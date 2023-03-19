@@ -36,11 +36,13 @@ def main():
     response = requests.post(worker_addr + "/generate_stream", headers=headers,
             json=pload, stream=True)
 
+    print(context.replace(stop_str, "\n"))
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
             output = data["text"].split(f"{stop_str}Assistant: ")[-1]
-            print(output)
+            print(output, end="\r")
+    print("")
 
 
 if __name__ == "__main__":
