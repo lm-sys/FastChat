@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ChatServer"
+version = "0.1.0"
+description = "chatbot server"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "uvicorn"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/lm-sys/ChatServer"
+"Bug Tracker" = "https://github.com/lm-sys/ChatServer/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["benchmark*", "dist*", "playground*", "scripts*", "tests*"]
+
+[tool.wheel]
+exclude = ["benchmark*", "dist*", "playground*", "scripts*", "tests*"]
