@@ -1,5 +1,6 @@
 resources:
   accelerators: A100-80GB:4
+  disk_size: 1000
 
 num_nodes: 1
 
@@ -12,14 +13,13 @@ file_mounts:
     name: skypilot-chatbot-data # Change to your own bucket
     store: gcs
     mode: MOUNT
-  ~/llama: gs://llama-7b/llama-ckpt # Change to your own bucket with the LLaMA weights
 
 setup: |
   # Download the model weights if not exits
   # mkdir -p $HOME/llama
-  # if [ ! -f /artifacts/llama-hf/llama-7B/complete ]; then
+  # if [ ! -f /artifacts/llama-hf/llama-13B/complete ]; then
   #   if [ ! -f $HOME/llama/complete ]; then
-  #     bash download.sh $LLAMA_URL 7B $HOME/llama &
+  #     bash download.sh $LLAMA_URL 13B $HOME/llama &
   #   fi
   # fi
 
@@ -52,17 +52,22 @@ setup: |
   # wait
   # touch $HOME/llama/complete
 
-  mkdir -p /artifacts/llama-hf/llama-7B
-  if [ ! -f /artifacts/llama-hf/llama-7B/complete ]; then
+  mkdir -p /artifacts/llama-hf/llama-13B
+  mkdir -p  ~/hf-output/llama-13b/
+  if [ ! -f /artifacts/llama-hf/llama-13B/complete ]; then
+    mkdir -p ~/llama-13b
+    gsutil -m cp -r gs://llama-13b/* ~/llama-13b/ # Change to your own bucket with the LLaMA weights
     cd transformers
     python src/transformers/models/llama/convert_llama_weights_to_hf.py \
-      --input_dir $HOME/llama \
-      --model_size 7B \
+      --input_dir $HOME/llama-13b \
+      --model_size 13B \
       --output_dir ~/hf-output || exit 1
-    mv ~/hf-output/llama-7b/* ~/hf-output/
-    mv ~/hf-output/tokenizer/* ~/hf-output/
-    cp -r ~/hf-output/* /artifacts/llama-hf/llama-7B
-    touch /artifacts/llama-hf/llama-7B/complete
+    mv ~/hf-output/tokenizer/* ~/hf-output/llama-13b/
+    cp -r ~/hf-output/llama-13b/* /artifacts/llama-hf/llama-13B
+    touch /artifacts/llama-hf/llama-13B/complete
+  else
+    # rsync -Pavz /artifacts/llama-hf/llama-13B/* ~/hf-output/llama-13b/
+    gsutil -m cp -r gs://skypilot-chatbot/llama-hf/llama-13B/* ~/hf-output/llama-13b/
   fi
 
 run: |
@@ -75,17 +80,17 @@ run: |
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12355 \
     train.py \
-    --model_name_or_path /artifacts/llama-hf/llama-7B \
+    --model_name_or_path ~/hf-output/llama-13b/ \
     --data_path /data/alpaca-data.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/7b/ckpt \
+    --output_dir /artifacts/chatbot/13b/ckpt \
     --num_train_epochs 3 \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps $((32 / NUM_NODES / SKYPILOT_NUM_GPUS_PER_NODE)) \
+    --gradient_accumulation_steps $((64 / NUM_NODES / SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 2000 \
+    --save_steps 200 \
     --save_total_limit 1 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
