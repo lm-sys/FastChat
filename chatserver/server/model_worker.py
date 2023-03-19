@@ -167,4 +167,3 @@ if __name__ == "__main__":
                          args.worker_address,
                          args.model_name)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-

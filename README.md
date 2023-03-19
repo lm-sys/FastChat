@@ -1,5 +1,5 @@
 # ChatServer
-chatbot server
+A chatbot server.
 
 ## Install
 
