@@ -41,7 +41,7 @@ def _html_to_rich_text(val: str) -> str:
 
 
 def _html_to_markdown(val: str) -> str:
-    """can handle enum and code. Table not tested. Code not in best format."""
+    """can handle enum, table and code. Code not in the best format."""
     import markdownify
     out = markdownify.markdownify(val)
     # TODO: the output format is:
@@ -49,11 +49,9 @@ def _html_to_markdown(val: str) -> str:
     # pythonCode`$<exact_code_here>`
     # ```
     # We need to convert it into the correct markdown format
-    # TODO: test whether table is correctly converted
     return out
 
 
-# Handles li correctly
 json_file = json.load(open(RAW_CONVERSATION_PATH, "r"))
 for l in tqdm.tqdm(json_file):
     for c in l["conversations"]:
