@@ -10,10 +10,10 @@ pip3 install -e .
 
 ## Serving
 ```
-# Launch the controller
+# Launch a controller
 python3 -m chatserver.server.controller
 
-# Launch the model worker
+# Launch a model worker
 python3 -m chatserver.server.model_worker
 
 # Send a test request
