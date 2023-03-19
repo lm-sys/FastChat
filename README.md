@@ -1,7 +1,27 @@
 # ChatServer
 chatbot server
 
+## Install
 
+### Method 1: From Source
+```
+pip3 install -e .
+```
+
+## Serving
+```
+# Launch a controller
+python3 -m chatserver.server.controller
+
+# Launch a model worker
+python3 -m chatserver.server.model_worker
+
+# Send a test request
+python3 -m chatserver.server.client
+```
+
+
+## Training
 ## Train Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 2. Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
@@ -20,5 +40,3 @@ chatbot server
     sky launch -c alpaca-2 -s --num-nodes 2 --gpus A100-80GB:8 scripts/train.yaml  --env WANDB_API_KEY
     ```
     Managed spot version TO BE ADDED.
-
-
