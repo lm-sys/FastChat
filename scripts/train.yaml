@@ -12,7 +12,7 @@ file_mounts:
     name: skypilot-chatbot-data # Change to your own bucket
     store: gcs
     mode: MOUNT
-  ~/llama: gs://llama-7b/llama-ckpt # Change to your own bucket
+  ~/llama: gs://llama-7b/llama-ckpt # Change to your own bucket with the LLaMA weights
 
 setup: |
   # Download the model weights if not exits
