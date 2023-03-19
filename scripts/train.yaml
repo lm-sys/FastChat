@@ -33,18 +33,19 @@ setup: |
   conda activate chatbot
 
   # Install pytorch
-  pip install torch==1.12.1+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+  pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
 
   # Install huggingface with the LLaMA commit
   git clone https://github.com/huggingface/transformers.git
   cd transformers
-  git checkout 60d51ef5123d949fd8c59cd4d3254e711541d278
+  git checkout 60d51ef # pin to latest commit
   pip install .
   cd -
 
   # Install alpaca
   git clone https://github.com/tatsu-lab/stanford_alpaca.git
   cd stanford_alpaca
+  git checkout eb5b171 # pin to latest commit
   pip install -r requirements.txt
   cd -
 
@@ -72,9 +73,7 @@ run: |
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
-    --rdzv_id=100 \
-    --rdzv_backend=c10d \
-    --rdzv_endpoint=$HOST_ADDR:29500 \
+    --master_port=12355 \
     train.py \
     --model_name_or_path /artifacts/llama-hf/llama-7B \
     --data_path /data/alpaca-data.json \
