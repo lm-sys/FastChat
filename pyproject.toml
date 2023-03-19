@@ -13,7 +13,8 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "uvicorn"
+    "uvicorn", "transformers", "accelerate",
+    "skypilot"
 ]
 
 [project.urls]

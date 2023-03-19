@@ -120,6 +120,13 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
+    def list_models(self):
+        models = []
+        for model, m_info in self.model_info.items():
+            if len(m_info.worker_names) > 0:
+                models.append(model)
+        return models
+
 
 app = FastAPI()
 
@@ -143,6 +150,12 @@ async def get_worker_address(request: Request):
     data = await request.json()
     exist = controller.receive_heart_beat(data["worker_name"])
     return {"exist": exist}
+
+
+@app.post("/list_models")
+async def list_models():
+    models = controller.list_models()
+    return {"models": models}
 
 
 if __name__ == "__main__":

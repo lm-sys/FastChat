@@ -9,7 +9,8 @@ import threading
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import requests
-from transformers import AutoTokenizer, OPTForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import LlamaForCausalLM, LlamaTokenizer
 import torch
 import uvicorn
 
@@ -35,17 +36,31 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
+def load_model(model_name):
+    disable_torch_init()
+    if model_name == "facebook/llama-7b":
+        hf_model_name = "/home/ubuntu/llama_weights/hf-llama-7b/"
+        tokenizer = AutoTokenizer.from_pretrained(
+           hf_model_name + "tokenizer/")
+        model = AutoModelForCausalLM.from_pretrained(
+           hf_model_name + "llama-7b/", torch_dtype=torch.float16,
+           device_map="auto", max_memory={0: "10GiB", 1: "10GiB"})
+    else:
+        hf_model_name = model_name
+
+        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
+        model = AutoModelForCausalLM.from_pretrained(
+           hf_model_name, torch_dtype=torch.float16).cuda()
+    return tokenizer, model
+
+
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr, model_name):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.model_name = model_name
 
-        disable_torch_init()
-        self.tokenizer = AutoTokenizer.from_pretrained(
-           model_name, add_bos_token=False)
-        self.model = OPTForCausalLM.from_pretrained(
-           model_name, torch_dtype=torch.float16).cuda()
+        self.tokenizer, self.model = load_model(model_name)
 
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
@@ -80,16 +95,6 @@ class ModelWorker:
         stop_str = args.get("stop", None)
         temperature = float(args.get("temperature", 1.0))
 
-        if stop_str:
-            if tokenizer.add_bos_token:
-                assert len(tokenizer(stop_str).input_ids) == 2
-                stop_token = tokenizer(stop_str).input_ids[1]
-            else:
-                assert len(tokenizer(stop_str).input_ids) == 1
-                stop_token = tokenizer(stop_str).input_ids[0]
-        else:
-            stop_token = None
-
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
 
@@ -111,11 +116,15 @@ class ModelWorker:
             last_token_logits = logits[0][-1]
             probs = torch.softmax(last_token_logits / temperature, dim=-1)
             token = int(torch.multinomial(probs, num_samples=1))
-            if token == stop_token:
-                break
 
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
+
+            if output.endswith(stop_str):
+                output = output[:-len(stop_str)]
+                stopped = True
+            else:
+                stopped = False
 
             ret = {
                 "text": output,
@@ -123,6 +132,8 @@ class ModelWorker:
             }
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
+            if stopped:
+                break
 
 
 app = FastAPI()
@@ -156,3 +167,4 @@ if __name__ == "__main__":
                          args.worker_address,
                          args.model_name)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+
