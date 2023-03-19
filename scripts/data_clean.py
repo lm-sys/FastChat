@@ -1,4 +1,3 @@
-from html.parser import HTMLParser
 import json
 import logging
 import re
@@ -9,6 +8,13 @@ logger = logging.getLogger(__name__)
 
 RAW_CONVERSATION_PATH = "./all_conversations.json"
 OUTPUT_PATH = "./cleaned.json"
+CHECK_TAG = None    # to check the conversion of code, use /code.
+CHECK_NUM = 1       # few examples are enough
+BARRIER = "=" * 20 + "\n"
+
+if CHECK_TAG is not None:
+    tag_cnt = 0
+    logger.setLevel(logging.DEBUG)
 
 
 def _get_html_tags(file_path: str):
@@ -18,25 +24,6 @@ def _get_html_tags(file_path: str):
         for m in re.findall("</[^<>]+>", l):
             s.add(m)
     return s
-
-
-def _html_to_plain_text(val: str) -> str:
-    class HtmlFilter(HTMLParser):
-        text = ""
-
-        def handle_data(self, data):
-            self.text += data + "\n"
-
-    f = HtmlFilter()
-    f.feed(val)
-    return f.text[:-1]
-
-
-def _html_to_rich_text(val: str) -> str:
-    """This one can handle enum, but cannot handle code."""
-    import html2text
-    h = html2text.HTML2Text()
-    return h.handle(val)
 
 
 def _reformat_all_code(val: str) -> str:
@@ -63,10 +50,15 @@ for l in tqdm.tqdm(json_file):
         try:
             new_val = _html_to_markdown(c["value"])
         except:
-            break_line = "=" * 20 + "\n"
             logger.warning(
-                break_line + c["value"] + break_line +
+                BARRIER + c["value"] + BARRIER +
                 "The above value is not correctly handled, keep it unchanged.")
             new_val = c["value"]
+        if (CHECK_TAG is not None and CHECK_TAG in c["value"]
+                and tag_cnt < CHECK_NUM):
+            logger.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
+                         "\n" + BARRIER + "\n")
+            tag_cnt += 1
+            if tag_cnt == CHECK_NUM:
         c["value"] = new_val
 json.dump(json_file, open(OUTPUT_PATH, "w"))
