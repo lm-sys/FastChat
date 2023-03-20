@@ -89,7 +89,7 @@ run: |
     --gradient_accumulation_steps $((64 / NUM_NODES / SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 200 \
+    --save_steps 400 \
     --save_total_limit 1 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
