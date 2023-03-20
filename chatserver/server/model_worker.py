@@ -53,6 +53,11 @@ def load_model(model_name, num_gpus):
            hf_model_name + "tokenizer/")
         model = AutoModelForCausalLM.from_pretrained(
            hf_model_name + "llama-7b/", torch_dtype=torch.float16, **kwargs)
+    elif model_name == "alpaca-13b":
+        from transformers import LlamaForCausalLM, LlamaTokenizer
+        hf_model_name = "/home/gcpuser/ckpt"
+        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
+        model = AutoModelForCausalLM.from_pretrained(hf_model_name, torch_dtype=torch.float16, **kwargs)
     else:
         hf_model_name = model_name
 
@@ -132,6 +137,11 @@ class ModelWorker:
             probs = torch.softmax(last_token_logits / temperature, dim=-1)
             token = int(torch.multinomial(probs, num_samples=1))
 
+            del out
+            del logits
+
+            if token == tokenizer.eos_token_id:
+                break
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
 
@@ -149,6 +159,8 @@ class ModelWorker:
 
             if stopped:
                 break
+
+        del past_key_values
 
 
 app = FastAPI()

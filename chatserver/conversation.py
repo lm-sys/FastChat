@@ -41,8 +41,15 @@ default_conversation = Conversation(
     messages=(
         ("Human", "Hello! What can you do?"),
         ("Assistant", "As an AI assistant, I can answer questions and chat with you."),
-        ("Human", "What is the name of the tallest mountain in the world?"),
-        ("Assistant", "Everest."),
+        ("Human", "Give me a list of tallest mountains in the world."),
+        ("Assistant", "here's a list of the ten tallest mountains in the world based on their height in meters:\n"
+         "Mount Everest - 8,848 meters\n"
+         "K2 (also known as Mount Godwin-Austen) - 8,611 meters\n"
+         "Kangchenjunga - 8,586 meters\n"
+         "Lhotse - 8,516 meters\n"
+         "Makalu - 8,485 meters\n"
+         "Please note that there are differing opinions on the exact height of these mountains "
+         "due to factors such as changes in elevation due to natural processes or differences in surveying methods."),
     )
 )
 
