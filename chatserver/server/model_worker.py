@@ -36,31 +36,43 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_name):
+def load_model(model_name, num_gpus):
     disable_torch_init()
+
+    if num_gpus == 1:
+        kwargs = {}
+    else:
+        kwargs = {
+            "device_map": "auto",
+            "max_memory": {i: "12GiB" for i in range(num_gpus)},
+        }
+
     if model_name == "facebook/llama-7b":
         hf_model_name = "/home/ubuntu/llama_weights/hf-llama-7b/"
         tokenizer = AutoTokenizer.from_pretrained(
            hf_model_name + "tokenizer/")
         model = AutoModelForCausalLM.from_pretrained(
-           hf_model_name + "llama-7b/", torch_dtype=torch.float16,
-           device_map="auto", max_memory={0: "10GiB", 1: "10GiB"})
+           hf_model_name + "llama-7b/", torch_dtype=torch.float16, **kwargs)
     else:
         hf_model_name = model_name
 
         tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
         model = AutoModelForCausalLM.from_pretrained(
-           hf_model_name, torch_dtype=torch.float16).cuda()
+           hf_model_name, torch_dtype=torch.float16, **kwargs)
+
+    if num_gpus == 1:
+        model.cuda()
+
     return tokenizer, model, 2048
 
 
 class ModelWorker:
-    def __init__(self, controller_addr, worker_addr, model_name):
+    def __init__(self, controller_addr, worker_addr, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.model_name = model_name
 
-        self.tokenizer, self.model, self.context_len = load_model(model_name)
+        self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
@@ -162,11 +174,13 @@ if __name__ == "__main__":
     parser.add_argument("--controller-address", type=str,
         default="http://localhost:21001")
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--num-gpus", type=int, default=1)
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
-                         args.model_name)
+                         args.model_name,
+                         args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
