@@ -25,6 +25,7 @@ python3 -m chatserver.server.client
 ## Train Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 2. Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
+    Replace the `train-7b.yaml` with the `train-13b.yaml` to train the 13B model.
     ```
     # WANDB API KEY is required for logging. We use the key in your local environment.
     sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY
