@@ -34,15 +34,16 @@ class Conversation:
             sep=self.sep)
 
 
-
 default_conversation = Conversation(
     system="A chat between a curious human and a knowledgeable artificial intelligence assistant.",
     roles=("Human", "Assistant"),
     messages=(
         ("Human", "Hello! What can you do?"),
         ("Assistant", "As an AI assistant, I can answer questions and chat with you."),
-        ("Human", "What is the name of the tallest mountain in the world?"),
-        ("Assistant", "Everest."),
+        ("Human", "Give three tips for staying healthy."),
+        ("Assistant", "1. Eat a balanced diet and make sure to include plenty of fruits and vegetables.\n"
+                      "2. Exercise regularly to keep your body active and strong.\n"
+                      "3. Get enough sleep and maintain a consistent sleep schedule."),
     )
 )
 

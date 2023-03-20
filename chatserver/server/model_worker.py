@@ -15,6 +15,7 @@ import uvicorn
 
 from chatserver.server.constants import WORKER_HEART_BEAT_INTERVAL
 
+GB = 1 << 30
 
 logger = logging.getLogger("model_worker")
 
@@ -54,16 +55,19 @@ def load_model(model_name, num_gpus):
         model = AutoModelForCausalLM.from_pretrained(
            hf_model_name + "llama-7b/", torch_dtype=torch.float16, **kwargs)
     else:
-        hf_model_name = model_name
-
-        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
-           hf_model_name, torch_dtype=torch.float16, **kwargs)
+           model_name, torch_dtype=torch.float16, **kwargs)
 
     if num_gpus == 1:
         model.cuda()
 
-    return tokenizer, model, 2048
+    if hasattr(model.config, "max_sequence_length"):
+        context_len = model.config.max_sequence_length
+    else:
+        context_len = 2048
+
+    return tokenizer, model, context_len
 
 
 class ModelWorker:
@@ -72,6 +76,7 @@ class ModelWorker:
         self.worker_addr = worker_addr
         self.model_name = model_name
 
+        logger.info("Loading the model...")
         self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
         self.register_to_controller()
@@ -99,7 +104,12 @@ class ModelWorker:
         if not exist:
             self.register_to_controller()
 
+    @torch.inference_mode()
     def generate_stream(self, args):
+        #cur_mem = torch.cuda.memory_allocated()
+        #max_mem = torch.cuda.max_memory_allocated()
+        #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
+
         tokenizer, model = self.tokenizer, self.model
 
         context = args["prompt"]
@@ -132,6 +142,11 @@ class ModelWorker:
             probs = torch.softmax(last_token_logits / temperature, dim=-1)
             token = int(torch.multinomial(probs, num_samples=1))
 
+            assert out.hidden_states is None
+            assert out.attentions is None
+
+            if token == tokenizer.eos_token_id:
+                break
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
 
@@ -149,6 +164,8 @@ class ModelWorker:
 
             if stopped:
                 break
+
+        del past_key_values
 
 
 app = FastAPI()

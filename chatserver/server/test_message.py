@@ -24,7 +24,7 @@ def main():
     pload = {
         "model": "facebook/opt-350m",
         "prompt": prompt,
-        "max_new_tokens": 64,
+        "max_new_tokens": 32,
         "temperature": 0.8,
         "stop": conv.sep,
     }

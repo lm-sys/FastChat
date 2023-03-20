@@ -40,7 +40,7 @@ def http_bot(history, model_selector):
     headers = {"User-Agent": "Alpa Client"}
     pload = {
         "prompt": prompt,
-        "max_new_tokens": 64,
+        "max_new_tokens": 512,
         "temperature": 0.8,
         "stop": conv.sep,
     }
@@ -103,6 +103,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
     ret = requests.post(args.controller_url + "/list_models")
@@ -111,4 +112,4 @@ if __name__ == "__main__":
 
     demo = build_demo(models)
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
-        server_name=args.host, server_port=args.port)
+        server_name=args.host, server_port=args.port, share=args.share)

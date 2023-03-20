@@ -30,7 +30,7 @@ def heart_beat_controller(controller):
 
     while True:
         time.sleep(CONTROLLER_HEART_BEAT_EXPIRATION)
-        controller.remove_stable_workers()
+        controller.remove_stable_workers_by_expiration()
 
 
 class Controller:
@@ -67,6 +67,8 @@ class Controller:
         w_info.last_heart_beat = time.time()
 
         logger.info(f"Register new. {(model_name, worker_name)}")
+
+        self.remove_stable_workers_by_checking()
 
     def get_worker_address(self, model_name: str):
         if model_name not in self.model_info:
@@ -110,13 +112,22 @@ class Controller:
         logger.info(f"Receive heart beat. {worker_name}")
         return True
 
-    def remove_stable_workers(self):
+    def remove_stable_workers_by_expiration(self):
         expire = time.time() - CONTROLLER_HEART_BEAT_EXPIRATION
         to_delete = []
         for worker_name, w_info in self.worker_info.items():
             if w_info.last_heart_beat < expire:
                 to_delete.append(worker_name)
         
+        for worker_name in to_delete:
+            self.remove_worker(worker_name)
+
+    def remove_stable_workers_by_checking(self):
+        to_delete = []
+        for worker_name in self.worker_info:
+            if not self.check_worker_status(worker_name):
+                to_delete.append(worker_name)
+
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
