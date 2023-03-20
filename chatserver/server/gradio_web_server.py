@@ -7,6 +7,10 @@ import gradio as gr
 import requests
 
 from chatserver.conversation import default_conversation
+from chatserver.utils import build_logger
+
+
+logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 
 def add_text(history, text):
@@ -23,7 +27,7 @@ def http_bot(history, model_selector):
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model_name": model_selector})
     worker_addr = ret.json()["address"]
-    print(f"worker_addr: {worker_addr}")
+    logger.info(f"worker_addr: {worker_addr}")
 
     # Fix some bugs in gradio UI
     for i in range(len(history)):
@@ -42,7 +46,7 @@ def http_bot(history, model_selector):
     conv.append_gradio_chatbot_history(history)
     prompt = conv.get_prompt()
     txt = prompt.replace(conv.sep, '\n')
-    print(f"==== Conversation ====\n{txt}")
+    logger.info(f"==== Conversation ====\n{txt}")
 
     # Make requests
     headers = {"User-Agent": "Alpa Client"}
@@ -63,7 +67,7 @@ def http_bot(history, model_selector):
             output = data["text"].split(sep)[-1]
             history[-1][-1] = output
             yield history
-    print(f"{output}")
+    logger.info(f"{output}")
 
 
 priority = defaultdict(lambda: 10, {
@@ -121,7 +125,7 @@ if __name__ == "__main__":
 
     ret = requests.post(args.controller_url + "/list_models")
     models = ret.json()["models"]
-    print(f"Models: {models}")
+    logger.info(f"Models: {models}")
 
     demo = build_demo(models)
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
