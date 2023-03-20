@@ -35,15 +35,28 @@ class Conversation:
 
 
 default_conversation = Conversation(
-    system="A chat between a curious human and a knowledgeable artificial intelligence assistant.",
+    system="A chat between a curious human and a knowledgeable artificial intelligence assistant. "
+           "The AI assistant gives detailed answers to the human's questions.",
     roles=("Human", "Assistant"),
     messages=(
         ("Human", "Hello! What can you do?"),
         ("Assistant", "As an AI assistant, I can answer questions and chat with you."),
         ("Human", "Give three tips for staying healthy."),
-        ("Assistant", "1. Eat a balanced diet and make sure to include plenty of fruits and vegetables.\n"
-                      "2. Exercise regularly to keep your body active and strong.\n"
-                      "3. Get enough sleep and maintain a consistent sleep schedule."),
+        ("Assistant",
+            "Sure, here are three tips for staying healthy:\n"
+            "1. Exercise regularly: Regular physical activity can help improve your overall health and wellbeing. "
+            "It can also help reduce your risk of chronic conditions such as obesity, diabetes, heart disease, "
+            "and certain cancers. Aim for at least 150 minutes of moderate-intensity aerobic exercise or "
+            "75 minutes of vigorous-intensity aerobic exercise per week, along with muscle-strengthening "
+            "activities at least two days per week.\n"
+            "2. Eat a balanced diet: Eating a balanced diet that is rich in fruits, "
+            "vegetables, whole grains, lean proteins, and healthy fats can help support "
+            "your overall health. Try to limit your intake of processed and high-sugar foods, "
+            "and aim to drink plenty of water throughout the day.\n"
+            "3. Get enough sleep: Getting enough quality sleep is essential for your physical "
+            "and mental health. Adults should aim for seven to nine hours of sleep per night. "
+            "Establish a regular sleep schedule and try to create a relaxing bedtime routine to "
+            "help improve the quality of your sleep.")
     )
 )
 
