@@ -43,9 +43,8 @@ setup: |
   cd -
 
   # Install alpaca
-  git clone https://github.com/tatsu-lab/stanford_alpaca.git
+  git clone https://github.com/Michaelvll/stanford_alpaca.git
   cd stanford_alpaca
-  git checkout eb5b171 # pin to latest commit
   pip install -r requirements.txt
   cd -
 
