@@ -10,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import requests
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers import LlamaForCausalLM, LlamaTokenizer
 import torch
 import uvicorn
 
@@ -48,6 +47,7 @@ def load_model(model_name, num_gpus):
         }
 
     if model_name == "facebook/llama-7b":
+        from transformers import LlamaForCausalLM, LlamaTokenizer
         hf_model_name = "/home/ubuntu/llama_weights/hf-llama-7b/"
         tokenizer = AutoTokenizer.from_pretrained(
            hf_model_name + "tokenizer/")
@@ -110,7 +110,7 @@ class ModelWorker:
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
 
-        max_src_len = self.context_len - max_new_tokens - 10
+        max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
         for i in range(max_new_tokens):
