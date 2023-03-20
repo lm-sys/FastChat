@@ -51,7 +51,7 @@ def load_model(model_name):
         tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
         model = AutoModelForCausalLM.from_pretrained(
            hf_model_name, torch_dtype=torch.float16).cuda()
-    return tokenizer, model
+    return tokenizer, model, 2048
 
 
 class ModelWorker:
@@ -60,7 +60,7 @@ class ModelWorker:
         self.worker_addr = worker_addr
         self.model_name = model_name
 
-        self.tokenizer, self.model = load_model(model_name)
+        self.tokenizer, self.model, self.context_len = load_model(model_name)
 
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
@@ -91,12 +91,15 @@ class ModelWorker:
         tokenizer, model = self.tokenizer, self.model
 
         context = args["prompt"]
-        max_new_tokens = args.get("max_new_tokens", 1024)
+        max_new_tokens = args.get("max_new_tokens", 256)
         stop_str = args.get("stop", None)
         temperature = float(args.get("temperature", 1.0))
 
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
+
+        max_src_len = self.context_len - max_new_tokens - 10
+        input_ids = input_ids[-max_src_len:]
 
         for i in range(max_new_tokens):
             if i == 0:
