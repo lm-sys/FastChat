@@ -1,5 +1,6 @@
 import argparse
 from collections import defaultdict
+import datetime
 import json
 import time
 
@@ -7,6 +8,7 @@ import gradio as gr
 import requests
 
 from chatserver.conversation import default_conversation
+from chatserver.constants import LOGDIR
 from chatserver.utils import build_logger
 
 
@@ -25,8 +27,13 @@ def clear_history(history):
     return []
 
 
+def get_conv_log_filename():
+    t = datetime.datetime.now()
+    return f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
+
+
 def vote_last_response(history, vote_type):
-    with open(args.conversation_log, "a") as fout:
+    with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
@@ -98,7 +105,7 @@ def http_bot(history, model_selector):
     logger.info(f"{output}")
     finish_tstamp = time.time()
 
-    with open(args.conversation_log, "a") as fout:
+    with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
@@ -165,7 +172,6 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
     parser.add_argument("--share", action="store_true")
-    parser.add_argument("--conversation-log", type=str, default="conv.json")
     args = parser.parse_args()
 
     ret = requests.post(args.controller_url + "/list_models")
