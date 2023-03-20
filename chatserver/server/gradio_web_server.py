@@ -80,12 +80,17 @@ def build_demo(models):
     with gr.Blocks(title="Chat Server", css=css) as demo:
         gr.Markdown(
             "# Chat server\n"
-            "**Note**: This service lacks safety measures and may produce offensive content.\n"
+            "### Terms of Use\n"
+            "By using this service, users have to agree to the following terms.\n"
+            " - This service is a research preview for non-commercial usage.\n"
+            " - This service lacks safety measures and may produce offensive content.\n"
+            " - This service cannot be used for illegal, harmful, violent, or sexual content.\n"
+            " - This service collects user dialog data for future research.\n"
         )
 
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(models,
-                value=models[0],
+                value=models[0] if len(models) > 0 else None,
                 interactive=True,
                 label="Choose a model to chat with.")
 

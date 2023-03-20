@@ -4,14 +4,13 @@ import logging.handlers
 import os
 import sys
 
-
-LOGDIR = "."
+from chatserver.constants import LOGDIR
 
 
 handler = None
 
 
-def build_logger():
+def build_logger(logger_name, logger_filename):
     global handler
 
     formatter = logging.Formatter(
@@ -36,13 +35,13 @@ def build_logger():
     sys.stderr = sl
 
     # Get logger
-    logger = logging.getLogger("alpa.llm_serving")
+    logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
     # Add a file handler for all loggers
     if handler is None:
         os.makedirs(LOGDIR, exist_ok=True)
-        filename = os.path.join(LOGDIR, f"llm_serving.worker.log")
+        filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
             filename, when='D', utc=True)
         handler.setFormatter(formatter)

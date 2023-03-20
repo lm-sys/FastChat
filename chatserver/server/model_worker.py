@@ -13,7 +13,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import uvicorn
 
-from chatserver.server.constants import WORKER_HEART_BEAT_INTERVAL
+from chatserver.constants import WORKER_HEART_BEAT_INTERVAL
 
 GB = 1 << 30
 
