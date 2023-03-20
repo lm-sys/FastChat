@@ -9,9 +9,11 @@ from fastapi import FastAPI, Request
 import requests
 import uvicorn
 
-from chatserver.server.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from chatserver.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from chatserver.utils import build_logger
 
-logger = logging.getLogger("controller")
+
+logger = build_logger("controller", "controller.log")
 
 
 @dataclasses.dataclass
@@ -67,8 +69,6 @@ class Controller:
         w_info.last_heart_beat = time.time()
 
         logger.info(f"Register new. {(model_name, worker_name)}")
-
-        self.remove_stable_workers_by_checking()
 
     def get_worker_address(self, model_name: str):
         if model_name not in self.model_info:
@@ -174,8 +174,6 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
     args = parser.parse_args()
-
-    logging.basicConfig(level=logging.INFO)
 
     controller = Controller()
 

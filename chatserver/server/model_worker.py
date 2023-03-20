@@ -5,6 +5,7 @@ import json
 import time
 from typing import List, Union
 import threading
+import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
@@ -13,11 +14,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import uvicorn
 
-from chatserver.server.constants import WORKER_HEART_BEAT_INTERVAL
+from chatserver.constants import WORKER_HEART_BEAT_INTERVAL
+from chatserver.utils import build_logger
 
 GB = 1 << 30
 
-logger = logging.getLogger("model_worker")
+logger = build_logger("model_worker", f"model_worker_{str(uuid.uuid4())[:6]}.log")
 
 
 def disable_torch_init():
@@ -26,7 +28,6 @@ def disable_torch_init():
     """
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
-
 
 
 def heart_beat_worker(controller):
@@ -76,7 +77,7 @@ class ModelWorker:
         self.worker_addr = worker_addr
         self.model_name = model_name
 
-        logger.info("Loading the model...")
+        logger.info(f"Loading the model {model_name}...")
         self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
         self.register_to_controller()
@@ -138,15 +139,15 @@ class ModelWorker:
                 logits = out.logits
                 past_key_values = out.past_key_values
 
-            last_token_logits = logits[0][-1]
-            probs = torch.softmax(last_token_logits / temperature, dim=-1)
-            token = int(torch.multinomial(probs, num_samples=1))
-
             assert out.hidden_states is None
             assert out.attentions is None
 
+            last_token_logits = logits[0][-1]
+            probs = torch.softmax(last_token_logits / temperature, dim=-1)
+            token = int(torch.multinomial(probs, num_samples=1))
             if token == tokenizer.eos_token_id:
                 break
+
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
 
@@ -193,8 +194,6 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--num-gpus", type=int, default=1)
     args = parser.parse_args()
-
-    logging.basicConfig(level=logging.INFO)
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
