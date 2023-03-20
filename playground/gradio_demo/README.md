@@ -1,7 +1,7 @@
 ```
 # Launch a model worker
-python3 model_worker.py --model facebook/opt-6.7b
+python3 worker.py --model facebook/opt-6.7b
 
-# Launch a web server
-python3 web_server.py
+# Launch a web demo server
+python3 demo_server.py
 ```

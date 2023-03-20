@@ -6,6 +6,8 @@ import time
 import gradio as gr
 import requests
 
+from chatserver.conversation import default_conversation
+
 
 def add_text(history, text):
     history = history + [[text, None]]
@@ -14,16 +16,6 @@ def add_text(history, text):
 
 def clear_history(history):
     return []
-
-
-def dummy_bot(history):
-    bot_response = "Today is a wonderful day"
-    tmp = ""
-    for word in bot_response.split(" "):
-        time.sleep(1)
-        tmp += word + " "
-        history[-1][-1] = tmp
-        yield history
 
 
 def http_bot(history, model_selector):
@@ -38,47 +30,33 @@ def http_bot(history, model_selector):
         yield history
         return
 
-    stop_str = "\n"
+    conv = default_conversation.copy()
+    conv.append_gradio_chatbot_history(history)
+    prompt = conv.get_prompt()
 
-    context = (
-        f"A chat between a curious human and a knowledgeable artificial intelligence assistant.{stop_str}"
-        f"Human: Hello! What can you do?{stop_str}"
-        f"Assistant: As an AI assistant, I can answer questions and chat with you.{stop_str}"
-        f"Human: What is the name of the tallest mountain in the world?{stop_str}"
-        f"Assistant: Everest.{stop_str}"
-    )
-    for msg_pair in history:
-        context += f"Human: {msg_pair[0]}{stop_str}"
-        if msg_pair[1]:
-            context += f"Assistant: {msg_pair[1]}{stop_str}"
-        else:
-            context += f"Assistant:"
-
-    print(f"==== context ====\n{context}\n====")
-
-    model = "default"
-    prompt = context
-    min_tokens = None
-    top_p = 1
-    echo = True
+    txt = prompt.replace(conv.sep, '\n')
+    print(f"==== Conversation ====\n{txt}")
 
     headers = {"User-Agent": "Alpa Client"}
     pload = {
-        "model": model,
         "prompt": prompt,
         "max_new_tokens": 64,
         "temperature": 0.8,
-        "stop": stop_str,
+        "stop": conv.sep,
     }
     response = requests.post(worker_addr + "/generate_stream",
         headers=headers, json=pload, stream=True)
 
+    sep = f"{conv.sep}{conv.roles[1]}: "
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            output = data["text"].split(f"{stop_str}Assistant: ")[-1]
+            output = data["text"].split(sep)[-1]
             history[-1][-1] = output
             yield history
+
+    print(f"{output}")
+
 
 priority = defaultdict(lambda: 10, {
     "facebook/opt-350m": 9,

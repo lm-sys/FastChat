@@ -12,11 +12,19 @@ class Conversation:
     def get_prompt(self):
         ret = self.system + self.sep
         for role, message in self.messages:
-            ret += role + ": " + message + self.sep
+            if message:
+                ret += role + ": " + message + self.sep
+            else:
+                ret += role + ":"
         return ret
 
     def append_message(self, role, message):
         self.messages.append([role, message])
+
+    def append_gradio_chatbot_history(self, history):
+        for a, b in history:
+            self.messages.append([self.roles[0], a])
+            self.messages.append([self.roles[1], b])
 
     def copy(self):
         return Conversation(
