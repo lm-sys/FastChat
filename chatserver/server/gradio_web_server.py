@@ -25,28 +25,37 @@ def http_bot(history, model_selector):
     worker_addr = ret.json()["address"]
     print(f"worker_addr: {worker_addr}")
 
+    # Fix some bugs in gradio UI
+    for i in range(len(history)):
+        history[i][0] = history[i][0].replace("<br>", "")
+        if history[i][1]:
+            history[i][1] = history[i][1].replace("<br>", "")
+
+    # No available worker
     if worker_addr == "":
         history[-1][-1] = "**NETWORK ERROR. PLEASE TRY AGAIN OR CHOOSE OTHER MODELS.**"
         yield history
         return
 
+    # Construct prompt
     conv = default_conversation.copy()
     conv.append_gradio_chatbot_history(history)
     prompt = conv.get_prompt()
-
     txt = prompt.replace(conv.sep, '\n')
     print(f"==== Conversation ====\n{txt}")
 
+    # Make requests
     headers = {"User-Agent": "Alpa Client"}
     pload = {
         "prompt": prompt,
-        "max_new_tokens": 64,
-        "temperature": 0.8,
+        "max_new_tokens": 512,
+        "temperature": 0.7,
         "stop": conv.sep,
     }
     response = requests.post(worker_addr + "/generate_stream",
         headers=headers, json=pload, stream=True)
 
+    # Stream output
     sep = f"{conv.sep}{conv.roles[1]}: "
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
@@ -54,7 +63,6 @@ def http_bot(history, model_selector):
             output = data["text"].split(sep)[-1]
             history[-1][-1] = output
             yield history
-
     print(f"{output}")
 
 
@@ -67,7 +75,7 @@ priority = defaultdict(lambda: 10, {
 
 def build_demo(models):
     models.sort(key=lambda x: priority[x])
-    css = """#model_selector_row {width: 300px;}"""
+    css = """#model_selector_row {width: 350px;}"""
 
     with gr.Blocks(title="Chat Server", css=css) as demo:
         gr.Markdown(
@@ -103,6 +111,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
     ret = requests.post(args.controller_url + "/list_models")
@@ -111,4 +120,4 @@ if __name__ == "__main__":
 
     demo = build_demo(models)
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
-        server_name=args.host, server_port=args.port)
+        server_name=args.host, server_port=args.port, share=args.share)
