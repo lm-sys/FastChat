@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 import datetime
 import json
+import os
 import time
 
 import gradio as gr
@@ -16,6 +17,7 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 upvote_msg = "👍  Upvote the last response"
 downvote_msg = "👎  Downvote the last response"
+init_prompt = default_conversation.get_prompt()
 
 
 def add_text(history, text):
@@ -29,7 +31,8 @@ def clear_history(history):
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
-    return f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
+    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
+    return name
 
 
 def vote_last_response(history, vote_type):
@@ -37,7 +40,8 @@ def vote_last_response(history, vote_type):
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
-            "history": history,
+            "conversation": history,
+            "init_prompt": init_prompt,
         }
         fout.write(json.dumps(data) + "\n")
 
@@ -111,7 +115,8 @@ def http_bot(history, model_selector):
             "type": "chat",
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
-            "history": history,
+            "conversation": history,
+            "init_prompt": init_prompt,
         }
         fout.write(json.dumps(data) + "\n")
 
