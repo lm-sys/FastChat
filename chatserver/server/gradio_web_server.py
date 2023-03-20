@@ -12,17 +12,45 @@ from chatserver.utils import build_logger
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
+upvote_msg = "👍  Upvote the last response"
+downvote_msg = "👎  Downvote the last response"
+
 
 def add_text(history, text):
     history = history + [[text, None]]
-    return history, ""
+    return history, "", upvote_msg, downvote_msg
 
 
 def clear_history(history):
     return []
 
 
+def vote_last_response(history, vote_type):
+    with open(args.conversation_log, "a") as fout:
+        data = {
+            "tstamp": round(time.time(), 4),
+            "type": vote_type,
+            "history": history,
+        }
+        fout.write(json.dumps(data) + "\n")
+
+
+def upvote_last_response(history, upvote_btn, downvote_btn):
+    if upvote_btn == "done" or len(history) == 0:
+        return "done", "done"
+    vote_last_response(history, "upvote")
+    return "done", "done"
+
+
+def downvote_last_response(history, upvote_btn, downvote_btn):
+    if upvote_btn == "done" or len(history) == 0:
+        return "done", "done"
+    vote_last_response(history, "downvote")
+    return "done", "done"
+
+
 def http_bot(history, model_selector):
+    start_tstamp = time.time()
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model_name": model_selector})
@@ -68,6 +96,17 @@ def http_bot(history, model_selector):
             history[-1][-1] = output
             yield history
     logger.info(f"{output}")
+    finish_tstamp = time.time()
+
+    with open(args.conversation_log, "a") as fout:
+        data = {
+            "tstamp": round(finish_tstamp, 4),
+            "type": "chat",
+            "start": round(start_tstamp, 4),
+            "finish": round(start_tstamp, 4),
+            "history": history,
+        }
+        fout.write(json.dumps(data) + "\n")
 
 
 priority = defaultdict(lambda: 10, {
@@ -103,12 +142,17 @@ def build_demo(models):
             placeholder="Enter text and press ENTER",).style(container=False)
 
         with gr.Row():
-            upvote_btn = gr.Button(value="Upvote the last response")
-            downvote_btn = gr.Button(value="Downvote the last response")
+            upvote_btn = gr.Button(value=upvote_msg)
+            downvote_btn = gr.Button(value=downvote_msg)
             clear_btn = gr.Button(value="Clear History")
 
-        clear_btn.click(clear_history, inputs=[chatbot], outputs=[chatbot])
-        textbox.submit(add_text, [chatbot, textbox], [chatbot, textbox]).then(
+        clear_btn.click(clear_history, chatbot, chatbot)
+        upvote_btn.click(upvote_last_response,
+            [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
+        downvote_btn.click(downvote_last_response,
+            [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
+        textbox.submit(add_text, [chatbot, textbox],
+            [chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [chatbot, model_selector], chatbot,
         )
     return demo
@@ -121,6 +165,7 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
     parser.add_argument("--share", action="store_true")
+    parser.add_argument("--conversation-log", type=str, default="conv.json")
     args = parser.parse_args()
 
     ret = requests.post(args.controller_url + "/list_models")
