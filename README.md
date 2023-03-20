@@ -1,5 +1,5 @@
 # ChatServer
-chatbot server
+A chatbot server.
 
 ## Install
 
@@ -14,12 +14,16 @@ pip3 install -e .
 python3 -m chatserver.server.controller
 
 # Launch a model worker
-python3 -m chatserver.server.model_worker
+python3 -m chatserver.server.model_worker --model facebook/opt-350m
 
-# Send a test request
-python3 -m chatserver.server.client
+# Send a test message
+python3 -m chatserver.server.test_message
+
+# Luanch a gradio web server.
+python3 -m chatserver.server.gradio_web_server
+
+# You can open your brower and chat with a model now.
 ```
-
 
 ## Training
 ## Train Alpaca with SkyPilot
