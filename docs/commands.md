@@ -18,5 +18,8 @@ python3 -m chatserver.server.gradio_web_server
 ### Host a gradio web server
 ```
 sudo apt update
+wget https://bootstrap.pypa.io/get-pip.py
+python3 get-pip.py
 pip3 install -e .
+python3 -m chatserver.server.gradio_web_server --controller http://ec2-35-89-79-20.us-west-2.compute.amazonaws.com:21001
 ```
