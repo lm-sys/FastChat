@@ -13,7 +13,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "uvicorn"
+    "fastapi", "gradio", "requests", "uvicorn"
 ]
 
 [project.urls]

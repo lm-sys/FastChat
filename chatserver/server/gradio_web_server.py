@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 import datetime
 import json
+import os
 import time
 
 import gradio as gr
@@ -16,6 +17,29 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 upvote_msg = "👍  Upvote the last response"
 downvote_msg = "👎  Downvote the last response"
+init_prompt = default_conversation.get_prompt()
+
+priority = defaultdict(lambda: 10, {
+    "facebook/opt-350m": 9,
+    "facebook/opt-6.7b": 8,
+    "facebook/llama-7b": 7,
+})
+
+
+def get_conv_log_filename():
+    t = datetime.datetime.now()
+    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
+    return name
+
+
+def get_model_list():
+    ret = requests.post(args.controller_url + "/refresh_status")
+    assert ret.status_code == 200
+    ret = requests.post(args.controller_url + "/list_models")
+    models = ret.json()["models"]
+    models.sort(key=lambda x: priority[x])
+    logger.info(f"Models: {models}")
+    return models
 
 
 def add_text(history, text):
@@ -27,9 +51,11 @@ def clear_history(history):
     return []
 
 
-def get_conv_log_filename():
-    t = datetime.datetime.now()
-    return f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
+def refresh_models():
+    models = get_model_list()
+    return gr.Dropdown.update(
+        choices=models,
+        value=models[0] if len(models) > 0 else "")
 
 
 def vote_last_response(history, vote_type):
@@ -37,7 +63,8 @@ def vote_last_response(history, vote_type):
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
-            "history": history,
+            "conversation": history,
+            "init_prompt": init_prompt,
         }
         fout.write(json.dumps(data) + "\n")
 
@@ -111,20 +138,14 @@ def http_bot(history, model_selector):
             "type": "chat",
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
-            "history": history,
+            "conversation": history,
+            "init_prompt": init_prompt,
         }
         fout.write(json.dumps(data) + "\n")
 
 
-priority = defaultdict(lambda: 10, {
-    "facebook/opt-350m": 9,
-    "facebook/opt-6.7b": 8,
-    "facebook/llama-7b": 7,
-})
-
-
-def build_demo(models):
-    models.sort(key=lambda x: priority[x])
+def build_demo():
+    models = get_model_list()
     css = """#model_selector_row {width: 350px;}"""
 
     with gr.Blocks(title="Chat Server", css=css) as demo:
@@ -139,8 +160,9 @@ def build_demo(models):
         )
 
         with gr.Row(elem_id="model_selector_row"):
-            model_selector = gr.Dropdown(models,
-                value=models[0] if len(models) > 0 else None,
+            model_selector = gr.Dropdown(
+                choices=models,
+                value=models[0] if len(models) > 0 else "",
                 interactive=True,
                 label="Choose a model to chat with.")
 
@@ -151,17 +173,21 @@ def build_demo(models):
         with gr.Row():
             upvote_btn = gr.Button(value=upvote_msg)
             downvote_btn = gr.Button(value=downvote_msg)
-            clear_btn = gr.Button(value="Clear History")
+            clear_btn = gr.Button(value="Clear history")
+            refresh_btn = gr.Button(value="Refresh models")
 
-        clear_btn.click(clear_history, chatbot, chatbot)
         upvote_btn.click(upvote_last_response,
             [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
         downvote_btn.click(downvote_last_response,
             [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
+        clear_btn.click(clear_history, chatbot, chatbot)
+        refresh_btn.click(refresh_models, [], model_selector)
+
         textbox.submit(add_text, [chatbot, textbox],
             [chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [chatbot, model_selector], chatbot,
         )
+
     return demo
 
 
@@ -174,10 +200,6 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
-    ret = requests.post(args.controller_url + "/list_models")
-    models = ret.json()["models"]
-    logger.info(f"Models: {models}")
-
-    demo = build_demo(models)
+    demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
         server_name=args.host, server_port=args.port, share=args.share)
