@@ -69,6 +69,7 @@ def vote_last_response(history, vote_type, request: gr.Request):
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
+            "model": model_selector,
             "conversation": history,
             "init_prompt": init_prompt,
             "ip": request.client.host,
@@ -76,17 +77,19 @@ def vote_last_response(history, vote_type, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
 
 
-def upvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
+def upvote_last_response(history, upvote_btn, downvote_btn, model_selector,
+                         request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "upvote", request)
+    vote_last_response(history, "upvote", model_selector, request)
     return "done", "done"
 
 
-def downvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
+def downvote_last_response(history, upvote_btn, downvote_btn, model_selector,
+                           request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "downvote", request)
+    vote_last_response(history, "downvote", model_selector, request)
     return "done", "done"
 
 
@@ -143,6 +146,7 @@ def http_bot(history, model_selector, request: gr.Request):
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
+            "model": model_selector,
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
             "conversation": history,
@@ -187,9 +191,11 @@ def build_demo():
             clear_btn = gr.Button(value="Clear history")
 
         upvote_btn.click(upvote_last_response,
-            [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
+            [chatbot, upvote_btn, downvote_btn, model_selector],
+            [upvote_btn, downvote_btn])
         downvote_btn.click(downvote_last_response,
-            [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
+            [chatbot, upvote_btn, downvote_btn, model_selector],
+            [upvote_btn, downvote_btn])
         clear_btn.click(clear_history, chatbot, chatbot)
 
         textbox.submit(add_text, [chatbot, textbox],

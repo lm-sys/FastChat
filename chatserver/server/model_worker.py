@@ -19,7 +19,8 @@ from chatserver.utils import build_logger
 
 GB = 1 << 30
 
-logger = build_logger("model_worker", f"model_worker_{str(uuid.uuid4())[:6]}.log")
+worker_id = str(uuid.uuid4())[:6]
+logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
 
 def disable_torch_init():
@@ -72,12 +73,14 @@ def load_model(model_name, num_gpus):
 
 
 class ModelWorker:
-    def __init__(self, controller_addr, worker_addr, model_name, num_gpus):
+    def __init__(self, controller_addr, worker_addr,
+                 worker_id, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
+        self.worker_id = worker_id
         self.model_name = model_name
 
-        logger.info(f"Loading the model {model_name}...")
+        logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
         self.register_to_controller()
@@ -197,6 +200,7 @@ if __name__ == "__main__":
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
+                         worker_id,
                          args.model_name,
                          args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
