@@ -1,0 +1,103 @@
+resources:
+  accelerators: A100-80GB:4
+  disk_size: 1000
+
+num_nodes: 1
+
+file_mounts:
+  /artifacts:
+    name: skypilot-chatbot # Change to your own bucket
+    store: gcs
+    mode: MOUNT
+  /data:
+    name: skypilot-chatbot-data # Change to your own bucket
+    store: gcs
+    mode: MOUNT
+
+setup: |
+  # Download the model weights if not exits
+  # mkdir -p $HOME/llama
+  # if [ ! -f /artifacts/llama-hf/llama-13B/complete ]; then
+  #   if [ ! -f $HOME/llama/complete ]; then
+  #     bash download.sh $LLAMA_URL 13B $HOME/llama &
+  #   fi
+  # fi
+
+  # Download the data
+  if [ ! -f /data/alpaca-data.json ]; then
+    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
+  fi
+
+  # Setup the environment
+  conda create -n chatbot python=3.10 -y
+  conda activate chatbot
+
+  # Install pytorch
+  pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
+
+  # Install huggingface with the LLaMA commit
+  git clone https://github.com/huggingface/transformers.git
+  cd transformers
+  git checkout 60d51ef # pin to latest commit
+  pip install .
+  cd -
+
+  # Install alpaca
+  git clone https://github.com/Michaelvll/stanford_alpaca.git
+  cd stanford_alpaca
+  pip install -r requirements.txt
+  cd -
+
+  # wait
+  # touch $HOME/llama/complete
+
+  mkdir -p /artifacts/llama-hf/llama-13B
+  mkdir -p  ~/hf-output/llama-13b/
+  if [ ! -f /artifacts/llama-hf/llama-13B/complete ]; then
+    mkdir -p ~/llama-13b
+    gsutil -m cp -r gs://llama-13b/* ~/llama-13b/ # Change to your own bucket with the LLaMA weights
+    cd transformers
+    python src/transformers/models/llama/convert_llama_weights_to_hf.py \
+      --input_dir $HOME/llama-13b \
+      --model_size 13B \
+      --output_dir ~/hf-output || exit 1
+    mv ~/hf-output/tokenizer/* ~/hf-output/llama-13b/
+    cp -r ~/hf-output/llama-13b/* /artifacts/llama-hf/llama-13B
+    touch /artifacts/llama-hf/llama-13B/complete
+  else
+    # rsync -Pavz /artifacts/llama-hf/llama-13B/* ~/hf-output/llama-13b/
+    gsutil -m cp -r gs://skypilot-chatbot/llama-hf/llama-13B/* ~/hf-output/llama-13b/
+  fi
+
+run: |
+  cd stanford_alpaca
+  conda activate chatbot
+  NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
+  HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
+  torchrun \
+    --nnodes=$NUM_NODES \
+    --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
+    --master_port=12355 \
+    train.py \
+    --model_name_or_path ~/hf-output/llama-13b/ \
+    --data_path /data/alpaca-data.json \
+    --bf16 True \
+    --output_dir /artifacts/chatbot/13b/ckpt \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 2 \
+    --per_device_eval_batch_size 4 \
+    --gradient_accumulation_steps $((64 / NUM_NODES / SKYPILOT_NUM_GPUS_PER_NODE)) \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 400 \
+    --save_total_limit 1 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True
+
+
