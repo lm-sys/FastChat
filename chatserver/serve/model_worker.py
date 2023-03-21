@@ -1,3 +1,6 @@
+"""
+A model worker executes the model.
+"""
 import argparse
 import dataclasses
 import logging
@@ -19,7 +22,8 @@ from chatserver.utils import build_logger
 
 GB = 1 << 30
 
-logger = build_logger("model_worker", f"model_worker_{str(uuid.uuid4())[:6]}.log")
+worker_id = str(uuid.uuid4())[:6]
+logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
 
 def disable_torch_init():
@@ -45,16 +49,14 @@ def load_model(model_name, num_gpus):
     else:
         kwargs = {
             "device_map": "auto",
-            "max_memory": {i: "12GiB" for i in range(num_gpus)},
+            "max_memory": {i: "13GiB" for i in range(num_gpus)},
         }
 
     if model_name == "facebook/llama-7b":
-        from transformers import LlamaForCausalLM, LlamaTokenizer
         hf_model_name = "/home/ubuntu/llama_weights/hf-llama-7b/"
-        tokenizer = AutoTokenizer.from_pretrained(
-           hf_model_name + "tokenizer/")
+        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
         model = AutoModelForCausalLM.from_pretrained(
-           hf_model_name + "llama-7b/", torch_dtype=torch.float16, **kwargs)
+            hf_model_name, torch_dtype=torch.float16, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
@@ -72,12 +74,14 @@ def load_model(model_name, num_gpus):
 
 
 class ModelWorker:
-    def __init__(self, controller_addr, worker_addr, model_name, num_gpus):
+    def __init__(self, controller_addr, worker_addr,
+                 worker_id, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
+        self.worker_id = worker_id
         self.model_name = model_name
 
-        logger.info(f"Loading the model {model_name}...")
+        logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
         self.register_to_controller()
@@ -197,6 +201,7 @@ if __name__ == "__main__":
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
+                         worker_id,
                          args.model_name,
                          args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
