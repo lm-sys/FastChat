@@ -118,7 +118,7 @@ class Controller:
         for worker_name, w_info in self.worker_info.items():
             if w_info.last_heart_beat < expire:
                 to_delete.append(worker_name)
-        
+
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
@@ -150,14 +150,14 @@ async def get_worker_address(request: Request):
 
 
 @app.post("/register_model_worker")
-async def get_worker_address(request: Request):
+async def register_model_worker(request: Request):
     data = await request.json()
     controller.register_model_worker(
         data["model_name"], data["worker_name"])
 
 
 @app.post("/receive_heart_beat")
-async def get_worker_address(request: Request):
+async def receive_heart_beat(request: Request):
     data = await request.json()
     exist = controller.receive_heart_beat(data["worker_name"])
     return {"exist": exist}
