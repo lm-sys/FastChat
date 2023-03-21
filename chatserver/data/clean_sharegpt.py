@@ -1,3 +1,5 @@
+# python3 clean_sharegpt.py --file-path $PATH_TO_all_conversations.json --output-path $OUTPUT_JSON_PATH
+
 import argparse
 import json
 import logging
