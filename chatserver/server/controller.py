@@ -122,7 +122,7 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
-    def remove_stable_workers_by_checking(self):
+    def refresh_status(self):
         to_delete = []
         for worker_name in self.worker_info:
             if not self.check_worker_status(worker_name):
@@ -167,6 +167,11 @@ async def get_worker_address(request: Request):
 async def list_models():
     models = controller.list_models()
     return {"models": models}
+
+
+@app.post("/refresh_status")
+async def refresh_status():
+    models = controller.refresh_status()
 
 
 if __name__ == "__main__":
