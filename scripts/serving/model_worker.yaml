@@ -10,7 +10,6 @@ workdir: .
 file_mounts:
   /artifacts:
     name: skypilot-chatbot
-    # name: skypilot-chatbot-east
     store: gcs
     mode: MOUNT
 
