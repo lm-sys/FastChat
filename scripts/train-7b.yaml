@@ -79,6 +79,7 @@ run: |
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12375 \
+    --master_addr=$HOST_ADDR \
     train.py \
     --model_name_or_path ~/hf-output/llama-7b \
     --data_path /data/alpaca-data.json \
