@@ -33,10 +33,16 @@ python3 -m chatserver.server.gradio_web_server
     ```
     # WANDB API KEY is required for logging. We use the key in your local environment.
     sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY
+    # Change the sequence length to 1024:
+    sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY --env SEQ_LEN=1024
     ```
     Or use spot (not managed).
     ```
     sky launch -c alpaca-spot -s --use-spot scripts/train-7b.yaml --env WANDB_API_KEY
+    ```
+    You can even use a manged spot instance.
+    ```
+    sky spot launch -n alpaca scripts/train-7b.yaml --env WANDB_API_KEY
     ```
     **The following still does not work at the moment as Alpaca code does not support multiple nodes.**
     We can also launch the training job with multiple nodes and different number of GPUs. We will automatically adapt the
