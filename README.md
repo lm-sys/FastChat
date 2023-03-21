@@ -25,8 +25,8 @@ python3 -m chatserver.server.gradio_web_server
 # You can open your brower and chat with a model now.
 ```
 
-## Training
-## Train Alpaca with SkyPilot
+## SkyPilot Integration
+### Training Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 2. Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
     ```
@@ -45,9 +45,8 @@ python3 -m chatserver.server.gradio_web_server
     ```
     Managed spot version TO BE ADDED.
 
-## Serving
-## Serving Alpaca with SkyPilot
-1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
+### Serving Alpaca with SkyPilot
+1. We assume SkyPilot is installed and the model checkpoint is stored on some cloud storage (e.g., GCS).
 2. Launch the controller server (default to a cheap CPU VM):
     ```
     sky launch -c controller scripts/serving/controller.yaml
