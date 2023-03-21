@@ -45,7 +45,7 @@ def load_model(model_name, num_gpus):
     else:
         kwargs = {
             "device_map": "auto",
-            "max_memory": {i: "12GiB" for i in range(num_gpus)},
+            "max_memory": {i: "13GiB" for i in range(num_gpus)},
         }
 
     if model_name == "facebook/llama-7b":
