@@ -60,10 +60,12 @@ setup: |
       --input_dir $HOME/llama-7b \
       --model_size 7B \
       --output_dir ~/hf-output || exit 1
-    mv ~/hf-output/llama-7b/* ~/hf-output/
-    mv ~/hf-output/tokenizer/* ~/hf-output/
-    cp -r ~/hf-output/* /artifacts/llama-hf/llama-7B
+    mv ~/hf-output/tokenizer/* ~/hf-output/llama-7b
+    cp -r ~/hf-output/llama-7b/* /artifacts/llama-hf/llama-7B
     touch /artifacts/llama-hf/llama-7B/complete
+  else
+    mkdir -p ~/hf-output/llama-7b
+    gsutil -m cp -r /artifacts/llama-hf/llama-7B/* ~/hf-output/llama-7b
   fi
 
 run: |
@@ -76,8 +78,7 @@ run: |
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12355 \
     train.py \
-    --model_name_or_path /artifacts/llama-hf/llama-7B \
-    --data_path /data/alpaca-data.json \
+    --model_name_or_path ~/hf-output/llama-7b \
     --bf16 True \
     --output_dir /artifacts/chatbot/7b/ckpt \
     --num_train_epochs 3 \
