@@ -35,12 +35,10 @@ class Conversation:
 
 
 default_conversation = Conversation(
-    system="A chat between a curious human and a knowledgeable artificial intelligence assistant. "
-           "The AI assistant gives detailed answers to the human's questions.",
+    system="A chat between a curious human and an artificial intelligence assistant. "
+           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
     messages=(
-        ("Human", "Hello! What can you do?"),
-        ("Assistant", "As an AI assistant, I can answer questions and chat with you."),
         ("Human", "Give three tips for staying healthy."),
         ("Assistant",
             "Sure, here are three tips for staying healthy:\n"

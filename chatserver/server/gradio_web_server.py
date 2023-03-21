@@ -42,7 +42,13 @@ def get_model_list():
     return models
 
 
-def add_text(history, text):
+def add_text(history, text, request: gr.Request):
+    print("request", request.request)
+    # Fix some bugs in gradio UI
+    for i in range(len(history)):
+        history[i][0] = history[i][0].replace("<br>", "")
+        if history[i][1]:
+            history[i][1] = history[i][1].replace("<br>", "")
     history = history + [[text, None]]
     return history, "", upvote_msg, downvote_msg
 
@@ -58,32 +64,33 @@ def refresh_models():
         value=models[0] if len(models) > 0 else "")
 
 
-def vote_last_response(history, vote_type):
+def vote_last_response(history, vote_type, request: gr.Request):
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
             "conversation": history,
             "init_prompt": init_prompt,
+            "ip": request.client.host,
         }
         fout.write(json.dumps(data) + "\n")
 
 
-def upvote_last_response(history, upvote_btn, downvote_btn):
+def upvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "upvote")
+    vote_last_response(history, "upvote", request)
     return "done", "done"
 
 
-def downvote_last_response(history, upvote_btn, downvote_btn):
+def downvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "downvote")
+    vote_last_response(history, "downvote", request)
     return "done", "done"
 
 
-def http_bot(history, model_selector):
+def http_bot(history, model_selector, request: gr.Request):
     start_tstamp = time.time()
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
@@ -140,23 +147,27 @@ def http_bot(history, model_selector):
             "finish": round(start_tstamp, 4),
             "conversation": history,
             "init_prompt": init_prompt,
+            "ip": request.client.host,
         }
         fout.write(json.dumps(data) + "\n")
 
 
 def build_demo():
     models = get_model_list()
-    css = """#model_selector_row {width: 350px;}"""
+    css = (
+        """#model_selector_row {width: 350px;}"""
+        #"""#chatbot {height: 5000px;}"""
+    )
 
     with gr.Blocks(title="Chat Server", css=css) as demo:
         gr.Markdown(
             "# Chat server\n"
             "### Terms of Use\n"
-            "By using this service, users have to agree to the following terms.\n"
-            " - This service is a research preview for non-commercial usage.\n"
-            " - This service lacks safety measures and may produce offensive content.\n"
-            " - This service cannot be used for illegal, harmful, violent, or sexual content.\n"
-            " - This service collects user dialog data for future research.\n"
+            "By using this service, users have to agree to the following terms: "
+            "This service is a research preview for non-commercial usage. "
+            "It lacks safety measures and may produce offensive content. "
+            "It cannot be used for illegal, harmful, violent, or sexual content. "
+            "It collects user dialog data for future research."
         )
 
         with gr.Row(elem_id="model_selector_row"):
@@ -166,7 +177,7 @@ def build_demo():
                 interactive=True,
                 label="Choose a model to chat with.")
 
-        chatbot = gr.Chatbot()
+        chatbot = gr.Chatbot(elem_id="chatbot")
         textbox = gr.Textbox(show_label=False,
             placeholder="Enter text and press ENTER",).style(container=False)
 
@@ -174,19 +185,19 @@ def build_demo():
             upvote_btn = gr.Button(value=upvote_msg)
             downvote_btn = gr.Button(value=downvote_msg)
             clear_btn = gr.Button(value="Clear history")
-            refresh_btn = gr.Button(value="Refresh models")
 
         upvote_btn.click(upvote_last_response,
             [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
         downvote_btn.click(downvote_last_response,
             [chatbot, upvote_btn, downvote_btn], [upvote_btn, downvote_btn])
         clear_btn.click(clear_history, chatbot, chatbot)
-        refresh_btn.click(refresh_models, [], model_selector)
 
         textbox.submit(add_text, [chatbot, textbox],
             [chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [chatbot, model_selector], chatbot,
         )
+
+        demo.load(refresh_models, [], model_selector)
 
     return demo
 
