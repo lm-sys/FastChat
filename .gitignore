@@ -4,3 +4,5 @@ __pycache__
 *.log
 *.json
 .idea
+output
+wandb
