@@ -49,7 +49,7 @@ run: |
   WORKER_IP=$(hostname -I | cut -d' ' -f1)
   CONTROLLER_PORT=21001
   WORKER_PORT=21002
-  python3 -m chatserver.server.model_worker \
+  python3 -m chatserver.serve.model_worker \
     --model ~/alpaca-13b \
     --controller-address http://${CONTROLLER_IP}:${CONTROLLER_PORT} \
     --worker-address http://${WORKER_IP}:${WORKER_PORT} \
