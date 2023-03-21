@@ -79,14 +79,14 @@ def vote_last_response(history, vote_type, request: gr.Request):
 def upvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "upvote")
+    vote_last_response(history, "upvote", request)
     return "done", "done"
 
 
 def downvote_last_response(history, upvote_btn, downvote_btn, request: gr.Request):
     if upvote_btn == "done" or len(history) == 0:
         return "done", "done"
-    vote_last_response(history, "downvote")
+    vote_last_response(history, "downvote", request)
     return "done", "done"
 
 
