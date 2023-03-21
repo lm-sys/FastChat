@@ -25,7 +25,7 @@ python3 -m chatserver.server.gradio_web_server
 # You can open your brower and chat with a model now.
 ```
 
-## Launch it on any cloud with SkyPilot
+## Deploy Chatbot on Any Cloud with SkyPilot
 ### Training Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 2. Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
