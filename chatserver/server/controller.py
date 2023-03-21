@@ -9,9 +9,11 @@ from fastapi import FastAPI, Request
 import requests
 import uvicorn
 
-from chatserver.server.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from chatserver.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from chatserver.utils import build_logger
 
-logger = logging.getLogger("controller")
+
+logger = build_logger("controller", "controller.log")
 
 
 @dataclasses.dataclass
@@ -30,7 +32,7 @@ def heart_beat_controller(controller):
 
     while True:
         time.sleep(CONTROLLER_HEART_BEAT_EXPIRATION)
-        controller.remove_stable_workers()
+        controller.remove_stable_workers_by_expiration()
 
 
 class Controller:
@@ -110,7 +112,7 @@ class Controller:
         logger.info(f"Receive heart beat. {worker_name}")
         return True
 
-    def remove_stable_workers(self):
+    def remove_stable_workers_by_expiration(self):
         expire = time.time() - CONTROLLER_HEART_BEAT_EXPIRATION
         to_delete = []
         for worker_name, w_info in self.worker_info.items():
@@ -119,6 +121,22 @@ class Controller:
         
         for worker_name in to_delete:
             self.remove_worker(worker_name)
+
+    def refresh_status(self):
+        to_delete = []
+        for worker_name in self.worker_info:
+            if not self.check_worker_status(worker_name):
+                to_delete.append(worker_name)
+
+        for worker_name in to_delete:
+            self.remove_worker(worker_name)
+
+    def list_models(self):
+        models = []
+        for model, m_info in self.model_info.items():
+            if len(m_info.worker_names) > 0:
+                models.append(model)
+        return models
 
 
 app = FastAPI()
@@ -145,13 +163,22 @@ async def get_worker_address(request: Request):
     return {"exist": exist}
 
 
+@app.post("/list_models")
+async def list_models():
+    models = controller.list_models()
+    return {"models": models}
+
+
+@app.post("/refresh_status")
+async def refresh_status():
+    models = controller.refresh_status()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
     args = parser.parse_args()
-
-    logging.basicConfig(level=logging.INFO)
 
     controller = Controller()
 
