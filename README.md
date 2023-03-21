@@ -6,6 +6,9 @@ A chatbot server.
 ### Method 1: From Source
 ```
 pip3 install -e .
+
+# Install the main branch of huggingface/transformers
+pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ## Serving

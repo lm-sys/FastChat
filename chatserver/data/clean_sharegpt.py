@@ -1,14 +1,15 @@
-# python3 clean_sharegpt.py --file-path $PATH_TO_all_conversations.json --output-path $OUTPUT_JSON_PATH
-
+"""
+Usage: python3 -m chatserver.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
+"""
 import argparse
 import json
 import logging
 import re
 from typing import Dict, Union
 
+import bs4
+import markdownify
 import tqdm
-
-logger = logging.getLogger(__name__)
 
 
 def _get_html_tags(file_path: str):
@@ -19,27 +20,41 @@ def _get_html_tags(file_path: str):
             s.add(m)
     return s
 
+div_pattern = re.compile("<div.*?>")
+code_lang_pattern = re.compile("```\n?" + "(.*?)" + "Copy code" + "(.+?)" + "\n\n```", re.DOTALL)
+code_lang_format = r"```\g<1>\n\g<2>\n```"
 
-def _reformat_all_code(val: str) -> str:
+def reformat_code(val: str) -> str:
     # Input code format is:
     # ```
-    # $<language>Copy code`$<exact_code_here>`
+    # $<language>Copy code$<exact_code_here>
+    #
     # ```
     # This function convert it into the correct markdown format
-    match_pattern = re.compile("```\n" + "([^`]+)" + "Copy code`" + "([^`]+)" +
-                               "`\n```")
-    repl_format = r"```\g<1>\n\g<2>\n```"
-    return re.sub(match_pattern, repl_format, val)
+    return re.sub(code_lang_pattern, code_lang_format, val)
 
 
-def _html_to_markdown(val: str) -> str:
+def html_to_markdown(val: str) -> str:
     """can handle enum, table and code. Code not in the best format."""
-    import markdownify
-    out = markdownify.markdownify(val)
-    return _reformat_all_code(out)
+    # Delete all <div>. This is required to make intent work in code blocks.
+    val = re.sub(div_pattern, "", val)
+    # Remove all html tags
+    val = markdownify.markdownify(val)
+    # Reformat code
+    val = reformat_code(val)
+    val = val.replace("\n\n\n", "\n")
+    return val
 
 
-def clean_html_source(content: Union[list, Dict], check_tag="", check_num=1):
+def should_skip(val: str) -> bool:
+    black_list = ["OpenAI", "openai"]
+    for w in black_list:
+        if w in val:
+            return True
+    return False
+
+
+def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_num):
     """
     clean the input json content.
     Args:
@@ -48,20 +63,29 @@ def clean_html_source(content: Union[list, Dict], check_tag="", check_num=1):
           it before and after cleaning.
         check_num: number of matched conversations logged.
     """
-    if len(check_tag) == 0:
-        check_tag = None
-    else:
-        tag_cnt = 0
-    BARRIER = "=" * 20 + "\n"
+    tag_cnt = 0
+    BARRIER = "\n" + "=" * 20 + "\n"
+    skip_cnt = 0
 
+    content = content[begin:end]
+
+    new_content = []
     for l in tqdm.tqdm(content):
+        skipped = False
         for c in l["conversations"]:
+            if should_skip(c["value"]):
+                skipped = True
+                break
+
             try:
-                new_val = _html_to_markdown(c["value"])
-            except:
-                logger.warning(BARRIER + c["value"] + BARRIER +
-                               "The above value is kept unchanged.")
-                new_val = c["value"]
+                new_val = html_to_markdown(c["value"])
+            except bs4.builder.ParserRejectedMarkup:
+                skipped = True
+                break
+
+            c["value"] = new_val.strip()
+
+            # Debug
             if (check_tag is not None and check_tag in c["value"]
                     and tag_cnt < check_num):
                 logger.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
@@ -69,21 +93,31 @@ def clean_html_source(content: Union[list, Dict], check_tag="", check_num=1):
                 tag_cnt += 1
                 if tag_cnt == check_num:
                     break
-            c["value"] = new_val
-    return content
+
+        if not skipped:
+            new_content.append(l)
+        else:
+            skip_cnt += 1
+
+    print(f"#skip: {skip_cnt}")
+    return new_content
 
 
 def main(args):
-    content = json.load(open(args.file_path, "r"))
-    content = clean_html_source(content, args.check_tag, args.check_num)
-    json.dump(content, open(args.output_path, "w"))
+    content = json.load(open(args.in_file, "r"))
+    content = clean_html_source(
+        content, args.begin, args.end,
+        args.check_tag, args.check_num)
+    json.dump(content, open(args.out_file, "w"), indent=2)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file-path", type=str)
-    parser.add_argument('--output-path', type=str, default="./cleaned.json")
-    parser.add_argument('--check-tag', type=str, default="")
-    parser.add_argument('--check-num', type=int, default=1)
+    parser.add_argument("--in-file", type=str, required=True)
+    parser.add_argument("--out-file", type=str, default="sharegpt_clean.json")
+    parser.add_argument("--begin", type=int)
+    parser.add_argument("--end", type=int)
+    parser.add_argument("--check-tag", type=str)
+    parser.add_argument("--check-num", type=int, default=1)
     args = parser.parse_args()
     main(args)
