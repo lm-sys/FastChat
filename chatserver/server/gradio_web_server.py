@@ -43,7 +43,6 @@ def get_model_list():
 
 
 def add_text(history, text, request: gr.Request):
-    print("request", request.request)
     # Fix some bugs in gradio UI
     for i in range(len(history)):
         history[i][0] = history[i][0].replace("<br>", "")
@@ -57,14 +56,15 @@ def clear_history(history):
     return []
 
 
-def refresh_models():
+def load_demo(request: gr.Request):
     models = get_model_list()
+    logger.info(f"load demo: {request.client.host}")
     return gr.Dropdown.update(
         choices=models,
         value=models[0] if len(models) > 0 else "")
 
 
-def vote_last_response(history, vote_type, request: gr.Request):
+def vote_last_response(history, vote_type, model_selector, request: gr.Request):
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -203,7 +203,7 @@ def build_demo():
             http_bot, [chatbot, model_selector], chatbot,
         )
 
-        demo.load(refresh_models, [], model_selector)
+        demo.load(load_demo, [], model_selector)
 
     return demo
 
