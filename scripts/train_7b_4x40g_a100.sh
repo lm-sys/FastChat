@@ -4,7 +4,7 @@ torchrun --nproc_per_node=4 --master_port=20001 chatserver/train/alpaca_train.py
     --bf16 True \
     --output_dir output \
     --num_train_epochs 3 \
-    --per_device_train_batch_size 1 \
+    --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 8 \
     --evaluation_strategy "no" \
@@ -17,5 +17,6 @@ torchrun --nproc_per_node=4 --master_port=20001 chatserver/train/alpaca_train.py
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --fsdp "full_shard auto_wrap" \
-    --fsdp_transformer_layer_cls_to_wrap 'LlaMADecoderLayer' \
-    --tf32 True
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True \
+    --gradient_checkpointing True
