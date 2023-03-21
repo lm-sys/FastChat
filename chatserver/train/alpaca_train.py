@@ -1,4 +1,5 @@
-"""From https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/train.py"""
+# From https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/train.py
+#
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +24,7 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
 
-import utils
+import chatserver.train.alpaca_utils as utils
 
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
