@@ -14,16 +14,16 @@ pip3 install git+https://github.com/huggingface/transformers
 ## Serving
 ```
 # Launch a controller
-python3 -m chatserver.server.controller
+python3 -m chatserver.serve.controller
 
 # Launch a model worker
-python3 -m chatserver.server.model_worker --model facebook/opt-350m
+python3 -m chatserver.serve.model_worker --model facebook/opt-350m
 
 # Send a test message
-python3 -m chatserver.server.test_message
+python3 -m chatserver.serve.test_message
 
 # Luanch a gradio web server.
-python3 -m chatserver.server.gradio_web_server
+python3 -m chatserver.serve.gradio_web_server
 
 # You can open your brower and chat with a model now.
 ```
