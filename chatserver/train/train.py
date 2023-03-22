@@ -189,6 +189,28 @@ class SupervisedDataset(Dataset):
         return dict(input_ids=self.input_ids[i], labels=self.labels[i])
 
 
+class LazySupervisedDataset(Dataset):
+    """Dataset for supervised fine-tuning."""
+
+    def __init__(self, data_path: str,
+                 tokenizer: transformers.PreTrainedTokenizer):
+        super(SupervisedDataset, self).__init__()
+        logging.warning("Loading data...")
+        list_data_dict = json.load(open(data_path, "r"))
+
+        logging.warning("Formatting inputs...")
+        sources = [example["conversations"] for example in list_data_dict]
+        self.tokenizer = tokenizer
+        self.sources = sources
+
+    def __len__(self):
+        return len(self.sources)
+
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
+        data_dict = preprocess(self.sources[i], self.tokenizer)
+        return data_dict
+
+
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
