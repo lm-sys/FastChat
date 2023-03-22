@@ -104,11 +104,11 @@ def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_n
 
 
 def main(args):
-    content = json.load(open(args.in_file, "r"))
+    content = json.load(open(args['in_file'], "r"))
     content = clean_html_source(
-        content, args.begin, args.end,
-        args.check_tag, args.check_num)
-    json.dump(content, open(args.out_file, "w"), indent=2)
+        content, args['begin'], args['end'],
+        args['check_tag'], args['check_num'])
+    json.dump(content, open(args['out_file'], "w"), indent=2)
 
 
 if __name__ == "__main__":
@@ -120,4 +120,4 @@ if __name__ == "__main__":
     parser.add_argument("--check-tag", type=str)
     parser.add_argument("--check-num", type=int, default=1)
     args = parser.parse_args()
-    main(args)
+    main(vars(args))
