@@ -76,7 +76,8 @@ if __name__ == '__main__':
                     # limit the length of input
                     ans = get_ans(rule, user['value'][:1024], assistant['value'][:1024], args.max_tokens)
                     break
-                except Exception:
+                except Exception as e:
+                    print('Error:', e)
                     time.sleep(1)
             print(f'#{j}: {ans}')
             if ans == '':
