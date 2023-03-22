@@ -13,7 +13,8 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "fastapi", "gdown", "gradio", "requests", "uvicorn",
+    "fastapi", "gdown", "gradio", "requests", "uvicorn", "numpy",
+    "transformers>=4.26.1", "torch", "sentencepiece", "tokenizers==0.12.1", "wandb"
 ]
 
 [project.urls]

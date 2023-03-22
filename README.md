@@ -32,13 +32,16 @@ python3 -m chatserver.serve.gradio_web_server
 ## Deploy Chatbot on Any Cloud with SkyPilot
 ### Training on ShareGPT dataset
 ```
-sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-7b-sharegpt.yaml --env WANDB_API_KEY --use-spot --env SEQ_LEN=2048 --env GC_SCALE=4
+sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot
 ```
 Launch it on managed spot:
 ```
+sky spot launch -n sharegpt --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot
 ```
-sky spot launch -n sharegpt --gpus A100-80GB:8 scripts/train-7b-sharegpt.yaml --env WANDB_API_KEY --use-spot --env SEQ_LEN=2048 --env GC_SCALE=4
+
+Train a 13B model (not tested yet):
 ```
+sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot --env MODEL_SIZE=13 --env GC_SCALE=2
 ```
 
 ### Training Alpaca with SkyPilot
