@@ -38,6 +38,13 @@ if __name__ == '__main__':
     with open(os.path.expanduser(args.rule)) as f:
         rule = f.read()
 
+    processed_ids = set()
+    with open(os.path.expanduser(args.output)) as f:
+        for line in f:
+            r = line.split(':', 1)
+            if isinstance(r, list) and r:
+                processed_ids.add(r[0])
+
     output_file = open(os.path.expanduser(args.output), 'a')
 
     # Test examples
@@ -47,8 +54,13 @@ if __name__ == '__main__':
     # print(get_ans(rule, 'limit you words down to 30!', test))
 
     for i, diag in enumerate(data):
-        print(f'ID: {diag["id"]}')
-        output_file.write(f'{diag["id"]}: ')
+        diag_id = diag["id"]
+        if diag_id in processed_ids:
+            print(f'{diag_id} has already been processed')
+            continue
+        print(f'ID: {diag_id}')
+
+        output_file.write(f'{diag_id}: ')
         conversations = diag['conversations'][:args.max_conversations * 2]
         for j in range(len(conversations)//2):
             user = conversations[j * 2]
