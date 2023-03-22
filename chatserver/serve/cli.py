@@ -3,12 +3,15 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 from chatserver.conversation import default_conversation
+from chatserver.utils import disable_torch_init
 
 
+@torch.inference_mode()
 def main(args):
     model_name = args.model_name
 
     # Model
+    disable_torch_init()
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name,
         torch_dtype=torch.float16).cuda()
@@ -33,7 +36,7 @@ def main(args):
         try:
             index = outputs.index(conv.sep, len(prompt))
         except ValueError:
-            outputs += conv.seq
+            outputs += conv.sep
             index = outputs.index(conv.sep, len(prompt))
         
         outputs = outputs[len(prompt) + len(conv.roles[1]) + 2:index].strip()
