@@ -19,12 +19,8 @@ upvote_msg = "👍  Upvote the last response"
 downvote_msg = "👎  Downvote the last response"
 init_prompt = default_conversation.get_prompt()
 
-priority = defaultdict(lambda: 10, {
-    "facebook/opt-350m": 9,
-    "facebook/opt-6.7b": 8,
-    "facebook/llama-7b": 7,
-})
-
+priority = {
+}
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
@@ -37,7 +33,7 @@ def get_model_list():
     assert ret.status_code == 200
     ret = requests.post(args.controller_url + "/list_models")
     models = ret.json()["models"]
-    models.sort(key=lambda x: priority[x])
+    models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
     return models
 
@@ -99,7 +95,7 @@ def http_bot(history, model_selector, request: gr.Request):
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model_name": model_selector})
     worker_addr = ret.json()["address"]
-    logger.info(f"worker_addr: {worker_addr}")
+    logger.info(f"model_name: {model_selector}, worker_addr: {worker_addr}")
 
     # Fix some bugs in gradio UI
     for i in range(len(history)):
@@ -159,7 +155,7 @@ def http_bot(history, model_selector, request: gr.Request):
 def build_demo():
     models = get_model_list()
     css = (
-        """#model_selector_row {width: 350px;}"""
+        """#model_selector_row {width: 400px;}"""
         #"""#chatbot {height: 5000px;}"""
     )
 
