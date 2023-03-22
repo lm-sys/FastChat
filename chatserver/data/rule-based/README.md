@@ -1,5 +1,7 @@
-# Rule-based Data Cleaning
+# Rule-based Auto Data Cleaning
 
-We score or classify text quality based on a prompt that is based on certain rules.
-Then we use third-party APIs like OpenAI APIs to execute this rule.
-By doing this, we are NOT generating data from third-party APIs, which violates terms of use, but simply filter out harmful content, which is crucial for AI safety.
+We score or classify text quality with a prompt which is based on certain rules.
+Then we use third-party APIs to execute this rule.
+
+By doing this, we are NOT training our model by directly extracting data from third-party APIs by ourselves, which may violate terms of use.
+Instead, we simply filter out harmful content, which is crucial for AI safety.
