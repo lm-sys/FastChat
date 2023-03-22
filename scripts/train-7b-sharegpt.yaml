@@ -78,6 +78,9 @@ run: |
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
+  # Hack copy it once to make it faster later
+  mkdir -p ~/.checkpoints
+  gsutil -m cp -r /artifacts/chatbot/7b/sharegpt-${DATE}-seq-${SEQ_LEN} ~/.checkpoints
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
@@ -88,7 +91,7 @@ run: |
     --model_name_or_path ~/hf-output/llama-7b \
     --data_path /data/sharegpt_clean_$DATE.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/7b/sharegpt-seq-${SEQ_LEN} \
+    --output_dir /artifacts/chatbot/7b/sharegpt-${DATE}-seq-${SEQ_LEN} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
