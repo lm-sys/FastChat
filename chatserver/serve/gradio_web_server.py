@@ -163,11 +163,7 @@ def build_demo():
         gr.Markdown(
             "# Chat server\n"
             "### Terms of Use\n"
-            "By using this service, users have to agree to the following terms: "
-            "This service is a research preview for non-commercial usage. "
-            "It lacks safety measures and may produce offensive content. "
-            "It cannot be used for illegal, harmful, violent, or sexual content. "
-            "It collects user dialog data for future research."
+            "By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service collects user dialogue data for future research."
         )
 
         with gr.Row(elem_id="model_selector_row"):
