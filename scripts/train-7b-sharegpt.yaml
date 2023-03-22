@@ -105,4 +105,5 @@ run: |
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --tf32 True \
     --model_max_length ${SEQ_LEN} \
-    --gradient_checkpointing True
+    --gradient_checkpointing True \
+    --lazy_preprocess True
