@@ -218,7 +218,7 @@ class LazySupervisedDataset(Dataset):
         self.list_data_dict = list_data_dict
 
     def __len__(self):
-        return len(self.sources)
+        return len(self.list_data_dict)
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         sources = self.list_data_dict[i]
