@@ -99,7 +99,7 @@ def http_bot(history, model_selector, request: gr.Request):
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model_name": model_selector})
     worker_addr = ret.json()["address"]
-    logger.info(f"worker_addr: {worker_addr}")
+    logger.info(f"model_name: {model_selector}, worker_addr: {worker_addr}")
 
     # Fix some bugs in gradio UI
     for i in range(len(history)):
@@ -159,7 +159,7 @@ def http_bot(history, model_selector, request: gr.Request):
 def build_demo():
     models = get_model_list()
     css = (
-        """#model_selector_row {width: 350px;}"""
+        """#model_selector_row {width: 400px;}"""
         #"""#chatbot {height: 5000px;}"""
     )
 

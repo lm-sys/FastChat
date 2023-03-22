@@ -79,7 +79,7 @@ def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_n
 
             try:
                 new_val = html_to_markdown(c["value"])
-            except bs4.builder.ParserRejectedMarkup:
+            except (bs4.builder.ParserRejectedMarkup, AssertionError):
                 skipped = True
                 break
 
