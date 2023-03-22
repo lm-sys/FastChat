@@ -18,20 +18,12 @@ import torch
 import uvicorn
 
 from chatserver.constants import WORKER_HEART_BEAT_INTERVAL
-from chatserver.utils import build_logger
+from chatserver.utils import build_logger, disable_torch_init
 
 GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
-
-
-def disable_torch_init():
-    """
-    Disable the redundant torch default initialization to accelerate model creation.
-    """
-    setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
-    setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
 
 
 def heart_beat_worker(controller):

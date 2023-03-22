@@ -6,6 +6,8 @@ import sys
 
 from chatserver.constants import LOGDIR
 
+import torch
+
 
 handler = None
 
@@ -84,3 +86,11 @@ class StreamToLogger(object):
         if self.linebuf != '':
             self.logger.log(self.log_level, self.linebuf.rstrip())
         self.linebuf = ''
+
+
+def disable_torch_init():
+    """
+    Disable the redundant torch default initialization to accelerate model creation.
+    """
+    setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
+    setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
