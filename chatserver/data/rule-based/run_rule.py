@@ -44,19 +44,27 @@ if __name__ == '__main__':
     for i, diag in enumerate(data):
         print(f'ID: {diag["id"]}')
         output_file.write(f'{diag["id"]}: ')
+        # We only use first 5 conversations to assess quality.
         conversations = diag['conversations'][:10]
         for j in range(len(conversations)//2):
             user = conversations[j * 2]
             assistant = conversations[j * 2 + 1]
-            assert user['from'] == 'human'
-            assert assistant['from'] == 'gpt'
+            if user['from'] != 'human':
+                output_file.write('B')
+                continue
+            if assistant['from'] != 'gpt':
+                output_file.write('B')
+                continue
             while True:
                 try:
+                    # limit the length of input
                     ans = get_ans(rule, user['value'][:1024], assistant['value'][:1024])
                     break
                 except Exception:
                     time.sleep(1)
             print(f'#{j}: {ans}')
+            if ans == '':
+                ans = 'N'
             output_file.write(ans[0] if ans[0] in ('1', '2', '3', '4', '5') else 'N')
         output_file.write('\n')
         output_file.flush()
