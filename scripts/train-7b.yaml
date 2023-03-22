@@ -83,7 +83,7 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     train.py \
     --model_name_or_path ~/hf-output/llama-7b \
-    --data_path /data/generated.json \
+    --data_path /data/alpaca-data.json \
     --bf16 True \
     --output_dir /artifacts/chatbot/7b/alpaca-${SEQ_LEN} \
     --num_train_epochs 3 \

@@ -17,12 +17,15 @@ import copy
 from dataclasses import dataclass, field
 import json
 import logging
+import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
 import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
+
+from chatserver import conversation as conversation_lib
 
 # TODO: import and use code from ../data/dataset.py
 
@@ -147,11 +150,19 @@ def preprocess(
     END_SIGNAL = "\n"
     conversations = []
     for source in sources:
-        conversation = ""
+        conversation = f"{conversation_lib.default_conversation.system}\n\n"
         for sentence in source:
-            sentence["value"] = (BEGIN_SIGNAL + sentence["from"] + ": " +
+            from_str = sentence["from"]
+            if from_str.lower() == "human":
+                from_str = conversation_lib.default_conversation.roles[0]
+            elif from_str.lower() == "gpt":
+                from_str = conversation_lib.default_conversation.roles[1]
+            else:
+                from_str = 'unknown'
+            sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
                                  sentence["value"] + END_SIGNAL)
             conversation += sentence["value"]
+
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
@@ -177,7 +188,12 @@ class SupervisedDataset(Dataset):
 
         logging.warning("Formatting inputs...")
         sources = [example["conversations"] for example in list_data_dict]
-        data_dict = preprocess(sources, tokenizer)
+        cache_file = pathlib.Path(data_path + ".preprocessed")
+        if cache_file in pathlib.Path(cache_file).parent.glob("*"):
+            data_dict = json.load(cache_file.open("r"))
+        else:
+            data_dict = preprocess(sources, tokenizer)
+            json.dump(data_dict, cache_file.open("w"))
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
@@ -289,7 +305,10 @@ def train():
                       tokenizer=tokenizer,
                       args=training_args,
                       **data_module)
-    trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer,
                                    output_dir=training_args.output_dir)
