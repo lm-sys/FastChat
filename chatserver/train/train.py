@@ -25,6 +25,8 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
 
+from chatserver import conversation as conversation_lib
+
 # TODO: import and use code from ../data/dataset.py
 
 IGNORE_INDEX = -100
@@ -148,11 +150,19 @@ def preprocess(
     END_SIGNAL = "\n"
     conversations = []
     for source in sources:
-        conversation = ""
+        conversation = f"{conversation_lib.default_conversation.system}\n\n"
         for sentence in source:
-            sentence["value"] = (BEGIN_SIGNAL + sentence["from"] + ": " +
+            from_str = sentence["from"]
+            if from_str.lower() == "human":
+                from_str = conversation_lib.default_conversation.roles[0]
+            elif from_str.lower() == "gpt":
+                from_str = conversation_lib.default_conversation.roles[1]
+            else:
+                from_str = 'unknown'
+            sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
                                  sentence["value"] + END_SIGNAL)
             conversation += sentence["value"]
+        
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
