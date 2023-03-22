@@ -1,5 +1,5 @@
 resources:
-  accelerators: A100-80GB:4
+  accelerators: A100-80GB:8
   disk_size: 1000
 
 num_nodes: 1
@@ -106,6 +106,6 @@ run: |
     --model_max_length ${SEQ_LEN} \
     --gradient_checkpointing True
 
-env:
+envs:
   SEQ_LEN: 2048
-  GC_SCALE: 4.0
+  GC_SCALE: 4
