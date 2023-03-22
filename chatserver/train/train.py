@@ -42,6 +42,7 @@ class ModelArguments:
 class DataArguments:
     data_path: str = field(default=None,
                            metadata={"help": "Path to the training data."})
+    lazy_preprocess: bool = False
 
 
 @dataclass
@@ -208,8 +209,9 @@ class LazySupervisedDataset(Dataset):
         sources = self.list_data_dict[i]
         if isinstance(i, int):
             sources = [sources]
-        data_dict = preprocess(copy.deepcopy([e["conversations"] for e in sources]),
-                               self.tokenizer)
+        data_dict = preprocess(
+            copy.deepcopy([e["conversations"] for e in sources]),
+            self.tokenizer)
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
                              labels=data_dict["labels"][0])
@@ -242,8 +244,10 @@ class DataCollatorForSupervisedDataset(object):
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
-                                          data_path=data_args.data_path)
+    dataset_cls = (LazySupervisedDataset
+                   if data_args.lazy_preprocess else SupervisedDataset)
+    train_dataset = dataset_cls(tokenizer=tokenizer,
+                                data_path=data_args.data_path)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset,
                 eval_dataset=None,
