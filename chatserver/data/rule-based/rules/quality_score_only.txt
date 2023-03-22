@@ -1,0 +1,14 @@
+Read the entire message above and determine if the Assistant response is appropriate, accurate, and relevant. Assess the Assistant response on a scale of 1-5, where 1 indicates an entirely inappropriate response, and 5 represents a highly appropriate and relevant response. Your choice should not be affected by the content of the User prompt. Make sure you make the decision carefully and get the correct answer.
+
+Your response should ONLY include a single number of 1-5.
+
+Example:
+
+Input:
+
+[User]
+Hello!
+[Assistant]
+Bye!
+
+Your output: 1
