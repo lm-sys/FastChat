@@ -1,6 +1,7 @@
 resources:
   accelerators: A100-80GB:8
   disk_size: 1000
+  use_spot: true
 
 num_nodes: 1
 
@@ -44,8 +45,9 @@ setup: |
   pip install .
   cd -
 
-  # Install chatserver requirements.txt
+  # Install chatserver
   pip install -e .
+  pip install xformers
   
 
   # wait
