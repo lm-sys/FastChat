@@ -58,7 +58,6 @@ class TrainingArguments(transformers.TrainingArguments):
             "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
         },
     )
-    gradient_checkpointing: bool = True
 
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
@@ -214,16 +213,22 @@ class LazySupervisedDataset(Dataset):
         logging.warning("Loading data...")
         list_data_dict = json.load(open(data_path, "r"))
 
-        logging.warning("Formatting inputs...")
-        sources = [example["conversations"] for example in list_data_dict]
+        logging.warning("Formatting inputs...Skip in lazy mode")
         self.tokenizer = tokenizer
-        self.sources = sources
+        self.list_data_dict = list_data_dict
 
     def __len__(self):
         return len(self.sources)
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        data_dict = preprocess(self.sources[i], self.tokenizer)
+        sources = self.list_data_dict[i]
+        if isinstance(i, int):
+            sources = [sources]
+        data_dict = preprocess(copy.deepcopy([e["conversations"] for e in sources]),
+                               self.tokenizer)
+        if isinstance(i, int):
+            data_dict = dict(input_ids=data_dict["input_ids"][0],
+                             labels=data_dict["labels"][0])
         return data_dict
 
 
@@ -253,8 +258,8 @@ class DataCollatorForSupervisedDataset(object):
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = SupervisedDataset(tokenizer=tokenizer,
-                                      data_path=data_args.data_path)
+    train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
+                                          data_path=data_args.data_path)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset,
                 eval_dataset=None,
