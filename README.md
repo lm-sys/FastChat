@@ -28,7 +28,13 @@ python3 -m chatserver.serve.gradio_web_server
 # You can open your brower and chat with a model now.
 ```
 
+
 ## Deploy Chatbot on Any Cloud with SkyPilot
+### Training on ShareGPT dataset
+```
+sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-7b-sharegpt.yaml --env WANDB_API_KEY --use-spot --env SEQ_LEN=2048 --env GC_SCALE=4
+```
+
 ### Training Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 2. Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
@@ -47,13 +53,6 @@ python3 -m chatserver.serve.gradio_web_server
     ```
     sky spot launch -n alpaca scripts/train-7b.yaml --env WANDB_API_KEY
     ```
-    **The following still does not work at the moment as Alpaca code does not support multiple nodes.**
-    We can also launch the training job with multiple nodes and different number of GPUs. We will automatically adapt the
-    gradient accumulation steps to the setting (Supported max number of #nodes * #GPUs per node = 32)
-    ```
-    sky launch -c alpaca-2 -s --num-nodes 2 --gpus A100-80GB:8 scripts/train-7b.yaml  --env WANDB_API_KEY
-    ```
-    Managed spot version TO BE ADDED.
 
 ### Serving Alpaca with SkyPilot
 1. We assume SkyPilot is installed and the model checkpoint is stored on some cloud storage (e.g., GCS).

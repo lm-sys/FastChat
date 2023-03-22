@@ -162,7 +162,7 @@ def preprocess(
             sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
                                  sentence["value"] + END_SIGNAL)
             conversation += sentence["value"]
-        
+
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
@@ -188,7 +188,12 @@ class SupervisedDataset(Dataset):
 
         logging.warning("Formatting inputs...")
         sources = [example["conversations"] for example in list_data_dict]
-        data_dict = preprocess(sources, tokenizer)
+        cache_file = pathlib.Path(data_path + ".preprocessed")
+        if cache_file in pathlib.Path(cache_file).parent.glob("*"):
+            data_dict = json.load(cache_file.open("r"))
+        else:
+            data_dict = preprocess(sources, tokenizer)
+            json.dump(data_dict, cache_file.open("w"))
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]

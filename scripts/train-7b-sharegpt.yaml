@@ -46,6 +46,7 @@ setup: |
 
   # Install chatserver requirements.txt
   pip install -r requirements.txt
+  pip install -e .
   
 
   # wait
@@ -71,7 +72,7 @@ setup: |
 run: |
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
-  GC_SCALE=${GC_SCALE:-1.0}
+  GC_SCALE=${GC_SCALE:-1}
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
@@ -93,7 +94,7 @@ run: |
     --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 2000 \
+    --save_steps 300 \
     --save_total_limit 1 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
@@ -105,7 +106,3 @@ run: |
     --tf32 True \
     --model_max_length ${SEQ_LEN} \
     --gradient_checkpointing True
-
-envs:
-  SEQ_LEN: 2048
-  GC_SCALE: 4
