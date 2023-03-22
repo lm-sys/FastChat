@@ -5,3 +5,4 @@ __pycache__
 *.json
 .idea
 output
+wandb
