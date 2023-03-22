@@ -73,6 +73,7 @@ run: |
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
   GC_SCALE=${GC_SCALE:-1}
+  DATE=${DATE:-20230303}
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
@@ -85,7 +86,7 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     chatserver/train/train.py \
     --model_name_or_path ~/hf-output/llama-7b \
-    --data_path /data/sharegpt_clean_20230303.json \
+    --data_path /data/sharegpt_clean_$DATE.json \
     --bf16 True \
     --output_dir /artifacts/chatbot/7b/sharegpt-seq-${SEQ_LEN} \
     --num_train_epochs 3 \
