@@ -52,6 +52,11 @@ def clear_history(history):
     return []
 
 
+def regenerate(history):
+    history[-1][1] = None
+    return history, upvote_msg, downvote_msg
+
+
 def load_demo(request: gr.Request):
     models = get_model_list()
     logger.info(f"load demo: {request.client.host}")
@@ -180,6 +185,7 @@ def build_demo():
         with gr.Row():
             upvote_btn = gr.Button(value=upvote_msg)
             downvote_btn = gr.Button(value=downvote_msg)
+            regenerate_btn = gr.Button(value="Regenerate")
             clear_btn = gr.Button(value="Clear history")
 
         upvote_btn.click(upvote_last_response,
@@ -188,12 +194,14 @@ def build_demo():
         downvote_btn.click(downvote_last_response,
             [chatbot, upvote_btn, downvote_btn, model_selector],
             [upvote_btn, downvote_btn])
+        regenerate_btn.click(regenerate, chatbot,
+            [chatbot, upvote_btn, downvote_btn]).then(
+            http_bot, [chatbot, model_selector], chatbot)
         clear_btn.click(clear_history, chatbot, chatbot)
 
         textbox.submit(add_text, [chatbot, textbox],
             [chatbot, textbox, upvote_btn, downvote_btn]).then(
-            http_bot, [chatbot, model_selector], chatbot,
-        )
+            http_bot, [chatbot, model_selector], chatbot)
 
         demo.load(load_demo, [], model_selector)
 
