@@ -4,6 +4,7 @@ import torch
 
 from chatserver.conversation import default_conversation
 
+
 def main(args):
     model_name = args.model_name
 
@@ -39,7 +40,6 @@ def main(args):
         print(f"{conv.roles[1]}: {outputs}")
         conv.append_message(conv.roles[1], outputs)
 
-    print(conv.messages)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
