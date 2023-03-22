@@ -19,12 +19,8 @@ upvote_msg = "👍  Upvote the last response"
 downvote_msg = "👎  Downvote the last response"
 init_prompt = default_conversation.get_prompt()
 
-priority = defaultdict(lambda: 10, {
-    "facebook/opt-350m": 9,
-    "facebook/opt-6.7b": 8,
-    "facebook/llama-7b": 7,
-})
-
+priority = {
+}
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
@@ -37,7 +33,7 @@ def get_model_list():
     assert ret.status_code == 200
     ret = requests.post(args.controller_url + "/list_models")
     models = ret.json()["models"]
-    models.sort(key=lambda x: priority[x])
+    models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
     return models
 
