@@ -36,8 +36,8 @@ python3 -m chatserver.serve.gradio_web_server
     ```
     # WANDB API KEY is required for logging. We use the key in your local environment.
     sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY
-    # Change the sequence length to 1024:
-    sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY --env SEQ_LEN=1024
+    # Change the sequence length to 2048, and a gradient checkpointing to increase the per device batch size by 4:
+    sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY --env SEQ_LEN=2048 --env GC_SCALE=4
     ```
     Or use spot (not managed).
     ```

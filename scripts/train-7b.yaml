@@ -38,7 +38,7 @@ setup: |
   # Install huggingface with the LLaMA commit
   git clone https://github.com/huggingface/transformers.git
   cd transformers
-  git checkout 60d51ef # pin to latest commit
+  # git checkout 60d51ef # pin to latest commit
   pip install .
   cd -
 
@@ -79,9 +79,11 @@ run: |
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12375 \
+    --master_addr=$HOST_ADDR \
+    --node_rank=${SKYPILOT_NODE_RANK} \
     train.py \
     --model_name_or_path ~/hf-output/llama-7b \
-    --data_path /data/alpaca-data.json \
+    --data_path /data/generated.json \
     --bf16 True \
     --output_dir /artifacts/chatbot/7b/alpaca-${SEQ_LEN} \
     --num_train_epochs 3 \
@@ -101,3 +103,5 @@ run: |
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --tf32 True \
     --model_max_length ${SEQ_LEN}
+
+    # --data_path /data/alpaca-data.json \
