@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input')
     parser.add_argument('-o', '--output')
     parser.add_argument('-r', '--rule')
-    parser.add_argument('--max-conversations', type=int, default=5, help='maximum number of conversations to use for assessing quality')
+    parser.add_argument('--max-conversations', type=int, default=1, help='maximum number of conversations to use for assessing quality')
     parser.add_argument('--max-tokens', type=int, default=2, help='maximum number of tokens produced in the output')
     args = parser.parse_args()
 
