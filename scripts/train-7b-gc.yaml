@@ -105,3 +105,7 @@ run: |
     --tf32 True \
     --model_max_length ${SEQ_LEN} \
     --gradient_checkpointing True
+
+env:
+  SEQ_LEN: 2048
+  GC_SCALE: 4.0
