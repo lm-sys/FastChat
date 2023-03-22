@@ -38,12 +38,17 @@ def get_model_list():
     return models
 
 
-def add_text(history, text, request: gr.Request):
+def clear_html_tags(history):
     # Fix some bugs in gradio UI
     for i in range(len(history)):
         history[i][0] = history[i][0].replace("<br>", "")
         if history[i][1]:
             history[i][1] = history[i][1].replace("<br>", "")
+
+
+def add_text(history, text, request: gr.Request):
+    clear_html_tags(history)
+    text = text[:1536]  # Hard cut-off
     history = history + [[text, None]]
     return history, "", upvote_msg, downvote_msg
 
@@ -53,6 +58,7 @@ def clear_history(history):
 
 
 def regenerate(history):
+    clear_html_tags(history)
     history[-1][1] = None
     return history, upvote_msg, downvote_msg
 
@@ -103,10 +109,7 @@ def http_bot(history, model_selector, request: gr.Request):
     logger.info(f"model_name: {model_selector}, worker_addr: {worker_addr}")
 
     # Fix some bugs in gradio UI
-    for i in range(len(history)):
-        history[i][0] = history[i][0].replace("<br>", "")
-        if history[i][1]:
-            history[i][1] = history[i][1].replace("<br>", "")
+    clear_html_tags(history)
 
     # No available worker
     if worker_addr == "":
@@ -168,7 +171,7 @@ def build_demo():
         gr.Markdown(
             "# Chat server\n"
             "### Terms of Use\n"
-            "By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service collects user dialogue data for future research."
+            "By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research."
         )
 
         with gr.Row(elem_id="model_selector_row"):
