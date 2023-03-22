@@ -11,6 +11,7 @@ import requests
 from chatserver.conversation import default_conversation
 from chatserver.constants import LOGDIR
 from chatserver.utils import build_logger
+from chatserver.serve.gradio_patch import Chatbot as grChatbot
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -172,7 +173,7 @@ def build_demo():
                 interactive=True,
                 label="Choose a model to chat with.")
 
-        chatbot = gr.Chatbot(elem_id="chatbot")
+        chatbot = grChatbot(elem_id="chatbot")
         textbox = gr.Textbox(show_label=False,
             placeholder="Enter text and press ENTER",).style(container=False)
 
