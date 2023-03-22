@@ -195,7 +195,7 @@ class LazySupervisedDataset(Dataset):
 
     def __init__(self, data_path: str,
                  tokenizer: transformers.PreTrainedTokenizer):
-        super(SupervisedDataset, self).__init__()
+        super(LazySupervisedDataset, self).__init__()
         logging.warning("Loading data...")
         list_data_dict = json.load(open(data_path, "r"))
 
