@@ -34,6 +34,12 @@ python3 -m chatserver.serve.gradio_web_server
 ```
 sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-7b-sharegpt.yaml --env WANDB_API_KEY --use-spot --env SEQ_LEN=2048 --env GC_SCALE=4
 ```
+Launch it on managed spot:
+```
+```
+sky spot launch -n sharegpt --gpus A100-80GB:8 scripts/train-7b-sharegpt.yaml --env WANDB_API_KEY --use-spot --env SEQ_LEN=2048 --env GC_SCALE=4
+```
+```
 
 ### Training Alpaca with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
