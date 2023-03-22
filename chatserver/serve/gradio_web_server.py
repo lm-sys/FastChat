@@ -81,7 +81,9 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 
 def upvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                          request: gr.Request):
-    if upvote_btn == "done" or len(state.messages) == state.offset:
+    if len(state.messages) == state.offset:
+        return upvote_btn, downvote_msg
+    if upvote_btn == "done":
         return "done", "done"
     vote_last_response(state, "upvote", model_selector, request)
     return "done", "done"
@@ -89,7 +91,9 @@ def upvote_last_response(state, upvote_btn, downvote_btn, model_selector,
 
 def downvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                            request: gr.Request):
-    if upvote_btn == "done" or len(state.messages) == state.offset:
+    if len(state.messages) == state.offset:
+        return upvote_btn, downvote_msg
+    if upvote_btn == "done":
         return "done", "done"
     vote_last_response(state, "downvote", model_selector, request)
     return "done", "done"
