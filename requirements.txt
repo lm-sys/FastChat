@@ -1,0 +1,9 @@
+numpy
+rouge_score
+fire
+openai
+transformers>=4.26.1
+torch
+sentencepiece
+tokenizers==0.12.1
+wandb

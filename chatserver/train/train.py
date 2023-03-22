@@ -17,6 +17,7 @@ import copy
 from dataclasses import dataclass, field
 import json
 import logging
+import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
@@ -258,7 +259,10 @@ def train():
                       tokenizer=tokenizer,
                       args=training_args,
                       **data_module)
-    trainer.train()
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer,
                                    output_dir=training_args.output_dir)

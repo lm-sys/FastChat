@@ -14,6 +14,8 @@ file_mounts:
     store: gcs
     mode: MOUNT
 
+workdir: .
+
 setup: |
   # Download the model weights if not exits
   # mkdir -p $HOME/llama
@@ -42,11 +44,9 @@ setup: |
   pip install .
   cd -
 
-  # Install alpaca
-  git clone https://github.com/Michaelvll/stanford_alpaca.git
-  cd stanford_alpaca
+  # Install chatserver requirements.txt
   pip install -r requirements.txt
-  cd -
+  
 
   # wait
   # touch $HOME/llama/complete
@@ -69,7 +69,6 @@ setup: |
   fi
 
 run: |
-  cd stanford_alpaca
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
   GC_SCALE=${GC_SCALE:-1.0}
@@ -83,11 +82,11 @@ run: |
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    train.py \
+    chatserver/train/train.py \
     --model_name_or_path ~/hf-output/llama-7b \
-    --data_path /data/generated.json \
+    --data_path /data/sharegpt_clean_20230303.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/7b/alpaca-${SEQ_LEN}-${GC_SCALE} \
+    --output_dir /artifacts/chatbot/7b/sharegpt-seq-${SEQ_LEN} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
