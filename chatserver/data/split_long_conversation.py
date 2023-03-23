@@ -36,12 +36,13 @@ def split_contents(raw: Sequence[Sequence[Dict]],
     context.
     """
     split = []
+
     def split_example(example, start_idx, end_idx):
         # only ends in the bot because otherwise the last human part is useless.
         end_speaker = example["conversations"][end_idx]["from"]
         end_idx = end_idx + 1 if end_speaker != "human" else end_idx
         return {
-            "id": example["id"] + "_" +str(start_idx),
+            "id": example["id"] + "_" + str(start_idx),
             "conversations": example["conversations"][start_idx:end_idx]
         }
 
@@ -78,7 +79,8 @@ def split_contents(raw: Sequence[Sequence[Dict]],
     for example in split:
         source = example["conversations"]
         for s in source:
-            s["value"] = s["value"][len(BEGIN_SIGNAL):-len(END_SIGNAL)]
+            begin_idx = len(BEGIN_SIGNAL) + len(s["from"]) + len(": ")
+            s["value"] = s["value"][begin_idx:-len(END_SIGNAL)]
     return split
 
 
