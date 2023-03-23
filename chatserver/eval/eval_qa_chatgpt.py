@@ -1,3 +1,4 @@
+"""Evaluate QA with ChatGPT."""
 # Note: you need to be using OpenAI Python v0.27.0 for the code below to work
 import argparse
 import json
@@ -39,7 +40,7 @@ if __name__ == '__main__':
 
     with open(os.path.expanduser(args.answer)) as f:
         answer = json.load(f)
-        answers_dict = {ans['id']+1: ans['answer'] for ans in list(answer.values())[0]}
+        answers_dict = {ans['id']: ans['answer'] for ans in answer['answers']}
 
     with open(os.path.expanduser(args.rule)) as f:
         rule = f.read()

@@ -1,3 +1,4 @@
+"""Generate answers with GPT-3.5"""
 # Note: you need to be using OpenAI Python v0.27.0 for the code below to work
 import argparse
 import json
@@ -24,7 +25,7 @@ def get_eval(question: str, max_tokens: int):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ChatGPT-based QA evaluation.')
+    parser = argparse.ArgumentParser(description='ChatGPT answer generation.')
     parser.add_argument('-q', '--question')
     parser.add_argument('-o', '--output')
     parser.add_argument('--max-tokens', type=int, default=1024, help='maximum number of tokens produced in the output')
