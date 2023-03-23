@@ -44,15 +44,9 @@ def load_model(model_name, num_gpus):
             "max_memory": {i: "13GiB" for i in range(num_gpus)},
         }
 
-    if model_name == "facebook/llama-7b":
-        hf_model_name = "/home/ubuntu/llama_weights/hf-llama-7b/"
-        tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
-        model = AutoModelForCausalLM.from_pretrained(
-            hf_model_name, torch_dtype=torch.float16, **kwargs)
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(
-           model_name, torch_dtype=torch.float16, **kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+       model_name, torch_dtype=torch.float16, **kwargs)
 
     if num_gpus == 1:
         model.cuda()
