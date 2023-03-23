@@ -109,18 +109,6 @@ def preprocess(
                                       tokenizer)["input_ids_lens"]
         speakers = [sentence["from"] for sentence in source]
         _mask_targets(target, tokenized_lens, speakers)
-        for sentence, tokenized_len in zip(source, tokenized_lens):
-            sentence["length"] = tokenized_len
-    # cache results
-    new_sources = []
-    for input_id, source in zip(input_ids, sources):
-        new_sources.append({
-            "tokenized": input_id,
-            "length": [sen["length"] for sen in source],
-            "from": [sen["from"] for sen in source]
-        })
-    new_sources.append({"tokenized": True})
-    json.dump(new_sources, open("./cached.json", "w"), indent=2)
 
     return dict(input_ids=input_ids, labels=targets)
 
@@ -139,6 +127,7 @@ class SupervisedDataset(Dataset):
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
+
 
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
