@@ -107,9 +107,17 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     start_tstamp = time.time()
 
     if len(state.messages) == state.offset:
-        # skip empty "Regenerate"
+        # Skip empty "Regenerate"
         yield state, state.to_gradio_chatbot()
         return
+
+    if len(state.messages) == state.offset + 2:
+        # First round of conversation
+        if "bair-chat" in model_selector: # Hardcode the condition
+            new_state = conv_templates["bair_v1"].copy()
+            new_state.append_message(new_state.roles[0], state.messages[-2][1])
+            new_state.append_message(new_state.roles[1], None)
+            state = new_state
 
     # Query worker address
     controller_url = args.controller_url
@@ -128,7 +136,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     prompt = state.get_prompt()
 
     # Make requests
-    headers = {"User-Agent": "Alpa Client"}
+    headers = {"User-Agent": "Client"}
     pload = {
         "prompt": prompt,
         "temperature": float(temperature),
