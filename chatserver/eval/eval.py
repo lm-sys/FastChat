@@ -44,9 +44,10 @@ def eval_model(model_name, questions_file):
         print(f"{conv.roles[1]}: {outputs}")
         print('======')
         answers.append({"id": i+1, "answer": outputs})
-    ans_all = {}
-    ans_all[model_name] = answers
-    return ans_all
+    ret = {}
+    ret["model_name"] = model_name
+    ret["answers"] = answers
+    return ret
 
 
 if __name__ == "__main__":
@@ -56,5 +57,5 @@ if __name__ == "__main__":
     parser.add_argument("--answers-file", type=str, default="answers.json")
     args = parser.parse_args()
 
-    ans_all = eval_model(args.model_name, args.questions_file)
-    json.dump(ans_all, open(args.answers_file, "w"))
+    ret = eval_model(args.model_name, args.questions_file)
+    json.dump(ret, open(args.answers_file, "w"))
