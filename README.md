@@ -12,6 +12,8 @@ pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ## Serving
+
+### Web UI
 ```
 # Launch a controller
 python3 -m chatserver.serve.controller
@@ -28,9 +30,13 @@ python3 -m chatserver.serve.gradio_web_server
 # You can open your brower and chat with a model now.
 ```
 
+### Command Line Interface
+```
+python3 -m chatserver.serve.cli --model facebook/opt-350m
+```
 
 ## Deploy Chatbot on Any Cloud with SkyPilot
-### Training on ShareGPT dataset
+### Training on ShareGPT Dataset
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 ```
 # Need this version of skypilot, for the fix of `--env` flag.
