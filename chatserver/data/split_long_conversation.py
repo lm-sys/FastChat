@@ -12,20 +12,40 @@ from typing import Dict, Sequence
 
 import transformers
 
+from chatserver import conversation as conversation_lib
+
 DEFAULT_PAD_TOKEN = "[PAD]"
 BEGIN_SIGNAL = "### "
 END_SIGNAL = "\n"
 
-
-def _add_speaker_and_signal(source, get_conversation=True):
-    """Add speaker and start/end signal on each round."""
-    conversation = ""
+# TODO: It's better to move this function to conversation_lib
+def _add_speaker_and_signal(source):
+    """Add speaker and start/end signal on each round.(Inplace)"""
     for sentence in source:
-        sentence["value"] = (BEGIN_SIGNAL + sentence["from"] + ": " +
+        from_str = sentence["from"]
+        if from_str.lower() == "human":
+            from_str = conversation_lib.default_conversation.roles[0]
+        elif from_str.lower() == "gpt":
+            from_str = conversation_lib.default_conversation.roles[1]
+        else:
+            from_str = 'unknown'
+        sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
                              sentence["value"] + END_SIGNAL)
-        if get_conversation:
-            conversation += sentence["value"]
-    return conversation
+
+
+# TODO: It's better to move this function to conversation_lib
+def _remove_speaker_and_signal(source):
+    """Remove speaker and start/end signal on each round.(Inplace)"""
+    for sentence in source:
+        from_str = sentence["from"]
+        if from_str.lower() == "human":
+            from_str = conversation_lib.default_conversation.roles[0]
+        elif from_str.lower() == "gpt":
+            from_str = conversation_lib.default_conversation.roles[1]
+        else:
+            from_str = 'unknown'
+        begin_idx = len(BEGIN_SIGNAL) + len(from_str) + len(": ")
+        sentence["value"] = sentence["value"][begin_idx:-len(END_SIGNAL)]
 
 
 def split_contents(raw: Sequence[Sequence[Dict]],
@@ -49,7 +69,7 @@ def split_contents(raw: Sequence[Sequence[Dict]],
     # modify each sentence first.
     sources = [example["conversations"] for example in raw]
     for source in sources:
-        _add_speaker_and_signal(source, get_conversation=False)
+        _add_speaker_and_signal(source)
 
     for example in raw:
         source = example["conversations"]
@@ -77,10 +97,7 @@ def split_contents(raw: Sequence[Sequence[Dict]],
                     split.append(split_example(example, start_idx, idx))
     # back to the previous format
     for example in split:
-        source = example["conversations"]
-        for s in source:
-            begin_idx = len(BEGIN_SIGNAL) + len(s["from"]) + len(": ")
-            s["value"] = s["value"][begin_idx:-len(END_SIGNAL)]
+        _remove_speaker_and_signal(example["conversations"])
     return split
 
 
