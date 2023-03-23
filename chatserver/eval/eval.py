@@ -43,7 +43,7 @@ def eval_model(model_name, questions_file):
         print('======')
         print(f"{conv.roles[1]}: {outputs}")
         print('======')
-        answers.append({"id": i, "answer": outputs})
+        answers.append({"id": i+1, "answer": outputs})
     ans_all = {}
     ans_all[model_name] = answers
     return ans_all
