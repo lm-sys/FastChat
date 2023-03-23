@@ -10,7 +10,7 @@ from chatserver.utils import disable_torch_init
 
 
 @torch.inference_mode()
-def eval_model(model_name, questions_file, answers_file):
+def eval_model(model_name, questions_file):
     # Model
     disable_torch_init()
     model_name = os.path.expanduser(model_name)
@@ -52,7 +52,7 @@ def eval_model(model_name, questions_file, answers_file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--questions-file", type=str, default="questions.json")
+    parser.add_argument("--questions-file", type=str, default="mini_evals/general/questions.json")
     parser.add_argument("--answers-file", type=str, default="answers.json")
     args = parser.parse_args()
 
