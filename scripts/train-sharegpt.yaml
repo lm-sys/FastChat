@@ -1,6 +1,7 @@
 resources:
   accelerators: A100-80GB:8
   disk_size: 1000
+  use_spot: true
 
 num_nodes: 1
 
@@ -44,8 +45,9 @@ setup: |
   pip install .
   cd -
 
-  # Install chatserver requirements.txt
+  # Install chatserver
   pip install -e .
+  pip install flash-attn
   
 
   # wait
@@ -73,31 +75,38 @@ run: |
   SEQ_LEN=${SEQ_LEN:-512}
   GC_SCALE=${GC_SCALE:-1}
   DATE=${DATE:-20230303}
+  USE_FLASH_ATTN=${USE_FLASH_ATTN:-0}
+  if [ $USE_FLASH_ATTN -eq 1 ]; then
+    TRAIN_SCRIPT=chatserver/train/train_flash_attn.py
+    USE_FLASH_SUFFIX="-flash"
+  else
+    TRAIN_SCRIPT=chatserver/train/train.py
+    USE_FLASH_SUFFIX=""
+  fi
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
   # Hack copy it once to make it faster later
   mkdir -p ~/.checkpoints
-  gsutil -m cp -r /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN} ~/.checkpoints
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    chatserver/train/train.py \
+    $TRAIN_SCRIPT \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
     --data_path /data/sharegpt_clean_$DATE.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN} \
+    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}${USE_FLASH_SUFFIX} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
     --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 900 \
+    --save_steps 1200 \
     --save_total_limit 100 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
@@ -117,3 +126,4 @@ envs:
   SEQ_LEN: 2048
   GC_SCALE: 4
   DATE: 20230303
+  USE_FLASH_ATTN: 0
