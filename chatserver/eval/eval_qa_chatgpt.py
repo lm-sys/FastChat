@@ -60,8 +60,8 @@ if __name__ == '__main__':
                 break
             except Exception as e:
                 print('Error', e)
-        if retries == 3:
-            evaluations.append({'id': qid, 'score': -1, 'explanation': f'#ERROR: {e}'})
+                if retries == 2:
+                    evaluations.append({'id': qid, 'score': -1, 'explanation': f'#ERROR: {e}'})
 
     with open(os.path.expanduser(args.output), 'w') as f:
         json.dump(evaluations, f)

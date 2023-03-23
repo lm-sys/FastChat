@@ -44,8 +44,8 @@ if __name__ == '__main__':
                 break
             except Exception as e:
                 print('Error: ', e)
-        if retries == 3:
-            answers.append({'id': qid, 'answer': '#ERROR#'})
+                if retries == 2:
+                    answers.append({'id': qid, 'answer': '#ERROR#'})
 
     with open(os.path.expanduser(args.output), 'w') as f:
         json.dump({'model': 'gpt-3.5-turbo', 'answers': answers}, f)
