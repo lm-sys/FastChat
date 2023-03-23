@@ -8,7 +8,7 @@ import openai
 import tqdm
 
 
-def get_eval(rule: str, user: str, assistant: str, max_tokens: int):
+def get_eval(question: str, max_tokens: int):
     response = openai.ChatCompletion.create(
         model='gpt-3.5-turbo',
         messages=[{
@@ -16,7 +16,7 @@ def get_eval(rule: str, user: str, assistant: str, max_tokens: int):
             'content': 'You are a helpful assistant.'
         }, {
             'role': 'user',
-            'content': f'[User]\n{user}\n[Assistant]\n{assistant}\n[system]\n{rule}',
+            'content': question,
         }],
         max_tokens=max_tokens,
     )
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     for qid, question in tqdm.tqdm(questions_dict.items()):
         for retries in range(3):
             try:
-                eval_result = get_eval(rule, question, answer, args.max_tokens)
+                eval_result = get_eval(question, args.max_tokens)
                 answers.append({'id': qid, 'answer': eval_result})
                 break
             except Exception as e:
