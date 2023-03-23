@@ -2,7 +2,7 @@ import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-from chatserver.conversation import default_conversation
+from chatserver.conversation import conv_templates, SeparatorStyle
 from chatserver.utils import disable_torch_init
 
 
@@ -29,7 +29,7 @@ def main(args):
         model.cuda()
 
     # Chat
-    conv = default_conversation.copy()
+    conv = conv_templates[args.conv_template].copy()
     while True:
         inp = input(f"{conv.roles[0]}: ")
         if not inp:
@@ -37,6 +37,7 @@ def main(args):
             break
 
         conv.append_message(conv.roles[0], inp)
+        conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         inputs = tokenizer([prompt])
         output_ids = model.generate(
@@ -45,20 +46,26 @@ def main(args):
             temperature=0.7,
             max_new_tokens=256)
         outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
+        sep = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
         try:
-            index = outputs.index(conv.sep, len(prompt))
+            index = outputs.index(sep, len(prompt))
         except ValueError:
-            outputs += conv.sep
-            index = outputs.index(conv.sep, len(prompt))
-        
-        outputs = outputs[len(prompt) + len(conv.roles[1]) + 2:index].strip()
+            outputs += sep
+            index = outputs.index(sep, len(prompt))
+
+        outputs = outputs[len(prompt) + 2:index].strip()
         print(f"{conv.roles[1]}: {outputs}")
-        conv.append_message(conv.roles[1], outputs)
+        conv.messages[-1][-1] = outputs
+
+        if args.debug:
+            print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument("--conv-template", type=str, default="v1")
+    parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)

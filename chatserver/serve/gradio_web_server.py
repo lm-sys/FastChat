@@ -126,7 +126,6 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # Construct prompt
     prompt = state.get_prompt()
-    txt = prompt.replace(state.sep, '\n')
 
     # Make requests
     headers = {"User-Agent": "Alpa Client"}
