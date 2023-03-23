@@ -94,6 +94,9 @@ class LlamaAttention(nn.Module):
         assert not use_cache, "use_cache is not supported"
         assert past_key_value is None, "past_key_value is not supported"
 
+        # Flash attention codes from
+        # https://github.com/HazyResearch/flash-attention/blob/main/flash_attn/flash_attention.py
+
         # transform the data into the format required by flash attention
         qkv = torch.stack([query_states, key_states, value_states], dim=2) # [bsz, nh, 3, q_len, hd]
         qkv = qkv.transpose(1, 3) # [bsz, q_len, 3, nh, hd]
@@ -101,7 +104,6 @@ class LlamaAttention(nn.Module):
         # the attention_mask should be the same as the key_padding_mask
         key_padding_mask = attention_mask
 
-        # TODO(zhwu): Use flash attention here.
 
         if key_padding_mask is None:
             qkv = rearrange(qkv, 'b s ... -> (b s) ...')
