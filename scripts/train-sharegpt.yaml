@@ -107,7 +107,7 @@ run: |
     --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 900 \
+    --save_steps 1200 \
     --save_total_limit 100 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
