@@ -114,10 +114,13 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     if len(state.messages) == state.offset + 2:
         # First round of conversation
         if "bair-chat" in model_selector: # Hardcode the condition
-            new_state = conv_templates["bair_v1"].copy()
-            new_state.append_message(new_state.roles[0], state.messages[-2][1])
-            new_state.append_message(new_state.roles[1], None)
-            state = new_state
+            template_name = "bair_v1"
+        else:
+            template_name = "v1"
+        new_state = conv_templates[template_name].copy()
+        new_state.append_message(new_state.roles[0], state.messages[-2][1])
+        new_state.append_message(new_state.roles[1], None)
+        state = new_state
 
     # Query worker address
     controller_url = args.controller_url
