@@ -86,9 +86,9 @@ run: |
   fi
   USE_SPLIT=${USE_SPLIT:-0}
   if [ $USE_SPLIT -eq 1 ]; then
-    USE_SPLIT_SUFFIX="_split"
+    USE_SPLIT_SUFFIX="split"
   else
-    USE_SPLIT_SUFFIX="_clean"
+    USE_SPLIT_SUFFIX="clean"
   fi
   
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
