@@ -89,7 +89,6 @@ run: |
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
   # Hack copy it once to make it faster later
   mkdir -p ~/.checkpoints
-  gsutil -m cp -r /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}${USE_FLASH_SUFFIX} ~/.checkpoints
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
