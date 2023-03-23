@@ -103,7 +103,7 @@ def downvote_last_response(state, upvote_btn, downvote_btn, model_selector,
     return "done", "done"
 
 
-def http_bot(state, model_selector, request: gr.Request):
+def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
 
     if len(state.messages) == state.offset:
@@ -127,16 +127,16 @@ def http_bot(state, model_selector, request: gr.Request):
     # Construct prompt
     prompt = state.get_prompt()
     txt = prompt.replace(state.sep, '\n')
-    logger.info(f"==== Conversation ====\n{txt}")
 
     # Make requests
     headers = {"User-Agent": "Alpa Client"}
     pload = {
         "prompt": prompt,
-        "max_new_tokens": 512,
-        "temperature": 0.7,
+        "temperature": float(temperature),
+        "max_new_tokens": int(max_new_tokens),
         "stop": state.sep,
     }
+    logger.info(f"==== request ====\n{pload}")
     response = requests.post(worker_addr + "/generate_stream",
         headers=headers, json=pload, stream=True)
 
@@ -196,6 +196,10 @@ def build_demo():
             regenerate_btn = gr.Button(value="Regenerate")
             clear_btn = gr.Button(value="Clear history")
 
+        with gr.Accordion("Parameters", open=False):
+            temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
+            max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+
         upvote_btn.click(upvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
             [upvote_btn, downvote_btn])
@@ -204,12 +208,14 @@ def build_demo():
             [upvote_btn, downvote_btn])
         regenerate_btn.click(regenerate, state,
             [state, chatbot, upvote_btn, downvote_btn]).then(
-            http_bot, [state, model_selector], [state, chatbot])
+            http_bot, [state, model_selector, temperature, max_output_tokens],
+            [state, chatbot])
         clear_btn.click(clear_history, None, [state, chatbot])
 
         textbox.submit(add_text, [state, textbox],
             [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
-            http_bot, [state, model_selector], [state, chatbot])
+            http_bot, [state, model_selector, temperature, max_output_tokens],
+            [state, chatbot])
 
         demo.load(load_demo, [], [model_selector, state, chatbot])
 
