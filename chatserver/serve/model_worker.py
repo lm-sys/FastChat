@@ -110,9 +110,9 @@ class ModelWorker:
         tokenizer, model = self.tokenizer, self.model
 
         context = args["prompt"]
-        max_new_tokens = args.get("max_new_tokens", 256)
-        stop_str = args.get("stop", None)
         temperature = float(args.get("temperature", 1.0))
+        max_new_tokens = int(args.get("max_new_tokens", 256))
+        stop_str = args.get("stop", None)
 
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
@@ -139,8 +139,11 @@ class ModelWorker:
             assert out.attentions is None
 
             last_token_logits = logits[0][-1]
-            probs = torch.softmax(last_token_logits / temperature, dim=-1)
-            token = int(torch.multinomial(probs, num_samples=1))
+            if temperature < 1e-4:
+                token = int(torch.argmax(last_token_logits))
+            else:
+                probs = torch.softmax(last_token_logits / temperature, dim=-1)
+                token = int(torch.multinomial(probs, num_samples=1))
             if token == tokenizer.eos_token_id:
                 break
 

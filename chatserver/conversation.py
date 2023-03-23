@@ -7,6 +7,7 @@ class Conversation:
     system: str
     roles: List[str]
     messages: List[List[str]]
+    offset: int
     sep: str = "###"
 
     def get_prompt(self):
@@ -21,17 +22,31 @@ class Conversation:
     def append_message(self, role, message):
         self.messages.append([role, message])
 
-    def append_gradio_chatbot_history(self, history):
-        for a, b in history:
-            self.messages.append([self.roles[0], a])
-            self.messages.append([self.roles[1], b])
+    def to_gradio_chatbot(self):
+        ret = []
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+            if i % 2 == 0:
+                ret.append([msg, None])
+            else:
+                ret[-1][-1] = msg
+        return ret
 
     def copy(self):
         return Conversation(
             system=self.system,
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
+            offset=self.offset,
             sep=self.sep)
+
+    def dict(self):
+        return {
+            "system": self.system,
+            "roles": self.roles,
+            "messages": self.messages,
+            "offset": self.offset,
+            "sep": self.sep,
+        }
 
 
 default_conversation = Conversation(
@@ -55,7 +70,8 @@ default_conversation = Conversation(
             "and mental health. Adults should aim for seven to nine hours of sleep per night. "
             "Establish a regular sleep schedule and try to create a relaxing bedtime routine to "
             "help improve the quality of your sleep.")
-    )
+    ),
+    offset=2,
 )
 
 
