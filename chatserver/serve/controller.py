@@ -102,7 +102,7 @@ class Controller:
 
     def check_worker_status(self, worker_name):
         try:
-            r = requests.post(worker_name + "/check_status")
+            r = requests.post(worker_name + "/check_status", timeout=5)
         except requests.exceptions.RequestException:
             return False
         return r.status_code == 200

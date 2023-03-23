@@ -1,5 +1,5 @@
 resources:
-  accelerators: A100-80GB:4
+  accelerators: A100-80GB:8
   disk_size: 1000
 
 num_nodes: 1
@@ -14,12 +14,14 @@ file_mounts:
     store: gcs
     mode: MOUNT
 
+workdir: .
+
 setup: |
   # Download the model weights if not exits
   # mkdir -p $HOME/llama
-  # if [ ! -f /artifacts/llama-hf/llama-7B/complete ]; then
+  # if [ ! -f /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete ]; then
   #   if [ ! -f $HOME/llama/complete ]; then
-  #     bash download.sh $LLAMA_URL 7B $HOME/llama &
+  #     bash download.sh $LLAMA_URL ${MODEL_SIZE}B $HOME/llama &
   #   fi
   # fi
 
@@ -42,60 +44,61 @@ setup: |
   pip install .
   cd -
 
-  # Install alpaca
-  git clone https://github.com/Michaelvll/stanford_alpaca.git
-  cd stanford_alpaca
-  pip install -r requirements.txt
-  cd -
+  # Install chatserver requirements.txt
+  pip install -e .
+  
 
   # wait
   # touch $HOME/llama/complete
 
-  mkdir -p /artifacts/llama-hf/llama-7B
-  if [ ! -f /artifacts/llama-hf/llama-7B/complete ]; then
-    mkdir -p ~/llama-7b
-    gsutil -m cp -r gs://llama-7b/* ~/llama-7b/* # Change to your own bucket with the LLaMA weights
+  mkdir -p /artifacts/llama-hf/llama-${MODEL_SIZE}B
+  if [ ! -f /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete ]; then
+    mkdir -p ~/llama-${MODEL_SIZE}b
+    gsutil -m cp -r gs://llama-${MODEL_SIZE}b/* ~/llama-${MODEL_SIZE}b/* # Change to your own bucket with the LLaMA weights
     cd transformers
     python src/transformers/models/llama/convert_llama_weights_to_hf.py \
-      --input_dir $HOME/llama-7b \
-      --model_size 7B \
+      --input_dir $HOME/llama-${MODEL_SIZE}b \
+      --model_size ${MODEL_SIZE}B \
       --output_dir ~/hf-output || exit 1
-    mv ~/hf-output/tokenizer/* ~/hf-output/llama-7b
-    cp -r ~/hf-output/llama-7b/* /artifacts/llama-hf/llama-7B
-    touch /artifacts/llama-hf/llama-7B/complete
+    mv ~/hf-output/tokenizer/* ~/hf-output/llama-${MODEL_SIZE}b
+    cp -r ~/hf-output/llama-${MODEL_SIZE}b/* /artifacts/llama-hf/llama-${MODEL_SIZE}B
+    touch /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete
   else
-    mkdir -p ~/hf-output/llama-7b
-    gsutil -m cp -r /artifacts/llama-hf/llama-7B/* ~/hf-output/llama-7b
+    mkdir -p ~/hf-output/llama-${MODEL_SIZE}b
+    gsutil -m cp -r /artifacts/llama-hf/llama-${MODEL_SIZE}B/* ~/hf-output/llama-${MODEL_SIZE}b
   fi
 
 run: |
-  cd stanford_alpaca
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
-  GC_SCALE=${GC_SCALE:-1.0}
+  GC_SCALE=${GC_SCALE:-1}
+  DATE=${DATE:-20230303}
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
+  # Hack copy it once to make it faster later
+  mkdir -p ~/.checkpoints
+  gsutil -m cp -r /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN} ~/.checkpoints
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    train.py \
-    --model_name_or_path ~/hf-output/llama-7b \
-    --data_path /data/generated.json \
+    chatserver/train/train.py \
+    --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
+    --data_path /data/sharegpt_clean_$DATE.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/7b/alpaca-${SEQ_LEN}-${GC_SCALE} \
+    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
     --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 2000 \
-    --save_total_limit 1 \
+    --save_steps 900 \
+    --save_total_limit 100 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
@@ -105,4 +108,12 @@ run: |
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --tf32 True \
     --model_max_length ${SEQ_LEN} \
-    --gradient_checkpointing True
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+
+
+envs:
+  MODEL_SIZE: 7
+  SEQ_LEN: 2048
+  GC_SCALE: 4
+  DATE: 20230303

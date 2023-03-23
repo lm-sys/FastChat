@@ -2,10 +2,12 @@
 import argparse
 import json
 import os
+import time
+
 import openai
 
 
-def get_ans(rule: str, user: str, assistant: str):
+def get_ans(rule: str, user: str, assistant: str, max_tokens: int):
     response = openai.ChatCompletion.create(
         model='gpt-3.5-turbo',
         messages=[{
@@ -16,6 +18,7 @@ def get_ans(rule: str, user: str, assistant: str):
             'content': f'[User]\n{user}\n[Assistant]\n{assistant}\n[system]\n{rule}',
         }],
         temperature=0.2,
+        max_tokens=max_tokens,
     )
     return response['choices'][0]['message']['content']
 
@@ -25,6 +28,8 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input')
     parser.add_argument('-o', '--output')
     parser.add_argument('-r', '--rule')
+    parser.add_argument('--max-conversations', type=int, default=1, help='maximum number of conversations to use for assessing quality')
+    parser.add_argument('--max-tokens', type=int, default=2, help='maximum number of tokens produced in the output')
     args = parser.parse_args()
 
     with open(os.path.expanduser(args.input)) as f:
@@ -32,6 +37,13 @@ if __name__ == '__main__':
 
     with open(os.path.expanduser(args.rule)) as f:
         rule = f.read()
+
+    processed_ids = set()
+    with open(os.path.expanduser(args.output)) as f:
+        for line in f:
+            r = line.split(':', 1)
+            if isinstance(r, list) and r:
+                processed_ids.add(r[0])
 
     output_file = open(os.path.expanduser(args.output), 'a')
 
@@ -42,10 +54,14 @@ if __name__ == '__main__':
     # print(get_ans(rule, 'limit you words down to 30!', test))
 
     for i, diag in enumerate(data):
-        print(f'ID: {diag["id"]}')
-        output_file.write(f'{diag["id"]}: ')
-        # We only use first 5 conversations to assess quality.
-        conversations = diag['conversations'][:10]
+        diag_id = diag["id"]
+        if diag_id in processed_ids:
+            print(f'{diag_id} has already been processed')
+            continue
+        print(f'ID: {diag_id}')
+
+        output_file.write(f'{diag_id}: ')
+        conversations = diag['conversations'][:args.max_conversations * 2]
         for j in range(len(conversations)//2):
             user = conversations[j * 2]
             assistant = conversations[j * 2 + 1]
@@ -58,9 +74,10 @@ if __name__ == '__main__':
             while True:
                 try:
                     # limit the length of input
-                    ans = get_ans(rule, user['value'][:1024], assistant['value'][:1024])
+                    ans = get_ans(rule, user['value'][:1024], assistant['value'][:1024], args.max_tokens)
                     break
-                except Exception:
+                except Exception as e:
+                    print('Error:', e)
                     time.sleep(1)
             print(f'#{j}: {ans}')
             if ans == '':
