@@ -21,6 +21,7 @@ import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
+
 import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
@@ -274,11 +275,10 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = transformers.LlamaForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    model.enable_xformers_memory_efficient_attention()
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
