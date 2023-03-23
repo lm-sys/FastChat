@@ -1,19 +1,19 @@
-### Launch a service with three models on 8 V100 (16 GB) GPUs.
+### Launch a service with four models on 8 V100 (16 GB) GPUs.
 ```
 # Launch a controller
 python3 -m chatserver.serve.controller
 
-# Launch model workers
-CUDA_VISIBLE_DEVICES=4 python3 -m chatserver.serve.model_worker --model facebook/opt-350m --port 21004 --worker-address http://localhost:21004
+CUDA_VISIBLE_DEVICES=2 python3 -m chatserver.serve.model_worker --model /home/ubuntu/model_weights/hf-llama-7b --port 21002 --worker-address http://localhost:21002
 
-CUDA_VISIBLE_DEVICES=5 python3 -m chatserver.serve.model_worker --model facebook/opt-6.7b --port 21005 --worker-address http://localhost:21005
+CUDA_VISIBLE_DEVICES=3 python3 -m chatserver.serve.model_worker --model /home/ubuntu/model_weights/alpaca-7b --port 21003 --worker-address http://localhost:21003
 
-CUDA_VISIBLE_DEVICES=6,7 python3 -m chatserver.serve.model_worker --model facebook/llama-7b --port 21006 --worker-address http://localhost:21006 --num-gpus 2
+CUDA_VISIBLE_DEVICES=4,5 python3 -m chatserver.serve.model_worker --model /home/ubuntu/model_weights/alpaca-13b --port 21004 --worker-address http://localhost:21004 --num-gpus 2
+
+CUDA_VISIBLE_DEVICES=6,7 python3 -m chatserver.serve.model_worker --model /home/ubuntu/model_weights/bair-chat-13b --port 21006 --worker-address http://localhost:21006 --num-gpus 2
 
 # Luanch a gradio web server.
 python3 -m chatserver.serve.gradio_web_server
 ```
-
 
 ### Host a gradio web server
 ```

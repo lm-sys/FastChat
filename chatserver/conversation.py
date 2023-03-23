@@ -1,23 +1,45 @@
 import dataclasses
+from enum import auto, Enum
 from typing import List, Tuple
+
+
+class SeparatorStyle(Enum):
+    """Different separator style."""
+    SINGLE = auto()
+    TWO = auto()
 
 
 @dataclasses.dataclass
 class Conversation:
+    """A class that keeps all conversation history."""
     system: str
     roles: List[str]
     messages: List[List[str]]
     offset: int
+    sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
+    sep2: str = None
 
     def get_prompt(self):
-        ret = self.system + self.sep
-        for role, message in self.messages:
-            if message:
-                ret += role + ": " + message + self.sep
-            else:
-                ret += role + ":"
-        return ret
+        if self.sep_style == SeparatorStyle.SINGLE:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.TWO:
+            seps = [self.sep, self.sep2]
+            ret = self.system + seps[0]
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
+            return ret
+        else:
+            raise ValueError(f"Invalid style: {self.sep_style}")
 
     def append_message(self, role, message):
         self.messages.append([role, message])
@@ -37,7 +59,9 @@ class Conversation:
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
             offset=self.offset,
-            sep=self.sep)
+            sep_style=self.sep_style,
+            sep=self.sep,
+            sep2=self.sep2)
 
     def dict(self):
         return {
@@ -46,10 +70,11 @@ class Conversation:
             "messages": self.messages,
             "offset": self.offset,
             "sep": self.sep,
+            "sep2": self.sep2,
         }
 
 
-default_conversation = Conversation(
+conv_v1 = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
            "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
@@ -72,7 +97,26 @@ default_conversation = Conversation(
             "help improve the quality of your sleep.")
     ),
     offset=2,
+    sep_style=SeparatorStyle.SINGLE,
+    sep="###",
 )
+
+conv_bair_v1 = Conversation(
+    system="BEGINNING OF CONVERSATION:",
+    roles=("USER", "GPT"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.TWO,
+    sep=" ",
+    sep2="</s>",
+)
+
+
+default_conversation = conv_v1
+conv_templates = {
+    "v1": conv_v1,
+    "bair_v1": conv_bair_v1,
+}
 
 
 if __name__ == "__main__":

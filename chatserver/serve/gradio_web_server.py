@@ -8,7 +8,8 @@ import time
 import gradio as gr
 import requests
 
-from chatserver.conversation import default_conversation
+from chatserver.conversation import (default_conversation, conv_templates,
+    SeparatorStyle)
 from chatserver.constants import LOGDIR
 from chatserver.utils import build_logger
 from chatserver.serve.gradio_patch import Chatbot as grChatbot
@@ -18,7 +19,6 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 upvote_msg = "👍  Upvote the last response"
 downvote_msg = "👎  Downvote the last response"
-init_prompt = default_conversation.get_prompt()
 
 priority = {
 }
@@ -107,9 +107,20 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     start_tstamp = time.time()
 
     if len(state.messages) == state.offset:
-        # skip empty "Regenerate"
+        # Skip empty "Regenerate"
         yield state, state.to_gradio_chatbot()
         return
+
+    if len(state.messages) == state.offset + 2:
+        # First round of conversation
+        if "bair-chat" in model_selector: # Hardcode the condition
+            template_name = "bair_v1"
+        else:
+            template_name = "v1"
+        new_state = conv_templates[template_name].copy()
+        new_state.append_message(new_state.roles[0], state.messages[-2][1])
+        new_state.append_message(new_state.roles[1], None)
+        state = new_state
 
     # Query worker address
     controller_url = args.controller_url
@@ -126,15 +137,14 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # Construct prompt
     prompt = state.get_prompt()
-    txt = prompt.replace(state.sep, '\n')
 
     # Make requests
-    headers = {"User-Agent": "Alpa Client"}
+    headers = {"User-Agent": "Client"}
     pload = {
         "prompt": prompt,
         "temperature": float(temperature),
         "max_new_tokens": int(max_new_tokens),
-        "stop": state.sep,
+        "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
     response = requests.post(worker_addr + "/generate_stream",
