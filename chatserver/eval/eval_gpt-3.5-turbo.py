@@ -34,9 +34,6 @@ if __name__ == '__main__':
         question = json.load(f)
         questions_dict = {q['id']: q['question'] for q in question['questions']}
 
-    with open(os.path.expanduser(args.rule)) as f:
-        rule = f.read()
-
     answers = []
 
     for qid, question in tqdm.tqdm(questions_dict.items()):
