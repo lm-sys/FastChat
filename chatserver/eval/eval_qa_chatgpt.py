@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     with open(os.path.expanduser(args.answer)) as f:
         answer = json.load(f)
-        answers_dict = {ans['id']: ans['answer'] for ans in list(answer.values())[0]}
+        answers_dict = {ans['id']+1: ans['answer'] for ans in list(answer.values())[0]}
 
     with open(os.path.expanduser(args.rule)) as f:
         rule = f.read()
@@ -49,15 +49,19 @@ if __name__ == '__main__':
     for qid, question in tqdm.tqdm(questions_dict.items()):
         answer = answers_dict.get(qid)
         if answer is None:
-            evaluations.append({'id': qid, 'evaluation': '1\nCould not find the answer.'})
+            evaluations.append({'id': qid, 'score': 0, 'explanation': 'Could not find the answer.'})
             continue
         # limit the length of input
-        try:
-            eval_result = get_eval(rule, question, answer, args.max_tokens)
-        except Exception as e:
-            evaluations.append({'id': qid, 'evaluation': '0\nEvaluation failed.'})
-            continue
-        evaluations.append({'id': qid, 'evaluation': eval_result})
+        for retries in range(3):
+            try:
+                eval_result = get_eval(rule, question, answer, args.max_tokens)
+                score, explanation = eval_result.split('\n', 1)
+                evaluations.append({'id': qid, 'score': int(score), 'explanation': explanation})
+                break
+            except Exception as e:
+                print('Error', e)
+        if retries == 3:
+            evaluations.append({'id': qid, 'score': -1, 'explanation': f'#ERROR: {e}'})
 
     with open(os.path.expanduser(args.output), 'w') as f:
         json.dump(evaluations, f)
