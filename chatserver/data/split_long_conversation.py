@@ -1,10 +1,10 @@
 """
-Split the long conversation based on certain max length
+Split long conversations based on certain max length.
+
 Usage: python3 -m chatserver.data.split_long_conversation \
-    --in-file sharegpt_clean.json \
-    --model-name-or-path $<model-name> \
-    --out-file sharegpt_split.json \
-    --max-length 2048
+    --in sharegpt_clean.json \
+    --out sharegpt_split.json \
+    --model-name-or-path $<model-name>
 """
 import argparse
 import json
@@ -94,6 +94,6 @@ if __name__ == "__main__":
     parser.add_argument("--begin", type=int)
     parser.add_argument("--end", type=int)
     parser.add_argument("--model-name-or-path", type=str, required=True)
-    parser.add_argument("--max-length", type=int, default=2048)
+    parser.add_argument("--max-length", type=int, default=3072)
     args = parser.parse_args()
     main(args)
