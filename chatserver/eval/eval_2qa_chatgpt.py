@@ -62,25 +62,35 @@ if __name__ == '__main__':
     f_q = open(os.path.expanduser(args.question))
     f_ans1 = open(os.path.expanduser(args.answer_list[0]))
     f_ans2 = open(os.path.expanduser(args.answer_list[1]))
+    # f_ans3 = open(os.path.expanduser(args.answer_list[2]))
+    # f_ans4 = open(os.path.expanduser(args.answer_list[3]))
 
     with open(os.path.expanduser(args.rule)) as f:
         rule = f.read()
 
-    # prompt_file = open(f'prompt_list_alpaca_vicuna.txt', 'w')
+    prompt_file = open(f'{args.output}', 'w')
     # prompt_file = open(f'prompt_list_gpt3.5_vicuna.txt', 'w')
-    prompt_file = open(f'prompt_list_llama_vicuna.txt', 'w')
+    # prompt_file = open(f'prompt_list_llama_vicuna.txt', 'w')
+    # prompt_file = open(f'prompt_list_all.txt', 'w')
 
     evaluations = []
     eval_result_handle = []
     scores = [0, 0]
     idx = 1
+    #for ques, ans1, ans2, ans3, ans4 in zip(f_q, f_ans1, f_ans2, f_ans3, f_ans4):
     for ques, ans1, ans2 in zip(f_q, f_ans1, f_ans2):
         ques = json.loads(ques)["question"]
         ans1 = json.loads(ans1)["answer"]
         ans2 = json.loads(ans2)["answer"]
+        # ans3 = json.loads(ans3)["answer"]
+        # ans4 = json.loads(ans4)["answer"]
         
-        prompt=(f'[User Question]\n{ques}\n\n[Assistant 1]\n{ans1}\n\n'
-                f'[Assistant 2]\n{ans2}\n\n[System]\n{rule}\n\n'
+        prompt=(f'[User Question]\n{ques}\n\n'
+                f'[Assistant 1]\n{ans1}\n\n'
+                f'[Assistant 2]\n{ans2}\n\n'
+                # f'[Assistant 3]\n{ans3}\n\n'
+                # f'[Assistant 4]\n{ans4}\n\n'
+                f'[System]\n{rule}\n\n'
                 '=====================\n\n')
         # print(prompt)
         prompt_file.write('Q'+str(idx) + '\n\n')
