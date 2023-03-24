@@ -40,7 +40,7 @@ python3 -m chatserver.serve.cli --model facebook/opt-350m
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 ```
 # Need this version of skypilot, for the fix of `--env` flag.
-pip install git+https://github.com/skypilot-org/skypilot.git@58525b18cdc856b7d216f717d201e31d877999b9
+pip install git+https://github.com/skypilot-org/skypilot.git
 ```
 2. Train the model
 ```
