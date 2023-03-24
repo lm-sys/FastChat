@@ -250,11 +250,11 @@ def build_demo():
     models = get_model_list()
     css = (
         """
-	#model_selector_row {width: 400px;}
-        #chatbot {height: 500px;}
+	#model_selector_row {width: 450px;}
+        #chatbot {height: 80vh;}
 	""" + code_highlight_css)
 
-    with gr.Blocks(title="Chat Server", css=css) as demo:
+    with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
         gr.Markdown(
 	    """
             # Chat server\n
