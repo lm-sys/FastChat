@@ -43,6 +43,10 @@ def html_to_markdown(val: str) -> str:
     # Reformat code
     val = reformat_code(val)
     val = val.replace("\n\n\n", "\n")
+    val = val.strip()
+    noise = re.search("\d+ / \d+", val)
+    if noise and noise.start() == 0:
+        val = val[noise.end():]
     return val
 
 
@@ -83,7 +87,7 @@ def clean_html_source(content, begin, end, check_tag, check_num):
                 skipped = True
                 break
 
-            c["value"] = new_val.strip()
+            c["value"] = new_val
 
             # Debug
             if (check_tag is not None and check_tag in c["value"]
