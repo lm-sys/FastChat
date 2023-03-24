@@ -107,11 +107,11 @@ run: |
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
     --data_path /data/sharegpt_${DATE}_${USE_SPLIT_SUFFIX}.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}${USE_FLASH_SUFFIX} \
+    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}-${GRAD_ACCUM_SCALE}${USE_FLASH_SUFFIX}_${USE_SPLIT_SUFFIX} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
-    --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
+    --gradient_accumulation_steps $(($GRAD_ACCUM_SCALE * 128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 1200 \
@@ -136,3 +136,4 @@ envs:
   DATE: 20230303
   USE_FLASH_ATTN: 0
   USE_SPLIT: 0
+  GRAD_ACCUM_SCALE: 1
