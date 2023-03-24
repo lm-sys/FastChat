@@ -11,7 +11,7 @@ file_mounts:
     store: gcs
     mode: MOUNT
   /data:
-    name: skypilot-chatbot-data # Change to your own bucket
+    name: model-weights # Change to your own bucket
     store: gcs
     mode: MOUNT
 
@@ -27,9 +27,9 @@ setup: |
   # fi
 
   # Download the data
-  if [ ! -f /data/alpaca-data.json ]; then
-    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
-  fi
+  # if [ ! -f /data/alpaca-data.json ]; then
+  #   wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
+  # fi
 
   # Setup the environment
   conda create -n chatbot python=3.10 -y
@@ -39,11 +39,12 @@ setup: |
   pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
 
   # Install huggingface with the LLaMA commit
+  cd ~
   git clone https://github.com/huggingface/transformers.git
   cd transformers
   # git checkout 60d51ef # pin to latest commit
   pip install .
-  cd -
+  cd ~/sky_workdir
 
   # Install chatserver
   pip install -e .
@@ -83,6 +84,13 @@ run: |
     TRAIN_SCRIPT=chatserver/train/train.py
     USE_FLASH_SUFFIX=""
   fi
+  USE_SPLIT=${USE_SPLIT:-0}
+  if [ $USE_SPLIT -eq 1 ]; then
+    USE_SPLIT_SUFFIX="split"
+  else
+    USE_SPLIT_SUFFIX="clean"
+  fi
+  
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
   PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
@@ -97,13 +105,13 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     $TRAIN_SCRIPT \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/sharegpt_clean_$DATE.json \
+    --data_path /data/sharegpt/sharegpt_${DATE}_${USE_SPLIT_SUFFIX}.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}${USE_FLASH_SUFFIX} \
+    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-fixed-seq-${SEQ_LEN}-${GRAD_ACCUM_SCALE}${USE_FLASH_SUFFIX}_${USE_SPLIT_SUFFIX} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
-    --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
+    --gradient_accumulation_steps $(($GRAD_ACCUM_SCALE * 128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 1200 \
@@ -127,3 +135,5 @@ envs:
   GC_SCALE: 4
   DATE: 20230303
   USE_FLASH_ATTN: 0
+  USE_SPLIT: 0
+  GRAD_ACCUM_SCALE: 1
