@@ -88,8 +88,8 @@ def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_n
             # Debug
             if (check_tag is not None and check_tag in c["value"]
                     and tag_cnt < check_num):
-                logger.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
-                             "\n" + BARRIER + "\n")
+                logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
+                              "\n" + BARRIER + "\n")
                 tag_cnt += 1
                 if tag_cnt == check_num:
                     break

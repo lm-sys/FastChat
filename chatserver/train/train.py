@@ -184,56 +184,6 @@ def preprocess(
     return dict(input_ids=input_ids, labels=targets)
 
 
-def preprocess_with_augment(sources: Sequence[Sequence[Dict]],
-    tokenizer: transformers.PreTrainedTokenizer, max_length):
-    """
-    Version 1 of data augmentation. Keep the maximum round of conversations
-    within the max token length constraint. Not use the rest length to get more
-    context.
-    """
-    # modify each sentence first.
-    for source in sources:
-        _add_speaker_and_signal(source, get_conversation=False)
-
-    augmented_sources = []
-    augmented_lens = []
-    for source in sources:
-        tokenized = _tokenize_fn([s["value"] for s in source], tokenizer)
-        speakers = [s["from"] for s in source]
-        tokenized_len = tokenized["input_ids_lens"]
-        num_tokens = 0
-        start_idx = 0
-        for idx, l in enumerate(tokenized_len):
-            # TODO: shall we also only starts from a specific speaker?
-            if num_tokens + l > max_length:
-                # only ends in the bot because otherwise the last human part is
-                # useless.
-                end_idx = idx + 1 if speakers[idx] != "human" else idx
-                augmented_sources.append([source[start_idx:end_idx]])
-                augmented_lens.append(tokenized_len[start_idx:end_idx])
-                start_idx = idx
-                num_tokens = l
-            else:
-                num_tokens += l
-                if idx == len(tokenized_len) - 1:
-                    # already the last part of data. Add it.
-                    end_idx = idx + 1 if speakers[idx] != "human" else idx
-                    augmented_sources.append([source[start_idx:end_idx]])
-                    augmented_lens.append(tokenized_len[start_idx:end_idx])
-    # Now do as the normal process, just skip tokenizing per sentence
-    conversations = [
-        "".join([sentence["value"] for sentence in source])
-        for source in augmented_sources
-    ]
-    conversations_tokenized = _tokenize_fn(conversations, tokenizer)
-    input_ids = conversations_tokenized["input_ids"]
-    targets = copy.deepcopy(input_ids)
-    for (target, lens, source) in zip(targets, augmented_lens, augmented_sources):
-        speakers = [s["from"] for s in source]
-        _mask_targets(target, lens, speakers)
-    return dict(input_ids=input_ids, labels=targets)
-
-
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
