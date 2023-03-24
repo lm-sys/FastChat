@@ -105,9 +105,9 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     $TRAIN_SCRIPT \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/sharegpt_${DATE}_${USE_SPLIT_SUFFIX}.json \
+    --data_path /data/sharegpt/sharegpt_${DATE}_${USE_SPLIT_SUFFIX}.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}-${GRAD_ACCUM_SCALE}${USE_FLASH_SUFFIX}_${USE_SPLIT_SUFFIX} \
+    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-fixed-seq-${SEQ_LEN}-${GRAD_ACCUM_SCALE}${USE_FLASH_SUFFIX}_${USE_SPLIT_SUFFIX} \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
