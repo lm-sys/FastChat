@@ -8,7 +8,7 @@ import re
 from typing import Dict, Union
 
 import bs4
-import markdownify
+import markdownify  # == 0.11.6
 import tqdm
 
 
@@ -47,32 +47,32 @@ def html_to_markdown(val: str) -> str:
 
 
 def should_skip(val: str) -> bool:
-    black_list = ["OpenAI", "openai"]
+    black_list = ["openai", "chatgpt"]
     for w in black_list:
-        if w in val:
+        if w in val.lower():
             return True
     return False
 
 
-def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_num):
+def clean_html_source(content, begin, end, check_tag, check_num):
     """
     clean the input json content.
     Args:
-        content(Union[list, Dict]): json file loaded in memory.
+        content: json file loaded in memory.
         check_tag: a debug purpose arg. If a conversation contains the tag, log
           it before and after cleaning.
         check_num: number of matched conversations logged.
     """
-    tag_cnt = 0
     BARRIER = "\n" + "=" * 20 + "\n"
     skip_cnt = 0
+    tag_cnt = 0
 
     content = content[begin:end]
-
     new_content = []
-    for l in tqdm.tqdm(content):
+
+    for sample in tqdm.tqdm(content):
         skipped = False
-        for c in l["conversations"]:
+        for c in sample["conversations"]:
             if should_skip(c["value"]):
                 skipped = True
                 break
@@ -88,18 +88,18 @@ def clean_html_source(content: Union[list, Dict], begin, end, check_tag, check_n
             # Debug
             if (check_tag is not None and check_tag in c["value"]
                     and tag_cnt < check_num):
-                logger.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
-                             "\n" + BARRIER + "\n")
+                logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
+                              "\n" + BARRIER + "\n")
                 tag_cnt += 1
                 if tag_cnt == check_num:
                     break
 
         if not skipped:
-            new_content.append(l)
+            new_content.append(sample)
         else:
             skip_cnt += 1
 
-    print(f"#skip: {skip_cnt}")
+    print(f"total: {len(content)}, skip: {skip_cnt}, new: {len(new_content)}")
     return new_content
 
 

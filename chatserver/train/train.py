@@ -135,6 +135,26 @@ def _mask_targets(target, tokenized_lens, speakers):
         cur_idx += tokenized_len
 
 
+def _add_speaker_and_signal(header, source, get_conversation=True):
+    """Add speaker and start/end signal on each round."""
+    BEGIN_SIGNAL = "### "
+    END_SIGNAL = "\n"
+    conversation = header
+    for sentence in source:
+        from_str = sentence["from"]
+        if from_str.lower() == "human":
+            from_str = conversation_lib.default_conversation.roles[0]
+        elif from_str.lower() == "gpt":
+            from_str = conversation_lib.default_conversation.roles[1]
+        else:
+            from_str = 'unknown'
+        sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
+                             sentence["value"] + END_SIGNAL)
+        if get_conversation:
+            conversation += sentence["value"]
+    return conversation
+
+
 def preprocess(
     sources: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
@@ -147,23 +167,10 @@ def preprocess(
     4. Make a deepcopy as the target. Mask human words with IGNORE_INDEX.
     """
     # add end signal and concatenate together
-    BEGIN_SIGNAL = "### "
-    END_SIGNAL = "\n"
     conversations = []
     for source in sources:
-        conversation = f"{conversation_lib.default_conversation.system}\n\n"
-        for sentence in source:
-            from_str = sentence["from"]
-            if from_str.lower() == "human":
-                from_str = conversation_lib.default_conversation.roles[0]
-            elif from_str.lower() == "gpt":
-                from_str = conversation_lib.default_conversation.roles[1]
-            else:
-                from_str = 'unknown'
-            sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
-                                 sentence["value"] + END_SIGNAL)
-            conversation += sentence["value"]
-
+        header = f"{conversation_lib.default_conversation.system}\n\n"
+        conversation = _add_speaker_and_signal(header, source)
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
