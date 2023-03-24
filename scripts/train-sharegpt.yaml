@@ -11,7 +11,7 @@ file_mounts:
     store: gcs
     mode: MOUNT
   /data:
-    name: skypilot-chatbot-data # Change to your own bucket
+    name: model-weights # Change to your own bucket
     store: gcs
     mode: MOUNT
 
@@ -27,9 +27,9 @@ setup: |
   # fi
 
   # Download the data
-  if [ ! -f /data/alpaca-data.json ]; then
-    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
-  fi
+  # if [ ! -f /data/alpaca-data.json ]; then
+  #   wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
+  # fi
 
   # Setup the environment
   conda create -n chatbot python=3.10 -y
