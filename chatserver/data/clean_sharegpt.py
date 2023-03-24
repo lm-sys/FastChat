@@ -8,7 +8,7 @@ import re
 from typing import Dict, Union
 
 import bs4
-import markdownify
+import markdownify  # == 0.11.6
 import tqdm
 
 
