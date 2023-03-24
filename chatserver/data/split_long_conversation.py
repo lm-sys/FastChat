@@ -4,13 +4,14 @@ Usage: python3 -m chatserver.data.split_long_conversation \
     --in-file sharegpt_clean.json \
     --model-name-or-path $<model-name> \
     --out-file sharegpt_split.json \
-    --max-length 1024
+    --max-length 2048
 """
 import argparse
 import json
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Optional
 
 import transformers
+import tqdm
 
 from chatserver import conversation as conversation_lib
 
@@ -18,108 +19,81 @@ DEFAULT_PAD_TOKEN = "[PAD]"
 BEGIN_SIGNAL = "### "
 END_SIGNAL = "\n"
 
-# TODO: It's better to move this function to conversation_lib
-def _add_speaker_and_signal(source):
-    """Add speaker and start/end signal on each round.(Inplace)"""
-    for sentence in source:
-        from_str = sentence["from"]
-        if from_str.lower() == "human":
-            from_str = conversation_lib.default_conversation.roles[0]
-        elif from_str.lower() == "gpt":
-            from_str = conversation_lib.default_conversation.roles[1]
-        else:
-            from_str = 'unknown'
-        sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
-                             sentence["value"] + END_SIGNAL)
+
+def split_sample(sample, start_idx, end_idx):
+    # only ends in the bot because otherwise the last human part is useless.
+    end_speaker = sample["conversations"][end_idx]["from"]
+    end_idx = end_idx + 1 if end_speaker != "human" else end_idx
+    return {
+        "id": sample["id"] + "_" + str(start_idx),
+        "conversations": sample["conversations"][start_idx:end_idx]
+    }
 
 
-# TODO: It's better to move this function to conversation_lib
-def _remove_speaker_and_signal(source):
-    """Remove speaker and start/end signal on each round.(Inplace)"""
-    for sentence in source:
-        from_str = sentence["from"]
-        if from_str.lower() == "human":
-            from_str = conversation_lib.default_conversation.roles[0]
-        elif from_str.lower() == "gpt":
-            from_str = conversation_lib.default_conversation.roles[1]
-        else:
-            from_str = 'unknown'
-        begin_idx = len(BEGIN_SIGNAL) + len(from_str) + len(": ")
-        sentence["value"] = sentence["value"][begin_idx:-len(END_SIGNAL)]
-
-
-def split_contents(raw: Sequence[Sequence[Dict]],
-                   tokenizer: transformers.PreTrainedTokenizer, max_length):
+def split_contents(content, begin, end, tokenizer, max_length):
     """
-    Version 1 of data augmentation. Keep the maximum round of conversations
-    within the max token length constraint. Not use the rest length to get more
-    context.
+    Keep the maximum round of conversations within the max token length constraint
     """
-    split = []
+    content = content[begin:end]
+    new_content = []
 
-    def split_example(example, start_idx, end_idx):
-        # only ends in the bot because otherwise the last human part is useless.
-        end_speaker = example["conversations"][end_idx]["from"]
-        end_idx = end_idx + 1 if end_speaker != "human" else end_idx
-        return {
-            "id": example["id"] + "_" + str(start_idx),
-            "conversations": example["conversations"][start_idx:end_idx]
-        }
+    for sample in tqdm.tqdm(content):
+        tokenized_lens = []
 
-    # modify each sentence first.
-    sources = [example["conversations"] for example in raw]
-    for source in sources:
-        _add_speaker_and_signal(source)
+        for c in sample["conversations"]:
+            from_str = c["from"]
+            if from_str.lower() == "human":
+                from_str = conversation_lib.default_conversation.roles[0]
+            elif from_str.lower() == "gpt":
+                from_str = conversation_lib.default_conversation.roles[1]
+            else:
+                from_str = 'unknown'
 
-    for example in raw:
-        source = example["conversations"]
-        tokenized_len = [
-            tokenizer(
-                s["value"],
-                return_tensors="pt",
-                padding="longest",
-                max_length=tokenizer.model_max_length,
-                truncation=True,
-            ).input_ids.ne(tokenizer.pad_token_id).sum().item() for s in source
-        ]
+            sentence = (BEGIN_SIGNAL + from_str + ": " + c["value"] +
+                        END_SIGNAL)
+            length = tokenizer(sentence, return_tensors="pt", padding="longest"
+                ).input_ids.ne(tokenizer.pad_token_id).sum().item()
+            tokenized_lens.append(length)
+
         num_tokens = 0
         start_idx = 0
-        for idx, l in enumerate(tokenized_len):
+        for idx, l in enumerate(tokenized_lens):
             # TODO: shall we also only starts from a specific speaker?
             if num_tokens + l > max_length:
-                split.append(split_example(example, start_idx, idx))
+                new_content.append(split_sample(sample, start_idx, idx))
                 start_idx = idx
                 num_tokens = l
             else:
                 num_tokens += l
-                if idx == len(tokenized_len) - 1:
-                    # already the last part.
-                    split.append(split_example(example, start_idx, idx))
-    # back to the previous format
-    for example in split:
-        _remove_speaker_and_signal(example["conversations"])
-    return split
+                if idx == len(tokenized_lens) - 1:
+                    new_content.append(split_sample(sample, start_idx, idx))
+
+    print(f"total: {len(content)}, new: {len(new_content)}")
+    return new_content
 
 
 def main(args):
-    content = json.load(open(args['in_file'], "r"))
+    content = json.load(open(args.in_file, "r"))
     tokenizer = transformers.AutoTokenizer.from_pretrained(
-        args["model_name_or_path"],
-        model_max_length=args["max_length"],
+        args.model_name_or_path,
+        model_max_length=args.max_length,
         padding_side="right",
         use_fast=False,
     )
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens(dict(pad_token=DEFAULT_PAD_TOKEN))
-    content = split_contents(content, tokenizer, args["max_length"])
-    json.dump(content, open(args['out_file'], "w"), indent=2)
+    content = split_contents(content, args.begin, args.end,
+        tokenizer, args.max_length)
+    json.dump(content, open(args.out_file, "w"), indent=2)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-file", type=str, required=True)
+    parser.add_argument("--out-file", type=str, default="sharegpt_split.json")
+    parser.add_argument("--begin", type=int)
+    parser.add_argument("--end", type=int)
     parser.add_argument("--model-name-or-path", type=str, required=True)
-    parser.add_argument("--out-file", type=str, default="sharegpt_clean.json")
-    parser.add_argument("--max-length", type=int, default=512)
+    parser.add_argument("--max-length", type=int, default=2048)
     args = parser.parse_args()
-    main(vars(args))
+    main(args)
