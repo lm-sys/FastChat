@@ -251,7 +251,6 @@ def build_demo():
     css = (
         """
 	#model_selector_row {width: 450px;}
-        #chatbot {height: 80vh;}
 	""" + code_highlight_css)
 
     with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
@@ -272,7 +271,7 @@ def build_demo():
                 interactive=True,
                 label="Choose a model to chat with.")
 
-        chatbot = grChatbot(elem_id="chatbot")
+        chatbot = grChatbot(elem_id="chatbot").style(height=550)
         textbox = gr.Textbox(show_label=False,
             placeholder="Enter text and press ENTER",).style(container=False)
 

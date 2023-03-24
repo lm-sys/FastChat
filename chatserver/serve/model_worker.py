@@ -172,7 +172,7 @@ async def generate_stream(request: Request):
 
 
 @app.post("/check_status")
-async def check_status(request: Request):
+def check_status(request: Request):
     return True
 
 
