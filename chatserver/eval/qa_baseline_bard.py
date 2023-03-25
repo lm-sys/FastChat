@@ -139,8 +139,8 @@ if __name__ == "__main__":
         answer = response["content"]
         answers.append({'id': qid, 'answer': answer, 'model': 'bard'})
 
-    answers.sort(key=lambda x: x['id'])
-    with open(os.path.expanduser(args.output), 'w') as f:
-        table = [json.dumps(ans) for ans in answers]
-        f.write('\n'.join(table))
+        answers.sort(key=lambda x: x['id'])
+        with open(os.path.expanduser(args.output), 'w') as f:
+            table = [json.dumps(ans) for ans in answers]
+            f.write('\n'.join(table))
 
