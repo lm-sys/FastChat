@@ -1,5 +1,5 @@
 """
-Usage: python3 -m chatserver.data.clean_lang --lang en --in sharegpt_clean.json --out sharegpt_clean_en.json
+Usage: python3 -m chatserver.data.optional_clean --lang en --reduce-rep --in sharegpt_clean.json --out output.json
 """
 import argparse
 import json
