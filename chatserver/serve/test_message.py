@@ -17,14 +17,13 @@ def main():
         return
 
     conv = default_conversation.copy()
-    conv.append_message(conv.roles[0], "What is the weather today?")
+    conv.append_message(conv.roles[0], "Tell me a long story with more than 1000 words.")
     prompt = conv.get_prompt()
 
-    headers = {"User-Agent": "Alpa Client"}
+    headers = {"User-Agent": "ChatServer Client"}
     pload = {
-        "model": "facebook/opt-350m",
         "prompt": prompt,
-        "max_new_tokens": 32,
+        "max_new_tokens": args.max_new_tokens,
         "temperature": 0.8,
         "stop": conv.sep,
     }
@@ -44,6 +43,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, default="http://localhost:21001")
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--max-new-tokens", type=int, default=32)
     args = parser.parse_args()
 
     main()

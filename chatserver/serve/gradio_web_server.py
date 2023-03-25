@@ -11,7 +11,7 @@ import requests
 from chatserver.conversation import (default_conversation, conv_templates,
     SeparatorStyle)
 from chatserver.constants import LOGDIR
-from chatserver.utils import build_logger
+from chatserver.utils import build_logger, server_error_msg
 from chatserver.serve.gradio_patch import Chatbot as grChatbot
 
 
@@ -204,7 +204,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # No available worker
     if worker_addr == "":
-        state.messages[-1][-1] = "**NETWORK ERROR. PLEASE TRY AGAIN OR CHOOSE OTHER MODELS.**"
+        state.messages[-1][-1] = server_error_msg
         yield state, state.to_gradio_chatbot()
         return
 
@@ -227,9 +227,15 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            output = data["text"][len(prompt) + 2:]
-            state.messages[-1][-1] = output
-            yield state, state.to_gradio_chatbot()
+            if data["error_code"] == 0:
+                output = data["text"][len(prompt) + 2:]
+                state.messages[-1][-1] = output
+                yield state, state.to_gradio_chatbot()
+            else:
+                output = data["text"]
+                state.messages[-1][-1] = output
+                yield state, state.to_gradio_chatbot()
+
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
@@ -318,4 +324,4 @@ if __name__ == "__main__":
 
     demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
-        server_name=args.host, server_port=args.port, share=args.share)
+        server_name=args.host, server_port=args.port, show_api=False, share=args.share)
