@@ -6,6 +6,7 @@ import sys
 
 from chatserver.constants import LOGDIR
 
+server_error_msg = "**NETWORK ERROR. PLEASE REFRESH THIS PAGE.**"
 
 handler = None
 

@@ -2,6 +2,7 @@
 A model worker executes the model.
 """
 import argparse
+import asyncio
 import dataclasses
 import logging
 import json
@@ -18,7 +19,7 @@ import torch
 import uvicorn
 
 from chatserver.constants import WORKER_HEART_BEAT_INTERVAL
-from chatserver.utils import build_logger, disable_torch_init
+from chatserver.utils import build_logger, disable_torch_init, server_error_msg
 
 GB = 1 << 30
 
@@ -152,7 +153,7 @@ class ModelWorker:
 
             ret = {
                 "text": output,
-                "error": 0,
+                "error_code": 0,
             }
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
@@ -161,14 +162,33 @@ class ModelWorker:
 
         del past_key_values
 
+    def generate_stream_gate(self, args, release_semaphore):
+        try:
+            for x in self.generate_stream(args):
+                yield x
+        except torch.cuda.OutOfMemoryError:
+            ret = {
+                "text": server_error_msg,
+                "error_code": 1,
+            }
+            yield (json.dumps(ret) + "\0").encode("utf-8")
+        if release_semaphore:
+            release_semaphore.release()
+
 
 app = FastAPI()
-
+model_semaphore = None
 
 @app.post("/generate_stream")
 async def generate_stream(request: Request):
-    args = await request.json()
-    return StreamingResponse(worker.generate_stream(args))
+    global model_semaphore
+    params = await request.json()
+    if model_semaphore is None:
+        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
+    await model_semaphore.acquire()
+
+    generator = worker.generate_stream_gate(params, model_semaphore)
+    return StreamingResponse(generator)
 
 
 @app.post("/check_status")
@@ -186,6 +206,7 @@ if __name__ == "__main__":
         default="http://localhost:21001")
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument("--limit-model-concurrency", type=int, default=4)
     args = parser.parse_args()
 
     worker = ModelWorker(args.controller_address,
