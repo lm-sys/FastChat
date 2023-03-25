@@ -112,35 +112,18 @@ def get_model_list():
     return models
 
 
-def add_text(state, text, request: gr.Request):
-    text = text[:1536]  # Hard cut-off
-    state.append_message(state.roles[0], text)
-    state.append_message(state.roles[1], None)
-    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
-
-
-def clear_history():
-    state = default_conversation.copy()
-    return state, state.to_gradio_chatbot()
-
-
-def regenerate(state):
-    if len(state.messages) == state.offset:
-        # skip empty "Regenerate"
-        return state, state.to_gradio_chatbot(), upvote_msg, downvote_msg
-
-    state.messages[-1][-1] = None
-    return state, state.to_gradio_chatbot(), upvote_msg, downvote_msg
-
-
 def load_demo(request: gr.Request):
-    models = get_model_list()
     logger.info(f"load demo: {request.client.host}")
+    models = get_model_list()
     state = default_conversation.copy()
-    return (gr.Dropdown.update(
-                choices=models,
-                value=models[0] if len(models) > 0 else ""),
-            state, state.to_gradio_chatbot())
+    return (state, gr.Dropdown.update(
+               choices=models,
+               visible=True,
+               value=models[0] if len(models) > 0 else ""),
+            gr.Chatbot.update(visible=True),
+            gr.Textbox.update(visible=True),
+            gr.Row.update(visible=True),
+            gr.Accordion.update(visible=True))
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -159,21 +142,42 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 def upvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                          request: gr.Request):
     if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg
+        return upvote_btn, downvote_msg, ""
     if upvote_btn == "done":
-        return "done", "done"
+        return "done", "done", ""
     vote_last_response(state, "upvote", model_selector, request)
-    return "done", "done"
+    return "done", "done", ""
 
 
 def downvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                            request: gr.Request):
     if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg
+        return upvote_btn, downvote_msg, ""
     if upvote_btn == "done":
-        return "done", "done"
+        return "done", "done", ""
     vote_last_response(state, "downvote", model_selector, request)
-    return "done", "done"
+    return "done", "done", ""
+
+
+def regenerate(state):
+    if len(state.messages) == state.offset:
+        # skip empty "Regenerate"
+        return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+
+    state.messages[-1][-1] = None
+    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+
+
+def clear_history():
+    state = default_conversation.copy()
+    return state, state.to_gradio_chatbot(), ""
+
+
+def add_text(state, text, request: gr.Request):
+    text = text[:1536]  # Hard cut-off
+    state.append_message(state.roles[0], text)
+    state.append_message(state.roles[1], None)
+    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
 
 
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
@@ -253,62 +257,60 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 
 def build_demo():
-    models = get_model_list()
     css = (
         """
-	#model_selector_row {width: 450px;}
-	""" + code_highlight_css)
+        #model_selector_row {width: 450px;}
+        """ + code_highlight_css)
 
     with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
-        gr.Markdown(
-	    """
+        notice = gr.Markdown(
+            """
             # Chat server\n
             ### Terms of Use\n
             By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
-	    """
+            ### Choose a model to chat with
+            """
         )
-
         state = gr.State()
 
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
-                choices=models,
-                value=models[0] if len(models) > 0 else "",
                 interactive=True,
-                label="Choose a model to chat with.")
+                show_label=False).style(container=False)
 
-        chatbot = grChatbot(elem_id="chatbot").style(height=550)
+        chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         textbox = gr.Textbox(show_label=False,
-            placeholder="Enter text and press ENTER",).style(container=False)
+            placeholder="Enter text and press ENTER", visible=False).style(container=False)
 
-        with gr.Row():
+        with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value=upvote_msg)
             downvote_btn = gr.Button(value=downvote_msg)
             regenerate_btn = gr.Button(value="Regenerate")
             clear_btn = gr.Button(value="Clear history")
 
-        with gr.Accordion("Parameters", open=False):
+        with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
             temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
             max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
 
         upvote_btn.click(upvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn])
+            [upvote_btn, downvote_btn, textbox])
         downvote_btn.click(downvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn])
+            [upvote_btn, downvote_btn, textbox])
         regenerate_btn.click(regenerate, state,
-            [state, chatbot, upvote_btn, downvote_btn]).then(
+            [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
-        clear_btn.click(clear_history, None, [state, chatbot])
+        clear_btn.click(clear_history, None, [state, chatbot, textbox])
 
         textbox.submit(add_text, [state, textbox],
             [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
 
-        demo.load(load_demo, [], [model_selector, state, chatbot])
+        demo.load(load_demo, None, [state, model_selector,
+            chatbot, textbox, button_row, parameter_row])
 
     return demo
 
