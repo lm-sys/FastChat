@@ -27,6 +27,7 @@ def skip(conv, options: dict):
             val = sentence["value"]
             sub = re.search(r"(\d)\1{8}", val)
             if sub is not None:
+                print(val)
                 return True
     return False
  
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     # NOTICE This will also remove data that use two languages.
     parser.add_argument("--lang", type=str, default="all",
                         choices=["all", "en"])
-    # NOTICE Be careful about turn on the reduce_rep, which may remove some good data.
+    # DANGER Be careful about turn on the reduce_rep, which may remove some good data.
     # For example, addresses could have long consecutive 0's
     parser.add_argument("--reduce-rep", action="store_true")
     args = parser.parse_args()
