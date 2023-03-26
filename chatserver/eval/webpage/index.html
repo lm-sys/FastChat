@@ -13,7 +13,7 @@
     <div class="container mt-5">
         <h2 class="text-center mb-5">AI Assistants Performance Comparison</h2>
         <div class="form-row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-8">
                 <label for="question-select">Question</label>
                 <select class="form-control" id="question-select"></select>
             </div>
@@ -21,13 +21,13 @@
                 <label for="model-select">AI Assistant #1</label>
                 <select class="form-control" id="model-select"></select>
             </div>
-            <div class="form-group col-md-2">
+            <div class="form-group col-md-1">
                 <label>&nbsp;</label>
-                <button class="form-control btn btn-primary" id="prev-question">Prev</button>
+                <button class="form-control btn btn-primary" id="prev-question"><i class="material-icons">keyboard_arrow_left</i></button>
             </div>
-            <div class="form-group col-md-2">
+            <div class="form-group col-md-1">
                 <label>&nbsp;</label>
-                <button class="form-control btn btn-primary" id="next-question">Next</button>
+                <button class="form-control btn btn-primary" id="next-question"><i class="material-icons">keyboard_arrow_right</i></button>
             </div>
         </div>
         <div class="card mb-4">
@@ -37,19 +37,19 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4">
-                    <div class="card-header" style="background-color: #f2c9c9;" id="other-model-header">AI Assistant 1</div>
+                    <div class="card-header" style="background-color: #f2c9c9;" id="other-model-header">AI Assistant #1</div>
                     <div class="card-body" id="other-model-answer"></div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card mb-4">
-                    <div class="card-header" style="background-color: #c9f2c9;">AI Assistant 2 (Vicuna, our model)</div>
+                    <div class="card-header" style="background-color: #c9f2c9;">AI Assistant #2 (Vicuna, our model)</div>
                     <div class="card-body" id="our-model-answer"></div>
                 </div>
             </div>
         </div>
         <div class="card">
-            <div class="card-header">GPT-4 Evaluation Result</div>
+            <div class="card-header" style="background-color: #c9c9f2;">GPT-4 Evaluation</div>
             <div class="card-body" id="evaluation-result"></div>
         </div>
     </div>
@@ -60,7 +60,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    
+
     <script src="script.js"></script>
     <script>
       // Declare a global constant variable
