@@ -44,9 +44,13 @@ def html_to_markdown(val: str) -> str:
     val = reformat_code(val)
     val = val.replace("\n\n\n", "\n")
     val = val.strip()
+
     noise = re.search("\d+ / \d+", val)
     if noise and noise.start() == 0:
         val = val[noise.end():]
+
+    val = re.sub("Copy\d+ chars / \d+ words", "", val)
+
     return val
 
 
