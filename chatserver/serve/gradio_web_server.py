@@ -199,6 +199,9 @@ notice_markdown = ("""
 ### Terms of Use\n
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
 ### Choose a model to chat with
+- [LLaMa](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
+- [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html), a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
+- [Vicuna](), a chat assistant fine-tuned from LLaMa on ShareGPT data. This one is expected to have the best conversation ability.
 """)
 
 
@@ -209,7 +212,8 @@ If you find any potential violation, please contact us.
 """)
 
 
-css = ("""#model_selector_row {width: 450px;}""" + code_highlight_css)
+#css = ("""#model_selector_row {width: 450px;}""" + code_highlight_css)
+css = code_highlight_css
 
 
 def build_demo():
@@ -222,11 +226,12 @@ def build_demo():
         notice = gr.Markdown(notice_markdown)
 
         with gr.Row(elem_id="model_selector_row"):
-            model_selector = gr.Dropdown(
-                choices=models,
-                value=models[0] if len(models) > 0 else "",
-                interactive=True,
-                show_label=False).style(container=False)
+            with gr.Column(scale=2):
+                model_selector = gr.Dropdown(
+                    choices=models,
+                    value=models[0] if len(models) > 0 else "",
+                    interactive=True,
+                    show_label=False).style(container=False)
 
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         textbox = gr.Textbox(show_label=False,
