@@ -200,8 +200,8 @@ notice_markdown = ("""
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
 ### Choose a model to chat with
 - [LLaMa](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
-- [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html), a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
-- [Vicuna](), a chat assistant fine-tuned from LLaMa on ShareGPT data. This one is expected to have the best conversation ability.
+- [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
+- [Vicuna](): a chat assistant fine-tuned from LLaMa on ShareGPT data. This one is expected to have the best conversation ability.
 """)
 
 
@@ -292,5 +292,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
-        server_name=args.host, server_port=args.port, show_api=False, share=args.share)
+    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
+               api_open=False).launch(
+        server_name=args.host, server_port=args.port, share=args.share)
