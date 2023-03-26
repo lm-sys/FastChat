@@ -44,27 +44,26 @@ pip install git+https://github.com/skypilot-org/skypilot.git
 ```
 2. Train the model
 ```
-sky launch -c vicuna --cloud gcp -s scripts/train-vicuna.yaml --env WANDB_API_KEY
+sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY
 
 # Launch it on managed spot
-sky spot launch -n vicuna --cloud gcp scripts/train-vicuna.yaml --env WANDB_API_KEY
+sky spot launch -n vicuna scripts/train-vicuna.yaml --env WANDB_API_KEY
 
 # Train a 7B model
-sky launch -c vicuna --cloud gcp -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
+sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
 ```
 
 ### Training Alpaca with SkyPilot
 Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
-Replace the `train-7b.yaml` with the `train-13b.yaml` to train the 13B model.
 ```
 # WANDB API KEY is required for logging. We use the key in your local environment.
-sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY
+sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
 
-# Change the sequence length to 2048, and a gradient checkpointing to increase the per device batch size by 4:
-sky launch -c alpaca -s scripts/train-7b.yaml --env WANDB_API_KEY --env SEQ_LEN=2048 --env GC_SCALE=4
+# Train the 13B model
+sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY --env MODEL_SIZE=13
 
 # You can use a manged spot instance.
-sky spot launch -n alpaca scripts/train-7b.yaml --env WANDB_API_KEY
+sky spot launch -n alpaca scripts/train-alpaca.yaml --env WANDB_API_KEY
 ```
 
 ### Serving Alpaca with SkyPilot

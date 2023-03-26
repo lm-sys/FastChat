@@ -22,7 +22,6 @@ file_mounts:
 workdir: .
 
 setup: |
-  # Download the model weights if not exits
   # Download the data
   if [ ! -f /data/alpaca-data.json ]; then
     wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
@@ -51,7 +50,7 @@ setup: |
   if [ ! -f /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete ]; then
     mkdir -p ~/llama-${MODEL_SIZE}b
     gsutil -m rsync -r /llama/${MODEL_SIZE}b/ ~/llama-${MODEL_SIZE}b
-    cd transformers
+    cd ~/transformers
     python src/transformers/models/llama/convert_llama_weights_to_hf.py \
       --input_dir $HOME/llama-${MODEL_SIZE}b \
       --model_size ${MODEL_SIZE}B \
@@ -96,9 +95,9 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     $TRAIN_SCRIPT \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/sharegpt/sharegpt_${DATE}_split.json \
+    --data_path /data/sharegpt/combined-code-math-sharegpt-20230322.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-fixed-seq-${SEQ_LEN}-${USE_FLASH_SUFFIX}_split \
+    --output_dir $CKPT_PATH \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
