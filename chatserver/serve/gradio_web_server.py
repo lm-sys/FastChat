@@ -11,8 +11,9 @@ import requests
 from chatserver.conversation import (default_conversation, conv_templates,
     SeparatorStyle)
 from chatserver.constants import LOGDIR
-from chatserver.utils import build_logger
+from chatserver.utils import build_logger, server_error_msg
 from chatserver.serve.gradio_patch import Chatbot as grChatbot
+from chatserver.serve.gradio_css import code_highlight_css
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -22,6 +23,7 @@ downvote_msg = "👎  Downvote the last response"
 
 priority = {
 }
+
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
@@ -39,35 +41,27 @@ def get_model_list():
     return models
 
 
-def add_text(state, text, request: gr.Request):
-    text = text[:1536]  # Hard cut-off
-    state.append_message(state.roles[0], text)
-    state.append_message(state.roles[1], None)
-    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
-
-
-def clear_history():
-    state = default_conversation.copy()
-    return state, state.to_gradio_chatbot()
-
-
-def regenerate(state):
-    if len(state.messages) == state.offset:
-        # skip empty "Regenerate"
-        return state, state.to_gradio_chatbot(), upvote_msg, downvote_msg
-
-    state.messages[-1][-1] = None
-    return state, state.to_gradio_chatbot(), upvote_msg, downvote_msg
-
-
 def load_demo(request: gr.Request):
-    models = get_model_list()
     logger.info(f"load demo: {request.client.host}")
     state = default_conversation.copy()
-    return (gr.Dropdown.update(
-                choices=models,
-                value=models[0] if len(models) > 0 else ""),
-            state, state.to_gradio_chatbot())
+    return (state,
+            gr.Chatbot.update(visible=True),
+            gr.Textbox.update(visible=True),
+            gr.Row.update(visible=True),
+            gr.Accordion.update(visible=True))
+
+
+def load_demo_refresh_model_list(request: gr.Request):
+    logger.info(f"load demo: {request.client.host}")
+    models = get_model_list()
+    state = default_conversation.copy()
+    return (state, gr.Dropdown.update(
+               choices=models,
+               value=models[0] if len(models) > 0 else ""),
+            gr.Chatbot.update(visible=True),
+            gr.Textbox.update(visible=True),
+            gr.Row.update(visible=True),
+            gr.Accordion.update(visible=True))
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -86,21 +80,42 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 def upvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                          request: gr.Request):
     if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg
+        return upvote_btn, downvote_msg, ""
     if upvote_btn == "done":
-        return "done", "done"
+        return "done", "done", ""
     vote_last_response(state, "upvote", model_selector, request)
-    return "done", "done"
+    return "done", "done", ""
 
 
 def downvote_last_response(state, upvote_btn, downvote_btn, model_selector,
                            request: gr.Request):
     if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg
+        return upvote_btn, downvote_msg, ""
     if upvote_btn == "done":
-        return "done", "done"
+        return "done", "done", ""
     vote_last_response(state, "downvote", model_selector, request)
-    return "done", "done"
+    return "done", "done", ""
+
+
+def regenerate(state):
+    if len(state.messages) == state.offset:
+        # skip empty "Regenerate"
+        return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+
+    state.messages[-1][-1] = None
+    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+
+
+def clear_history():
+    state = default_conversation.copy()
+    return state, state.to_gradio_chatbot(), ""
+
+
+def add_text(state, text, request: gr.Request):
+    text = text[:1536]  # Hard cut-off
+    state.append_message(state.roles[0], text)
+    state.append_message(state.roles[1], None)
+    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
 
 
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
@@ -131,7 +146,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # No available worker
     if worker_addr == "":
-        state.messages[-1][-1] = "**NETWORK ERROR. PLEASE TRY AGAIN OR CHOOSE OTHER MODELS.**"
+        state.messages[-1][-1] = server_error_msg
         yield state, state.to_gradio_chatbot()
         return
 
@@ -143,7 +158,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     pload = {
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": int(max_new_tokens),
+        "max_new_tokens": min(int(max_new_tokens), 1536),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -154,9 +169,15 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            output = data["text"][len(prompt) + 2:]
-            state.messages[-1][-1] = output
-            yield state, state.to_gradio_chatbot()
+            if data["error_code"] == 0:
+                output = data["text"][len(prompt) + 2:]
+                state.messages[-1][-1] = output
+                yield state, state.to_gradio_chatbot()
+            else:
+                output = data["text"]
+                state.messages[-1][-1] = output
+                yield state, state.to_gradio_chatbot()
+
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
@@ -173,61 +194,86 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         fout.write(json.dumps(data) + "\n")
 
 
+notice_markdown = ("""
+# Chat server\n
+### Terms of Use\n
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
+### Choose a model to chat with
+- [Vicuna](): a chat assistant fine-tuned from LLaMa on ShareGPT data. This one is expected to have the best conversation ability.
+- [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
+- [LLaMa](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
+""")
+
+
+learn_more_markdown = ("""
+# License
+The service is a research preview intended for non-commercial use only, subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of LLaMa and [Terms of Use](https://openai.com/policies/terms-of-use) of the data generated by OpenAI.
+If you find any potential violation, please contact us.
+""")
+
+
+css = code_highlight_css
+
+
 def build_demo():
     models = get_model_list()
-    css = (
-        """#model_selector_row {width: 400px;}"""
-        #"""#chatbot {height: 5000px;}"""
-    )
 
-    with gr.Blocks(title="Chat Server", css=css) as demo:
-        gr.Markdown(
-            "# Chat server\n"
-            "### Terms of Use\n"
-            "By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research."
-        )
-
+    with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
         state = gr.State()
+
+        # Draw layout
+        notice = gr.Markdown(notice_markdown)
 
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=models,
                 value=models[0] if len(models) > 0 else "",
                 interactive=True,
-                label="Choose a model to chat with.")
+                show_label=False).style(container=False)
 
-        chatbot = grChatbot(elem_id="chatbot")
+        chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         textbox = gr.Textbox(show_label=False,
-            placeholder="Enter text and press ENTER",).style(container=False)
+            placeholder="Enter text and press ENTER", visible=False).style(container=False)
 
-        with gr.Row():
+        with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value=upvote_msg)
             downvote_btn = gr.Button(value=downvote_msg)
             regenerate_btn = gr.Button(value="Regenerate")
             clear_btn = gr.Button(value="Clear history")
 
-        with gr.Accordion("Parameters", open=False):
+        with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
             temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
             max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
 
+        with gr.Accordion("Learn more", open=False) as learn_more_row:
+            gr.Markdown(learn_more_markdown)
+
+        # Register listeners
         upvote_btn.click(upvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn])
+            [upvote_btn, downvote_btn, textbox])
         downvote_btn.click(downvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn])
+            [upvote_btn, downvote_btn, textbox])
         regenerate_btn.click(regenerate, state,
-            [state, chatbot, upvote_btn, downvote_btn]).then(
+            [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
-        clear_btn.click(clear_history, None, [state, chatbot])
+        clear_btn.click(clear_history, None, [state, chatbot, textbox])
 
         textbox.submit(add_text, [state, textbox],
             [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
 
-        demo.load(load_demo, [], [model_selector, state, chatbot])
+        if args.model_list_mode == "once":
+            demo.load(load_demo, None, [state,
+                chatbot, textbox, button_row, parameter_row])
+        elif args.model_list_mode == "reload":
+            demo.load(load_demo_refresh_model_list, None, [state, model_selector,
+                chatbot, textbox, button_row, parameter_row])
+        else:
+            raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
     return demo
 
@@ -238,9 +284,12 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--model-list-mode", type=str, default="once",
+        choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
+    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
+               api_open=False).launch(
         server_name=args.host, server_port=args.port, share=args.share)

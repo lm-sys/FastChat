@@ -5,6 +5,7 @@ Fix a markdown render problem.
 from __future__ import annotations
 
 from gradio.components import *
+from markdown2 import Markdown
 
 
 class _Keywords(Enum):
@@ -49,7 +50,8 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
             warnings.warn(
                 "The 'color_map' parameter has been deprecated.",
             )
-        self.md = utils.get_markdown_parser()
+        #self.md = utils.get_markdown_parser()
+        self.md = Markdown(extras=["fenced-code-blocks", "tables", "break-on-newline"])
         self.select: EventListenerMethod
         """
         Event listener for when the user selects message from Chatbot.
@@ -111,7 +113,8 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
         ):  # This happens for previously processed messages
             return chat_message
         elif isinstance(chat_message, str):
-            return self.md.render(chat_message)
+            #return self.md.render(chat_message)
+            return str(self.md.convert(chat_message))
         else:
             raise ValueError(f"Invalid message for Chatbot component: {chat_message}")
 
@@ -139,7 +142,9 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
             ), f"Expected a list of lists of length 2 or list of tuples of length 2. Received: {message_pair}"
             processed_messages.append(
                 (
-                    self._process_chat_messages(message_pair[0]),
+                    #self._process_chat_messages(message_pair[0]),
+                    '<pre style="font-family: var(--font)">' +
+                    message_pair[0] + "</pre>",
                     self._process_chat_messages(message_pair[1]),
                 )
             )

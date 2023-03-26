@@ -12,6 +12,12 @@ A curated selection of evaluation sets. These sets are compact yet representativ
 
 See `eval_qa_chatgpt.py`
 
-# Generate baseline QA with ChatGPT
+# Generate baseline QA
+
+## OpenAI ChatGPT-3.5
 
 See `qa_baseline_gpt-3.5-turbo.py`
+
+## Google Bard
+
+See `qa_baseline_bard.py`
