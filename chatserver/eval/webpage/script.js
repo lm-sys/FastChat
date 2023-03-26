@@ -31,8 +31,9 @@ function populateModels() {
 }
 
 function displayQuestion(index) {
-    const question = data.questions[index];
-    document.getElementById('selected-question').textContent = question.question;
+    const question = data.questions[index].question;
+
+    document.getElementById('selected-question').innerHTML = "<strong>Question: </strong>" + formatText(question);
     displayAnswers(index);
 }
 
