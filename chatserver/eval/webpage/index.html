@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistants Comparison</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center mb-5">AI Assistants Performance Comparison</h2>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="question-select">Question</label>
+                <select class="form-control" id="question-select"></select>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="model-select">Other AI Assistant</label>
+                <select class="form-control" id="model-select"></select>
+            </div>
+            <div class="form-group col-md-2">
+                <label>&nbsp;</label>
+                <button class="form-control btn btn-primary" id="prev-question">Prev</button>
+            </div>
+            <div class="form-group col-md-2">
+                <label>&nbsp;</label>
+                <button class="form-control btn btn-primary" id="next-question">Next</button>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">Selected Question</div>
+            <div class="card-body" id="selected-question"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header" style="background-color: #f2c9c9;" id="other-model-header">AI Assistant 1</div>
+                    <div class="card-body" id="other-model-answer"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header" style="background-color: #c9f2c9;">AI Assistant 2 (Vicuna, our model)</div>
+                    <div class="card-body" id="our-model-answer"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">GPT-4 Evaluation Result</div>
+            <div class="card-body" id="evaluation-result"></div>
+        </div>
+    </div>
+    <script src="data.json"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
