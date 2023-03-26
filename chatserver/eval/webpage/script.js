@@ -5,7 +5,7 @@ function populateQuestions() {
     data.questions.forEach((question, index) => {
         const option = document.createElement('option');
         option.value = index;
-        option.textContent = question.text;
+        option.textContent = question.question;
         select.appendChild(option);
     });
 }
@@ -22,7 +22,7 @@ function populateModels() {
 
 function displayQuestion(index) {
     const question = data.questions[index];
-    document.getElementById('selected-question').textContent = question.text;
+    document.getElementById('selected-question').textContent = question.question;
     displayAnswers(index);
 }
 
@@ -31,15 +31,16 @@ function displayAnswers(index) {
     const otherModel = document.getElementById('model-select').value;
     document.getElementById('other-model-header').textContent = `AI Assistant 1 (${otherModel})`;
     document.getElementById('other-model-answer').textContent = question.answers[otherModel];
-    document.getElementById('our-model-answer').textContent = question.answers.ourModel;
+    document.getElementById('our-model-answer').textContent = question.answers.vicuna;
     // document.getElementById('other-model-answer').innerHTML = marked.parse(question.answers[otherModel]);
-    // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.ourModel);
+    // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.vicuna);
     displayEvaluation(index);
 }
 
 function displayEvaluation(index) {
     const question = data.questions[index];
-    document.getElementById('evaluation-result').textContent = question.evaluation;
+    const otherModel = document.getElementById('model-select').value;
+    document.getElementById('evaluation-result').textContent = question.evaluations[otherModel];
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
@@ -62,8 +63,3 @@ document.getElementById('next-question').addEventListener('click', () => {
     document.getElementById('question-select').value = currentQuestionIndex;
     displayQuestion(currentQuestionIndex);
 });
-
-populateQuestions();
-populateModels();
-displayQuestion(currentQuestionIndex);
-

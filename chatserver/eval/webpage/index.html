@@ -13,12 +13,12 @@
     <div class="container mt-5">
         <h2 class="text-center mb-5">AI Assistants Performance Comparison</h2>
         <div class="form-row">
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-6">
                 <label for="question-select">Question</label>
                 <select class="form-control" id="question-select"></select>
             </div>
-            <div class="form-group col-md-4">
-                <label for="model-select">Other AI Assistant</label>
+            <div class="form-group col-md-2">
+                <label for="model-select">AI Assistant #1</label>
                 <select class="form-control" id="model-select"></select>
             </div>
             <div class="form-group col-md-2">
@@ -60,9 +60,25 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <script src="data.json"></script>
+    
     <script src="script.js"></script>
+    <script>
+      // Declare a global constant variable
+      const data = {};
+      // Fetch the JSON file
+      fetch('data.json')
+        .then(response => response.json())
+        .then(json_data => {
+          // Assign the JSON data to a variable
+          Object.assign(data, json_data);
+        }).then(_ => {
+            // Populate the questions and models
+            populateQuestions();
+            populateModels();
+            displayQuestion(currentQuestionIndex);
+        })
+        .catch(error => console.error(error));
+    </script>
 </body>
 
 </html>
