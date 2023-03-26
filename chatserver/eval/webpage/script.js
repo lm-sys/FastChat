@@ -1,5 +1,15 @@
 let currentQuestionIndex = 0;
 
+function formatText(input) {
+    input = input.replace(/&/g, '&amp;')
+                 .replace(/</g, '&lt;')
+                 .replace(/>/g, '&gt;')
+                 .replace(/"/g, '&quot;')
+                 .replace(/'/g, '&#x27;')
+                 .replace(/\//g, '&#x2F;');
+    return input.replace(/\n/g, '<br>');
+}
+
 function populateQuestions() {
     const select = document.getElementById('question-select');
     data.questions.forEach((question, index) => {
@@ -30,8 +40,8 @@ function displayAnswers(index) {
     const question = data.questions[index];
     const otherModel = document.getElementById('model-select').value;
     document.getElementById('other-model-header').textContent = `AI Assistant 1 (${otherModel})`;
-    document.getElementById('other-model-answer').textContent = question.answers[otherModel];
-    document.getElementById('our-model-answer').textContent = question.answers.vicuna;
+    document.getElementById('other-model-answer').innerHTML = formatText(question.answers[otherModel]);
+    document.getElementById('our-model-answer').innerHTML = formatText(question.answers.vicuna);
     // document.getElementById('other-model-answer').innerHTML = marked.parse(question.answers[otherModel]);
     // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.vicuna);
     displayEvaluation(index);
@@ -40,7 +50,9 @@ function displayAnswers(index) {
 function displayEvaluation(index) {
     const question = data.questions[index];
     const otherModel = document.getElementById('model-select').value;
-    document.getElementById('evaluation-result').textContent = question.evaluations[otherModel];
+    // Here set innerHTML to the evaluation result directly, but it will be escaped.
+    evaluationResult = question.evaluations[otherModel];
+    document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
