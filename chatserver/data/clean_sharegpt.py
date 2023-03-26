@@ -40,17 +40,22 @@ def html_to_markdown(val: str) -> str:
     val = re.sub(div_pattern, "", val)
     # Remove all html tags
     val = markdownify.markdownify(val)
-    # Reformat code
-    val = reformat_code(val)
-    val = val.replace("\n\n\n", "\n")
-    val = val.strip()
-
+    # Remove noisy "[number] / [number]" at the beginning
     noise = re.search("\d+ / \d+", val)
     if noise and noise.start() == 0:
         val = val[noise.end():]
-
-    val = re.sub("Copy\d+ chars / \d+ words", "", val)
-
+    # Remove noisy "Copy[number] chars / [number] words"
+    if re.search("Copy\d+ chars / \d+ words", val):
+        print("=" * 60)
+        print(val)
+        print("-" * 60)
+        val = re.sub("Copy\d+ chars / \d+ words", "", val)
+        print("=" * 60)
+        print(val)
+        print("-" * 60)
+    # Reformat code
+    val = reformat_code(val)
+    val = val.replace("\n\n\n", "\n")
     return val
 
 
@@ -91,7 +96,7 @@ def clean_html_source(content, begin, end, check_tag, check_num):
                 skipped = True
                 break
 
-            c["value"] = new_val
+            c["value"] = new_val.strip()
 
             # Debug
             if (check_tag is not None and check_tag in c["value"]
