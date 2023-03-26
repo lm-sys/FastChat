@@ -7,3 +7,4 @@ __pycache__
 *.swp
 output
 wandb
+.DS_Store
