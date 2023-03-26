@@ -32,6 +32,8 @@ function displayAnswers(index) {
     document.getElementById('other-model-header').textContent = `AI Assistant 1 (${otherModel})`;
     document.getElementById('other-model-answer').textContent = question.answers[otherModel];
     document.getElementById('our-model-answer').textContent = question.answers.ourModel;
+    // document.getElementById('other-model-answer').innerHTML = marked.parse(question.answers[otherModel]);
+    // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.ourModel);
     displayEvaluation(index);
 }
 
