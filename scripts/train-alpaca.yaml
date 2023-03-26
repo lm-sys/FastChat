@@ -1,7 +1,6 @@
 resources:
-  accelerators: A100-80GB:8
+  accelerators: A100-80GB:4
   disk_size: 1000
-  use_spot: true
 
 num_nodes: 1
 
@@ -14,22 +13,18 @@ file_mounts:
     name: model-weights # Change to your own bucket
     store: gcs
     mode: MOUNT
+  # /lamma:
+  #   name: llama-ckpts # Change to the bucket that contains the LLaMA weights
+  #   store: gcs
+  #   mode: MOUNT
 
 workdir: .
 
 setup: |
-  # Download the model weights if not exits
-  # mkdir -p $HOME/llama
-  # if [ ! -f /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete ]; then
-  #   if [ ! -f $HOME/llama/complete ]; then
-  #     bash download.sh $LLAMA_URL ${MODEL_SIZE}B $HOME/llama &
-  #   fi
-  # fi
-
   # Download the data
-  # if [ ! -f /data/alpaca-data.json ]; then
-  #   wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
-  # fi
+  if [ ! -f /data/alpaca-data.json ]; then
+    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
+  fi
 
   # Setup the environment
   conda create -n chatbot python=3.10 -y
@@ -42,29 +37,24 @@ setup: |
   cd ~
   git clone https://github.com/huggingface/transformers.git
   cd transformers
-  # git checkout 60d51ef # pin to latest commit
+  git checkout cae78c46 # pin to latest commit
   pip install .
   cd ~/sky_workdir
 
   # Install chatserver
   pip install -e .
-  pip install flash-attn
-  
-
-  # wait
-  # touch $HOME/llama/complete
 
   mkdir -p /artifacts/llama-hf/llama-${MODEL_SIZE}B
   if [ ! -f /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete ]; then
     mkdir -p ~/llama-${MODEL_SIZE}b
-    gsutil -m cp -r gs://llama-${MODEL_SIZE}b/* ~/llama-${MODEL_SIZE}b/* # Change to your own bucket with the LLaMA weights
-    cd transformers
+    gsutil -m rsync -r /llama/${MODEL_SIZE}b/ ~/llama-${MODEL_SIZE}b
+    cd ~/transformers
     python src/transformers/models/llama/convert_llama_weights_to_hf.py \
       --input_dir $HOME/llama-${MODEL_SIZE}b \
       --model_size ${MODEL_SIZE}B \
       --output_dir ~/hf-output || exit 1
     mv ~/hf-output/tokenizer/* ~/hf-output/llama-${MODEL_SIZE}b
-    cp -r ~/hf-output/llama-${MODEL_SIZE}b/* /artifacts/llama-hf/llama-${MODEL_SIZE}B
+    gsutil -m rsync -r ~/hf-output/llama-${MODEL_SIZE}b/ /artifacts/llama-hf/llama-${MODEL_SIZE}B
     touch /artifacts/llama-hf/llama-${MODEL_SIZE}B/complete
   else
     mkdir -p ~/hf-output/llama-${MODEL_SIZE}b
@@ -74,48 +64,36 @@ setup: |
 run: |
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
-  GC_SCALE=${GC_SCALE:-1}
-  DATE=${DATE:-20230303}
-  USE_FLASH_ATTN=${USE_FLASH_ATTN:-0}
-  if [ $USE_FLASH_ATTN -eq 1 ]; then
-    TRAIN_SCRIPT=chatserver/train/train_flash_attn.py
-    USE_FLASH_SUFFIX="-flash"
-  else
-    TRAIN_SCRIPT=chatserver/train/train.py
-    USE_FLASH_SUFFIX=""
-  fi
-  USE_SPLIT=${USE_SPLIT:-0}
-  if [ $USE_SPLIT -eq 1 ]; then
-    USE_SPLIT_SUFFIX="split"
-  else
-    USE_SPLIT_SUFFIX="clean"
-  fi
-  
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
-  PER_DEVICE_BATCH_SIZE=$((2048 * $GC_SCALE / $SEQ_LEN))
+  PER_DEVICE_BATCH_SIZE=$((2048 / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
+
   # Hack copy it once to make it faster later
   mkdir -p ~/.checkpoints
+  CKPT_PATH=/artifacts/chatbot/${MODEL_SIZE}b/alpaca-${SEQ_LEN}
+  last_ckpt=$(ls ${CKPT_PATH} | grep -E '[0-9]+' | sort -n | tail -1)
+  gsutil -m rsync -r ${CKPT_PATH}/${last_ckpt}/ ~/.checkpoints 
+  
   torchrun \
     --nnodes=$NUM_NODES \
     --nproc_per_node=$SKYPILOT_NUM_GPUS_PER_NODE \
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    $TRAIN_SCRIPT \
+    chatserver/train/alpaca_train.py \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/sharegpt/sharegpt_${DATE}_${USE_SPLIT_SUFFIX}.json \
+    --data_path /data/alpaca-data.json \
     --bf16 True \
-    --output_dir /artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-fixed-seq-${SEQ_LEN}-${GRAD_ACCUM_SCALE}${USE_FLASH_SUFFIX}_${USE_SPLIT_SUFFIX} \
+    --output_dir $CKPT_PATH \
     --num_train_epochs 3 \
     --per_device_train_batch_size $PER_DEVICE_BATCH_SIZE \
     --per_device_eval_batch_size $PER_DEVICE_BATCH_SIZE \
-    --gradient_accumulation_steps $(($GRAD_ACCUM_SCALE * 128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
+    --gradient_accumulation_steps $((128 * 512 / $SEQ_LEN / $PER_DEVICE_BATCH_SIZE / $NUM_NODES / $SKYPILOT_NUM_GPUS_PER_NODE)) \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 1200 \
-    --save_total_limit 100 \
+    --save_steps 2000 \
+    --save_total_limit 1 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
@@ -124,16 +102,9 @@ run: |
     --fsdp "full_shard auto_wrap" \
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --tf32 True \
-    --model_max_length ${SEQ_LEN} \
-    --gradient_checkpointing True \
-    --lazy_preprocess True
+    --model_max_length ${SEQ_LEN}
 
 
 envs:
-  MODEL_SIZE: 7
-  SEQ_LEN: 2048
-  GC_SCALE: 4
-  DATE: 20230303
-  USE_FLASH_ATTN: 0
-  USE_SPLIT: 0
-  GRAD_ACCUM_SCALE: 1
+  MODEL_SIZE: 13
+  SEQ_LEN: 512
