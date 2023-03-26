@@ -31,7 +31,7 @@ sudo yum install nginx
 
 Copy `nginx.conf` to `/etc/nginx/nginx.conf` (need sudo permission).
 
-Replace the port number 7861 in `listen 7861` with the desired port for the gateway.
+Replace the port number 7960 in `listen 7960` with the desired port for the gateway.
 
 Modify `upstream websocket` to config Gradio servers behind the gateway.
 

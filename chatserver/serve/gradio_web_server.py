@@ -13,6 +13,7 @@ from chatserver.conversation import (default_conversation, conv_templates,
 from chatserver.constants import LOGDIR
 from chatserver.utils import build_logger, server_error_msg
 from chatserver.serve.gradio_patch import Chatbot as grChatbot
+from chatserver.serve.gradio_css import code_highlight_css
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -23,78 +24,6 @@ downvote_msg = "👎  Downvote the last response"
 priority = {
 }
 
-code_highlight_css = (
-"""
-#chatbot .hll { background-color: #ffffcc }
-#chatbot .c { color: #408080; font-style: italic }
-#chatbot .err { border: 1px solid #FF0000 }
-#chatbot .k { color: #008000; font-weight: bold }
-#chatbot .o { color: #666666 }
-#chatbot .ch { color: #408080; font-style: italic }
-#chatbot .cm { color: #408080; font-style: italic }
-#chatbot .cp { color: #BC7A00 }
-#chatbot .cpf { color: #408080; font-style: italic }
-#chatbot .c1 { color: #408080; font-style: italic }
-#chatbot .cs { color: #408080; font-style: italic }
-#chatbot .gd { color: #A00000 }
-#chatbot .ge { font-style: italic }
-#chatbot .gr { color: #FF0000 }
-#chatbot .gh { color: #000080; font-weight: bold }
-#chatbot .gi { color: #00A000 }
-#chatbot .go { color: #888888 }
-#chatbot .gp { color: #000080; font-weight: bold }
-#chatbot .gs { font-weight: bold }
-#chatbot .gu { color: #800080; font-weight: bold }
-#chatbot .gt { color: #0044DD }
-#chatbot .kc { color: #008000; font-weight: bold }
-#chatbot .kd { color: #008000; font-weight: bold }
-#chatbot .kn { color: #008000; font-weight: bold }
-#chatbot .kp { color: #008000 }
-#chatbot .kr { color: #008000; font-weight: bold }
-#chatbot .kt { color: #B00040 }
-#chatbot .m { color: #666666 }
-#chatbot .s { color: #BA2121 }
-#chatbot .na { color: #7D9029 }
-#chatbot .nb { color: #008000 }
-#chatbot .nc { color: #0000FF; font-weight: bold }
-#chatbot .no { color: #880000 }
-#chatbot .nd { color: #AA22FF }
-#chatbot .ni { color: #999999; font-weight: bold }
-#chatbot .ne { color: #D2413A; font-weight: bold }
-#chatbot .nf { color: #0000FF }
-#chatbot .nl { color: #A0A000 }
-#chatbot .nn { color: #0000FF; font-weight: bold }
-#chatbot .nt { color: #008000; font-weight: bold }
-#chatbot .nv { color: #19177C }
-#chatbot .ow { color: #AA22FF; font-weight: bold }
-#chatbot .w { color: #bbbbbb }
-#chatbot .mb { color: #666666 }
-#chatbot .mf { color: #666666 }
-#chatbot .mh { color: #666666 }
-#chatbot .mi { color: #666666 }
-#chatbot .mo { color: #666666 }
-#chatbot .sa { color: #BA2121 }
-#chatbot .sb { color: #BA2121 }
-#chatbot .sc { color: #BA2121 }
-#chatbot .dl { color: #BA2121 }
-#chatbot .sd { color: #BA2121; font-style: italic }
-#chatbot .s2 { color: #BA2121 }
-#chatbot .se { color: #BB6622; font-weight: bold }
-#chatbot .sh { color: #BA2121 }
-#chatbot .si { color: #BB6688; font-weight: bold }
-#chatbot .sx { color: #008000 }
-#chatbot .sr { color: #BB6688 }
-#chatbot .s1 { color: #BA2121 }
-#chatbot .ss { color: #19177C }
-#chatbot .bp { color: #008000 }
-#chatbot .fm { color: #0000FF }
-#chatbot .vc { color: #19177C }
-#chatbot .vg { color: #19177C }
-#chatbot .vi { color: #19177C }
-#chatbot .vm { color: #19177C }
-#chatbot .il { color: #666666 }
-""")
-#.highlight  { background: #f8f8f8; }
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
@@ -114,11 +43,20 @@ def get_model_list():
 
 def load_demo(request: gr.Request):
     logger.info(f"load demo: {request.client.host}")
+    state = default_conversation.copy()
+    return (state,
+            gr.Chatbot.update(visible=True),
+            gr.Textbox.update(visible=True),
+            gr.Row.update(visible=True),
+            gr.Accordion.update(visible=True))
+
+
+def load_demo_refresh_model_list(request: gr.Request):
+    logger.info(f"load demo: {request.client.host}")
     models = get_model_list()
     state = default_conversation.copy()
     return (state, gr.Dropdown.update(
                choices=models,
-               visible=True,
                value=models[0] if len(models) > 0 else ""),
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
@@ -220,7 +158,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     pload = {
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": int(max_new_tokens),
+        "max_new_tokens": min(int(max_new_tokens), 1536),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -256,25 +194,40 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         fout.write(json.dumps(data) + "\n")
 
 
+notice_markdown = ("""
+# Chat server\n
+### Terms of Use\n
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
+### Choose a model to chat with
+- [Vicuna](): a chat assistant fine-tuned from LLaMa on ShareGPT data. This one is expected to have the best conversation ability.
+- [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
+- [LLaMa](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
+""")
+
+
+learn_more_markdown = ("""
+# License
+The service is a research preview intended for non-commercial use only, subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of LLaMa and [Terms of Use](https://openai.com/policies/terms-of-use) of the data generated by OpenAI.
+If you find any potential violation, please contact us.
+""")
+
+
+css = code_highlight_css
+
+
 def build_demo():
-    css = (
-        """
-        #model_selector_row {width: 450px;}
-        """ + code_highlight_css)
+    models = get_model_list()
 
     with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
-        notice = gr.Markdown(
-            """
-            # Chat server\n
-            ### Terms of Use\n
-            By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.\n
-            ### Choose a model to chat with
-            """
-        )
         state = gr.State()
+
+        # Draw layout
+        notice = gr.Markdown(notice_markdown)
 
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
+                choices=models,
+                value=models[0] if len(models) > 0 else "",
                 interactive=True,
                 show_label=False).style(container=False)
 
@@ -292,6 +245,10 @@ def build_demo():
             temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
             max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
 
+        with gr.Accordion("Learn more", open=False) as learn_more_row:
+            gr.Markdown(learn_more_markdown)
+
+        # Register listeners
         upvote_btn.click(upvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
             [upvote_btn, downvote_btn, textbox])
@@ -309,8 +266,14 @@ def build_demo():
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
 
-        demo.load(load_demo, None, [state, model_selector,
-            chatbot, textbox, button_row, parameter_row])
+        if args.model_list_mode == "once":
+            demo.load(load_demo, None, [state,
+                chatbot, textbox, button_row, parameter_row])
+        elif args.model_list_mode == "reload":
+            demo.load(load_demo_refresh_model_list, None, [state, model_selector,
+                chatbot, textbox, button_row, parameter_row])
+        else:
+            raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
     return demo
 
@@ -321,9 +284,12 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--model-list-mode", type=str, default="once",
+        choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10).launch(
-        server_name=args.host, server_port=args.port, show_api=False, share=args.share)
+    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
+               api_open=False).launch(
+        server_name=args.host, server_port=args.port, share=args.share)
