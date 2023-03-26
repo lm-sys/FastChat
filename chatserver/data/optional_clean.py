@@ -1,5 +1,6 @@
 """
-Usage: python3 -m chatserver.data.optional_clean --lang en --reduce-rep --in sharegpt_clean.json --out output.json
+Example Usage: python3 -m chatserver.data.optional_clean --lang en --reduce-rep --in sharegpt_clean.json --out output.json
+Example Usage: python3 -m chatserver.data.optional_clean --skip-lang en --reduce-rep --in sharegpt_clean.json --out output.json
 """
 import argparse
 import json
@@ -9,25 +10,28 @@ from tqdm import tqdm
 
 
 def skip(conv, options: dict):
-    if options["lang"] != "all":
-        res = 0
+    if options["lang"] != "all" or options["skip_lang"] != "none":
+        cnt1 = 0
+        cnt2 = 0
         for sentence in conv["conversations"][:10]:
             try:
                 lang = detect(sentence["value"])
-                if lang != options["lang"]:
-                    res += 1
-                break
+                if options["lang"] != "all" and  lang != options["lang"]:
+                    cnt1 += 1
+                if lang == options["skip_lang"]:
+                    cnt2 += 1
             except:
-                res += 1
+                cnt1 += 1
                 pass
-        if res > min(5, len(conv["conversations"]) // 2):
+        if cnt1 > min(5, len(conv["conversations"]) // 2):
+            return True
+        if cnt2 > min(5, len(conv["conversations"]) // 2):
             return True
     if options["reduce_rep"]:
         for sentence in conv["conversations"]:
             val = sentence["value"]
             sub = re.search(r"(\d)\1{8}", val)
             if sub is not None:
-                print(val)
                 return True
     return False
  
@@ -39,6 +43,7 @@ if __name__ == "__main__":
     # NOTICE This will also remove data that use two languages.
     parser.add_argument("--lang", type=str, default="all",
                         choices=["all", "en"])
+    parser.add_argument("--skip-lang", type=str, default="none")
     # DANGER Be careful about turn on the reduce_rep, which may remove some good data.
     # For example, addresses could have long consecutive 0's
     parser.add_argument("--reduce-rep", action="store_true")
@@ -47,12 +52,16 @@ if __name__ == "__main__":
     in_file = args.in_file
     out_file = args.out_file
     lang = args.lang
+    skip_lang = args.skip_lang
     reduce_rep = args.reduce_rep
+    assert (lang == "all" or skip_lang == "none")
 
     if out_file == "":
         out_file = "sharegpt_clean"
         if lang != "all":
             out_file += "_" + lang
+        if skip_lang != "none":
+            out_file += "_skip_" + skip_lang
         if reduce_rep:
             out_file += "_reduce_rep"
         out_file += ".json"
