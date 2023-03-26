@@ -45,14 +45,7 @@ def html_to_markdown(val: str) -> str:
     if noise and noise.start() == 0:
         val = val[noise.end():]
     # Remove noisy "Copy[number] chars / [number] words"
-    if re.search("Copy\d+ chars / \d+ words", val):
-        print("=" * 60)
-        print(val)
-        print("-" * 60)
-        val = re.sub("Copy\d+ chars / \d+ words", "", val)
-        print("=" * 60)
-        print(val)
-        print("-" * 60)
+    val = re.sub("Copy\d+ chars / \d+ words", "", val)
     # Reformat code
     val = reformat_code(val)
     val = val.replace("\n\n\n", "\n")
