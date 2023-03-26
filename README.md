@@ -36,7 +36,7 @@ python3 -m chatserver.serve.cli --model facebook/opt-350m
 ```
 
 ## Deploy Chatbot on Any Cloud with SkyPilot
-### Training on ShareGPT Dataset
+### Training Vicuna with SkyPilot
 1. Install skypilot and setup the credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html)
 ```
 # Need this version of skypilot, for the fix of `--env` flag.
@@ -44,13 +44,13 @@ pip install git+https://github.com/skypilot-org/skypilot.git
 ```
 2. Train the model
 ```
-sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot
+sky launch -c vicuna --cloud gcp -s scripts/train-vicuna.yaml --env WANDB_API_KEY
 
 # Launch it on managed spot
-sky spot launch -n sharegpt --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot
+sky spot launch -n vicuna --cloud gcp scripts/train-vicuna.yaml --env WANDB_API_KEY
 
-# Train a 13B model
-sky launch -c sharegpt --cloud gcp -s --gpus A100-80GB:8 scripts/train-sharegpt.yaml --env WANDB_API_KEY --use-spot --env MODEL_SIZE=13 --env GC_SCALE=4 --env USE_FLASH_ATTN=1
+# Train a 7B model
+sky launch -c vicuna --cloud gcp -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
 ```
 
 ### Training Alpaca with SkyPilot

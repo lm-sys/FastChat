@@ -121,7 +121,7 @@ run: |
 
 
 envs:
-  MODEL_SIZE: 7
+  MODEL_SIZE: 13
   SEQ_LEN: 2048
   GC_SCALE: 4
   DATE: 20230322
