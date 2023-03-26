@@ -43,11 +43,20 @@ def get_model_list():
 
 def load_demo(request: gr.Request):
     logger.info(f"load demo: {request.client.host}")
+    state = default_conversation.copy()
+    return (state,
+            gr.Chatbot.update(visible=True),
+            gr.Textbox.update(visible=True),
+            gr.Row.update(visible=True),
+            gr.Accordion.update(visible=True))
+
+
+def load_demo_refresh_model_list(request: gr.Request):
+    logger.info(f"load demo: {request.client.host}")
     models = get_model_list()
     state = default_conversation.copy()
     return (state, gr.Dropdown.update(
                choices=models,
-               visible=True,
                value=models[0] if len(models) > 0 else ""),
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
@@ -149,7 +158,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     pload = {
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": int(max_new_tokens),
+        "max_new_tokens": min(int(max_new_tokens), 1536),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -200,19 +209,22 @@ If you find any potential violation, please contact us.
 """)
 
 
+css = ("""#model_selector_row {width: 450px;}""" + code_highlight_css)
+
+
 def build_demo():
-    css = (
-        """
-        #model_selector_row {width: 450px;}
-        """ + code_highlight_css)
+    models = get_model_list()
 
     with gr.Blocks(title="Chat Server", theme=gr.themes.Soft(), css=css) as demo:
         state = gr.State()
 
+        # Draw layout
         notice = gr.Markdown(notice_markdown)
 
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
+                choices=models,
+                value=models[0] if len(models) > 0 else "",
                 interactive=True,
                 show_label=False).style(container=False)
 
@@ -233,6 +245,7 @@ def build_demo():
         with gr.Accordion("Learn more", open=False) as learn_more_row:
             gr.Markdown(learn_more_markdown)
 
+        # Register listeners
         upvote_btn.click(upvote_last_response,
             [state, upvote_btn, downvote_btn, model_selector],
             [upvote_btn, downvote_btn, textbox])
@@ -250,8 +263,14 @@ def build_demo():
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot])
 
-        demo.load(load_demo, None, [state, model_selector,
-            chatbot, textbox, button_row, parameter_row])
+        if args.model_list_mode == "once":
+            demo.load(load_demo, None, [state,
+                chatbot, textbox, button_row, parameter_row])
+        elif args.model_list_mode == "reload":
+            demo.load(load_demo_refresh_model_list, None, [state, model_selector,
+                chatbot, textbox, button_row, parameter_row])
+        else:
+            raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
     return demo
 
@@ -262,6 +281,8 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--model-list-mode", type=str, default="once",
+        choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
