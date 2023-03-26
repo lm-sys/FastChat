@@ -4,5 +4,6 @@ __pycache__
 *.log
 *.json
 .idea
+*.swp
 output
 wandb
