@@ -8,6 +8,7 @@ from chatserver.conversation import default_conversation
 
 def main():
     controller_addr = args.url
+    requests.post(controller_addr + "/refresh_all_workers")
     ret = requests.post(controller_addr + "/get_worker_address",
             json={"model_name": args.model_name})
     worker_addr = ret.json()["address"]

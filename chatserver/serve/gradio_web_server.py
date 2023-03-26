@@ -32,7 +32,7 @@ def get_conv_log_filename():
 
 
 def get_model_list():
-    ret = requests.post(args.controller_url + "/refresh_status")
+    ret = requests.post(args.controller_url + "/refresh_all_workers")
     assert ret.status_code == 200
     ret = requests.post(args.controller_url + "/list_models")
     models = ret.json()["models"]
@@ -156,6 +156,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Make requests
     headers = {"User-Agent": "Client"}
     pload = {
+        "model": model_selector,
         "prompt": prompt,
         "temperature": float(temperature),
         "max_new_tokens": min(int(max_new_tokens), 1536),

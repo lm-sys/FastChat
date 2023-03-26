@@ -77,24 +77,36 @@ class ModelWorker:
         self.heart_beat_thread.start()
 
     def register_to_controller(self):
-        logger.info("register to controller")
+        logger.info("Register to controller")
 
-        url = self.controller_addr + "/register_model_worker"
+        url = self.controller_addr + "/register_worker"
         data = {
-            "model_name": self.model_name,
             "worker_name": self.worker_addr,
+            "check_heart_beat": True,
+            "worker_status": self.get_status()
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
 
     def send_heart_beat(self):
+        logger.info("Send heart beat")
+
         url = self.controller_addr + "/receive_heart_beat"
-        ret = requests.post(url, json={
-            "worker_name": self.worker_addr})
-        assert ret.status_code == 200
-        exist = ret.json()["exist"]
+        try:
+            ret = requests.post(url, json={
+                "worker_name": self.worker_addr})
+            exist = ret.json()["exist"]
+        except requests.exceptions.RequestException as e:
+            logger.error(f"heat beat error: {e}")
+            return
         if not exist:
             self.register_to_controller()
+
+    def get_status(self):
+        return {
+            "model_names": [self.model_name],
+            "speed": 1,
+        }
 
     @torch.inference_mode()
     def generate_stream(self, args):
@@ -179,6 +191,7 @@ class ModelWorker:
 app = FastAPI()
 model_semaphore = None
 
+
 @app.post("/generate_stream")
 async def generate_stream(request: Request):
     global model_semaphore
@@ -191,9 +204,9 @@ async def generate_stream(request: Request):
     return StreamingResponse(generator)
 
 
-@app.post("/check_status")
-async def check_status(request: Request):
-    return True
+@app.post("/get_status")
+async def get_status(request: Request):
+    return worker.get_status()
 
 
 if __name__ == "__main__":
