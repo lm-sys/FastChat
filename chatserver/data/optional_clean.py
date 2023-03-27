@@ -19,6 +19,8 @@ def skip(conv, options: dict):
                     cnt += 1
                 if lang == options["skip_lang"]:
                     return True
+                if options["skip_lang"] == "ko" and "\ubc88" in sentence["value"]:
+                    return True
             except:
                 cnt += 1
                 pass
