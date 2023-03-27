@@ -65,7 +65,8 @@ function displayEvaluation(index) {
     document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
 
     evaluationResult = question.evaluations[otherModel];
-    document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
+    // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
+    document.getElementById('evaluation-result').innerHTML = marked.parse(evaluationResult);
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
