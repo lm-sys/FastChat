@@ -120,6 +120,7 @@ def add_text(state, text, request: gr.Request):
 
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
+    model_name = model_selector
 
     if len(state.messages) == state.offset:
         # Skip empty "Regenerate"
@@ -128,7 +129,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "bair-chat" in model_selector: # Hardcode the condition
+        if "bair-chat" in model_name: # Hardcode the condition
             template_name = "bair_v1"
         else:
             template_name = "v1"
@@ -140,9 +141,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Query worker address
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
-            json={"model_name": model_selector})
+            json={"model_name": model_name})
     worker_addr = ret.json()["address"]
-    logger.info(f"model_name: {model_selector}, worker_addr: {worker_addr}")
+    logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
     # No available worker
     if worker_addr == "":
@@ -156,7 +157,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Make requests
     headers = {"User-Agent": "Client"}
     pload = {
-        "model": model_selector,
+        "model": model_name,
         "prompt": prompt,
         "temperature": float(temperature),
         "max_new_tokens": min(int(max_new_tokens), 1536),
@@ -186,7 +187,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
-            "model": model_selector,
+            "model": model_name,
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
             "state": state.dict(),

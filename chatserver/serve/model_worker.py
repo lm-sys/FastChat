@@ -34,7 +34,7 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_name, num_gpus):
+def load_model(model_path, num_gpus):
     disable_torch_init()
 
     if num_gpus == 1:
@@ -45,9 +45,9 @@ def load_model(model_name, num_gpus):
             "max_memory": {i: "13GiB" for i in range(num_gpus)},
         }
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForCausalLM.from_pretrained(
-       model_name, torch_dtype=torch.float16, **kwargs)
+       model_path, torch_dtype=torch.float16, **kwargs)
 
     if num_gpus == 1:
         model.cuda()
@@ -62,14 +62,16 @@ def load_model(model_name, num_gpus):
 
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
-                 worker_id, no_register, model_name, num_gpus):
+                 worker_id, no_register,
+                 model_path, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        self.model_name = model_name
+        self.model_name = model_name or model_path
 
         logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
-        self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
+        self.tokenizer, self.model, self.context_len = load_model(
+            model_path, num_gpus)
 
         if not no_register:
             self.register_to_controller()
@@ -218,7 +220,8 @@ if __name__ == "__main__":
         default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str,
         default="http://localhost:21001")
-    parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
     parser.add_argument("--no-register", action="store_true")
@@ -228,6 +231,7 @@ if __name__ == "__main__":
                          args.worker_address,
                          worker_id,
                          args.no_register,
+                         args.model_path,
                          args.model_name,
                          args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
