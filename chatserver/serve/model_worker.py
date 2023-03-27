@@ -156,14 +156,14 @@ class ModelWorker:
             else:
                 probs = torch.softmax(last_token_logits / temperature, dim=-1)
                 token = int(torch.multinomial(probs, num_samples=1))
-            if token == tokenizer.eos_token_id:
-                break
 
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
 
             if output.endswith(stop_str):
                 output = output[:-len(stop_str)]
+                stopped = True
+            elif token == tokenizer.eos_token_id:
                 stopped = True
             else:
                 stopped = False
