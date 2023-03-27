@@ -46,15 +46,31 @@ function displayQuestion(index) {
 function displayAnswers(index) {
     const question = data.questions[index];
     const otherModel = document.getElementById('model-select').value;
-    document.getElementById('other-model-header').textContent = `AI Assistant 1 (${otherModel})`;
-
     // document.getElementById('other-model-answer').innerHTML = formatText(question.answers[otherModel]);
     // document.getElementById('our-model-answer').innerHTML = formatText(question.answers.vicuna);
     // render the answers with markdown
     document.getElementById('other-model-answer').innerHTML = text2Markdown(question.answers[otherModel]);
     document.getElementById('our-model-answer').innerHTML = text2Markdown(question.answers.vicuna);
 
-    displayEvaluation(index);
+    // Display evaluation
+    score = question.scores[otherModel];
+    score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
+    document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
+    // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
+    document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
+
+    // Update model names
+    assistant1_title = "Assistant #1 (" + otherModel + ")";
+    assistant2_title = "Assistant #2 (Vicuna, our model)";
+    if (score[0] >= score[1]) {
+        assistant1_title = '🏆 ' + assistant1_title;
+    }
+    if (score[0] <= score[1]) {
+        assistant2_title = '🏆 ' + assistant2_title;
+    }
+    document.getElementById('other-model-header').textContent = assistant1_title;
+    document.getElementById('our-model-header').innerHTML = assistant2_title;
+
     // Update expand buttons visibility for both cards after displaying answers
     // Reset the expanded state and update expand buttons visibility for both cards after displaying answers
     document.querySelectorAll('.expandable-card').forEach(card => {
@@ -63,18 +79,6 @@ function displayAnswers(index) {
         const expandBtn = card.querySelector('.expand-btn');
         expandBtn.textContent = 'Show more';
     });
-}
-
-function displayEvaluation(index) {
-    const question = data.questions[index];
-    const otherModel = document.getElementById('model-select').value;
-
-    score = question.scores[otherModel];
-    score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
-    document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
-
-    // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
-    document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
