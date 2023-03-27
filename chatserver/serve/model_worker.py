@@ -62,7 +62,7 @@ def load_model(model_name, num_gpus):
 
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
-                 worker_id, model_name, num_gpus):
+                 worker_id, no_register, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -71,10 +71,11 @@ class ModelWorker:
         logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
 
-        self.register_to_controller()
-        self.heart_beat_thread = threading.Thread(
-            target=heart_beat_worker, args=(self,))
-        self.heart_beat_thread.start()
+        if not no_register:
+            self.register_to_controller()
+            self.heart_beat_thread = threading.Thread(
+                target=heart_beat_worker, args=(self,))
+            self.heart_beat_thread.start()
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -220,11 +221,13 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
+    parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
                          worker_id,
+                         args.no_register,
                          args.model_name,
                          args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
