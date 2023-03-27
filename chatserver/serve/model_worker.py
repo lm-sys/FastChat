@@ -67,14 +67,11 @@ class ModelWorker:
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        if model_name is None:
-            if model_path.endswith("/"):
-                model_path = model_path[:-1]
-            self.model_name = model_path.split("/")[-1]
-        else:
-            self.model_name = model_name
+        if model_path.endswith("/"):
+            model_path = model_path[:-1]
+        self.model_name = model_name or model_path.split("/")[-1]
 
-        logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
+        logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(
             model_path, num_gpus)
 
