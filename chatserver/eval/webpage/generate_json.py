@@ -69,7 +69,8 @@ if __name__ == '__main__':
             for line in lines:
                 if len(line) <= 30:
                     continue
-                line = line.replace('Assistant 1', f"`{k}`").replace('Assistant 2', '`Vicuna`')
+                other_model = k[0].upper() + k[1:]
+                line = line.replace('Assistant 1', f"`{other_model}`").replace('Assistant 2', '`Vicuna`')
                 new_lines.append(line)
             cleaned_evals[k] = '\n'.join(new_lines)
 
