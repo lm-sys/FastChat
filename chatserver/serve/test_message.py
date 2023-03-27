@@ -7,11 +7,20 @@ from chatserver.conversation import default_conversation
 
 
 def main():
-    controller_addr = args.url
-    ret = requests.post(controller_addr + "/get_worker_address",
-            json={"model_name": args.model_name})
-    worker_addr = ret.json()["address"]
-    print(f"worker_addr: {worker_addr}")
+    if args.worker_address:
+        worker_addr = args.worker_address
+    else:
+        controller_addr = args.controller_address
+        ret = requests.post(controller_addr + "/refresh_all_workers")
+        ret = requests.post(controller_addr + "/list_models")
+        models = ret.json()["models"]
+        models.sort()
+        print(f"Models: {models}")
+
+        ret = requests.post(controller_addr + "/get_worker_address",
+            json={"model": args.model_name})
+        worker_addr = ret.json()["address"]
+        print(f"worker_addr: {worker_addr}")
 
     if worker_addr == "":
         return
@@ -22,12 +31,13 @@ def main():
 
     headers = {"User-Agent": "ChatServer Client"}
     pload = {
+        "model": args.model_name,
         "prompt": prompt,
         "max_new_tokens": args.max_new_tokens,
-        "temperature": 0.8,
+        "temperature": 0.7,
         "stop": conv.sep,
     }
-    response = requests.post(worker_addr + "/generate_stream", headers=headers,
+    response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
             json=pload, stream=True)
 
     print(prompt.replace(conv.sep, "\n"), end="")
@@ -41,7 +51,8 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", type=str, default="http://localhost:21001")
+    parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
+    parser.add_argument("--worker-address", type=str)
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--max-new-tokens", type=int, default=32)
     args = parser.parse_args()

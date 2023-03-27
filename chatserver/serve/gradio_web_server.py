@@ -32,7 +32,7 @@ def get_conv_log_filename():
 
 
 def get_model_list():
-    ret = requests.post(args.controller_url + "/refresh_status")
+    ret = requests.post(args.controller_url + "/refresh_all_workers")
     assert ret.status_code == 200
     ret = requests.post(args.controller_url + "/list_models")
     models = ret.json()["models"]
@@ -120,6 +120,7 @@ def add_text(state, text, request: gr.Request):
 
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
+    model_name = model_selector
 
     if len(state.messages) == state.offset:
         # Skip empty "Regenerate"
@@ -128,7 +129,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "bair-chat" in model_selector: # Hardcode the condition
+        if "bair-chat" in model_name: # Hardcode the condition
             template_name = "bair_v1"
         else:
             template_name = "v1"
@@ -140,9 +141,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Query worker address
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
-            json={"model_name": model_selector})
+            json={"model": model_name})
     worker_addr = ret.json()["address"]
-    logger.info(f"model_name: {model_selector}, worker_addr: {worker_addr}")
+    logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
     # No available worker
     if worker_addr == "":
@@ -156,13 +157,14 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Make requests
     headers = {"User-Agent": "Client"}
     pload = {
+        "model": model_name,
         "prompt": prompt,
         "temperature": float(temperature),
         "max_new_tokens": min(int(max_new_tokens), 1536),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
-    response = requests.post(worker_addr + "/generate_stream",
+    response = requests.post(worker_addr + "/worker_generate_stream",
         headers=headers, json=pload, stream=True)
 
     # Stream output
@@ -185,7 +187,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
-            "model": model_selector,
+            "model": model_name,
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
             "state": state.dict(),
@@ -283,7 +285,7 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
-    parser.add_argument("--concurrency-count", type=int, default=2)
+    parser.add_argument("--concurrency-count", type=int, default=4)
     parser.add_argument("--model-list-mode", type=str, default="once",
         choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")

@@ -34,7 +34,7 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_name, num_gpus):
+def load_model(model_path, num_gpus):
     disable_torch_init()
 
     if num_gpus == 1:
@@ -45,9 +45,9 @@ def load_model(model_name, num_gpus):
             "max_memory": {i: "13GiB" for i in range(num_gpus)},
         }
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForCausalLM.from_pretrained(
-       model_name, torch_dtype=torch.float16, **kwargs)
+       model_path, torch_dtype=torch.float16, **kwargs)
 
     if num_gpus == 1:
         model.cuda()
@@ -62,52 +62,69 @@ def load_model(model_name, num_gpus):
 
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
-                 worker_id, model_name, num_gpus):
+                 worker_id, no_register,
+                 model_path, model_name, num_gpus):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        self.model_name = model_name
+        if model_path.endswith("/"):
+            model_path = model_path[:-1]
+        self.model_name = model_name or model_path.split("/")[-1]
 
-        logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
-        self.tokenizer, self.model, self.context_len = load_model(model_name, num_gpus)
+        logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
+        self.tokenizer, self.model, self.context_len = load_model(
+            model_path, num_gpus)
 
-        self.register_to_controller()
-        self.heart_beat_thread = threading.Thread(
-            target=heart_beat_worker, args=(self,))
-        self.heart_beat_thread.start()
+        if not no_register:
+            self.register_to_controller()
+            self.heart_beat_thread = threading.Thread(
+                target=heart_beat_worker, args=(self,))
+            self.heart_beat_thread.start()
 
     def register_to_controller(self):
-        logger.info("register to controller")
+        logger.info("Register to controller")
 
-        url = self.controller_addr + "/register_model_worker"
+        url = self.controller_addr + "/register_worker"
         data = {
-            "model_name": self.model_name,
             "worker_name": self.worker_addr,
+            "check_heart_beat": True,
+            "worker_status": self.get_status()
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
 
     def send_heart_beat(self):
+        logger.info("Send heart beat")
+
         url = self.controller_addr + "/receive_heart_beat"
-        ret = requests.post(url, json={
-            "worker_name": self.worker_addr})
-        assert ret.status_code == 200
-        exist = ret.json()["exist"]
+        try:
+            ret = requests.post(url, json={
+                "worker_name": self.worker_addr})
+            exist = ret.json()["exist"]
+        except requests.exceptions.RequestException as e:
+            logger.error(f"heat beat error: {e}")
+            return
         if not exist:
             self.register_to_controller()
 
+    def get_status(self):
+        return {
+            "model_names": [self.model_name],
+            "speed": 1,
+        }
+
     @torch.inference_mode()
-    def generate_stream(self, args):
+    def generate_stream(self, params):
         #cur_mem = torch.cuda.memory_allocated()
         #max_mem = torch.cuda.max_memory_allocated()
         #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
 
         tokenizer, model = self.tokenizer, self.model
 
-        context = args["prompt"]
-        temperature = float(args.get("temperature", 1.0))
-        max_new_tokens = int(args.get("max_new_tokens", 256))
-        stop_str = args.get("stop", None)
+        context = params["prompt"]
+        temperature = float(params.get("temperature", 1.0))
+        max_new_tokens = int(params.get("max_new_tokens", 256))
+        stop_str = params.get("stop", None)
 
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
@@ -139,8 +156,6 @@ class ModelWorker:
             else:
                 probs = torch.softmax(last_token_logits / temperature, dim=-1)
                 token = int(torch.multinomial(probs, num_samples=1))
-            if token == tokenizer.eos_token_id:
-                break
 
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
@@ -148,23 +163,26 @@ class ModelWorker:
             if output.endswith(stop_str):
                 output = output[:-len(stop_str)]
                 stopped = True
+            elif token == tokenizer.eos_token_id:
+                stopped = True
             else:
                 stopped = False
 
-            ret = {
-                "text": output,
-                "error_code": 0,
-            }
-            yield (json.dumps(ret) + "\0").encode("utf-8")
+            if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
+                ret = {
+                    "text": output,
+                    "error_code": 0,
+                }
+                yield (json.dumps(ret) + "\0").encode("utf-8")
 
             if stopped:
                 break
 
         del past_key_values
 
-    def generate_stream_gate(self, args, release_semaphore):
+    def generate_stream_gate(self, params, release_semaphore):
         try:
-            for x in self.generate_stream(args):
+            for x in self.generate_stream(params):
                 yield x
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -179,7 +197,8 @@ class ModelWorker:
 app = FastAPI()
 model_semaphore = None
 
-@app.post("/generate_stream")
+
+@app.post("/worker_generate_stream")
 async def generate_stream(request: Request):
     global model_semaphore
     params = await request.json()
@@ -191,9 +210,9 @@ async def generate_stream(request: Request):
     return StreamingResponse(generator)
 
 
-@app.post("/check_status")
-async def check_status(request: Request):
-    return True
+@app.post("/worker_get_status")
+async def get_status(request: Request):
+    return worker.get_status()
 
 
 if __name__ == "__main__":
@@ -204,14 +223,19 @@ if __name__ == "__main__":
         default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str,
         default="http://localhost:21001")
-    parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
+    parser.add_argument("--stream-interval", type=int, default=4)
+    parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,
                          worker_id,
+                         args.no_register,
+                         args.model_path,
                          args.model_name,
                          args.num_gpus)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

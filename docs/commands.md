@@ -24,6 +24,30 @@ gsutil cp sharegpt_20230322_clean.json gs://model-weights/sharegpt/
 gsutil cp sharegpt_20230322_split.json gs://model-weights/sharegpt/
 ```
 
+### Local Cluster
+
+#### Local GPU cluster
+```
+python3 -m chatserver.serve.controller --host 0.0.0.0 --port 10002
+
+CUDA_VISIBLE_DEVICES=0 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/alpaca-7b/ --controller http://localhost:10002 --port 31000 --worker http://localhost:31000
+CUDA_VISIBLE_DEVICES=1 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/alpaca-13b/ --controller http://localhost:10002 --port 31001 --worker http://localhost:31001
+CUDA_VISIBLE_DEVICES=2 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/bair-chat-7b/ --controller http://localhost:10002 --port 31002 --worker http://localhost:31002
+CUDA_VISIBLE_DEVICES=3 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/bair-chat-13b/ --controller http://localhost:10002 --port 31003 --worker http://localhost:31003
+
+python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://localhost:10002
+```
+
+#### Web server
+```
+python3 -m chatserver.serve.controller --host 0.0.0.0 --port 21001
+
+python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name https://
+python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://localhost:21001
+
+python3 -m chatserver.serve.gradio_web_server --controller http://localhost:21001
+```
+
 ### Host a gradio web server
 ```
 sudo apt update
