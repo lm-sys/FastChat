@@ -26,7 +26,7 @@ gsutil cp sharegpt_20230322_split.json gs://model-weights/sharegpt/
 
 ### Local Cluster
 
-### Local GPU cluster
+#### Local GPU cluster
 ```
 python3 -m chatserver.serve.controller --host 0.0.0.0 --port 10002
 
@@ -40,7 +40,7 @@ python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://l
 python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name https://
 ```
 
-### Web server
+#### Web server
 ```
 python3 -m chatserver.serve.controller --host 0.0.0.0 --port 21001
 python3 -m chatserver.serve.gradio_web_server --controller http://localhost:21001
