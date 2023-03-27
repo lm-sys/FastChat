@@ -46,6 +46,10 @@ function displayAnswers(index) {
     // document.getElementById('other-model-answer').innerHTML = marked.parse(question.answers[otherModel]);
     // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.vicuna);
     displayEvaluation(index);
+    // Update expand buttons visibility for both cards after displaying answers
+    document.querySelectorAll('.expandable-card').forEach(card => {
+        updateExpandButtonVisibility(card);
+    });
 }
 
 function displayEvaluation(index) {
@@ -61,8 +65,12 @@ document.getElementById('question-select').addEventListener('change', e => {
     displayQuestion(currentQuestionIndex);
 });
 
+// Update expand buttons whenever the model is changed
 document.getElementById('model-select').addEventListener('change', () => {
     displayAnswers(currentQuestionIndex);
+    document.querySelectorAll('.expandable-card').forEach(card => {
+        updateExpandButtonVisibility(card);
+    });
 });
 
 document.getElementById('prev-question').addEventListener('click', () => {
@@ -75,4 +83,22 @@ document.getElementById('next-question').addEventListener('click', () => {
     currentQuestionIndex = Math.min(data.questions.length - 1, currentQuestionIndex + 1);
     document.getElementById('question-select').value = currentQuestionIndex;
     displayQuestion(currentQuestionIndex);
+});
+
+function updateExpandButtonVisibility(card) {
+    const cardTextContainer = card.querySelector('.card-text-container');
+    const expandBtn = card.querySelector('.expand-btn');
+    if (cardTextContainer.scrollHeight > cardTextContainer.offsetHeight) {
+        expandBtn.style.display = 'block';
+    } else {
+        expandBtn.style.display = 'none';
+    }
+}
+
+document.querySelectorAll('.expand-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        const card = e.target.closest('.expandable-card');
+        card.classList.toggle('expanded');
+        e.target.textContent = card.classList.contains('expanded') ? 'Show less' : 'Show more';
+    });
 });
