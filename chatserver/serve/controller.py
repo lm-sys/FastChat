@@ -179,7 +179,7 @@ class Controller:
 
         return {
             "model_names": list(model_names),
-            "speed": 1,
+            "speed": speed,
         }
 
 
