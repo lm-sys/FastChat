@@ -29,7 +29,7 @@ if __name__ == '__main__':
     bard_answers = read_jsonl('v3/answers-bard.jsonl')
     vicuna_answers = read_jsonl('v3/answers-vicuna-v2.jsonl')
 
-    # {"id": 35, "content": xxxx}
+    # {"id": 35, "content": xxxx, "tuple": [8, 9]}
     eval_results_alpaca = read_jsonl('v3/result/results_alpaca.jsonl')
     eval_results_bard = read_jsonl('v3/result/results_bard.jsonl')
     eval_results_llama = read_jsonl('v3/result/results_llama.jsonl')
@@ -52,7 +52,13 @@ if __name__ == '__main__':
                 'llama': eval_results_llama[qid]['content'],
                 'bard': eval_results_bard[qid]['content'],
                 'gpt35': eval_results_gpt35[qid]['content'],
-            }
+            },
+            'scores': {
+                'alpaca': eval_results_alpaca[qid]['tuple'],
+                'llama': eval_results_llama[qid]['tuple'],
+                'bard': eval_results_bard[qid]['tuple'],
+                'gpt35': eval_results_gpt35[qid]['tuple'],
+            },
         }
         records.append(r)
 

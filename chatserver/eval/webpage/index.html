@@ -99,9 +99,15 @@
                 </div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-header" style="background-color: #c9c9f2;">GPT-4 Evaluation</div>
-            <div class="card-body" id="evaluation-result"></div>
+        <div class="card expandable-card">
+            <div class="card-header" style="background-color: #c9c9f2;" id="evaluation-header">GPT-4 Evaluation</div>
+            <!-- <div class="card-body" id="evaluation-result"></div> -->
+            <div class="card-body">
+                <div class="card-text-container">
+                    <div class="card-text" id="evaluation-result"></div>
+                </div>
+                <button class="btn btn-link expand-btn" style="display:none;">Show more</button>
+            </div>
         </div>
     </div>
 

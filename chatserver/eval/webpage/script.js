@@ -61,7 +61,10 @@ function displayEvaluation(index) {
     const otherModel = document.getElementById('model-select').value;
     // Here set innerHTML to the evaluation result directly, but it will be escaped.
     evaluationResult = question.evaluations[otherModel];
+    score = question.scores[otherModel];
     document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
+    score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
+    document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
