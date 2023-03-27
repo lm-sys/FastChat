@@ -1,6 +1,7 @@
 """
-Example Usage: python3 -m chatserver.data.optional_clean --lang en --reduce-rep --in sharegpt_clean.json --out output.json
-Example Usage: python3 -m chatserver.data.optional_clean --skip-lang en --reduce-rep --in sharegpt_clean.json --out output.json
+Usage:
+python3 -m chatserver.data.optional_clean --lang en --reduce-rep --in sharegpt_clean.json --out output.json
+python3 -m chatserver.data.optional_clean --skip-lang en --reduce-rep --in sharegpt_clean.json --out output.json
 """
 import argparse
 import json
