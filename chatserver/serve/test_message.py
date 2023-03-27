@@ -18,7 +18,7 @@ def main():
         print(f"Models: {models}")
 
         ret = requests.post(controller_addr + "/get_worker_address",
-            json={"model_name": args.model_name})
+            json={"model": args.model_name})
         worker_addr = ret.json()["address"]
         print(f"worker_addr: {worker_addr}")
 

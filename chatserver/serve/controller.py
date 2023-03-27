@@ -208,7 +208,7 @@ async def list_models():
 @app.post("/get_worker_address")
 async def get_worker_address(request: Request):
     data = await request.json()
-    addr = controller.get_worker_address(data["model_name"])
+    addr = controller.get_worker_address(data["model"])
     return {"address": addr}
 
 

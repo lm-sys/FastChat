@@ -141,7 +141,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Query worker address
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
-            json={"model_name": model_name})
+            json={"model": model_name})
     worker_addr = ret.json()["address"]
     logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
