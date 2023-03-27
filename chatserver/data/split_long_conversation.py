@@ -94,6 +94,6 @@ if __name__ == "__main__":
     parser.add_argument("--begin", type=int)
     parser.add_argument("--end", type=int)
     parser.add_argument("--model-name-or-path", type=str, required=True)
-    parser.add_argument("--max-length", type=int, default=3072)
+    parser.add_argument("--max-length", type=int, default=2304)
     args = parser.parse_args()
     main(args)
