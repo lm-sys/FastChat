@@ -22,8 +22,11 @@ def _get_html_tags(file_path: str):
 
 div_pattern = re.compile("<div.*?>")
 span_pattern = re.compile("<span.*?>")
-code_lang_pattern = re.compile("```\n?" + "(.*?)" + "Copy code" + "(.+?)" + "\n\n?```", re.DOTALL)
-code_lang_format = r"```\g<1>\n\g<2>\n```"
+code_lang_pattern = re.compile("```\s*" + "(.*?)" + "(?:Copy code)+" + "(.+?)" + "\s*?```", re.DOTALL)
+code_lang_format = "```\g<1>\n\g<2>\n```"
+regenerate_pattern = re.compile("\d+ / \d+")
+copy_chars_pattern = re.compile("Copy\d+ chars / \d+ words")
+copy_code_pattern = re.compile("```(.*?)Copy code\s*```")
 
 def reformat_code(val: str) -> str:
     # Input code format is:
@@ -37,26 +40,30 @@ def reformat_code(val: str) -> str:
 
 def html_to_markdown(val: str) -> str:
     """can handle enum, table and code. Code not in the best format."""
-    # Delete all <div>. This is required to make intent work in code blocks.
+    # Remove all <div>. This is required to make intent work in code blocks.
     val = re.sub(div_pattern, "", val)
-    # Delete all <span>. This is required to make underscores work in code blocks.
+    # Remove all <span>. This is required to make underscores work in code blocks.
     val = re.sub(span_pattern, "", val)
-    # Remove all html tags
-    val = markdownify.markdownify(val)
-    val = val.strip()
-
-    # Remove noisy "[number] / [number]" at the beginning
-    noise = re.search("\d+ / \d+", val)
-    if noise and noise.start() == 0:
-        val = val[noise.end():]
-
-    # Remove noisy "Copy[number] chars / [number] words"
-    val = re.sub("Copy\d+ chars / \d+ words", "", val)
-
+    # Markdown to html
+    val = markdownify.markdownify(val).strip()
     # Reformat code
     val = reformat_code(val)
-    val = val.replace("\n\n\n", "\n")
-    val = val.strip()
+
+    # Remove noisy "[number] / [number]" at the beginning
+    noise = re.search(regenerate_pattern, val)
+    if noise and noise.start() == 0:
+        val = val[noise.end():]
+    # Remove noisy "Copy[number] chars / [number] words"
+    val = re.sub(copy_chars_pattern, "", val)
+    # Remove empty code block ```\nCopy code\n```
+    val = re.sub(copy_code_pattern, "", val)
+
+    # Strip
+    val = val.replace("\n\n\n", "\n").strip()
+
+    if args.debug:
+        print(val)
+        exit()
 
     return val
 
@@ -137,6 +144,7 @@ if __name__ == "__main__":
     parser.add_argument("--out-file", type=str, default="sharegpt_clean.json")
     parser.add_argument("--begin", type=int)
     parser.add_argument("--end", type=int)
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--check-tag", type=str)
     parser.add_argument("--check-num", type=int, default=1)
     args = parser.parse_args()
