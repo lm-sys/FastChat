@@ -11,21 +11,18 @@ from tqdm import tqdm
 
 def skip(conv, options: dict):
     if options["lang"] != "all" or options["skip_lang"] != "none":
-        cnt1 = 0
-        cnt2 = 0
+        cnt = 0
         for sentence in conv["conversations"][:10]:
             try:
                 lang = detect(sentence["value"])
                 if options["lang"] != "all" and  lang != options["lang"]:
-                    cnt1 += 1
+                    cnt += 1
                 if lang == options["skip_lang"]:
-                    cnt2 += 1
+                    return True
             except:
-                cnt1 += 1
+                cnt += 1
                 pass
-        if cnt1 > min(5, len(conv["conversations"]) // 2):
-            return True
-        if cnt2 > min(5, len(conv["conversations"]) // 2):
+        if cnt > min(5, len(conv["conversations"]) // 2):
             return True
     if options["reduce_rep"]:
         for sentence in conv["conversations"]:
