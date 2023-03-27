@@ -10,6 +10,12 @@ function formatText(input) {
     return input.replace(/\n/g, '<br>');
 }
 
+function text2Markdown(text) {
+    // Normalize the text for markdown rendering.
+    text = text.trim().replace('\n\n', '\n').replace('\n', '\n\n');
+    return marked.parse(text);
+}
+
 function populateQuestions() {
     const select = document.getElementById('question-select');
     data.questions.forEach((question, index) => {
@@ -41,17 +47,12 @@ function displayAnswers(index) {
     const question = data.questions[index];
     const otherModel = document.getElementById('model-select').value;
     document.getElementById('other-model-header').textContent = `AI Assistant 1 (${otherModel})`;
-    let other_answer = question.answers[otherModel];
-    let vicuna_answer = question.answers.vicuna;
-    // Normalize the answers for markdown rendering.
-    other_answer = other_answer.replace('\n\n', '\n').replace('\n', '\n\n');
-    vicuna_answer = vicuna_answer.replace('\n\n', '\n').replace('\n', '\n\n');
 
     // document.getElementById('other-model-answer').innerHTML = formatText(question.answers[otherModel]);
     // document.getElementById('our-model-answer').innerHTML = formatText(question.answers.vicuna);
     // render the answers with markdown
-    document.getElementById('other-model-answer').innerHTML = marked.parse(question.answers[otherModel]);
-    document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.vicuna);
+    document.getElementById('other-model-answer').innerHTML = text2Markdown(question.answers[otherModel]);
+    document.getElementById('our-model-answer').innerHTML = text2Markdown(question.answers.vicuna);
 
     displayEvaluation(index);
     // Update expand buttons visibility for both cards after displaying answers
@@ -72,10 +73,8 @@ function displayEvaluation(index) {
     score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
     document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
 
-    evaluationResult = question.evaluations[otherModel];
-    evaluationResult = evaluationResult.replace('\n\n', '\n').replace('\n', '\n\n');
     // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
-    document.getElementById('evaluation-result').innerHTML = marked.parse(evaluationResult);
+    document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 }
 
 document.getElementById('question-select').addEventListener('change', e => {
