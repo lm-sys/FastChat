@@ -114,17 +114,17 @@ class ModelWorker:
         }
 
     @torch.inference_mode()
-    def generate_stream(self, args):
+    def generate_stream(self, params):
         #cur_mem = torch.cuda.memory_allocated()
         #max_mem = torch.cuda.max_memory_allocated()
         #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
 
         tokenizer, model = self.tokenizer, self.model
 
-        context = args["prompt"]
-        temperature = float(args.get("temperature", 1.0))
-        max_new_tokens = int(args.get("max_new_tokens", 256))
-        stop_str = args.get("stop", None)
+        context = params["prompt"]
+        temperature = float(params.get("temperature", 1.0))
+        max_new_tokens = int(params.get("max_new_tokens", 256))
+        stop_str = params.get("stop", None)
 
         input_ids = tokenizer(context).input_ids
         output_ids = list(input_ids)
@@ -168,20 +168,21 @@ class ModelWorker:
             else:
                 stopped = False
 
-            ret = {
-                "text": output,
-                "error_code": 0,
-            }
-            yield (json.dumps(ret) + "\0").encode("utf-8")
+            if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
+                ret = {
+                    "text": output,
+                    "error_code": 0,
+                }
+                yield (json.dumps(ret) + "\0").encode("utf-8")
 
             if stopped:
                 break
 
         del past_key_values
 
-    def generate_stream_gate(self, args, release_semaphore):
+    def generate_stream_gate(self, params, release_semaphore):
         try:
-            for x in self.generate_stream(args):
+            for x in self.generate_stream(params):
                 yield x
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -197,7 +198,7 @@ app = FastAPI()
 model_semaphore = None
 
 
-@app.post("/generate_stream")
+@app.post("/worker_generate_stream")
 async def generate_stream(request: Request):
     global model_semaphore
     params = await request.json()
@@ -209,7 +210,7 @@ async def generate_stream(request: Request):
     return StreamingResponse(generator)
 
 
-@app.post("/get_status")
+@app.post("/worker_get_status")
 async def get_status(request: Request):
     return worker.get_status()
 
@@ -226,6 +227,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
+    parser.add_argument("--stream-interval", type=int, default=4)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
 

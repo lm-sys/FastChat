@@ -164,7 +164,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
-    response = requests.post(worker_addr + "/generate_stream",
+    response = requests.post(worker_addr + "/worker_generate_stream",
         headers=headers, json=pload, stream=True)
 
     # Stream output

@@ -3,6 +3,7 @@ A controller manages distributed workers.
 It sends worker addresses to clients.
 """
 import argparse
+import asyncio
 import dataclasses
 import logging
 import time
@@ -10,6 +11,7 @@ from typing import List, Union
 import threading
 
 from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 import numpy as np
 import requests
 import uvicorn
@@ -67,7 +69,7 @@ class Controller:
 
     def get_worker_status(self, worker_name: str):
         try:
-            r = requests.post(worker_name + "/get_status", timeout=5)
+            r = requests.post(worker_name + "/worker_get_status", timeout=5)
         except requests.exceptions.RequestException as e:
             logger.error(f"Get status fails: {worker_name}, {e}")
             return None
@@ -147,9 +149,42 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
+    def worker_api_generate_stream(self, params, release_semaphore):
+        headers = {"User-Agent": "ChatServer Client"}
+        worker_addr = self.get_worker_address(params["model"])
+        if not worker_addr:
+            ret = {
+                "text": server_error_msg,
+                "error_code": 2,
+            }
+            yield (json.dumps(ret) + "\0").encode("utf-8")
+
+        response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
+            json=params, stream=True)
+        for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+            if chunk:
+                yield chunk + b"\0"
+
+    # Let the controller act as a worker to achieve hierarchical
+    # management. This can be used to connect isolated sub networks.
+    def worker_api_get_status(self):
+        model_names = set()
+        speed = 0
+
+        for w_name in self.worker_info:
+            worker_status = self.get_worker_status(w_name)
+            if worker_status is not None:
+                model_names.update(worker_status["model_names"])
+                speed += worker_status["speed"]
+
+        return {
+            "model_names": list(model_names),
+            "speed": 1,
+        }
+
 
 app = FastAPI()
-
+worker_api_model_semaphore = None
 
 @app.post("/register_worker")
 async def register_worker(request: Request):
@@ -184,10 +219,30 @@ async def receive_heart_beat(request: Request):
     return {"exist": exist}
 
 
+@app.post("/worker_generate_stream")
+async def worker_api_generate_stream(request: Request):
+    global worker_api_model_semaphore
+    params = await request.json()
+    if worker_api_model_semaphore is None:
+        worker_api_model_semaphore = asyncio.Semaphore(
+            args.worker_api_limit_model_concurrency)
+    await worker_api_model_semaphore.acquire()
+
+    generator = controller.worker_api_generate_stream(params, worker_api_model_semaphore)
+    return StreamingResponse(generator)
+
+
+@app.post("/worker_get_status")
+async def worker_api_get_status(request: Request):
+    return controller.worker_api_get_status()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
+    parser.add_argument("--worker-api-limit-model-concurrency",
+        type=int, default=4)
     args = parser.parse_args()
 
     controller = Controller()
