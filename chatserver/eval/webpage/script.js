@@ -47,8 +47,12 @@ function displayAnswers(index) {
     // document.getElementById('our-model-answer').innerHTML = marked.parse(question.answers.vicuna);
     displayEvaluation(index);
     // Update expand buttons visibility for both cards after displaying answers
+    // Reset the expanded state and update expand buttons visibility for both cards after displaying answers
     document.querySelectorAll('.expandable-card').forEach(card => {
+        card.classList.remove('expanded');
         updateExpandButtonVisibility(card);
+        const expandBtn = card.querySelector('.expand-btn');
+        expandBtn.textContent = 'Show more';
     });
 }
 
