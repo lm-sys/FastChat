@@ -87,7 +87,7 @@ class Controller:
 
         for w_name, w_info in old_info.items():
             if not self.register_worker(w_name, w_info.check_heart_beat, None):
-                logger.info(f"Remove stale worker: {worker_name}")
+                logger.info(f"Remove stale worker: {w_name}")
 
     def list_models(self):
         model_names = set()
