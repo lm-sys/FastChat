@@ -39,7 +39,6 @@ def reformat_code(val: str) -> str:
 
 
 def html_to_markdown(val: str) -> str:
-    """can handle enum, table and code. Code not in the best format."""
     # Remove all <div>. This is required to make intent work in code blocks.
     val = re.sub(div_pattern, "", val)
     # Remove all <span>. This is required to make underscores work in code blocks.
