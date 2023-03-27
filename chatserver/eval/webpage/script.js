@@ -38,8 +38,7 @@ function populateModels() {
 
 function displayQuestion(index) {
     const question = data.questions[index].question;
-
-    document.getElementById('selected-question').innerHTML = "<strong>Question: </strong>" + formatText(question);
+    document.getElementById('selected-question').innerHTML = text2Markdown('**Question:** ' + question); // "<strong>Question: </strong>" + formatText(question);
     displayAnswers(index);
 }
 
@@ -77,7 +76,7 @@ function displayAnswers(index) {
         card.classList.remove('expanded');
         updateExpandButtonVisibility(card);
         const expandBtn = card.querySelector('.expand-btn');
-        expandBtn.textContent = 'Show more';
+        expandBtn.innerHTML = '<i class="material-icons" style="pointer-events: none">keyboard_arrow_down</i> Show more';   // .textContent = 'Show more';
     });
 }
 
@@ -110,9 +109,10 @@ function updateExpandButtonVisibility(card) {
     const cardTextContainer = card.querySelector('.card-text-container');
     const expandBtn = card.querySelector('.expand-btn');
     if (cardTextContainer.scrollHeight > cardTextContainer.offsetHeight) {
-        expandBtn.style.display = 'block';
+        expandBtn.style.display = 'flex';
     } else {
         expandBtn.style.display = 'none';
+        card.classList.add('expanded');
     }
 }
 
@@ -120,6 +120,8 @@ document.querySelectorAll('.expand-btn').forEach(btn => {
     btn.addEventListener('click', e => {
         const card = e.target.closest('.expandable-card');
         card.classList.toggle('expanded');
-        e.target.textContent = card.classList.contains('expanded') ? 'Show less' : 'Show more';
+        const more = '<i class="material-icons" style="pointer-events: none">keyboard_arrow_down</i> Show more';
+        const less = '<i class="material-icons" style="pointer-events: none">keyboard_arrow_up</i> Show less';
+        e.target.innerHTML = card.classList.contains('expanded') ? less : more;
     });
 });

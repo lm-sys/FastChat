@@ -12,7 +12,7 @@
             max-height: 150px;
             overflow-y: hidden;
             position: relative;
-            padding-bottom: 20px;
+            /* padding-bottom: 20px; */
         }
 
         .expandable-card.expanded .card-text-container {
@@ -22,11 +22,18 @@
         .expand-btn {
             position: relative;
             display: none;
+            background-color: rgba(255, 255, 255, 0.8);
+            /* margin-top: -20px; */
+            /* justify-content: center; */
+            color: #510c75;
+            border-color: transparent;
         }
 
         .expand-btn:hover {
-            color: #ffffff;
+            background-color: rgba(200, 200, 200, 0.8);
             text-decoration: none;
+            border-color: transparent;
+            color: #510c75;
         }
 
         .expand-btn:focus {
@@ -40,8 +47,16 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 30px;
-            background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+            height: 90px;
+            background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1));
+        }
+
+        .expandable-card:not(.expanded) .expand-btn {
+            margin-top: -40px;
+        }
+
+        .card-body {
+            padding-bottom: 5px;
         }
     </style>
 </head>
@@ -83,7 +98,7 @@
                         <div class="card-text-container">
                             <div class="card-text" id="other-model-answer"></div>
                         </div>
-                        <button class="btn btn-link expand-btn" style="display:none;">Show more</button>
+                        <div class="btn btn-primary expand-btn" style="display:flex;"></div>
                     </div>
                 </div>
             </div>
@@ -94,7 +109,7 @@
                         <div class="card-text-container">
                             <div class="card-text" id="our-model-answer"></div>
                         </div>
-                        <button class="btn btn-link expand-btn" style="display:none;">Show more</button>
+                        <div class="btn btn-primary expand-btn" style="display:flex;"></div>
                     </div>
                 </div>
             </div>
@@ -106,7 +121,7 @@
                 <div class="card-text-container">
                     <div class="card-text" id="evaluation-result"></div>
                 </div>
-                <button class="btn btn-link expand-btn" style="display:none;">Show more</button>
+                <div class="btn btn-primary expand-btn" style="display:flex;"></div>
             </div>
         </div>
     </div>
