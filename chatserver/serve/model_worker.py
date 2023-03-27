@@ -67,7 +67,7 @@ class ModelWorker:
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        self.model_name = model_name or model_path
+        self.model_name = model_name or model_path.split("/")[0]
 
         logger.info(f"Loading the model {model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(
