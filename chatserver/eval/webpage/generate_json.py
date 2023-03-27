@@ -60,6 +60,20 @@ if __name__ == '__main__':
                 'gpt35': eval_results_gpt35[qid]['tuple'],
             },
         }
+
+        # cleanup data
+        cleaned_evals = {}
+        for k, v in r['evaluations'].items():
+            lines = v.split('\n')
+            new_lines = []
+            for line in lines:
+                if len(line) <= 30:
+                    continue
+                line = line.replace('Assistant 1', f"`{k}`").replace('Assistant 2', '`Vicuna`')
+                new_lines.append(line)
+            cleaned_evals[k] = '\n'.join(new_lines)
+
+        r['evaluations'] = cleaned_evals
         records.append(r)
 
     data = {
