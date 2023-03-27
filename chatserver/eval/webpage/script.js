@@ -73,6 +73,7 @@ function displayEvaluation(index) {
     document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
 
     evaluationResult = question.evaluations[otherModel];
+    evaluationResult = evaluationResult.replace('\n\n', '\n').replace('\n', '\n\n');
     // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
     document.getElementById('evaluation-result').innerHTML = marked.parse(evaluationResult);
 }
