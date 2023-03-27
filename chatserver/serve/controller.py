@@ -149,7 +149,7 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
-    def worker_api_generate_stream(self, params, release_semaphore):
+    def worker_api_generate_stream(self, params):
         headers = {"User-Agent": "ChatServer Client"}
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
@@ -184,7 +184,7 @@ class Controller:
 
 
 app = FastAPI()
-worker_api_model_semaphore = None
+
 
 @app.post("/register_worker")
 async def register_worker(request: Request):
@@ -221,14 +221,8 @@ async def receive_heart_beat(request: Request):
 
 @app.post("/worker_generate_stream")
 async def worker_api_generate_stream(request: Request):
-    global worker_api_model_semaphore
     params = await request.json()
-    if worker_api_model_semaphore is None:
-        worker_api_model_semaphore = asyncio.Semaphore(
-            args.worker_api_limit_model_concurrency)
-    await worker_api_model_semaphore.acquire()
-
-    generator = controller.worker_api_generate_stream(params, worker_api_model_semaphore)
+    generator = controller.worker_api_generate_stream(params)
     return StreamingResponse(generator)
 
 
@@ -241,8 +235,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
-    parser.add_argument("--worker-api-limit-model-concurrency",
-        type=int, default=4)
     args = parser.parse_args()
 
     controller = Controller()
