@@ -36,13 +36,15 @@ CUDA_VISIBLE_DEVICES=2 python3 -m chatserver.serve.model_worker --model-path ~/m
 CUDA_VISIBLE_DEVICES=3 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/bair-chat-13b/ --controller http://localhost:10002 --port 31003 --worker http://localhost:31003
 
 python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://localhost:10002
-
-python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name https://
 ```
 
 #### Web server
 ```
 python3 -m chatserver.serve.controller --host 0.0.0.0 --port 21001
+
+python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name https://
+python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://localhost:21001
+
 python3 -m chatserver.serve.gradio_web_server --controller http://localhost:21001
 ```
 
