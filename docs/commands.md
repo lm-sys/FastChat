@@ -28,9 +28,13 @@ gsutil cp sharegpt_20230322_split.json gs://model-weights/sharegpt/
 ```
 python3 -m chatserver.serve.controller --host 0.0.0.0 --port 10002
 
-CUDA_VISIBLE_DEVICES=0 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/alpaca-7b/ --controller http://localhost:10002 --host 0.0.0.0 --port 31000
+CUDA_VISIBLE_DEVICES=0 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/alpaca-7b/ --controller http://localhost:10002 --port 31000 --worker http://localhost:31000
 
-CUDA_VISIBLE_DEVICES=2 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/bair-chat-7b/ --controller http://localhost:10002 --host 0.0.0.0 --port 31002
+CUDA_VISIBLE_DEVICES=2 python3 -m chatserver.serve.model_worker --model-path ~/model_weights/bair-chat-7b/ --controller http://localhost:10002 --port 31002 --worker http://localhost:31002
+
+python3 -m chatserver.serve.test_message --model alpaca-7b --controller http://localhost:10002
+
+python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name https://
 ```
 
 ### Host a gradio web server
