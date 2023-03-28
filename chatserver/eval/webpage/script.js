@@ -21,7 +21,7 @@ modelFigureMapping = {
     // Image from: https://crfm.stanford.edu/2023/03/13/alpaca.html
     "alpaca": "figures/alpaca.png",
     // Created Using Midjourney: https://pub.towardsai.net/inside-llama-meta-ai-new-large-language-model-that-outperforms-gpt-3-across-many-tasks-d1e42f23c804
-    "llama": "figures/llama.png",
+    "llama": "figures/llama.jpg",
 }
 
 // Store the question data in a mapping for later use.
