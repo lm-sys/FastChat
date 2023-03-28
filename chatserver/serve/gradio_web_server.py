@@ -167,7 +167,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     }
     logger.info(f"==== request ====\n{pload}")
     response = requests.post(worker_addr + "/worker_generate_stream",
-        headers=headers, json=pload, stream=True)
+        headers=headers, json=pload, stream=True, timeout=5)
 
     # Stream output
     for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
@@ -181,6 +181,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                 output = data["text"]
                 state.messages[-1][-1] = output + "▌"
                 yield state, state.to_gradio_chatbot()
+            time.sleep(0.05)
 
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
     yield state, state.to_gradio_chatbot()

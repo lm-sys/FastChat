@@ -133,6 +133,7 @@ class ModelWorker:
         input_ids = input_ids[-max_src_len:]
 
         for i in range(max_new_tokens):
+            print(f"token {i}")
             if i == 0:
                 out = model(
                     torch.as_tensor([input_ids]).cuda(), use_cache=True)
