@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistants Comparison</title>
+    <title>Who's GPT-4's favorite? Battles between STOA Chatbots</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -67,12 +67,21 @@
             flex-direction: column;
             gap: 5px;
         }
+
+        .figure-img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .adjustable-font-size {
+            font-size: calc(0.5rem + 2vw);
+        }
     </style>
 </head>
 
 <body>
     <div class="container mt-5">
-        <h2 class="text-center mb-5">AI Assistants Performance Comparison</h2>
+        <h2 class="text-center mb-5">Who's GPT-4's favorite? Battles between STOA Chatbots</h2>
         <div class="form-row">
             <div class="form-group col-md-2">
                 <label for="category-select">Category</label>
@@ -94,26 +103,33 @@
             <!-- <div class="card-header compact-header">Selected Question</div> -->
             <div class="card-body" id="selected-question"></div>
         </div>
-        <div class="form-row justify-content-center">
-            <div class="form-group col-md-3">
+
+        <div class="row mb-4", style="justify-content: center;">
+            <div class="col", style="display: flex; justify-content: center; align-items: center;">
+                <label class="adjustable-font-size" id="other-score-label">*/10</label>
+            </div>
+            <div class="col">
                 <div class="vertical-flex-layout">
-                    <img class="img-thumbnail shadow" src="http://via.placeholder.com/200x200" alt="vicuna logo" width="150">
-                    <!-- <select class="form-control" id="model-select" style="text-align: center;"></select> -->
+                    <img class="shadow figure-img img-fluid" src="http://via.placeholder.com/200x200" alt="vicuna logo" width="150">
                 </div>
             </div>
-            <div class="form-group col-md-3">
+            <div class="col">
                 <div class="vertical-flex-layout">
                     <!-- From: https://www.freepnglogos.com/images/vs-41949.html -->  
                     <!-- Copy right of this image: non-commercial usage only. -->
-                    <img src="vs-blade-black-panther-logo-hd-transparent-29.png" width="75" height="75"></img>
+                    <img class="figure-img img-fluid" src="vs-blade-black-panther-logo-hd-transparent-29.png" width="60" height="60"></img>
                 </div>
             </div>
-            <div class="form-group col-md-3">
+            <div class="col">
                 <div class="vertical-flex-layout">
-                    <img class="img-thumbnail shadow" src="http://via.placeholder.com/200x200" alt="other logo" width="150">
+                    <img class="shadow figure-img img-fluid" src="http://via.placeholder.com/200x200" alt="other logo" width="150">
                 </div>
+            </div>
+            <div class="col", style="display: flex; justify-content: center; align-items: center;">
+                <label class="adjustable-font-size" id="our-score-label">*/10</label>
             </div>
         </div>
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4 expandable-card">

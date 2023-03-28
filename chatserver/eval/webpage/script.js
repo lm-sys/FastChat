@@ -68,16 +68,23 @@ function displayAnswers(index) {
     document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 
     // Update model names
-    assistant1_title = "Assistant #1"; // (" + modelNameMapping[otherModel] + ")";
-    assistant2_title = "Assistant #2 (Vicuna-13b, our model)";
+    let assistant1_title = "Assistant #1"; // (" + modelNameMapping[otherModel] + ")";
+    let assistant2_title = "Assistant #2 (Vicuna-13b, our model)";
+    let assistant1_score_label = score[0].toString() + '/10';
+    let assistant2_score_label = score[1].toString() + '/10';
     if (score[0] >= score[1]) {
         assistant1_title = '🏆 ' + assistant1_title;
+        assistant1_score_label = '🏆 ' + assistant1_score_label;
     }
     if (score[0] <= score[1]) {
         assistant2_title = '🏆 ' + assistant2_title;
+        assistant2_score_label = '🏆 ' + assistant2_score_label;
     }
     document.getElementById('other-model-header').textContent = assistant1_title;
-    document.getElementById('our-model-header').innerHTML = assistant2_title;
+    document.getElementById('our-model-header').textContent = assistant2_title;
+
+    document.getElementById('other-score-label').textContent = assistant1_score_label;
+    document.getElementById('our-score-label').textContent = assistant2_score_label;
 
     // Update expand buttons visibility for both cards after displaying answers
     // Reset the expanded state and update expand buttons visibility for both cards after displaying answers
