@@ -1,5 +1,8 @@
-let currentQuestionIndex = 0;
+// Description: Script for the evaluation webpage.
 
+let currentQuestionIndex = 1;
+
+// Store the model name mapping for later use.
 modelNameMapping = {
     "gpt35": "ChatGPT-3.5",
     "gpt4": "GPT-4",
@@ -7,7 +10,14 @@ modelNameMapping = {
     "vicuna": "Vicuna-13b",
     "llama": "LLaMA-13b",
     "bard": "Bard",
-}
+};
+
+// Store the question data in a mapping for later use.
+questionMapping = {};
+// Store the question ids in a mapping for later use.
+categoryMapping = {};
+// Store the number of questions for later use.
+questionsCount = 0;
 
 function formatText(input) {
     input = input.replace(/&/g, '&amp;')
@@ -25,19 +35,35 @@ function text2Markdown(text) {
     return marked.parse(text);
 }
 
-function populateQuestions() {
+function populateQuestions(questions) {
     const select = document.getElementById('question-select');
-    data.questions.forEach((question, index) => {
+    questionsCount = questions.length;
+    questions.forEach(question => {
         const option = document.createElement('option');
-        option.value = index;
+        // Store the question data in a mapping for later use.
+        questionMapping[question.id] = {
+            category: question.category,
+            question: question.question,
+            answers: question.answers,
+            evaluations: question.evaluations,
+            scores: question.scores,
+        };
+        // Store the question id in the category mapping.
+        if (question.category in categoryMapping) {
+            categoryMapping[question.category].push(question.id);
+        } else {
+            categoryMapping[question.category] = [question.id];
+        }
+        // Populate the question select.
+        option.value = question.id;
         option.textContent = question.question;
         select.appendChild(option);
     });
 }
 
-function populateModels() {
+function populateModels(models) {
     const select = document.getElementById('model-select');
-    data.models.forEach(model => {
+    models.forEach(model => {
         const option = document.createElement('option');
         option.value = model;
         option.textContent = modelNameMapping[model];
@@ -46,16 +72,14 @@ function populateModels() {
 }
 
 function displayQuestion(index) {
-    const question = data.questions[index].question;
+    const question = questionMapping[index].question;
     document.getElementById('selected-question').innerHTML = text2Markdown('**Question:** ' + question); // "<strong>Question: </strong>" + formatText(question);
     displayAnswers(index);
 }
 
 function displayAnswers(index) {
-    const question = data.questions[index];
+    const question = questionMapping[index];
     const otherModel = document.getElementById('model-select').value;
-    // document.getElementById('other-model-answer').innerHTML = formatText(question.answers[otherModel]);
-    // document.getElementById('our-model-answer').innerHTML = formatText(question.answers.vicuna);
     // render the answers with markdown
     document.getElementById('other-model-answer').innerHTML = text2Markdown(question.answers[otherModel]);
     document.getElementById('our-model-answer').innerHTML = text2Markdown(question.answers.vicuna);
@@ -64,14 +88,15 @@ function displayAnswers(index) {
     score = question.scores[otherModel];
     score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
     document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
-    // document.getElementById('evaluation-result').innerHTML = formatText(evaluationResult);
     document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 
     // Update model names
     let assistant1_title = "Assistant #1"; // (" + modelNameMapping[otherModel] + ")";
     let assistant2_title = "Assistant #2 (Vicuna-13b, our model)";
+    // Update scores/labels.
     let assistant1_score_label = score[0].toString() + '/10';
     let assistant2_score_label = score[1].toString() + '/10';
+    // Update the winner.
     if (score[0] >= score[1]) {
         assistant1_title = '🏆 ' + assistant1_title;
         assistant1_score_label = '🏆 ' + assistant1_score_label;
@@ -110,13 +135,15 @@ document.getElementById('model-select').addEventListener('change', () => {
 });
 
 document.getElementById('prev-question').addEventListener('click', () => {
-    currentQuestionIndex = Math.max(0, currentQuestionIndex - 1);
+    // Question index starts from 1.
+    currentQuestionIndex = Math.max(1, currentQuestionIndex - 1);
     document.getElementById('question-select').value = currentQuestionIndex;
     displayQuestion(currentQuestionIndex);
 });
 
 document.getElementById('next-question').addEventListener('click', () => {
-    currentQuestionIndex = Math.min(data.questions.length - 1, currentQuestionIndex + 1);
+    // Question index starts from 1.
+    currentQuestionIndex = Math.min(questionsCount, currentQuestionIndex + 1);
     document.getElementById('question-select').value = currentQuestionIndex;
     displayQuestion(currentQuestionIndex);
 });

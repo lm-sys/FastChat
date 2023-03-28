@@ -186,21 +186,15 @@
 
     <script src="script.js"></script>
     <script>
-      // Declare a global constant variable
-      const data = {};
       // Fetch the JSON file
       fetch('data.json')
         .then(response => response.json())
         .then(json_data => {
-          // Assign the JSON data to a variable
-          Object.assign(data, json_data);
-        }).then(_ => {
             // Populate the questions and models
-            populateQuestions();
-            populateModels();
+            populateQuestions(json_data.questions);
+            populateModels(json_data.models);
             displayQuestion(currentQuestionIndex);
-        })
-        .catch(error => console.error(error));
+        }).catch(error => console.error(error));
     </script>
 </body>
 
