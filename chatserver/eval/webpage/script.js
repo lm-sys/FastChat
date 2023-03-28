@@ -68,7 +68,7 @@ function displayAnswers(index) {
     document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 
     // Update model names
-    assistant1_title = "Assistant #1 (" + modelNameMapping[otherModel] + ")";
+    assistant1_title = "Assistant #1"; // (" + modelNameMapping[otherModel] + ")";
     assistant2_title = "Assistant #2 (Vicuna-13b, our model)";
     if (score[0] >= score[1]) {
         assistant1_title = '🏆 ' + assistant1_title;

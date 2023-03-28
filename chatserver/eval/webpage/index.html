@@ -104,7 +104,7 @@
             <div class="form-group col-md-3">
                 <div class="vertical-flex-layout">
                     <img class="img-thumbnail shadow" src="http://via.placeholder.com/200x200" alt="vicuna logo" width="150">
-                    <select class="form-control" id="model-select" style="text-align: center;"></select>
+                    <!-- <select class="form-control" id="model-select" style="text-align: center;"></select> -->
                 </div>
             </div>
             <div class="form-group col-md-3">
@@ -117,16 +117,22 @@
             <div class="form-group col-md-3">
                 <div class="vertical-flex-layout">
                     <img class="img-thumbnail shadow" src="http://via.placeholder.com/200x200" alt="other logo" width="150">
-                    <select disabled class="form-control" style="text-align: center; appearance: none; background-color: white;">
-                        <option>Vicuna-13b</option>
-                    </select>
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4 expandable-card">
-                    <div class="card-header" style="background-color: #f2c9c9;" id="other-model-header">Assistant #1</div>
+                    <div class="card-header" style="background-color: #f2c9c9; padding-bottom: 0.2rem">
+                        <div class="row">
+                            <div class="col-md-4" style="align-items: center; display: flex;">
+                                <label id="other-model-header">Assistant #1</label>
+                            </div>
+                            <div class="col-md-8">
+                                <select class="form-control" id="model-select" style="height: fit-content; margin-top: -0.3rem;"></select>
+                            </div>
+                        </div>
+                    </div>
                     <div class="card-body">
                         <div class="card-text-container">
                             <div class="card-text" id="other-model-answer"></div>
@@ -137,7 +143,9 @@
             </div>
             <div class="col-md-6">
                 <div class="card mb-4 expandable-card">
-                    <div class="card-header" style="background-color: #c9f2c9;" id="our-model-header">Assistant #2 (Vicuna, our model)</div>
+                    <div class="card-header" style="background-color: #c9f2c9;" id="our-model-header">
+                        Assistant #2 (Vicuna, our model)
+                    </div>
                     <div class="card-body">
                         <div class="card-text-container">
                             <div class="card-text" id="our-model-answer"></div>
