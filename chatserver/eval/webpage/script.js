@@ -42,11 +42,12 @@ function capitalizeFirstChar(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function updateQuestionSelect(category) {
+function updateQuestionSelect(question_id) {
     const select = document.getElementById('question-select');
     // Clear the question select.
     select.innerHTML = '';
     // Populate the question select.
+    category = questionMapping[question_id].category;
     categoryMapping[category].forEach(question_id => {
         const question = questionMapping[question_id];
         const option = document.createElement('option');
@@ -54,9 +55,7 @@ function updateQuestionSelect(category) {
         option.textContent = question.question;
         select.appendChild(option);
     });
-    // Update the current question index.
-    currentQuestionIndex = parseInt(select.value);
-    displayQuestion(currentQuestionIndex);
+    select.value = question_id;
 }
 
 function populateModels(models) {
@@ -95,7 +94,7 @@ function populateQuestions(questions) {
         }
     });
     // Set the default category.
-    updateQuestionSelect(category_select.value);
+    updateQuestionSelect(currentQuestionIndex);
 }
 
 function displayQuestion(index) {
@@ -156,8 +155,9 @@ document.getElementById('question-select').addEventListener('change', e => {
 document.getElementById('category-select').addEventListener('change', e => {
     let currentCategory = e.target.value;
     const questionIds = categoryMapping[currentCategory];
-    updateQuestionSelect(currentCategory);
-    displayQuestion(questionIds[0]);
+    currentQuestionIndex = questionIds[0];
+    updateQuestionSelect(currentQuestionIndex);
+    displayQuestion(currentQuestionIndex);
 });
 
 // Update expand buttons whenever the model is changed
@@ -174,7 +174,7 @@ function switchQuestionAndCategory() {
     new_category = questionMapping[currentQuestionIndex].category;
     if (old_category != new_category) {
         document.getElementById('category-select').value = new_category;
-        updateQuestionSelect(new_category);
+        updateQuestionSelect(currentQuestionIndex);
     }
     displayQuestion(currentQuestionIndex);
 }
