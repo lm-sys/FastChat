@@ -157,7 +157,6 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     prompt = state.get_prompt()
 
     # Make requests
-    headers = {"User-Agent": "Client"}
     pload = {
         "model": model_name,
         "prompt": prompt,
@@ -166,22 +165,29 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
-    response = requests.post(worker_addr + "/worker_generate_stream",
-        headers=headers, json=pload, stream=True, timeout=5)
 
-    # Stream output
-    for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-        if chunk:
-            data = json.loads(chunk.decode())
-            if data["error_code"] == 0:
-                output = data["text"][len(prompt) + 2:]
-                state.messages[-1][-1] = output + "▌"
-                yield state, state.to_gradio_chatbot()
-            else:
-                output = data["text"]
-                state.messages[-1][-1] = output + "▌"
-                yield state, state.to_gradio_chatbot()
-            time.sleep(0.05)
+    state.messages[-1][-1] = "▌"
+    yield state, state.to_gradio_chatbot()
+
+    try:
+        # Stream output
+        response = requests.post(worker_addr + "/worker_generate_stream", json=pload, stream=True, timeout=10)
+        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+            if chunk:
+                data = json.loads(chunk.decode())
+                if data["error_code"] == 0:
+                    output = data["text"][len(prompt) + 2:]
+                    state.messages[-1][-1] = output + "▌"
+                    yield state, state.to_gradio_chatbot()
+                else:
+                    output = data["text"]
+                    state.messages[-1][-1] = output + "▌"
+                    yield state, state.to_gradio_chatbot()
+                time.sleep(0.05)
+    except requests.exceptions.RequestException as e:
+        state.messages[-1][-1] = server_error_msg
+        yield state, state.to_gradio_chatbot()
+        return
 
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
     yield state, state.to_gradio_chatbot()
