@@ -161,7 +161,7 @@ class Controller:
 
         response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
             json=params, stream=True)
-        for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 yield chunk + b"\0"
 

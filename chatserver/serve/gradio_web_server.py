@@ -170,17 +170,20 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         headers=headers, json=pload, stream=True)
 
     # Stream output
-    for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+    for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
         if chunk:
-            data = json.loads(chunk.decode("utf-8"))
+            data = json.loads(chunk.decode())
             if data["error_code"] == 0:
                 output = data["text"][len(prompt) + 2:]
-                state.messages[-1][-1] = output
+                state.messages[-1][-1] = output + "▌"
                 yield state, state.to_gradio_chatbot()
             else:
                 output = data["text"]
-                state.messages[-1][-1] = output
+                state.messages[-1][-1] = output + "▌"
                 yield state, state.to_gradio_chatbot()
+
+    state.messages[-1][-1] = state.messages[-1][-1][:-1]
+    yield state, state.to_gradio_chatbot()
 
     finish_tstamp = time.time()
     logger.info(f"{output}")

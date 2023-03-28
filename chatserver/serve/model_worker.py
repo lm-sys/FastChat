@@ -139,16 +139,14 @@ class ModelWorker:
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
-                attention_mask = torch.ones(1, past_key_values[0][0].shape[-2] + 1).cuda()
-                out = model(input_ids=torch.as_tensor([[token]]).cuda(),
+                attention_mask = torch.ones(
+                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
+                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
                 logits = out.logits
                 past_key_values = out.past_key_values
-
-            assert out.hidden_states is None
-            assert out.attentions is None
 
             last_token_logits = logits[0][-1]
             if temperature < 1e-4:
@@ -173,7 +171,7 @@ class ModelWorker:
                     "text": output,
                     "error_code": 0,
                 }
-                yield (json.dumps(ret) + "\0").encode("utf-8")
+                yield json.dumps(ret).encode() + b"\0"
 
             if stopped:
                 break
@@ -189,7 +187,7 @@ class ModelWorker:
                 "text": server_error_msg,
                 "error_code": 1,
             }
-            yield (json.dumps(ret) + "\0").encode("utf-8")
+            yield json.dumps(ret).encode() + b"\0"
         if release_semaphore:
             release_semaphore.release()
 
@@ -227,7 +225,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
-    parser.add_argument("--stream-interval", type=int, default=4)
+    parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
 
