@@ -12,7 +12,6 @@
             max-height: 200px;
             overflow-y: hidden;
             position: relative;
-            /* padding-bottom: 20px; */
         }
 
         .expandable-card.expanded .card-text-container {
@@ -82,6 +81,8 @@
 <body>
     <div class="container mt-5">
         <h2 class="text-center mb-5">Who's GPT-4's favorite? Battles between STOA Chatbots</h2>
+
+        <!-- Selection -->
         <div class="form-row">
             <div class="form-group col-md-2">
                 <label for="category-select">Category</label>
@@ -100,10 +101,10 @@
             </div>
         </div>
         <div class="card mb-4">
-            <!-- <div class="card-header compact-header">Selected Question</div> -->
             <div class="card-body" id="selected-question"></div>
         </div>
 
+        <!-- "Battle" -->
         <div class="row mb-4", style="justify-content: center;">
             <div class="col", style="display: flex; justify-content: center; align-items: center;">
                 <label class="adjustable-font-size" id="other-score-label">*/10</label>
@@ -115,10 +116,7 @@
             </div>
             <div class="col">
                 <div class="vertical-flex-layout">
-                    <!-- From: https://www.freepnglogos.com/images/vs-41949.html -->  
-                    <!-- Copy right of this image: non-commercial usage only. -->
-                    <!-- <img class="figure-img img-fluid" src="vs-blade-black-panther-logo-hd-transparent-29.png" width="60" height="60"></img> -->
-                    <img class="figure-img img-fluid" src="swords_FILL0_wght300_GRAD0_opsz48.svg" width="60" height="60"></img>
+                    <img class="figure-img img-fluid" src="figures/swords_FILL0_wght300_GRAD0_opsz48.svg" width="60" height="60"></img>
                 </div>
             </div>
             <div class="col">
@@ -131,6 +129,7 @@
             </div>
         </div>
 
+        <!-- Answer Cards -->
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4 expandable-card">
@@ -166,9 +165,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- Evaluation -->
         <div class="card expandable-card">
             <div class="card-header" style="background-color: #c9c9f2;" id="evaluation-header">GPT-4 Evaluation</div>
-            <!-- <div class="card-body" id="evaluation-result"></div> -->
             <div class="card-body">
                 <div class="card-text-container">
                     <div class="card-text" id="evaluation-result"></div>
