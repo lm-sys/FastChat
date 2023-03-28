@@ -84,7 +84,6 @@ function populateModels(models) {
         option.textContent = modelNameMapping[model];
         select.appendChild(option);
     });
-    document.getElementById('our-model-figure').src = modelFigureMapping['vicuna'];
     updateModelSelect();
 }
 
@@ -142,15 +141,26 @@ function displayAnswers(index) {
     // Update scores/labels.
     let assistant1_score_label = score[0].toString() + '/10';
     let assistant2_score_label = score[1].toString() + '/10';
+
+    const colorRed = '#f2c9c9';
+    const colorGreen = '#c9f2c9';
+    let otherModelHeaderColor = colorRed;
+    let ourModelHeaderColor = colorRed;
     // Update the winner.
     if (score[0] >= score[1]) {
         assistant1_title = '🏆 ' + assistant1_title;
         assistant1_score_label = '🏆 ' + assistant1_score_label;
+        otherModelHeaderColor = colorGreen;
     }
     if (score[0] <= score[1]) {
         assistant2_title = '🏆 ' + assistant2_title;
         assistant2_score_label = '🏆 ' + assistant2_score_label;
+        ourModelHeaderColor = colorGreen;
     }
+
+    document.getElementById('other-model-header-bg').style.backgroundColor = otherModelHeaderColor;
+    document.getElementById('our-model-header').style.backgroundColor = ourModelHeaderColor;
+
     document.getElementById('other-model-header').textContent = assistant1_title;
     document.getElementById('our-model-header').textContent = assistant2_title;
 
