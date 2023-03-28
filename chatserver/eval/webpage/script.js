@@ -35,8 +35,17 @@ function text2Markdown(text) {
     return marked.parse(text);
 }
 
+function capitalizeFirstChar(str) {
+    if (!str || str.length === 0) {
+      return str;
+    }
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function populateQuestions(questions) {
     const select = document.getElementById('question-select');
+    const category_select = document.getElementById('category-select');
+
     questionsCount = questions.length;
     questions.forEach(question => {
         const option = document.createElement('option');
@@ -53,6 +62,10 @@ function populateQuestions(questions) {
             categoryMapping[question.category].push(question.id);
         } else {
             categoryMapping[question.category] = [question.id];
+            const category_option = document.createElement('option');
+            category_option.value = question.category;
+            category_option.textContent = capitalizeFirstChar(question.category);
+            category_select.appendChild(category_option);
         }
         // Populate the question select.
         option.value = question.id;
@@ -138,6 +151,7 @@ document.getElementById('prev-question').addEventListener('click', () => {
     // Question index starts from 1.
     currentQuestionIndex = Math.max(1, currentQuestionIndex - 1);
     document.getElementById('question-select').value = currentQuestionIndex;
+    document.getElementById('category-select').value = questionMapping[currentQuestionIndex].category;
     displayQuestion(currentQuestionIndex);
 });
 
@@ -145,6 +159,7 @@ document.getElementById('next-question').addEventListener('click', () => {
     // Question index starts from 1.
     currentQuestionIndex = Math.min(questionsCount, currentQuestionIndex + 1);
     document.getElementById('question-select').value = currentQuestionIndex;
+    document.getElementById('category-select').value = questionMapping[currentQuestionIndex].category;
     displayQuestion(currentQuestionIndex);
 });
 
