@@ -39,6 +39,7 @@ if __name__ == '__main__':
     for qid in questions.keys():
         r = {
             'id': qid,
+            'category': questions[qid]['category'],
             'question': questions[qid]['question'],
             'answers': {
                 'alpaca': alpaca_answers[qid]['answer'],
@@ -69,8 +70,8 @@ if __name__ == '__main__':
             for line in lines:
                 if len(line) <= 30:
                     continue
-                other_model = k[0].upper() + k[1:]
-                line = line.replace('Assistant 1', f"`{other_model}`").replace('Assistant 2', '`Vicuna`')
+                # other_model = k[0].upper() + k[1:]
+                # line = line.replace('Assistant 1', f"`{other_model}`").replace('Assistant 2', '`Vicuna`')
                 new_lines.append(line)
             cleaned_evals[k] = '\n'.join(new_lines)
 
