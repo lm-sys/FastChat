@@ -113,9 +113,12 @@ class Controller:
         worker_speeds = worker_speeds / norm
 
         if True:  # Directly return address
-            return worker_names
+            pt = np.random.choice(np.arange(len(worker_names)),
+                p=worker_speeds)
+            worker_name = worker_names[pt]
+            return worker_name
 
-        # Check status
+        # Check status before returning
         while True:
             pt = np.random.choice(np.arange(len(worker_names)),
                 p=worker_speeds)
