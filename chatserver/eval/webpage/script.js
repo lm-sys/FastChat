@@ -64,7 +64,7 @@ function updateQuestionSelect(question_id) {
         const question = questionMapping[question_id];
         const option = document.createElement('option');
         option.value = question_id;
-        option.textContent = question.question;
+        option.textContent = 'Q' + question_id.toString() + ': ' + question.question;
         select.appendChild(option);
     });
     select.value = question_id;
