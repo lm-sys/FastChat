@@ -112,6 +112,10 @@ class Controller:
             return ""
         worker_speeds = worker_speeds / norm
 
+        if True:  # Directly return address
+            return worker_names
+
+        # Check status
         while True:
             pt = np.random.choice(np.arange(len(worker_names)),
                 p=worker_speeds)
@@ -121,7 +125,7 @@ class Controller:
                 break
             else:
                 self.remove_worker(worker_name)
-                self.worker_speeds[pt] = 0
+                worker_speeds[pt] = 0
                 norm = np.sum(worker_speeds)
                 if norm < 1e-4:
                     return ""
