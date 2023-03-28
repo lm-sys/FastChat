@@ -190,9 +190,9 @@
       fetch('data.json')
         .then(response => response.json())
         .then(json_data => {
-            // Populate the questions and models
-            populateQuestions(json_data.questions);
+            // Populate the models and questions.
             populateModels(json_data.models);
+            populateQuestions(json_data.questions);
             displayQuestion(currentQuestionIndex);
         }).catch(error => console.error(error));
     </script>

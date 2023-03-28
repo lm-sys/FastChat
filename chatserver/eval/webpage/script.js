@@ -42,8 +42,34 @@ function capitalizeFirstChar(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function populateQuestions(questions) {
+function updateQuestionSelect(category) {
     const select = document.getElementById('question-select');
+    // Clear the question select.
+    select.innerHTML = '';
+    // Populate the question select.
+    categoryMapping[category].forEach(question_id => {
+        const question = questionMapping[question_id];
+        const option = document.createElement('option');
+        option.value = question_id;
+        option.textContent = question.question;
+        select.appendChild(option);
+    });
+    // Update the current question index.
+    currentQuestionIndex = parseInt(select.value);
+    displayQuestion(currentQuestionIndex);
+}
+
+function populateModels(models) {
+    const select = document.getElementById('model-select');
+    models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = modelNameMapping[model];
+        select.appendChild(option);
+    });
+}
+
+function populateQuestions(questions) {
     const category_select = document.getElementById('category-select');
 
     questionsCount = questions.length;
@@ -67,21 +93,9 @@ function populateQuestions(questions) {
             category_option.textContent = capitalizeFirstChar(question.category);
             category_select.appendChild(category_option);
         }
-        // Populate the question select.
-        option.value = question.id;
-        option.textContent = question.question;
-        select.appendChild(option);
     });
-}
-
-function populateModels(models) {
-    const select = document.getElementById('model-select');
-    models.forEach(model => {
-        const option = document.createElement('option');
-        option.value = model;
-        option.textContent = modelNameMapping[model];
-        select.appendChild(option);
-    });
+    // Set the default category.
+    updateQuestionSelect(category_select.value);
 }
 
 function displayQuestion(index) {
@@ -139,6 +153,13 @@ document.getElementById('question-select').addEventListener('change', e => {
     displayQuestion(currentQuestionIndex);
 });
 
+document.getElementById('category-select').addEventListener('change', e => {
+    let currentCategory = e.target.value;
+    const questionIds = categoryMapping[currentCategory];
+    updateQuestionSelect(currentCategory);
+    displayQuestion(questionIds[0]);
+});
+
 // Update expand buttons whenever the model is changed
 document.getElementById('model-select').addEventListener('change', () => {
     displayAnswers(currentQuestionIndex);
@@ -147,20 +168,27 @@ document.getElementById('model-select').addEventListener('change', () => {
     });
 });
 
+function switchQuestionAndCategory() {
+    document.getElementById('question-select').value = currentQuestionIndex;
+    old_category = document.getElementById('category-select').value;
+    new_category = questionMapping[currentQuestionIndex].category;
+    if (old_category != new_category) {
+        document.getElementById('category-select').value = new_category;
+        updateQuestionSelect(new_category);
+    }
+    displayQuestion(currentQuestionIndex);
+}
+
 document.getElementById('prev-question').addEventListener('click', () => {
     // Question index starts from 1.
     currentQuestionIndex = Math.max(1, currentQuestionIndex - 1);
-    document.getElementById('question-select').value = currentQuestionIndex;
-    document.getElementById('category-select').value = questionMapping[currentQuestionIndex].category;
-    displayQuestion(currentQuestionIndex);
+    switchQuestionAndCategory();
 });
 
 document.getElementById('next-question').addEventListener('click', () => {
     // Question index starts from 1.
     currentQuestionIndex = Math.min(questionsCount, currentQuestionIndex + 1);
-    document.getElementById('question-select').value = currentQuestionIndex;
-    document.getElementById('category-select').value = questionMapping[currentQuestionIndex].category;
-    displayQuestion(currentQuestionIndex);
+    switchQuestionAndCategory();
 });
 
 function updateExpandButtonVisibility(card) {
