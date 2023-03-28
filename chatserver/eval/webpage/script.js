@@ -12,6 +12,18 @@ modelNameMapping = {
     "bard": "Bard",
 };
 
+modelFigureMapping = {
+    "vicuna": "figures/vicuna.jpeg",
+    // Image from: https://commons.wikimedia.org/wiki/File:ChatGPT_logo.svg
+    "gpt35": "figures/chatgpt.svg",
+    // Image from: https://www.reddit.com/r/logodesign/comments/1128aat/google_ai_bard_logo_design/
+    "bard": "figures/bard.jpg",
+    // Image from: https://crfm.stanford.edu/2023/03/13/alpaca.html
+    "alpaca": "figures/alpaca.png",
+    // Created Using Midjourney: https://pub.towardsai.net/inside-llama-meta-ai-new-large-language-model-that-outperforms-gpt-3-across-many-tasks-d1e42f23c804
+    "llama": "figures/llama.png",
+}
+
 // Store the question data in a mapping for later use.
 questionMapping = {};
 // Store the question ids in a mapping for later use.
@@ -58,6 +70,12 @@ function updateQuestionSelect(question_id) {
     select.value = question_id;
 }
 
+function updateModelSelect() {
+    const select = document.getElementById('model-select');
+    img_path = modelFigureMapping[select.value];
+    document.getElementById('other-model-figure').src = img_path;
+}
+
 function populateModels(models) {
     const select = document.getElementById('model-select');
     models.forEach(model => {
@@ -66,6 +84,8 @@ function populateModels(models) {
         option.textContent = modelNameMapping[model];
         select.appendChild(option);
     });
+    document.getElementById('our-model-figure').src = modelFigureMapping['vicuna'];
+    updateModelSelect();
 }
 
 function populateQuestions(questions) {
@@ -166,6 +186,7 @@ document.getElementById('model-select').addEventListener('change', () => {
     document.querySelectorAll('.expandable-card').forEach(card => {
         updateExpandButtonVisibility(card);
     });
+    updateModelSelect();
 });
 
 function switchQuestionAndCategory() {
