@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who's GPT-4's favorite? Battles between STOA Chatbots</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        .expandable-card .card-text-container {
+            max-height: 200px;
+            overflow-y: hidden;
+            position: relative;
+        }
+
+        .expandable-card.expanded .card-text-container {
+            max-height: none;
+        }
+
+        .expand-btn {
+            position: relative;
+            display: none;
+            background-color: rgba(255, 255, 255, 0.8);
+            /* margin-top: -20px; */
+            /* justify-content: center; */
+            color: #510c75;
+            border-color: transparent;
+        }
+
+        .expand-btn:hover {
+            background-color: rgba(200, 200, 200, 0.8);
+            text-decoration: none;
+            border-color: transparent;
+            color: #510c75;
+        }
+
+        .expand-btn:focus {
+            outline: none;
+            text-decoration: none;
+        }
+
+        .expandable-card:not(.expanded) .card-text-container:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 90px;
+            background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1));
+        }
+
+        .expandable-card:not(.expanded) .expand-btn {
+            margin-top: -40px;
+        }
+
+        .card-body {
+            padding-bottom: 5px;
+        }
+
+        .vertical-flex-layout {
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .figure-img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .adjustable-font-size {
+            font-size: calc(0.5rem + 2vw);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center mb-5">Who's GPT-4's favorite? Battles between STOA Chatbots</h2>
+
+        <!-- Selection -->
+        <div class="form-row">
+            <div class="form-group col-md-2">
+                <label for="category-select">Category</label>
+                <select class="form-control" id="category-select"></select>
+            </div>
+            <div class="form-group col-md-8">
+                <label for="question-select">Question</label>
+                <select class="form-control" id="question-select"></select>
+            </div>
+            <div class="form-group col-md-2">
+                <div class="col-md-2"><label>&nbsp;</label></div>
+                <div class="btn-group" role="group" aria-label="Left and Right Controller">
+                    <button type="button" class="form-control btn btn-primary" id="prev-question"><i class="material-icons">keyboard_arrow_left</i></button>
+                    <button type="button" class="form-control btn btn-primary" id="next-question"><i class="material-icons">keyboard_arrow_right</i></button>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body" id="selected-question"></div>
+        </div>
+
+        <!-- "Battle" -->
+        <div class="row mb-4", style="justify-content: center;">
+            <div class="col", style="display: flex; justify-content: center; align-items: center;">
+                <label class="adjustable-font-size" id="other-score-label">*/10</label>
+            </div>
+            <div class="col">
+                <div class="vertical-flex-layout">
+                    <img class="shadow figure-img img-fluid" src="http://via.placeholder.com/200x200" alt="other logo" width="150" id="other-model-figure">
+                </div>
+            </div>
+            <div class="col">
+                <div class="vertical-flex-layout">
+                    <!-- from: https://fonts.google.com/icons?icon.query=battle&selected=Material+Symbols+Outlined:swords:FILL@0;wght@300;GRAD@0;opsz@48&icon.style=Outlined -->
+                    <img class="figure-img img-fluid" src="figures/swords_FILL0_wght300_GRAD0_opsz48.svg" width="60" height="60">
+                </div>
+            </div>
+            <div class="col">
+                <div class="vertical-flex-layout">
+                    <img class="shadow figure-img img-fluid" src="http://via.placeholder.com/200x200" alt="vicuna logo" width="150" id="our-model-figure">
+                </div>
+            </div>
+            <div class="col", style="display: flex; justify-content: center; align-items: center;">
+                <label class="adjustable-font-size" id="our-score-label">*/10</label>
+            </div>
+        </div>
+
+        <!-- Answer Cards -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4 expandable-card">
+                    <div class="card-header" style="background-color: #f2c9c9; padding-bottom: 0.2rem">
+                        <div class="row">
+                            <div class="col-md-4" style="align-items: center; display: flex;">
+                                <label id="other-model-header">Assistant #1</label>
+                            </div>
+                            <div class="col-md-8">
+                                <select class="form-control" id="model-select" style="height: fit-content; margin-top: -0.3rem;"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-text-container">
+                            <div class="card-text" id="other-model-answer"></div>
+                        </div>
+                        <div class="btn btn-primary expand-btn" style="display:flex;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4 expandable-card">
+                    <div class="card-header" style="background-color: #c9f2c9;" id="our-model-header">
+                        Assistant #2 (Vicuna, our model)
+                    </div>
+                    <div class="card-body">
+                        <div class="card-text-container">
+                            <div class="card-text" id="our-model-answer"></div>
+                        </div>
+                        <div class="btn btn-primary expand-btn" style="display:flex;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluation -->
+        <div class="card expandable-card">
+            <div class="card-header" style="background-color: #c9c9f2;" id="evaluation-header">GPT-4 Evaluation</div>
+            <div class="card-body">
+                <div class="card-text-container">
+                    <div class="card-text" id="evaluation-result"></div>
+                </div>
+                <div class="btn btn-primary expand-btn" style="display:flex;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid bg-light py-2">
+        <div class="text-center">
+            <small class="text-muted">This website is co-authored with <a href="https://openai.com" target="_blank">GPT-4</a>.</small>
+        </div>
+    </div>
+
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js"></script>
+    <!-- Bootstrap and Popper.js JavaScript dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script src="script.js"></script>
+    <script>
+      // Fetch the JSON file
+      fetch('data.json')
+        .then(response => response.json())
+        .then(json_data => {
+            // Populate the models and questions.
+            populateModels(json_data.models);
+            populateQuestions(json_data.questions);
+            displayQuestion(currentQuestionIndex);
+        }).catch(error => console.error(error));
+    </script>
+</body>
+
+</html>
