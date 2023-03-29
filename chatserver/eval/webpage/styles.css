@@ -46,8 +46,6 @@ button:hover {
     position: relative;
     display: none;
     background-color: rgba(255, 255, 255, 0.8);
-    /* margin-top: -20px; */
-    /* justify-content: center; */
     color: #510c75;
     border-color: transparent;
 }
