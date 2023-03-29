@@ -11,7 +11,7 @@ from typing import List, Union
 import threading
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import requests
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -25,6 +25,7 @@ GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+global_counter = 0
 
 
 def heart_beat_worker(controller):
@@ -133,7 +134,6 @@ class ModelWorker:
         input_ids = input_ids[-max_src_len:]
 
         for i in range(max_new_tokens):
-            print(f"token {i}")
             if i == 0:
                 out = model(
                     torch.as_tensor([input_ids]).cuda(), use_cache=True)
@@ -179,7 +179,7 @@ class ModelWorker:
 
         del past_key_values
 
-    def generate_stream_gate(self, params, release_semaphore):
+    def generate_stream_gate(self, params):
         try:
             for x in self.generate_stream(params):
                 yield x
@@ -189,24 +189,29 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
-        if release_semaphore:
-            release_semaphore.release()
 
 
 app = FastAPI()
 model_semaphore = None
 
 
+def release_model_semaphore():
+    model_semaphore.release()
+
+
 @app.post("/worker_generate_stream")
 async def generate_stream(request: Request):
-    global model_semaphore
+    global model_semaphore, global_counter
+    global_counter += 1
     params = await request.json()
+
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-
-    generator = worker.generate_stream_gate(params, model_semaphore)
-    return StreamingResponse(generator)
+    generator = worker.generate_stream_gate(params)
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(release_model_semaphore)
+    return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_get_status")
