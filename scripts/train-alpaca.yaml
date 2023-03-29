@@ -75,7 +75,7 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     chatserver/train/train.py \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/example/alpaca-data-conversation.json \
+    --data_path /data/alpaca-data-conversation.json \
     --bf16 True \
     --output_dir $CKPT_PATH \
     --num_train_epochs 3 \
