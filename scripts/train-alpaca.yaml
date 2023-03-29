@@ -9,6 +9,7 @@ file_mounts:
     name: skypilot-chatbot # Change to your own bucket
     store: gcs
     mode: MOUNT
+  /data/alpaca-data-conversation.json: chatserver/data/example/alpaca-data-conversation.json
   # /lamma:
   #   name: llama-ckpts # Change to the bucket that contains the LLaMA weights
   #   store: gcs
@@ -74,7 +75,7 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     chatserver/train/train.py \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path chatserver/data/example/alpaca-data-conversation.json \
+    --data_path /data/example/alpaca-data-conversation.json \
     --bf16 True \
     --output_dir $CKPT_PATH \
     --num_train_epochs 3 \
