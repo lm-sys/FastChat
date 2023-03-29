@@ -122,6 +122,17 @@ def add_text(state, text, request: gr.Request):
     return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
 
 
+sep = "\n```"
+def post_process_code(code):
+    if sep in code:
+        blocks = code.split(sep)
+        if len(blocks) % 2 == 1:
+            for i in range(1, len(blocks), 2):
+                blocks[i] = blocks[i].replace("\\_", "_")
+        code = sep.join(blocks)
+    return code
+
+
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
     model_name = model_selector
@@ -180,13 +191,14 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
                     output = data["text"][len(prompt) + 2:]
+                    output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield state, state.to_gradio_chatbot()
                 else:
                     output = data["text"]
                     state.messages[-1][-1] = output + "▌"
                     yield state, state.to_gradio_chatbot()
-                time.sleep(0.05)
+                time.sleep(0.04)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
         yield state, state.to_gradio_chatbot()
