@@ -157,7 +157,6 @@ class Controller:
             self.remove_worker(worker_name)
 
     def worker_api_generate_stream(self, params):
-        headers = {"User-Agent": "ChatServer Client"}
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
             ret = {
@@ -166,7 +165,8 @@ class Controller:
             }
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
-        response = requests.post(worker_addr + "/worker_generate_stream", headers=headers, json=params, stream=True)
+        response = requests.post(worker_addr + "/worker_generate_stream",
+            json=params, stream=True)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 yield chunk + b"\0"
