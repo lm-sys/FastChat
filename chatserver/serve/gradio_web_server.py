@@ -20,8 +20,9 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 headers = {"User-Agent": "ChatServer Client"}
 
-upvote_msg = "👍  Upvote the last response"
-downvote_msg = "👎  Downvote the last response"
+no_change_btn = gr.Button.update()
+enable_btn = gr.Button.update(interactive=True)
+disable_btn = gr.Button.update(interactive=False)
 
 priority = {
     "vicuna-13b": "aaaaaaa",
@@ -81,49 +82,35 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
 
 
-def upvote_last_response(state, upvote_btn, downvote_btn, model_selector,
-                         request: gr.Request):
-    if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg, ""
-    if upvote_btn == "done":
-        return "done", "done", ""
+def upvote_last_response(state, model_selector, request: gr.Request):
     vote_last_response(state, "upvote", model_selector, request)
-    return "done", "done", ""
+    return disable_btn, disable_btn
 
 
-def downvote_last_response(state, upvote_btn, downvote_btn, model_selector,
-                           request: gr.Request):
-    if len(state.messages) == state.offset:
-        return upvote_btn, downvote_msg, ""
-    if upvote_btn == "done":
-        return "done", "done", ""
+def downvote_last_response(state, model_selector, request: gr.Request):
     vote_last_response(state, "downvote", model_selector, request)
-    return "done", "done", ""
+    return disable_btn, disable_btn
 
 
 def regenerate(state):
-    if len(state.messages) == state.offset:
-        # skip empty "Regenerate"
-        return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
-
     state.messages[-1][-1] = None
-    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
 
 
 def clear_history():
     state = default_conversation.copy()
-    return state, state.to_gradio_chatbot(), ""
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
 
 
 def add_text(state, text, request: gr.Request):
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
-    return state, state.to_gradio_chatbot(), "", upvote_msg, downvote_msg
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
 
 
-sep = "\n```"
 def post_process_code(code):
+    sep = "\n```"
     if sep in code:
         blocks = code.split(sep)
         if len(blocks) % 2 == 1:
@@ -136,11 +123,6 @@ def post_process_code(code):
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
     model_name = model_selector
-
-    if len(state.messages) == state.offset:
-        # Skip empty "Regenerate"
-        yield state, state.to_gradio_chatbot()
-        return
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
@@ -163,7 +145,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # No available worker
     if worker_addr == "":
         state.messages[-1][-1] = server_error_msg
-        yield state, state.to_gradio_chatbot()
+        yield (state, state.to_gradio_chatbot(), disable_btn, disable_btn, enable_btn, enable_btn)
         return
 
     # Construct prompt
@@ -180,7 +162,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     logger.info(f"==== request ====\n{pload}")
 
     state.messages[-1][-1] = "▌"
-    yield state, state.to_gradio_chatbot()
+    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 4
 
     try:
         # Stream output
@@ -193,19 +175,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     output = data["text"][len(prompt) + 2:]
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
-                    yield state, state.to_gradio_chatbot()
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 4
                 else:
                     output = data["text"]
                     state.messages[-1][-1] = output + "▌"
-                    yield state, state.to_gradio_chatbot()
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, enable_btn, enable_btn)
                 time.sleep(0.04)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
-        yield state, state.to_gradio_chatbot()
+        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, enable_btn, enable_btn)
         return
 
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
-    yield state, state.to_gradio_chatbot()
+    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 4
 
     finish_tstamp = time.time()
     logger.info(f"{output}")
@@ -276,10 +258,10 @@ def build_demo():
             placeholder="Enter text and press ENTER", visible=False).style(container=False)
 
         with gr.Row(visible=False) as button_row:
-            upvote_btn = gr.Button(value=upvote_msg)
-            downvote_btn = gr.Button(value=downvote_msg)
-            regenerate_btn = gr.Button(value="Regenerate")
-            clear_btn = gr.Button(value="Clear history")
+            upvote_btn = gr.Button(value="👍  Upvote the last response", interactive=False)
+            downvote_btn = gr.Button(value="👎  Downvote the last response", interactive=False)
+            regenerate_btn = gr.Button(value="Regenerate", interactive=False)
+            clear_btn = gr.Button(value="Clear history", interactive=False)
 
         with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
             temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
@@ -288,22 +270,20 @@ def build_demo():
         gr.Markdown(learn_more_markdown)
 
         # Register listeners
+        btn_list = [upvote_btn, downvote_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn, textbox])
+            [state, model_selector], [upvote_btn, downvote_btn])
         downvote_btn.click(downvote_last_response,
-            [state, upvote_btn, downvote_btn, model_selector],
-            [upvote_btn, downvote_btn, textbox])
+            [state, model_selector], [upvote_btn, downvote_btn])
         regenerate_btn.click(regenerate, state,
-            [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
+            [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
-            [state, chatbot])
-        clear_btn.click(clear_history, None, [state, chatbot, textbox])
+            [state, chatbot] + btn_list)
+        clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
-        textbox.submit(add_text, [state, textbox],
-            [state, chatbot, textbox, upvote_btn, downvote_btn]).then(
-            http_bot, [state, model_selector, temperature, max_output_tokens],
-            [state, chatbot])
+        textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+                   [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
             demo.load(load_demo, None, [state, model_selector,

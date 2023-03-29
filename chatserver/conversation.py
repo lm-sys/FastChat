@@ -19,6 +19,7 @@ class Conversation:
     sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
     sep2: str = None
+    in_generation: bool = False
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
