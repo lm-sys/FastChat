@@ -11,7 +11,7 @@ from typing import List, Union
 import threading
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import requests
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -25,6 +25,7 @@ GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+global_counter = 0
 
 
 def heart_beat_worker(controller):
@@ -139,16 +140,14 @@ class ModelWorker:
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
-                attention_mask = torch.ones(1, past_key_values[0][0].shape[-2] + 1).cuda()
-                out = model(input_ids=torch.as_tensor([[token]]).cuda(),
+                attention_mask = torch.ones(
+                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
+                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
                 logits = out.logits
                 past_key_values = out.past_key_values
-
-            assert out.hidden_states is None
-            assert out.attentions is None
 
             last_token_logits = logits[0][-1]
             if temperature < 1e-4:
@@ -173,14 +172,14 @@ class ModelWorker:
                     "text": output,
                     "error_code": 0,
                 }
-                yield (json.dumps(ret) + "\0").encode("utf-8")
+                yield json.dumps(ret).encode() + b"\0"
 
             if stopped:
                 break
 
         del past_key_values
 
-    def generate_stream_gate(self, params, release_semaphore):
+    def generate_stream_gate(self, params):
         try:
             for x in self.generate_stream(params):
                 yield x
@@ -189,25 +188,30 @@ class ModelWorker:
                 "text": server_error_msg,
                 "error_code": 1,
             }
-            yield (json.dumps(ret) + "\0").encode("utf-8")
-        if release_semaphore:
-            release_semaphore.release()
+            yield json.dumps(ret).encode() + b"\0"
 
 
 app = FastAPI()
 model_semaphore = None
 
 
+def release_model_semaphore():
+    model_semaphore.release()
+
+
 @app.post("/worker_generate_stream")
 async def generate_stream(request: Request):
-    global model_semaphore
+    global model_semaphore, global_counter
+    global_counter += 1
     params = await request.json()
+
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-
-    generator = worker.generate_stream_gate(params, model_semaphore)
-    return StreamingResponse(generator)
+    generator = worker.generate_stream_gate(params)
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(release_model_semaphore)
+    return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_get_status")
@@ -227,7 +231,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=4)
-    parser.add_argument("--stream-interval", type=int, default=4)
+    parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
 

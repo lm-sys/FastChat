@@ -112,6 +112,13 @@ class Controller:
             return ""
         worker_speeds = worker_speeds / norm
 
+        if True:  # Directly return address
+            pt = np.random.choice(np.arange(len(worker_names)),
+                p=worker_speeds)
+            worker_name = worker_names[pt]
+            return worker_name
+
+        # Check status before returning
         while True:
             pt = np.random.choice(np.arange(len(worker_names)),
                 p=worker_speeds)
@@ -121,7 +128,7 @@ class Controller:
                 break
             else:
                 self.remove_worker(worker_name)
-                self.worker_speeds[pt] = 0
+                worker_speeds[pt] = 0
                 norm = np.sum(worker_speeds)
                 if norm < 1e-4:
                     return ""
@@ -150,7 +157,6 @@ class Controller:
             self.remove_worker(worker_name)
 
     def worker_api_generate_stream(self, params):
-        headers = {"User-Agent": "ChatServer Client"}
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
             ret = {
@@ -159,9 +165,9 @@ class Controller:
             }
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
-        response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
+        response = requests.post(worker_addr + "/worker_generate_stream",
             json=params, stream=True)
-        for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 yield chunk + b"\0"
 
