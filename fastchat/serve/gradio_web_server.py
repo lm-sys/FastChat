@@ -212,7 +212,7 @@ notice_markdown = ("""
 - Blog post: [TODO](TODO)
 - Github: [TODO](TODO)
 
-### Terms of Use
+### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
 ### Choose a model to chat with
 - [Vicuna](): a chat assistant fine-tuned from LLaMa on user-shared conversations. This one is expected to perform best according to our evaluation.
