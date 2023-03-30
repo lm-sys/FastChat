@@ -57,7 +57,7 @@ python3 -m fastchat.serve.gradio_web_server
 
 ## Evaluation
 
-Check [evaluation](https://github.com/lm-sys/FastChat/tree/main/fastchat/eval) for an end-to-end evaluation pipeline based on GPT-4.
+Check [evaluation](fastchat/eval) for an end-to-end evaluation pipeline based on GPT-4.
 
 ## Fine-tuning
 ### Data
