@@ -27,23 +27,31 @@ sudo yum install epel-release
 sudo yum install nginx
 ```
 
-### Depolyment
+### Deployment
 
 Copy `nginx.conf` to `/etc/nginx/nginx.conf` (need sudo permission).
 
-Replace the port number 7960 in `listen 7960` with the desired port for the gateway.
+Replace the port number 7860 in `server localhost:7860` with the port where you deploy the Gradio web server.
 
-Modify `upstream websocket` to config Gradio servers behind the gateway.
+Modify `upstream websocket` to configure Gradio servers behind the gateway.
 
 Lastly, update Nginx.
 
+
+### HTTPS Deployment with a Public Domain URL
+
+Make sure you obtain the HTTPS certificate and the private key used to generate the certificate.
+
+Fill the addresses to your certificate and private key in the `[PATH_TO_SSL_CERT]` and `[PATH_TO_PRIVATE_KEY]` fields.
+
+If you have your own domain url to serve the chatbot, replace the chat.lmsys.org url with your own domain url.
+
 ### Updating
 
-When `/etc/nginx/nginx.conf` is modified, you need to update the Nginx service:
+Every time when `/etc/nginx/nginx.conf` is modified, you need to update the Nginx service:
 
 ```bash
 sudo nginx -t  # check `/etc/nginx/nginx.conf`
 sudo systemctl reload nginx  # restart Nginx service to load the new config
 sudo systemctl status nginx  # check the status of the Nginx service. It should be active (running).
 ```
-
