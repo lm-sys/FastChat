@@ -65,7 +65,7 @@ run: |
   DATE=${DATE:-20230303}
   USE_FLASH_ATTN=${USE_FLASH_ATTN:-0}
   if [ $USE_FLASH_ATTN -eq 1 ]; then
-    TRAIN_SCRIPT=fastchat/train/train_flash_attn.py
+    TRAIN_SCRIPT=fastchat/train/train_mem.py
     USE_FLASH_SUFFIX="-flash"
   else
     TRAIN_SCRIPT=fastchat/train/train.py
