@@ -2,8 +2,8 @@ import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-from chatserver.conversation import conv_templates, SeparatorStyle
-from chatserver.utils import disable_torch_init
+from fastchat.conversation import conv_templates, SeparatorStyle
+from fastchat.utils import disable_torch_init
 
 
 @torch.inference_mode()

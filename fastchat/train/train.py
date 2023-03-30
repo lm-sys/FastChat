@@ -26,7 +26,7 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
 
-from chatserver import conversation as conversation_lib
+from fastchat import conversation as conversation_lib
 
 # TODO: import and use code from ../data/dataset.py
 

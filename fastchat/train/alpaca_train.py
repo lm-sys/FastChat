@@ -24,7 +24,7 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
 
-import chatserver.train.alpaca_utils as utils
+import fastchat.train.alpaca_utils as utils
 
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"

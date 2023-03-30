@@ -1,5 +1,5 @@
 """
-Usage: python3 -m chatserver.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
+Usage: python3 -m fastchat.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
 """
 import argparse
 import json

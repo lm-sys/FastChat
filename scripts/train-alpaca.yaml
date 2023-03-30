@@ -41,7 +41,7 @@ setup: |
   pip install .
   cd ~/sky_workdir
 
-  # Install chatserver
+  # Install fastchat
   pip install -e .
 
   mkdir -p /artifacts/llama-hf/llama-${MODEL_SIZE}B
@@ -81,7 +81,7 @@ run: |
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    chatserver/train/alpaca_train.py \
+    fastchat/train/alpaca_train.py \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
     --data_path /data/alpaca-data.json \
     --bf16 True \

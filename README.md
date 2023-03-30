@@ -1,4 +1,4 @@
-# ChatServer
+# FastChat
 A chatbot server.
 
 ## Install
@@ -16,23 +16,23 @@ pip3 install git+https://github.com/huggingface/transformers
 ### Web UI
 ```
 # Launch a controller
-python3 -m chatserver.serve.controller
+python3 -m fastchat.serve.controller
 
 # Launch a model worker
-python3 -m chatserver.serve.model_worker --model facebook/opt-350m
+python3 -m fastchat.serve.model_worker --model facebook/opt-350m
 
 # Send a test message
-python3 -m chatserver.serve.test_message
+python3 -m fastchat.serve.test_message
 
 # Luanch a gradio web server.
-python3 -m chatserver.serve.gradio_web_server
+python3 -m fastchat.serve.gradio_web_server
 
 # You can open your brower and chat with a model now.
 ```
 
 ### Command Line Interface
 ```
-python3 -m chatserver.serve.cli --model facebook/opt-350m
+python3 -m fastchat.serve.cli --model facebook/opt-350m
 ```
 
 ## Deploy Chatbot on Any Cloud with SkyPilot

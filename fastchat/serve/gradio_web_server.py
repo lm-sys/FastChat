@@ -8,17 +8,17 @@ import time
 import gradio as gr
 import requests
 
-from chatserver.conversation import (default_conversation, conv_templates,
-    SeparatorStyle)
-from chatserver.constants import LOGDIR
-from chatserver.utils import build_logger, server_error_msg
-from chatserver.serve.gradio_patch import Chatbot as grChatbot
-from chatserver.serve.gradio_css import code_highlight_css
+from fastchat.conversation import (default_conversation, conv_templates,
+                                   SeparatorStyle)
+from fastchat.constants import LOGDIR
+from fastchat.utils import build_logger, server_error_msg
+from fastchat.serve.gradio_patch import Chatbot as grChatbot
+from fastchat.serve.gradio_css import code_highlight_css
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
-headers = {"User-Agent": "ChatServer Client"}
+headers = {"User-Agent": "fastchat Client"}
 
 no_change_btn = gr.Button.update()
 enable_btn = gr.Button.update(interactive=True)
