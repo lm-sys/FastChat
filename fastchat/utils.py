@@ -105,6 +105,7 @@ def violates_moderation(text):
                "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]}
     text = text.replace("\n", "")
     data = "{" + '"input": ' + f'"{text}"' + "}"
+    data = data.encode("utf-8")
     try:
         ret = requests.post(url, headers=headers, data=data, timeout=5)
         flagged = ret.json()["results"][0]["flagged"]
