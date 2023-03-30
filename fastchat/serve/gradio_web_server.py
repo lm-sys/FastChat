@@ -241,7 +241,7 @@ pre {
 def build_demo():
     models = get_model_list()
 
-    with gr.Blocks(title="Chat Server", theme=gr.themes.Base(), css=css) as demo:
+    with gr.Blocks(title="FastChat", theme=gr.themes.Base(), css=css) as demo:
         state = gr.State()
 
         # Draw layout
