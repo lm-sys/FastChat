@@ -53,7 +53,7 @@ def main(args):
             outputs += sep
             index = outputs.index(sep, len(prompt))
 
-        outputs = outputs[len(prompt) + 2:index].strip()
+        outputs = outputs[len(prompt) + 1:index].strip()
         print(f"{conv.roles[1]}: {outputs}")
         conv.messages[-1][-1] = outputs
 
