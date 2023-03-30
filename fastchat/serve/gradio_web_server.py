@@ -208,7 +208,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 
 notice_markdown = ("""
-# 🏔️  Chat Server
+# 🏔️  FastChat
 - Blog post: [TODO](TODO)
 - Github: [TODO](TODO)
 
