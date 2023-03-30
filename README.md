@@ -14,8 +14,8 @@ Join our [Discord]() server and follow our [Twitter]() to get the latest updates
 ## Contents
 - [Install](#install)
 - [Serving](#serving)
-- [Fine-tuning](#fine-tuning)
 - [Evaluation](#evaluation)
+- [Fine-tuning](#fine-tuning)
 
 ## Install
 
@@ -30,6 +30,8 @@ pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ## Serving
+We use OPT models as examples to show the usage of our distributed serving system.
+After we release the delta weights of Vicuna, you can use similar commands to serve Vicuna.
 
 ### Command Line Interface
 ```
@@ -53,9 +55,10 @@ python3 -m fastchat.serve.gradio_web_server
 # You can open your brower and chat with a model now.
 ```
 
+## Evaluation
+
+
 ## Fine-tuning
-
-
 ### Data
 
 Vicuna is created by fine-tuning a LLaMA base model using approximately 70K user-shared conversations gathered from ShareGPT.com with public APIs. To ensure data quality, we convert the HTML back to markdown and filter out some inappropriate or low-quality samples. Additionally, we divide lengthy conversations into smaller segments that fit the model's maximum context length.
@@ -126,6 +129,3 @@ torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
     --gradient_checkpointing True \
     --lazy_preprocess True
 ```
-
-## Evaluation
-
