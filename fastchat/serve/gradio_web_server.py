@@ -57,7 +57,7 @@ function() {
 
 
 def load_demo(url_params, request: gr.Request):
-    logger.info(f"load_demo. host: {request.client.host}. params: {url_params}")
+    logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
 
     dropdown_update = gr.Dropdown.update(visible=True)
     if "model" in url_params:
@@ -76,7 +76,7 @@ def load_demo(url_params, request: gr.Request):
 
 
 def load_demo_refresh_model_list(request: gr.Request):
-    logger.info(f"load_demo. host: {request.client.host}")
+    logger.info(f"load_demo. ip: {request.client.host}")
     models = get_model_list()
     state = default_conversation.copy()
     return (state, gr.Dropdown.update(
@@ -101,38 +101,38 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"upvote. host: {request.client.host}")
+    logger.info(f"upvote. ip: {request.client.host}")
     vote_last_response(state, "upvote", model_selector, request)
     return (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"downvote. host: {request.client.host}")
+    logger.info(f"downvote. ip: {request.client.host}")
     vote_last_response(state, "downvote", model_selector, request)
     return (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"flag. host: {request.client.host}")
+    logger.info(f"flag. ip: {request.client.host}")
     vote_last_response(state, "flag", model_selector, request)
     return (disable_btn,) * 3
 
 
 def regenerate(state):
-    logger.info(f"regenerate. host: {request.client.host}")
+    logger.info(f"regenerate. ip: {request.client.host}")
     state.messages[-1][-1] = None
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history():
-    logger.info(f"clear_history. host: {request.client.host}")
+    logger.info(f"clear_history. ip: {request.client.host}")
     state = default_conversation.copy()
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def add_text(state, text, request: gr.Request):
-    logger.info(f"add_text. host: {request.client.host}. len: {len(text)}")
+    logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
