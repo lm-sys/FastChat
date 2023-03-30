@@ -57,7 +57,7 @@ python3 -m fastchat.serve.gradio_web_server
 
 Vicuna is created by fine-tuning a LLaMA base model using approximately 70K user-shared conversations gathered from ShareGPT.com with public APIs. To ensure data quality, we convert the HTML back to markdown and filter out some inappropriate or low-quality samples. Additionally, we divide lengthy conversations into smaller segments that fit the model's maximum context length.
 
-Due to the legal concerns, we may not release the data at the moment. If you would like to try the fine-tuning code, you can try to run it with our [preprocessed alpaca dataset](chatserver/data/example/alpaca-data-conversation.json) (originally from [here](https://github.com/tatsu-lab/stanford_alpaca)).
+Due to the legal concerns, we may not release the data at the moment. If you would like to try the fine-tuning code, you can try to run it with our [preprocessed alpaca dataset](playground/data/alpaca-data-conversation.json) (originally from [here](https://github.com/tatsu-lab/stanford_alpaca)).
 
 ### Code and Hyperparameters
 We fine-tune the model using the code from [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), with some modifications to support gradient checkpointing and [Flash Attention](https://github.com/HazyResearch/flash-attention). We use the similar hyperparameters as the Stanford Alpaca.
@@ -98,7 +98,7 @@ sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
 Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on less GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
 ```bash
 torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
-    chatserver/train/train_flash_attn.py \
+    fastchat/train/train_flash_attn.py \
     --model_name_or_path <path-to-llama-model-weight> \
     --data_path <path-to-data> \
     --bf16 True \
