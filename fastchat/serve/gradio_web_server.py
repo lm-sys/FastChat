@@ -118,14 +118,14 @@ def flag_last_response(state, model_selector, request: gr.Request):
     return (disable_btn,) * 3
 
 
-def regenerate(state):
+def regenerate(state, request: gr.Request):
     logger.info(f"regenerate. ip: {request.client.host}")
     state.messages[-1][-1] = None
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
-def clear_history():
+def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
     state = default_conversation.copy()
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
