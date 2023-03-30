@@ -8,12 +8,18 @@ import concurrent.futures
 
 import openai
 import tqdm
-
+import shortuuid
 
 MODEL = 'gpt-3.5-turbo'
+MODEL_ID = 'gpt-3.5-turbo:20230327'
 
 def get_answer(question_id: int, question: str, max_tokens: int):
-    for retries in range(3):
+    ans = {
+        'answer_id': shortuuid.uuid(),
+        'question_id': question_id,
+        'model_id': MODEL_ID,
+    }
+    for _ in range(3):
         try:
             response = openai.ChatCompletion.create(
                 model=MODEL,
@@ -26,12 +32,13 @@ def get_answer(question_id: int, question: str, max_tokens: int):
                 }],
                 max_tokens=max_tokens,
             )
-            answer = response['choices'][0]['message']['content']
-            return {'id': question_id, 'answer': answer, 'model': MODEL}
+            ans['text'] = response['choices'][0]['message']['content']
+            return ans
         except Exception as e:
             print('[ERROR]', e)
+            ans['text'] = '#ERROR#'
             time.sleep(1)
-    return {'id': question_id, 'answer': '#ERROR#', 'model': MODEL}
+    return ans
 
 
 if __name__ == '__main__':
@@ -47,7 +54,7 @@ if __name__ == '__main__':
             if not line:
                 continue
             q = json.loads(line)
-            questions_dict[q['id']] = q['question']
+            questions_dict[q['question_id']] = q['text']
 
     answers = []
 
@@ -60,7 +67,7 @@ if __name__ == '__main__':
         for future in tqdm.tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
             answers.append(future.result())
 
-    answers.sort(key=lambda x: x['id'])
+    answers.sort(key=lambda x: x['question_id'])
 
     with open(os.path.expanduser(args.output), 'w') as f:
         table = [json.dumps(ans) for ans in answers]
