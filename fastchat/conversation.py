@@ -20,6 +20,7 @@ class Conversation:
     sep: str = "###"
     sep2: str = None
 
+    skip_next: bool = False
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:

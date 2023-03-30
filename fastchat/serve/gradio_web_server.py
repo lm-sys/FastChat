@@ -11,7 +11,8 @@ import requests
 from fastchat.conversation import (default_conversation, conv_templates,
                                    SeparatorStyle)
 from fastchat.constants import LOGDIR
-from fastchat.utils import build_logger, server_error_msg
+from fastchat.utils import (build_logger, server_error_msg,
+    violates_moderation, moderation_msg)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 
@@ -94,6 +95,7 @@ def downvote_last_response(state, model_selector, request: gr.Request):
 
 def regenerate(state):
     state.messages[-1][-1] = None
+    state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
 
 
@@ -104,10 +106,19 @@ def clear_history():
 
 def add_text(state, text, request: gr.Request):
     if len(text) <= 0:
+        state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 4
+    if args.moderate:
+        flagged = violates_moderation(text)
+        if flagged:
+            state.skip_next = True
+            return (state, state.to_gradio_chatbot(), moderation_msg) + (
+                no_change_btn,) * 4
+
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
+    state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
 
 
@@ -125,6 +136,11 @@ def post_process_code(code):
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
     model_name = model_selector
+
+    if state.skip_next:
+        # This generate call is skipped due to invalid inputs
+        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 4
+        return
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
@@ -213,7 +229,7 @@ notice_markdown = ("""
 - Github: [TODO](TODO)
 
 ### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
 ### Choose a model to chat with
 - [Vicuna](): a chat assistant fine-tuned from LLaMa on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
@@ -308,6 +324,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-list-mode", type=str, default="once",
         choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
+    parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
 
     demo = build_demo()

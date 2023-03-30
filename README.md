@@ -39,7 +39,7 @@ python3 -m fastchat.serve.cli --model facebook/opt-1.3b
 python3 -m fastchat.serve.controller
 
 # Launch a model worker
-python3 -m fastchat.serve.model_worker --model facebook/opt-1.3b
+python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
 
 # Send a test message
 python3 -m fastchat.serve.test_message
