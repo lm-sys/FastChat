@@ -162,6 +162,7 @@ def post_process_code(code):
 
 
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
+    logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
     model_name = model_selector
 
