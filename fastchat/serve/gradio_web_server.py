@@ -225,7 +225,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models.
-- Blog post: [GPT-4 Says An Open-Source Chatbot Vicuna Reaches 90% ChatGPT Quality](https://vicuna.lmsys.org)
+- Blog post: [Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality](https://vicuna.lmsys.org)
 - Code: [Github](https://github.com/lm-sys/FastChat)
 
 ### Terms of use
