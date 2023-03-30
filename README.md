@@ -29,7 +29,7 @@ pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ## Serving
-We will soon release the delta weights for Vicuna.
+We plan to release the model weights by providing a version of delta weights that build on the original LLaMA weights, but we are still figuring out a proper way to do so.
 In this example, we demonstrate the usage of our distributed serving system using OPT models.
 Later, you can apply similar commands to serve Vicuna, just as shown in our demo.
 
