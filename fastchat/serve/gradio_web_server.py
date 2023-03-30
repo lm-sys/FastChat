@@ -265,7 +265,7 @@ By using this service, users are required to agree to the following terms: The s
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
-- Note: If you are waiting in the queue, feel free to explore more benchmark results from GPT-4 in a static website [here](https://vicuna.lmsys.org/eval).
+- Note: If you are waiting in the queue, feel free to explore more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
 
 
