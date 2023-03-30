@@ -27,18 +27,18 @@ def trim_hanging_lines(s: str, n: int) -> str:
 
 
 if __name__ == '__main__':
-    questions = read_jsonl('../table/question.jsonl', key='question_id')
+    questions = read_jsonl('table/question.jsonl', key='question_id')
 
-    alpaca_answers = read_jsonl('../table/answer/answer_alpaca-13b.jsonl', key='question_id')
-    bard_answers = read_jsonl('../table/answer/answer_bard.jsonl', key='question_id')
-    gpt35_answers = read_jsonl('../table/answer/answer_gpt35.jsonl', key='question_id')
-    llama_answers = read_jsonl('../table/answer/answer_llama-13b.jsonl', key='question_id')
-    vicuna_answers = read_jsonl('../table/answer/answer_vicuna-13b.jsonl', key='question_id')
+    alpaca_answers = read_jsonl('table/answer/answer_alpaca-13b.jsonl', key='question_id')
+    bard_answers = read_jsonl('table/answer/answer_bard.jsonl', key='question_id')
+    gpt35_answers = read_jsonl('table/answer/answer_gpt35.jsonl', key='question_id')
+    llama_answers = read_jsonl('table/answer/answer_llama-13b.jsonl', key='question_id')
+    vicuna_answers = read_jsonl('table/answer/answer_vicuna-13b.jsonl', key='question_id')
 
-    review_alpaca = read_jsonl('../table/review/review_alpaca-13b_vicuna-13b.jsonl', key='question_id')
-    review_bard = read_jsonl('../table/review/review_bard_vicuna-13b.jsonl', key='question_id')
-    review_gpt35 = read_jsonl('../table/review/review_gpt35_vicuna-13b.jsonl', key='question_id')
-    review_llama = read_jsonl('../table/review/review_llama-13b_vicuna-13b.jsonl', key='question_id')
+    review_alpaca = read_jsonl('table/review/review_alpaca-13b_vicuna-13b.jsonl', key='question_id')
+    review_bard = read_jsonl('table/review/review_bard_vicuna-13b.jsonl', key='question_id')
+    review_gpt35 = read_jsonl('table/review/review_gpt35_vicuna-13b.jsonl', key='question_id')
+    review_llama = read_jsonl('table/review/review_llama-13b_vicuna-13b.jsonl', key='question_id')
 
     records = []
     for qid in questions.keys():
@@ -81,10 +81,14 @@ if __name__ == '__main__':
         r['evaluations'] = cleaned_evals
         records.append(r)
 
-    data = {
-        'questions': records,
-        'models': models,
-    }
+    # Reorder the records
+    for r in records:
+        if r['id'] <= 20:
+            r['id'] += 60
+        else:
+            r['id'] -= 20
+    records.sort(key=lambda x: x['id'])
 
+    # Write to file
     with open('webpage/data.json', 'w') as f:
-        json.dump(data, f, indent=2)
+        json.dump({'questions': records, 'models': models}, f, indent=2)

@@ -57,7 +57,17 @@ python3 -m fastchat.serve.gradio_web_server
 
 ## Evaluation
 
-Check [evaluation](fastchat/eval) for an end-to-end evaluation pipeline based on GPT-4.
+Our AI-enhanced [evaluation](fastchat/eval) pipeline is based on GPT-4. Here are some high-level instructions for using the pipeline:
+
+First, generate answers from different models. Use `qa_baseline_gpt35.py` for ChatGPT, or specify the model checkpoint and run `model_qa.py` for Vicuna and other models.
+
+Then, use GPT-4 to generate reviews automatically, which can be done manually if the GPT-4 API is not available to you. Once you have your evaluation data, visualize the results by running `generate_webpage_data_from_table.py`, which generates data for a static website.
+
+Finally, serve a static website under the `webpage` directory. You can simply use `python3 -m http.server` to serve the website locally.
+
+Besides the evaluation workflow, we also document the data format used for evaluation, which is encoded with JSON Lines and includes information on models, prompts, reviewers, questions, answers, and reviews. You can customize the evaluation process or contribute to our project by accessing relevant [data](fastchat/eval/table/).
+
+Check [evaluation](fastchat/eval) for detailed instructions.
 
 ## Fine-tuning
 ### Data
