@@ -35,7 +35,7 @@ After we release the delta weights of Vicuna, you can use similar commands to se
 
 ### Command Line Interface
 ```
-python3 -m fastchat.serve.cli --model facebook/opt-1.3b
+python3 -m fastchat.serve.cli --model-name facebook/opt-1.3b
 ```
 
 ### Web UI
