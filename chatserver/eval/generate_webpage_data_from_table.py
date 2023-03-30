@@ -86,5 +86,5 @@ if __name__ == '__main__':
         'models': models,
     }
 
-    with open('data.json', 'w') as f:
+    with open('webpage/data.json', 'w') as f:
         json.dump(data, f, indent=2)

@@ -14,7 +14,7 @@ python qa_baseline_gpt35.py --question table/question.jsonl --output table/answe
 
 ### Bard
 
-Unfortunately, Bard does not release its public APIs. You may have to enter the anwsers manually. Or you could find a third-party project that interfaces with Bard.
+Unfortunately, Bard has not release its public APIs till now. You may have to enter the anwsers manually. Or you could find a third-party project that interfaces with Bard.
 
 ### Vicuna
 
@@ -22,9 +22,21 @@ TODO: add instructions
 
 ## Evaluate Answers Automatically
 
-### Compare Answers
+### Generete Reviews with GPT-4
+
+PS: If you do not current have access to GPT-4 API, but you have access to GPT-4 chatbot, you can evaluate the answers manually, according to the instructions in the **Data Format** section. `table/review/*.jsonl` are some examples of reviews.
 
 TODO: add instructions
+
+## Visualize Results
+
+You can generate the data for the webpage by running:
+
+```bash
+python eval/generate_webpage_data_from_table.py
+```
+
+Then you can serve a static website in `webpage` to see the results.
 
 ## Data Format
 
