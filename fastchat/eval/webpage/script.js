@@ -20,7 +20,7 @@ modelFigureMapping = {
     "bard": "figures/bard.jpg",
     // Image from: https://crfm.stanford.edu/2023/03/13/alpaca.html
     "alpaca": "figures/alpaca.png",
-    // Created Using Midjourney: https://pub.towardsai.net/inside-llama-meta-ai-new-large-language-model-that-outperforms-gpt-3-across-many-tasks-d1e42f23c804
+    // Image adapted from https://commons.wikimedia.org/wiki/File:Llama_on_Machu_Picchu.jpg
     "llama": "figures/llama.jpg",
 }
 
