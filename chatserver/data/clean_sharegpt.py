@@ -21,8 +21,12 @@ def _get_html_tags(file_path: str):
     return s
 
 div_pattern = re.compile("<div.*?>")
-code_lang_pattern = re.compile("```\n?" + "(.*?)" + "Copy code" + "(.+?)" + "\n\n```", re.DOTALL)
-code_lang_format = r"```\g<1>\n\g<2>\n```"
+span_pattern = re.compile("<span.*?>")
+code_lang_pattern = re.compile("```\s*" + "(.*?)" + "(?:Copy code)+" + "(.+?)" + "\s*?```", re.DOTALL)
+code_lang_format = "```\g<1>\n\g<2>\n```"
+regenerate_pattern = re.compile("\d+ / \d+")
+copy_chars_pattern = re.compile("Copy\d+ chars / \d+ words")
+copy_code_pattern = re.compile("```(.*?)Copy code\s*```")
 
 def reformat_code(val: str) -> str:
     # Input code format is:
@@ -35,18 +39,31 @@ def reformat_code(val: str) -> str:
 
 
 def html_to_markdown(val: str) -> str:
-    """can handle enum, table and code. Code not in the best format."""
-    # Delete all <div>. This is required to make intent work in code blocks.
+    # Remove all <div>. This is required to make intent work in code blocks.
     val = re.sub(div_pattern, "", val)
-    # Remove all html tags
-    val = markdownify.markdownify(val)
+    # Remove all <span>. This is required to make underscores work in code blocks.
+    val = re.sub(span_pattern, "", val)
+    # Markdown to html
+    val = markdownify.markdownify(val).strip()
     # Reformat code
     val = reformat_code(val)
-    val = val.replace("\n\n\n", "\n")
-    val = val.strip()
-    noise = re.search("\d+ / \d+", val)
+
+    # Remove noisy "[number] / [number]" at the beginning
+    noise = re.search(regenerate_pattern, val)
     if noise and noise.start() == 0:
         val = val[noise.end():]
+    # Remove noisy "Copy[number] chars / [number] words"
+    val = re.sub(copy_chars_pattern, "", val)
+    # Remove empty code block ```\nCopy code\n```
+    val = re.sub(copy_code_pattern, "", val)
+
+    # Strip
+    val = val.replace("\n\n\n", "\n").strip()
+
+    if args.debug:
+        print(val)
+        exit()
+
     return val
 
 
@@ -76,27 +93,32 @@ def clean_html_source(content, begin, end, check_tag, check_num):
 
     for sample in tqdm.tqdm(content):
         skipped = False
-        for c in sample["conversations"]:
-            if should_skip(c["value"]):
-                skipped = True
-                break
 
-            try:
-                new_val = html_to_markdown(c["value"])
-            except (bs4.builder.ParserRejectedMarkup, AssertionError):
-                skipped = True
-                break
-
-            c["value"] = new_val
-
-            # Debug
-            if (check_tag is not None and check_tag in c["value"]
-                    and tag_cnt < check_num):
-                logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
-                              "\n" + BARRIER + "\n")
-                tag_cnt += 1
-                if tag_cnt == check_num:
+        if len(sample["conversations"]) <= 1:
+            # The conversation is too short
+            skipped = True
+        else:
+            for c in sample["conversations"]:
+                if should_skip(c["value"]):
+                    skipped = True
                     break
+
+                try:
+                    new_val = html_to_markdown(c["value"])
+                except (bs4.builder.ParserRejectedMarkup, AssertionError):
+                    skipped = True
+                    break
+
+                c["value"] = new_val
+
+                # Debug
+                if (check_tag is not None and check_tag in c["value"]
+                        and tag_cnt < check_num):
+                    logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
+                                  "\n" + BARRIER + "\n")
+                    tag_cnt += 1
+                    if tag_cnt == check_num:
+                        break
 
         if not skipped:
             new_content.append(sample)
@@ -121,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument("--out-file", type=str, default="sharegpt_clean.json")
     parser.add_argument("--begin", type=int)
     parser.add_argument("--end", type=int)
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--check-tag", type=str)
     parser.add_argument("--check-num", type=int, default=1)
     args = parser.parse_args()
