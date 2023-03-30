@@ -4,9 +4,12 @@ import logging.handlers
 import os
 import sys
 
+import requests
+
 from fastchat.constants import LOGDIR
 
 server_error_msg = "**NETWORK ERROR. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
+moderation_msg = "YOUR INPUT VIOLATES OPENAI CONTENT MODERATION API. PLEASE TRY AGAIN."
 
 handler = None
 
@@ -94,3 +97,17 @@ def disable_torch_init():
     import torch
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
+
+
+def violates_moderation(text):
+    url = "https://api.openai.com/v1/moderations"
+    headers = {"Content-Type": "application/json",
+               "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]}
+    data = "{" + '"input": ' + f'"{text}"' + "}"
+    try:
+        ret = requests.post(url, headers=headers, data=data, timeout=5)
+        flagged = ret.json()["results"][0]["flagged"]
+    except requests.exceptions.RequestException as e:
+        flagged = False
+
+    return flagged
