@@ -8,8 +8,7 @@ An open platform for training, serving, and evaluating large language model base
 <!-- ![demo](assets/demo-narrow.gif) -->
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
 
-
-Join our [Discord]() server and follow our [Twitter]() to get the latest updates.
+Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
 ## Contents
 - [Install](#install)
@@ -30,12 +29,13 @@ pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ## Serving
-We use OPT models as examples to show the usage of our distributed serving system.
-After we release the delta weights of Vicuna, you can use similar commands to serve Vicuna.
+We will soon release the delta weights for Vicuna.
+In this example, we demonstrate the usage of our distributed serving system using OPT models.
+Later, you can apply similar commands to serve Vicuna, just as shown in our demo.
 
 ### Command Line Interface
 ```
-python3 -m fastchat.serve.cli --model facebook/opt-1.3b
+python3 -m fastchat.serve.cli --model-name facebook/opt-1.3b
 ```
 
 ### Web UI

@@ -85,41 +85,46 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 
 def upvote_last_response(state, model_selector, request: gr.Request):
     vote_last_response(state, "upvote", model_selector, request)
-    return disable_btn, disable_btn
+    return (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
     vote_last_response(state, "downvote", model_selector, request)
-    return disable_btn, disable_btn
+    return (disable_btn,) * 3
+
+
+def flag_last_response(state, model_selector, request: gr.Request):
+    vote_last_response(state, "flag", model_selector, request)
+    return (disable_btn,) * 3
 
 
 def regenerate(state):
     state.messages[-1][-1] = None
     state.skip_next = False
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history():
     state = default_conversation.copy()
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def add_text(state, text, request: gr.Request):
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 4
+        return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
     if args.moderate:
         flagged = violates_moderation(text)
         if flagged:
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
-                no_change_btn,) * 4
+                no_change_btn,) * 5
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
     state.skip_next = False
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 4
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def post_process_code(code):
@@ -139,7 +144,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
-        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 4
+        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
     if len(state.messages) == state.offset + 2:
@@ -163,7 +168,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # No available worker
     if worker_addr == "":
         state.messages[-1][-1] = server_error_msg
-        yield (state, state.to_gradio_chatbot(), disable_btn, disable_btn, enable_btn, enable_btn)
+        yield (state, state.to_gradio_chatbot(), disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
         return
 
     # Construct prompt
@@ -180,7 +185,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     logger.info(f"==== request ====\n{pload}")
 
     state.messages[-1][-1] = "▌"
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 4
+    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
         # Stream output
@@ -193,19 +198,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     output = data["text"][len(prompt) + 2:]
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 4
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
                     output = data["text"]
                     state.messages[-1][-1] = output + "▌"
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, enable_btn, enable_btn)
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                 time.sleep(0.04)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
-        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, enable_btn, enable_btn)
+        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
         return
 
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
-    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 4
+    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     finish_tstamp = time.time()
     logger.info(f"{output}")
@@ -230,6 +235,8 @@ notice_markdown = ("""
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
+**<span style="color:red">Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.</span>**
+
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
@@ -277,6 +284,7 @@ def build_demo():
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
             downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
+            flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
             #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
             regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
             clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
@@ -288,11 +296,13 @@ def build_demo():
         gr.Markdown(learn_more_markdown)
 
         # Register listeners
-        btn_list = [upvote_btn, downvote_btn, regenerate_btn, clear_btn]
+        btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn])
+            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
         downvote_btn.click(downvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn])
+            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+        flag_btn.click(flag_last_response,
+            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
         regenerate_btn.click(regenerate, state,
             [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
