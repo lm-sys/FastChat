@@ -4,7 +4,9 @@ An open platform for training, serving, and evaluating large language model base
 ## Release
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post]() and [demo]().
 
-[A GIF HERE].
+<div align="center">
+  <video src="assets/demo-narrow.mp4" width=400/>
+</div>
 
 Join our [Discord]() server and follow our [Twitter]() to get the latest updates.
 
