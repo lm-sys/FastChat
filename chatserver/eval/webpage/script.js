@@ -64,7 +64,7 @@ function updateQuestionSelect(question_id) {
         const question = questionMapping[question_id];
         const option = document.createElement('option');
         option.value = question_id;
-        option.textContent = question.question;
+        option.textContent = 'Q' + question_id.toString() + ': ' + question.question;
         select.appendChild(option);
     });
     select.value = question_id;
@@ -142,20 +142,30 @@ function displayAnswers(index) {
     let assistant1_score_label = score[0].toString() + '/10';
     let assistant2_score_label = score[1].toString() + '/10';
 
-    const colorRed = '#f2c9c9';
-    const colorGreen = '#c9f2c9';
-    let otherModelHeaderColor = colorRed;
-    let ourModelHeaderColor = colorRed;
+    const colorRed ='#fa9'; // '#eb978d';
+    // const colorGreen = '#c9f2c9';
+    const colorBlue = '#8ef'; // '#71dbf9';
+    const colorYellow = '#fe7'; // '#fada57';
+    let otherModelHeaderColor = '';
+    let ourModelHeaderColor = '';
     // Update the winner.
-    if (score[0] >= score[1]) {
+    if (score[0] == score[1]) {
         assistant1_title = '🏆 ' + assistant1_title;
         assistant1_score_label = '🏆 ' + assistant1_score_label;
-        otherModelHeaderColor = colorGreen;
-    }
-    if (score[0] <= score[1]) {
         assistant2_title = '🏆 ' + assistant2_title;
         assistant2_score_label = '🏆 ' + assistant2_score_label;
-        ourModelHeaderColor = colorGreen;
+        otherModelHeaderColor = colorYellow;
+        ourModelHeaderColor = colorYellow;
+    } else if (score[0] > score[1]) {
+        assistant1_title = '🏆 ' + assistant1_title;
+        assistant1_score_label = '🏆 ' + assistant1_score_label;
+        otherModelHeaderColor = colorBlue;
+        ourModelHeaderColor = colorRed;
+    } else if (score[0] < score[1]) {
+        assistant2_title = '🏆 ' + assistant2_title;
+        assistant2_score_label = '🏆 ' + assistant2_score_label;
+        otherModelHeaderColor = colorRed;
+        ourModelHeaderColor = colorBlue;
     }
 
     document.getElementById('other-model-header-bg').style.backgroundColor = otherModelHeaderColor;

@@ -18,22 +18,29 @@ def read_jsonl(path: str, to_dict: bool = True):
     return data
 
 
+def trim_hanging_lines(s: str, n: int) -> str:
+    s = s.strip()
+    for _ in range(n):
+        s = s.split('\n', 1)[1].strip()
+    return s
+
+
 if __name__ == '__main__':
     # {"id": 35, "question": xxxx}
-    questions = read_jsonl('../mini_evals/qa.jsonl')
+    questions = read_jsonl('../mini_evals/qa_v2.jsonl')
 
     # {"id": 35, "answer": xxxx}
-    gpt35_answers = read_jsonl('v3/answers-gpt-3.5-turbo.jsonl')
-    alpaca_answers = read_jsonl('v3/answers-alpaca.jsonl')
-    llama_answers = read_jsonl('v3/answers-hf-llama.jsonl')
-    bard_answers = read_jsonl('v3/answers-bard.jsonl')
-    vicuna_answers = read_jsonl('v3/answers-vicuna-v2.jsonl')
+    alpaca_answers = read_jsonl('v4/answers-alpaca-13b.jsonl')
+    bard_answers = read_jsonl('v4/answers-bard.jsonl')
+    gpt35_answers = read_jsonl('v4/answers-gpt-3.5-turbo.jsonl')
+    llama_answers = read_jsonl('v4/answers-hf-llama-13b.jsonl')
+    vicuna_answers = read_jsonl('v4/answers-vicuna-13b-20230322-split-flash.jsonl')
 
     # {"id": 35, "content": xxxx, "tuple": [8, 9]}
-    eval_results_alpaca = read_jsonl('v3/result/results_alpaca.jsonl')
-    eval_results_bard = read_jsonl('v3/result/results_bard.jsonl')
-    eval_results_llama = read_jsonl('v3/result/results_llama.jsonl')
-    eval_results_gpt35 = read_jsonl('v3/result/results_gpt35.jsonl')
+    eval_results_alpaca = read_jsonl('v4/gpt4-reviews/reviews_alpaca_vicuna.jsonl')
+    eval_results_bard = read_jsonl('v4/gpt4-reviews/reviews_bard_vicuna.jsonl')
+    eval_results_gpt35 = read_jsonl('v4/gpt4-reviews/reviews_gpt35_vicuna.jsonl')
+    eval_results_llama = read_jsonl('v4/gpt4-reviews/reviews_llama_vicuna.jsonl')
 
     records = []
     for qid in questions.keys():
@@ -65,15 +72,8 @@ if __name__ == '__main__':
         # cleanup data
         cleaned_evals = {}
         for k, v in r['evaluations'].items():
-            lines = v.split('\n')
-            new_lines = []
-            for line in lines:
-                if len(line) <= 30:
-                    continue
-                # other_model = k[0].upper() + k[1:]
-                # line = line.replace('Assistant 1', f"`{other_model}`").replace('Assistant 2', '`Vicuna`')
-                new_lines.append(line)
-            cleaned_evals[k] = '\n'.join(new_lines)
+            v = trim_hanging_lines(v, 2)
+            cleaned_evals[k] = v.replace('Assistant 1', "**Assistant 1**").replace('Assistant 2', '**Assistant 2**')
 
         r['evaluations'] = cleaned_evals
         records.append(r)
