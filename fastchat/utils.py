@@ -4,7 +4,7 @@ import logging.handlers
 import os
 import sys
 
-from chatserver.constants import LOGDIR
+from fastchat.constants import LOGDIR
 
 server_error_msg = "**NETWORK ERROR. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
 

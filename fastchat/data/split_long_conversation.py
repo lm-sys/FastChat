@@ -1,7 +1,7 @@
 """
 Split long conversations based on certain max length.
 
-Usage: python3 -m chatserver.data.split_long_conversation \
+Usage: python3 -m fastchat.data.split_long_conversation \
     --in sharegpt_clean.json \
     --out sharegpt_split.json \
     --model-name-or-path $<model-name>
@@ -13,7 +13,7 @@ from typing import Dict, Sequence, Optional
 import transformers
 import tqdm
 
-from chatserver import conversation as conversation_lib
+from fastchat import conversation as conversation_lib
 
 DEFAULT_PAD_TOKEN = "[PAD]"
 BEGIN_SIGNAL = "### "

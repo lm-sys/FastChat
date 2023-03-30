@@ -42,7 +42,7 @@ setup: |
   pip install .
   cd ~/sky_workdir
 
-  # Install chatserver
+  # Install fastchat
   pip install -e .
   pip install flash-attn
 
@@ -70,10 +70,10 @@ run: |
   DATE=${DATE:-20230303}
   USE_FLASH_ATTN=${USE_FLASH_ATTN:-0}
   if [ $USE_FLASH_ATTN -eq 1 ]; then
-    TRAIN_SCRIPT=chatserver/train/train_flash_attn.py
+    TRAIN_SCRIPT=fastchat/train/train_flash_attn.py
     USE_FLASH_SUFFIX="-flash"
   else
-    TRAIN_SCRIPT=chatserver/train/train.py
+    TRAIN_SCRIPT=fastchat/train/train.py
     USE_FLASH_SUFFIX=""
   fi
   echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
