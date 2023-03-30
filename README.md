@@ -104,7 +104,7 @@ sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
 Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on less GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
 ```bash
 torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
-    fastchat/train/train_flash_attn.py \
+    fastchat/train/train_mem.py \
     --model_name_or_path <path-to-llama-model-weight> \
     --data_path <path-to-data> \
     --bf16 True \
