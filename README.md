@@ -84,7 +84,7 @@ We fine-tune the model using the code from [Stanford Alpaca](https://github.com/
 | Vicuna-13B | 128 | 2e-5 | 3 | 2048 | 0 |
 
 ### Fine-tuning on Any Cloud with SkyPilot
-[SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud. 
+[SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
 To use SkyPilot, install it with the following command and setup the cloud credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html).
 ```bash
 # Install skypilot from the master branch

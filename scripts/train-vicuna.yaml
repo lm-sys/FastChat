@@ -14,7 +14,7 @@ file_mounts:
     name: model-weights # Change to your own bucket
     store: gcs
     mode: MOUNT
-  # /lamma:
+  # /llamma:
   #   name: llama-ckpts # Change to the bucket that contains the LLaMA weights
   #   store: gcs
   #   mode: MOUNT
