@@ -3,6 +3,12 @@ body {
     background-color: #f8f9fa;
 }
 
+.navbar-dark .navbar-nav .nav-link {
+    color: #f1cf68;
+    font-size: 1.1rem;
+    padding: 0.5rem 0.6rem;
+}
+
 .card-header {
     font-weight: bold;
 }
