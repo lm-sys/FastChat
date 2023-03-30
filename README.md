@@ -18,7 +18,6 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 
 ## Install
 
-### Method 1: From Source
 ```
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
