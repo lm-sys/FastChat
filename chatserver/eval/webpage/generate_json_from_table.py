@@ -21,7 +21,6 @@ def read_jsonl(path: str, key: str=None):
 def trim_hanging_lines(s: str, n: int) -> str:
     s = s.strip()
     for _ in range(n):
-        print(s)
         s = s.split('\n', 1)[1].strip()
     return s
 
