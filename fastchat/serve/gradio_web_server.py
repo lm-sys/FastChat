@@ -144,7 +144,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "bair-chat" in model_name: # Hardcode the condition
+        if "grizzly" in model_name: # Hardcode the condition
             template_name = "bair_v1"
         else:
             template_name = "v1"
