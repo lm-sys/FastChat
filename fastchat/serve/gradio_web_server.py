@@ -304,8 +304,12 @@ def build_demo():
                 show_label=False).style(container=False)
 
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-        textbox = gr.Textbox(show_label=False,
-            placeholder="Enter text and press ENTER", visible=False).style(container=False)
+        with gr.Row():
+            with gr.Column(scale=10):
+                textbox = gr.Textbox(show_label=False,
+                    placeholder="Enter text and press ENTER", visible=False).style(container=False)
+            with gr.Column(scale=1, min_width=60):
+                submit_btn = gr.Button(value="Submit")
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -337,6 +341,9 @@ def build_demo():
         clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+                   [state, chatbot] + btn_list)
+        submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
 
