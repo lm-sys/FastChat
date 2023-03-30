@@ -66,13 +66,38 @@ We fine-tune the model using the code from [Stanford Alpaca](https://github.com/
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Vicuna-13B | 128 | 2e-5 | 3 | 2048 | 0 |
 
-### On Local GPUs
-Vicuna can be trained on 8 A100 GPUs with 80GB memory with the following code. To train on less GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
+### Fine-tuning on Any Cloud with SkyPilot
+[SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud. 
+To use SkyPilot, install it with the following command and setup the cloud credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html).
 ```bash
-torchrun \
-    --nnodes=1 \
-    --nproc_per_node=1 \
-    --master_port=12375 \
+# Install skypilot from the master branch
+pip install git+https://github.com/skypilot-org/skypilot.git
+```
+#### Vicuna
+Vicuna can be trained on 8 A100 GPUs with 80GB memory. The following command will automatically launch a node satisfying the requirement, setup and run the training job on it.
+```bash
+sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY
+```
+Other options are also valid:
+```bash
+# Launch it on managed spot to save 3x cost
+sky spot launch -n vicuna scripts/train-vicuna.yaml --env WANDB_API_KEY
+
+# Train a 7B model
+sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
+```
+Note: Please make sure the `WANDB_API_KEY` has been setup on your local machine. You can find the API key on your [wandb profile page](https://wandb.ai/authorize). If you would like to train the model without using wandb, you can replace the `--env WANDB_API_KEY` flag with `--env WANDB_MODE=offline`.
+
+#### Alpaca
+Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
+```
+sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
+```
+
+### Fine-tuning with Local GPUs
+Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on less GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
+```bash
+torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
     chatserver/train/train_flash_attn.py \
     --model_name_or_path <path-to-llama-model-weight> \
     --data_path <path-to-data> \
