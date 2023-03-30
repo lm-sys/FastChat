@@ -45,6 +45,7 @@ def main(args):
                 }
             ]
         })
+        cnt += 1
 
     json.dump(new_data, open(args.output_path, 'w'), indent=2)
 
@@ -53,4 +54,5 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, default='alpaca-data.json')
     parser.add_argument('--output_path', type=str, default='alpaca-data-conversation.json')
     args = parser.parse_args()
+    main(args)
 
