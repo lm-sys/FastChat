@@ -8,17 +8,17 @@ import time
 import gradio as gr
 import requests
 
-from chatserver.conversation import (default_conversation, conv_templates,
-    SeparatorStyle)
-from chatserver.constants import LOGDIR
-from chatserver.utils import build_logger, server_error_msg
-from chatserver.serve.gradio_patch import Chatbot as grChatbot
-from chatserver.serve.gradio_css import code_highlight_css
+from fastchat.conversation import (default_conversation, conv_templates,
+                                   SeparatorStyle)
+from fastchat.constants import LOGDIR
+from fastchat.utils import build_logger, server_error_msg
+from fastchat.serve.gradio_patch import Chatbot as grChatbot
+from fastchat.serve.gradio_css import code_highlight_css
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
-headers = {"User-Agent": "ChatServer Client"}
+headers = {"User-Agent": "fastchat Client"}
 
 no_change_btn = gr.Button.update()
 enable_btn = gr.Button.update(interactive=True)
@@ -208,11 +208,11 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 
 notice_markdown = ("""
-# 🏔️  Chat Server
+# 🏔️  FastChat
 - Blog post: [TODO](TODO)
 - Github: [TODO](TODO)
 
-### Terms of Use
+### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It does not provide safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
 ### Choose a model to chat with
 - [Vicuna](): a chat assistant fine-tuned from LLaMa on user-shared conversations. This one is expected to perform best according to our evaluation.
@@ -241,7 +241,7 @@ pre {
 def build_demo():
     models = get_model_list()
 
-    with gr.Blocks(title="Chat Server", theme=gr.themes.Base(), css=css) as demo:
+    with gr.Blocks(title="FastChat", theme=gr.themes.Base(), css=css) as demo:
         state = gr.State()
 
         # Draw layout

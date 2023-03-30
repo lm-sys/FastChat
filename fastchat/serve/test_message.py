@@ -3,7 +3,7 @@ import json
 
 import requests
 
-from chatserver.conversation import default_conversation
+from fastchat.conversation import default_conversation
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     conv.append_message(conv.roles[0], args.message)
     prompt = conv.get_prompt()
 
-    headers = {"User-Agent": "ChatServer Client"}
+    headers = {"User-Agent": "fastchat Client"}
     pload = {
         "model": args.model_name,
         "prompt": prompt,

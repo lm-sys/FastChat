@@ -6,8 +6,8 @@ import json
 from tqdm import tqdm
 import ray
 
-from chatserver.conversation import default_conversation
-from chatserver.utils import disable_torch_init
+from fastchat.conversation import default_conversation
+from fastchat.utils import disable_torch_init
 
 @ray.remote(num_gpus=1)
 @torch.inference_mode()

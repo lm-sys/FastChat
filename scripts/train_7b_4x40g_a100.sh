@@ -1,4 +1,4 @@
-torchrun --nproc_per_node=4 --master_port=20001 chatserver/train/alpaca_train.py \
+torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/alpaca_train.py \
     --model_name_or_path /home/haozhang/model_weights/hf-llama-7b \
     --data_path /home/haozhang/datasets/alpaca_data.json \
     --bf16 True \

@@ -1,4 +1,4 @@
-# ChatServer Nginx Gateway
+# fastchat Nginx Gateway
 
 ## Purpose of the Gateway
 

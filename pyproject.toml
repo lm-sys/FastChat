@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ChatServer"
+name = "fastchat"
 version = "0.1.0"
 description = "chatbot server"
 readme = "README.md"
@@ -19,8 +19,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/lm-sys/ChatServer"
-"Bug Tracker" = "https://github.com/lm-sys/ChatServer/issues"
+"Homepage" = "https://github.com/lm-sys/fastchat"
+"Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
 
 [tool.setuptools.packages.find]
 exclude = ["benchmark*", "dist*", "playground*", "scripts*", "tests*"]

@@ -18,8 +18,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import uvicorn
 
-from chatserver.constants import WORKER_HEART_BEAT_INTERVAL
-from chatserver.utils import build_logger, disable_torch_init, server_error_msg
+from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
+from fastchat.utils import build_logger, disable_torch_init, server_error_msg
 
 GB = 1 << 30
 

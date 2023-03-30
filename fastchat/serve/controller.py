@@ -16,8 +16,8 @@ import numpy as np
 import requests
 import uvicorn
 
-from chatserver.constants import CONTROLLER_HEART_BEAT_EXPIRATION
-from chatserver.utils import build_logger
+from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from fastchat.utils import build_logger
 
 
 logger = build_logger("controller", "controller.log")

@@ -2,7 +2,7 @@
 Manually register workers.
 
 Usage:
-python3 -m chatserver.serve.register_worker --controller http://localhost:21001 --worker-name http://localhost:21002
+python3 -m fastchat.serve.register_worker --controller http://localhost:21001 --worker-name http://localhost:21002
 """
 
 import argparse
