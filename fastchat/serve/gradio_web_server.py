@@ -46,11 +46,29 @@ def get_model_list():
     return models
 
 
-def load_demo(request: gr.Request):
-    logger.info(f"load demo: {request.client.host}")
+get_window_url_params = """
+function() {
+    const params = new URLSearchParams(window.location.search);
+    url_params = Object.fromEntries(params);
+    console.log(url_params);
+    return url_params;
+    }
+"""
+
+
+def load_demo(url_params, request: gr.Request):
+    logger.info(f"load_demo. host: {request.client.host}. params: {url_params}")
+
+    dropdown_update = gr.Dropdown.update(visible=True)
+    if "model" in url_params:
+        model = url_params["model"]
+        if model in models:
+            dropdown_update = gr.Dropdown.update(
+                value=model, visible=True)
+
     state = default_conversation.copy()
     return (state,
-            gr.Dropdown.update(visible=True),
+            dropdown_update,
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
             gr.Row.update(visible=True),
@@ -58,7 +76,7 @@ def load_demo(request: gr.Request):
 
 
 def load_demo_refresh_model_list(request: gr.Request):
-    logger.info(f"load demo: {request.client.host}")
+    logger.info(f"load_demo. host: {request.client.host}")
     models = get_model_list()
     state = default_conversation.copy()
     return (state, gr.Dropdown.update(
@@ -71,7 +89,6 @@ def load_demo_refresh_model_list(request: gr.Request):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    logger.info(f"vote_type: {vote_type}")
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -84,32 +101,38 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
+    logger.info(f"upvote. host: {request.client.host}")
     vote_last_response(state, "upvote", model_selector, request)
     return (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
+    logger.info(f"downvote. host: {request.client.host}")
     vote_last_response(state, "downvote", model_selector, request)
     return (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
+    logger.info(f"flag. host: {request.client.host}")
     vote_last_response(state, "flag", model_selector, request)
     return (disable_btn,) * 3
 
 
 def regenerate(state):
+    logger.info(f"regenerate. host: {request.client.host}")
     state.messages[-1][-1] = None
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history():
+    logger.info(f"clear_history. host: {request.client.host}")
     state = default_conversation.copy()
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def add_text(state, text, request: gr.Request):
+    logger.info(f"add_text. host: {request.client.host}. len: {len(text)}")
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
@@ -265,8 +288,6 @@ pre {
 
 
 def build_demo():
-    models = get_model_list()
-
     with gr.Blocks(title="FastChat", theme=gr.themes.Base(), css=css) as demo:
         state = gr.State()
 
@@ -297,6 +318,7 @@ def build_demo():
             max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
 
         gr.Markdown(learn_more_markdown)
+        url_params = gr.JSON()
 
         # Register listeners
         btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -317,8 +339,9 @@ def build_demo():
                    [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
-            demo.load(load_demo, None, [state, model_selector,
-                chatbot, textbox, button_row, parameter_row])
+            demo.load(load_demo, [url_params], [state, model_selector,
+                chatbot, textbox, button_row, parameter_row],
+                _js=get_window_url_params)
         elif args.model_list_mode == "reload":
             demo.load(load_demo_refresh_model_list, None, [state, model_selector,
                 chatbot, textbox, button_row, parameter_row])
@@ -339,6 +362,8 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
+
+    models = get_model_list()
 
     demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
