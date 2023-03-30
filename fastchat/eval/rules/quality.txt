@@ -1,3 +1,0 @@
-Read the entire message above and determine if the Assistant response is appropriate, accurate, and relevant. Assess the Assistant response on a scale of 1-10, where 1 indicates an entirely inappropriate response, and 10 represents a highly appropriate and relevant response. Your choice should not be affected by the content of the User prompt.
-
-Your response should start with only the single number of 1-10 on its own line followed by an explanation of your answer on the next line. Your explanation should take the reader through your reasoning step-by-step. Avoid simply stating assessment at the outset of your explanation.
