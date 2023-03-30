@@ -22,11 +22,6 @@ file_mounts:
 workdir: .
 
 setup: |
-  # Download the data
-  if [ ! -f /data/alpaca-data.json ]; then
-    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
-  fi
-
   # Setup the environment
   conda create -n chatbot python=3.10 -y
   conda activate chatbot
@@ -83,7 +78,7 @@ run: |
 
   # Hack copy it once to make it faster later
   mkdir -p ~/.checkpoints
-  CKPT_PATH=/artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-combined-seq-${SEQ_LEN}-${USE_FLASH_SUFFIX}
+  CKPT_PATH=/artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}-${USE_FLASH_SUFFIX}
   last_ckpt=$(ls ${CKPT_PATH} | grep -E '[0-9]+' | sort -n | tail -1)
   gsutil -m rsync -r ${CKPT_PATH}/${last_ckpt}/ ~/.checkpoints 
   
@@ -95,7 +90,7 @@ run: |
     --node_rank=${SKYPILOT_NODE_RANK} \
     $TRAIN_SCRIPT \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/sharegpt/combined-code-math-sharegpt-20230322.json \
+    --data_path /data/sharegpt/sharegpt_20230322_clean_lang_split.json \
     --bf16 True \
     --output_dir $CKPT_PATH \
     --num_train_epochs 3 \

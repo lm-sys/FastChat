@@ -3,6 +3,7 @@ __pycache__
 *.egg-info
 *.log
 *.json
+!**/alpaca-data-conversation.json
 .idea
 *.swp
 output

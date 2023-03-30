@@ -196,12 +196,7 @@ class SupervisedDataset(Dataset):
 
         logging.warning("Formatting inputs...")
         sources = [example["conversations"] for example in list_data_dict]
-        cache_file = pathlib.Path(data_path + ".preprocessed")
-        if cache_file in pathlib.Path(cache_file).parent.glob("*"):
-            data_dict = json.load(cache_file.open("r"))
-        else:
-            data_dict = preprocess(sources, tokenizer)
-            json.dump(data_dict, cache_file.open("w"))
+        data_dict = preprocess(sources, tokenizer)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]

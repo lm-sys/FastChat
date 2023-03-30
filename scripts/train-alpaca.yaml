@@ -9,10 +9,7 @@ file_mounts:
     name: skypilot-chatbot # Change to your own bucket
     store: gcs
     mode: MOUNT
-  /data:
-    name: model-weights # Change to your own bucket
-    store: gcs
-    mode: MOUNT
+  /data/alpaca-data-conversation.json: chatserver/data/example/alpaca-data-conversation.json
   # /lamma:
   #   name: llama-ckpts # Change to the bucket that contains the LLaMA weights
   #   store: gcs
@@ -21,11 +18,6 @@ file_mounts:
 workdir: .
 
 setup: |
-  # Download the data
-  if [ ! -f /data/alpaca-data.json ]; then
-    wget https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json -O /data/alpaca-data.json
-  fi
-
   # Setup the environment
   conda create -n chatbot python=3.10 -y
   conda activate chatbot
@@ -64,7 +56,7 @@ setup: |
 run: |
   conda activate chatbot
   SEQ_LEN=${SEQ_LEN:-512}
-  echo "Training with seq_len=${SEQ_LEN} and gc_scale=${GC_SCALE}"
+  echo "Training with seq_len=${SEQ_LEN} and model_size=${MODEL_SIZE}B"
   PER_DEVICE_BATCH_SIZE=$((2048 / $SEQ_LEN))
   NUM_NODES=`echo "$SKYPILOT_NODE_IPS" | wc -l`
   HOST_ADDR=`echo "$SKYPILOT_NODE_IPS" | head -n1`
@@ -81,9 +73,9 @@ run: |
     --master_port=12375 \
     --master_addr=$HOST_ADDR \
     --node_rank=${SKYPILOT_NODE_RANK} \
-    fastchat/train/alpaca_train.py \
+    fastchat/train/train.py \
     --model_name_or_path ~/hf-output/llama-${MODEL_SIZE}b \
-    --data_path /data/alpaca-data.json \
+    --data_path /data/alpaca-data-conversation.json \
     --bf16 True \
     --output_dir $CKPT_PATH \
     --num_train_epochs 3 \
@@ -106,5 +98,5 @@ run: |
 
 
 envs:
-  MODEL_SIZE: 13
+  MODEL_SIZE: 7
   SEQ_LEN: 512
