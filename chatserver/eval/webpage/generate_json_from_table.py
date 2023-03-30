@@ -1,6 +1,7 @@
 """Generate json file for webpage."""
 import json
 import os
+import re
 
 models = ['llama', 'alpaca', 'gpt35', 'bard']
 
@@ -69,7 +70,12 @@ if __name__ == '__main__':
         # cleanup data
         cleaned_evals = {}
         for k, v in r['evaluations'].items():
-            v = trim_hanging_lines(v, 1)
+            v = v.strip()
+            lines = v.split('\n')
+            # trim the first line if it's a pair of numbers
+            if re.match(r'\d+[, ]+\d+', lines[0]):
+                lines = lines[1:]
+            v = '\n'.join(lines)
             cleaned_evals[k] = v.replace('Assistant 1', "**Assistant 1**").replace('Assistant 2', '**Assistant 2**')
 
         r['evaluations'] = cleaned_evals
