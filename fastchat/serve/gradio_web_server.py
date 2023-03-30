@@ -139,7 +139,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
-        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 4
+        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 4
         return
 
     if len(state.messages) == state.offset + 2:
