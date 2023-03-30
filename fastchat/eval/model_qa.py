@@ -4,12 +4,11 @@ import torch
 import os
 import json
 from tqdm import tqdm
-import ray
+import shortuuid
 
 from fastchat.conversation import default_conversation
 from fastchat.utils import disable_torch_init
 
-@ray.remote(num_gpus=1)
 @torch.inference_mode()
 def eval_model(model_name, questions_file, answers_file):
     # Model
@@ -20,11 +19,11 @@ def eval_model(model_name, questions_file, answers_file):
         torch_dtype=torch.float16).cuda()
 
 
-    qa_file = open(os.path.expanduser(questions_file), "r")
+    ques_file = open(os.path.expanduser(questions_file), "r")
     ans_file = open(os.path.expanduser(answers_file), "w")
-    for i, line in enumerate(tqdm(qa_file)):
-        idx = json.loads(line)["id"]
-        qs = json.loads(line)["question"]
+    for i, line in enumerate(tqdm(ques_file)):
+        idx = json.loads(line)["question_id"]
+        qs = json.loads(line)["text"]
         cat = json.loads(line)["category"]
         conv = default_conversation.copy()
         conv.append_message(conv.roles[0], qs)
@@ -43,25 +42,20 @@ def eval_model(model_name, questions_file, answers_file):
             index = outputs.index(conv.sep, len(prompt))
 
         outputs = outputs[len(prompt) + len(conv.roles[1]) + 2:index].strip()
-        ans_file.write(json.dumps({"id": idx, "answer": outputs, "category": cat}) + "\n")
+        ans_id = shortuuid.uuid()
+        ans_file.write(json.dumps({"question_id": idx,
+                                   "text": outputs,
+                                   "answer_id": ans_id,
+                                   "model_id": model_name,
+                                   "metadata": {}}) + "\n")
         ans_file.flush()
     ans_file.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--questions-file", type=str, default="mini_evals/qa.jsonl")
-    parser.add_argument("--answers-file", type=str, default="answers.jsonl")
+    parser.add_argument("--question-file", type=str, default="tables/question.jsonl")
+    parser.add_argument("--answer-file", type=str, default="answer.jsonl")
     args = parser.parse_args()
 
-    ray.init()
-    handle = []
-    for i in range(1, 5):
-        model_name = args.model_name
-        model_name.replace('~/', '')
-        print(model_name)
-        question_file = f'mini_evals/qa_v2-{i}.jsonl'
-        answers_file = f'answers/v4/answers-v2-{i}.jsonl'
-        handle.append(eval_model.remote(model_name, question_file, answers_file))
-
-    results = ray.get(handle)
+    eval_model(args.model_name, args.question_file, args.answers_file)
