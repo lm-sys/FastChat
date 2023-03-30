@@ -124,7 +124,7 @@ class ModelWorker:
 
         context = params["prompt"]
         temperature = float(params.get("temperature", 1.0))
-        max_new_tokens = int(params.get("max_new_tokens", 256))
+        max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
 
         input_ids = tokenizer(context).input_ids
