@@ -20,10 +20,9 @@ pip3 install git+https://github.com/huggingface/transformers
 ### Launch servers
 ```
 python3 -m fastchat.serve.controller --host 0.0.0.0 --port 21001
-
 python3 -m fastchat.serve.register_worker --controller http://localhost:21001 --worker-name https://
-
 python3 -m fastchat.serve.test_message --model vicuna-13b --controller http://localhost:21001
 
-python3 -m fastchat.serve.gradio_web_server --controller http://localhost:21001
+export OPENAI_API_KEY=
+python3 -m fastchat.serve.gradio_web_server --controller http://localhost:21001 --moderate --concurrency 20
 ```
