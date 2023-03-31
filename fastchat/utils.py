@@ -8,7 +8,7 @@ import requests
 
 from fastchat.constants import LOGDIR
 
-server_error_msg = "**NETWORK ERROR. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
+server_error_msg = "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
 moderation_msg = "YOUR INPUT VIOLATES OPENAI CONTENT MODERATION API. PLEASE TRY AGAIN."
 
 handler = None
