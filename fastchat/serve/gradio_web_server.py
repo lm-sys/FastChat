@@ -375,7 +375,7 @@ if __name__ == "__main__":
 
     models = get_model_list()
 
-    print(args)
+    logger.info(args)
     demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
                api_open=False).launch(

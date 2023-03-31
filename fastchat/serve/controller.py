@@ -5,11 +5,11 @@ It sends worker addresses to clients.
 import argparse
 import asyncio
 import dataclasses
+import json
 import logging
 import time
 from typing import List, Union
 import threading
-import json
 
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
