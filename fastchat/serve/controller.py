@@ -9,6 +9,7 @@ import logging
 import time
 from typing import List, Union
 import threading
+import json
 
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
@@ -17,7 +18,7 @@ import requests
 import uvicorn
 
 from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
-from fastchat.utils import build_logger
+from fastchat.utils import build_logger, server_error_msg
 
 
 logger = build_logger("controller", "controller.log")
@@ -116,6 +117,7 @@ class Controller:
             pt = np.random.choice(np.arange(len(worker_names)),
                 p=worker_speeds)
             worker_name = worker_names[pt]
+            print(f"speeds: {worker_speeds}, pt: {pt}, worker_name: {worker_name}")
             return worker_name
 
         # Check status before returning
