@@ -18,7 +18,7 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION, INF
 from fastchat.utils import build_logger, server_error_msg
 
 
@@ -148,10 +148,13 @@ class Controller:
             worker_names = []
             worker_qlen = []
             for w_name, w_info in self.worker_info.items():
+                worker_names.append(w_name)
                 if model_name in w_info.model_names:
-                    worker_names.append(w_name)
                     worker_qlen.append(w_info.queue_length)
+                else:
+                    worker_qlen.append(INF)
             min_index = worker_qlen.index(min(worker_qlen))
+            self.worker_info.items()[min_index][1].queue_length += 1
             return worker_names[min_index]
 
         return worker_name
