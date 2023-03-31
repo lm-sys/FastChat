@@ -126,13 +126,13 @@ class Controller:
                     p=worker_speeds)
                 worker_name = worker_names[pt]
                 return worker_name
-    
+
             # Check status before returning
             while True:
                 pt = np.random.choice(np.arange(len(worker_names)),
                     p=worker_speeds)
                 worker_name = worker_names[pt]
-    
+
                 if self.get_worker_status(worker_name):
                     break
                 else:
