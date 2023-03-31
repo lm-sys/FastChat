@@ -71,6 +71,7 @@ def load_demo(url_params, request: gr.Request):
             dropdown_update,
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -84,6 +85,7 @@ def load_demo_refresh_model_list(request: gr.Request):
                value=models[0] if len(models) > 0 else ""),
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -310,7 +312,7 @@ def build_demo():
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=60):
-                submit_btn = gr.Button(value="Submit")
+                submit_btn = gr.Button(value="Submit", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -350,11 +352,11 @@ def build_demo():
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, button_row, parameter_row],
+                chatbot, textbox, submit_btn, button_row, parameter_row],
                 _js=get_window_url_params)
         elif args.model_list_mode == "reload":
             demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, button_row, parameter_row])
+                chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
