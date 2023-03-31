@@ -95,7 +95,9 @@ class ModelWorker:
         assert r.status_code == 200
 
     def send_heart_beat(self):
-        logger.info(f"Send heart beat. Models: {[self.model_name]}")
+        logger.info(f"Send heart beat. Models: {[self.model_name]}. "
+                    f"Semaphore: {model_semaphore}. "
+                    f"global_counter: {global_counter}")
 
         url = self.controller_addr + "/receive_heart_beat"
         try:
@@ -197,7 +199,6 @@ model_semaphore = None
 
 def release_model_semaphore():
     model_semaphore.release()
-    logger.info(f"release model_semaphore: {model_semaphore}")
 
 
 @app.post("/worker_generate_stream")
@@ -205,8 +206,6 @@ async def generate_stream(request: Request):
     global model_semaphore, global_counter
     global_counter += 1
     params = await request.json()
-
-    logger.info(f"acquire model_semaphore: {model_semaphore}")
 
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
