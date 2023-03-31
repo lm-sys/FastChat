@@ -5,6 +5,7 @@ It sends worker addresses to clients.
 import argparse
 import asyncio
 import dataclasses
+from enum import Enum, auto
 import json
 import logging
 import time
@@ -23,11 +24,16 @@ from fastchat.utils import build_logger, server_error_msg
 
 logger = build_logger("controller", "controller.log")
 
+class DispatchMethod(Enum):
+    LOTTERY = auto()
+    SHORTEST_QUEUE = auto()
+
 
 @dataclasses.dataclass
 class WorkerInfo:
     model_names: List[str]
     speed: int
+    queue_lengh: int
     check_heart_beat: bool
     last_heart_beat: str
 
@@ -42,6 +48,7 @@ class Controller:
     def __init__(self):
         # Dict[str -> WorkerInfo]
         self.worker_info = {}
+        self.dispatch_method = DispatchMethod.SHORTEST_QUEUE
 
         self.heart_beat_thread = threading.Thread(
             target=heart_beat_controller, args=(self,))
@@ -60,9 +67,11 @@ class Controller:
             worker_status = self.get_worker_status(worker_name)
         if not worker_status:
             return False
+        if worker_status["queue_length"] is None:
+            worker_status["queue_length"] = 0
 
         self.worker_info[worker_name] = WorkerInfo(
-            worker_status["model_names"], worker_status["speed"],
+            worker_status["model_names"], worker_status["speed"], worker_status["queue_length"],
             check_heart_beat, time.time())
 
         logger.info(f"Register done: {worker_name}, {worker_status}")
@@ -101,41 +110,49 @@ class Controller:
         return list(model_names)
 
     def get_worker_address(self, model_name: str):
-        worker_names = []
-        worker_speeds = []
-        for w_name, w_info in self.worker_info.items():
-            if model_name in w_info.model_names:
-                worker_names.append(w_name)
-                worker_speeds.append(w_info.speed)
-        worker_speeds = np.array(worker_speeds, dtype=np.float32)
-        norm = np.sum(worker_speeds)
-        if norm < 1e-4:
-            return ""
-        worker_speeds = worker_speeds / norm
-
-        if True:  # Directly return address
-            pt = np.random.choice(np.arange(len(worker_names)),
-                p=worker_speeds)
-            worker_name = worker_names[pt]
-            #logger.info(f"speeds: {worker_speeds}, pt: {pt}, worker_name: {worker_name}")
-            return worker_name
-
-        # Check status before returning
-        while True:
-            pt = np.random.choice(np.arange(len(worker_names)),
-                p=worker_speeds)
-            worker_name = worker_names[pt]
-
-            if self.get_worker_status(worker_name):
-                break
-            else:
-                self.remove_worker(worker_name)
-                worker_speeds[pt] = 0
-                norm = np.sum(worker_speeds)
-                if norm < 1e-4:
-                    return ""
-                worker_speeds = worker_speeds / norm
-                continue
+        if self.dispatch_method == DispatchMethod.LOTTERY:
+            worker_names = []
+            worker_speeds = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_speeds.append(w_info.speed)
+            worker_speeds = np.array(worker_speeds, dtype=np.float32)
+            norm = np.sum(worker_speeds)
+            if norm < 1e-4:
+                return ""
+            worker_speeds = worker_speeds / norm
+            if True:  # Directly return address
+                pt = np.random.choice(np.arange(len(worker_names)),
+                    p=worker_speeds)
+                worker_name = worker_names[pt]
+                return worker_name
+    
+            # Check status before returning
+            while True:
+                pt = np.random.choice(np.arange(len(worker_names)),
+                    p=worker_speeds)
+                worker_name = worker_names[pt]
+    
+                if self.get_worker_status(worker_name):
+                    break
+                else:
+                    self.remove_worker(worker_name)
+                    worker_speeds[pt] = 0
+                    norm = np.sum(worker_speeds)
+                    if norm < 1e-4:
+                        return ""
+                    worker_speeds = worker_speeds / norm
+                    continue
+        elif self.dispatch_method == DispatchMethod.SHORTEST_QUEUE:
+            worker_names = []
+            worker_qlen = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_qlen.append(w_info.queue_length)
+            min_index = worker_qlen.index(min(worker_qlen))
+            return worker_names[min_index]
 
         return worker_name
 

@@ -27,6 +27,8 @@ worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 global_counter = 0
 
+model_semaphore = None
+
 
 def heart_beat_worker(controller):
 
@@ -111,9 +113,14 @@ class ModelWorker:
             self.register_to_controller()
 
     def get_status(self):
+        if model_semaphore is None:
+            qlen = 0
+        else:
+            qlen = model_semaphore._value
         return {
             "model_names": [self.model_name],
             "speed": 1,
+            "queue_length": qlen,
         }
 
     @torch.inference_mode()
@@ -194,7 +201,6 @@ class ModelWorker:
 
 
 app = FastAPI()
-model_semaphore = None
 
 
 def release_model_semaphore():
