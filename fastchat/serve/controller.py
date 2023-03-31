@@ -18,11 +18,12 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION, INF
+from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
 from fastchat.utils import build_logger, server_error_msg
 
 
 logger = build_logger("controller", "controller.log")
+
 
 class DispatchMethod(Enum):
     LOTTERY = auto()
@@ -33,7 +34,7 @@ class DispatchMethod(Enum):
 class WorkerInfo:
     model_names: List[str]
     speed: int
-    queue_lengh: int
+    queue_length: int
     check_heart_beat: bool
     last_heart_beat: str
 
@@ -67,8 +68,6 @@ class Controller:
             worker_status = self.get_worker_status(worker_name)
         if not worker_status:
             return False
-        if worker_status["queue_length"] is None:
-            worker_status["queue_length"] = 0
 
         self.worker_info[worker_name] = WorkerInfo(
             worker_status["model_names"], worker_status["speed"], worker_status["queue_length"],
@@ -148,22 +147,25 @@ class Controller:
             worker_names = []
             worker_qlen = []
             for w_name, w_info in self.worker_info.items():
-                worker_names.append(w_name)
                 if model_name in w_info.model_names:
-                    worker_qlen.append(w_info.queue_length)
-                else:
-                    worker_qlen.append(INF)
-            min_index = worker_qlen.index(min(worker_qlen))
-            self.worker_info.items()[min_index][1].queue_length += 1
-            return worker_names[min_index]
+                    worker_names.append(w_name)
+                    worker_qlen.append(w_info.queue_length / w_info.speed)
+            logger.info(f"names: {worker_names}, qlen: {worker_qlen}")
+            if len(worker_names) == 0:
+                return ""
+            min_index = np.argmin(worker_qlen)
+            w_name = worker_names[min_index]
+            self.worker_info[w_name].queue_length += 1
+            return w_name
 
         return worker_name
 
-    def receive_heart_beat(self, worker_name: str):
+    def receive_heart_beat(self, worker_name: str, queue_length: int):
         if worker_name not in self.worker_info:
-            logger.info(f"Receive unknow heart beat. {worker_name}")
+            logger.info(f"Receive unknown heart beat. {worker_name}")
             return False
 
+        self.worker_info[worker_name].queue_length = queue_length
         self.worker_info[worker_name].last_heart_beat = time.time()
         logger.info(f"Receive heart beat. {worker_name}")
         return True
@@ -253,7 +255,8 @@ async def get_worker_address(request: Request):
 @app.post("/receive_heart_beat")
 async def receive_heart_beat(request: Request):
     data = await request.json()
-    exist = controller.receive_heart_beat(data["worker_name"])
+    exist = controller.receive_heart_beat(
+        data["worker_name"], data["queue_length"])
     return {"exist": exist}
 
 

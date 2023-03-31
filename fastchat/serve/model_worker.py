@@ -104,23 +104,26 @@ class ModelWorker:
         url = self.controller_addr + "/receive_heart_beat"
         try:
             ret = requests.post(url, json={
-                "worker_name": self.worker_addr})
+                "worker_name": self.worker_addr,
+                "queue_length": self.get_queue_length()})
             exist = ret.json()["exist"]
         except requests.exceptions.RequestException as e:
-            logger.error(f"heat beat error: {e}")
+            logger.error(f"heart beat error: {e}")
             return
         if not exist:
             self.register_to_controller()
 
-    def get_status(self):
+    def get_queue_length(self):
         if model_semaphore is None:
-            qlen = 0
+            return 0
         else:
-            qlen = model_semaphore._value
+            return args.limit_model_concurrency - model_semaphore._value
+
+    def get_status(self):
         return {
             "model_names": [self.model_name],
             "speed": 1,
-            "queue_length": qlen,
+            "queue_length": self.get_queue_length(),
         }
 
     @torch.inference_mode()
