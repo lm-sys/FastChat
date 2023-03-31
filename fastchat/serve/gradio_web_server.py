@@ -103,19 +103,19 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 def upvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"upvote. ip: {request.client.host}")
     vote_last_response(state, "upvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"downvote. ip: {request.client.host}")
     vote_last_response(state, "downvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
     logger.info(f"flag. ip: {request.client.host}")
     vote_last_response(state, "flag", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
@@ -330,11 +330,11 @@ def build_demo():
         # Register listeners
         btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         downvote_btn.click(downvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         flag_btn.click(flag_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         regenerate_btn.click(regenerate, state,
             [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
