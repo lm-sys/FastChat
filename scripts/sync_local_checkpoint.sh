@@ -14,6 +14,7 @@ while true; do
         mkdir -p ${remote_path}/${local_last_ckpt}
         gsutil -m rsync -r ${local_path}/${local_last_ckpt}/ ${remote_path}/${local_last_ckpt}
 
+        # Keep only the last MAX_NUM_CKPT checkpoints
         num_local_ckpt=$(ls ${local_path} | grep checkpoint- | wc -l)
         echo "num_local_ckpt: ${num_local_ckpt}"
         if [ ${num_local_ckpt} -gt $MAX_NUM_CKPT ]; then
