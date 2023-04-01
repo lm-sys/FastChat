@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-models = ['llama', 'alpaca', 'gpt35', 'bard']
+models = ['alpaca', 'llama', 'gpt35', 'bard']
 
 
 def read_jsonl(path: str, key: str=None):
@@ -81,12 +81,23 @@ if __name__ == '__main__':
         r['evaluations'] = cleaned_evals
         records.append(r)
 
-    # Reorder the records
+    # Reorder the records, this is optional
     for r in records:
         if r['id'] <= 20:
             r['id'] += 60
         else:
             r['id'] -= 20
+    for r in records:
+        if r['id'] <= 50:
+            r['id'] += 10
+        elif 50 < r['id'] <= 60:
+            r['id'] -= 50
+    for r in records:
+        if r['id'] == 7:
+            r['id'] = 1
+        elif r['id'] < 7:
+            r['id'] += 1 
+
     records.sort(key=lambda x: x['id'])
 
     # Write to file
