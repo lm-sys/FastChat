@@ -28,6 +28,7 @@ cd FastChat
 
 2. Install Package
 ```bash
+pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
