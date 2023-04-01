@@ -82,7 +82,7 @@ run: |
   LOCAL_CKPT_PATH=~/.checkpoints
   CKPT_PATH=/artifacts/chatbot/${MODEL_SIZE}b/sharegpt-${DATE}-seq-${SEQ_LEN}${USE_FLASH_SUFFIX}
   last_ckpt=$(ls ${CKPT_PATH} | grep -E '[0-9]+' | sort -t'-' -k1,1 -k2,2n | tail -1)
-  mkdir ~/.checkpoints/${last_ckpt}
+  mkdir -p ~/.checkpoints/${last_ckpt}
   gsutil -m rsync -r ${CKPT_PATH}/${last_ckpt}/ ~/.checkpoints/${last_ckpt}
 
   bash scripts/sync_local_checkpoint.sh ${LOCAL_CKPT_PATH} ${CKPT_PATH} > sync.log 2>&1 &
@@ -105,7 +105,7 @@ run: |
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 1200 \
-    --save_total_limit 100 \
+    --save_total_limit 10 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
