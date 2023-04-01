@@ -10,6 +10,8 @@ An open platform for training, serving, and evaluating large language model base
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
+**Announcement:** Thank you for checking out our project and your interest! We plan to release the model weights once we have addressed all legal concerns and have a low-resource version of the inference code ready. Based on our current timeline, it will be available by early next week. Please stay tuned! :llama:
+
 ## Contents
 - [Install](#install)
 - [Serving](#serving)
