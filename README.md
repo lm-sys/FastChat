@@ -20,13 +20,20 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 
 ## Install
 
-```
+1. Clone this repository and navigate to FastChat folder
+```bash
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
-pip3 install --upgrade pip
-pip3 install -e .
+```
 
-# Install the latest main branch of huggingface/transformers
+2. Install Package
+```bash
+pip3 install --upgrade pip  # enable PEP 660 support
+pip3 install -e .
+```
+
+3. Install the latest main branch of huggingface/transformers
+```bash
 pip3 install git+https://github.com/huggingface/transformers
 ```
 
@@ -41,21 +48,27 @@ python3 -m fastchat.serve.cli --model-name facebook/opt-1.3b
 ```
 
 ### Web UI
-```
-# Launch a controller
+
+#### Launch a controller
+```bash
 python3 -m fastchat.serve.controller
-
-# Launch a model worker
-python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
-
-# Send a test message
-python3 -m fastchat.serve.test_message
-
-# Launch a gradio web server.
-python3 -m fastchat.serve.gradio_web_server
-
-# You can open your brower and chat with a model now.
 ```
+
+#### Launch a model worker
+```bash
+python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
+```
+
+#### Send a test message
+```bash
+python3 -m fastchat.serve.test_message
+```
+
+#### Launch a gradio web server.
+```bash
+python3 -m fastchat.serve.gradio_web_server
+```
+#### You can open your brower and chat with a model now.
 
 ## Evaluation
 
