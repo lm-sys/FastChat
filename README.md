@@ -48,7 +48,7 @@ python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
 # Send a test message
 python3 -m fastchat.serve.test_message
 
-# Luanch a gradio web server.
+# Launch a gradio web server.
 python3 -m fastchat.serve.gradio_web_server
 
 # You can open your brower and chat with a model now.
