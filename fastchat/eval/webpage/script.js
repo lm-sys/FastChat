@@ -31,19 +31,10 @@ categoryMapping = {};
 // Store the number of questions for later use.
 questionsCount = 0;
 
-function formatText(input) {
-    input = input.replace(/&/g, '&amp;')
-                 .replace(/</g, '&lt;')
-                 .replace(/>/g, '&gt;')
-                 .replace(/"/g, '&quot;')
-                 .replace(/'/g, '&#x27;')
-                 .replace(/\//g, '&#x2F;');
-    return input.replace(/\n/g, '<br>');
-}
 
 function text2Markdown(text) {
     // Normalize the text for markdown rendering.
-    text = text.trim().replace('\n\n', '\n').replace('\n', '\n\n');
+    text = text.trim().replaceAll('\n\n', '\n').replaceAll('\n', '\n\n');
     return marked.parse(text);
 }
 
@@ -118,7 +109,7 @@ function populateQuestions(questions) {
 
 function displayQuestion(index) {
     const question = questionMapping[index].question;
-    document.getElementById('selected-question').innerHTML = text2Markdown('**Question:** ' + question); // "<strong>Question: </strong>" + formatText(question);
+    document.getElementById('selected-question').innerHTML = text2Markdown('**Question:** ' + question);
     displayAnswers(index);
 }
 
@@ -131,7 +122,7 @@ function displayAnswers(index) {
 
     // Display evaluation
     score = question.scores[otherModel];
-    score_text = otherModel + " " + score[0] + "/10, Vicuna " + score[1] + "/10";
+    score_text = modelNameMapping[otherModel] + " " + score[0] + "/10, Vicuna-13b " + score[1] + "/10";
     document.getElementById('evaluation-header').textContent = "GPT-4 Evaluation" + " (Score: " + score_text + ")";
     document.getElementById('evaluation-result').innerHTML = text2Markdown(question.evaluations[otherModel]);
 
