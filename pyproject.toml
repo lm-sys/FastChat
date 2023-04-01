@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fastchat"
-version = "0.1.0"
-description = "chatbot server"
+name = "fschat"
+version = "0.1.1"
+description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -13,9 +13,9 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "fastapi", "gdown", "gradio==3.23", "requests", "uvicorn", "numpy",
-    "transformers>=4.26.1", "torch", "sentencepiece", "tokenizers==0.12.1", "wandb",
-    "markdown2[all]"
+    "fastapi", "gdown", "gradio==3.23", "markdown2[all]", "numpy",
+    "requests", "sentencepiece", "tokenizers==0.12.1",
+    "torch", "transformers>=4.26.1", "uvicorn", "wandb",
 ]
 
 [project.urls]
@@ -23,7 +23,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
 
 [tool.setuptools.packages.find]
-exclude = ["benchmark*", "dist*", "playground*", "scripts*", "tests*"]
+exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
 
 [tool.wheel]
-exclude = ["benchmark*", "dist*", "playground*", "scripts*", "tests*"]
+exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
