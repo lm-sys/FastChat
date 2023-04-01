@@ -118,6 +118,9 @@ run: |
     --gradient_checkpointing True \
     --lazy_preprocess True
 
+  # Sync any files not in the checkpoint-* folders
+  gsutil -m rsync -r -x 'checkpoint-*' $LOCAL_CKPT_PATH/ $CKPT_PATH/
+
 
 envs:
   MODEL_SIZE: 13

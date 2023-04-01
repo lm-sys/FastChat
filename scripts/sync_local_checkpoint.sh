@@ -24,7 +24,5 @@ while true; do
         fi
     fi
 
-    # Sync any files not in the checkpoint-* folders
-    gsutil -m rsync -r -x 'checkpoint-*' ${local_path}/ ${remote_path}/
     sleep 600
 done
