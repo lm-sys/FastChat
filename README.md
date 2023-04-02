@@ -112,7 +112,7 @@ sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY
 ```
 Other options are also valid:
 ```bash
-# Launch it on managed spot to save 3x cost
+# Launch it on managed spot to save 3x cost (train Vicuna-13B with around $300)
 sky spot launch -n vicuna scripts/train-vicuna.yaml --env WANDB_API_KEY
 
 # Train a 7B model
