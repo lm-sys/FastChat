@@ -29,6 +29,15 @@ class DispatchMethod(Enum):
     LOTTERY = auto()
     SHORTEST_QUEUE = auto()
 
+    @classmethod
+    def from_str(cls, name):
+        if name == "lottery":
+            return cls.LOTTERY
+        elif name == "shortest_queue":
+            return cls.SHORTEST_QUEUE
+        else:
+            raise ValueError(f"Invalid dispatch method")
+
 
 @dataclasses.dataclass
 class WorkerInfo:
@@ -46,10 +55,10 @@ def heart_beat_controller(controller):
 
 
 class Controller:
-    def __init__(self):
+    def __init__(self, dispatch_method: str):
         # Dict[str -> WorkerInfo]
         self.worker_info = {}
-        self.dispatch_method = DispatchMethod.SHORTEST_QUEUE
+        self.dispatch_method = DispatchMethod.from_str(dispatch_method)
 
         self.heart_beat_thread = threading.Thread(
             target=heart_beat_controller, args=(self,))
@@ -143,6 +152,7 @@ class Controller:
                         return ""
                     worker_speeds = worker_speeds / norm
                     continue
+            return worker_name
         elif self.dispatch_method == DispatchMethod.SHORTEST_QUEUE:
             worker_names = []
             worker_qlen = []
@@ -150,15 +160,15 @@ class Controller:
                 if model_name in w_info.model_names:
                     worker_names.append(w_name)
                     worker_qlen.append(w_info.queue_length / w_info.speed)
-            logger.info(f"names: {worker_names}, qlen: {worker_qlen}")
             if len(worker_names) == 0:
                 return ""
             min_index = np.argmin(worker_qlen)
             w_name = worker_names[min_index]
             self.worker_info[w_name].queue_length += 1
+            logger.info(f"names: {worker_names}, queue_lens: {worker_qlen}, ret: {w_name}")
             return w_name
-
-        return worker_name
+        else:
+            raise ValueError(f"Invalid dispatch method: {self.dispatch_method}")
 
     def receive_heart_beat(self, worker_name: str, queue_length: int):
         if worker_name not in self.worker_info:
@@ -276,8 +286,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
+    parser.add_argument("--dispatch-method", type=str, choices=[
+        "lottery", "shortest_queue"], default="shortest_queue")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
-    controller = Controller()
-
+    controller = Controller(args.dispatch_method)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

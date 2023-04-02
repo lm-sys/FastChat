@@ -19,7 +19,8 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.utils import build_logger, disable_torch_init, server_error_msg
+from fastchat.utils import (build_logger, disable_torch_init, server_error_msg,
+    pretty_print_semaphore)
 
 GB = 1 << 30
 
@@ -98,18 +99,22 @@ class ModelWorker:
 
     def send_heart_beat(self):
         logger.info(f"Send heart beat. Models: {[self.model_name]}. "
-                    f"Semaphore: {model_semaphore}. "
+                    f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
                     f"global_counter: {global_counter}")
 
         url = self.controller_addr + "/receive_heart_beat"
-        try:
-            ret = requests.post(url, json={
-                "worker_name": self.worker_addr,
-                "queue_length": self.get_queue_length()})
-            exist = ret.json()["exist"]
-        except requests.exceptions.RequestException as e:
-            logger.error(f"heart beat error: {e}")
-            return
+
+        while True:
+            try:
+                ret = requests.post(url, json={
+                    "worker_name": self.worker_addr,
+                    "queue_length": self.get_queue_length()}, timeout=5)
+                exist = ret.json()["exist"]
+                break
+            except requests.exceptions.RequestException as e:
+                logger.error(f"heart beat error: {e}")
+            time.sleep(5)
+
         if not exist:
             self.register_to_controller()
 
@@ -117,7 +122,8 @@ class ModelWorker:
         if model_semaphore is None:
             return 0
         else:
-            return args.limit_model_concurrency - model_semaphore._value
+            return args.limit_model_concurrency - model_semaphore._value + len(
+                model_semaphore._waiters)
 
     def get_status(self):
         return {
@@ -241,10 +247,11 @@ if __name__ == "__main__":
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
-    parser.add_argument("--limit-model-concurrency", type=int, default=4)
+    parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
     worker = ModelWorker(args.controller_address,
                          args.worker_address,

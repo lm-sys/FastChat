@@ -230,7 +230,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.04)
+                time.sleep(0.03)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
@@ -374,6 +374,7 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
     models = get_model_list()
 
