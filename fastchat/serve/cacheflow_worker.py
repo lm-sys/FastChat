@@ -21,6 +21,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from cacheflow.utils import Counter, get_gpu_memory, get_cpu_memory
 from cacheflow.master.server import Server, initialize_ray_cluster
 from cacheflow.sequence import Sequence, SequenceGroup
+from cacheflow.sampling_params import SamplingParams
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import build_logger, disable_torch_init, server_error_msg
 
@@ -314,6 +315,21 @@ class CacheFlowWorker:
 
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
+
+        # make sampling params in cacheflow
+        # TODO(Hao): the following call is buggy
+        sampling_params = SamplingParams.from_dict(params)
+        sampling_params.stop_token_ids.add(tokenizer.eos_token_id)
+        sampling_params.n = 1
+        # we might sample multiple sequences, but in chatbot, this is one
+        seqs: List[Sequence] = []
+        for _ in range(sampling_params.n):
+            seq_id = next(self.seq_counter)
+            seq = Sequence(seq_id, token_ids, block_size=self.block_size)
+            seqs.append(seq)
+
+
+
 
         for i in range(max_new_tokens):
             if i == 0:
