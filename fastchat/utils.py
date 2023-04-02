@@ -8,8 +8,8 @@ import requests
 
 from fastchat.constants import LOGDIR
 
-server_error_msg = "**NETWORK ERROR. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
-moderation_msg = "YOUR INPUT VIOLATES OPENAI CONTENT MODERATION API. PLEASE TRY AGAIN."
+server_error_msg = "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
+moderation_msg = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE TRY AGAIN."
 
 handler = None
 
@@ -100,6 +100,9 @@ def disable_torch_init():
 
 
 def violates_moderation(text):
+    """
+    Check whether the text violates OpenAI moderation API.
+    """
     url = "https://api.openai.com/v1/moderations"
     headers = {"Content-Type": "application/json",
                "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]}
@@ -115,3 +118,9 @@ def violates_moderation(text):
         flagged = False
 
     return flagged
+
+
+def pretty_print_semaphore(semaphore):
+    if semaphore is None:
+        return "None"
+    return f"Semaphore(value={semaphore._value}, locked={semaphore.locked()})"

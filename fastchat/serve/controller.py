@@ -5,6 +5,7 @@ It sends worker addresses to clients.
 import argparse
 import asyncio
 import dataclasses
+from enum import Enum, auto
 import json
 import logging
 import time
@@ -24,10 +25,25 @@ from fastchat.utils import build_logger, server_error_msg
 logger = build_logger("controller", "controller.log")
 
 
+class DispatchMethod(Enum):
+    LOTTERY = auto()
+    SHORTEST_QUEUE = auto()
+
+    @classmethod
+    def from_str(cls, name):
+        if name == "lottery":
+            return cls.LOTTERY
+        elif name == "shortest_queue":
+            return cls.SHORTEST_QUEUE
+        else:
+            raise ValueError(f"Invalid dispatch method")
+
+
 @dataclasses.dataclass
 class WorkerInfo:
     model_names: List[str]
     speed: int
+    queue_length: int
     check_heart_beat: bool
     last_heart_beat: str
 
@@ -39,9 +55,10 @@ def heart_beat_controller(controller):
 
 
 class Controller:
-    def __init__(self):
+    def __init__(self, dispatch_method: str):
         # Dict[str -> WorkerInfo]
         self.worker_info = {}
+        self.dispatch_method = DispatchMethod.from_str(dispatch_method)
 
         self.heart_beat_thread = threading.Thread(
             target=heart_beat_controller, args=(self,))
@@ -62,7 +79,7 @@ class Controller:
             return False
 
         self.worker_info[worker_name] = WorkerInfo(
-            worker_status["model_names"], worker_status["speed"],
+            worker_status["model_names"], worker_status["speed"], worker_status["queue_length"],
             check_heart_beat, time.time())
 
         logger.info(f"Register done: {worker_name}, {worker_status}")
@@ -101,49 +118,64 @@ class Controller:
         return list(model_names)
 
     def get_worker_address(self, model_name: str):
-        worker_names = []
-        worker_speeds = []
-        for w_name, w_info in self.worker_info.items():
-            if model_name in w_info.model_names:
-                worker_names.append(w_name)
-                worker_speeds.append(w_info.speed)
-        worker_speeds = np.array(worker_speeds, dtype=np.float32)
-        norm = np.sum(worker_speeds)
-        if norm < 1e-4:
-            return ""
-        worker_speeds = worker_speeds / norm
+        if self.dispatch_method == DispatchMethod.LOTTERY:
+            worker_names = []
+            worker_speeds = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_speeds.append(w_info.speed)
+            worker_speeds = np.array(worker_speeds, dtype=np.float32)
+            norm = np.sum(worker_speeds)
+            if norm < 1e-4:
+                return ""
+            worker_speeds = worker_speeds / norm
+            if True:  # Directly return address
+                pt = np.random.choice(np.arange(len(worker_names)),
+                    p=worker_speeds)
+                worker_name = worker_names[pt]
+                return worker_name
 
-        if True:  # Directly return address
-            pt = np.random.choice(np.arange(len(worker_names)),
-                p=worker_speeds)
-            worker_name = worker_names[pt]
-            #logger.info(f"speeds: {worker_speeds}, pt: {pt}, worker_name: {worker_name}")
+            # Check status before returning
+            while True:
+                pt = np.random.choice(np.arange(len(worker_names)),
+                    p=worker_speeds)
+                worker_name = worker_names[pt]
+
+                if self.get_worker_status(worker_name):
+                    break
+                else:
+                    self.remove_worker(worker_name)
+                    worker_speeds[pt] = 0
+                    norm = np.sum(worker_speeds)
+                    if norm < 1e-4:
+                        return ""
+                    worker_speeds = worker_speeds / norm
+                    continue
             return worker_name
+        elif self.dispatch_method == DispatchMethod.SHORTEST_QUEUE:
+            worker_names = []
+            worker_qlen = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_qlen.append(w_info.queue_length / w_info.speed)
+            if len(worker_names) == 0:
+                return ""
+            min_index = np.argmin(worker_qlen)
+            w_name = worker_names[min_index]
+            self.worker_info[w_name].queue_length += 1
+            logger.info(f"names: {worker_names}, queue_lens: {worker_qlen}, ret: {w_name}")
+            return w_name
+        else:
+            raise ValueError(f"Invalid dispatch method: {self.dispatch_method}")
 
-        # Check status before returning
-        while True:
-            pt = np.random.choice(np.arange(len(worker_names)),
-                p=worker_speeds)
-            worker_name = worker_names[pt]
-
-            if self.get_worker_status(worker_name):
-                break
-            else:
-                self.remove_worker(worker_name)
-                worker_speeds[pt] = 0
-                norm = np.sum(worker_speeds)
-                if norm < 1e-4:
-                    return ""
-                worker_speeds = worker_speeds / norm
-                continue
-
-        return worker_name
-
-    def receive_heart_beat(self, worker_name: str):
+    def receive_heart_beat(self, worker_name: str, queue_length: int):
         if worker_name not in self.worker_info:
-            logger.info(f"Receive unknow heart beat. {worker_name}")
+            logger.info(f"Receive unknown heart beat. {worker_name}")
             return False
 
+        self.worker_info[worker_name].queue_length = queue_length
         self.worker_info[worker_name].last_heart_beat = time.time()
         logger.info(f"Receive heart beat. {worker_name}")
         return True
@@ -233,7 +265,8 @@ async def get_worker_address(request: Request):
 @app.post("/receive_heart_beat")
 async def receive_heart_beat(request: Request):
     data = await request.json()
-    exist = controller.receive_heart_beat(data["worker_name"])
+    exist = controller.receive_heart_beat(
+        data["worker_name"], data["queue_length"])
     return {"exist": exist}
 
 
@@ -253,8 +286,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
+    parser.add_argument("--dispatch-method", type=str, choices=[
+        "lottery", "shortest_queue"], default="shortest_queue")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
-    controller = Controller()
-
+    controller = Controller(args.dispatch_method)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

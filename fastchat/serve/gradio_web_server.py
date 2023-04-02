@@ -71,6 +71,7 @@ def load_demo(url_params, request: gr.Request):
             dropdown_update,
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -84,6 +85,7 @@ def load_demo_refresh_model_list(request: gr.Request):
                value=models[0] if len(models) > 0 else ""),
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -103,19 +105,19 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 def upvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"upvote. ip: {request.client.host}")
     vote_last_response(state, "upvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"downvote. ip: {request.client.host}")
     vote_last_response(state, "downvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
     logger.info(f"flag. ip: {request.client.host}")
     vote_last_response(state, "flag", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
@@ -228,7 +230,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.04)
+                time.sleep(0.03)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
@@ -310,7 +312,7 @@ def build_demo():
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=60):
-                submit_btn = gr.Button(value="Submit")
+                submit_btn = gr.Button(value="Submit", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -330,11 +332,11 @@ def build_demo():
         # Register listeners
         btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         downvote_btn.click(downvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         flag_btn.click(flag_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         regenerate_btn.click(regenerate, state,
             [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
@@ -350,11 +352,11 @@ def build_demo():
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, button_row, parameter_row],
+                chatbot, textbox, submit_btn, button_row, parameter_row],
                 _js=get_window_url_params)
         elif args.model_list_mode == "reload":
             demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, button_row, parameter_row])
+                chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -372,6 +374,7 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
     models = get_model_list()
 
