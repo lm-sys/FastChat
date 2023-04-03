@@ -104,7 +104,7 @@ python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 
 #### Send a test message
 ```bash
-python3 -m fastchat.serve.test_message
+python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
 #### Launch a gradio web server.
