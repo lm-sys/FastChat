@@ -43,7 +43,7 @@ pip3 install -e .
 ```
 
 ## Vicuna Weights
-We release Vicuna weights as delta weights to comply with the LLaMA model license.
+We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
 1. Get the orignal LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
@@ -80,10 +80,15 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
 ```
 
 #### CPU Only
-This runs on CPU only. It requires around 60GB of CPU memory for Vicuna-13B.
+This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
+
+#### Others (Quantization, More Platforms)
+Currently, we only provide some basic commands for running the model.
+We are actively exploring methods to make the model easier to run on more platforms.
+Contributions and pull requests are welcome.
 
 ### Web UI
 
@@ -99,7 +104,7 @@ python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 
 #### Send a test message
 ```bash
-python3 -m fastchat.serve.test_message
+python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
 #### Launch a gradio web server.
