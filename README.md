@@ -62,7 +62,10 @@ transformers when fastchat is installed.
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 ```bash
-python3 -m fastchat.model.apply_delta --base /path/to/llama-13b --target /output/path/to/vicuna-13b --delta lmsys/vicuna-13b-delta-v0
+python3 -m fastchat.model.apply_delta \
+    --base /path/to/llama-13b \
+    --target /output/path/to/vicuna-13b \
+    --delta lmsys/vicuna-13b-delta-v0
 ```
 
 ### Vicuna-7B
