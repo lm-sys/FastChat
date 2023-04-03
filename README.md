@@ -4,8 +4,6 @@ An open platform for training, serving, and evaluating large language model base
 ## Release
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
-
-<!-- ![demo](assets/demo-narrow.gif) -->
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
