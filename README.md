@@ -67,7 +67,7 @@ Coming soon.
 ### Command Line Interface
 
 #### Single GPU
-This requires around 28GB of GPU memory.
+The command below requires around 27GB of GPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
@@ -79,7 +79,7 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
 ```
 
 #### CPU Only
-This requires no GPU but around 60GB of CPU memory.
+This runs on CPU only. It requires around 60GB of CPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
