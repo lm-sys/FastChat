@@ -2,6 +2,11 @@
 An open platform for training, serving, and evaluating large language model based chatbots.
 
 ## Release
+
+<p align="center">
+<a href="https://vicuna.lmsys.org"><img src="assets/vicuna-logo.jpeg" width="20%"></a>
+</p>
+
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
@@ -101,6 +106,7 @@ python3 -m fastchat.serve.controller
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
+Wait until the process finishes loading the model and you see "Uvicorn running on ...".
 
 #### Send a test message
 ```bash
