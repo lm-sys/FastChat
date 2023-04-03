@@ -22,10 +22,6 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 ```bash
 # Install FastChat
 pip3 install fschat
-
-# Install a specific commit of huggingface/transformers.
-# Our released weights do not work with commits after this due to some upstream changes in the tokenizer.
-pip3 install git+https://github.com/huggingface/transformers@c612628045822f909020f7eb6784c79700813eda
 ```
 
 ### Method 2: From source
@@ -42,12 +38,6 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-3. Install a specific commit of huggingface/transformers.
-Our released weights do not work with commits after this due to some upstream changes in the tokenizer.
-```bash
-pip3 install git+https://github.com/huggingface/transformers@c612628045822f909020f7eb6784c79700813eda
-```
-
 ## Vicuna Weights
 We release Vicuna weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
@@ -57,7 +47,8 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 
 **NOTE**:
 Our released weights are only compatible with huggingface/transformers commit: `c612628045822f909020f7eb6784c79700813eda`.
-The weights do not work with commits after this due to some upstream changes in the tokenizer.
+The weights do not work with commits after this due to some upstream changes in the tokenizer. We install the correct version of
+transformers when fastchat is installed.
 
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
