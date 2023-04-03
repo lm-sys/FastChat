@@ -7,7 +7,7 @@ name = "fschat"
 version = "0.1.3"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
