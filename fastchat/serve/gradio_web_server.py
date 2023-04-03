@@ -27,6 +27,7 @@ disable_btn = gr.Button.update(interactive=False)
 
 priority = {
     "vicuna-13b": "aaaaaaa",
+    "koala-13b": "aaaaaab",
 }
 
 
@@ -257,10 +258,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models
-- Vicuna blog post: [Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality](https://vicuna.lmsys.org)
-- Vicuna code: [Github](https://github.com/lm-sys/FastChat)
-- Koala blog post: [Koala: A Dialogue Model for Academic Research](https://bair.berkeley.edu/blog/2023/04/03/koala/)
-- Koala code: [Github](https://github.com/young-geng/EasyLM)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat)
+- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
+- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
