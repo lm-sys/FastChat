@@ -120,7 +120,7 @@ if __name__ == '__main__':
             'reviewer_id': reviewer_id,
             'metadata': {},
         })
-
+        # To avoid the rate limit set by OpenAI
         time.sleep(10)
         handles.append(get_eval.remote(sys_prompt, prompt, args.max_tokens))
 
