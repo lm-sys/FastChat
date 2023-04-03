@@ -23,8 +23,9 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 # Install FastChat
 pip3 install fschat
 
-# Install the latest main branch of huggingface/transformers
-pip3 install git+https://github.com/huggingface/transformers
+# Install a specific commit of huggingface/transformers.
+# Our released weights do not work with commits after this due to some upstream changes in the tokenizer.
+pip3 install git+https://github.com/huggingface/transformers@c612628045822f909020f7eb6784c79700813eda
 ```
 
 ### Method 2: From source
@@ -41,9 +42,10 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-3. Install the latest main branch of huggingface/transformers
+3. Install a specific commit of huggingface/transformers.
+Our released weights do not work with commits after this due to some upstream changes in the tokenizer.
 ```bash
-pip3 install git+https://github.com/huggingface/transformers
+pip3 install git+https://github.com/huggingface/transformers@c612628045822f909020f7eb6784c79700813eda
 ```
 
 ## Vicuna Weights
@@ -67,7 +69,7 @@ Coming soon.
 ### Command Line Interface
 
 #### Single GPU
-The command below requires around 27GB of GPU memory for Vicuna-13B.
+The command below requires around 28GB of GPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
