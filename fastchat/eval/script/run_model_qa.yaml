@@ -22,12 +22,12 @@ setup: |
   pip install torch==1.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
 
   # Install huggingface with the LLaMA commit
-  pip install git+https://github.com/huggingface/transformers
+  pip install git+https://github.com/huggingface/transformers.git@c612628045822f909020f7eb6784c79700813eda
 
   cd fastchat/eval
   pip install -r requirements.txt
 
-  MODEL_NAME=vicuna-13b-20230322-new-hp-fp16
+  MODEL_NAME=vicuna-7b-20230322-fp16
   MODEL_PATH=~/${MODEL_NAME}
 
   if [ ! -f "$MODEL_PATH/ready" ]; then
@@ -40,8 +40,9 @@ setup: |
   fi
 
 run: |
-  python -m fastchat.eval.get_model_answer --model_path $MODEL_PATH \
+  conda activate chatbot
+  python -m fastchat.eval.get_model_answer --model-path $MODEL_PATH \
     --model-id $MODEL_NAME \
-    --question fastchat/eval/table/question.jsonl \
-    --answer answer.jsonl \
+    --question-file fastchat/eval/table/question.jsonl \
+    --answer-file answer.jsonl \
     --num-gpus $SKYPILOT_NUM_GPUS_PER_NODE
