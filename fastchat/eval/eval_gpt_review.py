@@ -128,8 +128,6 @@ if __name__ == '__main__':
     with open(f'{args.review_file}', 'w') as review_file:
         for idx, review in enumerate(reviews):
             scores = parse_score(review)
-            review_id = shortuuid.uuid()
-
             review_jsons[idx]['text'] = review
             review_jsons[idx]['score'] = scores
             review_file.write(json.dumps(review_jsons[idx]) + '\n')
