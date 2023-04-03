@@ -65,8 +65,23 @@ Coming soon.
 ## Serving
 
 ### Command Line Interface
+
+#### Single GPU
+This requires around 28GB of GPU memory.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
+```
+
+#### Multi GPU
+If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
+```
+
+#### CPU Only
+This requires no GPU but around 60GB of CPU memory.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
 ### Web UI
