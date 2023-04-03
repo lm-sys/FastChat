@@ -8,15 +8,23 @@ An open platform for training, serving, and evaluating large language model base
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
-**Announcement:** Thank you for checking out our project and your interest! We plan to release the model weights once we have addressed all legal concerns and have a low-resource version of the inference code ready. Based on our current timeline, it will be available by early next week. Please stay tuned! :llama:
-
 ## Contents
 - [Install](#install)
+- [Vicuna Weights](#vicuna-weights)
 - [Serving](#serving)
 - [Evaluation](#evaluation)
 - [Fine-tuning](#fine-tuning)
 
 ## Install
+
+### Method 1: With pip
+
+```bash
+# Install FastChat
+pip3 install fschat
+```
+
+### Method 2: From source
 
 1. Clone this repository and navigate to FastChat folder
 ```bash
@@ -30,19 +38,47 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-3. Install the latest main branch of huggingface/transformers
+## Vicuna Weights
+We release Vicuna weights as delta weights to comply with the LLaMA model license.
+You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
+
+1. Get the orignal LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
+2. Use the following scripts to get Vicuna weights by applying our delta.
+
+**NOTE**:
+Our released weights are only compatible with huggingface/transformers commit: `c612628045822f909020f7eb6784c79700813eda`.
+The weights do not work with commits after this due to some upstream changes in the tokenizer. We install the correct version of
+transformers when fastchat is installed.
+
+### Vicuna-13B
+This conversion command needs around 60 GB of CPU RAM.
 ```bash
-pip3 install git+https://github.com/huggingface/transformers
+python3 -m fastchat.model.apply_delta --base /path/to/llama-13b --target /output/path/to/vicuna-13b --delta lmsys/vicuna-13b-delta-v0
 ```
+
+### Vicuna-7B
+Coming soon.
 
 ## Serving
-We plan to release the model weights by providing a version of delta weights that build on the original LLaMA weights, but we are still figuring out a proper way to do so.
-In this example, we demonstrate the usage of our distributed serving system using OPT models.
-Later, you can apply similar commands to serve Vicuna, just as shown in our demo.
 
 ### Command Line Interface
+
+#### Single GPU
+The command below requires around 28GB of GPU memory for Vicuna-13B.
 ```
-python3 -m fastchat.serve.cli --model-name facebook/opt-1.3b
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
+```
+
+#### Multi GPU
+If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
+```
+
+#### CPU Only
+This runs on CPU only. It requires around 60GB of CPU memory for Vicuna-13B.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
 ### Web UI
@@ -54,7 +90,7 @@ python3 -m fastchat.serve.controller
 
 #### Launch a model worker
 ```bash
-python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
+python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
 
 #### Send a test message
