@@ -1,24 +1,25 @@
-# FastChat
-An open platform for training, serving, and evaluating large language model based chatbots.
+<h1 align="center">FastChat</h1>
+<h2 align="center">An open platform for training, serving, and evaluating large language model based chatbots.</h2>
 
-## Release
-
+## :rocket: Release
 <p align="center">
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna-logo.jpeg" width="20%"></a>
 </p>
 
-- 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
-
+<h3 align="center">🔥 We released <bold>Vicuna:An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality<bold>.</h3>
+<h3 align="center"> Checkout the blog <a href="https://vicuna.lmsys.org">Post<a> and :point_right:<a href="https://chat.lmsys.org">Demo. </h3>
+<p align="center">
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
+</p>
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
 ## Contents
-- [Install](#install)
-- [Vicuna Weights](#vicuna-weights)
-- [Serving](#serving)
-- [Evaluation](#evaluation)
-- [Fine-tuning](#fine-tuning)
+1.[Install](#install)
+2.[Vicuna Weights](#vicuna-weights)
+3.[Serving](#serving)
+4.[Evaluation](#evaluation)
+5.[Fine-tuning](#fine-tuning)
 
 ## Install
 
