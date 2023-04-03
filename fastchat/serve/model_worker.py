@@ -19,7 +19,7 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.utils import (build_logger, disable_torch_init, server_error_msg,
+from fastchat.utils import (build_logger, server_error_msg,
     pretty_print_semaphore)
 
 GB = 1 << 30
@@ -39,8 +39,6 @@ def heart_beat_worker(controller):
 
 
 def load_model(model_path, num_gpus):
-    disable_torch_init()
-
     if num_gpus == 1:
         kwargs = {}
     else:
@@ -51,7 +49,7 @@ def load_model(model_path, num_gpus):
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, **kwargs)
+       model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
 
     if num_gpus == 1:
         model.cuda()
@@ -140,12 +138,13 @@ class ModelWorker:
 
         tokenizer, model = self.tokenizer, self.model
 
-        context = params["prompt"]
+        prompt = params["prompt"]
+        l_prompt = len(prompt)
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
 
-        input_ids = tokenizer(context).input_ids
+        input_ids = tokenizer(prompt).input_ids
         output_ids = list(input_ids)
 
         max_src_len = self.context_len - max_new_tokens - 8
@@ -175,17 +174,19 @@ class ModelWorker:
                 token = int(torch.multinomial(probs, num_samples=1))
 
             output_ids.append(token)
-            output = tokenizer.decode(output_ids, skip_special_tokens=True)
 
-            if output.endswith(stop_str):
-                output = output[:-len(stop_str)]
-                stopped = True
-            elif token == tokenizer.eos_token_id:
+            if token == tokenizer.eos_token_id:
                 stopped = True
             else:
                 stopped = False
 
             if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
+                output = tokenizer.decode(output_ids, skip_special_tokens=True)
+                pos = output.rfind(stop_str, l_prompt)
+                if pos != -1:
+                    output = output[:pos]
+                    stopped = True
+
                 ret = {
                     "text": output,
                     "error_code": 0,
