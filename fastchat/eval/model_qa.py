@@ -58,4 +58,4 @@ if __name__ == "__main__":
     parser.add_argument("--answer-file", type=str, default="answer.jsonl")
     args = parser.parse_args()
 
-    eval_model(args.model_name, args.question_file, args.answers_file)
+    eval_model(args.model_name, args.question_file, args.answer_file)

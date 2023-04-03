@@ -20,7 +20,7 @@ Unfortunately, Bard has not release its public APIs till now. You may have to en
 
 To generate answers with Vicuna or other models, specify path to the model checkpoint. Then run:
 ```bash
-python model_qa.py --model-name /model/path --question-file tables/question.jsonl --answer-file table/answer/answer.jsonl
+python model_qa.py --model-name /model/path --question-file table/question.jsonl --answer-file table/answer/answer.jsonl
 ```
 
 ## Evaluate Answers Automatically
