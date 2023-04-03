@@ -22,6 +22,10 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 ```bash
 # Install FastChat
 pip3 install fschat
+
+# Install a specific commit of huggingface/transformers
+# Our released weights do not work with commits after this due to some upstream changes in the tokenizer.
+pip3 install git+https://github.com/huggingface/transformers@c612628045822f909020f7eb6784c79700813eda
 ```
 
 ### Method 2: From source
