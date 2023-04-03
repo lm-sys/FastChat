@@ -29,7 +29,10 @@ python model_qa.py --model-name /model/path --question-file tables/question.json
 
 PS: If you do not current have access to GPT-4 API, but you have access to GPT-4 chatbot, you can evaluate the answers manually, according to the instructions in the **Data Format** section. `table/review/*.jsonl` are some examples of reviews.
 
-TODO: add instructions
+To use the script for generating reviews with GPT-4, you need to have an OpenAI API key. Then run:
+```bash
+python eval_gpt_review.py -q table/question.jsonl -a /path/to/answer_1.jsonl /path/to/answer_2.jsonl -p table/prompt.jsonl -r table/reviewer.jsonl -o /path/to/review_output.jsonl
+```
 
 ## Visualize Results
 
@@ -108,6 +111,7 @@ For example:
 * `prompt_id` (str): The ID of the prompt given to the reviewer (e.g., an AI assistant). Different prompts could result in different reviewing performance.
 * `metadata` (dict): Metadata of a reviewer about its configurations.
 * `description` (str): A description of the reviewer.
+* `category` (str): The category that the reviewer belongs to.
 
 For example:
 
