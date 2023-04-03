@@ -27,6 +27,7 @@ disable_btn = gr.Button.update(interactive=False)
 
 priority = {
     "vicuna-13b": "aaaaaaa",
+    "koala-13b": "aaaaaab",
 }
 
 
