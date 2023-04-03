@@ -80,10 +80,15 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
 ```
 
 #### CPU Only
-This runs on CPU only. It requires around 60GB of CPU memory for Vicuna-13B.
+This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
+
+#### Others (Quantization, More Platforms)
+Currently, we only provide some basic commands for running the model.
+We are actively exploring methods to make the model easier to run on more platforms.
+Contributions and pull requests are welcome.
 
 ### Web UI
 
