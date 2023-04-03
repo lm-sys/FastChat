@@ -30,7 +30,7 @@ def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
         except Exception as e:
             print(e)
             time.sleep(5)
-    print('Failed after 3 retries.')
+    print(f'Failed after {MAX_RETRY} retries.')
     return 'error'
 
 
