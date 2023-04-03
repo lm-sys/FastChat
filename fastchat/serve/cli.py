@@ -1,3 +1,7 @@
+"""
+Usage:
+python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
+"""
 import argparse
 import time
 
@@ -115,7 +119,7 @@ def main(args):
             "model": model_name,
             "prompt": prompt,
             "temperature": args.temperature,
-            "max_new_tokens": 256,
+            "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
         }
 
@@ -143,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
     parser.add_argument("--conv-template", type=str, default="v1")
     parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)
