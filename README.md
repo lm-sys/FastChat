@@ -55,10 +55,14 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 1. Get the orignal LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
 2. Use the following scripts to get Vicuna weights by applying our delta.
 
+**NOTE**:
+Our released weights are only compatible with huggingface/transformers commit: `c612628045822f909020f7eb6784c79700813eda`.
+The weights do not work with commits after this due to some upstream changes in the tokenizer.
+
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 ```bash
-python3 -m fastchat.model.apply_delta --base /path/to/llama-13b --target /output/path/to/vicuna-13b --delta lmsys/vicuna-13b-delta
+python3 -m fastchat.model.apply_delta --base /path/to/llama-13b --target /output/path/to/vicuna-13b --delta lmsys/vicuna-13b-delta-v0
 ```
 
 ### Vicuna-7B
