@@ -1,5 +1,6 @@
 import argparse
 import json
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from fastchat.conversation import default_conversation
@@ -60,6 +61,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise NotImplementedError("unknown role")
                 sent = message["content"]
                 conv.append_message(role, sent)
+            conv.append_message(conv.roles[1], "")
             prompt = conv.get_prompt()
             max_content = body.get("max_content_length", 2048)
 
@@ -99,7 +101,12 @@ class Handler(BaseHTTPRequestHandler):
                 for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
                     if chunk:
                         data = json.loads(chunk.decode("utf-8"))
-                        output = data["text"].split(conv.sep)[-1]
+                        if data["error_code"] == 0:
+                            output = data["text"][len(prompt) + 1:].strip()
+                        else:
+                            self.send_error(500, f"Error, code {data['error_code']}")
+                    time.sleep(0.01)
+
                 choices.append(output)
 
             response = json.dumps(
