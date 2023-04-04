@@ -38,20 +38,26 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
-    if num_gpus == 1:
+def load_model(model_path, num_gpus, device):
+    if device == "cuda":
+        kwargs = {"torch_dtype": torch.float16}
+        if num_gpus == "auto":
+            kwargs["device_map"] = "auto"
+        else:
+            num_gpus = int(num_gpus)
+            if num_gpus != 1:
+                kwargs.update({
+                    "device_map": "auto",
+                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
+                })
+    elif device == "cpu":
         kwargs = {}
-    else:
-        kwargs = {
-            "device_map": "auto",
-            "max_memory": {i: "13GiB" for i in range(num_gpus)},
-        }
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
+       model_path, low_cpu_mem_usage=True, **kwargs)
 
-    if num_gpus == 1:
+    if device == "cuda" and num_gpus == 1:
         model.cuda()
 
     if hasattr(model.config, "max_sequence_length"):
@@ -65,7 +71,7 @@ def load_model(model_path, num_gpus):
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
                  worker_id, no_register,
-                 model_path, model_name, num_gpus):
+                 model_path, model_name, num_gpus, device):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -75,13 +81,14 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus)
+            model_path, num_gpus, device)
 
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
                 target=heart_beat_worker, args=(self,))
             self.heart_beat_thread.start()
+        self.device = device
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -153,13 +160,13 @@ class ModelWorker:
         for i in range(max_new_tokens):
             if i == 0:
                 out = model(
-                    torch.as_tensor([input_ids]).cuda(), use_cache=True)
+                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
                 attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
-                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
+                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
+                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
@@ -214,7 +221,10 @@ app = FastAPI()
 
 
 def release_model_semaphore():
-    model_semaphore.release()
+    if model_semaphore is None:
+        return
+    else:
+        model_semaphore.release()
 
 
 @app.post("/worker_generate_stream")
@@ -248,6 +258,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda"])
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -260,5 +271,6 @@ if __name__ == "__main__":
                          args.no_register,
                          args.model_path,
                          args.model_name,
-                         args.num_gpus)
+                         args.num_gpus,
+                         args.device)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
