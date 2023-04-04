@@ -1,7 +1,8 @@
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
+
+from fastchat.conversation import default_conversation
 
 import requests
 
@@ -31,74 +32,82 @@ class Handler(BaseHTTPRequestHandler):
         body = json.loads(content)
 
         if self.path == "/api/v1/chat/completions":
+            model = body["model"]
+            worker_addr_res = requests.post(controller_addr + "/get_worker_address", json={"model": model})
+            worker_addr = worker_addr_res.json()["address"]
+            assert worker_addr != ""
+
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
 
+            conv = default_conversation.copy()
             messages = body["messages"]
-            roles = body.get("roles", ["Human", "Assistant"])
-            begin_signal = body.get("begin_signal", "### ")
-            end_signal = body.get("end_signal", "\n")
-            context = body.get("system", None)
-            prompt_lines = []
+            context = body.get("system", conv.system)
             if context:
                 # the context prompt
-                prompt_lines.append(f"{context}\n\n")
+                conv.system = context
+
+            conv.messages = []
             for message in messages:
                 # remap roles
                 username = message["role"]
+                if username == "user":
+                    role = conv.roles[0]
+                elif username == "assistant":
+                    role = conv.roles[1]
+                else:
+                    raise NotImplementedError("unknown role")
                 sent = message["content"]
-                input = f"{begin_signal}{username}: {sent}{end_signal}"
-                prompt_lines.append(input)
-
-            max_context = body.get("max_context_length", 2048)
-
-            while (
-                    len(prompt_lines) >= 0
-                    and len(encode("\n".join(prompt_lines))) > max_context
-            ):
-                prompt_lines.pop(0)
-            prompt_lines.append(f"{begin_signal}{roles[1]} :")
-
-            prompt = "".join(prompt_lines)
+                conv.append_message(role, sent)
+            prompt = conv.get_prompt()
+            max_content = body.get("max_content_length", 2048)
 
             n = body.get("n", 1)
+            headers = {"User-Agent": "fastchat Client"}
+            pload = {
+                "model": model,
+                "prompt": prompt,
+                "max_new_tokens": max_content,
+                "temperature": float(body.get("temperature", 0.5)),
+                "top_p": float(body.get("top_p", 1)),
+                "stop": conv.sep,
+            }
+            # todo make possible to parameterize this all
+            # question=prompt,
+            # max_new_tokens=int(body.get("max_length", 512)),
+            # do_sample=bool(body.get("do_sample", True)),
+            # typical_p=float(body.get("typical_p", 1)),
+            # # TODO is this presence_penalty, frequency_penalty or something else?
+            # repetition_penalty=float(body.get("repetition_penalty", 1.1)),
+            # encoder_repetition_penalty=1,
+            # top_k=int(body.get("top_k", 0)),
+            # min_length=int(body.get("min_length", 0)),
+            # no_repeat_ngram_size=int(body.get("no_repeat_ngram_size", 0)),
+            # num_beams=int(body.get("num_beams", 1)),
+            # penalty_alpha=float(body.get("penalty_alpha", 0)),
+            # length_penalty=float(body.get("length_penalty", 1)),
+            # early_stopping=bool(body.get("early_stopping", True)),
+            # seed=int(body.get("seed", -1)),
+            # stopping_strings=body.get("stop", [begin_signal]),
+
             choices = []
             for _ in range(n):
-                generator = generate_reply(
-                    question=prompt,
-                    max_new_tokens=int(body.get("max_length", 512)),
-                    do_sample=bool(body.get("do_sample", True)),
-                    temperature=float(body.get("temperature", 0.5)),
-                    top_p=float(body.get("top_p", 1)),
-                    typical_p=float(body.get("typical_p", 1)),
-                    # TODO is this presence_penalty, frequency_penalty or something else?
-                    repetition_penalty=float(body.get("repetition_penalty", 1.1)),
-                    encoder_repetition_penalty=1,
-                    top_k=int(body.get("top_k", 0)),
-                    min_length=int(body.get("min_length", 0)),
-                    no_repeat_ngram_size=int(body.get("no_repeat_ngram_size", 0)),
-                    num_beams=int(body.get("num_beams", 1)),
-                    penalty_alpha=float(body.get("penalty_alpha", 0)),
-                    length_penalty=float(body.get("length_penalty", 1)),
-                    early_stopping=bool(body.get("early_stopping", True)),
-                    seed=int(body.get("seed", -1)),
-                    stopping_strings=body.get("stop", [begin_signal]),
-                )
-                answer = ""
-                # the generator streams the result, but we are not interested in a stream
-                for a in generator:
-                    if isinstance(a, str):
-                        answer = a
-                    else:
-                        answer = a[0]
-                choices.append(answer)
+                response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
+                                         json=pload, stream=True)
+                output = ""
+                for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+                    if chunk:
+                        data = json.loads(chunk.decode("utf-8"))
+                        output = data["text"].split(conv.sep)[-1]
+                choices.append(output)
 
             response = json.dumps(
                 {
                     "choices": [
                         {"index": i, "message": x} for i, x in enumerate(choices)
                     ],
+                    # TODO compute
                     "usage": {
                         "prompt_tokens": 0,
                         "completion_tokens": 0,

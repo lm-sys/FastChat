@@ -34,7 +34,7 @@ def main():
         "model": args.model_name,
         "prompt": prompt,
         "max_new_tokens": args.max_new_tokens,
-        "temperature": 0.7,
+        "temperature": 0.0,
         "stop": conv.sep,
     }
     response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
     parser.add_argument("--worker-address", type=str)
-    parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--max-new-tokens", type=int, default=32)
+    parser.add_argument("--model-name", type=str, default="opt-350M-chat")
+    parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--message", type=str, default=
         "Tell me a story with more than 1000 words.")
     args = parser.parse_args()
