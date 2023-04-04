@@ -13,12 +13,13 @@ import tqdm
 
 
 def _get_html_tags(file_path: str):
-    # Generate the list of html tags occured in the file.
-    s = set()
-    for l in open("file_path", "r"):
-        for m in re.findall("</[^<>]+>", l):
-            s.add(m)
-    return s
+    # Generate the list of html tags occurred in the file.
+    tags = set()
+    with open(file_path, "r") as f:
+        for line in f:
+            for match in re.findall("</[^<>]+>", line):
+                tags.add(match)
+    return tags
 
 div_pattern = re.compile("<div.*?>")
 span_pattern = re.compile("<span.*?>")
@@ -69,10 +70,7 @@ def html_to_markdown(val: str) -> str:
 
 def should_skip(val: str) -> bool:
     black_list = ["openai", "chatgpt"]
-    for w in black_list:
-        if w in val.lower():
-            return True
-    return False
+    return any(w in val.lower() for w in black_list)
 
 
 def clean_html_source(content, begin, end, check_tag, check_num):
