@@ -93,9 +93,15 @@ def main(args):
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    if args.wbits > 0:
+        from serve.load_gptq_model import load_quantized
+
+        print("Loading GPTQ quantized model...")
+        model = load_quantized(model_name)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
 
     if args.device == "cuda" and num_gpus == 1:
         model.cuda()
@@ -149,5 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--wbits", type=int, default = 0)
+    parser.add_argument("--groupsize", type=int, default = 0)
     args = parser.parse_args()
     main(args)
