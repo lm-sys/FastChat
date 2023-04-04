@@ -13,6 +13,7 @@ def main(args):
 
     # Model
     disable_torch_init()
+    torch.manual_seed(0)
     if num_gpus == 1:
         kwargs = {}
     else:
@@ -32,20 +33,24 @@ def main(args):
     conv = conv_templates[args.conv_template].copy()
     while True:
         inp = input(f"{conv.roles[0]}: ")
-        if not inp:
-            print("exit...")
-            break
-
-        conv.append_message(conv.roles[0], inp)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        inputs = tokenizer([prompt])
+        # if not inp:
+        #     print("exit...")
+        #     break
+        #
+        # conv.append_message(conv.roles[0], inp)
+        # conv.append_message(conv.roles[1], None)
+        # prompt = conv.get_prompt()
+        print(inp)
+        prompt = inp
+        inputs = tokenizer([inp])
         output_ids = model.generate(
             torch.as_tensor(inputs.input_ids).cuda(),
             do_sample=True,
             temperature=0.7,
             max_new_tokens=256)
         outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
+        print(outputs)
+        continue
         sep = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
         try:
             index = outputs.index(sep, len(prompt))
