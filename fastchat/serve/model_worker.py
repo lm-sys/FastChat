@@ -48,13 +48,6 @@ def load_model(model_path, num_gpus):
         }
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    if isinstance(tokenizer, LlamaTokenizer):
-        # This is a hack to make the new transformers' tokenizer work with the vicuna model
-        # trained with the transformers before commit: c0f99b4
-        # TODO: remove this when we retrain the vicuna model
-        tokenizer.bos_token_id = tokenizer.sp_model.bos_id()
-        tokenizer.eos_token_id = tokenizer.sp_model.eos_id()
-
     model = AutoModelForCausalLM.from_pretrained(
        model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
 
