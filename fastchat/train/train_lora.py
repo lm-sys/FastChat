@@ -29,7 +29,6 @@ from transformers import Trainer
 from fastchat.train.train import (DataArguments, ModelArguments,
                                   TrainingArguments,
                                   make_supervised_data_module,
-                                  safe_save_model_for_hf_trainer,
                                   smart_tokenizer_and_embedding_resize)
 
 IGNORE_INDEX = -100
@@ -93,9 +92,9 @@ def train():
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
     trainer = Trainer(model=model,
-                    tokenizer=tokenizer,
-                    args=training_args,
-                    **data_module)
+                      tokenizer=tokenizer,
+                      args=training_args,
+                      **data_module)
 
     model.config.use_cache = False
 
@@ -104,8 +103,7 @@ def train():
     else:
         trainer.train()
     trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer,
-                                   output_dir=training_args.output_dir)
+    model.save_pretrained(training_args.output_dir)
 
 
 if __name__ == "__main__":
