@@ -6,7 +6,7 @@ import argparse
 import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 
@@ -94,6 +94,13 @@ def main(args):
         raise ValueError(f"Invalid device: {args.device}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if isinstance(tokenizer, LlamaTokenizer):
+        # This is a hack to make the new transformers' tokenizer work with the vicuna model
+        # trained with the transformers before commit: c0f99b4
+        # TODO: remove this when we retrain the vicuna model
+        tokenizer.bos_token_id = tokenizer.sp_model.bos_id()
+        tokenizer.eos_token_id = tokenizer.sp_model.eos_id()
+
     model = AutoModelForCausalLM.from_pretrained(model_name,
         low_cpu_mem_usage=True, **kwargs)
 
