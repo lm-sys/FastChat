@@ -59,6 +59,27 @@ Our released weights are only compatible with huggingface/transformers commit: `
 The weights do not work with commits after this due to some upstream changes in the tokenizer. We install the correct version of
 transformers when fastchat is installed.
 
+As an alternative, or if this commit produces the error --
+
+```
+ValueError: Tokenizer class LLaMATokenizer does not exist or is not currently imported.
+```
+
+You can also edit the tokenizer model --
+
+```
+/path/to/llama-13b/tokenizer_config.json
+```
+
+Changing the following field --
+
+```python
+#you should see
+"tokenizer_class": "LLaMATokenizer"
+#change to
+"tokenizer_class": "LlamaTokenizer"
+```
+
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 ```bash
