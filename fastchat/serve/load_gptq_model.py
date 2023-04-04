@@ -3,11 +3,13 @@ from pathlib import Path
 import torch
 import transformers
 from transformers import AutoConfig, AutoModelForCausalLM
+
+sys.path.insert(0, str(Path("repositories/GPTQ-for-LLaMa")))
 from modelutils import find_layers
 from quant import make_quant
 
 
-def load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head'], kernel_switch_threshold):
+def load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head'], kernel_switch_threshold=128):
     config = AutoConfig.from_pretrained(model)
     def noop(*args, **kwargs):
         pass
@@ -42,6 +44,7 @@ def load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, excl
 
 
 def load_quantized(model_name, wbits=4, groupsize=128, threshold=128):
+    model_name = model_name.replace('/', '_')
     path_to_model = Path(f'./models/{model_name}')
     found_pts = list(path_to_model.glob("*.pt"))
     found_safetensors = list(path_to_model.glob("*.safetensors"))

@@ -38,7 +38,7 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
+def load_model(model_path, num_gpus, wbits, groupsize):
     if num_gpus == 1:
         kwargs = {}
     else:
@@ -48,8 +48,18 @@ def load_model(model_path, num_gpus):
         }
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
+    
+    if wbits > 0:
+        from fastchat.serve.load_gptq_model import load_quantized
+
+        print("Loading GPTQ quantized model...")
+        model = load_quantized(model_path)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+            **kwargs
+        )
 
     if num_gpus == 1:
         model.cuda()
@@ -65,7 +75,8 @@ def load_model(model_path, num_gpus):
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
                  worker_id, no_register,
-                 model_path, model_name, num_gpus):
+                 model_path, model_name, num_gpus,
+                 wbits, groupsize):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -75,7 +86,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus)
+            model_path, num_gpus, wbits, groupsize)
 
         if not no_register:
             self.register_to_controller()
@@ -251,6 +262,8 @@ if __name__ == "__main__":
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument("--wbits", type=int, default = 0)
+    parser.add_argument("--groupsize", type=int, default = 0)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -260,5 +273,7 @@ if __name__ == "__main__":
                          args.no_register,
                          args.model_path,
                          args.model_name,
-                         args.num_gpus)
+                         args.num_gpus,
+                         args.wbits,
+                         args.groupsize)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

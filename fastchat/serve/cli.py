@@ -93,13 +93,14 @@ def main(args):
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    
     if args.wbits > 0:
-        from serve.load_gptq_model import load_quantized
+        from fastchat.serve.load_gptq_model import load_quantized
 
         print("Loading GPTQ quantized model...")
         model = load_quantized(model_name)
     else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(model_name,
             low_cpu_mem_usage=True, **kwargs)
 
