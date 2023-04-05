@@ -92,10 +92,10 @@ class Handler(BaseHTTPRequestHandler):
             # early_stopping=bool(body.get("early_stopping", True)),
             # seed=int(body.get("seed", -1)),
             # stopping_strings=body.get("stop", [begin_signal]),
-
+            initial_seed = int(body.get("seed", 0))
             choices = []
             for i in range(n):
-                pload["seed"] = i
+                pload["seed"] = i + initial_seed
                 response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
                                          json=pload, stream=True)
                 output = ""
