@@ -188,7 +188,7 @@ def preprocess(
         tokenized_sentence = _tokenize_fn([s["value"] for s in source], tokenizer)
         tokenized_lens = tokenized_sentence["input_ids_lens"]
         # Currently, "###" is tokenized into 2 tokens in the whole conversation,
-        # and 1 token in a single sentence, so we do not need to use the code below.
+        # and 1 token in a single sentence, so we do not need to use the line below.
         # tokenized_lens = [l-1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
         ids = tokenized_sentence["input_ids"]
