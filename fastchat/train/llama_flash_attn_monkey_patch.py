@@ -14,8 +14,9 @@ from flash_attn.bert_padding import unpad_input, pad_input
 def forward(
     self,
     hidden_states: torch.Tensor,
-    past_key_value: Optional[Tuple[torch.Tensor]] = None,
     attention_mask: Optional[torch.Tensor] = None,
+    position_ids: Optional[torch.Tensor] = None,
+    past_key_value: Optional[Tuple[torch.Tensor]] = None,
     output_attentions: bool = False,
     use_cache: bool = False,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor],
@@ -26,12 +27,9 @@ def forward(
     """
     bsz, q_len, _ = hidden_states.size()
 
-    query_states = self.q_proj(hidden_states).view(
-        bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-    key_states = self.k_proj(hidden_states).view(
-        bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-    value_states = self.v_proj(hidden_states).view(
-        bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+    query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+    key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+    value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
     # [bsz, q_len, nh, hd]
     # [bsz, nh, q_len, hd]
 
@@ -41,11 +39,7 @@ def forward(
         offset = past_key_value[0].shape[-2]
         kv_seq_len += offset
     cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
-    query_states, key_states = apply_rotary_pos_emb(query_states,
-                                                    key_states,
-                                                    cos,
-                                                    sin,
-                                                    offset=offset)
+    query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
     # [bsz, nh, t, hd]
     assert not output_attentions, "output_attentions is not supported"
     assert not use_cache, "use_cache is not supported"
