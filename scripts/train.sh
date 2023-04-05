@@ -1,5 +1,12 @@
 #!/bin/bash
-
+script_name=$(basename "$0")
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 # Default values
 MODEL_PATH="/home/haozhang/model_weights/hf-llama-7b"
 DATA_PATH="/home/haozhang/datasets/alpaca_data.json"
@@ -127,31 +134,32 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$SHOW_COMMAND" == "True" ]]; then
-    echo torchrun \
-        --nproc_per_node=4 \
-        --master_port=20001 \
-        fastchat/train/alpaca_train.py \
-        --model_name_or_path "$MODEL_PATH" \
-        --data_path "$DATA_PATH" \
-        --bf16 "$BF16" \
-        --output_dir "$OUTPUT_DIR" \
-        --num_train_epochs "$NUM_EPOCHS" \
-        --per_device_train_batch_size "$PER_DEVICE_TRAIN_BATCH_SIZE" \
-        --per_device_eval_batch_size "$PER_DEVICE_EVAL_BATCH_SIZE" \
-        --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
-        --evaluation_strategy "$EVALUATION_STRATEGY" \
-        --save_strategy "$SAVE_STRATEGY" \
-        --save_steps "$SAVE_STEPS" \
-        --save_total_limit "$SAVE_TOTAL_LIMIT" \
-        --learning_rate "$LEARNING_RATE" \
-        --weight_decay "$WEIGHT_DECAY" \
-        --warmup_ratio "$WARMUP_RATIO" \
-        --lr_scheduler_type "$LR_SCHEDULER_TYPE" \
-        --logging_steps "$LOGGING_STEPS" \
-        --fsdp "$FSDP" \
-        --fsdp_transformer_layer_cls_to_wrap "$FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP" \
-        --tf32 "$TF32" \
-        --gradient_checkpointing "$GRADIENT_CHECKPOINTING"
+    echo -e "${YELLOW}  - Dry Run Command ${NC}"
+    echo -e "${BLUE}torchrun \\
+        --nproc_per_node=4 \\
+        --master_port=20001 \\
+        fastchat/train/alpaca_train.py \\
+        --model_name_or_path ${RED}"$MODEL_PATH"${NC} \\
+        --data_path ${RED}"$DATA_PATH"${NC} \\
+        --bf16 ${RED}"$BF16"${NC} \\
+        --output_dir ${RED}"$OUTPUT_DIR"${NC} \\
+        --num_train_epochs ${RED}"$NUM_EPOCHS"${NC} \\
+        --per_device_train_batch_size ${RED}"$PER_DEVICE_TRAIN_BATCH_SIZE"${NC} \\
+        --per_device_eval_batch_size ${RED}"$PER_DEVICE_EVAL_BATCH_SIZE"${NC} \\
+        --gradient_accumulation_steps ${RED}"$GRADIENT_ACCUMULATION_STEPS"${NC} \\
+        --evaluation_strategy ${RED}"$EVALUATION_STRATEGY"${NC} \\
+        --save_strategy ${RED}"$SAVE_STRATEGY"${NC} \\
+        --save_steps ${RED}"$SAVE_STEPS"${NC} \\
+        --save_total_limit ${RED}"$SAVE_TOTAL_LIMIT"${NC} \\
+        --learning_rate ${RED}"$LEARNING_RATE"${NC} \\
+        --weight_decay ${RED}"$WEIGHT_DECAY"${NC} \\
+        --warmup_ratio ${RED}"$WARMUP_RATIO"${NC} \\
+        --lr_scheduler_type ${RED}"$LR_SCHEDULER_TYPE"${NC} \\
+        --logging_steps ${RED}"$LOGGING_STEPS"${NC} \\
+        --fsdp ${RED}"$FSDP"${NC} \\
+        --fsdp_transformer_layer_cls_to_wrap ${RED}"$FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP"${NC} \\
+        --tf32 ${RED}"$TF32"${NC} \\
+        --gradient_checkpointing ${RED}"$GRADIENT_CHECKPOINTING"${NC}"
 else
     torchrun \
         --nproc_per_node=4 \
