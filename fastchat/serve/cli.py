@@ -6,7 +6,7 @@ import argparse
 import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 

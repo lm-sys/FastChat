@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 import time
+import uuid
 
 import gradio as gr
 import requests
@@ -181,6 +182,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         else:
             template_name = "v1"
         new_state = conv_templates[template_name].copy()
+        new_state.conv_id = uuid.uuid4().hex
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
@@ -231,7 +233,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.03)
+                time.sleep(0.02)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
@@ -310,11 +312,11 @@ def build_demo():
 
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         with gr.Row():
-            with gr.Column(scale=10):
+            with gr.Column(scale=20):
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
-            with gr.Column(scale=1, min_width=60):
-                submit_btn = gr.Button(value="Submit", visible=False)
+            with gr.Column(scale=1, min_width=50):
+                submit_btn = gr.Button(value="Send", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
