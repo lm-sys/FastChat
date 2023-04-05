@@ -127,9 +127,18 @@ def _tokenize_fn(strings: Sequence[str],
     )
 
 
-def _mask_targets(target, tokenized_lens, speakers):
-    cur_idx = 0
-    for tokenized_len, speaker in zip(tokenized_lens, speakers):
+def _mask_targets(target, tokenized_lens, speakers, header_len, s_ids):
+    cur_idx = header_len
+    tgt_len = target.shape[0]
+    for tokenized_len, speaker, s_id in zip(tokenized_lens, speakers, s_ids):
+        if cur_idx >= tgt_len:
+            break
+        elif cur_idx + tokenized_len < tgt_len:
+            # Check whether the mask is applied to the correct position
+            if not torch.equal(target[cur_idx + 2:cur_idx + tokenized_len],
+                               s_id[2:]):
+                logging.warning("a sentence mismatches the corresponding piece "
+                                "in the conversation")
         if speaker == "human":
             target[cur_idx:cur_idx + tokenized_len] = IGNORE_INDEX
         cur_idx += tokenized_len
@@ -168,19 +177,24 @@ def preprocess(
     """
     # add end signal and concatenate together
     conversations = []
+    header = f"{conversation_lib.default_conversation.system}\n\n"
     for source in sources:
-        header = f"{conversation_lib.default_conversation.system}\n\n"
         conversation = _add_speaker_and_signal(header, source)
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
     input_ids = conversations_tokenized["input_ids"]
     targets = copy.deepcopy(input_ids)
+    header_len = _tokenize_fn([header], tokenizer)["input_ids_lens"][0]
     for target, source in zip(targets, sources):
-        tokenized_lens = _tokenize_fn([s["value"] for s in source],
-                                      tokenizer)["input_ids_lens"]
+        tokenized_sentence = _tokenize_fn([s["value"] for s in source], tokenizer)
+        tokenized_lens = tokenized_sentence["input_ids_lens"]
+        # Currently, "###" is tokenized into 2 tokens in the whole conversation,
+        # and 1 token in a single sentence, so we do not need to use the line below.
+        # tokenized_lens = [l-1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
-        _mask_targets(target, tokenized_lens, speakers)
+        ids = tokenized_sentence["input_ids"]
+        _mask_targets(target, tokenized_lens, speakers, header_len, ids)
 
     return dict(input_ids=input_ids, labels=targets)
 
