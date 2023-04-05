@@ -127,8 +127,8 @@ def _tokenize_fn(strings: Sequence[str],
     )
 
 
-def _mask_targets(target, tokenized_lens, speakers):
-    cur_idx = 0
+def _mask_targets(target, tokenized_lens, speakers, header_len):
+    cur_idx = header_len
     for tokenized_len, speaker in zip(tokenized_lens, speakers):
         if speaker == "human":
             target[cur_idx:cur_idx + tokenized_len] = IGNORE_INDEX
@@ -168,19 +168,21 @@ def preprocess(
     """
     # add end signal and concatenate together
     conversations = []
+    header = f"{conversation_lib.default_conversation.system}\n\n"
     for source in sources:
-        header = f"{conversation_lib.default_conversation.system}\n\n"
         conversation = _add_speaker_and_signal(header, source)
         conversations.append(conversation)
     # tokenize conversations
     conversations_tokenized = _tokenize_fn(conversations, tokenizer)
     input_ids = conversations_tokenized["input_ids"]
     targets = copy.deepcopy(input_ids)
+    header_len = _tokenize_fn([header], tokenizer)["input_ids_lens"][0]
     for target, source in zip(targets, sources):
-        tokenized_lens = _tokenize_fn([s["value"] for s in source],
-                                      tokenizer)["input_ids_lens"]
+        tokenized_lens = _tokenize_fn([s["value"] for s in source], tokenizer)["input_ids_lens"]
+        # empirical perfect fix
+        tokenized_lens = [l-1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
-        _mask_targets(target, tokenized_lens, speakers)
+        _mask_targets(target, tokenized_lens, speakers, header_len)
 
     return dict(input_ids=input_ids, labels=targets)
 
