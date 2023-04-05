@@ -127,9 +127,16 @@ def _tokenize_fn(strings: Sequence[str],
     )
 
 
-def _mask_targets(target, tokenized_lens, speakers, header_len):
+def _mask_targets(target, tokenized_lens, speakers, header_len, s_ids):
     cur_idx = header_len
-    for tokenized_len, speaker in zip(tokenized_lens, speakers):
+    tgt_len = target.shape[0]
+    for tokenized_len, speaker, s_id in zip(tokenized_lens, speakers, s_ids):
+        if cur_idx >= tgt_len:
+            break
+        elif cur_idx + tokenized_len < tgt_len:
+            # Check whether the mask is applied to the correct position
+            assert torch.equal(target[cur_idx + 2:cur_idx + tokenized_len],
+                               s_id[2:])
         if speaker == "human":
             target[cur_idx:cur_idx + tokenized_len] = IGNORE_INDEX
         cur_idx += tokenized_len
@@ -178,11 +185,14 @@ def preprocess(
     targets = copy.deepcopy(input_ids)
     header_len = _tokenize_fn([header], tokenizer)["input_ids_lens"][0]
     for target, source in zip(targets, sources):
-        tokenized_lens = _tokenize_fn([s["value"] for s in source], tokenizer)["input_ids_lens"]
-        # empirical perfect fix
-        tokenized_lens = [l-1 for l in tokenized_lens]
+        tokenized_sentence = _tokenize_fn([s["value"] for s in source], tokenizer)
+        tokenized_lens = tokenized_sentence["input_ids_lens"]
+        # empirical perfect fix. Current ### is tokenized into 2 in conv, 1 in
+        # single sentence and thus avoids this fix
+        # tokenized_lens = [l-1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
-        _mask_targets(target, tokenized_lens, speakers, header_len)
+        ids = tokenized_sentence["input_ids"]
+        _mask_targets(target, tokenized_lens, speakers, header_len, ids)
 
     return dict(input_ids=input_ids, labels=targets)
 
