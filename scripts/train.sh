@@ -22,6 +22,7 @@ FSDP="full_shard auto_wrap"
 FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP="LlamaDecoderLayer"
 TF32="True"
 GRADIENT_CHECKPOINTING="True"
+SHOW_COMMAND="False"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -110,35 +111,71 @@ while [[ $# -gt 0 ]]; do
             GRADIENT_CHECKPOINTING="$2"
             shift 2
             ;;
-        *)
-            echo "Unknown argument: $1"
-            exit 1
+        --c)
+            SHOW_COMMAND="True"
+            shift 1
             ;;
+        --command)
+            SHOW_COMMAND="True"
+            shift 1
+            ;;
+        *)
+        echo "Invalid argument: $1"
+        exit 1
+        ;;
     esac
 done
 
-torchrun \
-    --nproc_per_node=4 \
-    --master_port=20001 \
-    fastchat/train/alpaca_train.py \
-    --model_name_or_path "$MODEL_PATH" \
-    --data_path "$DATA_PATH" \
-    --bf16 "$BF16" \
-    --output_dir "$OUTPUT_DIR" \
-    --num_train_epochs "$NUM_EPOCHS" \
-    --per_device_train_batch_size "$PER_DEVICE_TRAIN_BATCH_SIZE" \
-    --per_device_eval_batch_size "$PER_DEVICE_EVAL_BATCH_SIZE" \
-    --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
-    --evaluation_strategy "$EVALUATION_STRATEGY" \
-    --save_strategy "$SAVE_STRATEGY" \
-    --save_steps "$SAVE_STEPS" \
-    --save_total_limit "$SAVE_TOTAL_LIMIT" \
-    --learning_rate "$LEARNING_RATE" \
-    --weight_decay "$WEIGHT_DECAY" \
-    --warmup_ratio "$WARMUP_RATIO" \
-    --lr_scheduler_type "$LR_SCHEDULER_TYPE" \
-    --logging_steps "$LOGGING_STEPS" \
-    --fsdp "$FSDP" \
-    --fsdp_transformer_layer_cls_to_wrap "$FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP" \
-    --tf32 "$TF32" \
-    --gradient_checkpointing "$GRADIENT_CHECKPOINTING"
+if [[ "$SHOW_COMMAND" == "True" ]]; then
+    echo torchrun \
+        --nproc_per_node=4 \
+        --master_port=20001 \
+        fastchat/train/alpaca_train.py \
+        --model_name_or_path "$MODEL_PATH" \
+        --data_path "$DATA_PATH" \
+        --bf16 "$BF16" \
+        --output_dir "$OUTPUT_DIR" \
+        --num_train_epochs "$NUM_EPOCHS" \
+        --per_device_train_batch_size "$PER_DEVICE_TRAIN_BATCH_SIZE" \
+        --per_device_eval_batch_size "$PER_DEVICE_EVAL_BATCH_SIZE" \
+        --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
+        --evaluation_strategy "$EVALUATION_STRATEGY" \
+        --save_strategy "$SAVE_STRATEGY" \
+        --save_steps "$SAVE_STEPS" \
+        --save_total_limit "$SAVE_TOTAL_LIMIT" \
+        --learning_rate "$LEARNING_RATE" \
+        --weight_decay "$WEIGHT_DECAY" \
+        --warmup_ratio "$WARMUP_RATIO" \
+        --lr_scheduler_type "$LR_SCHEDULER_TYPE" \
+        --logging_steps "$LOGGING_STEPS" \
+        --fsdp "$FSDP" \
+        --fsdp_transformer_layer_cls_to_wrap "$FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP" \
+        --tf32 "$TF32" \
+        --gradient_checkpointing "$GRADIENT_CHECKPOINTING"
+else
+    torchrun \
+        --nproc_per_node=4 \
+        --master_port=20001 \
+        fastchat/train/alpaca_train.py \
+        --model_name_or_path "$MODEL_PATH" \
+        --data_path "$DATA_PATH" \
+        --bf16 "$BF16" \
+        --output_dir "$OUTPUT_DIR" \
+        --num_train_epochs "$NUM_EPOCHS" \
+        --per_device_train_batch_size "$PER_DEVICE_TRAIN_BATCH_SIZE" \
+        --per_device_eval_batch_size "$PER_DEVICE_EVAL_BATCH_SIZE" \
+        --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
+        --evaluation_strategy "$EVALUATION_STRATEGY" \
+        --save_strategy "$SAVE_STRATEGY" \
+        --save_steps "$SAVE_STEPS" \
+        --save_total_limit "$SAVE_TOTAL_LIMIT" \
+        --learning_rate "$LEARNING_RATE" \
+        --weight_decay "$WEIGHT_DECAY" \
+        --warmup_ratio "$WARMUP_RATIO" \
+        --lr_scheduler_type "$LR_SCHEDULER_TYPE" \
+        --logging_steps "$LOGGING_STEPS" \
+        --fsdp "$FSDP" \
+        --fsdp_transformer_layer_cls_to_wrap "$FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP" \
+        --tf32 "$TF32" \
+        --gradient_checkpointing "$GRADIENT_CHECKPOINTING"
+fi
