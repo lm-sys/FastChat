@@ -13,6 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import copy
 from dataclasses import dataclass, field
 import json
@@ -140,19 +141,24 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
     BEGIN_SIGNAL = "### "
     END_SIGNAL = "\n"
     conversation = header
+    unknown_role = "unknown"  # use default unknown role
+    roles = {
+        "human": conversation_lib.default_conversation.roles[0],  # human role
+        "gpt": conversation_lib.default_conversation.roles[1],  # gpt role
+    }
     for sentence in source:
-        from_str = sentence["from"]
-        if from_str.lower() == "human":
-            from_str = conversation_lib.default_conversation.roles[0]
-        elif from_str.lower() == "gpt":
-            from_str = conversation_lib.default_conversation.roles[1]
-        else:
-            from_str = 'unknown'
-        sentence["value"] = (BEGIN_SIGNAL + from_str + ": " +
-                             sentence["value"] + END_SIGNAL)
+        sentence_from = sentence["from"].lower()
+        sentence["value"] = (
+            BEGIN_SIGNAL
+            + roles.get(sentence_from, unknown_role)
+            + ": "
+            + sentence["value"]
+            + END_SIGNAL
+        )
         if get_conversation:
             conversation += sentence["value"]
     return conversation
+
 
 
 def preprocess(
