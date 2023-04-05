@@ -34,16 +34,13 @@ def forward(
     # [bsz, nh, q_len, hd]
 
     kv_seq_len = key_states.shape[-2]
-    offset = 0
-    if past_key_value is not None:
-        offset = past_key_value[0].shape[-2]
-        kv_seq_len += offset
+    assert past_key_value is None, "past_key_value is not supported"
+
     cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
     query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
     # [bsz, nh, t, hd]
     assert not output_attentions, "output_attentions is not supported"
     assert not use_cache, "use_cache is not supported"
-    assert past_key_value is None, "past_key_value is not supported"
 
     # Flash attention codes from
     # https://github.com/HazyResearch/flash-attention/blob/main/flash_attn/flash_attention.py
