@@ -61,7 +61,10 @@ def html_to_markdown(val: str) -> str:
 
 def should_skip(val: str) -> bool:
     black_list = ["openai", "chatgpt"]
-    return any(w in val.lower() for w in black_list)
+    for w in black_list:
+        if w in val.lower():
+            return True
+    return False
 
 
 def clean_html_source(content, begin, end, check_tag, check_num):
