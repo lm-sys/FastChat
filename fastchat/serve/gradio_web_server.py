@@ -12,7 +12,7 @@ from fastchat.conversation import (default_conversation, conv_templates,
                                    SeparatorStyle)
 from fastchat.constants import LOGDIR
 from fastchat.utils import (build_logger, server_error_msg,
-    violates_moderation, moderation_msg)
+                            violates_moderation, moderation_msg)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 
@@ -33,7 +33,8 @@ priority = {
 
 def get_conv_log_filename():
     t = datetime.datetime.now()
-    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
+    name = os.path.join(
+        LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
     return name
 
 
@@ -82,13 +83,13 @@ def load_demo_refresh_model_list(request: gr.Request):
     models = get_model_list()
     state = default_conversation.copy()
     return (state, gr.Dropdown.update(
-               choices=models,
-               value=models[0] if len(models) > 0 else ""),
-            gr.Chatbot.update(visible=True),
-            gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True))
+        choices=models,
+        value=models[0] if len(models) > 0 else ""),
+        gr.Chatbot.update(visible=True),
+        gr.Textbox.update(visible=True),
+        gr.Button.update(visible=True),
+        gr.Row.update(visible=True),
+        gr.Accordion.update(visible=True))
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -176,7 +177,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "koala" in model_name: # Hardcode the condition
+        if "koala" in model_name:  # Hardcode the condition
             template_name = "bair_v1"
         else:
             template_name = "v1"
@@ -188,7 +189,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Query worker address
     controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
-            json={"model": model_name})
+                        json={"model": model_name})
     worker_addr = ret.json()["address"]
     logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
@@ -217,7 +218,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     try:
         # Stream output
         response = requests.post(worker_addr + "/worker_generate_stream",
-            headers=headers, json=pload, stream=True, timeout=10)
+                                 headers=headers, json=pload, stream=True, timeout=10)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 data = json.loads(chunk.decode())
@@ -227,7 +228,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
-                    output = data["text"] + f" (error_code: {data['error_code']})"
+                    output = data["text"] + \
+                        f" (error_code: {data['error_code']})"
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
@@ -241,7 +243,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     finish_tstamp = time.time()
-    logger.info(f"{output}")
+    logger.info(f"Output is:{output}")
 
     with open(get_conv_log_filename(), "a") as fout:
         data = {
@@ -312,7 +314,7 @@ def build_demo():
         with gr.Row():
             with gr.Column(scale=10):
                 textbox = gr.Textbox(show_label=False,
-                    placeholder="Enter text and press ENTER", visible=False).style(container=False)
+                                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=60):
                 submit_btn = gr.Button(value="Submit", visible=False)
 
@@ -320,47 +322,53 @@ def build_demo():
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
             downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
             flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-            #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
-            regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
+            # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
+            regenerate_btn = gr.Button(
+                value="🔄  Regenerate", interactive=False)
             clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
         with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
-            temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
-            max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+            temperature = gr.Slider(
+                minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
+            max_output_tokens = gr.Slider(
+                minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
 
         gr.Markdown(learn_more_markdown)
         url_params = gr.JSON(visible=False)
 
         # Register listeners
-        btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
+        btn_list = [upvote_btn, downvote_btn,
+                    flag_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+                         [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         downvote_btn.click(downvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+                           [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         flag_btn.click(flag_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+                       [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         regenerate_btn.click(regenerate, state,
-            [state, chatbot, textbox] + btn_list).then(
+                             [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot] + btn_list)
-        clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+        clear_btn.click(clear_history, None, [
+                        state, chatbot, textbox] + btn_list)
 
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-                   [state, chatbot] + btn_list)
+                       ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+                              [state, chatbot] + btn_list)
         submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-                   [state, chatbot] + btn_list)
+                         ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+                                [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row],
-                _js=get_window_url_params)
+                                                chatbot, textbox, submit_btn, button_row, parameter_row],
+                      _js=get_window_url_params)
         elif args.model_list_mode == "reload":
             demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row])
+                                                           chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
-            raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
+            raise ValueError(
+                f"Unknown model list mode: {args.model_list_mode}")
 
     return demo
 
@@ -369,10 +377,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
-    parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
+    parser.add_argument("--controller-url", type=str,
+                        default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=4)
     parser.add_argument("--model-list-mode", type=str, default="once",
-        choices=["once", "reload"])
+                        choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
