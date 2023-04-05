@@ -14,11 +14,8 @@ import tqdm
 
 def _get_html_tags(file_path: str):
     # Generate the list of html tags occurred in the file.
-    tags = set()
     with open(file_path, "r") as f:
-        for line in f:
-            for match in re.findall("</[^<>]+>", line):
-                tags.add(match)
+        tags = {match for line in f for match in re.findall("</[^<>]+>", line)}
     return tags
 
 div_pattern = re.compile("<div.*?>")
