@@ -1,21 +1,13 @@
 """Download checkpoint."""
 import argparse
 import os
+import subprocess
 
 import tqdm
 
 
-def run_cmd(cmd):
-    print(cmd)
-    os.system(cmd)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", type=str, default="alpaca-13b-ckpt")
-    args = parser.parse_args()
-
-    output_dir = args.output_dir
+def download_checkpoint(output_dir: str) -> None:
+    """Download checkpoint from Google Cloud Storage."""
     os.makedirs(output_dir, exist_ok=True)
 
     files = [
@@ -34,4 +26,13 @@ if __name__ == "__main__":
     ]
 
     for filename in tqdm.tqdm(files):
-        run_cmd(f"gsutil cp {filename} {output_dir}")
+        cmd = f"gsutil cp {filename} {output_dir}"
+        subprocess.run(cmd, shell=True, check=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", type=str, default="alpaca-13b-ckpt")
+    args = parser.parse_args()
+
+    download_checkpoint(args.output_dir)
