@@ -20,7 +20,9 @@ import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import (build_logger, server_error_msg,
-    pretty_print_semaphore)
+                            pretty_print_semaphore)
+
+from fastchat.serve.shared_model_utils import tokensByDevice
 
 GB = 1 << 30
 
@@ -38,20 +40,37 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
-    if num_gpus == 1:
-        kwargs = {}
+def load_model(model_path, num_gpus, device, debug):
+
+    if (debug):
+        print('Loading tokenizer...')
+
+    if device == "cuda" and num_gpus == 1:
+        kwargs = {"device_map": "auto", "torch_dtype": torch.float16}
+    elif device == "cpu-gptq":
+        print('device was CPU-gptq')
+        kwargs = {
+            "low_cpu_mem_usage": True,
+            "max_memory": {0: "64GiB"},
+        }
     else:
         kwargs = {
-            "device_map": "auto",
-            "max_memory": {i: "13GiB" for i in range(num_gpus)},
+            "torch_dtype": torch.float32,
+            "low_cpu_mem_usage": True,
+            "max_memory": {0: "64GiB"},
         }
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
 
-    if num_gpus == 1:
+    if debug:
+        print(f'Loading model ({device})...')
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path, **kwargs)
+
+    if debug:
+        print('Done loading model')
+
+    if device == "cuda" and num_gpus == 1:
         model.cuda()
 
     if hasattr(model.config, "max_sequence_length"):
@@ -63,19 +82,36 @@ def load_model(model_path, num_gpus):
 
 
 class ModelWorker:
-    def __init__(self, controller_addr, worker_addr,
-                 worker_id, no_register,
-                 model_path, model_name, num_gpus):
+    def __init__(self,
+                 controller_addr,
+                 worker_addr,
+                 worker_id,
+                 no_register,
+                 model_path,
+                 model_name,
+                 num_gpus,
+                 device,
+                 debug):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
+        self.device = device
+        self.debug = debug
 
-        logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
+        if device == "cuda":
+            logger.info(
+                f"Loading model {self.model_name} on worker {worker_id} (CUDA)...")
+        else:
+            logger.info(
+                f"Loading model {self.model_name} on worker {worker_id} (CPU)...")
         self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus)
+            model_path, num_gpus, device, debug)
+
+        logger.info(
+            f"Model loaded.")
 
         if not no_register:
             self.register_to_controller()
@@ -84,7 +120,7 @@ class ModelWorker:
             self.heart_beat_thread.start()
 
     def register_to_controller(self):
-        logger.info("Register to controller")
+        logger.info("Registering to controller...")
 
         url = self.controller_addr + "/register_worker"
         data = {
@@ -132,11 +168,17 @@ class ModelWorker:
 
     @torch.inference_mode()
     def generate_stream(self, params):
-        #cur_mem = torch.cuda.memory_allocated()
-        #max_mem = torch.cuda.max_memory_allocated()
-        #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
+        # cur_mem = torch.cuda.memory_allocated()
+        # max_mem = torch.cuda.max_memory_allocated()
+        # logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
 
-        tokenizer, model = self.tokenizer, self.model
+        tokenizer = self.tokenizer
+        model = self.model
+        device = self.device
+        debug = self.debug
+
+        if self.debug:
+            print('Generating response. Device:', self.device)
 
         prompt = params["prompt"]
         l_prompt = len(prompt)
@@ -144,22 +186,37 @@ class ModelWorker:
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
 
-        input_ids = tokenizer(prompt).input_ids
+        if debug:
+            print('Tokenising input...')
+        if device == "cpu-gptq":
+            input_ids = tokenizer(prompt, return_tensors="pt").input_ids
+        else:
+            input_ids = tokenizer(prompt).input_ids
+
         output_ids = list(input_ids)
 
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
         for i in range(max_new_tokens):
+            if debug:
+                print("Preparing token", i + 1, "for inferencing...")
             if i == 0:
-                out = model(
-                    torch.as_tensor([input_ids]).cuda(), use_cache=True)
+                out = model(input_ids=tokensByDevice(
+                    self.device, input_ids, True, debug, debug), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
-                attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
-                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
+                if debug:
+                    print(
+                        f'Applying attention mask to token ({device})...')
+                if device == "cuda":
+                    attention_mask = torch.ones(
+                        1, past_key_values[0][0].shape[-2] + 1, device="cuda")
+                else:
+                    attention_mask = torch.ones(
+                        1, past_key_values[0][0].shape[-2] + 1)
+                out = model(input_ids=tokensByDevice(device, token, False, debug, debug),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
@@ -167,6 +224,9 @@ class ModelWorker:
                 past_key_values = out.past_key_values
 
             last_token_logits = logits[0][-1]
+
+            if debug:
+                print('Managing temperature...')
             if temperature < 1e-4:
                 token = int(torch.argmax(last_token_logits))
             else:
@@ -175,13 +235,35 @@ class ModelWorker:
 
             output_ids.append(token)
 
+            if torch.is_tensor(output_ids[0]):
+                output_idsPatched = [*output_ids[0].tolist(), *output_ids[1:]]
+                if debug:
+                    print('Tokens were tensor patched for GPTQ... Tokens:',
+                          output_idsPatched)
+
+            else:
+                output_idsPatched = output_ids
+
+            # if output.endswith(stop_str):
+            #     if self.debugInference:
+            #         print(
+            #             f"End of response string '{stop_str}' detected, stopping inference.")
+            #     output = output[:-len(stop_str)]
+            #     stopped = True
             if token == tokenizer.eos_token_id:
+                if debug:
+                    print("Last token found, stopping inference.")
                 stopped = True
             else:
                 stopped = False
 
             if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True)
+                if debug:
+                    print('Decoding tokens... Tokens:', output_ids)
+                output = tokenizer.decode(
+                    output_idsPatched, skip_special_tokens=True)
+                if debug:
+                    print("Output was:", output)
                 pos = output.rfind(stop_str, l_prompt)
                 if pos != -1:
                     output = output[:pos]
@@ -195,6 +277,12 @@ class ModelWorker:
 
             if stopped:
                 break
+
+        if debug:
+            print("Finished inference. Output:\n", output)
+        else:
+            # print used here instead of logger because it shits itself. see utils.py:35
+            print("Reponse:\n", output)
 
         del past_key_values
 
@@ -242,15 +330,19 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
     parser.add_argument("--worker-address", type=str,
-        default="http://localhost:21002")
+                        default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str,
-        default="http://localhost:21001")
+                        default="http://localhost:21001")
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument("--device", type=str,
+                        choices=["cuda", "cpu", "cpu-gptq"], default="cuda")
+    parser.add_argument('--debug', dest='debug',
+                        action='store_true')
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -260,5 +352,7 @@ if __name__ == "__main__":
                          args.no_register,
                          args.model_path,
                          args.model_name,
-                         args.num_gpus)
+                         args.num_gpus,
+                         args.device,
+                         args.debug)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
