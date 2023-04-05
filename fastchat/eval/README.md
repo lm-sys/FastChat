@@ -125,7 +125,8 @@ For example:
   "prompt_id": 1,
   "temperature": 0.2,
   "max_tokens": 8192,
-  "description": "GPT-4 for generic questions."
+  "description": "GPT-4 for general questions.",
+  "category": "general"
 }
 ```
 
