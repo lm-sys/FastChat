@@ -219,14 +219,15 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             if chunk:
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"][len(prompt) + 2:]
+                    output = data["text"][len(prompt) + 1:].strip()
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
                     output = data["text"]
-                    state.messages[-1][-1] = output + "▌"
+                    state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                    return
                 time.sleep(0.04)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
@@ -304,8 +305,12 @@ def build_demo():
                 show_label=False).style(container=False)
 
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-        textbox = gr.Textbox(show_label=False,
-            placeholder="Enter text and press ENTER", visible=False).style(container=False)
+        with gr.Row():
+            with gr.Column(scale=10):
+                textbox = gr.Textbox(show_label=False,
+                    placeholder="Enter text and press ENTER", visible=False).style(container=False)
+            with gr.Column(scale=1, min_width=60):
+                submit_btn = gr.Button(value="Submit")
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -339,6 +344,9 @@ def build_demo():
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
+        submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+                   [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
@@ -367,6 +375,7 @@ if __name__ == "__main__":
 
     models = get_model_list()
 
+    logger.info(args)
     demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
                api_open=False).launch(

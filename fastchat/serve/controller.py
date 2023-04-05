@@ -5,6 +5,7 @@ It sends worker addresses to clients.
 import argparse
 import asyncio
 import dataclasses
+import json
 import logging
 import time
 from typing import List, Union
@@ -17,7 +18,7 @@ import requests
 import uvicorn
 
 from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
-from fastchat.utils import build_logger
+from fastchat.utils import build_logger, server_error_msg
 
 
 logger = build_logger("controller", "controller.log")
@@ -116,6 +117,7 @@ class Controller:
             pt = np.random.choice(np.arange(len(worker_names)),
                 p=worker_speeds)
             worker_name = worker_names[pt]
+            #logger.info(f"speeds: {worker_speeds}, pt: {pt}, worker_name: {worker_name}")
             return worker_name
 
         # Check status before returning
@@ -159,17 +161,27 @@ class Controller:
     def worker_api_generate_stream(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
+            logger.info(f"no worker: {params['model']}")
             ret = {
                 "text": server_error_msg,
                 "error_code": 2,
             }
-            yield (json.dumps(ret) + "\0").encode("utf-8")
+            yield json.dumps(ret).encode() + b"\0"
 
-        response = requests.post(worker_addr + "/worker_generate_stream",
-            json=params, stream=True)
-        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                yield chunk + b"\0"
+        try:
+            response = requests.post(worker_addr + "/worker_generate_stream",
+                json=params, stream=True, timeout=5)
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    yield chunk + b"\0"
+        except requests.exceptions.RequestException as e:
+            logger.info(f"worker timeout: {worker_addr}")
+            ret = {
+                "text": server_error_msg,
+                "error_code": 3,
+            }
+            yield json.dumps(ret).encode() + b"\0"
+
 
     # Let the controller act as a worker to achieve hierarchical
     # management. This can be used to connect isolated sub networks.
