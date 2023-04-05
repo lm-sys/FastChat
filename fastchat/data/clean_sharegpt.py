@@ -1,5 +1,8 @@
 """
-Usage: python3 -m fastchat.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
+Convert html to markdown with basic data cleaning.
+
+Usage:
+python3 -m fastchat.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
 """
 import argparse
 import json
@@ -11,14 +14,6 @@ import bs4
 import markdownify  # == 0.11.6
 import tqdm
 
-
-def _get_html_tags(file_path: str):
-    # Generate the list of html tags occured in the file.
-    s = set()
-    for l in open("file_path", "r"):
-        for m in re.findall("</[^<>]+>", l):
-            s.add(m)
-    return s
 
 div_pattern = re.compile("<div.*?>")
 span_pattern = re.compile("<span.*?>")
