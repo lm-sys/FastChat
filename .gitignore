@@ -1,11 +1,21 @@
+# Python
 __pycache__
 *.pyc
 *.egg-info
+dist
+
+# Log
 *.log
 *.json
+
+# Data
 !**/alpaca-data-conversation.json
+
+# Editor
 .idea
 *.swp
-output
-wandb
+
+# Other
 .DS_Store
+wandb
+output

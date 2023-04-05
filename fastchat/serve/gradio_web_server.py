@@ -27,6 +27,7 @@ disable_btn = gr.Button.update(interactive=False)
 
 priority = {
     "vicuna-13b": "aaaaaaa",
+    "koala-13b": "aaaaaab",
 }
 
 
@@ -71,6 +72,7 @@ def load_demo(url_params, request: gr.Request):
             dropdown_update,
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -84,6 +86,7 @@ def load_demo_refresh_model_list(request: gr.Request):
                value=models[0] if len(models) > 0 else ""),
             gr.Chatbot.update(visible=True),
             gr.Textbox.update(visible=True),
+            gr.Button.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
@@ -103,19 +106,19 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
 def upvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"upvote. ip: {request.client.host}")
     vote_last_response(state, "upvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
     logger.info(f"downvote. ip: {request.client.host}")
     vote_last_response(state, "downvote", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
     logger.info(f"flag. ip: {request.client.host}")
     vote_last_response(state, "flag", model_selector, request)
-    return (disable_btn,) * 3
+    return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
@@ -224,11 +227,11 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
-                    output = data["text"]
+                    output = data["text"] + f" (error_code: {data['error_code']})"
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.04)
+                time.sleep(0.03)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
@@ -255,19 +258,20 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models
-- Blog post: [Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality](https://vicuna.lmsys.org)
-- Code: [Github](https://github.com/lm-sys/FastChat)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat)
+- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
+- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
-**<span style="color:red">Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.</span>**
+Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.
 For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
-
 
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
+- [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
-- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models  
+- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
 
 Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
@@ -310,7 +314,7 @@ def build_demo():
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=60):
-                submit_btn = gr.Button(value="Submit")
+                submit_btn = gr.Button(value="Submit", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -330,11 +334,11 @@ def build_demo():
         # Register listeners
         btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
         upvote_btn.click(upvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         downvote_btn.click(downvote_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         flag_btn.click(flag_last_response,
-            [state, model_selector], [upvote_btn, downvote_btn, flag_btn])
+            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
         regenerate_btn.click(regenerate, state,
             [state, chatbot, textbox] + btn_list).then(
             http_bot, [state, model_selector, temperature, max_output_tokens],
@@ -350,11 +354,11 @@ def build_demo():
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, button_row, parameter_row],
+                chatbot, textbox, submit_btn, button_row, parameter_row],
                 _js=get_window_url_params)
         elif args.model_list_mode == "reload":
             demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, button_row, parameter_row])
+                chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -372,6 +376,7 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--moderate", action="store_true")
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
     models = get_model_list()
 
