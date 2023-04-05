@@ -12,12 +12,6 @@ import markdownify  # == 0.11.6
 import tqdm
 
 
-def _get_html_tags(file_path: str):
-    # Generate the list of html tags occurred in the file.
-    with open(file_path, "r") as f:
-        tags = {match for line in f for match in re.findall("</[^<>]+>", line)}
-    return tags
-
 div_pattern = re.compile("<div.*?>")
 span_pattern = re.compile("<span.*?>")
 code_lang_pattern = re.compile("```\s*" + "(.*?)" + "(?:Copy code)+" + "(.+?)" + "\s*?```", re.DOTALL)
