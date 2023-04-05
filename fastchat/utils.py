@@ -31,12 +31,16 @@ def build_logger(logger_name, logger_filename):
     stdout_logger = logging.getLogger("stdout")
     stdout_logger.setLevel(logging.INFO)
     sl = StreamToLogger(stdout_logger, logging.INFO)
-    sys.stdout = sl
+    # the characters used when transformers is loading shards, eg:
+    # Loading checkpoint shards: 100%|████████████████████████████| 3/3 [00:20<00:00,  6.67s/it]
+    # does NOT play nice with the StreamToLogger function declared here. It could be fixed but I'm time poor
+    # for now just don't use this.
+    # sys.stdout = sl
 
     stderr_logger = logging.getLogger("stderr")
     stderr_logger.setLevel(logging.ERROR)
     sl = StreamToLogger(stderr_logger, logging.ERROR)
-    sys.stderr = sl
+    # sys.stderr = sl
 
     # Get logger
     logger = logging.getLogger(logger_name)
@@ -61,6 +65,7 @@ class StreamToLogger(object):
     """
     Fake file-like stream object that redirects writes to a logger instance.
     """
+
     def __init__(self, logger, log_level=logging.INFO):
         self.terminal = sys.stdout
         self.logger = logger
