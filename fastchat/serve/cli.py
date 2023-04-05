@@ -10,9 +10,11 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 
+from fastchat.serve.shared_model_utils import tokensByDevice
+
 
 @torch.inference_mode()
-def generate_stream(tokenizer, model, params, device,
+def generate_stream(tokenizer, model, params, device, debug,
                     context_len=2048, stream_interval=2):
     """Adapted from fastchat/serve/model_worker.py::generate_stream"""
 
@@ -24,41 +26,20 @@ def generate_stream(tokenizer, model, params, device,
 
     if device == 'cpu-gptq':
         input_ids = tokenizer(prompt, return_tensors="pt").input_ids
+    elif device == 'cuda':
+        input_ids = tokenizer(prompt).input_ids
     else:
-        input_ids = tokenizer([prompt]).input_ids
+        input_ids = tokenizer(prompt).input_ids
 
     output_ids = list(input_ids)
 
     max_src_len = context_len - max_new_tokens - 8
     input_ids = input_ids[-max_src_len:]
 
-    def tokensByDevice(device, token, isBase):
-        # if self.debugInference and self.showTokens:
-        #     print(
-        #         f'{"Tokenising prompt" if isBase else "Inferencing"} using ({device})... Tokens:', token)
-        # elif self.debugInference:
-        #     print(
-        #         f'{"Tokenising prompt" if isBase else "Inferencing"} using ({device})...')
-        if device == 'cuda':
-            if isBase:
-                return torch.as_tensor([token]).cuda()
-            else:
-                return torch.as_tensor([[token]], device="cuda")
-        elif device == 'cpu-gptq':
-            if isBase:
-                return token
-            else:
-                return torch.as_tensor([[token]])
-        elif device == 'cpu':
-            if isBase:
-                return [token]
-            else:
-                return [[token]]
-
     for i in range(max_new_tokens):
         if i == 0:
             out = model(input_ids=tokensByDevice(
-                device, input_ids, True), use_cache=True)
+                device, input_ids, True, debug, debug), use_cache=True)
             logits = out.logits
             past_key_values = out.past_key_values
         else:
@@ -68,11 +49,14 @@ def generate_stream(tokenizer, model, params, device,
             else:
                 attention_mask = torch.ones(
                     1, past_key_values[0][0].shape[-2] + 1)
-            out = model(input_ids=tokensByDevice(device, input_ids, False), use_cache=True,
+            out = model(input_ids=tokensByDevice(device, token, False, debug, debug), use_cache=True,
                         attention_mask=attention_mask,
                         past_key_values=past_key_values)
             logits = out.logits
             past_key_values = out.past_key_values
+
+        if debug:
+            print('Finished inferencing a token')
 
         last_token_logits = logits[0][-1]
         if temperature < 1e-4:
@@ -85,13 +69,18 @@ def generate_stream(tokenizer, model, params, device,
 
         if torch.is_tensor(output_ids[0]):
             output_idsPatched = [*output_ids[0].tolist(), *output_ids[1:]]
-            # if self.debugInference:
-            #     if self.showTokens:
-            #         print('Tokens were tensor patched for GPTQ... Tokens:',
-            #               output_idsPatched)
-            #     else:
-            #         print('Tokens were tensor patched for GPTQ...')
+            if debug:
+                print('Tokens were tensor patched for GPTQ... Tokens:',
+                      output_idsPatched)
+        elif type(output_ids[0]) is list:
+            output_idsPatched = [*output_ids[0], *output_ids[1:]]
+            if debug:
+                print('Tokens were patched... Tokens:',
+                      output_idsPatched)
         else:
+            if debug:
+                print('Tokens werent patched... Tokens:',
+                      output_ids)
             output_idsPatched = output_ids
 
         if token == tokenizer.eos_token_id:
@@ -118,6 +107,7 @@ def main(args):
     model_name = args.model_name
     num_gpus = args.num_gpus
     device = args.device
+    debug = args.debug
 
     if device == 'cuda':
         num_gpus = int(num_gpus)
@@ -173,19 +163,7 @@ def main(args):
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
 
-        # outputs = tokenizer.batch_decode(
-        #     output_ids, skip_special_tokens=True)[0]
-        # sep = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
-        # try:
-        #     index = outputs.index(sep, len(prompt))
-        # except ValueError:
-        #     outputs += sep
-        #     index = outputs.index(sep, len(prompt))
-        # outputs = outputs[len(prompt) + 1:index].strip()
-        # print(f"{conv.roles[1]}: {outputs}")
-        # conv.messages[-1][-1] = outputs
-
-        for outputs in generate_stream(tokenizer, model, params, device):
+        for outputs in generate_stream(tokenizer, model, params, device, debug):
             outputs = outputs[len(prompt) + 1:].strip()
             outputs = outputs.split(" ")
             now = len(outputs)

@@ -22,6 +22,8 @@ from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import (build_logger, server_error_msg,
                             pretty_print_semaphore)
 
+from fastchat.serve.shared_model_utils import tokensByDevice
+
 GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
@@ -38,9 +40,9 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus, device, debugInference):
+def load_model(model_path, num_gpus, device, debug):
 
-    if (debugInference):
+    if (debug):
         print('Loading tokenizer...')
 
     if device == "cuda" and num_gpus == 1:
@@ -60,12 +62,12 @@ def load_model(model_path, num_gpus, device, debugInference):
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    if debugInference:
+    if debug:
         print(f'Loading model ({device})...')
     model = AutoModelForCausalLM.from_pretrained(
         model_path, **kwargs)
 
-    if debugInference:
+    if debug:
         print('Done loading model')
 
     if device == "cuda" and num_gpus == 1:
@@ -89,8 +91,7 @@ class ModelWorker:
                  model_name,
                  num_gpus,
                  device,
-                 showTokens,
-                 debugInference):
+                 debug):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -98,8 +99,7 @@ class ModelWorker:
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
         self.device = device
-        self.showTokens = showTokens
-        self.debugInference = debugInference
+        self.debug = debug
 
         if device == "cuda":
             logger.info(
@@ -108,7 +108,7 @@ class ModelWorker:
             logger.info(
                 f"Loading model {self.model_name} on worker {worker_id} (CPU)...")
         self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus, device, debugInference)
+            model_path, num_gpus, device, debug)
 
         logger.info(
             f"Model loaded.")
@@ -171,11 +171,14 @@ class ModelWorker:
         # cur_mem = torch.cuda.memory_allocated()
         # max_mem = torch.cuda.max_memory_allocated()
         # logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
-        if self.debugInference:
+
+        tokenizer = self.tokenizer
+        model = self.model
+        device = self.device
+        debug = self.debug
+
+        if self.debug:
             print('Generating response. Device:', self.device)
-        else:
-            logger.info("Generating response...")
-        tokenizer, model = self.tokenizer, self.model
 
         prompt = params["prompt"]
         l_prompt = len(prompt)
@@ -183,9 +186,9 @@ class ModelWorker:
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
 
-        if self.debugInference:
+        if debug:
             print('Tokenising input...')
-        if self.device == "cpu-gptq":
+        if device == "cpu-gptq":
             input_ids = tokenizer(prompt, return_tensors="pt").input_ids
         else:
             input_ids = tokenizer(prompt).input_ids
@@ -195,48 +198,25 @@ class ModelWorker:
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
-        def tokensByDevice(device, token, isBase):
-            if self.debugInference and self.showTokens:
-                print(
-                    f'{"Tokenising prompt" if isBase else "Inferencing"} using ({device})... Tokens:', token)
-            elif self.debugInference:
-                print(
-                    f'{"Tokenising prompt" if isBase else "Inferencing"} using ({device})...')
-            if device == 'cuda':
-                if isBase:
-                    return torch.as_tensor([token]).cuda()
-                else:
-                    return torch.as_tensor([[token]], device="cuda")
-            elif device == 'cpu-gptq':
-                if isBase:
-                    return token
-                else:
-                    return torch.as_tensor([[token]])
-            elif device == 'cpu':
-                if isBase:
-                    return [token]
-                else:
-                    return [[token]]
-
         for i in range(max_new_tokens):
-            if self.debugInference:
+            if debug:
                 print("Preparing token", i + 1, "for inferencing...")
             if i == 0:
                 out = model(input_ids=tokensByDevice(
-                    self.device, input_ids, True), use_cache=True)
+                    self.device, input_ids, True, debug, debug), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
-                if self.debugInference:
+                if debug:
                     print(
-                        f'Applying attention mask to token ({self.device})...')
-                if self.device == "cuda":
+                        f'Applying attention mask to token ({device})...')
+                if device == "cuda":
                     attention_mask = torch.ones(
                         1, past_key_values[0][0].shape[-2] + 1, device="cuda")
                 else:
                     attention_mask = torch.ones(
                         1, past_key_values[0][0].shape[-2] + 1)
-                out = model(input_ids=tokensByDevice(self.device, token, False),
+                out = model(input_ids=tokensByDevice(device, token, False, debug, debug),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
@@ -245,7 +225,7 @@ class ModelWorker:
 
             last_token_logits = logits[0][-1]
 
-            if self.debugInference:
+            if debug:
                 print('Managing temperature...')
             if temperature < 1e-4:
                 token = int(torch.argmax(last_token_logits))
@@ -254,14 +234,13 @@ class ModelWorker:
                 token = int(torch.multinomial(probs, num_samples=1))
 
             output_ids.append(token)
+
             if torch.is_tensor(output_ids[0]):
                 output_idsPatched = [*output_ids[0].tolist(), *output_ids[1:]]
-                if self.debugInference:
-                    if self.showTokens:
-                        print('Tokens were tensor patched for GPTQ... Tokens:',
-                              output_idsPatched)
-                    else:
-                        print('Tokens were tensor patched for GPTQ...')
+                if debug:
+                    print('Tokens were tensor patched for GPTQ... Tokens:',
+                          output_idsPatched)
+
             else:
                 output_idsPatched = output_ids
 
@@ -272,21 +251,18 @@ class ModelWorker:
             #     output = output[:-len(stop_str)]
             #     stopped = True
             if token == tokenizer.eos_token_id:
-                if self.debugInference:
+                if debug:
                     print("Last token found, stopping inference.")
                 stopped = True
             else:
                 stopped = False
 
             if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-                if self.debugInference:
-                    if self.showTokens:
-                        print('Decoding tokens... Tokens:', output_ids)
-                    else:
-                        print('Decoding tokens...')
+                if debug:
+                    print('Decoding tokens... Tokens:', output_ids)
                 output = tokenizer.decode(
                     output_idsPatched, skip_special_tokens=True)
-                if self.debugInference:
+                if debug:
                     print("Output was:", output)
                 pos = output.rfind(stop_str, l_prompt)
                 if pos != -1:
@@ -302,7 +278,7 @@ class ModelWorker:
             if stopped:
                 break
 
-        if self.debugInference:
+        if debug:
             print("Finished inference. Output:\n", output)
         else:
             # print used here instead of logger because it shits itself. see utils.py:35
@@ -365,9 +341,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--device", type=str,
                         choices=["cuda", "cpu", "cpu-gptq"], default="cuda")
-    parser.add_argument('--show-tokens', dest='showTokens',
-                        action='store_true')
-    parser.add_argument('--debug-inference', dest='debugInference',
+    parser.add_argument('--debug', dest='debug',
                         action='store_true')
     args = parser.parse_args()
     logger.info(f"args: {args}")
@@ -380,6 +354,5 @@ if __name__ == "__main__":
                          args.model_name,
                          args.num_gpus,
                          args.device,
-                         args.showTokens,
-                         args.debugInference)
+                         args.debug)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
