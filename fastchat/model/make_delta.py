@@ -1,6 +1,6 @@
 """
 Usage:
-python3 -m fastchat.model.make_delta --base ~/model_weights/llama-7b --target ~/model_weights/vicuna-7b --delta ~/model_weights/vicuna-7b-delta --hub-repo-id lmsys/vicuna-7b-delta
+python3 -m fastchat.model.make_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta ~/model_weights/vicuna-13b-delta --hub-repo-id lmsys/vicuna-13b-delta
 """
 import argparse
 
