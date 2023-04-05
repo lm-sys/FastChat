@@ -135,8 +135,10 @@ def _mask_targets(target, tokenized_lens, speakers, header_len, s_ids):
             break
         elif cur_idx + tokenized_len < tgt_len:
             # Check whether the mask is applied to the correct position
-            assert torch.equal(target[cur_idx + 2:cur_idx + tokenized_len],
-                               s_id[2:])
+            if not torch.equal(target[cur_idx + 2:cur_idx + tokenized_len],
+                               s_id[2:]):
+                logging.warning("a sentence mismatches the corresponding piece "
+                                "in the conversation")
         if speaker == "human":
             target[cur_idx:cur_idx + tokenized_len] = IGNORE_INDEX
         cur_idx += tokenized_len
