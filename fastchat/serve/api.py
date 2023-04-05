@@ -94,7 +94,8 @@ class Handler(BaseHTTPRequestHandler):
             # stopping_strings=body.get("stop", [begin_signal]),
 
             choices = []
-            for _ in range(n):
+            for i in range(n):
+                pload["seed"] = i
                 response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
                                          json=pload, stream=True)
                 output = ""

@@ -150,6 +150,8 @@ class ModelWorker:
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
+        seed = params.get("seed", 0)
+        torch.manual_seed(seed)
 
         input_ids = tokenizer(prompt).input_ids
         output_ids = list(input_ids)
