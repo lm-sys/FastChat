@@ -88,6 +88,12 @@ def main(args):
                     "device_map": "auto",
                     "max_memory": {i: "13GiB" for i in range(num_gpus)},
                 })
+                if args.load_8bit:
+                    print("8-bit weights are not supported on multiple GPUs, setting load_8bit=False")
+            elif args.load_8bit:
+                # Only supports loading 8-bit weights on a single GPU
+                kwargs["load_in_8bit"] = True
+                kwargs["device_map"] = "auto"
     elif args.device == "cpu":
         kwargs = {}
     else:
@@ -97,7 +103,8 @@ def main(args):
     model = AutoModelForCausalLM.from_pretrained(model_name,
         low_cpu_mem_usage=True, **kwargs)
 
-    if args.device == "cuda" and num_gpus == 1:
+    # calling model.cuda() mess up weights if loading 8-bit weights
+    if args.device == "cuda" and num_gpus == 1 and not args.load_8bit:
         model.cuda()
 
     # Chat
@@ -149,5 +156,6 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--load_8bit", action="store_true")
     args = parser.parse_args()
     main(args)

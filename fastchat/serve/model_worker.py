@@ -38,9 +38,12 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
+def load_model(model_path, num_gpus, load_8bit=False):
     if num_gpus == 1:
         kwargs = {}
+        if load_8bit:
+            kwargs["load_in_8bit"] = True
+            kwargs["device_map"] = "auto"
     else:
         kwargs = {
             "device_map": "auto",
@@ -51,7 +54,7 @@ def load_model(model_path, num_gpus):
     model = AutoModelForCausalLM.from_pretrained(
        model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
 
-    if num_gpus == 1:
+    if num_gpus == 1 and not load_8bit:
         model.cuda()
 
     if hasattr(model.config, "max_sequence_length"):
@@ -65,7 +68,7 @@ def load_model(model_path, num_gpus):
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
                  worker_id, no_register,
-                 model_path, model_name, num_gpus):
+                 model_path, model_name, num_gpus, load_8bit=False):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -75,7 +78,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus)
+            model_path, num_gpus, load_8bit)
 
         if not no_register:
             self.register_to_controller()
@@ -251,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument("--load_8bit", action="store_true")
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -260,5 +264,6 @@ if __name__ == "__main__":
                          args.no_register,
                          args.model_path,
                          args.model_name,
-                         args.num_gpus)
+                         args.num_gpus,
+                         args.load_8bit)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
