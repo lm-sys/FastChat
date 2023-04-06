@@ -97,9 +97,9 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
 ### Metal Backend (Mac computers with Apple silicon or AMD GPUs)
-Use `--device mps` to utilize GPU acceleration on Mac computers.
+Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
 ```
 
 ### Others (Quantization, Low-end Devices, and More Platforms)
