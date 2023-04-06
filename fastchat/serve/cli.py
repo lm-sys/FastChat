@@ -218,29 +218,18 @@ def main(args):
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)
-        if model_name == "THUDM/chatglm-6b":
-            prompt = inp if len(conv.messages) == 2 else conv.get_prompt()
-            params = {
-                "model": model_name,
-                "prompt": prompt,
-                "temperature": args.temperature,
-                "max_new_tokens": args.max_new_tokens,
-                "stop": None,
-                "prepare_input_function": prepare_inputs_chatglm,
-                "eos_token_id": model.config.eos_token_id,
-            }
-        else:
-            prompt = conv.get_prompt()
-            params = {
-                "model": model_name,
-                "prompt": prompt,
-                "temperature": args.temperature,
-                "max_new_tokens": args.max_new_tokens,
-                "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
-                "prepare_input_function": prepare_inputs,
-                "eos_token_id": tokenizer.eos_token_id,
-            }
-
+        prompt = conv.get_prompt()
+      
+        params = {
+            "model": model_name,
+            "prompt": prompt,
+            "temperature": args.temperature,
+            "max_new_tokens": args.max_new_tokens,
+            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+            "prepare_input_function": prepare_inputs_chatglm if model_name == "THUDM/chatglm-6b" else prepare_inputs,
+            "eos_token_id": model.config.eos_token_id if model_name == "THUDM/chatglm-6b" else tokenizer.eos_token_id,
+        }
+        
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
         for outputs in generate_stream(tokenizer, model, params, args.device):
