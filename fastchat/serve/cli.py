@@ -87,6 +87,7 @@ def generate_stream(tokenizer, model, params, device,
         last_token_logits = logits[0][-1]
 
         if device == "mps":
+            # Switch to CPU by avoiding some bugs in mps backend.
             last_token_logits = last_token_logits.float().to("cpu")
 
         if temperature < 1e-4:
