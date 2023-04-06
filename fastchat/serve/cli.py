@@ -8,7 +8,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
 
 from fastchat.conversation import conv_templates, SeparatorStyle
-from fastchat.model_wrappers import LLamaWrapper
+from fastchat.model_wrappers import ChatGlmWrapper, LLamaWrapper
 
 
 @torch.inference_mode()
@@ -98,10 +98,12 @@ def main(args):
     if "glm" in model_name:
         tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name, trust_remote_code=True, low_cpu_mem_usage=True, **kwargs)
+        model_wrapper = ChatGlmWrapper(model, tokenizer)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(model_name,
             low_cpu_mem_usage=True, **kwargs)
+        model_wrapper = LLamaWrapper(model, tokenizer)
 
     if args.device == "cuda" and num_gpus == 1:
         model.cuda()
@@ -129,14 +131,16 @@ def main(args):
             "device": args.device,
         }
 
-        model_wrapper = LLamaWrapper(model, tokenizer)
-
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
         for outputs in model_wrapper.generate_stream(prompt, params):
+            print(f">>>> raw outputs: {outputs}")
             outputs = outputs[len(prompt) + 1:].strip()
+            print(f">>>> strip outputs: {outputs}")
             outputs = outputs.split(" ")
+            print(f">>>> split outputs: {outputs}")
             now = len(outputs)
+            print(f">>>> now, pre: {now}, {pre}")
             if now - 1 > pre:
                 print(" ".join(outputs[pre:now-1]), end=" ", flush=True)
                 pre = now - 1

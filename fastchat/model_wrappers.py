@@ -77,33 +77,21 @@ class LLamaWrapper(BaseModelWrapper):
 class ChatGlmWrapper(BaseModelWrapper):
     """Wrapper for ChatGLM-6B https://huggingface.co/THUDM/chatglm-6b/tree/main"""
 
-    def generate_stream(self, input_text, **kwargs):
-        # Implement the specific code to call chat_stream for ModelA
-        yield self.model.stream_chat(self.tokenizer, input_text)
+    def generate_stream(self, input_text: str, params: Dict[str, Any], **kwargs):
+        # The following default values follow kwarg default values of chatglm-6b's `stream_chat`
+        # https://huggingface.co/THUDM/chatglm-6b/blob/1b54948bb28de5258b55b893e193c3046a0b0484/modeling_chatglm.py#L1116
+        history = params.get("history", None)
+        max_length = int(params.get("context_len", 2048))
+        do_sample = bool(params.get("do_sample", True))
+        top_p = float(params.get("top_p", 0.7))
+        temperature = float(params.get("temperature", 0.95))
+        logits_processor = params.get("logits_processor", None)
 
-    @torch.no_grad()
-    def stream_chat(self, tokenizer, query: str, history: List[Tuple[str, str]] = None, max_length: int = 2048,
-                    do_sample=True, top_p=0.7, temperature=0.95, logits_processor=None, **kwargs):
-        if history is None:
-            history = []
-        if logits_processor is None:
-            logits_processor = LogitsProcessorList()
-        logits_processor.append(InvalidScoreLogitsProcessor())
-        gen_kwargs = {"max_length": max_length, "do_sample": do_sample, "top_p": top_p,
-                      "temperature": temperature, "logits_processor": logits_processor, **kwargs}
-        if not history:
-            prompt = query
-        else:
-            prompt = ""
-            for i, (old_query, response) in enumerate(history):
-                prompt += "[Round {}]\n问：{}\n答：{}\n".format(i, old_query, response)
-            prompt += "[Round {}]\n问：{}\n答：".format(len(history), query)
-        input_ids = tokenizer([prompt], return_tensors="pt", padding=True)
-        input_ids = input_ids.to(self.device)
-        for outputs in self.stream_generate(**input_ids, **gen_kwargs):
-            outputs = outputs.tolist()[0][len(input_ids["input_ids"][0]):]
-            response = tokenizer.decode(outputs)
-            response = response.strip()
-            response = response.replace("[[训练时间]]", "2023年")
-            new_history = history + [(query, response)]
-            yield response, new_history
+        response_generator = self.model.stream_chat(
+            self.tokenizer, input_text,
+            history=history, max_length=max_length, temperature=temperature,
+            do_sample=do_sample, top_p=top_p, logits_processor=logits_processor, **kwargs)
+
+        # TODO (jiaodong): Support chat history as context for existing models and ChatGLM 
+        for response, new_history in response_generator:
+            yield response
