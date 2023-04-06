@@ -90,6 +90,8 @@ def main(args):
                 })
     elif args.device == "cpu":
         kwargs = {}
+    elif args.device == "mps":
+        kwargs = {"torch_dtype": torch.float16}
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
@@ -99,6 +101,8 @@ def main(args):
 
     if args.device == "cuda" and num_gpus == 1:
         model.cuda()
+    if args.device == "mps":
+        model.to('mps')
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--device", type=str, choices=["cuda", "cpu", "mps"], default="cuda")
     parser.add_argument("--conv-template", type=str, default="v1")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
