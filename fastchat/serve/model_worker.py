@@ -49,6 +49,7 @@ class ModelWorker:
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
+        self.device = device
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
@@ -137,13 +138,13 @@ class ModelWorker:
         for i in range(max_new_tokens):
             if i == 0:
                 out = model(
-                    torch.as_tensor([input_ids]).cuda(), use_cache=True)
+                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
                 attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
-                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
+                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
+                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
