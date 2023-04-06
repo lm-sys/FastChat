@@ -10,11 +10,14 @@ import ray
 import shortuuid
 import logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 MAX_API_RETRY = 5
+REQ_TIME_GAP = 10
 
 @ray.remote(num_cpus=4)
 def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
+    logging.basicConfig(level=logging.INFO)
     for i in range(MAX_API_RETRY):
         try:
             response = openai.ChatCompletion.create(
@@ -30,12 +33,12 @@ def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
                 max_tokens=max_tokens,
             )
             content = response['choices'][0]['message']['content']
-            logging.info(content)
+            logger.info(content)
             return content
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             time.sleep(5)
-    logging.error(f'Failed after {MAX_API_RETRY} retries.')
+    logger.error(f'Failed after {MAX_API_RETRY} retries.')
     return 'error'
 
 
@@ -49,14 +52,13 @@ def parse_score(review):
         else:
             raise Exception('Invalid score pair.')
     except Exception as e:
-        logging.error(e)
-        logging.error(f'Content: {review}')
-        logging.error('You must manually fix the score pair.')
+        logger.error(f'{e}\nContent: {review}\n'
+                     'You must manually fix the score pair.')
         return [-1, -1]
 
 
 def gen_prompt(reviewer_jsons, prompt_jsons, cat, ques, ans1, ans2):
-    # Default to general category
+    # Default to general category (index=0)
     reviewer_idx = 0
     for idx, reviewer in enumerate(reviewer_jsons):
         if reviewer['category'] == cat:
@@ -127,8 +129,9 @@ if __name__ == '__main__':
             'metadata': {},
         })
         # To avoid the rate limit set by OpenAI
-        time.sleep(10)
         handles.append(get_eval.remote(sys_prompt, prompt, args.max_tokens))
+        logger.info(f'Waiting for {REQ_TIME_GAP} seconds before sending the next request.')
+        time.sleep(REQ_TIME_GAP)
 
     reviews = ray.get(handles)
     with open(f'{args.output_review_file}', 'w') as output_review_file:
