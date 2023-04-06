@@ -235,7 +235,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     return
                 time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg
+        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
         return
 

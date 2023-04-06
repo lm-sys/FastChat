@@ -11,6 +11,39 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 from fastchat.conversation import conv_templates, SeparatorStyle
 
 
+def load_model(model_name, device, num_gpus, load_8bit=False):
+    if device == "cuda":
+        kwargs = {"torch_dtype": torch.float16}
+        if load_8bit:
+            if num_gpus != "auto" and int(num_gpus) != 1:
+                print("8-bit weights are not supported on multiple GPUs. Revert to use one GPU.")
+            kwargs.update({"load_in_8bit": True, "device_map": "auto"})
+        else:
+            if num_gpus == "auto":
+                kwargs["device_map"] = "auto"
+            else:
+                num_gpus = int(num_gpus)
+                if num_gpus != 1:
+                    kwargs.update({
+                        "device_map": "auto",
+                        "max_memory": {i: "13GiB" for i in range(num_gpus)},
+                    })
+    elif device == "cpu":
+        kwargs = {}
+    else:
+        raise ValueError(f"Invalid device: {device}")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name,
+        low_cpu_mem_usage=True, **kwargs)
+
+    # calling model.cuda() mess up weights if loading 8-bit weights
+    if device == "cuda" and num_gpus == 1 and not load_8bit:
+        model.cuda()
+
+    return model, tokenizer
+
+
 @torch.inference_mode()
 def generate_stream(tokenizer, model, params, device,
                     context_len=2048, stream_interval=2):
@@ -74,31 +107,10 @@ def generate_stream(tokenizer, model, params, device,
 
 def main(args):
     model_name = args.model_name
-    num_gpus = args.num_gpus
 
     # Model
-    if args.device == "cuda":
-        kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                })
-    elif args.device == "cpu":
-        kwargs = {}
-    else:
-        raise ValueError(f"Invalid device: {args.device}")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
-
-    if args.device == "cuda" and num_gpus == 1:
-        model.cuda()
+    model, tokenizer = load_model(args.model_name, args.device,
+        args.num_gpus, args.load_8bit)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
@@ -143,8 +155,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--conv-template", type=str, default="v1")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
