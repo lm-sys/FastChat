@@ -6,11 +6,115 @@ import argparse
 import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM, LlamaTokenizer
+from transformers.generation.logits_process import (
+    LogitsProcessorList,
+    TopKLogitsWarper,
+    TopPLogitsWarper
+)
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 
 
+def prepare_inputs(input_ids, output_ids, past_key_values, device):
+    if past_key_values == None:
+        input_ids = torch.as_tensor([input_ids], device=device)
+        return {
+            "input_ids": input_ids,
+            "past_key_values": None,
+            "attention_mask": None
+        }
+    else:
+        last_token = output_ids[-1]
+        input_ids= torch.as_tensor([[last_token]], device=device)
+        past_key_values = past_key_values
+        attention_mask = torch.ones(1, past_key_values[0][0].shape[-2] + 1, device=device)
+        return {
+            "input_ids": input_ids,
+            "past_key_values": past_key_values,
+            "attention_mask": attention_mask
+        }
+    
+    
+
+def prepare_inputs_chatglm(input_ids, output_ids, past_key_values, device):
+    MASK, gMASK = 150000, 150001
+    mask_token = MASK if MASK in input_ids else gMASK
+    use_gmask = False if MASK in input_ids else gMASK
+    seq = input_ids + output_ids
+    mask_position = seq.index(mask_token)
+    
+    if past_key_values == None:
+        input_ids = torch.as_tensor([input_ids], device=device)
+        attention_mask, position_ids = get_masks_and_position_ids(
+            seq=seq,
+            mask_position=mask_position,
+            context_length=len(seq),
+            device=input_ids.device,
+            gmask=use_gmask
+        )
+        return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "past_key_values": None,
+            "position_ids": position_ids
+        }
+    else:
+        last_token = output_ids[-1]
+        input_ids= torch.as_tensor([[last_token]], device=device)
+        bos_token_id = 150004
+        context_length = seq.index(bos_token_id)
+        position_ids = torch.tensor([[[mask_position], [len(seq) - context_length]]], 
+                                    dtype=torch.long, device=input_ids.device)
+        return {
+            "input_ids": input_ids,
+            "attention_mask": None,
+            "past_key_values": past_key_values,
+            "position_ids": position_ids
+        }
+    
+
+
+def process_logits(params, last_token_logits):
+    if params["model"] == "THUDM/chatglm-6b":
+        # Invalid Score
+        if torch.isnan(last_token_logits).any() or torch.isinf(last_token_logits).any():
+            last_token_logits.zeros_()
+            last_token_logits[..., 20005] = 5e4
+            
+        # topk and topp
+        warpers = LogitsProcessorList()
+        warpers.append(TopKLogitsWarper(50))
+        warpers.append(TopPLogitsWarper(0.7))
+        
+        last_token_logits = warpers(None, last_token_logits[None, :])
+    
+    return last_token_logits
+
+
+def get_masks_and_position_ids(seq, mask_position, context_length, device, gmask=False):
+    attention_mask = torch.ones((1, context_length, context_length), device=device)
+    attention_mask.tril_()
+    attention_mask[..., :context_length - 1] = 1
+    attention_mask.unsqueeze_(1)
+    attention_mask = (attention_mask < 0.5).bool()
+
+    bos_token_id = 150004
+    seq_length = seq.index(bos_token_id)
+    position_ids = torch.arange(context_length, dtype=torch.long, device=device)
+    if not gmask:
+        position_ids[seq_length:] = mask_position
+    block_position_ids = torch.cat((
+        torch.zeros(seq_length, dtype=torch.long, device=device),
+        torch.arange(context_length - seq_length, dtype=torch.long, device=device) + 1
+    ))
+    position_ids = torch.stack((position_ids, block_position_ids), dim=0)
+
+    position_ids = position_ids.unsqueeze(0)
+
+    return attention_mask, position_ids
+    
+    
 @torch.inference_mode()
 def generate_stream(tokenizer, model, params, device,
                     context_len=2048, stream_interval=2):
@@ -23,28 +127,26 @@ def generate_stream(tokenizer, model, params, device,
     stop_str = params.get("stop", None)
 
     input_ids = tokenizer(prompt).input_ids
-    output_ids = list(input_ids)
+    output_ids = []
 
     max_src_len = context_len - max_new_tokens - 8
     input_ids = input_ids[-max_src_len:]
-
+    
+    past_key_values = None
     for i in range(max_new_tokens):
-        if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
-            logits = out.logits
-            past_key_values = out.past_key_values
-        else:
-            attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
-            logits = out.logits
-            past_key_values = out.past_key_values
+        model_inputs = params["prepare_input_function"](input_ids=input_ids,
+                        output_ids=output_ids,
+                        past_key_values=past_key_values,
+                        device=device)
+        model_inputs["use_cache"] = True
+        
+        out = model(**model_inputs)
+        
+        logits = out.logits
+        past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
+        last_token_logits = process_logits(params, last_token_logits)
         if temperature < 1e-4:
             token = int(torch.argmax(last_token_logits))
         else:
@@ -52,15 +154,14 @@ def generate_stream(tokenizer, model, params, device,
             token = int(torch.multinomial(probs, num_samples=1))
 
         output_ids.append(token)
-
-        if token == tokenizer.eos_token_id:
+        if token == params["eos_token_id"]:
             stopped = True
         else:
             stopped = False
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-            output = tokenizer.decode(output_ids, skip_special_tokens=True)
-            pos = output.rfind(stop_str, l_prompt)
+            output = tokenizer.decode(list(input_ids) + output_ids, skip_special_tokens=True)
+            pos = output.rfind(stop_str, l_prompt) if stop_str is not None else -1
             if pos != -1:
                 output = output[:pos]
                 stopped = True
@@ -93,9 +194,13 @@ def main(args):
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    if model_name == "THUDM/chatglm-6b":
+        model = AutoModel.from_pretrained(model_name,
+        low_cpu_mem_usage=True, trust_remote_code=True, **kwargs).half().cuda()
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
 
     if args.device == "cuda" and num_gpus == 1:
         model.cuda()
@@ -113,28 +218,52 @@ def main(args):
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-
-        params = {
-            "model": model_name,
-            "prompt": prompt,
-            "temperature": args.temperature,
-            "max_new_tokens": args.max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
-        }
+        if model_name == "THUDM/chatglm-6b":
+            prompt = inp if len(conv.messages) == 2 else conv.get_prompt()
+            params = {
+                "model": model_name,
+                "prompt": prompt,
+                "temperature": args.temperature,
+                "max_new_tokens": args.max_new_tokens,
+                "stop": None,
+                "prepare_input_function": prepare_inputs_chatglm,
+                "eos_token_id": model.config.eos_token_id,
+            }
+        else:
+            prompt = conv.get_prompt()
+            params = {
+                "model": model_name,
+                "prompt": prompt,
+                "temperature": args.temperature,
+                "max_new_tokens": args.max_new_tokens,
+                "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+                "prepare_input_function": prepare_inputs,
+                "eos_token_id": tokenizer.eos_token_id,
+            }
 
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
         for outputs in generate_stream(tokenizer, model, params, args.device):
             outputs = outputs[len(prompt) + 1:].strip()
-            outputs = outputs.split(" ")
-            now = len(outputs)
-            if now - 1 > pre:
-                print(" ".join(outputs[pre:now-1]), end=" ", flush=True)
-                pre = now - 1
-        print(" ".join(outputs[pre:]), flush=True)
-
-        conv.messages[-1][-1] = " ".join(outputs)
+            if model_name == "THUDM/chatglm-6b":
+                outputs = outputs.replace("[[训练时间]]", "2023年")
+                now = len(outputs)
+                if now - 1 > pre:
+                    print(outputs[pre:now-1], flush=True)
+                    pre = now - 1
+            else:
+                outputs = outputs.split(" ")
+                now = len(outputs)
+                if now - 1 > pre:
+                    print(" ".join(outputs[pre:now-1]), end=" ", flush=True)
+                    pre = now - 1
+        
+        if model_name == "THUDM/chatglm-6b":
+            print(outputs[pre:], flush=True)
+            conv.messages[-1][-1] = outputs
+        else:
+            print(" ".join(outputs[pre:]), flush=True)
+            conv.messages[-1][-1] = " ".join(outputs)
 
         if args.debug:
             print("\n", {"prompt": prompt, "outputs": outputs}, "\n")

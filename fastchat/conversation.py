@@ -19,22 +19,31 @@ class Conversation:
     sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
     sep2: str = None
+    begin_line: str = None
 
     skip_next: bool = False
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
-            ret = self.system + self.sep
-            for role, message in self.messages:
+            ret = self.system + self.sep if self.system is not None else ""
+            for i, (role, message) in enumerate(self.messages):
+                if self.begin_line is None or i % 2 == 1:
+                    ret += ""
+                else:
+                    ret += self.begin_line.format(i//2)
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
                     ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.TWO:
-            seps = [self.sep, self.sep2]
+            seps = [self.sep, self.sep2] if self.system is not None else ""
             ret = self.system + seps[0]
             for i, (role, message) in enumerate(self.messages):
+                if self.begin_line is None or i % 2 == 1:
+                    ret += ""
+                else:
+                    ret += self.begin_line.format(i//2)
                 if message:
                     ret += role + ": " + message + seps[i % 2]
                 else:
@@ -63,7 +72,8 @@ class Conversation:
             offset=self.offset,
             sep_style=self.sep_style,
             sep=self.sep,
-            sep2=self.sep2)
+            sep2=self.sep2,
+            begin_line=self.begin_line)
 
     def dict(self):
         return {
@@ -73,6 +83,7 @@ class Conversation:
             "offset": self.offset,
             "sep": self.sep,
             "sep2": self.sep2,
+            "begin_line": self.begin_line
         }
 
 
@@ -144,11 +155,22 @@ conv_bair_v1 = Conversation(
     sep2="</s>",
 )
 
+conv_chatglm_v1 = Conversation(
+    system=None,
+    roles=("问", "答"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.SINGLE,
+    sep="\n",
+    begin_line="[Round {}]\n"
+)
+
 
 default_conversation = conv_v1_2
 conv_templates = {
     "v1": conv_v1_2,
     "bair_v1": conv_bair_v1,
+    "chatglm_v1": conv_chatglm_v1,
 }
 
 
