@@ -9,6 +9,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
+from fastchat.serve.model_worker import load_model
 
 
 @torch.inference_mode()
@@ -74,38 +75,10 @@ def generate_stream(tokenizer, model, params, device,
 
 def main(args):
     model_name = args.model_name
-    num_gpus = args.num_gpus
 
     # Model
-    if args.device == "cuda":
-        kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                })
-                if args.load_8bit:
-                    print("8-bit weights are not supported on multiple GPUs, setting load_8bit=False")
-            elif args.load_8bit:
-                # Only supports loading 8-bit weights on a single GPU
-                kwargs["load_in_8bit"] = True
-                kwargs["device_map"] = "auto"
-    elif args.device == "cpu":
-        kwargs = {}
-    else:
-        raise ValueError(f"Invalid device: {args.device}")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
-
-    # calling model.cuda() mess up weights if loading 8-bit weights
-    if args.device == "cuda" and num_gpus == 1 and not args.load_8bit:
-        model.cuda()
+    model, tokenizer = load_model(args.model_name, args.num_gpus,
+        args.device, args.load_8bit)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
@@ -150,12 +123,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--conv-template", type=str, default="v1")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--load_8bit", action="store_true")
     args = parser.parse_args()
     main(args)
