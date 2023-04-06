@@ -9,6 +9,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
+from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 
 
@@ -32,8 +33,8 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
                         "max_memory": {i: "13GiB" for i in range(num_gpus)},
                     })
     elif device == "mps":
-        # Avoid bugs in mps backend by not using in-place operations.
         kwargs = {"torch_dtype": torch.float16}
+        # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
@@ -47,6 +48,12 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
         model.to("cuda")
     elif device == "mps":
         model.to("mps")
+
+    if (device == "mps" or device == "cpu") and load_8bit:
+        compress_module(model)
+
+    if args.debug:
+        print(model)
 
     return model, tokenizer
 
