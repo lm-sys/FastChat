@@ -8,11 +8,14 @@ import tqdm
 import ray
 
 import shortuuid
+import logging
+logging.basicConfig(level=logging.INFO)
+
+MAX_API_RETRY = 5
 
 @ray.remote(num_cpus=4)
 def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
-    MAX_RETRY = 5
-    for i in range(MAX_RETRY):
+    for i in range(MAX_API_RETRY):
         try:
             response = openai.ChatCompletion.create(
                 model='gpt-4',
@@ -26,11 +29,13 @@ def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
                 temperature=0.2,  # TODO: figure out which temperature is best for evaluation
                 max_tokens=max_tokens,
             )
-            return response['choices'][0]['message']['content']
+            content = response['choices'][0]['message']['content']
+            logging.info(content)
+            return content
         except Exception as e:
-            print(e)
+            logging.error(e)
             time.sleep(5)
-    print(f'Failed after {MAX_RETRY} retries.')
+    logging.error(f'Failed after {MAX_API_RETRY} retries.')
     return 'error'
 
 
@@ -42,15 +47,16 @@ def parse_score(review):
         if len(sp) == 2:
             return [float(sp[0]), float(sp[1])]
         else:
-            print('error', review)
-            return [-1, -1]
+            raise Exception('Invalid score pair.')
     except Exception as e:
-        print(e)
-        print('error', review)
+        logging.error(e)
+        logging.error(f'Content: {review}')
+        logging.error('You must manually fix the score pair.')
         return [-1, -1]
 
 
 def gen_prompt(reviewer_jsons, prompt_jsons, cat, ques, ans1, ans2):
+    # Default to general category
     reviewer_idx = 0
     for idx, reviewer in enumerate(reviewer_jsons):
         if reviewer['category'] == cat:
@@ -83,7 +89,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--answer-file-list', nargs='+', default=[])
     parser.add_argument('-p', '--prompt-file')
     parser.add_argument('-r', '--reviewer-file')
-    parser.add_argument('-o', '--review-file')
+    parser.add_argument('-o', '--output-review-file')
     parser.add_argument('--max-tokens', type=int, default=1024, help='maximum number of tokens produced in the output')
     args = parser.parse_args()
 
@@ -125,9 +131,9 @@ if __name__ == '__main__':
         handles.append(get_eval.remote(sys_prompt, prompt, args.max_tokens))
 
     reviews = ray.get(handles)
-    with open(f'{args.review_file}', 'w') as review_file:
+    with open(f'{args.output_review_file}', 'w') as output_review_file:
         for idx, review in enumerate(reviews):
             scores = parse_score(review)
             review_jsons[idx]['text'] = review
             review_jsons[idx]['score'] = scores
-            review_file.write(json.dumps(review_jsons[idx]) + '\n')
+            output_review_file.write(json.dumps(review_jsons[idx]) + '\n')

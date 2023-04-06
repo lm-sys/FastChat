@@ -36,7 +36,7 @@ To use the script for generating reviews with GPT-4, you need to `export` your O
 ```bash
 python eval_gpt_review.py -q table/question.jsonl -a /path/to/answer_1.jsonl /path/to/answer_2.jsonl -p table/prompt.jsonl -r table/reviewer.jsonl -o /path/to/review_output.jsonl
 ```
-The GPT-4 reviews will be saved in `/path/to/review_output.jsonl`. Note: you need to double check whether the parsed score pair are correct. Sometime GPT-4 may not give a structured answer.
+The GPT-4 reviews will be saved in `/path/to/review_output.jsonl`. Note: we implement some simple parsing code to extract the score pairs from GPT-4's reviews. However, you need to double check whether the parsed score pair are correct. Sometime the parsing logic may fail if GPT-4 doesn't give a structured answer.
 
 ## Visualize Results
 
