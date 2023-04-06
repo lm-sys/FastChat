@@ -1,4 +1,6 @@
 # FastChat
+![GitHub pull requests](https://img.shields.io/github/issues-pr/lm-sys/FastChat?style=plastic) ![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/lm-sys/FastChat) ![GitHub issue](https://img.shields.io/github/issues/lm-sys/FastChat?style=plastic) ![GitHub closed pull issue](https://img.shields.io/github/issues-closed-raw/lm-sys/FastChat)
+
 An open platform for training, serving, and evaluating large language model based chatbots.
 
 ## Release
