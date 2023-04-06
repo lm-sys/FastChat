@@ -3,12 +3,12 @@ Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
 import argparse
-import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModelForSeq2SeqLM
 
 from fastchat.conversation import conv_templates, SeparatorStyle
+from fastchat.model_wrappers import LLamaWrapper
 
 
 @torch.inference_mode()
@@ -93,9 +93,15 @@ def main(args):
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    # For GLM-6B only to address `ValueError: Loading THUDM/chatglm-6b requires you to execute 
+    # the tokenizer file in that repo on your local machine.`
+    if "glm" in model_name:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, trust_remote_code=True, low_cpu_mem_usage=True, **kwargs)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
 
     if args.device == "cuda" and num_gpus == 1:
         model.cuda()
@@ -117,15 +123,17 @@ def main(args):
 
         params = {
             "model": model_name,
-            "prompt": prompt,
             "temperature": args.temperature,
             "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+            "device": args.device,
         }
+
+        model_wrapper = LLamaWrapper(model, tokenizer)
 
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
-        for outputs in generate_stream(tokenizer, model, params, args.device):
+        for outputs in model_wrapper.generate_stream(prompt, params):
             outputs = outputs[len(prompt) + 1:].strip()
             outputs = outputs.split(" ")
             now = len(outputs)
