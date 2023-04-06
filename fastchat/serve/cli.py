@@ -9,10 +9,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
+from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 
 
 def load_model(model_name, device, num_gpus, load_8bit=False):
-    if device == "cuda":
+    if device == "cpu":
+        kwargs = {}
+    elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if load_8bit:
             if num_gpus != "auto" and int(num_gpus) != 1:
@@ -28,18 +31,22 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
                         "device_map": "auto",
                         "max_memory": {i: "13GiB" for i in range(num_gpus)},
                     })
-    elif device == "cpu":
-        kwargs = {}
+    elif device == "mps":
+        # Avoid bugs in mps backend by not using in-place operations.
+        kwargs = {"torch_dtype": torch.float16}
+        replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
     model = AutoModelForCausalLM.from_pretrained(model_name,
         low_cpu_mem_usage=True, **kwargs)
 
     # calling model.cuda() mess up weights if loading 8-bit weights
     if device == "cuda" and num_gpus == 1 and not load_8bit:
-        model.cuda()
+        model.to("cuda")
+    elif device == "mps":
+        model.to("mps")
 
     return model, tokenizer
 
@@ -78,6 +85,11 @@ def generate_stream(tokenizer, model, params, device,
             past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
+
+        if device == "mps":
+            # Switch to CPU by avoiding some bugs in mps backend.
+            last_token_logits = last_token_logits.float().to("cpu")
+
         if temperature < 1e-4:
             token = int(torch.argmax(last_token_logits))
         else:
@@ -155,7 +167,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-    parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--conv-template", type=str, default="v1")
