@@ -159,7 +159,6 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
     return conversation
 
 
-
 def preprocess(
     sources: Sequence[str],
     tokenizer: transformers.PreTrainedTokenizer,
