@@ -92,7 +92,8 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 
 ### Others (Quantization, More Platforms)
 
-You can load in 8-bit mode to reduce GPU memory usage. It is tested on a single 4090 and requires around 18GB of GPU memory for Vicuna-13B.
+You can load in 8-bit mode to reduce GPU memory usage with slightly degraded model quality.
+It is tested on a single 4090 and requires around 18GB of GPU memory for Vicuna-13B.
 Note that this mode only works on a single GPU.
 You are also required to install `bitsandbytes` according to the printed messages.
 
@@ -115,11 +116,6 @@ python3 -m fastchat.serve.controller
 python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...".
-
-For single GPU, you can also load in 8 bit. You are also required to install [bitsandbytes](https://github.com/TimDettmers/bitsandbytes). 
-```
-python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights --load_8bit
-```
 
 ### Send a test message
 ```bash
