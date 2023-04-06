@@ -136,10 +136,15 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
         kwargs = {}
     else:
         raise ValueError(f"Invalid device: {device}")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    
+    if model_name == "THUDM/chatglm-6b":
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        model = AutoModel.from_pretrained(model_name,
+            low_cpu_mem_usage=True, trust_remote_code=True, **kwargs).half().cuda()
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
 
     # calling model.cuda() mess up weights if loading 8-bit weights
     if device == "cuda" and num_gpus == 1 and not load_8bit:
@@ -208,36 +213,10 @@ def generate_stream(tokenizer, model, params, device,
 
 def main(args):
     model_name = args.model_name
-
-    # Model
-    if args.device == "cuda":
-        kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                })
-    elif args.device == "cpu":
-        kwargs = {}
-    else:
-        raise ValueError(f"Invalid device: {args.device}")
-
     
-    if model_name == "THUDM/chatglm-6b":
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_name,
-        low_cpu_mem_usage=True, trust_remote_code=True, **kwargs).half().cuda()
-    else:
-        model, tokenizer = load_model(args.model_name, args.device,
-        args.num_gpus, args.load_8bit)
-
-    if args.device == "cuda" and num_gpus == 1:
-        model.cuda()
-
+    # Model
+    model, tokenizer = load_model(args.model_name, args.device,
+    args.num_gpus, args.load_8bit)
     
     # Chat
     conv = conv_templates[args.conv_template].copy()
