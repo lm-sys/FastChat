@@ -19,6 +19,7 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
+from fastchat.serve.cli import load_model
 from fastchat.utils import (build_logger, server_error_msg,
     pretty_print_semaphore)
 
@@ -38,44 +39,28 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
-    if num_gpus == 1:
-        kwargs = {}
-    else:
-        kwargs = {
-            "device_map": "auto",
-            "max_memory": {i: "13GiB" for i in range(num_gpus)},
-        }
-
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, **kwargs)
-
-    if num_gpus == 1:
-        model.cuda()
-
-    if hasattr(model.config, "max_sequence_length"):
-        context_len = model.config.max_sequence_length
-    else:
-        context_len = 2048
-
-    return tokenizer, model, context_len
-
-
 class ModelWorker:
     def __init__(self, controller_addr, worker_addr,
-                 worker_id, no_register,
-                 model_path, model_name, num_gpus):
+                 worker_id, no_register, model_path, model_name,
+                 device, num_gpus, load_8bit=False):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
+        self.device = device
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
-        self.tokenizer, self.model, self.context_len = load_model(
-            model_path, num_gpus)
+        self.model, self.tokenizer = load_model(
+            model_path, device, num_gpus, load_8bit)
+
+        if hasattr(self.model.config, "max_sequence_length"):
+            self.context_len = self.model.config.max_sequence_length
+        elif hasattr(self.model.config, "max_position_embeddings"):
+            self.context_len = self.model.config.max_position_embeddings
+        else:
+            self.context_len = 2048
 
         if not no_register:
             self.register_to_controller()
@@ -153,13 +138,13 @@ class ModelWorker:
         for i in range(max_new_tokens):
             if i == 0:
                 out = model(
-                    torch.as_tensor([input_ids]).cuda(), use_cache=True)
+                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
                 attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device="cuda")
-                out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
+                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
+                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
@@ -247,7 +232,9 @@ if __name__ == "__main__":
         default="http://localhost:21001")
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
     parser.add_argument("--model-name", type=str)
+    parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -260,5 +247,7 @@ if __name__ == "__main__":
                          args.no_register,
                          args.model_path,
                          args.model_name,
-                         args.num_gpus)
+                         args.device,
+                         args.num_gpus,
+                         args.load_8bit)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

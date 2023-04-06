@@ -1,6 +1,6 @@
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 
 class SeparatorStyle(Enum):
@@ -23,6 +23,7 @@ class Conversation:
     begin_line: str = None
 
     skip_next: bool = False
+    conv_id: Any = None
 
     def get_prompt(self):
         if self.language == "zh":
@@ -73,25 +74,27 @@ class Conversation:
     def copy(self):
         return Conversation(
             system=self.system,
-            language=self.language,
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
             offset=self.offset,
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            begin_line=self.begin_line)
+            language=self.language,
+            begin_line=self.begin_line,
+            conv_id=self.conv_id)
 
     def dict(self):
         return {
             "system": self.system,
-            "language": self.language,
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
             "sep": self.sep,
             "sep2": self.sep2,
-            "begin_line": self.begin_line
+            "language": self.language,
+            "begin_line": self.begin_line,
+            "conv_id": self.conv_id,
         }
 
 
