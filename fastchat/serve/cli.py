@@ -11,7 +11,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 from fastchat.conversation import conv_templates, SeparatorStyle
 
 
-def load_model(model_name, num_gpus, device, load_8bit=False):
+def load_model(model_name, device, num_gpus, load_8bit=False):
     if device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if load_8bit:
@@ -109,8 +109,8 @@ def main(args):
     model_name = args.model_name
 
     # Model
-    model, tokenizer = load_model(args.model_name, args.num_gpus,
-        args.device, args.load_8bit)
+    model, tokenizer = load_model(args.model_name, args.device,
+        args.num_gpus, args.load_8bit)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
