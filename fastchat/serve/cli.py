@@ -9,7 +9,39 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
-from fastchat.serve.model_worker import load_model
+
+
+def load_model(model_name, num_gpus, device, load_8bit=False):
+    if device == "cuda":
+        kwargs = {"torch_dtype": torch.float16}
+        if load_8bit:
+            if num_gpus != "auto" and int(num_gpus) != 1:
+                print("8-bit weights are not supported on multiple GPUs. Revert to use one GPU.")
+            kwargs.update({"load_in_8bit": True, "device_map": "auto"})
+        else:
+            if num_gpus == "auto":
+                kwargs["device_map"] = "auto"
+            else:
+                num_gpus = int(num_gpus)
+                if num_gpus != 1:
+                    kwargs.update({
+                        "device_map": "auto",
+                        "max_memory": {i: "13GiB" for i in range(num_gpus)},
+                    })
+    elif device == "cpu":
+        kwargs = {}
+    else:
+        raise ValueError(f"Invalid device: {device}")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name,
+        low_cpu_mem_usage=True, **kwargs)
+
+    # calling model.cuda() mess up weights if loading 8-bit weights
+    if device == "cuda" and num_gpus == 1 and not load_8bit:
+        model.cuda()
+
+    return model, tokenizer
 
 
 @torch.inference_mode()
