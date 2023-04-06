@@ -7,6 +7,7 @@ import time
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+from fastchat.serve.serve_chatGLM import chatglm_generate_stream
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 
@@ -134,6 +135,9 @@ def main(args):
             "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
         }
+
+        if 'chatglm' in  model_name:
+            generate_stream = chatglm_generate_stream
 
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
