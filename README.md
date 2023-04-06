@@ -90,7 +90,7 @@ This runs on the CPU only and does not require GPU. It requires around 60GB of C
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
-### Others (Quantization, More Platforms)
+### Others (Quantization, Low-end Devices, and More Platforms)
 
 You can load in 8-bit mode to reduce GPU memory usage with slightly degraded model quality.
 It is tested on a single 4090 and requires around 18GB of GPU memory for Vicuna-13B.
