@@ -3,24 +3,21 @@ A model worker executes the model.
 """
 import argparse
 import asyncio
-import dataclasses
-import logging
 import json
-import time
-from typing import List, Union
 import threading
+import time
 import uuid
 
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
 import requests
-from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import uvicorn
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.responses import StreamingResponse
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import (build_logger, disable_torch_init, server_error_msg,
-    pretty_print_semaphore)
+                            pretty_print_semaphore)
 
 GB = 1 << 30
 
@@ -137,7 +134,6 @@ class ModelWorker:
         #cur_mem = torch.cuda.memory_allocated()
         #max_mem = torch.cuda.max_memory_allocated()
         #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
-
         tokenizer, model = self.tokenizer, self.model
 
         context = params["prompt"]
@@ -150,7 +146,6 @@ class ModelWorker:
 
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
-
         for i in range(max_new_tokens):
             if i == 0:
                 out = model(
@@ -166,7 +161,6 @@ class ModelWorker:
                             past_key_values=past_key_values)
                 logits = out.logits
                 past_key_values = out.past_key_values
-
             last_token_logits = logits[0][-1]
             if temperature < 1e-4:
                 token = int(torch.argmax(last_token_logits))
@@ -176,8 +170,7 @@ class ModelWorker:
 
             output_ids.append(token)
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
-
-            if output.endswith(stop_str):
+            if stop_str is not None and output.endswith(stop_str):
                 output = output[:-len(stop_str)]
                 stopped = True
             elif token == tokenizer.eos_token_id:
@@ -194,7 +187,6 @@ class ModelWorker:
 
             if stopped:
                 break
-
         del past_key_values
 
     def generate_stream_gate(self, params):

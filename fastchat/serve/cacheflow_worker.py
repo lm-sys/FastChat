@@ -1,30 +1,31 @@
 """
 A model worker executes the model based on Cacheflow.
+
+Commands to launch:
+ray start --head
+python3 -m fastchat.serve.cacheflow_worker --model-path path_to_vicuna
 """
 import argparse
 import asyncio
-import dataclasses
-import logging
 import json
-import time
-from typing import List, Union, Dict
 import threading
+import time
 import uuid
+from typing import List, Dict
+
+import requests
 import torch
 import uvicorn
-import requests
-
-import ray
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from starlette.responses import JSONResponse
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from cacheflow.utils import Counter, get_gpu_memory, get_cpu_memory
+from transformers import AutoTokenizer
+
 from cacheflow.master.server import Server, initialize_ray_cluster
-from cacheflow.sequence import Sequence, SequenceGroup
 from cacheflow.sampling_params import SamplingParams
+from cacheflow.sequence import Sequence, SequenceGroup
+from cacheflow.utils import Counter, get_gpu_memory, get_cpu_memory
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.utils import build_logger, disable_torch_init, server_error_msg, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore
 
 GB = 1 << 30
 TIMEOUT_TO_PREVENT_DEADLOCK = 1 # seconds
@@ -65,21 +66,18 @@ class CacheFlowWorker:
         self.model_name = model_name or model_path.split("/")[-1]
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
-        # self.tokenizer, self.model, self.context_len = load_model(
-            # model_path, num_gpus)
         self.block_size = block_size
 
+        # FIXME(Hao): we need to pass the tokenizer into cacheflow because we need
+        # to detect the stopping criteria "###".
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.seq_group_counter = Counter()
         self.seq_counter = Counter()
+        # FIXME(Hao): hard code context len
         self.context_len = 2048
-
-        # Note(Hao): here are hard-coded parameters
         # pipeline_parallel_size = 1,
         # tensor_parallel_size = 1,
-        # dtype = torch.float16,
-        #
-        # remote_server_class = ray.remote(num_cpus=0)(Server)
+        # dtype = torch.float16
         remote_server_class = Server
         self.server = remote_server_class(
             model=self.model_name,
@@ -155,7 +153,7 @@ class CacheFlowWorker:
             "queue_length": self.get_queue_length(),
         }
 
-    def server_step(self):
+    async def server_step(self):
         self.is_server_running = True
         updated_seq_groups = self.server.step()
         self.is_server_running = False
@@ -166,20 +164,13 @@ class CacheFlowWorker:
             self.sequence_group_events[group_id].set()
 
     async def generate_stream(self, params):
-        #cur_mem = torch.cuda.memory_allocated()
-        #max_mem = torch.cuda.max_memory_allocated()
-        #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
-
         tokenizer = self.tokenizer
-
         context = params["prompt"]
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
 
         input_ids = tokenizer(context).input_ids
-        output_ids = list(input_ids)
-
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
@@ -188,8 +179,9 @@ class CacheFlowWorker:
         sampling_params.stop_token_ids.add(tokenizer.eos_token_id)
         sampling_params.n = 1
         sampling_params.max_num_steps = max_new_tokens
+        sampling_params.temperature = temperature
         if stop_str is not None:
-            sampling_params.stop_func = stop_str
+            sampling_params.stop_str = stop_str
         # we might sample multiple sequences, but in chatbot, this is one
         seqs: List[Sequence] = []
         for _ in range(sampling_params.n):
@@ -208,11 +200,11 @@ class CacheFlowWorker:
         while True:
             # logger.info(f"Handling prompt: {context}, {self.is_server_running}")
             if not self.is_server_running:
-                self.server_step()
+                await self.server_step()
             try:
                 await asyncio.wait_for(group_event.wait(), timeout=TIMEOUT_TO_PREVENT_DEADLOCK)
             except:
-                logger.info(f"Exception happens for {group_id}!")
+                pass
             group_event.clear()
             # logger.info(f"Running for {context}, dick keys: {self.running_seq_groups.keys()}")
             seq_group = self.running_seq_groups[group_id]
@@ -278,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b")
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
-    parser.add_argument("--limit-model-concurrency", type=int, default=4)
+    parser.add_argument("--limit-model-concurrency", type=int, default=10000)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     # cacheflow specific params
