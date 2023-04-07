@@ -1,9 +1,12 @@
 """
 A model worker executes the model based on Cacheflow.
 
-Commands to launch:
-ray start --head
-python3 -m fastchat.serve.cacheflow_worker --model-path path_to_vicuna
+Install Cacheflow first. Then, assuming controller is live:
+1. ray start --head
+2. python3 -m fastchat.serve.cacheflow_worker --model-path path_to_vicuna
+
+launch Gradio:
+3. python3 -m fastchat.serve.gradio_web_server --concurrency-count 10000
 """
 import argparse
 import asyncio
