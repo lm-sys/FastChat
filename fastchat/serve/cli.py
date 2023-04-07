@@ -34,7 +34,7 @@ def prepare_inputs(input_ids, output_ids, past_key_values, device, model_config)
         }
 
 
-def process_logits(last_token_logits):
+def process_logits(params, last_token_logits):
     return last_token_logits
 
 
