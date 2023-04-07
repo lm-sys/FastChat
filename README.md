@@ -116,28 +116,35 @@ Contributions and pull requests are welcome.
 
 ## Serving with Web GUI
 
-### Launch a controller
+To serve using the WebUI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
+
+**Launch the controller**
 ```bash
 python3 -m fastchat.serve.controller
 ```
 
-### Launch a model worker
+This controller manages the distributed workers.
+
+**Launch the model worker**
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
-Wait until the process finishes loading the model and you see "Uvicorn running on ...".
+Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
 
-### Send a test message
+To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
 python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
-### Launch a gradio web server.
+**Launch the Gradio web server**
 ```bash
 python3 -m fastchat.serve.gradio_web_server
 ```
 
-### You can open your browser and chat with a model now.
+This is the user interface that users will interact with.
+
+By following these steps, you will be able to serve your models using the WebUI. You can open your browser and chat with a model now.
+
 
 ## Evaluation
 
