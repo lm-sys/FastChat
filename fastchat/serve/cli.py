@@ -17,12 +17,17 @@ from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_
 def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, checkpoint=None):
     if device == "cpu":
         kwargs = {}
+        device_num = -1
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if load_8bit:
             if num_gpus != "auto" and int(num_gpus) != 1:
                 print("8-bit weights are not supported on multiple GPUs. Revert to use one GPU.")
             kwargs.update({"load_in_8bit": True, "device_map": "auto"})
+        elif checkpoint is not None:
+            if num_gpus == "auto":
+                kwargs["device_map"] = "auto"
+            device_num = 0
         else:
             if num_gpus == "auto":
                 kwargs["device_map"] = "auto"
@@ -37,16 +42,13 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, check
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
-    elif device == 0:
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
     else:
         raise ValueError(f"Invalid device: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 
     if checkpoint is not None:
-        model = load_quant(model_name, checkpoint, args.wbits, args.groupsize, args.device)
+        model = load_quant(model_name, checkpoint, args.wbits, args.groupsize, device_num)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, **kwargs)
 
@@ -55,8 +57,8 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, check
         model.to("cuda")
     elif device == "mps":
         model.to("mps")
-    elif device == 0:
-        model.to("cuda")
+    elif device == "cuda" and checkpoint is not None:
+        model.to('cuda')
 
     if (device == "mps" or device == "cpu") and load_8bit:
         compress_module(model)
@@ -183,7 +185,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-#    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--conv-template", type=str, default="v1")
@@ -198,10 +200,6 @@ if __name__ == "__main__":
     parser.add_argument(
         '--groupsize', type=int, default=128,
         help='Groupsize to use for quantization; default uses full row.'
-    )
-    parser.add_argument(
-        '--device', type=int, default=0,
-        help='The device used to load the model when using safetensors. Default device is "cpu" or specify, 0,1,2,3,... for GPU device.'
     )
     args = parser.parse_args()
     main(args)
