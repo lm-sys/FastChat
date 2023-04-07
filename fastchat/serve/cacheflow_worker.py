@@ -17,6 +17,7 @@ import requests
 import ray
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from starlette.responses import JSONResponse
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from cacheflow.utils import Counter, get_gpu_memory, get_cpu_memory
 from cacheflow.master.server import Server, initialize_ray_cluster
@@ -26,6 +27,7 @@ from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import build_logger, disable_torch_init, server_error_msg, pretty_print_semaphore
 
 GB = 1 << 30
+TIMEOUT_TO_PREVENT_DEADLOCK = 1 # seconds
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
@@ -40,32 +42,6 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-def load_model(model_path, num_gpus):
-    disable_torch_init()
-
-    if num_gpus == 1:
-        kwargs = {}
-    else:
-        kwargs = {
-            "device_map": "auto",
-            "max_memory": {i: "13GiB" for i in range(num_gpus)},
-        }
-
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForCausalLM.from_pretrained(
-       model_path, torch_dtype=torch.float16, **kwargs)
-
-    if num_gpus == 1:
-        model.cuda()
-
-    if hasattr(model.config, "max_sequence_length"):
-        context_len = model.config.max_sequence_length
-    else:
-        context_len = 2048
-
-    return tokenizer, model, context_len
-
-
 class CacheFlowWorker:
     def __init__(self,
                  controller_addr,
@@ -78,7 +54,7 @@ class CacheFlowWorker:
                  block_size,
                  seed,
                  swap_space,
-                 max_batch_size,
+                 max_num_batched_tokens,
                  distributed_init_method,
                  all_stage_devices):
         self.controller_addr = controller_addr
@@ -114,7 +90,7 @@ class CacheFlowWorker:
             dtype=torch.float16,
             seed=seed,
             swap_space=swap_space,
-            max_batch_size=max_batch_size,
+            max_num_batched_tokens=max_num_batched_tokens,
             num_nodes=1,
             num_devices_per_node=4,
             distributed_init_method=distributed_init_method,
@@ -183,13 +159,13 @@ class CacheFlowWorker:
         self.is_server_running = True
         updated_seq_groups = self.server.step()
         self.is_server_running = False
+        # Notify the waiting coroutines that there new outputs ready.
         for seq_group in updated_seq_groups:
             group_id = seq_group.group_id
             self.running_seq_groups[group_id] = seq_group
-            # self.sequence_group_events[group_id].set()
+            self.sequence_group_events[group_id].set()
 
-    # @torch.inference_mode()
-    def generate_stream(self, params):
+    async def generate_stream(self, params):
         #cur_mem = torch.cuda.memory_allocated()
         #max_mem = torch.cuda.max_memory_allocated()
         #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
@@ -212,7 +188,6 @@ class CacheFlowWorker:
         sampling_params.stop_token_ids.add(tokenizer.eos_token_id)
         sampling_params.n = 1
         sampling_params.max_num_steps = max_new_tokens
-        print(f"==========stop str: {stop_str}=========")
         if stop_str is not None:
             sampling_params.stop_func = stop_str
         # we might sample multiple sequences, but in chatbot, this is one
@@ -224,19 +199,27 @@ class CacheFlowWorker:
 
         arrival_time = time.time()
         group_id = next(self.seq_group_counter)
+        # logger.info(f"Group {group_id} arrives at {time.time()}")
         seq_group = SequenceGroup(group_id, seqs, arrival_time)
-        # group_event = asyncio.Event()
-        # self.sequence_group_events[group_id] = group_event
+        group_event = asyncio.Event()
+        self.running_seq_groups[group_id] = seq_group
+        self.sequence_group_events[group_id] = group_event
         self.server.add_sequence_groups([(seq_group, sampling_params)])
         while True:
+            # logger.info(f"Handling prompt: {context}, {self.is_server_running}")
             if not self.is_server_running:
                 self.server_step()
-            # await asyncio.wait_for(group_event.wait(), timeout=1)
-            # group_event.clear()
+            try:
+                await asyncio.wait_for(group_event.wait(), timeout=TIMEOUT_TO_PREVENT_DEADLOCK)
+            except:
+                logger.info(f"Exception happens for {group_id}!")
+            group_event.clear()
+            # logger.info(f"Running for {context}, dick keys: {self.running_seq_groups.keys()}")
             seq_group = self.running_seq_groups[group_id]
             all_outputs = []
             for seq in seq_group.seqs:
                 token_ids = seq.get_token_ids()
+                # logger.info(f"token ids: {token_ids} for {group_id}")
                 output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
                 if stop_str is not None:
                     if output.endswith(stop_str):
@@ -249,71 +232,10 @@ class CacheFlowWorker:
             }
             yield (json.dumps(ret) + "\0").encode("utf-8")
             if seq_group.is_finished():
+                del self.running_seq_groups[group_id]
+                del self.sequence_group_events[group_id]
                 break
 
-
-            # if all_outputs[0][-len(stop_str):] == stop_str:
-            #     print(all_outputs[0][-len(stop_str):])
-            #     break
-
-
-
-
-        # for i in range(max_new_tokens):
-        #     if i == 0:
-        #         out = model(
-        #             torch.as_tensor([input_ids]).cuda(), use_cache=True)
-        #         logits = out.logits
-        #         past_key_values = out.past_key_values
-        #     else:
-        #         attention_mask = torch.ones(
-        #             1, past_key_values[0][0].shape[-2] + 1, device="cuda")
-        #         out = model(input_ids=torch.as_tensor([[token]], device="cuda"),
-        #                     use_cache=True,
-        #                     attention_mask=attention_mask,
-        #                     past_key_values=past_key_values)
-        #         logits = out.logits
-        #         past_key_values = out.past_key_values
-        #
-        #     last_token_logits = logits[0][-1]
-        #     if temperature < 1e-4:
-        #         token = int(torch.argmax(last_token_logits))
-        #     else:
-        #         probs = torch.softmax(last_token_logits / temperature, dim=-1)
-        #         token = int(torch.multinomial(probs, num_samples=1))
-        #
-        #     output_ids.append(token)
-        #     output = tokenizer.decode(output_ids, skip_special_tokens=True)
-        #     if output.endswith(stop_str):
-        #         output = output[:-len(stop_str)]
-        #         stopped = True
-        #     elif token == tokenizer.eos_token_id:
-        #         stopped = True
-        #     else:
-        #         stopped = False
-        #
-        #     if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-        #         ret = {
-        #             "text": output,
-        #             "error_code": 0,
-        #         }
-        #         yield json.dumps(ret).encode() + b"\0"
-        #
-        #     if stopped:
-        #         break
-        #
-        # del past_key_values
-
-    def generate_stream_gate(self, params):
-        try:
-            for x in self.generate_stream(params):
-                yield x
-        except torch.cuda.OutOfMemoryError:
-            ret = {
-                "text": server_error_msg,
-                "error_code": 1,
-            }
-            yield json.dumps(ret).encode() + b"\0"
 
 app = FastAPI()
 model_semaphore = None
@@ -332,10 +254,12 @@ async def generate_stream(request: Request):
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-    generator = worker.generate_stream_gate(params)
+    logger.info(f"received one request: {request}")
+    # generator = worker.generate_stream_gate(params)
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
-    return StreamingResponse(generator, background=background_tasks)
+    # return StreamingResponse(generator, background=background_tasks)
+    return StreamingResponse(worker.generate_stream(params), background=background_tasks)
 
 
 @app.post("/worker_get_status")
@@ -362,7 +286,7 @@ if __name__ == "__main__":
                         help='token block size')
     parser.add_argument('--swap-space', type=int, default=20,
                         help='CPU swap space size (GiB) per GPU')
-    parser.add_argument('--max-batch-size', type=int, default=2560,
+    parser.add_argument('--max-num-batched-tokens', type=int, default=2560,
                         help='maximum number of batched tokens')
     args = parser.parse_args()
 
@@ -380,7 +304,7 @@ if __name__ == "__main__":
                              args.block_size,
                              seed,
                              args.swap_space,
-                             args.max_batch_size,
+                             args.max_num_batched_tokens,
                              distributed_init_method,
                              all_stage_devices)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

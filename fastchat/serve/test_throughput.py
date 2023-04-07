@@ -30,25 +30,26 @@ def main():
     conv = default_conversation.copy()
     conv.append_message(conv.roles[0], args.message)
     # prompt = conv.get_prompt()
-    prompt = "Tell me a story with more than 1000 words"
+    prompt = [f"Tell me a story with more than {''.join([str(i+1)] * 5)} words"
+              for i in range(args.n_thread)]
 
+    prompt_len = len(prompt[0].split(" "))
     headers = {"User-Agent": "fastchat Client"}
-    pload = {
+    ploads = [{
         "model": args.model_name,
-        "prompt": prompt,
+        "prompt": prompt[i],
         "max_new_tokens": args.max_new_tokens,
         "temperature": 0.0,
         # "stop": conv.sep,
-    }
+    } for i in range(len(prompt))]
 
     def send_request(results, i):
         response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
-                                 json=pload, stream=True)
+                                 json=ploads[i], stream=False)
         results[i] = response
 
-
-
     # use args.n_threads to prompt the backend
+    tik = time.time()
     threads = []
     results = [None] * args.n_thread
     for i in range(args.n_thread):
@@ -59,23 +60,32 @@ def main():
     for t in threads:
         t.join()
 
+    print(f"Time (POST): {time.time() - tik} s")
     # print(prompt.replace(conv.sep, "\n"), end="")
-    tik = time.time()
-    for result in results:
-        # print(result.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
-        m = result.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0")
-        k = list(m)
-        print(f"It takes {time.time() - tik}")
-        print(k)
-        print(f"It takes {time.time() - tik}")
-        # print(result.text)
-        # for chunk in result.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+    n_words = 0
+    # for i, result in enumerate(results):
+    #     # print(result.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
+    #     #print(f"It takes {time.time() - tik}")
+    #     #print(json.loads(k[-2].decode("utf-8"))["text"])
+    #     # json.loads(k[-2].decode("utf-8"))["text"]
+    #     n_words += len(result.json()["text"]) - prompt_len
+
+    # if streaming:
+    for i, response in enumerate(results):
+        # print(prompt[i].replace(conv.sep, "\n"), end="")
+        k = list(response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
+        response_new_words = json.loads(k[-2].decode("utf-8"))["text"]
+        n_words += len(response_new_words.split(" ")) - len(prompt[i].split(" "))
+        # for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         #     if chunk:
         #         data = json.loads(chunk.decode("utf-8"))
-        #         print(data)
-                # output = data["text"].split(conv.sep)[-1]
-                # print(output, end="\r")
+        #         output = data["text"].split(conv.sep)[-1]
+        #         # print(output, end="\r")
+        #         print(output)
 
+    time_seconds = time.time() - tik
+    print(f"Time (total): {time_seconds} to finish, n threads: {args.n_thread}, "
+          f"throughput: {n_words / time_seconds} words/s.")
 
 
 if __name__ == "__main__":
