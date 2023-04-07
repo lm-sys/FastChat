@@ -52,7 +52,7 @@ We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to compl
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
 1. Get the original LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
-2. Use the following scripts to get Vicuna weights by applying our delta. It will automatically download delta weights from our Hugging Face account.
+2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face account.
 
 **NOTE**:
 Our released weights are only compatible with the latest main branch of huggingface/transformers.
@@ -68,12 +68,18 @@ python3 -m fastchat.model.apply_delta \
 ```
 
 ### Vicuna-7B
-Coming soon.
+This conversion command needs around 30 GB of CPU RAM.
+```bash
+python3 -m fastchat.model.apply_delta \
+    --base /path/to/llama-7b \
+    --target /output/path/to/vicuna-7b \
+    --delta lmsys/vicuna-7b-delta-v0
+```
 
 ## Inference with Command Line Interface
 
 ### Single GPU
-The command below requires around 28GB of GPU memory for Vicuna-13B.
+The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
@@ -85,17 +91,21 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
 ```
 
 ### CPU Only
-This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B.
+This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
-### Others (Quantization, Low-end Devices, and More Platforms)
+### Metal Backend (Mac computers with Apple silicon or AMD GPUs)
+Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8bit` to turn on 8-bit compression.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
+```
 
-You can load in 8-bit mode to reduce GPU memory usage with slightly degraded model quality.
-It is tested on a single 4090 and requires around 18GB of GPU memory for Vicuna-13B.
-Note that this mode only works on a single GPU.
-You are also required to install `bitsandbytes` according to the printed messages.
+### Others (Quantization, Low-end Devices, and More Platforms)
+If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
+It works with CPU, GPU, and Metal.
+This can reduce the memory usage by around half with slightly degraded model quality.
 
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --load-8bit
@@ -106,28 +116,35 @@ Contributions and pull requests are welcome.
 
 ## Serving with Web GUI
 
-### Launch a controller
+To serve using the WebUI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
+
+**Launch the controller**
 ```bash
 python3 -m fastchat.serve.controller
 ```
 
-### Launch a model worker
+This controller manages the distributed workers.
+
+**Launch the model worker**
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
-Wait until the process finishes loading the model and you see "Uvicorn running on ...".
+Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
 
-### Send a test message
+To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
 python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
-### Launch a gradio web server.
+**Launch the Gradio web server**
 ```bash
 python3 -m fastchat.serve.gradio_web_server
 ```
 
-### You can open your browser and chat with a model now.
+This is the user interface that users will interact with.
+
+By following these steps, you will be able to serve your models using the WebUI. You can open your browser and chat with a model now.
+
 
 ## Evaluation
 
