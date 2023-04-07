@@ -6,7 +6,7 @@ import argparse
 import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer , AutoModel
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 from fastchat.conversation import conv_templates, SeparatorStyle
@@ -33,10 +33,17 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
         kwargs = {}
     else:
         raise ValueError(f"Invalid device: {device}")
+    
+    kwargs['trust_remote_code'] = True
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(model_name,trust_remote_code=True) 
+
+    if 'chatglm' in model_name:
+        model = AutoModel.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
 
     # calling model.cuda() mess up weights if loading 8-bit weights
     if device == "cuda" and num_gpus == 1 and not load_8bit:

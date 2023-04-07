@@ -18,9 +18,8 @@ def chatglm_generate_stream(tokenizer, model, params, device,
         "logits_processor": None
     }
 
-    outputs, _ = model.chat(tokenizer,query,None)
-    outputs = outputs.split(" ")
+    hist = []
     output = query + "#"
-    for token in outputs:
-        output = output + " " + token
+    for token , hist in model.stream_chat(tokenizer,query,hist):
+        output += token + " "
         yield output
