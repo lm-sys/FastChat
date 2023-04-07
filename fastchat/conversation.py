@@ -7,6 +7,7 @@ class SeparatorStyle(Enum):
     """Different separator style."""
     SINGLE = auto()
     TWO = auto()
+    ZH = auto()
 
 
 @dataclasses.dataclass
@@ -16,29 +17,14 @@ class Conversation:
     roles: List[str]
     messages: List[List[str]]
     offset: int
-    language: str = "en"
     sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
     sep2: str = None
-    begin_line: str = None
 
     skip_next: bool = False
     conv_id: Any = None
 
     def get_prompt(self):
-        if self.language == "zh":
-            ret = ""
-            if len(self.messages) == 2 and self.messages[1][1] is None:
-                return self.messages[0][1]
-            for i, (role, message) in enumerate(self.messages):
-                if i % 2 == 0:
-                    ret += self.begin_line.format(i//2)
-                if message:
-                    ret += role + "：" + message + "\n"
-                else:
-                    ret += role + "："
-            return ret
-        
         if self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
             for role, message in self.messages:
@@ -56,8 +42,24 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.ZH:
+            ret = ""
+            # return query as prompt for the first message
+            if len(self.messages) == 2 and self.messages[1][1] is None:
+                return self.messages[0][1]
+            for i, (role, message) in enumerate(self.messages):
+                if i % 2 == 0:
+                    ret += "[Round {}]\n".format(i//2)
+                # use chinese colon
+                if message:
+                    ret += role + "：" + message + "\n"
+                else:
+                    ret += role + "："
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
+    
+        
 
     def append_message(self, role, message):
         self.messages.append([role, message])
@@ -80,8 +82,6 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            language=self.language,
-            begin_line=self.begin_line,
             conv_id=self.conv_id)
 
     def dict(self):
@@ -92,8 +92,6 @@ class Conversation:
             "offset": self.offset,
             "sep": self.sep,
             "sep2": self.sep2,
-            "language": self.language,
-            "begin_line": self.begin_line,
             "conv_id": self.conv_id,
         }
 
@@ -168,13 +166,11 @@ conv_bair_v1 = Conversation(
 
 conv_chatglm_v1 = Conversation(
     system=None,
-    language="zh",
     roles=("问", "答"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.SINGLE,
-    sep=None,
-    begin_line="[Round {}]\n"
+    sep_style=SeparatorStyle.ZH,
+    sep=None
 )
 
 
