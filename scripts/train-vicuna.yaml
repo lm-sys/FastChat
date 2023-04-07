@@ -33,7 +33,7 @@ setup: |
   cd ~
   git clone https://github.com/huggingface/transformers.git
   cd transformers
-  git checkout cae78c46 # pin to latest commit
+  git checkout 41a2f3529c6b56866c317031375ffd3e7b8bea01
   pip install .
   cd ~/sky_workdir
 

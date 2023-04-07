@@ -220,16 +220,19 @@ class Controller:
     def worker_api_get_status(self):
         model_names = set()
         speed = 0
+        queue_length = 0
 
         for w_name in self.worker_info:
             worker_status = self.get_worker_status(w_name)
             if worker_status is not None:
                 model_names.update(worker_status["model_names"])
                 speed += worker_status["speed"]
+                queue_length += worker_status["queue_length"]
 
         return {
             "model_names": list(model_names),
             "speed": speed,
+            "queue_length": queue_length,
         }
 
 

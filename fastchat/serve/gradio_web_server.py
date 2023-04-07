@@ -4,6 +4,7 @@ import datetime
 import json
 import os
 import time
+import uuid
 
 import gradio as gr
 import requests
@@ -27,6 +28,7 @@ disable_btn = gr.Button.update(interactive=False)
 
 priority = {
     "vicuna-13b": "aaaaaaa",
+    "koala-13b": "aaaaaab",
 }
 
 
@@ -180,6 +182,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         else:
             template_name = "v1"
         new_state = conv_templates[template_name].copy()
+        new_state.conv_id = uuid.uuid4().hex
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
@@ -226,13 +229,13 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
-                    output = data["text"]
+                    output = data["text"] + f" (error_code: {data['error_code']})"
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.03)
+                time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg
+        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
         return
 
@@ -257,19 +260,20 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models
-- Blog post: [Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality](https://vicuna.lmsys.org)
-- Code: [Github](https://github.com/lm-sys/FastChat)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat)
+- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
+- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
-**<span style="color:red">Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.</span>**
+Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.
 For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
-
 
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
+- [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
-- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models  
+- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
 
 Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
@@ -308,11 +312,11 @@ def build_demo():
 
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         with gr.Row():
-            with gr.Column(scale=10):
+            with gr.Column(scale=20):
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
-            with gr.Column(scale=1, min_width=60):
-                submit_btn = gr.Button(value="Submit", visible=False)
+            with gr.Column(scale=1, min_width=50):
+                submit_btn = gr.Button(value="Send", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)

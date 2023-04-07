@@ -2,25 +2,40 @@
 An open platform for training, serving, and evaluating large language model based chatbots.
 
 ## Release
+
+<p align="center">
+<a href="https://vicuna.lmsys.org"><img src="assets/vicuna-logo.jpeg" width="20%"></a>
+</p>
+
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
-
-<!-- ![demo](assets/demo-narrow.gif) -->
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
-**Announcement:** Thank you for checking out our project and your interest! We plan to release the model weights once we have addressed all legal concerns and have a low-resource version of the inference code ready. Based on our current timeline, it will be available by early next week. Please stay tuned! :llama:
-
 ## Contents
 - [Install](#install)
-- [Serving](#serving)
+- [Vicuna Weights](#vicuna-weights)
+- [Inference with Command Line Interface](#inference-with-command-line-interface)
+- [Serving with Web GUI](#serving-with-web-gui)
 - [Evaluation](#evaluation)
 - [Fine-tuning](#fine-tuning)
 
 ## Install
 
-1. Clone this repository and navigate to FastChat folder
+### Method 1: With pip
+
+```bash
+# Install FastChat
+pip3 install fschat
+
+# Install the latest main branch of huggingface/transformers
+pip3 install git+https://github.com/huggingface/transformers
+```
+
+### Method 2: From source
+
+1. Clone this repository and navigate to the FastChat folder
 ```bash
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
@@ -32,43 +47,104 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-3. Install the latest main branch of huggingface/transformers
+## Vicuna Weights
+We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
+You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
+
+1. Get the original LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
+2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face account.
+
+**NOTE**:
+Our released weights are only compatible with the latest main branch of huggingface/transformers.
+We install the correct version of transformers when fastchat is installed.
+
+### Vicuna-13B
+This conversion command needs around 60 GB of CPU RAM.
 ```bash
-pip3 install git+https://github.com/huggingface/transformers
+python3 -m fastchat.model.apply_delta \
+    --base /path/to/llama-13b \
+    --target /output/path/to/vicuna-13b \
+    --delta lmsys/vicuna-13b-delta-v0
 ```
 
-## Serving
-We plan to release the model weights by providing a version of delta weights that build on the original LLaMA weights, but we are still figuring out a proper way to do so.
-In this example, we demonstrate the usage of our distributed serving system using OPT models.
-Later, you can apply similar commands to serve Vicuna, just as shown in our demo.
-
-### Command Line Interface
+### Vicuna-7B
+This conversion command needs around 30 GB of CPU RAM.
+```bash
+python3 -m fastchat.model.apply_delta \
+    --base /path/to/llama-7b \
+    --target /output/path/to/vicuna-7b \
+    --delta lmsys/vicuna-7b-delta-v0
 ```
-python3 -m fastchat.serve.cli --model-name facebook/opt-1.3b
+
+## Inference with Command Line Interface
+
+### Single GPU
+The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
 
-### Web UI
+### Multiple GPUs
+If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
+```
 
-#### Launch a controller
+### CPU Only
+This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
+```
+
+### Metal Backend (Mac computers with Apple silicon or AMD GPUs)
+Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8bit` to turn on 8-bit compression.
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
+```
+
+### Others (Quantization, Low-end Devices, and More Platforms)
+If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
+It works with CPU, GPU, and Metal.
+This can reduce the memory usage by around half with slightly degraded model quality.
+
+```
+python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --load-8bit
+```
+
+Besides, we are actively exploring more methods to make the model easier to run on more platforms.
+Contributions and pull requests are welcome.
+
+## Serving with Web GUI
+
+To serve using the WebUI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
+
+**Launch the controller**
 ```bash
 python3 -m fastchat.serve.controller
 ```
 
-#### Launch a model worker
+This controller manages the distributed workers.
+
+**Launch the model worker**
 ```bash
-python3 -m fastchat.serve.model_worker --model-path facebook/opt-1.3b
+python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
+```
+Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
+
+To ensure that your model worker is connected to your controller properly, send a test message using the following command:
+```bash
+python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
-#### Send a test message
-```bash
-python3 -m fastchat.serve.test_message
-```
-
-#### Launch a gradio web server.
+**Launch the Gradio web server**
 ```bash
 python3 -m fastchat.serve.gradio_web_server
 ```
-#### You can open your brower and chat with a model now.
+
+This is the user interface that users will interact with.
+
+By following these steps, you will be able to serve your models using the WebUI. You can open your browser and chat with a model now.
+
 
 ## Evaluation
 
@@ -92,7 +168,7 @@ Vicuna is created by fine-tuning a LLaMA base model using approximately 70K user
 Due to some concerns, we may not release the data at the moment. If you would like to try the fine-tuning code, you can try to run it with our [preprocessed alpaca dataset](playground/data/alpaca-data-conversation.json) (originally from [here](https://github.com/tatsu-lab/stanford_alpaca)).
 
 ### Code and Hyperparameters
-We fine-tune the model using the code from [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), with some modifications to support gradient checkpointing and [Flash Attention](https://github.com/HazyResearch/flash-attention). We use the similar hyperparameters as the Stanford Alpaca.
+We fine-tune the model using the code from [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), with some modifications to support gradient checkpointing and [Flash Attention](https://github.com/HazyResearch/flash-attention). We use similar hyperparameters as the Stanford Alpaca.
 
 | Hyperparameter | Global Batch Size | Learning rate | Epochs | Max length | Weight decay |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -127,7 +203,7 @@ sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
 ```
 
 ### Fine-tuning with Local GPUs
-Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on less GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
+Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on fewer GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
 ```bash
 torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
     fastchat/train/train_mem.py \
