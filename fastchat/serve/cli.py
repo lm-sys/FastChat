@@ -14,7 +14,7 @@ from fastchat.serve.gptq.llama_inference import load_quant
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 
 
-def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, checkpoint=None):
+def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, checkpoint=None, wbits=4, groupsize=128):
     if device == "cpu":
         kwargs = {}
         device_num = -1
@@ -48,7 +48,7 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False, check
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 
     if checkpoint is not None:
-        model = load_quant(model_name, checkpoint, args.wbits, args.groupsize, device_num)
+        model = load_quant(model_name, checkpoint, wbits, groupsize, device_num)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, **kwargs)
 
@@ -140,7 +140,8 @@ def main(args):
 
     # Model
     model, tokenizer = load_model(args.model_name, args.device,
-        args.num_gpus, args.load_8bit, args.debug, args.checkpoint)
+        args.num_gpus, args.load_8bit, args.debug, args.checkpoint,
+        args.wbits, args.groupsize)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
