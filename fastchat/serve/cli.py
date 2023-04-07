@@ -13,7 +13,7 @@ from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 
 
-def load_model(model_name, device, num_gpus, load_8bit=False):
+def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -52,7 +52,7 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
     if (device == "mps" or device == "cpu") and load_8bit:
         compress_module(model)
 
-    if args.debug:
+    if debug:
         print(model)
 
     return model, tokenizer
@@ -129,7 +129,7 @@ def main(args):
 
     # Model
     model, tokenizer = load_model(args.model_name, args.device,
-        args.num_gpus, args.load_8bit)
+        args.num_gpus, args.load_8bit, args.debug)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
