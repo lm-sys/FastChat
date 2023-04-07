@@ -9,10 +9,10 @@ import torch
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM, LlamaTokenizer
 
 from fastchat.conversation import conv_templates, SeparatorStyle
-from chatglm import prepare_inputs_chatglm, process_logits_chatglm
+from fastchat.serve.chatglm import prepare_inputs_chatglm, process_logits_chatglm
 
 
-def prepare_inputs(input_ids, output_ids, past_key_values, device):
+def prepare_inputs(input_ids, output_ids, past_key_values, device, model_config):
     if past_key_values == None:
         input_ids = torch.as_tensor([input_ids], device=device)
         return {
@@ -58,10 +58,14 @@ def load_model(model_name, device, num_gpus, load_8bit=False):
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    if model_name == "THUDM/chatglm-6b":
+    if "chatglm-6b" in model_name:
         tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_name,
-            low_cpu_mem_usage=True, trust_remote_code=True, **kwargs).half().cuda()
+            low_cpu_mem_usage=True, trust_remote_code=True, **kwargs)
+        if device == "cpu":
+            model = model.float()
+        else:
+            model = model.half()
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(model_name,
@@ -96,7 +100,8 @@ def generate_stream(tokenizer, model, params, device,
         model_inputs = params["prepare_input_function"](input_ids=input_ids,
                         output_ids=output_ids,
                         past_key_values=past_key_values,
-                        device=device)
+                        device=device,
+                        model_config=model.config)
         model_inputs["use_cache"] = True
 
         out = model(**model_inputs)
@@ -161,7 +166,7 @@ def main(args):
             "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
             "prepare_input_function": prepare_inputs_chatglm if "chatglm" in model_name else prepare_inputs,
-            "process_logits": process_logits_chatglm if "chatglm" in model_name else prepare_inputs,
+            "process_logits": process_logits_chatglm if "chatglm" in model_name else process_logits,
             "eos_token_id": model.config.eos_token_id if "chatglm" in model_name else tokenizer.eos_token_id,
         }
 
