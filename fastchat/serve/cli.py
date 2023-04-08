@@ -12,10 +12,25 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 from rich.console import Console
 from rich.markdown import Markdown
 
 from fastchat.serve.inference import chat_loop, ChatIO
+
+# Create custom key bindings
+bindings = KeyBindings()
+
+# Bind Shift+Enter to create a new line
+@bindings.add(Keys.ShiftEnter)
+def _(event):
+    event.current_buffer.insert_text('\n')
+
+# Bind Enter to finalize the input
+@bindings.add(Keys.Enter)
+def _(event):
+    event.current_buffer.validate_and_handle()
 
 
 class SimpleChatIO(ChatIO):
@@ -44,7 +59,7 @@ class MarkdownChatIO(ChatIO):
             completer=self._completer,
             multiline=True,
             auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=None)
+            key_bindings=bindings)
         self._console.print('\n')
         return prompt_input
 
@@ -52,7 +67,7 @@ class MarkdownChatIO(ChatIO):
         self._console.print(f"{role}: ")
 
     def append_output(self, output: str):
-        self._console.print(output, end="")
+        self._console.print(output, end=" ")
 
     def finalize_output(self, output: str):
         self._console.print(output, end="\n\n")
