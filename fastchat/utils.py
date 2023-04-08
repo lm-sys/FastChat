@@ -80,7 +80,7 @@ class StreamToLogger(object):
             # By default sys.stdout.write() expects '\n' newlines and then
             # translates them so this is still cross platform.
             if line[-1] == '\n':
-                encoded_message = self.linebuf.encode('utf-8', 'ignore').decode('utf-8')
+                encoded_message = line.encode('utf-8', 'ignore').decode('utf-8')
                 self.logger.log(self.log_level, encoded_message.rstrip())
             else:
                 self.linebuf += line
