@@ -43,12 +43,7 @@ cd FastChat
 
 If you are running on Mac:
 ```bash
-brew install rust 
-```
-
-For some Apple Silicon (M1 | M2) users, it may be necessary to install cmake:
-```bash
-brew install cmake
+brew install rust cmake
 ```
 
 2. Install Package
