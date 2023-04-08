@@ -19,7 +19,6 @@ def chatglm_generate_stream(tokenizer, model, params, device,
     }
 
     hist = []
-    output = query + "#"
     for token , hist in model.stream_chat(tokenizer,query,hist):
-        output += token + " "
+        output = query + "#" + token + " "
         yield output
