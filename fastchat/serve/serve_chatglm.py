@@ -18,7 +18,13 @@ def chatglm_generate_stream(tokenizer, model, params, device,
         "logits_processor": None
     }
 
+
+    prompt = ""
+    for i, (old_query, response) in enumerate(params["conv"].messages):
+        prompt += "[Round {}]\n问：{}\n答：{}\n".format(i, old_query, response)
+    prompt += "[Round {}]\n问：{}\n答：".format(len(params["conv"].messages), query)
+
     hist = []
-    for token , hist in model.stream_chat(tokenizer,query,hist):
+    for token , hist in model.stream_chat(tokenizer,prompt,hist):
         output = query + "#" + token + " "
         yield output

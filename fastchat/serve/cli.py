@@ -141,6 +141,7 @@ def main(args):
             "temperature": args.temperature,
             "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+            "conv": conv,
         }
 
         if 'chatglm' in  str(type(model)):
