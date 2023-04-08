@@ -201,14 +201,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         return
 
     # Construct prompt
-    prompt = state.get_prompt()
+    if "chatglm" in model_name:
+        prompt = state.messages[state.offset:]
+        skip_echo_len = len(state.messages[-2][1]) + 1
+    else:
+        prompt = state.get_prompt()
+        skip_echo_len = len(prompt) + 1
 
     # Make requests
     pload = {
         "model": model_name,
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": min(int(max_new_tokens), 1536),
+        "max_new_tokens": int(max_new_tokens),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -224,7 +229,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             if chunk:
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"][len(prompt) + 1:].strip()
+                    output = data["text"][skip_echo_len:].strip()
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -266,12 +271,11 @@ notice_markdown = ("""
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
-Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.
-For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
 
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
+- [ChatGLM](https://chatglm.cn/blog): An Open Bilingual Dialogue Language Model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
 
