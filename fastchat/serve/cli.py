@@ -14,6 +14,7 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import InMemoryHistory
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.live import Live
 
 from fastchat.serve.inference import chat_loop, ChatIO
 
@@ -57,6 +58,35 @@ class MarkdownChatIO(ChatIO):
 
     def finalize_output(self, output: str):
         self._console.print(output, end="\n\n")
+
+    def stream_output(self, role: str, output_stream, skip_echo_len: int):
+        """Stream output from a role."""
+        self.prompt_for_output(role)
+        pre = 0
+        # Create a Live context for updating the console output
+        with Live(console=self._console, refresh_per_second=4) as live:
+            accumulated_text = ""
+            
+            # Read lines from the stream
+            for outputs in output_stream:
+                outputs = outputs[skip_echo_len:].strip()
+                outputs = outputs.split(" ")
+                now = len(outputs) - 1
+                if now > pre:
+                    accumulated_text += " ".join(outputs[pre:now]) + " "
+                    pre = now
+                # Render the accumulated text as Markdown
+                markdown = Markdown(accumulated_text)
+                
+                # Update the Live console output
+                live.update(markdown)
+
+            accumulated_text += " ".join(outputs[pre:])
+            markdown = Markdown(accumulated_text)
+            live.update(markdown)
+
+        self._console.print('\n')
+        return outputs
 
 
 def main(args):
