@@ -19,7 +19,13 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.cli import load_model
+from fastchat.serve.cli import (
+    load_model, 
+    prepare_inputs, 
+    process_logits,
+    prepare_inputs_chatglm,
+    process_logits_chatglm
+)
 from fastchat.utils import (build_logger, server_error_msg,
     pretty_print_semaphore)
 
@@ -128,30 +134,34 @@ class ModelWorker:
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
+        params["prepare_input_function"] = prepare_inputs_chatglm if "chatglm" in params["model"] else prepare_inputs
+        params["process_logits_function"] = process_logits_chatglm if "chatglm" in params["model"] else process_logits
+        params["eos_token_id"] = model.config.eos_token_id if "chatglm" in params["model"] else tokenizer.eos_token_id
 
         input_ids = tokenizer(prompt).input_ids
-        output_ids = list(input_ids)
+        output_ids = []
 
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
+        past_key_values = None
         for i in range(max_new_tokens):
-            if i == 0:
-                out = model(
-                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
-                logits = out.logits
-                past_key_values = out.past_key_values
-            else:
-                attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
-                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
-                            use_cache=True,
-                            attention_mask=attention_mask,
-                            past_key_values=past_key_values)
-                logits = out.logits
-                past_key_values = out.past_key_values
+            model_inputs = params["prepare_input_function"](input_ids=input_ids,
+                            output_ids=output_ids,
+                            past_key_values=past_key_values,
+                            device=self.device,
+                            model_config=model.config)
+            model_inputs["use_cache"] = True
+
+            out = model(**model_inputs)
+
+            logits = out.logits
+            past_key_values = out.past_key_values
 
             last_token_logits = logits[0][-1]
+
+            last_token_logits = params["process_logits_function"](last_token_logits)
+
             if temperature < 1e-4:
                 token = int(torch.argmax(last_token_logits))
             else:
@@ -160,14 +170,14 @@ class ModelWorker:
 
             output_ids.append(token)
 
-            if token == tokenizer.eos_token_id:
+            if token == params["eos_token_id"]:
                 stopped = True
             else:
                 stopped = False
 
             if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True)
-                pos = output.rfind(stop_str, l_prompt)
+                output = tokenizer.decode(list(input_ids) + output_ids, skip_special_tokens=True)
+                pos = output.rfind(stop_str, l_prompt) if stop_str is not None else -1
                 if pos != -1:
                     output = output[:pos]
                     stopped = True

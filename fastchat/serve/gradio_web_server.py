@@ -179,6 +179,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # First round of conversation
         if "koala" in model_name: # Hardcode the condition
             template_name = "bair_v1"
+        elif "chatglm" in model_name:
+            template_name = "chatglm_v1"
         else:
             template_name = "v1"
         new_state = conv_templates[template_name].copy()

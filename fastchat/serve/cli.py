@@ -34,7 +34,7 @@ def prepare_inputs(input_ids, output_ids, past_key_values, device, model_config)
         }
 
 
-def process_logits(params, last_token_logits):
+def process_logits(last_token_logits):
     return last_token_logits
 
 
@@ -128,7 +128,7 @@ def generate_stream(tokenizer, model, params, device,
             # Switch to CPU by avoiding some bugs in mps backend.
             last_token_logits = last_token_logits.float().to("cpu")
 
-        last_token_logits = params["process_logits"](params, last_token_logits)
+        last_token_logits = params["process_logits_function"](last_token_logits)
 
         if temperature < 1e-4:
             token = int(torch.argmax(last_token_logits))
@@ -185,7 +185,7 @@ def main(args):
             "max_new_tokens": args.max_new_tokens,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
             "prepare_input_function": prepare_inputs_chatglm if "chatglm" in model_name else prepare_inputs,
-            "process_logits": process_logits_chatglm if "chatglm" in model_name else process_logits,
+            "process_logits_function": process_logits_chatglm if "chatglm" in model_name else process_logits,
             "eos_token_id": model.config.eos_token_id if "chatglm" in model_name else tokenizer.eos_token_id,
         }
 

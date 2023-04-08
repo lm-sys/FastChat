@@ -44,7 +44,7 @@ def prepare_inputs_chatglm(input_ids, output_ids, past_key_values, device, model
         }
 
 
-def process_logits_chatglm(params, last_token_logits):
+def process_logits_chatglm(last_token_logits):
     # Invalid Score
     if torch.isnan(last_token_logits).any() or torch.isinf(last_token_logits).any():
         last_token_logits.zeros_()
