@@ -152,7 +152,7 @@ def main(args):
         conv.append_message(conv.roles[1], None)
 
         if is_chatglm:
-            prompt = conv.messages
+            prompt = state.messages[state.offset:]
             generate_stream_func = chatglm_generate_stream
             skip_echo_len = len(conv.messages[-2][1]) + 1
         else:

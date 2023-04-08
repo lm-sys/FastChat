@@ -202,7 +202,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # Construct prompt
     if "chatglm" in model_name:
-        prompt = state.messages
+        prompt = state.messages[state.offset:]
         skip_echo_len = len(state.messages[-2][1]) + 1
     else:
         prompt = state.get_prompt()
