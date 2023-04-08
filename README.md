@@ -41,6 +41,11 @@ git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
 ```
 
+If you are running on Mac:
+```bash
+brew install rust
+```
+
 2. Install Package
 ```bash
 pip3 install --upgrade pip  # enable PEP 660 support
