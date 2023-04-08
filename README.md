@@ -123,6 +123,14 @@ Contributions and pull requests are welcome.
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
 
+**Note for Windows users**
+
+Windows users will need Python 3.7 and above and to set the following environmental variable prior to launching the worker.
+
+```
+PYTHONUTF8=1
+```
+
 **Launch the controller**
 ```bash
 python3 -m fastchat.serve.controller
@@ -139,12 +147,6 @@ Wait until the process finishes loading the model and you see "Uvicorn running o
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
 python3 -m fastchat.serve.test_message --model-name vicuna-13b
-```
-
-Windows users will need Python 3.7 and above and to run the following prior to launching the worker,
-
-```bash
-SET PYTHONUTF8=1
 ```
 
 **Launch the Gradio web server**
