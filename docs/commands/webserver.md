@@ -26,3 +26,15 @@ python3 -m fastchat.serve.test_message --model vicuna-13b --controller http://lo
 export OPENAI_API_KEY=
 python3 -m fastchat.serve.gradio_web_server --controller http://localhost:21001 --moderate --concurrency 20
 ```
+
+### Increase the limit of max open files
+One process (do not need reboot)
+```
+sudo prlimit --nofile=1048576:1048576 --pid=$id
+```
+
+System (need reboot): Add the lines below to `/etc/security/limits.conf`
+```
+* hard nofile 65535
+* soft nofile 65535
+```
