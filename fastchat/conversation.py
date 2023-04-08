@@ -58,8 +58,6 @@ class Conversation:
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
-    
-        
 
     def append_message(self, role, message):
         self.messages.append([role, message])
