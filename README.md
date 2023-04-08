@@ -83,31 +83,31 @@ python3 -m fastchat.model.apply_delta \
 
 ## Inference with Command Line Interface
 
-### Single GPU
+#### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
 
-### Multiple GPUs
+#### Multiple GPUs
 If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
 ```
 
-### CPU Only
+#### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
-### Metal Backend (Mac computers with Apple silicon or AMD GPUs)
+#### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8bit` to turn on 8-bit compression.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
 ```
 
-### Others (Quantization, Low-end Devices, and More Platforms)
+#### Others (Quantization, Low-end Devices, and More Platforms)
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 It works with CPU, GPU, and Metal.
 This can reduce the memory usage by around half with slightly degraded model quality.
@@ -123,14 +123,20 @@ Contributions and pull requests are welcome.
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
 
-**Launch the controller**
+**Note for Windows users:** Windows users will need Python 3.7 and above and to set the following environmental variable prior to launching the worker.
+
+```
+PYTHONUTF8=1
+```
+
+#### Launch the controller
 ```bash
 python3 -m fastchat.serve.controller
 ```
 
 This controller manages the distributed workers.
 
-**Launch the model worker**
+#### Launch the model worker
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
 ```
@@ -141,7 +147,7 @@ To ensure that your model worker is connected to your controller properly, send 
 python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
-**Launch the Gradio web server**
+#### Launch the Gradio web server
 ```bash
 python3 -m fastchat.serve.gradio_web_server
 ```
