@@ -87,6 +87,7 @@ python3 -m fastchat.model.apply_delta \
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
+See the "No Enough Memory" section below if you do not have enough memory.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
@@ -112,7 +113,7 @@ Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 #### No Enough Memory or Other Platforms
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
-This can reduce the memory usage by around half with slightly degraded model quality.
+This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4090/V100(16GB) GPU.
 
