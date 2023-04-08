@@ -22,15 +22,16 @@ from fastchat.serve.inference import chat_loop, ChatIO
 # Create custom key bindings
 bindings = KeyBindings()
 
-# Bind Shift+Enter to create a new line
-@bindings.add(Keys.ShiftEnter)
-def _(event):
-    event.current_buffer.insert_text('\n')
-
-# Bind Enter to finalize the input
+# Bind Enter key
 @bindings.add(Keys.Enter)
 def _(event):
-    event.current_buffer.validate_and_handle()
+    # Check if the Shift key is pressed
+    if event.key_sequence[0].key == Keys.Enter and event.key_sequence[0].modifier == Keys.Shift:
+        # Insert a new line when Shift+Enter is pressed
+        event.current_buffer.insert_text('\n')
+    else:
+        # Finalize the input when Enter is pressed without Shift
+        event.current_buffer.validate_and_handle()
 
 
 class SimpleChatIO(ChatIO):
