@@ -39,21 +39,23 @@ class MarkdownChatIO(ChatIO):
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
-        self._console.print(f"{role}: ", end="")
-        return self._prompt_session.prompt(
+        self._console.print(f"{role}: ")
+        prompt_input = self._prompt_session.prompt(
             completer=self._completer,
             multiline=True,
             auto_suggest=AutoSuggestFromHistory(),
             key_bindings=None)
+        self._console.print('\n')
+        return prompt_input
 
     def prompt_for_output(self, role: str):
-        self._console.print(f"{role}: ", end="")
+        self._console.print(f"{role}: ")
 
     def append_output(self, output: str):
         self._console.print(output, end="")
 
     def finalize_output(self, output: str):
-        self._console.print(output)
+        self._console.print(output, end="\n\n")
 
 
 def main(args):
@@ -63,9 +65,12 @@ def main(args):
         chatio = MarkdownChatIO()
     else:
         raise ValueError(f"Invalid chatio for console: {args.chatio}")
-    chat_loop(args.model_name, args.device, args.num_gpus, args.load_8bit,
-              args.conv_template, args.temperature, args.max_new_tokens,
-              chatio, args.debug)
+    try:
+        chat_loop(args.model_name, args.device, args.num_gpus, args.load_8bit,
+                args.conv_template, args.temperature, args.max_new_tokens,
+                chatio, args.debug)
+    except KeyboardInterrupt:
+        print("exit...")
 
 
 if __name__ == "__main__":
