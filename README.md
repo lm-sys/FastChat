@@ -57,7 +57,7 @@ We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to compl
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
 1. Get the original LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
-2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face account.
+2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
 
 **NOTE**:
 Our released weights are only compatible with the latest main branch of huggingface/transformers.
@@ -121,7 +121,7 @@ Contributions and pull requests are welcome.
 
 ## Serving with Web GUI
 
-To serve using the WebUI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
+To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
 
 **Launch the controller**
 ```bash
@@ -148,7 +148,7 @@ python3 -m fastchat.serve.gradio_web_server
 
 This is the user interface that users will interact with.
 
-By following these steps, you will be able to serve your models using the WebUI. You can open your browser and chat with a model now.
+By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 
 
 ## Evaluation
