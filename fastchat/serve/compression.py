@@ -21,10 +21,12 @@ default_compression_config = CompressionConfig(
 
 
 class CLinear(nn.Module):
-    def __init__(self, weight, bias):
+    """Compressed Linear Layer."""
+
+    def __init__(self, weight, bias, device):
         super().__init__()
 
-        self.weight = compress(weight.data, default_compression_config)
+        self.weight = compress(weight.data.to(device), default_compression_config)
         self.bias = bias
 
     def forward(self, input: Tensor) -> Tensor:
@@ -32,13 +34,14 @@ class CLinear(nn.Module):
         return F.linear(input, weight, self.bias)
 
 
-def compress_module(module):
+def compress_module(module, target_device):
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
         if type(target_attr) == torch.nn.Linear:
-            setattr(module, attr_str, CLinear(target_attr.weight, target_attr.bias))
+            setattr(module, attr_str,
+                CLinear(target_attr.weight, target_attr.bias, target_device))
     for name, child in module.named_children():
-        compress_module(child)
+        compress_module(child, target_device)
 
 
 def compress(tensor, config):

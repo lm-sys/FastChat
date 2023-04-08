@@ -65,6 +65,7 @@ We install the correct version of transformers when fastchat is installed.
 
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
+If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base /path/to/llama-13b \
@@ -74,6 +75,7 @@ python3 -m fastchat.model.apply_delta \
 
 ### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
+If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base /path/to/llama-7b \
@@ -106,11 +108,13 @@ Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
 ```
+Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
-#### Others (Quantization, Low-end Devices, and More Platforms)
+#### No Enough Memory or Other Platforms
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
-It works with CPU, GPU, and Metal.
 This can reduce the memory usage by around half with slightly degraded model quality.
+It is compatible with the CPU, GPU, and Metal backend.
+Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4090/V100(16GB) GPU.
 
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --load-8bit
