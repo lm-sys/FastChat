@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 
 @torch.inference_mode()
-def chatglm_generate_stream(tokenizer, model, params, device,
+def chatglm_generate_stream(model, tokenizer, params, device,
                             context_len=2048, stream_interval=2):
     """Generate text using model's chat api"""
     messages = params["prompt"]

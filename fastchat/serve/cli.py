@@ -66,7 +66,7 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
 
 
 @torch.inference_mode()
-def generate_stream(tokenizer, model, params, device,
+def generate_stream(model, tokenizer, params, device,
                     context_len=2048, stream_interval=2):
     prompt = params["prompt"]
     l_prompt = len(prompt)
@@ -154,7 +154,7 @@ def main(args):
         if is_chatglm:
             prompt = conv.messages
             generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(inp) + 1
+            skip_echo_len = len(conv.messages[-2][1]) + 1
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
@@ -170,7 +170,7 @@ def main(args):
 
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
-        for outputs in generate_stream_func(tokenizer, model, params, args.device):
+        for outputs in generate_stream_func(model, tokenizer, params, args.device):
             outputs = outputs[skip_echo_len:].strip()
             outputs = outputs.split(" ")
             now = len(outputs)
