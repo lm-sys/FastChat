@@ -141,6 +141,12 @@ To ensure that your model worker is connected to your controller properly, send 
 python3 -m fastchat.serve.test_message --model-name vicuna-13b
 ```
 
+Windows users will need Python 3.7 and above and to run the following prior to launching the worker,
+
+```bash
+SET PYTHONUTF8=1
+```
+
 **Launch the Gradio web server**
 ```bash
 python3 -m fastchat.serve.gradio_web_server
