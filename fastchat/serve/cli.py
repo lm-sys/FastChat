@@ -1,4 +1,6 @@
 """
+Chat with a model with command line interface.
+
 Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
@@ -176,8 +178,10 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument("--load-8bit", action="store_true")
-    parser.add_argument("--conv-template", type=str, default="v1")
+    parser.add_argument("--load-8bit", action="store_true",
+        help="Use 8-bit quantization.")
+    parser.add_argument("--conv-template", type=str, default="v1",
+        help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
