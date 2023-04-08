@@ -12,26 +12,10 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.keys import Keys
 from rich.console import Console
 from rich.markdown import Markdown
 
 from fastchat.serve.inference import chat_loop, ChatIO
-
-# Create custom key bindings
-bindings = KeyBindings()
-
-# Bind Enter key
-@bindings.add(Keys.Enter)
-def _(event):
-    # Check if the Shift key is pressed
-    if event.key_sequence[0].key == Keys.Enter and event.key_sequence[0].modifier == Keys.Shift:
-        # Insert a new line when Shift+Enter is pressed
-        event.current_buffer.insert_text('\n')
-    else:
-        # Finalize the input when Enter is pressed without Shift
-        event.current_buffer.validate_and_handle()
 
 
 class SimpleChatIO(ChatIO):
@@ -56,11 +40,12 @@ class MarkdownChatIO(ChatIO):
 
     def prompt_for_input(self, role) -> str:
         self._console.print(f"{role}: ")
+        # TODO(suquark): multiline input has some issues. fix it later.
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
-            multiline=True,
+            multiline=False,
             auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=bindings)
+            key_bindings=None)
         self._console.print('\n')
         return prompt_input
 
