@@ -87,6 +87,7 @@ python3 -m fastchat.model.apply_delta \
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
+See the "No Enough Memory" section below if you do not have enough memory.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
 ```
@@ -104,7 +105,8 @@ python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
-Use `--device mps` to enable GPU acceleration on Mac computers and use `--load-8bit` to turn on 8-bit compression.
+Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
+Use `--load-8bit` to turn on 8-bit compression.
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
 ```
@@ -112,9 +114,9 @@ Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 #### No Enough Memory or Other Platforms
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
-This can reduce the memory usage by around half with slightly degraded model quality.
+This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
-Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4090/V100(16GB) GPU.
+Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/V100(16GB) GPU.
 
 ```
 python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --load-8bit
@@ -126,12 +128,6 @@ Contributions and pull requests are welcome.
 ## Serving with Web GUI
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
-
-**Note for Windows users:** Windows users will need Python 3.7 and above and to set the following environmental variable prior to launching the worker.
-
-```
-PYTHONUTF8=1
-```
 
 #### Launch the controller
 ```bash
