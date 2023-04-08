@@ -6,11 +6,23 @@ import argparse
 import time
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModelForSeq2SeqLM
 
 from fastchat.conversation import conv_templates, SeparatorStyle
 from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
+
+
+def is_encoder_decoder(model_name):
+    qualified_prefix = [
+        "google/flan-t5",
+        "google/t5",
+        "t5",
+    ]
+    for prefix in qualified_prefix:
+        if model_name.startswith(prefix):
+            return True
+    return False
 
 
 def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
@@ -40,8 +52,12 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
         raise ValueError(f"Invalid device: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    model = AutoModelForCausalLM.from_pretrained(model_name,
-        low_cpu_mem_usage=True, **kwargs)
+    if is_encoder_decoder(model_name):
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name,
+                                                      low_cpu_mem_usage=True, **kwargs)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+                                                     low_cpu_mem_usage=True, **kwargs)
 
     # calling model.cuda() mess up weights if loading 8-bit weights
     if device == "cuda" and num_gpus == 1 and not load_8bit:
@@ -77,19 +93,36 @@ def generate_stream(tokenizer, model, params, device,
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                out = model(
+                    torch.as_tensor([input_ids], device=device),
+                    decoder_input_ids=torch.as_tensor([[model.generation_config.decoder_start_token_id]],
+                                                      device=device),
+                    use_cache=True)
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                out = model(
+                    torch.as_tensor([input_ids], device=device), use_cache=True)
+                logits = out.logits
+                past_key_values = out.past_key_values
         else:
-            attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                out = model(input_ids=torch.as_tensor([input_ids], device=device),
+                            use_cache=True,
+                            decoder_input_ids=torch.as_tensor([[token]], device=device),
+                            past_key_values=past_key_values)
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                attention_mask = torch.ones(
+                    1, past_key_values[0][0].shape[-2] + 1, device=device)
+                out = model(input_ids=torch.as_tensor([[token]], device=device),
+                            use_cache=True,
+                            attention_mask=attention_mask,
+                            past_key_values=past_key_values)
+                logits = out.logits
+                past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
 
@@ -129,7 +162,7 @@ def main(args):
 
     # Model
     model, tokenizer = load_model(args.model_name, args.device,
-        args.num_gpus, args.load_8bit, args.debug)
+                                  args.num_gpus, args.load_8bit, args.debug)
 
     # Chat
     conv = conv_templates[args.conv_template].copy()
@@ -161,7 +194,7 @@ def main(args):
             outputs = outputs.split(" ")
             now = len(outputs)
             if now - 1 > pre:
-                print(" ".join(outputs[pre:now-1]), end=" ", flush=True)
+                print(" ".join(outputs[pre:now - 1]), end=" ", flush=True)
                 pre = now - 1
         print(" ".join(outputs[pre:]), flush=True)
 
