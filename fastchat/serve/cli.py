@@ -68,8 +68,6 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
 @torch.inference_mode()
 def generate_stream(tokenizer, model, params, device,
                     context_len=2048, stream_interval=2):
-    """Adapted from fastchat/serve/model_worker.py::generate_stream"""
-
     prompt = params["prompt"]
     l_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
@@ -155,9 +153,10 @@ def main(args):
 
         if is_chatglm:
             prompt = conv.messages
-            generate_stream = chatglm_generate_stream
+            generate_stream_func = chatglm_generate_stream
             skip_echo_len = len(inp) + 1
         else:
+            generate_stream_func = generate_stream
             prompt = conv.get_prompt()
             skip_echo_len = len(prompt) + 1
 
@@ -171,7 +170,7 @@ def main(args):
 
         print(f"{conv.roles[1]}: ", end="", flush=True)
         pre = 0
-        for outputs in generate_stream(tokenizer, model, params, args.device):
+        for outputs in generate_stream_func(tokenizer, model, params, args.device):
             outputs = outputs[skip_echo_len:].strip()
             outputs = outputs.split(" ")
             now = len(outputs)

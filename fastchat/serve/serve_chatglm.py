@@ -1,16 +1,18 @@
 import torch
 from typing import List, Tuple
 
+
+@torch.inference_mode()
 def chatglm_generate_stream(tokenizer, model, params, device,
                             context_len=2048, stream_interval=2):
     """Generate text using model's chat api"""
     messages = params["prompt"]
-    max_length = int(params.get("max_new_tokens", 256))
+    max_new_tokens = int(params.get("max_new_tokens", 256))
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 0.7))
 
     gen_kwargs = {
-        "max_length": max_length,
+        "max_new_tokens": max_new_tokens,
         "do_sample": True,
         "top_p": top_p,
         "temperature": temperature,

@@ -201,14 +201,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         return
 
     # Construct prompt
-    prompt = state.get_prompt()
+    if "chatglm" in model_name:
+        prompt = state.messages
+        skip_echo_len = len(inp) + 1
+    else:
+        prompt = state.get_prompt()
+        skip_echo_len = len(prompt) + 1
 
     # Make requests
     pload = {
         "model": model_name,
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": min(int(max_new_tokens), 1536),
+        "max_new_tokens": int(max_new_tokens),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -224,7 +229,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             if chunk:
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"][len(prompt) + 1:].strip()
+                    output = data["text"][skip_echo_len:].strip()
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
