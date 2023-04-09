@@ -43,7 +43,7 @@ cd FastChat
 
 If you are running on Mac:
 ```bash
-brew install rust
+brew install rust cmake
 ```
 
 2. Install Package
