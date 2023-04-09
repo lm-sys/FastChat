@@ -18,11 +18,10 @@ def main():
         models.sort()
         print(f"Models: {models}")
 
-        if not args.test_dispatch:
-            ret = requests.post(controller_addr + "/get_worker_address",
-                                json={"model": args.model_name})
-            worker_addr = ret.json()["address"]
-            print(f"worker_addr: {worker_addr}")
+        ret = requests.post(controller_addr + "/get_worker_address",
+                            json={"model": args.model_name})
+        worker_addr = ret.json()["address"]
+        print(f"worker_addr: {worker_addr}")
 
     if worker_addr == "":
         return
@@ -56,6 +55,7 @@ def main():
     for i in range(args.n_thread):
         t = threading.Thread(target=send_request, args=(results, i))
         t.start()
+        time.sleep(0.5)
         threads.append(t)
 
     for t in threads:
