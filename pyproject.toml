@@ -15,7 +15,7 @@ classifiers = [
 dependencies = [
     "accelerate", "fastapi", "gradio==3.23", "markdown2[all]", "numpy",
     "requests", "sentencepiece", "tokenizers>=0.12.1",
-    "torch", "uvicorn", "wandb",
+    "torch", "uvicorn", "wandb", "prompt_toolkit>=3.0.0", "rich>=10.0.0",
     "transformers @ git+https://github.com/huggingface/transformers.git"
 ]
 

@@ -5,176 +5,103 @@ Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
 import argparse
-import time
+import re
 
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+from prompt_toolkit import PromptSession
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.history import InMemoryHistory
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.live import Live
 
-from fastchat.conversation import conv_templates, SeparatorStyle
-from fastchat.serve.compression import compress_module
-from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
-from fastchat.serve.serve_chatglm import chatglm_generate_stream
-
-
-def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
-    if device == "cpu":
-        kwargs = {}
-    elif device == "cuda":
-        kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                })
-    elif device == "mps":
-        kwargs = {"torch_dtype": torch.float16}
-        # Avoid bugs in mps backend by not using in-place operations.
-        replace_llama_attn_with_non_inplace_operations()
-    else:
-        raise ValueError(f"Invalid device: {device}")
-
-    if "chatglm" in model_name:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_name, trust_remote_code=True).half().cuda()
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-        model = AutoModelForCausalLM.from_pretrained(model_name,
-            low_cpu_mem_usage=True, **kwargs)
-
-    if load_8bit:
-        compress_module(model, device)
-
-    if (device == "cuda" and num_gpus == 1) or device == "mps":
-        model.to(device)
-
-    if debug:
-        print(model)
-
-    return model, tokenizer
+from fastchat.serve.inference import chat_loop, ChatIO
 
 
-@torch.inference_mode()
-def generate_stream(model, tokenizer, params, device,
-                    context_len=2048, stream_interval=2):
-    prompt = params["prompt"]
-    l_prompt = len(prompt)
-    temperature = float(params.get("temperature", 1.0))
-    max_new_tokens = int(params.get("max_new_tokens", 256))
-    stop_str = params.get("stop", None)
+class SimpleChatIO(ChatIO):
+    def prompt_for_input(self, role) -> str:
+        return input(f"{role}: ")
 
-    input_ids = tokenizer(prompt).input_ids
-    output_ids = list(input_ids)
+    def prompt_for_output(self, role: str):
+        print(f"{role}: ", end="", flush=True)
 
-    max_src_len = context_len - max_new_tokens - 8
-    input_ids = input_ids[-max_src_len:]
+    def stream_output(self, output_stream, skip_echo_len: int):
+        pre = 0
+        for outputs in output_stream:
+            outputs = outputs[skip_echo_len:].strip()
+            outputs = outputs.split(" ")
+            now = len(outputs) - 1
+            if now > pre:
+                print(" ".join(outputs[pre:now]), end=" ", flush=True)
+                pre = now
+        print(" ".join(outputs[pre:]), flush=True)
+        return outputs
 
-    for i in range(max_new_tokens):
-        if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
-            logits = out.logits
-            past_key_values = out.past_key_values
-        else:
-            attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
-            logits = out.logits
-            past_key_values = out.past_key_values
 
-        last_token_logits = logits[0][-1]
+class RichChatIO(ChatIO):
+    def __init__(self):
+        self._prompt_session = PromptSession(history=InMemoryHistory())
+        self._completer = WordCompleter(words=['!exit', '!reset'], pattern=re.compile('$'))
+        self._console = Console()
 
-        if device == "mps":
-            # Switch to CPU by avoiding some bugs in mps backend.
-            last_token_logits = last_token_logits.float().to("cpu")
+    def prompt_for_input(self, role) -> str:
+        self._console.print(f"[bold]{role}:")
+        # TODO(suquark): multiline input has some issues. fix it later.
+        prompt_input = self._prompt_session.prompt(
+            completer=self._completer,
+            multiline=False,
+            auto_suggest=AutoSuggestFromHistory(),
+            key_bindings=None)
+        self._console.print()
+        return prompt_input
 
-        if temperature < 1e-4:
-            token = int(torch.argmax(last_token_logits))
-        else:
-            probs = torch.softmax(last_token_logits / temperature, dim=-1)
-            token = int(torch.multinomial(probs, num_samples=1))
+    def prompt_for_output(self, role: str):
+        self._console.print(f"[bold]{role}:")
 
-        output_ids.append(token)
+    def stream_output(self, output_stream, skip_echo_len: int):
+        """Stream output from a role."""
+        pre = 0
+        # TODO(suquark): the console flickers when there is a code block
+        #  above it. We need to cut off "live" when a code block is done.
 
-        if token == tokenizer.eos_token_id:
-            stopped = True
-        else:
-            stopped = False
+        # Create a Live context for updating the console output
+        with Live(console=self._console, refresh_per_second=4) as live:
+            accumulated_text = ""
+            # Read lines from the stream
+            for outputs in output_stream:
+                outputs = outputs[skip_echo_len:].strip()
+                outputs = outputs.split(" ")
+                now = len(outputs) - 1
+                if now > pre:
+                    accumulated_text += " ".join(outputs[pre:now]) + " "
+                    pre = now
+                # Render the accumulated text as Markdown
+                markdown = Markdown(accumulated_text)
+                
+                # Update the Live console output
+                live.update(markdown)
 
-        if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-            output = tokenizer.decode(output_ids, skip_special_tokens=True)
-            pos = output.rfind(stop_str, l_prompt)
-            if pos != -1:
-                output = output[:pos]
-                stopped = True
-            yield output
+            accumulated_text += " ".join(outputs[pre:])
+            markdown = Markdown(accumulated_text)
+            live.update(markdown)
 
-        if stopped:
-            break
-
-    del past_key_values
+        self._console.print()
+        return outputs
 
 
 def main(args):
-    model_name = args.model_name
-
-    # Model
-    model, tokenizer = load_model(args.model_name, args.device,
-        args.num_gpus, args.load_8bit, args.debug)
-    is_chatglm = "chatglm" in str(type(model)).lower()
-
-    # Chat
-    conv = conv_templates[args.conv_template].copy()
-    while True:
-        try:
-            inp = input(f"{conv.roles[0]}: ")
-        except EOFError:
-            inp = ""
-        if not inp:
-            print("exit...")
-            break
-
-        conv.append_message(conv.roles[0], inp)
-        conv.append_message(conv.roles[1], None)
-
-        if is_chatglm:
-            prompt = conv.messages[conv.offset:]
-            generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(conv.messages[-2][1]) + 1
-        else:
-            generate_stream_func = generate_stream
-            prompt = conv.get_prompt()
-            skip_echo_len = len(prompt) + 1
-
-        params = {
-            "model": model_name,
-            "prompt": prompt,
-            "temperature": args.temperature,
-            "max_new_tokens": args.max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
-        }
-
-        print(f"{conv.roles[1]}: ", end="", flush=True)
-        pre = 0
-        for outputs in generate_stream_func(model, tokenizer, params, args.device):
-            outputs = outputs[skip_echo_len:].strip()
-            outputs = outputs.split(" ")
-            now = len(outputs)
-            if now - 1 > pre:
-                print(" ".join(outputs[pre:now-1]), end=" ", flush=True)
-                pre = now - 1
-        print(" ".join(outputs[pre:]), flush=True)
-
-        conv.messages[-1][-1] = " ".join(outputs)
-
-        if args.debug:
-            print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
+    if args.style == "simple":
+        chatio = SimpleChatIO()
+    elif args.style == "rich":
+        chatio = RichChatIO()
+    else:
+        raise ValueError(f"Invalid style for console: {args.style}")
+    try:
+        chat_loop(args.model_name, args.device, args.num_gpus, args.load_8bit,
+                args.conv_template, args.temperature, args.max_new_tokens,
+                chatio, args.debug)
+    except KeyboardInterrupt:
+        print("exit...")
 
 
 if __name__ == "__main__":
@@ -188,6 +115,8 @@ if __name__ == "__main__":
         help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--style", type=str, default="simple",
+                        choices=["simple", "rich"], help="Display style.")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)
