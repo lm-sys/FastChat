@@ -45,7 +45,7 @@ class RichChatIO(ChatIO):
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
-        self._console.rule(f"[bold]{role}")
+        self._console.print(f"[bold]{role}")
         # TODO(suquark): multiline input has some issues. fix it later.
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
@@ -56,7 +56,7 @@ class RichChatIO(ChatIO):
         return prompt_input
 
     def prompt_for_output(self, role: str):
-        self._console.rule(f"[bold]{role}")
+        self._console.print(f"[bold]{role}")
 
     def append_output(self, output: str):
         self._console.print(output, end=" ")
@@ -96,12 +96,12 @@ class RichChatIO(ChatIO):
 
 
 def main(args):
-    if args.chatio == "simple":
+    if args.style == "simple":
         chatio = SimpleChatIO()
-    elif args.chatio == "rich":
+    elif args.style == "rich":
         chatio = RichChatIO()
     else:
-        raise ValueError(f"Invalid chatio for console: {args.chatio}")
+        raise ValueError(f"Invalid style for console: {args.style}")
     try:
         chat_loop(args.model_name, args.device, args.num_gpus, args.load_8bit,
                 args.conv_template, args.temperature, args.max_new_tokens,
@@ -121,8 +121,8 @@ if __name__ == "__main__":
         help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--chatio", type=str, default="simple",
-                        choices=["simple", "rich"], help="Chat IO format.")
+    parser.add_argument("--style", type=str, default="simple",
+                        choices=["simple", "rich"], help="Display style.")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)
