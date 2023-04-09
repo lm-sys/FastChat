@@ -161,17 +161,25 @@ By following these steps, you will be able to serve your models using the web UI
 
 ## Evaluation
 
-Our AI-enhanced [evaluation](fastchat/eval) pipeline is based on GPT-4. Here are some high-level instructions for using the pipeline:
+Our AI-enhanced evaluation pipeline is based on GPT-4. This section provides a high-level summary of the pipeline. For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
 
-First, generate answers from different models. Use `qa_baseline_gpt35.py` for ChatGPT, or specify the model checkpoint and run `model_qa.py` for Vicuna and other models.
+### Pipeline Steps
 
-Then, use GPT-4 to generate reviews automatically, which can be done manually if the GPT-4 API is not available to you. Once you have your evaluation data, visualize the results by running `generate_webpage_data_from_table.py`, which generates data for a static website.
+1. Generate answers from different models: Use `qa_baseline_gpt35.py` for ChatGPT, or specify the model checkpoint and run `get_model_answer.py` for Vicuna and other models.
 
-Finally, serve a static website under the `webpage` directory. You can simply use `python3 -m http.server` to serve the website locally.
+2. Generate reviews with GPT-4: Use GPT-4 to generate reviews automatically. This step can also be performed manually if the GPT-4 API is not available to you.
 
-Besides the evaluation workflow, we also document the data format used for evaluation, which is encoded with JSON Lines and includes information on models, prompts, reviewers, questions, answers, and reviews. You can customize the evaluation process or contribute to our project by accessing relevant [data](fastchat/eval/table/).
+3. Generate visualization data: Run `generate_webpage_data_from_table.py` to generate data for a static website, which allows you to visualize the evaluation data.
 
-Check [evaluation](fastchat/eval) for detailed instructions.
+4. Visualize the data: Serve a static website under the `webpage` directory. You can use `python3 -m http.server` to serve the website locally.
+
+### Data Format and Contribution
+
+We use a data format encoded with JSON Lines for evaluation. The format includes information on models, prompts, reviewers, questions, answers, and reviews.
+
+You can customize the evaluation process or contribute to our project by accessing the relevant [data](fastchat/eval/table/).
+
+For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
 
 ## Fine-tuning
 ### Data
