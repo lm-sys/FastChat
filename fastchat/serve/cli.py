@@ -45,24 +45,17 @@ class RichChatIO(ChatIO):
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
-        self._console.print(f"[bold]{role}")
+        self._console.print(f"[bold]{role}:")
         # TODO(suquark): multiline input has some issues. fix it later.
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
             multiline=False,
             auto_suggest=AutoSuggestFromHistory(),
             key_bindings=None)
-        self._console.print('\n')
         return prompt_input
 
     def prompt_for_output(self, role: str):
-        self._console.print(f"[bold]{role}")
-
-    def append_output(self, output: str):
-        self._console.print(output, end=" ")
-
-    def finalize_output(self, output: str):
-        self._console.print(output, end="\n\n")
+        self._console.print(f"[bold]{role}:")
 
     def stream_output(self, output_stream, skip_echo_len: int):
         """Stream output from a role."""
@@ -92,6 +85,7 @@ class RichChatIO(ChatIO):
             markdown = Markdown(accumulated_text)
             live.update(markdown)
 
+        self._console.print()
         return outputs
 
 
