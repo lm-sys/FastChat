@@ -52,6 +52,7 @@ class RichChatIO(ChatIO):
             multiline=False,
             auto_suggest=AutoSuggestFromHistory(),
             key_bindings=None)
+        self._console.print()
         return prompt_input
 
     def prompt_for_output(self, role: str):
@@ -64,25 +65,26 @@ class RichChatIO(ChatIO):
         #  above it. We need to cut off "live" when a code block is done.
 
         # Create a Live context for updating the console output
-        with Live(console=self._console, refresh_per_second=4) as live:
-            accumulated_text = ""
-            # Read lines from the stream
-            for outputs in output_stream:
-                outputs = outputs[skip_echo_len:].strip()
-                outputs = outputs.split(" ")
-                now = len(outputs) - 1
-                if now > pre:
-                    accumulated_text += " ".join(outputs[pre:now]) + " "
-                    pre = now
-                # Render the accumulated text as Markdown
-                markdown = Markdown(accumulated_text)
-                
-                # Update the Live console output
-                live.update(markdown)
+        with self._console.show_cursor():
+            with Live(console=self._console, refresh_per_second=4) as live:
+                accumulated_text = ""
+                # Read lines from the stream
+                for outputs in output_stream:
+                    outputs = outputs[skip_echo_len:].strip()
+                    outputs = outputs.split(" ")
+                    now = len(outputs) - 1
+                    if now > pre:
+                        accumulated_text += " ".join(outputs[pre:now]) + " "
+                        pre = now
+                    # Render the accumulated text as Markdown
+                    markdown = Markdown(accumulated_text)
+                    
+                    # Update the Live console output
+                    live.update(markdown)
 
-            accumulated_text += " ".join(outputs[pre:])
-            markdown = Markdown(accumulated_text)
-            live.update(markdown)
+                accumulated_text += " ".join(outputs[pre:])
+                markdown = Markdown(accumulated_text)
+                live.update(markdown)
 
         self._console.print()
         return outputs
