@@ -18,10 +18,11 @@ def main():
         models.sort()
         print(f"Models: {models}")
 
-        ret = requests.post(controller_addr + "/get_worker_address",
-                            json={"model": args.model_name})
-        worker_addr = ret.json()["address"]
-        print(f"worker_addr: {worker_addr}")
+        if not args.test_dispatch:
+            ret = requests.post(controller_addr + "/get_worker_address",
+                                json={"model": args.model_name})
+            worker_addr = ret.json()["address"]
+            print(f"worker_addr: {worker_addr}")
 
     if worker_addr == "":
         return
@@ -39,6 +40,11 @@ def main():
     } for i in range(len(prompts))]
 
     def send_request(results, i):
+        if args.test_dispatch:
+            ret = requests.post(controller_addr + "/get_worker_address",
+                                json={"model": args.model_name})
+            worker_addr = ret.json()["address"]
+            print(f"thread {i} goes to {worker_addr}")
         response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
                                  json=ploads[i], stream=False)
         results[i] = response
@@ -63,12 +69,6 @@ def main():
         k = list(response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
         response_new_words = json.loads(k[-2].decode("utf-8"))["text"]
         n_words += len(response_new_words.split(" ")) - len(prompts[i].split(" "))
-        # for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
-        #     if chunk:
-        #         data = json.loads(chunk.decode("utf-8"))
-        #         output = data["text"].split(conv.sep)[-1]
-        #         # print(output, end="\r")
-        #         print(output)
     time_seconds = time.time() - tik
     print(f"Time (Completion): {time_seconds}, n threads: {args.n_thread}, "
           f"throughput: {n_words / time_seconds} words/s.")
@@ -81,6 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str, default="vicuna")
     parser.add_argument("--max-new-tokens", type=int, default=2048)
     parser.add_argument("--n-thread", type=int, default=8)
+    parser.add_argument("--test-dispatch", action="store_true")
     args = parser.parse_args()
 
     main()
