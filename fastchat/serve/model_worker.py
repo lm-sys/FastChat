@@ -19,7 +19,7 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.cli import load_model, generate_stream
+from fastchat.serve.inference import load_model, generate_stream
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 from fastchat.utils import (build_logger, server_error_msg,
     pretty_print_semaphore)
@@ -81,9 +81,8 @@ class ModelWorker:
         url = self.controller_addr + "/register_worker"
         data = {
             "worker_name": self.worker_addr,
-            "worker_type": "torch",
             "check_heart_beat": True,
-            "worker_status": self.get_status(),
+            "worker_status": self.get_status()
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
@@ -99,8 +98,7 @@ class ModelWorker:
             try:
                 ret = requests.post(url, json={
                     "worker_name": self.worker_addr,
-                    "queue_length": self.get_queue_length(),
-                    "running_length": self.get_running_length()}, timeout=5)
+                    "queue_length": self.get_queue_length()}, timeout=5)
                 exist = ret.json()["exist"]
                 break
             except requests.exceptions.RequestException as e:
@@ -117,15 +115,11 @@ class ModelWorker:
             return args.limit_model_concurrency - model_semaphore._value + len(
                 model_semaphore._waiters)
 
-    def get_running_length(self):
-        return -1
-
     def get_status(self):
         return {
             "model_names": [self.model_name],
             "speed": 1,
             "queue_length": self.get_queue_length(),
-            "running_length": self.get_running_length(),
         }
 
     def generate_stream_gate(self, params):

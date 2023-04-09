@@ -54,7 +54,6 @@ class CacheFlowWorker:
                  no_register,
                  model_path,
                  model_name,
-                 num_gpus,
                  block_size,
                  seed,
                  swap_space,
@@ -115,7 +114,6 @@ class CacheFlowWorker:
         url = self.controller_addr + "/register_worker"
         data = {
             "worker_name": self.worker_addr,
-            "worker_type": "cacheflow",
             "check_heart_beat": True,
             "worker_status": self.get_status()
         }
@@ -133,8 +131,7 @@ class CacheFlowWorker:
             try:
                 ret = requests.post(url, json={
                     "worker_name": self.worker_addr,
-                    "queue_length": self.get_queue_length(),
-                    "running_length": self.get_running_length()}, timeout=5)
+                    "queue_length": self.get_queue_length()}, timeout=5)
                 exist = ret.json()["exist"]
                 break
             except requests.exceptions.RequestException as e:
@@ -156,11 +153,7 @@ class CacheFlowWorker:
             "model_names": [self.model_name],
             "speed": 1,
             "queue_length": self.get_queue_length(),
-            "running_length": self.get_running_length(),
         }
-
-    def get_running_length(self):
-        return len(self.running_seq_groups.keys())
 
     async def server_step(self):
         self.is_server_running = True
@@ -273,7 +266,6 @@ if __name__ == "__main__":
         default="http://localhost:21001")
     parser.add_argument("--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b")
     parser.add_argument("--model-name", type=str)
-    parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -296,7 +288,6 @@ if __name__ == "__main__":
                              args.no_register,
                              args.model_path,
                              args.model_name,
-                             args.num_gpus,
                              args.block_size,
                              seed,
                              args.swap_space,

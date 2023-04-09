@@ -41,11 +41,9 @@ class DispatchMethod(Enum):
 
 @dataclasses.dataclass
 class WorkerInfo:
-    worker_type: str
     model_names: List[str]
     speed: int
     queue_length: int
-    running_length: int
     check_heart_beat: bool
     last_heart_beat: str
 
@@ -69,7 +67,7 @@ class Controller:
         logger.info("Init controller")
 
     def register_worker(self, worker_name: str, check_heart_beat: bool,
-                        worker_status: dict, worker_type: str):
+                        worker_status: dict):
         if worker_name not in self.worker_info:
             logger.info(f"Register a new worker: {worker_name}")
         else:
@@ -81,13 +79,8 @@ class Controller:
             return False
 
         self.worker_info[worker_name] = WorkerInfo(
-            worker_type,
-            worker_status["model_names"],
-            worker_status["speed"],
-            worker_status["queue_length"],
-            worker_status["running_length"],
-            check_heart_beat,
-            time.time())
+            worker_status["model_names"], worker_status["speed"], worker_status["queue_length"],
+            check_heart_beat, time.time())
 
         logger.info(f"Register done: {worker_name}, {worker_status}")
         return True
@@ -113,7 +106,7 @@ class Controller:
         self.worker_info = {}
 
         for w_name, w_info in old_info.items():
-            if not self.register_worker(w_name, w_info.check_heart_beat, None, w_info.worker_type):
+            if not self.register_worker(w_name, w_info.check_heart_beat, None):
                 logger.info(f"Remove stale worker: {w_name}")
 
     def list_models(self):
@@ -125,39 +118,13 @@ class Controller:
         return list(model_names)
 
     def get_worker_address(self, model_name: str):
-        worker_names = []
-        worker_types = []
-        worker_speeds = []
-        worker_qlen = []
-        worker_rlen = []
-        for w_name, w_info in self.worker_info.items():
-            if model_name in w_info.model_names:
-                worker_names.append(w_name)
-                worker_types.append(w_info.worker_type)
-                worker_speeds.append(w_info.speed)
-                worker_qlen.append(w_info.queue_length / w_info.speed)
-                worker_rlen.append(w_info.running_length)
-        if len(set(worker_types)) > 1:
-            raise RuntimeError(f"There are >1 types of worker for {model_name}.")
-
-        use_cacheflow_dispatch = False
-        # For torch workers, we still use the default dispatch
-        if "cacheflow" in worker_types:
-            use_cacheflow_dispatch = True
-
-        if use_cacheflow_dispatch:
-            if len(worker_names) == 0:
-                return ""
-            max_throughput_break = 128
-            idx = min(range(len(worker_rlen)),
-                      key=lambda x: abs(worker_rlen[x] - max_throughput_break / 2 - 1))
-            w_name = worker_names[idx]
-            self.worker_info[w_name].running_length += 1
-            logger.info(f"names: {worker_names}, queue_lens: {worker_qlen}, "
-                        f"running lens: {worker_rlen}, ret: {w_name}")
-            return w_name
-
         if self.dispatch_method == DispatchMethod.LOTTERY:
+            worker_names = []
+            worker_speeds = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_speeds.append(w_info.speed)
             worker_speeds = np.array(worker_speeds, dtype=np.float32)
             norm = np.sum(worker_speeds)
             if norm < 1e-4:
@@ -187,6 +154,12 @@ class Controller:
                     continue
             return worker_name
         elif self.dispatch_method == DispatchMethod.SHORTEST_QUEUE:
+            worker_names = []
+            worker_qlen = []
+            for w_name, w_info in self.worker_info.items():
+                if model_name in w_info.model_names:
+                    worker_names.append(w_name)
+                    worker_qlen.append(w_info.queue_length / w_info.speed)
             if len(worker_names) == 0:
                 return ""
             min_index = np.argmin(worker_qlen)
@@ -197,13 +170,12 @@ class Controller:
         else:
             raise ValueError(f"Invalid dispatch method: {self.dispatch_method}")
 
-    def receive_heart_beat(self, worker_name: str, queue_length: int, running_length: int):
+    def receive_heart_beat(self, worker_name: str, queue_length: int):
         if worker_name not in self.worker_info:
             logger.info(f"Receive unknown heart beat. {worker_name}")
             return False
 
         self.worker_info[worker_name].queue_length = queue_length
-        self.worker_info[worker_name].running_length = running_length
         self.worker_info[worker_name].last_heart_beat = time.time()
         logger.info(f"Receive heart beat. {worker_name}")
         return True
@@ -244,12 +216,11 @@ class Controller:
 
 
     # Let the controller act as a worker to achieve hierarchical
-    # management. This can be used to connect isolated sub-networks.
+    # management. This can be used to connect isolated sub networks.
     def worker_api_get_status(self):
         model_names = set()
         speed = 0
         queue_length = 0
-        running_length = 0
 
         for w_name in self.worker_info:
             worker_status = self.get_worker_status(w_name)
@@ -257,13 +228,11 @@ class Controller:
                 model_names.update(worker_status["model_names"])
                 speed += worker_status["speed"]
                 queue_length += worker_status["queue_length"]
-                running_length += worker_status["running_length"]
 
         return {
             "model_names": list(model_names),
             "speed": speed,
             "queue_length": queue_length,
-            "running_length": running_length
         }
 
 
@@ -275,7 +244,7 @@ async def register_worker(request: Request):
     data = await request.json()
     controller.register_worker(
         data["worker_name"], data["check_heart_beat"],
-        data.get("worker_status", None), data["worker_type"])
+        data.get("worker_status", None))
 
 
 @app.post("/refresh_all_workers")
@@ -300,7 +269,7 @@ async def get_worker_address(request: Request):
 async def receive_heart_beat(request: Request):
     data = await request.json()
     exist = controller.receive_heart_beat(
-        data["worker_name"], data["queue_length"], data["running_length"])
+        data["worker_name"], data["queue_length"])
     return {"exist": exist}
 
 
