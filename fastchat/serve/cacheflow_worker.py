@@ -73,7 +73,7 @@ class CacheFlowWorker:
 
         # FIXME(Hao): we need to pass the tokenizer into cacheflow because we need
         # to detect the stopping criteria "###".
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         self.seq_group_counter = Counter()
         self.seq_counter = Counter()
         # FIXME(Hao): hard code context len
@@ -115,6 +115,7 @@ class CacheFlowWorker:
         url = self.controller_addr + "/register_worker"
         data = {
             "worker_name": self.worker_addr,
+            "worker_type": "cacheflow",
             "check_heart_beat": True,
             "worker_status": self.get_status()
         }
@@ -132,7 +133,8 @@ class CacheFlowWorker:
             try:
                 ret = requests.post(url, json={
                     "worker_name": self.worker_addr,
-                    "queue_length": self.get_queue_length()}, timeout=5)
+                    "queue_length": self.get_queue_length(),
+                    "running_length": self.get_running_length()}, timeout=5)
                 exist = ret.json()["exist"]
                 break
             except requests.exceptions.RequestException as e:
@@ -154,7 +156,11 @@ class CacheFlowWorker:
             "model_names": [self.model_name],
             "speed": 1,
             "queue_length": self.get_queue_length(),
+            "running_length": self.get_running_length(),
         }
+
+    def get_running_length(self):
+        return len(self.running_seq_groups.keys())
 
     async def server_step(self):
         self.is_server_running = True
@@ -201,7 +207,6 @@ class CacheFlowWorker:
         self.sequence_group_events[group_id] = group_event
         self.server.add_sequence_groups([(seq_group, sampling_params)])
         while True:
-            # logger.info(f"Handling prompt: {context}, {self.is_server_running}")
             if not self.is_server_running:
                 await self.server_step()
             try:
@@ -209,12 +214,10 @@ class CacheFlowWorker:
             except:
                 pass
             group_event.clear()
-            # logger.info(f"Running for {context}, dick keys: {self.running_seq_groups.keys()}")
             seq_group = self.running_seq_groups[group_id]
             all_outputs = []
             for seq in seq_group.seqs:
                 token_ids = seq.get_token_ids()
-                # logger.info(f"token ids: {token_ids} for {group_id}")
                 output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
                 if stop_str is not None:
                     if output.endswith(stop_str):
@@ -249,8 +252,6 @@ async def generate_stream(request: Request):
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-    logger.info(f"received one request: {request}")
-    # generator = worker.generate_stream_gate(params)
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     # return StreamingResponse(generator, background=background_tasks)
@@ -273,7 +274,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b")
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--num-gpus", type=int, default=1)
-    parser.add_argument("--limit-model-concurrency", type=int, default=10000)
+    parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     # cacheflow specific params
