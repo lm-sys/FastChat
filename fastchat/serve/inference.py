@@ -126,16 +126,6 @@ class ChatIO(abc.ABC):
     @abc.abstractmethod
     def stream_output(self, output_stream, skip_echo_len: int):
         """Stream output."""
-        pre = 0
-        for outputs in output_stream:
-            outputs = outputs[skip_echo_len:].strip()
-            outputs = outputs.split(" ")
-            now = len(outputs) - 1
-            if now > pre:
-                self.append_output(" ".join(outputs[pre:now]))
-                pre = now
-        self.finalize_output(" ".join(outputs[pre:]))
-        return outputs
 
 
 def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
