@@ -7,7 +7,6 @@ python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 import argparse
 import re
 
-from prompt_toolkit import prompt
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
@@ -26,21 +25,27 @@ class SimpleChatIO(ChatIO):
     def prompt_for_output(self, role: str):
         print(f"{role}: ", end="", flush=True)
 
-    def append_output(self, output: str):
-        print(output, end=" ", flush=True)
+    def stream_output(self, output_stream, skip_echo_len: int):
+        pre = 0
+        for outputs in output_stream:
+            outputs = outputs[skip_echo_len:].strip()
+            outputs = outputs.split(" ")
+            now = len(outputs) - 1
+            if now > pre:
+                print(" ".join(outputs[pre:now]), end=" ", flush=True)
+                pre = now
+        print(" ".join(outputs[pre:]), flush=True)
+        return outputs
 
-    def finalize_output(self, output: str):
-        print(output, flush=True)
 
-
-class MarkdownChatIO(ChatIO):
+class RichChatIO(ChatIO):
     def __init__(self):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(words=['!exit', '!reset'], pattern=re.compile('$'))
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
-        self._console.print(f"{role}: ")
+        self._console.rule(f"[bold]{role}")
         # TODO(suquark): multiline input has some issues. fix it later.
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
@@ -51,7 +56,7 @@ class MarkdownChatIO(ChatIO):
         return prompt_input
 
     def prompt_for_output(self, role: str):
-        self._console.print(f"{role}: ")
+        self._console.rule(f"[bold]{role}")
 
     def append_output(self, output: str):
         self._console.print(output, end=" ")
@@ -59,10 +64,12 @@ class MarkdownChatIO(ChatIO):
     def finalize_output(self, output: str):
         self._console.print(output, end="\n\n")
 
-    def stream_output(self, role: str, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream, skip_echo_len: int):
         """Stream output from a role."""
-        self.prompt_for_output(role)
         pre = 0
+        # TODO(suquark): the console shines when there is a code block
+        #  above it. We need to cut off "live" when a code block is done.
+
         # Create a Live context for updating the console output
         with Live(console=self._console, refresh_per_second=4) as live:
             accumulated_text = ""
@@ -85,15 +92,14 @@ class MarkdownChatIO(ChatIO):
             markdown = Markdown(accumulated_text)
             live.update(markdown)
 
-        self._console.print('\n')
         return outputs
 
 
 def main(args):
     if args.chatio == "simple":
         chatio = SimpleChatIO()
-    elif args.chatio == "markdown":
-        chatio = MarkdownChatIO()
+    elif args.chatio == "rich":
+        chatio = RichChatIO()
     else:
         raise ValueError(f"Invalid chatio for console: {args.chatio}")
     try:
@@ -115,8 +121,8 @@ if __name__ == "__main__":
         help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--chatio", type=str, default="markdown",
-                        choices=["simple", "markdown"], help="Chat IO format.")
+    parser.add_argument("--chatio", type=str, default="simple",
+                        choices=["simple", "rich"], help="Chat IO format.")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)

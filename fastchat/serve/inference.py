@@ -116,7 +116,7 @@ def generate_stream(model, tokenizer, params, device,
 
 class ChatIO(abc.ABC):
     @abc.abstractmethod
-    def prompt_for_input(self, role) -> str:
+    def prompt_for_input(self, role: str) -> str:
         """Prompt for input from a role."""
 
     @abc.abstractmethod
@@ -124,16 +124,8 @@ class ChatIO(abc.ABC):
         """Prompt for output from a role."""
 
     @abc.abstractmethod
-    def append_output(self, output):
-        """Append output to the current role."""
-
-    @abc.abstractmethod
-    def finalize_output(self, output):
-        """Finalize output of the current role."""
-    
-    def stream_output(self, role: str, output_stream, skip_echo_len: int):
-        """Stream output from a role."""
-        self.prompt_for_output(role)
+    def stream_output(self, output_stream, skip_echo_len: int):
+        """Stream output."""
         pre = 0
         for outputs in output_stream:
             outputs = outputs[skip_echo_len:].strip()
@@ -185,8 +177,9 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
         }
 
+        chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, params, device)
-        outputs = chatio.stream_output(conv.roles[1], output_stream, skip_echo_len)
+        outputs = chatio.stream_output(output_stream, skip_echo_len)
         conv.messages[-1][-1] = " ".join(outputs)
 
         if debug:
