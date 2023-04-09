@@ -85,7 +85,7 @@ python3 -m fastchat.model.apply_delta \
 
 ## Inference with Command Line Interface
 
-(Experimental Feature: You can specify `--style rich` to enable rich text output.)
+(Experimental Feature: You can specify `--style rich` to enable rich text output. This may not work on certain terminals.)
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
