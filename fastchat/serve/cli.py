@@ -34,23 +34,15 @@ def stream_text(output_stream, skip_echo_len: int):
         # skip the echo part
         pos = max(pos, skip_echo_len)
         new_text = output[pos:].encode()
+        pos = len(output)
         if new_text:
             decoded_chunk = decoder.decode(new_text, final=False)
             yield decoded_chunk
 
-            # category = unicodedata.category(new_text[-1])
-            # # Check if character is a nonspacing mark
-            # #  (e.g., part of a multi-codepoint character)
-            # if category == 'Mn':
-            #     pos = len(output) - 1
-            #     yield new_text[:-1]
-            # else:
-            #     pos = len(output)
-            #     yield new_text
-
-    # yield the rest of the output
-    if pos < len(output):
-        yield decoder.decode(output[pos:].encode(), final=True)
+    # Flush any remaining characters from the decoder
+    remaining = decoder.decode(b'', final=True)
+    if remaining:
+        yield remaining
 
 
 class SimpleChatIO(ChatIO):
