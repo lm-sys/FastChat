@@ -206,7 +206,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         skip_echo_len = len(state.messages[-2][1]) + 1
     else:
         prompt = state.get_prompt()
-        skip_echo_len = len(prompt) + 1
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     # Make requests
     pload = {

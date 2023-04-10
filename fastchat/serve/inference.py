@@ -157,7 +157,7 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
-            skip_echo_len = len(prompt) + 1
+            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
         params = {
             "model": model_name,
