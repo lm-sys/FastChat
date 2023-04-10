@@ -35,7 +35,7 @@ class SimpleChatIO(ChatIO):
                 print(" ".join(outputs[pre:now]), end=" ", flush=True)
                 pre = now
         print(" ".join(outputs[pre:]), flush=True)
-        return outputs
+        return " ".join(outputs)
 
 
 class RichChatIO(ChatIO):
@@ -60,33 +60,22 @@ class RichChatIO(ChatIO):
 
     def stream_output(self, output_stream, skip_echo_len: int):
         """Stream output from a role."""
-        pre = 0
         # TODO(suquark): the console flickers when there is a code block
         #  above it. We need to cut off "live" when a code block is done.
 
         # Create a Live context for updating the console output
         with Live(console=self._console, refresh_per_second=4) as live:
-            accumulated_text = ""
             # Read lines from the stream
             for outputs in output_stream:
-                outputs = outputs[skip_echo_len:].strip()
-                outputs = outputs.split(" ")
-                now = len(outputs) - 1
-                if now > pre:
-                    accumulated_text += " ".join(outputs[pre:now]) + " "
-                    pre = now
+                accumulated_text = outputs[skip_echo_len:]
+                if not accumulated_text:
+                    continue
                 # Render the accumulated text as Markdown
                 markdown = Markdown(accumulated_text)
-                
                 # Update the Live console output
                 live.update(markdown)
-
-            accumulated_text += " ".join(outputs[pre:])
-            markdown = Markdown(accumulated_text)
-            live.update(markdown)
-
         self._console.print()
-        return outputs
+        return outputs[skip_echo_len:]
 
 
 def main(args):
