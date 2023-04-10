@@ -65,7 +65,6 @@ class RichChatIO(ChatIO):
 
         # Create a Live context for updating the console output
         with Live(console=self._console, refresh_per_second=4) as live:
-            accumulated_text = ""
             # Read lines from the stream
             for outputs in output_stream:
                 accumulated_text = outputs[skip_echo_len:]
