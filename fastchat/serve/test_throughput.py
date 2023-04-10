@@ -6,6 +6,8 @@ import requests
 import threading
 import time
 
+from fastchat.conversation import default_conversation
+
 
 def main():
     if args.worker_address:
@@ -26,8 +28,10 @@ def main():
     if worker_addr == "":
         return
 
-    prompts = [f"Tell me a story with more than {''.join([str(i + 1)] * 5)} words"
-               for i in range(args.n_thread)]
+    conv = default_conversation.copy()
+    conv.append_message(conv.roles[0], "Tell me a story with more than 1000 words")
+    prompt_template = conv.get_prompt()
+    prompts = [prompt_template for _ in range(args.n_thread)]
 
     headers = {"User-Agent": "fastchat Client"}
     ploads = [{
@@ -42,11 +46,18 @@ def main():
         if args.test_dispatch:
             ret = requests.post(controller_addr + "/get_worker_address",
                                 json={"model": args.model_name})
-            worker_addr = ret.json()["address"]
-            print(f"thread {i} goes to {worker_addr}")
-        response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
+            thread_worker_addr = ret.json()["address"]
+        else:
+            thread_worker_addr = worker_addr
+        print(f"thread {i} goes to {thread_worker_addr}")
+        response = requests.post(thread_worker_addr + "/worker_generate_stream", headers=headers,
                                  json=ploads[i], stream=False)
-        results[i] = response
+        k = list(response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
+        # print(k)
+        response_new_words = json.loads(k[-2].decode("utf-8"))["text"]
+        error_code = json.loads(k[-2].decode("utf-8"))["error_code"]
+        # print(f"=== Thread {i} ===, words: {1}, error code: {error_code}")
+        results[i] = len(response_new_words.split(" ")) - len(prompts[i].split(" "))
 
     # use N threads to prompt the backend
     tik = time.time()
@@ -55,20 +66,22 @@ def main():
     for i in range(args.n_thread):
         t = threading.Thread(target=send_request, args=(results, i))
         t.start()
-        time.sleep(0.5)
+        # time.sleep(0.5)
         threads.append(t)
 
     for t in threads:
         t.join()
 
     print(f"Time (POST): {time.time() - tik} s")
-    n_words = 0
-    for i, response in enumerate(results):
-        # print(prompt[i].replace(conv.sep, "\n"), end="")
-        # make sure the streaming finishes at EOS or stopping criteria
-        k = list(response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
-        response_new_words = json.loads(k[-2].decode("utf-8"))["text"]
-        n_words += len(response_new_words.split(" ")) - len(prompts[i].split(" "))
+    # n_words = 0
+    # for i, response in enumerate(results):
+    #     # print(prompt[i].replace(conv.sep, "\n"), end="")
+    #     # make sure the streaming finishes at EOS or stopping criteria
+    #     k = list(response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"))
+    #     response_new_words = json.loads(k[-2].decode("utf-8"))["text"]
+    #     # print(response_new_words)
+    #     n_words += len(response_new_words.split(" ")) - len(prompts[i].split(" "))
+    n_words = sum(results)
     time_seconds = time.time() - tik
     print(f"Time (Completion): {time_seconds}, n threads: {args.n_thread}, "
           f"throughput: {n_words / time_seconds} words/s.")
