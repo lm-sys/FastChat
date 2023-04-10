@@ -8,6 +8,7 @@ import argparse
 import io
 import re
 import unicodedata
+import codecs
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -21,6 +22,7 @@ from fastchat.serve.inference import chat_loop, ChatIO
 
 
 def stream_text(output_stream, skip_echo_len: int):
+    decoder = codecs.getincrementaldecoder('utf-8')()
     # Assuming the stream is utf-8 encoded.
     pos = 0
     # Currently, the output is the same string that keeps extending,
@@ -33,19 +35,22 @@ def stream_text(output_stream, skip_echo_len: int):
         pos = max(pos, skip_echo_len)
         new_text = output[pos:]
         if new_text:
-            category = unicodedata.category(new_text[-1])
-            # Check if character is a nonspacing mark
-            #  (e.g., part of a multi-codepoint character)
-            if category == 'Mn':
-                pos = len(output) - 1
-                yield new_text[:-1]
-            else:
-                pos = len(output)
-                yield new_text
+            decoded_chunk = decoder.decode(new_text, final=False)
+            yield decoded_chunk
+
+            # category = unicodedata.category(new_text[-1])
+            # # Check if character is a nonspacing mark
+            # #  (e.g., part of a multi-codepoint character)
+            # if category == 'Mn':
+            #     pos = len(output) - 1
+            #     yield new_text[:-1]
+            # else:
+            #     pos = len(output)
+            #     yield new_text
 
     # yield the rest of the output
     if pos < len(output):
-        yield output[pos:]
+        yield decoder.decode(output[pos:], final=True)
 
 
 class SimpleChatIO(ChatIO):
