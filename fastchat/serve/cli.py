@@ -61,7 +61,9 @@ class SimpleChatIO(ChatIO):
         for output in stream_text(output_stream, skip_echo_len):
             string_buffer.write(output)
             print(output, end="", flush=True)
-        return string_buffer.getvalue()
+        value = string_buffer.getvalue()
+        string_buffer.close()
+        return value
 
 
 class RichChatIO(ChatIO):
