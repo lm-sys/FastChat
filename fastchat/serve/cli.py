@@ -7,8 +7,6 @@ python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 import argparse
 import io
 import re
-import unicodedata
-import codecs
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -19,30 +17,6 @@ from rich.markdown import Markdown
 from rich.live import Live
 
 from fastchat.serve.inference import chat_loop, ChatIO
-
-
-def stream_text(output_stream, skip_echo_len: int):
-    decoder = codecs.getincrementaldecoder('utf-8')()
-    # Assuming the stream is utf-8 encoded.
-    pos = 0
-    # Currently, the output is the same string that keeps extending,
-    # without modifying the previous part.
-    for output in output_stream:
-        # first, wait until the output is longer than the skip length
-        if len(output) <= skip_echo_len:
-            continue
-        # skip the echo part
-        pos = max(pos, skip_echo_len)
-        new_text = output[pos:].encode()
-        pos = len(output)
-        if new_text:
-            decoded_chunk = decoder.decode(new_text, final=False)
-            yield decoded_chunk
-
-    # Flush any remaining characters from the decoder
-    remaining = decoder.decode(b'', final=True)
-    if remaining:
-        yield remaining
 
 
 class SimpleChatIO(ChatIO):
@@ -93,12 +67,6 @@ class RichChatIO(ChatIO):
             accumulated_text = ""
             # Read lines from the stream
             for outputs in output_stream:
-                # outputs = outputs[skip_echo_len:].strip()
-                # outputs = outputs.split(" ")
-                # now = len(outputs) - 1
-                # if now > pre:
-                #     accumulated_text += " ".join(outputs[pre:now]) + " "
-                #     pre = now
                 accumulated_text = outputs[skip_echo_len:]
                 if not accumulated_text:
                     continue
@@ -106,11 +74,6 @@ class RichChatIO(ChatIO):
                 markdown = Markdown(accumulated_text)
                 # Update the Live console output
                 live.update(markdown)
-
-            accumulated_text += " ".join(outputs[pre:])
-            markdown = Markdown(accumulated_text)
-            live.update(markdown)
-
         self._console.print()
         return outputs
 
