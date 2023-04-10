@@ -109,7 +109,7 @@ class ModelWorker:
             self.register_to_controller()
 
     def get_queue_length(self):
-        if model_semaphore is None:
+        if model_semaphore is None or model_semaphore._value is None or model_semaphore._waiters is None:
             return 0
         else:
             return args.limit_model_concurrency - model_semaphore._value + len(
