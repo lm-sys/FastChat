@@ -5,7 +5,9 @@ Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
 import argparse
+import io
 import re
+import unicodedata
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -18,6 +20,32 @@ from rich.live import Live
 from fastchat.serve.inference import chat_loop, ChatIO
 
 
+def stream_text(output_stream, skip_echo_len: int):
+    # Assuming the stream is utf-8 encoded.
+    pos = 0
+    # Currently, the output is the same string that keeps extending,
+    # without modifying the previous part.
+    for output in output_stream:
+        output = output[skip_echo_len:]
+        new_text = output[pos:]
+        if new_text:
+            category = unicodedata.category(new_text[-1])
+            # Check if character is a nonspacing mark
+            #  (e.g., part of a multi-codepoint character)
+            if category == 'Mn':
+                pos = len(output) - 1
+                yield new_text[:-1]
+            else:
+                pos = len(output)
+                yield new_text
+        else:
+            break  # empty output
+
+    # yield the rest of the output
+    if pos < len(output):
+        yield output[pos:]
+
+
 class SimpleChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
         return input(f"{role}: ")
@@ -26,16 +54,12 @@ class SimpleChatIO(ChatIO):
         print(f"{role}: ", end="", flush=True)
 
     def stream_output(self, output_stream, skip_echo_len: int):
-        pre = 0
-        for outputs in output_stream:
-            outputs = outputs[skip_echo_len:].strip()
-            outputs = outputs.split(" ")
-            now = len(outputs) - 1
-            if now > pre:
-                print(" ".join(outputs[pre:now]), end=" ", flush=True)
-                pre = now
-        print(" ".join(outputs[pre:]), flush=True)
-        return outputs
+        # Create a StringIO object
+        string_buffer = io.StringIO()
+        for output in stream_text(output_stream, skip_echo_len):
+            string_buffer.write(output)
+            print(output, end="", flush=True)
+        return string_buffer.getvalue()
 
 
 class RichChatIO(ChatIO):
