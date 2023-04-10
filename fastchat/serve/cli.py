@@ -35,7 +35,7 @@ class SimpleChatIO(ChatIO):
                 print(" ".join(outputs[pre:now]), end=" ", flush=True)
                 pre = now
         print(" ".join(outputs[pre:]), flush=True)
-        return " ".join(outputs).strip()
+        return " ".join(outputs)
 
 
 class RichChatIO(ChatIO):
@@ -75,7 +75,7 @@ class RichChatIO(ChatIO):
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
-        return outputs[skip_echo_len:].strip()
+        return outputs[skip_echo_len:]
 
 
 def main(args):
