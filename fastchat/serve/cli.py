@@ -85,7 +85,6 @@ class RichChatIO(ChatIO):
 
     def stream_output(self, output_stream, skip_echo_len: int):
         """Stream output from a role."""
-        pre = 0
         # TODO(suquark): the console flickers when there is a code block
         #  above it. We need to cut off "live" when a code block is done.
 
@@ -94,15 +93,17 @@ class RichChatIO(ChatIO):
             accumulated_text = ""
             # Read lines from the stream
             for outputs in output_stream:
-                outputs = outputs[skip_echo_len:].strip()
-                outputs = outputs.split(" ")
-                now = len(outputs) - 1
-                if now > pre:
-                    accumulated_text += " ".join(outputs[pre:now]) + " "
-                    pre = now
+                # outputs = outputs[skip_echo_len:].strip()
+                # outputs = outputs.split(" ")
+                # now = len(outputs) - 1
+                # if now > pre:
+                #     accumulated_text += " ".join(outputs[pre:now]) + " "
+                #     pre = now
+                accumulated_text = outputs[skip_echo_len:]
+                if not accumulated_text:
+                    continue
                 # Render the accumulated text as Markdown
                 markdown = Markdown(accumulated_text)
-                
                 # Update the Live console output
                 live.update(markdown)
 
