@@ -26,7 +26,11 @@ def stream_text(output_stream, skip_echo_len: int):
     # Currently, the output is the same string that keeps extending,
     # without modifying the previous part.
     for output in output_stream:
-        output = output[skip_echo_len:]
+        # first, wait until the output is longer than the skip length
+        if len(output) <= skip_echo_len:
+            continue
+        # skip the echo part
+        pos = max(pos, skip_echo_len)
         new_text = output[pos:]
         if new_text:
             category = unicodedata.category(new_text[-1])
@@ -38,8 +42,6 @@ def stream_text(output_stream, skip_echo_len: int):
             else:
                 pos = len(output)
                 yield new_text
-        else:
-            break  # empty output
 
     # yield the rest of the output
     if pos < len(output):
