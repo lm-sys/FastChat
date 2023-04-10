@@ -5,7 +5,6 @@ Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
 import argparse
-import io
 import re
 
 from prompt_toolkit import PromptSession
@@ -27,14 +26,16 @@ class SimpleChatIO(ChatIO):
         print(f"{role}: ", end="", flush=True)
 
     def stream_output(self, output_stream, skip_echo_len: int):
-        # Create a StringIO object
-        string_buffer = io.StringIO()
-        for output in stream_text(output_stream, skip_echo_len):
-            string_buffer.write(output)
-            print(output, end="", flush=True)
-        value = string_buffer.getvalue()
-        string_buffer.close()
-        return value
+        pre = 0
+        for outputs in output_stream:
+            outputs = outputs[skip_echo_len:].strip()
+            outputs = outputs.split(" ")
+            now = len(outputs) - 1
+            if now > pre:
+                print(" ".join(outputs[pre:now]), end=" ", flush=True)
+                pre = now
+        print(" ".join(outputs[pre:]), flush=True)
+        return " ".join(outputs)
 
 
 class RichChatIO(ChatIO):
@@ -75,7 +76,7 @@ class RichChatIO(ChatIO):
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
-        return outputs
+        return outputs[skip_echo_len:]
 
 
 def main(args):
