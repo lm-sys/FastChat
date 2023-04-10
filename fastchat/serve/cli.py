@@ -33,7 +33,7 @@ def stream_text(output_stream, skip_echo_len: int):
             continue
         # skip the echo part
         pos = max(pos, skip_echo_len)
-        new_text = output[pos:].decode('utf-8')
+        new_text = output[pos:].encode()
         if new_text:
             decoded_chunk = decoder.decode(new_text, final=False)
             yield decoded_chunk
@@ -50,7 +50,7 @@ def stream_text(output_stream, skip_echo_len: int):
 
     # yield the rest of the output
     if pos < len(output):
-        yield decoder.decode(output[pos:].decode('utf-8'), final=True)
+        yield decoder.decode(output[pos:].encode(), final=True)
 
 
 class SimpleChatIO(ChatIO):
