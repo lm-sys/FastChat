@@ -1,8 +1,10 @@
 """Inference for FastChat models."""
 import abc
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
-
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+except ImportError:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
 from fastchat.conversation import conv_templates, SeparatorStyle
 from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
