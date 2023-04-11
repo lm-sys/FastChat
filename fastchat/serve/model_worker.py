@@ -115,8 +115,8 @@ class ModelWorker:
         if model_semaphore is None or model_semaphore._value is None or model_semaphore._waiters is None:
             return 0
         else:
-            return args.limit_model_concurrency - model_semaphore._value + len(
-                model_semaphore._waiters)
+            _waiters = len(model_semaphore._waiters) if model_semaphore._waiters else 0
+            return args.limit_model_concurrency - model_semaphore._value + _waiters
 
     def get_status(self):
         return {
