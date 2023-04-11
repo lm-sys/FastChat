@@ -91,26 +91,26 @@ python3 -m fastchat.model.apply_delta \
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 See the "No Enough Memory" section below if you do not have enough memory.
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights
+python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights
 ```
 
 #### Multiple GPUs
 If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --num-gpus 2
+python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --num-gpus 2
 ```
 
 #### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device cpu
+python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
@@ -121,7 +121,7 @@ It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/V100(16GB) GPU.
 
 ```
-python3 -m fastchat.serve.cli --model-name /path/to/vicuna/weights --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --load-8bit
 ```
 
 Besides, we are actively exploring more methods to make the model easier to run on more platforms.

@@ -11,7 +11,7 @@ from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
-def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
+def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -32,12 +32,12 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    if "chatglm" in model_name:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_name, trust_remote_code=True).half().cuda()
+    if "chatglm" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
     else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-        model = AutoModelForCausalLM.from_pretrained(model_name,
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
 
     if load_8bit:
@@ -130,11 +130,11 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
+def chat_loop(model_path: str, device: str, num_gpus: str, load_8bit: bool,
               conv_template: str, temperature: float, max_new_tokens: int,
               chatio: ChatIO, debug: bool):
     # Model
-    model, tokenizer = load_model(model_name, device,
+    model, tokenizer = load_model(model_path, device,
         num_gpus, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
@@ -162,7 +162,7 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
             skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
         params = {
-            "model": model_name,
+            "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
