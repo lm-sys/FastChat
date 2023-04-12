@@ -63,16 +63,6 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 Our released weights are only compatible with the latest main branch of huggingface/transformers.
 We install the correct version of transformers when fastchat is installed.
 
-### Vicuna-13B
-This conversion command needs around 60 GB of CPU RAM.
-If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
-```bash
-python3 -m fastchat.model.apply_delta \
-    --base /path/to/llama-13b \
-    --target /output/path/to/vicuna-13b \
-    --delta lmsys/vicuna-13b-delta-v0
-```
-
 ### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
 If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
@@ -80,8 +70,21 @@ If you do not have enough memory, you can create a large swap file that allows t
 python3 -m fastchat.model.apply_delta \
     --base /path/to/llama-7b \
     --target /output/path/to/vicuna-7b \
-    --delta lmsys/vicuna-7b-delta-v0
+    --delta lmsys/vicuna-7b-delta-v1.1
 ```
+
+### Vicuna-13B
+This conversion command needs around 60 GB of CPU RAM.
+If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
+```bash
+python3 -m fastchat.model.apply_delta \
+    --base /path/to/llama-13b \
+    --target /output/path/to/vicuna-13b \
+    --delta lmsys/vicuna-13b-delta-v1.1
+```
+
+### Old weights
+See [docs/weights_version.md](docs/weights_version.md) for all versions of weights and their differences.
 
 ## Inference with Command Line Interface
 
@@ -95,7 +98,7 @@ python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights
 ```
 
 #### Multiple GPUs
-If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
+You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
 python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --num-gpus 2
 ```
@@ -186,14 +189,46 @@ For detailed instructions, please refer to the [evaluation](fastchat/eval) docum
 
 Vicuna is created by fine-tuning a LLaMA base model using approximately 70K user-shared conversations gathered from ShareGPT.com with public APIs. To ensure data quality, we convert the HTML back to markdown and filter out some inappropriate or low-quality samples. Additionally, we divide lengthy conversations into smaller segments that fit the model's maximum context length. For detailed instructions to clean the ShareGPT data, check out [here](docs/commands/data_cleaning.md).
 
-Due to some concerns, we may not release the data at the moment. If you would like to try the fine-tuning code, you can try to run it with our [preprocessed alpaca dataset](playground/data/alpaca-data-conversation.json) (originally from [here](https://github.com/tatsu-lab/stanford_alpaca)).
+Due to some concerns, we may not release the ShareGPT dataset at the moment. If you would like to try the fine-tuning code, you can run it with some dummy questions in [dummy.json](playground/data/dummy.json). You can follow the same format and plug in your own data.
 
 ### Code and Hyperparameters
-We fine-tune the model using the code from [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), with some modifications to support gradient checkpointing and [Flash Attention](https://github.com/HazyResearch/flash-attention). We use similar hyperparameters as the Stanford Alpaca.
+Our code is based on [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca) with additional support for multi-round conversations.
+We use similar hyperparameters as the Stanford Alpaca.
 
 | Hyperparameter | Global Batch Size | Learning rate | Epochs | Max length | Weight decay |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Vicuna-13B | 128 | 2e-5 | 3 | 2048 | 0 |
+
+### Fine-tuning Vicuna-7B with Local GPUs
+You can use the following command to train Vicuna-7B with 4 x A100 (40GB).
+```bash
+torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
+    --model_name_or_path ~/model_weights/llama-7b  \
+    --data_path playground/data/dummy.json \
+    --bf16 True \
+    --output_dir output \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 2 \
+    --per_device_eval_batch_size 2 \
+    --gradient_accumulation_steps 16 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 1200 \
+    --save_total_limit 10 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True \
+    --model_max_length 2048 \
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+```
+
+If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
 ### Fine-tuning on Any Cloud with SkyPilot
 [SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
@@ -216,39 +251,3 @@ sky spot launch -n vicuna scripts/train-vicuna.yaml --env WANDB_API_KEY
 sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
 ```
 Note: Please make sure the `WANDB_API_KEY` has been setup on your local machine. You can find the API key on your [wandb profile page](https://wandb.ai/authorize). If you would like to train the model without using wandb, you can replace the `--env WANDB_API_KEY` flag with `--env WANDB_MODE=offline`.
-
-#### Alpaca
-Launch the training job with the following line (will be launched on a single node with 4 A100-80GB GPUs)
-```
-sky launch -c alpaca -s scripts/train-alpaca.yaml --env WANDB_API_KEY
-```
-
-### Fine-tuning with Local GPUs
-Vicuna can also be trained on 8 A100 GPUs with 80GB memory with the following code. To train on fewer GPUs, you can reduce the `per_device_train_batch_size` and increase the `gradient_accumulation_steps` accordingly to keep the global batch size the same. To setup the environment, please see the setup section in [scripts/train-vicuna.yaml](scripts/train-vicuna.yaml).
-```bash
-torchrun --nnodes=1 --nproc_per_node=8 --master_port=<your_random_port> \
-    fastchat/train/train_mem.py \
-    --model_name_or_path <path-to-llama-model-weight> \
-    --data_path <path-to-data> \
-    --bf16 True \
-    --output_dir ./checkpoints \
-    --num_train_epochs 3 \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 1 \
-    --evaluation_strategy "no" \
-    --save_strategy "steps" \
-    --save_steps 1200 \
-    --save_total_limit 100 \
-    --learning_rate 2e-5 \
-    --weight_decay 0. \
-    --warmup_ratio 0.03 \
-    --lr_scheduler_type "cosine" \
-    --logging_steps 1 \
-    --fsdp "full_shard auto_wrap" \
-    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
-    --tf32 True \
-    --model_max_length 2048 \
-    --gradient_checkpointing True \
-    --lazy_preprocess True
-```

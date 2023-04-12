@@ -1,4 +1,12 @@
-### Data cleaning
+## Data cleaning
+
+## Requirements
+```
+pip3 install bs4 markdownify
+pip3 install polyglot icu pyicu pycld2 morfessor
+```
+
+## Steps
 ```
 # Convert html to markdown
 python3 -m fastchat.data.clean_sharegpt --in sharegpt_20230322_html.json --out sharegpt_20230322_clean.json

@@ -3,7 +3,7 @@ import json
 
 import requests
 
-from fastchat.conversation import default_conversation, SeparatorStyle
+from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     if worker_addr == "":
         return
 
-    conv = default_conversation.copy()
+    conv = get_default_conv_template(model_name).copy()
     conv.append_message(conv.roles[0], args.message)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
@@ -50,7 +50,6 @@ def main():
             skip_echo_len = len(prompt.replace("</s>", " ")) + 1
             output = data["text"][skip_echo_len:].strip()
             print(f"{conv.roles[1]}: {output}", end="\r")
-
     print("")
 
 
