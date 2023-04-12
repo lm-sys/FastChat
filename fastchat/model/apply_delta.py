@@ -37,7 +37,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
     print(f"Saving the target model to {target_model_path}")
     base.save_pretrained(target_model_path)
-    delta_tokenizer.save_pretrained(target_model_path)
+    base_tokenizer.save_pretrained(target_model_path)
 
 
 if __name__ == "__main__":
