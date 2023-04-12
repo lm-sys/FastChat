@@ -138,6 +138,10 @@ def clear_history(request: gr.Request):
 
 def add_text(state, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
+
+    if state is None:
+        state = get_default_conv_template("vicuna").copy()
+
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
@@ -147,9 +151,6 @@ def add_text(state, text, request: gr.Request):
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
-
-    if state is None:
-        state = get_default_conv_template("vicuna").copy()
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
