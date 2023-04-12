@@ -9,7 +9,7 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import (default_conversation, conv_templates,
+from fastchat.conversation import (get_default_conv_template,
                                    SeparatorStyle)
 from fastchat.constants import LOGDIR
 from fastchat.utils import (build_logger, server_error_msg,
@@ -29,6 +29,7 @@ disable_btn = gr.Button.update(interactive=False)
 priority = {
     "vicuna-13b": "aaaaaaa",
     "koala-13b": "aaaaaab",
+    "chatglm-6b": "aaaaaac",
 }
 
 
@@ -68,7 +69,7 @@ def load_demo(url_params, request: gr.Request):
             dropdown_update = gr.Dropdown.update(
                 value=model, visible=True)
 
-    state = default_conversation.copy()
+    state = None
     return (state,
             dropdown_update,
             gr.Chatbot.update(visible=True),
@@ -81,7 +82,7 @@ def load_demo(url_params, request: gr.Request):
 def load_demo_refresh_model_list(request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}")
     models = get_model_list()
-    state = default_conversation.copy()
+    state = None
     return (state, gr.Dropdown.update(
                choices=models,
                value=models[0] if len(models) > 0 else ""),
@@ -131,8 +132,8 @@ def regenerate(state, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
-    state = default_conversation.copy()
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    state = None
+    return (state, [], "") + (disable_btn,) * 5
 
 
 def add_text(state, text, request: gr.Request):
@@ -146,6 +147,9 @@ def add_text(state, text, request: gr.Request):
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
+
+    if state is None:
+        state = get_default_conv_template("vicuna").copy()
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
@@ -177,11 +181,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "koala" in model_name: # Hardcode the condition
-            template_name = "bair_v1"
-        else:
-            template_name = "v1"
-        new_state = conv_templates[template_name].copy()
+        new_state = get_default_conv_template(model_name).copy()
         new_state.conv_id = uuid.uuid4().hex
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)

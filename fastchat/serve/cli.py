@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument("--load-8bit", action="store_true",
         help="Use 8-bit quantization.")
-    parser.add_argument("--conv-template", type=str, default="v1",
+    parser.add_argument("--conv-template", type=str, default=None,
         help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
