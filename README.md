@@ -175,8 +175,62 @@ By following these steps, you will be able to serve your models using the web UI
 ### Huggingface Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
 
-### OpenAI-compatible RESTful APIs
-Coming soon.
+### OpenAI-compatible RESTful APIs & SDK
+
+#### Chat Completion
+
+Reference: https://platform.openai.com/docs/api-reference/chat/create
+
+**RESTful API Server**
+
+First, launch the controller
+
+```bash
+python3 -m fastchat.serve.controller
+```
+
+Then, launch the model worker(s)
+
+```bash
+python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-path /path/to/vicuna/weights
+```
+
+Finally, launch the RESTful API server
+
+```bash
+python3 -m fastchat.serve.api --host localhost --port 8000
+```
+
+Test the API server
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "vicuna-7b-v1.1",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+**Client SDK**
+
+Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e.g., `http://localhost:8000`), you can use the following code to send a request to the API server:
+
+```python
+import os
+from fastchat import client
+
+client.set_baseurl(os.getenv("FASTCHAT_BASEURL"))
+
+completion = client.ChatCompletion.create(
+  model="vicuna-7b-v1.1",
+  messages=[
+    {"role": "user", "content": "Hello!"}
+  ]
+)
+
+print(completion.choices[0].message)
+```
 
 ## Evaluation
 
