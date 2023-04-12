@@ -90,7 +90,7 @@ See [docs/weights_version.md](docs/weights_version.md) for all versions of weigh
 
 (Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
-<a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.gif" width="70%"></a>
+<a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
@@ -134,7 +134,7 @@ Contributions and pull requests are welcome.
 
 ## Serving with Web GUI
 
-<a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.gif" width="70%"></a>
+<a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
 
