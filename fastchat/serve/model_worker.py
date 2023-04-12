@@ -146,6 +146,7 @@ class ModelWorker:
         tokenizer, model = self.tokenizer, self.model
 
         prompt = params["prompt"]
+        n = int(params.get("n", 1))
         l_prompt = len(prompt)
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
@@ -154,56 +155,62 @@ class ModelWorker:
         torch.manual_seed(seed)
 
         input_ids = tokenizer(prompt).input_ids
-        output_ids = list(input_ids)
+        output_ids = [list(input_ids) for _ in range(n)]
 
         max_src_len = self.context_len - max_new_tokens - 8
-        input_ids = input_ids[-max_src_len:]
+        input_ids = [input_ids[-max_src_len:] for _ in range(n)]
+        stopped = [False for _ in range(n)]
 
         for i in range(max_new_tokens):
             if i == 0:
                 out = model(
-                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
+                    torch.as_tensor(input_ids, device=self.device), use_cache=True)
                 logits = out.logits
                 past_key_values = out.past_key_values
             else:
                 attention_mask = torch.ones(
                     1, past_key_values[0][0].shape[-2] + 1, device=self.device)
-                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
+                out = model(input_ids=torch.as_tensor([[token, token]], device=self.device),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
                 logits = out.logits
                 past_key_values = out.past_key_values
 
-            last_token_logits = logits[0][-1]
-            if temperature < 1e-4:
-                token = int(torch.argmax(last_token_logits))
-            else:
-                probs = torch.softmax(last_token_logits / temperature, dim=-1)
-                token = int(torch.multinomial(probs, num_samples=1))
+            tokens = []
+            for j, _logits in enumerate(logits):
+                if stopped[j]:
+                    continue
+                last_token_logits = _logits[-1]
+                if temperature < 1e-4:
+                    token = int(torch.argmax(last_token_logits))
+                else:
+                    probs = torch.softmax(last_token_logits / temperature, dim=-1)
+                    token = int(torch.multinomial(probs, num_samples=1))
+                tokens.append(token)
 
-            output_ids.append(token)
+                output_ids[j].append(token)
 
-            if token == tokenizer.eos_token_id:
-                stopped = True
-            else:
-                stopped = False
+                if token == tokenizer.eos_token_id:
+                    stopped[j] = True
+                else:
+                    stopped[j] = False
 
-            if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True)
-                pos = output.rfind(stop_str, l_prompt)
-                if pos != -1:
-                    output = output[:pos]
-                    stopped = True
+                if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped[j]:
+                    output = tokenizer.decode(output_ids[j], skip_special_tokens=True)
+                    pos = output.rfind(stop_str, l_prompt)
+                    if pos != -1:
+                        output = output[:pos]
+                        stopped[j] = True
 
-                ret = {
-                    "text": output,
-                    "error_code": 0,
-                }
-                yield json.dumps(ret).encode() + b"\0"
+                    ret = {
+                        "text": output,
+                        "error_code": 0,
+                    }
+                    yield json.dumps(ret).encode() + b"\0"
 
-            if stopped:
-                break
+                if all(stopped):
+                    break
 
         del past_key_values
 
