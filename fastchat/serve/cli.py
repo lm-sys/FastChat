@@ -71,7 +71,16 @@ class RichChatIO(ChatIO):
                 if not accumulated_text:
                     continue
                 # Render the accumulated text as Markdown
-                markdown = Markdown(accumulated_text)
+                # NOTE: this is a workaround for the rendering "unstandard markdown"
+                #  in rich. The output of chatbots would treat "\n" as a new line for
+                #  better compatibility with real-world text. However, then rendering
+                #  in markdown this would not work. Standard markdown would treat a single
+                #  "\n" in normal text as a space. Our workaround is adding two spaces at
+                #  the end of each line. This is not a perfect solution, as it would
+                #  introduce trailing spaces in code block, but it works
+                #  especially for console output, because in general the console does not
+                #  care about trailing spaces.
+                markdown = Markdown(accumulated_text.replace("\n", "  \n"))
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
