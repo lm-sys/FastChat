@@ -4,12 +4,12 @@ An open platform for training, serving, and evaluating large language model base
 ## Release
 
 <p align="center">
-<a href="https://vicuna.lmsys.org"><img src="assets/vicuna-logo.jpeg" width="20%"></a>
+<a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
 
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
-<a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
+<a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
 
 Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
@@ -18,6 +18,7 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 - [Vicuna Weights](#vicuna-weights)
 - [Inference with Command Line Interface](#inference-with-command-line-interface)
 - [Serving with Web GUI](#serving-with-web-gui)
+- [API](#api)
 - [Evaluation](#evaluation)
 - [Fine-tuning](#fine-tuning)
 
@@ -90,6 +91,8 @@ See [docs/weights_version.md](docs/weights_version.md) for all versions of weigh
 
 (Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
+<a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
+
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 See the "No Enough Memory" section below if you do not have enough memory.
@@ -117,6 +120,7 @@ python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device mps 
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
+
 #### No Enough Memory or Other Platforms
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
@@ -131,6 +135,8 @@ Besides, we are actively exploring more methods to make the model easier to run 
 Contributions and pull requests are welcome.
 
 ## Serving with Web GUI
+
+<a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
 
@@ -161,6 +167,14 @@ This is the user interface that users will interact with.
 
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 
+
+## API
+
+### Huggingface Generation APIs
+See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
+
+### OpenAI-compatible RESTful APIs
+Coming soon.
 
 ## Evaluation
 
