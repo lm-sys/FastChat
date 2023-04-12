@@ -148,6 +148,7 @@ def add_text(state, text, request: gr.Request):
     if args.moderate:
         flagged = violates_moderation(text)
         if flagged:
+            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
