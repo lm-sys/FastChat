@@ -20,7 +20,7 @@ USER: How are you?
 ASSISTANT: I am good.</s>
 ```
 
-See the full prompt template [here]().
+See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/00d9e6675bdff60be6603ffff9313b1d797d2e3e/fastchat/conversation.py#L115-L124).
 
 ### Example prompt (Weight v0)
 ```
@@ -32,4 +32,4 @@ A chat between a human and an assistant.
 ### Assistant: I am good.
 ```
 
-See the full prompt template [here]().
+See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/00d9e6675bdff60be6603ffff9313b1d797d2e3e/fastchat/conversation.py#L83-L112).
