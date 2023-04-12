@@ -2,7 +2,7 @@
 
 | Weights Version | v1.1 | v0 |
 | ---- | ---- | ---- |
-| Link      | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v1.1), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v1.1) | [7B](https://huggingface.co/lmsys/vicuna-13b-delta-v0), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v0) |
+| Link      | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v1.1), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v1.1) | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v0), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v0) |
 | Separator | `</s>` | `###` |
 | FastChat PyPI package compatibility | >= v0.2.0 |<= v0.1.10 |
 
