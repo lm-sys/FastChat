@@ -80,7 +80,16 @@ class RichChatIO(ChatIO):
                 #  introduce trailing spaces in code block, but it works
                 #  especially for console output, because in general the console does not
                 #  care about trailing spaces.
-                markdown = Markdown(accumulated_text.replace("\n", "  \n"))
+                lines = []
+                for line in accumulated_text.splitlines():
+                    lines.append(line)
+                    if line.startswith("```"):
+                        # Code block - do not add trailing spaces, as it would
+                        #  break the syntax highlighting
+                        lines.append("\n")
+                    else:
+                        lines.append("  \n")
+                markdown = Markdown("".join(lines))
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
