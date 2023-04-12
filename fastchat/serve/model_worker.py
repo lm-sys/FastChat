@@ -169,15 +169,15 @@ class ModelWorker:
                 past_key_values = out.past_key_values
             else:
                 attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
-                out = model(input_ids=torch.as_tensor([[token, token]], device=self.device),
+                    n, past_key_values[0][0].shape[-2] + 1, device=self.device)
+                out = model(input_ids=torch.unsqueeze(torch.as_tensor(tokens, device=self.device), 1),
                             use_cache=True,
                             attention_mask=attention_mask,
                             past_key_values=past_key_values)
                 logits = out.logits
                 past_key_values = out.past_key_values
 
-            tokens = []
+            tokens = [0 for _ in range(n)]
             for j, _logits in enumerate(logits):
                 if stopped[j]:
                     continue
@@ -187,7 +187,7 @@ class ModelWorker:
                 else:
                     probs = torch.softmax(last_token_logits / temperature, dim=-1)
                     token = int(torch.multinomial(probs, num_samples=1))
-                tokens.append(token)
+                tokens[j] = token
 
                 output_ids[j].append(token)
 
@@ -205,12 +205,13 @@ class ModelWorker:
 
                     ret = {
                         "text": output,
+                        "choice": j,
                         "error_code": 0,
                     }
                     yield json.dumps(ret).encode() + b"\0"
 
-                if all(stopped):
-                    break
+            if all(stopped):
+                break
 
         del past_key_values
 
