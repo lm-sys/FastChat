@@ -3,17 +3,12 @@ import abc
 from typing import Optional
 
 import torch
-<<<<<<< HEAD
 try:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
 except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
-from fastchat.conversation import conv_templates, SeparatorStyle
-=======
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
->>>>>>> Release v1.1
 from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
