@@ -18,6 +18,7 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 - [Vicuna Weights](#vicuna-weights)
 - [Inference with Command Line Interface](#inference-with-command-line-interface)
 - [Serving with Web GUI](#serving-with-web-gui)
+- [API](#api)
 - [Evaluation](#evaluation)
 - [Fine-tuning](#fine-tuning)
 
@@ -119,6 +120,7 @@ python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device mps 
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
+
 #### No Enough Memory or Other Platforms
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
@@ -165,6 +167,14 @@ This is the user interface that users will interact with.
 
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 
+
+## API
+
+### Huggingface Generation APIs
+See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
+
+### OpenAI-compatible RESTful APIs
+Coming soon.
 
 ## Evaluation
 
