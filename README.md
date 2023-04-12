@@ -98,7 +98,7 @@ python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights
 ```
 
 #### Multiple GPUs
-If you do not have enough GPU memory, you can use model parallelism to aggregate memory from multiple GPUs on the same machine.
+You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
 python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --num-gpus 2
 ```
@@ -227,6 +227,8 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --gradient_checkpointing True \
     --lazy_preprocess True
 ```
+
+If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
 ### Fine-tuning on Any Cloud with SkyPilot
 [SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
