@@ -14,12 +14,16 @@ import uuid
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import requests
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+except ImportError:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
 import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.cli import load_model
+from fastchat.serve.inference import load_model, generate_stream
+from fastchat.serve.serve_chatglm import chatglm_generate_stream
 from fastchat.utils import (build_logger, server_error_msg,
     pretty_print_semaphore)
 
@@ -62,6 +66,12 @@ class ModelWorker:
         else:
             self.context_len = 2048
 
+        is_chatglm = "chatglm" in str(type(self.model)).lower()
+        if is_chatglm:
+            self.generate_stream_func = chatglm_generate_stream
+        else:
+            self.generate_stream_func = generate_stream
+
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -102,7 +112,7 @@ class ModelWorker:
             self.register_to_controller()
 
     def get_queue_length(self):
-        if model_semaphore is None:
+        if model_semaphore is None or model_semaphore._value is None or model_semaphore._waiters is None:
             return 0
         else:
             return args.limit_model_concurrency - model_semaphore._value + len(
@@ -115,78 +125,15 @@ class ModelWorker:
             "queue_length": self.get_queue_length(),
         }
 
-    @torch.inference_mode()
-    def generate_stream(self, params):
-        #cur_mem = torch.cuda.memory_allocated()
-        #max_mem = torch.cuda.max_memory_allocated()
-        #logging.info(f"cur mem: {cur_mem/GB:.2f} GB, max_mem: {max_mem/GB:.2f} GB")
-
-        tokenizer, model = self.tokenizer, self.model
-
-        prompt = params["prompt"]
-        l_prompt = len(prompt)
-        temperature = float(params.get("temperature", 1.0))
-        max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
-        stop_str = params.get("stop", None)
-
-        input_ids = tokenizer(prompt).input_ids
-        output_ids = list(input_ids)
-
-        max_src_len = self.context_len - max_new_tokens - 8
-        input_ids = input_ids[-max_src_len:]
-
-        for i in range(max_new_tokens):
-            if i == 0:
-                out = model(
-                    torch.as_tensor([input_ids], device=self.device), use_cache=True)
-                logits = out.logits
-                past_key_values = out.past_key_values
-            else:
-                attention_mask = torch.ones(
-                    1, past_key_values[0][0].shape[-2] + 1, device=self.device)
-                out = model(input_ids=torch.as_tensor([[token]], device=self.device),
-                            use_cache=True,
-                            attention_mask=attention_mask,
-                            past_key_values=past_key_values)
-                logits = out.logits
-                past_key_values = out.past_key_values
-
-            last_token_logits = logits[0][-1]
-            if temperature < 1e-4:
-                token = int(torch.argmax(last_token_logits))
-            else:
-                probs = torch.softmax(last_token_logits / temperature, dim=-1)
-                token = int(torch.multinomial(probs, num_samples=1))
-
-            output_ids.append(token)
-
-            if token == tokenizer.eos_token_id:
-                stopped = True
-            else:
-                stopped = False
-
-            if i % args.stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True)
-                pos = output.rfind(stop_str, l_prompt)
-                if pos != -1:
-                    output = output[:pos]
-                    stopped = True
-
+    def generate_stream_gate(self, params):
+        try:
+            for output in self.generate_stream_func(self.model, self.tokenizer,
+                    params, self.device, self.context_len, args.stream_interval):
                 ret = {
                     "text": output,
                     "error_code": 0,
                 }
                 yield json.dumps(ret).encode() + b"\0"
-
-            if stopped:
-                break
-
-        del past_key_values
-
-    def generate_stream_gate(self, params):
-        try:
-            for x in self.generate_stream(params):
-                yield x
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
@@ -203,7 +150,7 @@ def release_model_semaphore():
 
 
 @app.post("/worker_generate_stream")
-async def generate_stream(request: Request):
+async def api_generate_stream(request: Request):
     global model_semaphore, global_counter
     global_counter += 1
     params = await request.json()
@@ -218,7 +165,7 @@ async def generate_stream(request: Request):
 
 
 @app.post("/worker_get_status")
-async def get_status(request: Request):
+async def api_get_status(request: Request):
     return worker.get_status()
 
 
@@ -230,9 +177,11 @@ if __name__ == "__main__":
         default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str,
         default="http://localhost:21001")
-    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
-    parser.add_argument("--model-name", type=str)
-    parser.add_argument("--device", type=str, choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--model-path", type=str, default="facebook/opt-350m",
+        help="The path to the weights")
+    parser.add_argument("--model-name", type=str,
+        help="Optional name")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)

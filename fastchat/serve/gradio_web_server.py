@@ -9,7 +9,7 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import (default_conversation, conv_templates,
+from fastchat.conversation import (get_default_conv_template,
                                    SeparatorStyle)
 from fastchat.constants import LOGDIR
 from fastchat.utils import (build_logger, server_error_msg,
@@ -29,6 +29,7 @@ disable_btn = gr.Button.update(interactive=False)
 priority = {
     "vicuna-13b": "aaaaaaa",
     "koala-13b": "aaaaaab",
+    "chatglm-6b": "aaaaaac",
 }
 
 
@@ -68,7 +69,7 @@ def load_demo(url_params, request: gr.Request):
             dropdown_update = gr.Dropdown.update(
                 value=model, visible=True)
 
-    state = default_conversation.copy()
+    state = None
     return (state,
             dropdown_update,
             gr.Chatbot.update(visible=True),
@@ -81,7 +82,7 @@ def load_demo(url_params, request: gr.Request):
 def load_demo_refresh_model_list(request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}")
     models = get_model_list()
-    state = default_conversation.copy()
+    state = None
     return (state, gr.Dropdown.update(
                choices=models,
                value=models[0] if len(models) > 0 else ""),
@@ -131,8 +132,8 @@ def regenerate(state, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
-    state = default_conversation.copy()
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    state = None
+    return (state, [], "") + (disable_btn,) * 5
 
 
 def add_text(state, text, request: gr.Request):
@@ -146,6 +147,9 @@ def add_text(state, text, request: gr.Request):
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
+
+    if state is None:
+        state = get_default_conv_template("vicuna").copy()
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
@@ -177,11 +181,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        if "koala" in model_name: # Hardcode the condition
-            template_name = "bair_v1"
-        else:
-            template_name = "v1"
-        new_state = conv_templates[template_name].copy()
+        new_state = get_default_conv_template(model_name).copy()
         new_state.conv_id = uuid.uuid4().hex
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
@@ -201,14 +201,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         return
 
     # Construct prompt
-    prompt = state.get_prompt()
+    if "chatglm" in model_name:
+        prompt = state.messages[state.offset:]
+        skip_echo_len = len(state.messages[-2][1]) + 1
+    else:
+        prompt = state.get_prompt()
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     # Make requests
     pload = {
         "model": model_name,
         "prompt": prompt,
         "temperature": float(temperature),
-        "max_new_tokens": min(int(max_new_tokens), 1536),
+        "max_new_tokens": int(max_new_tokens),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -219,12 +224,12 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     try:
         # Stream output
         response = requests.post(worker_addr + "/worker_generate_stream",
-            headers=headers, json=pload, stream=True, timeout=10)
+            headers=headers, json=pload, stream=True, timeout=20)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"][len(prompt) + 1:].strip()
+                    output = data["text"][skip_echo_len:].strip()
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -266,12 +271,11 @@ notice_markdown = ("""
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
-Please click the "Flag" button if you get any inappropriate answer! We will collect those to keep improving our moderator.
-For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
 
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
+- [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
 
@@ -372,11 +376,12 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
-    parser.add_argument("--concurrency-count", type=int, default=4)
+    parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--model-list-mode", type=str, default="once",
         choices=["once", "reload"])
     parser.add_argument("--share", action="store_true")
-    parser.add_argument("--moderate", action="store_true")
+    parser.add_argument("--moderate", action="store_true",
+        help="Enable content moderation")
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -385,5 +390,5 @@ if __name__ == "__main__":
     logger.info(args)
     demo = build_demo()
     demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
-               api_open=False).launch(
-        server_name=args.host, server_port=args.port, share=args.share)
+               api_open=False).launch(server_name=args.host, server_port=args.port,
+                                      share=args.share, max_threads=200)

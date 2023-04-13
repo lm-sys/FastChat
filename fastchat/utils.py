@@ -24,7 +24,7 @@ def build_logger(logger_name, logger_filename):
 
     # Set the format of root handlers
     if not logging.getLogger().handlers:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, encoding='utf-8')
     logging.getLogger().handlers[0].setFormatter(formatter)
 
     # Redirect stdout and stderr to loggers
@@ -80,13 +80,15 @@ class StreamToLogger(object):
             # By default sys.stdout.write() expects '\n' newlines and then
             # translates them so this is still cross platform.
             if line[-1] == '\n':
-                self.logger.log(self.log_level, line.rstrip())
+                encoded_message = line.encode('utf-8', 'ignore').decode('utf-8')
+                self.logger.log(self.log_level, encoded_message.rstrip())
             else:
                 self.linebuf += line
 
     def flush(self):
         if self.linebuf != '':
-            self.logger.log(self.log_level, self.linebuf.rstrip())
+            encoded_message = self.linebuf.encode('utf-8', 'ignore').decode('utf-8')
+            self.logger.log(self.log_level, encoded_message.rstrip())
         self.linebuf = ''
 
 

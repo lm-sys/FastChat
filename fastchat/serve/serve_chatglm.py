@@ -1,36 +1,29 @@
 import torch
 from typing import List, Tuple
 
-def chatglm_generate_stream(tokenizer, model, params, device,
-                    context_len=2048, stream_interval=2):
-    """Generate text using model's chat api"""
 
-    query = params["prompt"]
-    max_length = int(params.get("max_new_tokens", 256))
+@torch.inference_mode()
+def chatglm_generate_stream(model, tokenizer, params, device,
+                            context_len=2048, stream_interval=2):
+    """Generate text using model's chat api"""
+    messages = params["prompt"]
+    max_new_tokens = int(params.get("max_new_tokens", 256))
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 0.7))
 
     gen_kwargs = {
-        "max_length": max_length,
+        "max_new_tokens": max_new_tokens,
         "do_sample": True,
         "top_p": top_p,
         "temperature": temperature,
         "logits_processor": None
     }
 
-
-    history = params["conv"].messages
-
-    prompt = ""
-    i = 0
-    while(i < len(history)-2):
-        prompt += "[Round {}]\n".format(i)
-        prompt += history[i][0] + "\n"
-        prompt += history[i][1] +"\n"
-        i += 1
-    prompt += "[Round {}]\n{}\n".format(i, history[i][1])
-
     hist = []
-    for token , hist in model.stream_chat(tokenizer,prompt,hist):
-        output = query + "#" + token + " "
+    for i in range(0, len(messages) - 2, 2):
+        hist.append((messages[i][1], messages[i+1][1]))
+    query = messages[-2][1]
+
+    for response, new_hist in model.stream_chat(tokenizer, query, hist):
+        output = query + " " + response
         yield output

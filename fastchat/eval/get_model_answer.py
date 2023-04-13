@@ -7,7 +7,7 @@ from tqdm import tqdm
 import shortuuid
 import ray
 
-from fastchat.conversation import default_conversation
+from fastchat.conversation import get_default_conv_template
 from fastchat.utils import disable_torch_init
 
 
@@ -37,7 +37,7 @@ def run_eval(model_path, model_id, question_file, answer_file, num_gpus):
 def get_model_answers(model_path, model_id, question_jsons):
     disable_torch_init()
     model_path = os.path.expanduser(model_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     model = AutoModelForCausalLM.from_pretrained(model_path,
         torch_dtype=torch.float16).cuda()
 
@@ -46,8 +46,9 @@ def get_model_answers(model_path, model_id, question_jsons):
         ques_json = json.loads(line)
         idx = ques_json["question_id"]
         qs = ques_json["text"]
-        conv = default_conversation.copy()
+        conv = get_default_conv_template(model_id).copy()
         conv.append_message(conv.roles[0], qs)
+        conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
         inputs = tokenizer([prompt])
         output_ids = model.generate(
@@ -56,13 +57,9 @@ def get_model_answers(model_path, model_id, question_jsons):
             temperature=0.7,
             max_new_tokens=1024)
         outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-        try:
-            index = outputs.index(conv.sep, len(prompt))
-        except ValueError:
-            outputs += conv.sep
-            index = outputs.index(conv.sep, len(prompt))
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
-        outputs = outputs[len(prompt) + len(conv.roles[1]) + 2:index].strip()
+        outputs = outputs[skip_echo_len:].strip()
         ans_id = shortuuid.uuid()
         ans_jsons.append({"question_id": idx,
                           "text": outputs,
