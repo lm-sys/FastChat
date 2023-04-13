@@ -285,6 +285,7 @@ By using this service, users are required to agree to the following terms: The s
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
+- [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): An instruction-tuned open LLM by Databricks
 
 Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
