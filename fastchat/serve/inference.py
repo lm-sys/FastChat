@@ -55,9 +55,9 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
             except Exception:
                 is_vicuna = isinstance(model, LLamaForCausalLM)
             if is_vicuna and model.model.vocab_size > 32000:
-                warnings.warn('You are probably using the old Vicuna-v0 model, '
+                warnings.warn('\nYou probably use the old Vicuna-v0 model, '
                             'which will generate unexpected results with the '
-                            'current fschat. Please check the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights')
+                            'current fschat.\nPlease check the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights')
 
     if load_8bit:
         compress_module(model, device)
