@@ -85,7 +85,7 @@ class RichChatIO(ChatIO):
                 for line in accumulated_text.splitlines():
                     lines.append(line)
                     if line.startswith("```"):
-                        # Code block - do not add trailing spaces, as it would
+                        # Code block marker - do not add trailing spaces, as it would
                         #  break the syntax highlighting
                         lines.append("\n")
                     else:
