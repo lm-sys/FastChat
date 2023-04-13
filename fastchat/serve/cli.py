@@ -72,12 +72,13 @@ class RichChatIO(ChatIO):
                     continue
                 # Render the accumulated text as Markdown
                 # NOTE: this is a workaround for the rendering "unstandard markdown"
-                #  in rich. The output of chatbots would treat "\n" as a new line for
-                #  better compatibility with real-world text. However, then rendering
-                #  in markdown this would not work. Standard markdown would treat a single
-                #  "\n" in normal text as a space. Our workaround is adding two spaces at
-                #  the end of each line. This is not a perfect solution, as it would
-                #  introduce trailing spaces in code block, but it works
+                #  in rich. The chatbots output treat "\n" as a new line for
+                #  better compatibility with real-world text. However, rendering
+                #  in markdown would break the format. It is because standard markdown
+                #  treat a single "\n" in normal text as a space.
+                #  Our workaround is adding two spaces at the end of each line.
+                #  This is not a perfect solution, as it would
+                #  introduce trailing spaces (only) in code block, but it works well
                 #  especially for console output, because in general the console does not
                 #  care about trailing spaces.
                 lines = []
