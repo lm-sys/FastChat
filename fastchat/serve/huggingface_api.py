@@ -1,3 +1,7 @@
+"""
+Usage:
+python3 -m fastchat.serve.huggingface_api --model ~/model_weights/vicuna-7b/
+"""
 import argparse
 import json
 
