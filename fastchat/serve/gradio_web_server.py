@@ -204,6 +204,13 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     if "chatglm" in model_name:
         prompt = state.messages[state.offset:]
         skip_echo_len = len(state.messages[-2][1]) + 1
+    elif "dolly" in model_name:
+        prompt = state.get_prompt()
+        special_toks = ['### End', '### Instruction:', '### Response:']
+        prompt_tmp = prompt
+        for tok in special_toks:
+            prompt_tmp = prompt_tmp.replace(tok, "")
+        skip_echo_len = len(prompt_tmp)
     else:
         prompt = state.get_prompt()
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1

@@ -38,6 +38,12 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
+    elif "dolly" in model_path:
+        kwargs.update({"torch_dtype": torch.bfloat16})
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        # 50277 means "### End"
+        tokenizer.eos_token_id = 50277
+        model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(model_path,
