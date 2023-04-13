@@ -29,7 +29,8 @@ disable_btn = gr.Button.update(interactive=False)
 priority = {
     "vicuna-13b": "aaaaaaa",
     "koala-13b": "aaaaaab",
-    "chatglm-6b": "aaaaaac",
+    "dolly-v2-12b": "aaaaaac",
+    "chatglm-6b": "aaaaaad",
 }
 
 
@@ -138,18 +139,20 @@ def clear_history(request: gr.Request):
 
 def add_text(state, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
+
+    if state is None:
+        state = get_default_conv_template("vicuna").copy()
+
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
     if args.moderate:
         flagged = violates_moderation(text)
         if flagged:
+            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
-
-    if state is None:
-        state = get_default_conv_template("vicuna").copy()
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
@@ -282,10 +285,10 @@ By using this service, users are required to agree to the following terms: The s
 ### Choose a model to chat with
 - [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
 - [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
-- [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): An instruction-tuned open LLM by Databricks
+- [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open LLM by Databricks.
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
-- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models
+- [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models.
 
 Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
