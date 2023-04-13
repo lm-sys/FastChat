@@ -37,7 +37,7 @@ DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
-# TODO: the lora_target_modules cannot support list
+
 @dataclass
 class LoraArguments:
     lora_r: int = 8,
@@ -59,7 +59,7 @@ def train():
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
-        target_modules=["q_proj", "v_proj"],
+        target_modules=lora_args.lora_target_modules,
         lora_dropout=lora_args.lora_dropout,
         bias="none",
         task_type="CAUSAL_LM",
