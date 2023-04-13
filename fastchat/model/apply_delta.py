@@ -11,7 +11,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import LlamaTokenizer, AutoConfig
 import gc
-from torch import nn
+import shutil
 
 def apply_delta(base_model_path, target_model_path, delta_path):
 
@@ -26,6 +26,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
     delta_num = 0
     delta_state_dict = torch.load(f"{delta_path}/pytorch_model-0000{str(delta_num%3+1)}-of-00003.bin", map_location=torch.device('cpu'))
+    config = AutoConfig.from_pretrained(base_model_path)
 
     
 
@@ -62,6 +63,8 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
     print(f"Saving the target model to {target_model_path}")
     delta_tokenizer.save_pretrained(target_model_path)
+    config.save_pretrained(target_model_path)
+    shutil.copyfile(f"{base_model_path}/pytorch_model.bin.index.json", f"{target_model_path}/pytorch_model.bin.index.json")
 
 
 if __name__ == "__main__":
