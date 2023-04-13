@@ -1,10 +1,11 @@
 import argparse
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaForCausalLM
 import torch
 import os
 import json
 from tqdm import tqdm
 import shortuuid
+import warnings
 import ray
 
 from fastchat.conversation import get_default_conv_template
@@ -40,6 +41,12 @@ def get_model_answers(model_path, model_id, question_jsons):
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     model = AutoModelForCausalLM.from_pretrained(model_path,
         torch_dtype=torch.float16).cuda()
+    
+    if isinstance(model, LlamaForCausalLM):
+        if model.model.vocab_size > 32000:
+            warnings.warn('You are probably using the old Vicuna-v0 model, '
+                          'which will generate unexpected results with the '
+                          'current fschat. Please check the new Vicuna-v1.1.')
 
     ans_jsons = []
     for i, line in enumerate(tqdm(question_jsons)):
