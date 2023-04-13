@@ -7,6 +7,7 @@ class SeparatorStyle(Enum):
     """Different separator style."""
     SINGLE = auto()
     TWO = auto()
+    DOLLY = auto()
 
 
 @dataclasses.dataclass
@@ -41,6 +42,17 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.DOLLY:
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ":\n" + message + seps[i % 2]
+                    if i % 2 == 1:
+                        ret += "\n\n"
+                else:
+                    ret += role + ":\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -134,11 +146,22 @@ conv_koala_v1 = Conversation(
     sep2="</s>",
 )
 
+conv_dolly = Conversation(
+    system=
+    "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
+    roles=('### Instruction', '### Response'),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.DOLLY,
+    sep="\n\n",
+    sep2="### End",
+)
 
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "koala_v1": conv_koala_v1,
+    "dolly": conv_dolly,
 }
 
 
@@ -148,6 +171,8 @@ def get_default_conv_template(model_name):
         return conv_vicuna_v1_1
     elif "koala" in model_name:
         return conv_koala_v1
+    elif "dolly" in model_name:
+        return conv_dolly
     return conv_one_shot
 
 
