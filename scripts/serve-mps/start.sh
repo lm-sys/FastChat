@@ -28,14 +28,14 @@ screen -dmS fastchat.worker zsh -c "\
     source ${CONDA_BASE_ENV_DIR}/bin/activate && \
     conda activate ${CONDA_ENV_NAME}; \
     ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/worker.7B+Vicuna_HF.sh; \
-    exec zsh" && echo "Launched 'fastchat.worker'"
+    exec zsh" && echo "Launched 'fastchat.worker' w/ shell alias 'fsworker'"
     
 screen -dmS fastchat.controller zsh -c "\
     sleep 0.5; \
     source ${CONDA_BASE_ENV_DIR}/bin/activate && \
     conda activate ${CONDA_ENV_NAME}; \
     ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/controller.sh; \
-    exec zsh" && echo "Launched 'fastchat.controller'"
+    exec zsh" && echo "Launched 'fastchat.controller' w/ shell alias 'fsctrl''"
     
 echo "sleeping for 30 seconds to allow worker to bind to controller ..." && sleep 30
     
@@ -44,7 +44,7 @@ screen -dmS fastchat.webserver zsh -c "\
     source ${CONDA_BASE_ENV_DIR}/bin/activate &&\
     conda activate ${CONDA_ENV_NAME}; \
     ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/webserver.sh; \
-    exec zsh" && echo "Launched 'fastchat.webserver'"
+    exec zsh" && echo "Launched 'fastchat.webserver' w/ shell alias 'fsweb'"
 
 alias fsctrl='screen -x fastchat.controller'
 alias fsweb='screen -x fastchat.webserver'
