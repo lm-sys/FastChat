@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# Run with 'source install.sh'
+# Run with 'source scripts/setup/install.sh'
 
 conda deactivate
 rm -rf /Users/panayao/mambaforge/envs/ml
