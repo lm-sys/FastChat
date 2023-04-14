@@ -11,6 +11,9 @@ sleep 3
 if [[ "${1}" == "stop" ]]; then
     killall python3;
     exit 0;
+elif [[ "${1}" == "init" ]]; then
+    initShortcuts();
+    exit 0;
 fi
 
 # screen -x fastchat.worker
@@ -53,7 +56,12 @@ screen -dmS "fastchat.webserver" zsh -c "\
     ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/webserver.sh; \
     exec zsh" && echo "Launched 'fastchat.webserver' w/ shell alias 'fsweb'"
 
-alias fsctrl='screen -x fastchat.controller'
-alias fsweb='screen -x fastchat.webserver'
-alias fsworker7b='screen -x fastchat.worker.7b'
-alias fsworker13b='screen -x fastchat.worker.13b'
+initShortcuts() {
+    "alias fsctrl='screen -x fastchat.controller'" > ~/.fastchatrc
+    "alias fsweb='screen -x fastchat.webserver'" >> ~/.fastchatrc
+    "alias fsworker7b='screen -x fastchat.worker.7b'" >> ~/.fastchatrc
+    "alias fsworker13b='screen -x fastchat.worker.13b'" >> ~/.fastchatrc
+    "alias fastchat=\"source ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/start.sh\"" >> ~/.fastchatrc
+
+    '#source ~/.fastchatrc' >> ~/.zshrc
+}

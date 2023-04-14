@@ -9,10 +9,9 @@ conda activate ml
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 
 python3 -m fastchat.serve.model_worker \
-	--model-path /Users/panayao/Documents/FastChat/LLaMA/hf/13B+Vicuna_HF \
+	--model-path /Users/panayao/Documents/FastChat/LLaMA/hf/13B+Vicuna_HF_v1.1 \
 	--device mps \
-	--load-8bit \
 	--controller http://localhost:21001 \
 	--port 31001 \
-	--worker http://localhost:31000 \
-	--limit-model-concurrency 8
+	--worker http://localhost:31001 \
+	--limit-model-concurrency 16 # --load-8bit

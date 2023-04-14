@@ -339,7 +339,7 @@ def build_demo():
             #upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
             #downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
             #flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-            #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
+            stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=True)
             regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=True)
             clear_btn = gr.Button(value="🗑️  Clear history", interactive=True)
 
