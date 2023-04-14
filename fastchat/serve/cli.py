@@ -87,7 +87,8 @@ def main(args):
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
         chat_loop(args.model_name, args.device, args.num_gpus, args.load_8bit,
-                args.conv_template, args.temperature, args.max_new_tokens,
+                args.conv_template, args.temperature, args.max_new_tokens, 
+                args.top_p, args.top_k,
                 chatio, args.debug)
     except KeyboardInterrupt:
         print("exit...")
@@ -104,6 +105,8 @@ if __name__ == "__main__":
         help="Conversation prompt template.")
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--top-p", type=float, default=0.7)
+    parser.add_argument("--top-k", type=float, default=0.7)
     parser.add_argument("--style", type=str, default="simple",
                         choices=["simple", "rich"], help="Display style.")
     parser.add_argument("--debug", action="store_true")

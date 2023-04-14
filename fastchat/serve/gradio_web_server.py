@@ -165,7 +165,7 @@ def post_process_code(code):
     return code
 
 
-def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
+def http_bot(state, model_selector, temperature, max_new_tokens, top_p, top_k, request: gr.Request):
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
     model_name = model_selector
@@ -214,6 +214,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         "prompt": prompt,
         "temperature": float(temperature),
         "max_new_tokens": int(max_new_tokens),
+        "top_p": float(top_p),
+        "top_k": float(top_k),
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -323,39 +325,42 @@ def build_demo():
                 submit_btn = gr.Button(value="Send", visible=False)
 
         with gr.Row(visible=False) as button_row:
-            upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-            downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-            flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
+            #upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
+            #downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
+            #flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
             #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
-            regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-            clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+            regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=True)
+            clear_btn = gr.Button(value="🗑️  Clear history", interactive=True)
 
-        with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
-            temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
-            max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+        with gr.Accordion("Parameters", open=False, visible=True) as parameter_row:
+            temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, interactive=True, label="Temperature",)
+            top_p = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.025, interactive=True, label="top_p",)
+            top_k = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.025, interactive=True, label="top_k",)
+            max_output_tokens = gr.Slider(minimum=0, maximum=2048, value=512, step=64, interactive=True, label="Max output tokens",)
 
         gr.Markdown(learn_more_markdown)
         url_params = gr.JSON(visible=False)
 
         # Register listeners
-        btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-        upvote_btn.click(upvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-        downvote_btn.click(downvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-        flag_btn.click(flag_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+        # btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
+        btn_list = [regenerate_btn, clear_btn]
+        # upvote_btn.click(upvote_last_response,
+        #     [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+        # downvote_btn.click(downvote_last_response,
+        #     [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+        # flag_btn.click(flag_last_response,
+        #     [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+#      ... http_bot, [state, model_selector, temperature, max_output_tokens, top_p, top_k, repetition_penalty, do_sample, num_beams, num_return_sequences, length_penalty, early_stopping, no_repeat_ngram_size, num_return_sequences, num_beams, temperature, max_output_tokens] ...
         regenerate_btn.click(regenerate, state,
-            [state, chatbot, textbox] + btn_list).then(
-            http_bot, [state, model_selector, temperature, max_output_tokens],
+            [state, chatbot, textbox] + btn_list).then(http_bot, [state, model_selector, temperature, max_output_tokens, top_p, top_k],
             [state, chatbot] + btn_list)
         clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+            ).then(http_bot, [state, model_selector, temperature, max_output_tokens, top_p, top_k],
                    [state, chatbot] + btn_list)
         submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+            ).then(http_bot, [state, model_selector, temperature, max_output_tokens, top_p, top_k],
                    [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
@@ -389,6 +394,6 @@ if __name__ == "__main__":
 
     logger.info(args)
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
+    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=5,
                api_open=False).launch(server_name=args.host, server_port=args.port,
-                                      share=args.share, max_threads=200)
+                                      share=args.share, max_threads=400)

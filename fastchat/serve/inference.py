@@ -55,8 +55,10 @@ def generate_stream(model, tokenizer, params, device,
                     context_len=2048, stream_interval=2):
     prompt = params["prompt"]
     l_prompt = len(prompt)
-    temperature = float(params.get("temperature", 1.0))
-    max_new_tokens = int(params.get("max_new_tokens", 256))
+    temperature = float(params.get("temperature", 0.7))
+    max_new_tokens = int(params.get("max_new_tokens", 512))
+    top_p = float(params.get("top_p", 0.7))
+    top_k = float(params.get("top_k", 0.7))
     stop_str = params.get("stop", None)
 
     input_ids = tokenizer(prompt).input_ids
@@ -129,8 +131,8 @@ class ChatIO(abc.ABC):
 
 
 def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
-              conv_template: str, temperature: float, max_new_tokens: int,
-              chatio: ChatIO, debug: bool):
+              conv_template: str, temperature: float, max_new_tokens: int, 
+              top_p: float, top_k: float, chatio: ChatIO, debug: bool):
     # Model
     model, tokenizer = load_model(model_name, device,
         num_gpus, load_8bit, debug)
@@ -164,6 +166,8 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
+            "top_p": top_p,
+            "top_k": top_k,
             "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
         }
 

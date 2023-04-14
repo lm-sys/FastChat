@@ -8,13 +8,15 @@ def chatglm_generate_stream(model, tokenizer, params, device,
     """Generate text using model's chat api"""
     messages = params["prompt"]
     max_new_tokens = int(params.get("max_new_tokens", 256))
-    temperature = float(params.get("temperature", 1.0))
+    temperature = float(params.get("temperature", 0.7))
     top_p = float(params.get("top_p", 0.7))
+    top_k = float(params.get("top_k", 0.7))
 
     gen_kwargs = {
         "max_new_tokens": max_new_tokens,
         "do_sample": True,
         "top_p": top_p,
+        "top_k": top_k,
         "temperature": temperature,
         "logits_processor": None
     }
