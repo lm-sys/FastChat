@@ -1,5 +1,6 @@
 checkpoints
 *.log
+venv
 # Python
 __pycache__
 *.pyc
