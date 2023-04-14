@@ -7,6 +7,7 @@ class SeparatorStyle(Enum):
     """Different separator style."""
     SINGLE = auto()
     TWO = auto()
+    DOLLY = auto()
 
 
 @dataclasses.dataclass
@@ -20,17 +21,18 @@ class Conversation:
     sep: str = "###"
     sep2: str = None
 
+    # Used for gradio server
     skip_next: bool = False
     conv_id: Any = None
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
-            ret = self.system + self.sep
+            ret = self.system
             for role, message in self.messages:
                 if message:
-                    ret += role + ": " + message + self.sep
+                    ret += self.sep + " " + role + ": " + message
                 else:
-                    ret += role + ":"
+                    ret += self.sep + " " + role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.TWO:
             seps = [self.sep, self.sep2]
@@ -40,6 +42,17 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.DOLLY:
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ":\n" + message + seps[i % 2]
+                    if i % 2 == 1:
+                        ret += "\n\n"
+                else:
+                    ret += role + ":\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -79,34 +92,7 @@ class Conversation:
         }
 
 
-conv_v1 = Conversation(
-    system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
-    roles=("Human", "Assistant"),
-    messages=(
-        ("Human", "Give three tips for staying healthy."),
-        ("Assistant",
-            "Sure, here are three tips for staying healthy:\n"
-            "1. Exercise regularly: Regular physical activity can help improve your overall health and wellbeing. "
-            "It can also help reduce your risk of chronic conditions such as obesity, diabetes, heart disease, "
-            "and certain cancers. Aim for at least 150 minutes of moderate-intensity aerobic exercise or "
-            "75 minutes of vigorous-intensity aerobic exercise per week, along with muscle-strengthening "
-            "activities at least two days per week.\n"
-            "2. Eat a balanced diet: Eating a balanced diet that is rich in fruits, "
-            "vegetables, whole grains, lean proteins, and healthy fats can help support "
-            "your overall health. Try to limit your intake of processed and high-sugar foods, "
-            "and aim to drink plenty of water throughout the day.\n"
-            "3. Get enough sleep: Getting enough quality sleep is essential for your physical "
-            "and mental health. Adults should aim for seven to nine hours of sleep per night. "
-            "Establish a regular sleep schedule and try to create a relaxing bedtime routine to "
-            "help improve the quality of your sleep.")
-    ),
-    offset=2,
-    sep_style=SeparatorStyle.SINGLE,
-    sep="###",
-)
-
-conv_v1_2 = Conversation(
+conv_one_shot = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
            "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
@@ -130,14 +116,27 @@ conv_v1_2 = Conversation(
             "5. Flexibility: Renewable energy sources are often more flexible and can be adapted to different "
             "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
             "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
-            "non-renewable sources are not, and their depletion can lead to economic and social instability.\n")
+            "non-renewable sources are not, and their depletion can lead to economic and social instability.")
     ),
     offset=2,
     sep_style=SeparatorStyle.SINGLE,
     sep="###",
 )
 
-conv_bair_v1 = Conversation(
+
+conv_vicuna_v1_1 = Conversation(
+    system="A chat between a curious user and an artificial intelligence assistant. "
+           "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+    roles=("USER", "ASSISTANT"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.TWO,
+    sep=" ",
+    sep2="</s>",
+)
+
+
+conv_koala_v1 = Conversation(
     system="BEGINNING OF CONVERSATION:",
     roles=("USER", "GPT"),
     messages=(),
@@ -147,12 +146,34 @@ conv_bair_v1 = Conversation(
     sep2="</s>",
 )
 
+conv_dolly = Conversation(
+    system=
+    "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
+    roles=('### Instruction', '### Response'),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.DOLLY,
+    sep="\n\n",
+    sep2="### End",
+)
 
-default_conversation = conv_v1_2
 conv_templates = {
-    "v1": conv_v1_2,
-    "bair_v1": conv_bair_v1,
+    "conv_one_shot": conv_one_shot,
+    "vicuna_v1.1": conv_vicuna_v1_1,
+    "koala_v1": conv_koala_v1,
+    "dolly": conv_dolly,
 }
+
+
+def get_default_conv_template(model_name):
+    model_name = model_name.lower()
+    if "vicuna" in model_name or "output" in model_name:
+        return conv_vicuna_v1_1
+    elif "koala" in model_name:
+        return conv_koala_v1
+    elif "dolly" in model_name:
+        return conv_dolly
+    return conv_one_shot
 
 
 if __name__ == "__main__":

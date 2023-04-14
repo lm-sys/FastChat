@@ -1,5 +1,6 @@
 """
-Convert html to markdown with basic data cleaning.
+- Convert html to markdown with basic data cleaning.
+- Deduplication.
 
 Usage:
 python3 -m fastchat.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
@@ -22,6 +23,7 @@ code_lang_format = "```\g<1>\n\g<2>\n```"
 regenerate_pattern = re.compile("\d+ / \d+")
 copy_chars_pattern = re.compile("Copy\d+ chars / \d+ words")
 copy_code_pattern = re.compile("```(.*?)Copy code\s*```")
+
 
 def reformat_code(val: str) -> str:
     # Input code format is:
@@ -62,7 +64,7 @@ def html_to_markdown(val: str) -> str:
     return val
 
 
-def should_skip(val: str) -> bool:
+def should_filter(val: str) -> bool:
     black_list = ["openai", "chatgpt"]
     for w in black_list:
         if w in val.lower():
@@ -72,7 +74,8 @@ def should_skip(val: str) -> bool:
 
 def clean_html_source(content, begin, end, check_tag, check_num):
     """
-    clean the input json content.
+    Clean the input json content.
+
     Args:
         content: json file loaded in memory.
         check_tag: a debug purpose arg. If a conversation contains the tag, log
@@ -80,21 +83,42 @@ def clean_html_source(content, begin, end, check_tag, check_num):
         check_num: number of matched conversations logged.
     """
     BARRIER = "\n" + "=" * 20 + "\n"
-    skip_cnt = 0
-    tag_cnt = 0
+    cnt_skip = 0
+    cnt_too_short = 0
+    cnt_id_duplication = 0
+    cnt_value_duplication = 0
+    cnt_filter = 0
+    cnt_tag = 0
+    visited = {}
 
     content = content[begin:end]
     new_content = []
 
     for sample in tqdm.tqdm(content):
         skipped = False
+        cid = sample["id"]
 
         if len(sample["conversations"]) <= 1:
-            # The conversation is too short
+            print(f"id {cid} is too short")
+            cnt_too_short += 1
+            skipped = True
+        elif cid in visited:
+            print(f"id {cid} is an id duplication of {visited[cid]}")
+            cnt_id_duplication += 1
+            skipped = True
+        elif (sample["conversations"][1]["value"], len(sample["conversations"])) in visited:
+            key = (sample["conversations"][1]["value"], len(sample["conversations"]))
+            print(f"id {cid} is a value duplication of {visited[key]}")
+            cnt_value_duplication += 1
             skipped = True
         else:
+            key = (sample["conversations"][1]["value"], len(sample["conversations"]))
+            visited[cid] = visited[key] = cid
+
             for c in sample["conversations"]:
-                if should_skip(c["value"]):
+                if should_filter(c["value"]):
+                    print(f"id {cid} is filtered out")
+                    cnt_filter += 1
                     skipped = True
                     break
 
@@ -108,19 +132,22 @@ def clean_html_source(content, begin, end, check_tag, check_num):
 
                 # Debug
                 if (check_tag is not None and check_tag in c["value"]
-                        and tag_cnt < check_num):
+                        and cnt_tag < check_num):
                     logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
                                   "\n" + BARRIER + "\n")
-                    tag_cnt += 1
-                    if tag_cnt == check_num:
+                    cnt_tag += 1
+                    if cnt_tag == check_num:
                         break
 
         if not skipped:
             new_content.append(sample)
         else:
-            skip_cnt += 1
+            cnt_skip += 1
 
-    print(f"total: {len(content)}, skip: {skip_cnt}, new: {len(new_content)}")
+    print(f"total: {len(content)}, skip: {cnt_skip}, new: {len(new_content)}, "
+          f"cnt_too_short: {cnt_too_short}, cnt_id_duplication: {cnt_id_duplication}, "
+          f"cnt_value_duplication: {cnt_value_duplication}, cnt_filter: {cnt_filter}")
+
     return new_content
 
 
