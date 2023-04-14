@@ -45,6 +45,10 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
         tokenizer.eos_token_id = 50277
         model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
+        if "30b" or "65b" in model_path:
+            kwargs.update({"device_map": "auto"})
+        if "65b" in model_path:
+            kwargs.update({"offload_folder": "offload"})
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
