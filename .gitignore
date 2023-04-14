@@ -1,4 +1,5 @@
 checkpoints
+*.log
 # Python
 __pycache__
 *.pyc

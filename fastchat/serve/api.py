@@ -3,7 +3,7 @@ import json
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from fastchat.conversation import default_conversation
+from fastchat.conversation import get_default_conv_template
 
 import requests
 
@@ -42,7 +42,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
 
-            conv = default_conversation.copy()
+            conv = get_default_conv_template(model).copy()
             messages = body["messages"]
             context = body.get("system", conv.system)
             if context:
@@ -61,7 +61,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise NotImplementedError("unknown role")
                 sent = message["content"]
                 conv.append_message(role, sent)
-            conv.append_message(conv.roles[1], "")
+            conv.append_message(conv.roles[1], None)
             prompt = conv.get_prompt()
             max_content = body.get("max_content_length", 2048)
 

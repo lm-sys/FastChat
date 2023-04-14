@@ -15,15 +15,9 @@ import tqdm
 
 from fastchat import conversation as conversation_lib
 
-DEFAULT_PAD_TOKEN = "[PAD]"
-BEGIN_SIGNAL = "### "
-END_SIGNAL = "\n"
-
 
 def split_sample(sample, start_idx, end_idx):
-    # only ends in the bot because otherwise the last human part is useless.
-    end_speaker = sample["conversations"][end_idx]["from"]
-    end_idx = end_idx + 1 if end_speaker != "human" else end_idx
+    assert (end_idx - start_idx) % 2 == 0
     return {
         "id": sample["id"] + "_" + str(start_idx),
         "conversations": sample["conversations"][start_idx:end_idx]
@@ -39,36 +33,46 @@ def split_contents(content, begin, end, tokenizer, max_length):
 
     for sample in tqdm.tqdm(content):
         tokenized_lens = []
-
-        for c in sample["conversations"]:
-            from_str = c["from"]
-            if from_str.lower() == "human":
-                from_str = conversation_lib.default_conversation.roles[0]
-            elif from_str.lower() == "gpt":
-                from_str = conversation_lib.default_conversation.roles[1]
-            else:
-                from_str = 'unknown'
-
-            sentence = (BEGIN_SIGNAL + from_str + ": " + c["value"] +
-                        END_SIGNAL)
-            length = tokenizer(sentence, return_tensors="pt", padding="longest"
-                ).input_ids.ne(tokenizer.pad_token_id).sum().item()
+        conversations = sample["conversations"]
+        conversations = conversations[:len(conversations) // 2 * 2]
+        for c in conversations:
+            length = len(tokenizer(c["value"]).input_ids) + 5
             tokenized_lens.append(length)
 
-        num_tokens = 0
         start_idx = 0
-        for idx, l in enumerate(tokenized_lens):
-            # TODO: shall we also only starts from a specific speaker?
-            if num_tokens + l > max_length:
-                new_content.append(split_sample(sample, start_idx, idx))
-                start_idx = idx
-                num_tokens = l
-            else:
-                num_tokens += l
-                if idx == len(tokenized_lens) - 1:
-                    new_content.append(split_sample(sample, start_idx, idx))
+        cur_len = 0
+        sample
+        assert len(conversations) % 2 == 0, f"id: {sample['id']}"
+        for i in range(0, len(conversations), 2):
+            tmp_len = tokenized_lens[i] + tokenized_lens[i+1]
+            if cur_len + tmp_len > max_length:
+                new_content.append(split_sample(sample, start_idx, i))
+                start_idx = i
+                cur_len = 0
+            elif i == len(conversations) - 2:
+                new_content.append(split_sample(sample, start_idx, i+2))
 
-    print(f"total: {len(content)}, new: {len(new_content)}")
+            cur_len += tmp_len
+
+    return new_content
+
+
+def filter_invalid_roles(content):
+    new_content = []
+    for i, c in enumerate(content):
+        roles = ["human", "gpt"]
+        if len(c["conversations"]) <= 0:
+            continue
+
+        valid = True
+        for j, s in enumerate(c["conversations"]):
+            if s["from"] != roles[j % 2]:
+                valid = False
+                break
+
+        if valid:
+            new_content.append(c)
+
     return new_content
 
 
@@ -80,11 +84,12 @@ def main(args):
         padding_side="right",
         use_fast=False,
     )
-    if tokenizer.pad_token is None:
-        tokenizer.add_special_tokens(dict(pad_token=DEFAULT_PAD_TOKEN))
-    content = split_contents(content, args.begin, args.end,
+    new_content = split_contents(content, args.begin, args.end,
         tokenizer, args.max_length)
-    json.dump(content, open(args.out_file, "w"), indent=2)
+    new_content = filter_invalid_roles(new_content)
+
+    print(f"total: {len(content)}, new: {len(new_content)}")
+    json.dump(new_content, open(args.out_file, "w"), indent=2)
 
 
 if __name__ == "__main__":
@@ -94,6 +99,6 @@ if __name__ == "__main__":
     parser.add_argument("--begin", type=int)
     parser.add_argument("--end", type=int)
     parser.add_argument("--model-name-or-path", type=str, required=True)
-    parser.add_argument("--max-length", type=int, default=2304)
+    parser.add_argument("--max-length", type=int, default=2048)
     args = parser.parse_args()
     main(args)
