@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# Run with 'source scripts/setup/convert.13B.sh'
+# Run with 'source scripts/setup/convert.13B-v1.1.sh'
 
 conda deactivate 
 conda activate ml

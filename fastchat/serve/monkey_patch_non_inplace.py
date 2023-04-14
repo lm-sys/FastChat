@@ -9,6 +9,8 @@ import torch
 from torch import nn
 import transformers
 
+torch.mps.set_per_process_memory_fraction(0.0)
+
 
 def rotate_half(x):
     """Rotates half the hidden dims of the input."""

@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Run with 'source scripts/serve-mps/start.sh'
     
 for s in $(screen -ls|ggrep -o -P "\d+\.fastchat\.(.*)"); do screen -S $s -X stuff $'\003\003\003\003'; done;
 sleep 1
@@ -22,15 +24,15 @@ screen -dmS fastchat.worker zsh -c "\
     sleep 0.5; \
     source /Users/panayao/mambaforge/bin/activate &&\
     conda activate ml; \
-    /Users/panayao/Documents/FastChat/worker.7B+Vicuna_HF.sh; \
-    #exec zsh" && echo "Launched 'fastchat.worker'"
+    /Users/panayao/Documents/FastChat/scripts/serve-mps/worker.7B+Vicuna_HF.sh; \
+    exec zsh" && echo "Launched 'fastchat.worker'"
     
 screen -dmS fastchat.controller zsh -c "\
     sleep 0.5; \
-    source /Users/panayao/mambaforge/bin/activate &&\
+    source /Users/panayao/mambaforge/bin/activate && \
     conda activate ml; \
-    /Users/panayao/Documents/FastChat/controller.sh; \
-    #exec zsh" && echo "Launched 'fastchat.controller'"
+    /Users/panayao/Documents/FastChat/scripts/serve-mps/controller.sh; \
+    exec zsh" && echo "Launched 'fastchat.controller'"
     
 echo "sleeping for 30 seconds to allow worker to bind to controller ..." && sleep 30
     
@@ -38,5 +40,5 @@ screen -dmS fastchat.webserver zsh -c "\
     sleep 0.5; \
     source /Users/panayao/mambaforge/bin/activate &&\
     conda activate ml; \
-    /Users/panayao/Documents/FastChat/webserver.sh; \
-    #exec zsh" && echo "Launched 'fastchat.webserver'"
+    /Users/panayao/Documents/FastChat/scripts/serve-mps/webserver.sh; \
+    exec zsh" && echo "Launched 'fastchat.webserver'"

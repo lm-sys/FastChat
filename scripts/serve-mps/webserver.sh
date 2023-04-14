@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# Run with 'source webserver.sh'
+# Run with 'source scripts/serve-mps/webserver.sh'
 
 conda deactivate
 conda activate ml
