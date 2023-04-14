@@ -23,14 +23,21 @@ export CONDA_BASE_ENV_DIR="/Users/panayao/mambaforge";
 export CONDA_ENV_NAME="ml";
 export FASTCHAT_PARENT_DIR="/Users/panayao/Documents"; # Do not include trailing slash
 
-screen -dmS fastchat.worker zsh -c "\
+screen -dmS "fastchat.worker.7b" zsh -c "\
     sleep 0.5; \
     source ${CONDA_BASE_ENV_DIR}/bin/activate && \
     conda activate ${CONDA_ENV_NAME}; \
     ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/worker.7B+Vicuna_HF.sh; \
-    exec zsh" && echo "Launched 'fastchat.worker' w/ shell alias 'fsworker'"
+    exec zsh" && echo "Launched 'fastchat.worker.7B+Vicuna_HF' w/ shell alias 'fsworker7b'"
+
+screen -dmS "fastchat.worker.13b" zsh -c "\
+    sleep 0.5; \
+    source ${CONDA_BASE_ENV_DIR}/bin/activate && \
+    conda activate ${CONDA_ENV_NAME}; \
+    ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/worker.13B+Vicuna_HF.sh; \
+    exec zsh" && echo "Launched 'fastchat.worker.13B+Vicuna_HF' w/ shell alias 'fsworker13b'"
     
-screen -dmS fastchat.controller zsh -c "\
+screen -dmS "fastchat.controller" zsh -c "\
     sleep 0.5; \
     source ${CONDA_BASE_ENV_DIR}/bin/activate && \
     conda activate ${CONDA_ENV_NAME}; \
@@ -39,7 +46,7 @@ screen -dmS fastchat.controller zsh -c "\
     
 echo "sleeping for 30 seconds to allow worker to bind to controller ..." && sleep 30
     
-screen -dmS fastchat.webserver zsh -c "\
+screen -dmS "fastchat.webserver" zsh -c "\
     sleep 0.5; \
     source ${CONDA_BASE_ENV_DIR}/bin/activate &&\
     conda activate ${CONDA_ENV_NAME}; \
@@ -48,4 +55,5 @@ screen -dmS fastchat.webserver zsh -c "\
 
 alias fsctrl='screen -x fastchat.controller'
 alias fsweb='screen -x fastchat.webserver'
-alias fsworker='screen -x fastchat.worker'
+alias fsworker7b='screen -x fastchat.worker.7b'
+alias fsworker13b='screen -x fastchat.worker.13b'

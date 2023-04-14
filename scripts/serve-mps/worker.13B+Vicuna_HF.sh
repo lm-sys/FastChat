@@ -14,5 +14,5 @@ python3 -m fastchat.serve.model_worker \
 	--load-8bit \
 	--controller http://localhost:21001 \
 	--port 31001 \
-	--worker http://localhost:31001 \
+	--worker http://localhost:31000 \
 	--limit-model-concurrency 8
