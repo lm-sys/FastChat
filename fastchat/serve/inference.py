@@ -1,15 +1,20 @@
 """Inference for FastChat models."""
 import abc
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+from typing import Optional
 
-from fastchat.conversation import conv_templates, SeparatorStyle
+import torch
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+except ImportError:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
+
+from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
 from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
-def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
+def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -30,12 +35,18 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    if "chatglm" in model_name:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_name, trust_remote_code=True).half().cuda()
+    if "chatglm" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
+    elif "dolly" in model_path:
+        kwargs.update({"torch_dtype": torch.bfloat16})
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        # 50277 means "### End"
+        tokenizer.eos_token_id = 50277
+        model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-        model = AutoModelForCausalLM.from_pretrained(model_name,
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
 
     if load_8bit:
@@ -60,6 +71,8 @@ def generate_stream(model, tokenizer, params, device,
     top_p = float(params.get("top_p", 0.7))
     top_k = float(params.get("top_k", 0.7))
     stop_str = params.get("stop", None)
+    if stop_str == tokenizer.eos_token:
+        stop_str = None
 
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
@@ -104,10 +117,11 @@ def generate_stream(model, tokenizer, params, device,
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
-            pos = output.rfind(stop_str, l_prompt)
-            if pos != -1:
-                output = output[:pos]
-                stopped = True
+            if stop_str:
+                pos = output.rfind(stop_str, l_prompt)
+                if pos != -1:
+                    output = output[:pos]
+                    stopped = True
             yield output
 
         if stopped:
@@ -130,16 +144,21 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
-              conv_template: str, temperature: float, max_new_tokens: int, 
-              top_p: float, top_k: float, chatio: ChatIO, debug: bool):
+def chat_loop(model_path: str, device: str, num_gpus: str, load_8bit: bool,
+              conv_template: Optional[str], temperature: float, 
+              max_new_tokens: int, top_p: float, top_k: float, 
+              chatio: ChatIO, debug: bool):
     # Model
-    model, tokenizer = load_model(model_name, device,
+    model, tokenizer = load_model(model_path, device,
         num_gpus, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
     # Chat
-    conv = conv_templates[conv_template].copy()
+    if conv_template:
+        conv = conv_templates[conv_template].copy()
+    else:
+        conv = get_default_conv_template(model_path).copy()
+
     while True:
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
@@ -162,7 +181,7 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
             skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
         params = {
-            "model": model_name,
+            "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,

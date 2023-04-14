@@ -14,7 +14,10 @@ import uuid
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import requests
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+except ImportError:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
 import torch
 import uvicorn
 
@@ -174,8 +177,10 @@ if __name__ == "__main__":
         default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str,
         default="http://localhost:21001")
-    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
-    parser.add_argument("--model-name", type=str)
+    parser.add_argument("--model-path", type=str, default="facebook/opt-350m",
+        help="The path to the weights")
+    parser.add_argument("--model-name", type=str,
+        help="Optional name")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument("--load-8bit", action="store_true")

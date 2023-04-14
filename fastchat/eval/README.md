@@ -20,7 +20,7 @@ Unfortunately, Bard has not release its public APIs till now. You may have to en
 
 To generate answers with Vicuna or other models, specify path to the model checkpoint, a desired model ID and run:
 ```bash
-python get_model_answer.py --model-id [MODEL-ID] --model-path /model/path --question-file tables/question.jsonl --answer-file table/answer/answer.jsonl --num-gpus [NUM-GPUS]
+python get_model_answer.py --model-id [MODEL-ID] --model-path /model/path --question-file table/question.jsonl --answer-file table/answer/answer.jsonl --num-gpus [NUM-GPUS]
 ```
 Then the answers to the questions will be saved in `table/answer/answer.jsonl`.
 Note: we assume the model can be loaded with a single GPU.
