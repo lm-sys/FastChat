@@ -2,7 +2,7 @@
 Apply the delta weights on top of a base model.
 
 Usage:
-python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b-v1.1 --delta lmsys/vicuna-13b-delta
+python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta lmsys/vicuna-13b-delta-v1.1
 """
 import argparse
 
