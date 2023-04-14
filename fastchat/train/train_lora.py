@@ -15,7 +15,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pathlib
 import typing
 
@@ -40,10 +40,10 @@ DEFAULT_UNK_TOKEN = "</s>"
 
 @dataclass
 class LoraArguments:
-    lora_r: int = 8,
-    lora_alpha: int = 16,
-    lora_dropout: float = 0.05,
-    lora_target_modules: typing.List[str] = ["q_proj", "v_proj"],
+    lora_r: int = 8
+    lora_alpha: int = 16
+    lora_dropout: float = 0.05
+    lora_target_modules: typing.List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     lora_weight_path: str = ""
 
 def train():
