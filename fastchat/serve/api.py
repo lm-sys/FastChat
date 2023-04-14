@@ -62,8 +62,13 @@ class Handler(BaseHTTPRequestHandler):
                 sent = message["content"]
                 conv.append_message(role, sent)
             conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
             max_content = body.get("max_content_length", 2048)
+            if "chatglm" in model:
+                prompt = conv.messages[conv.offset:]
+                skip_echo_len = len(conv.messages[-2][1]) + 1
+            else:
+                prompt = conv.get_prompt()
+                skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
             n = body.get("n", 1)
             headers = {"User-Agent": "fastchat Client"}
@@ -92,6 +97,7 @@ class Handler(BaseHTTPRequestHandler):
             # early_stopping=bool(body.get("early_stopping", True)),
             # seed=int(body.get("seed", -1)),
             # stopping_strings=body.get("stop", [begin_signal]),
+
             initial_seed = int(body.get("seed", 0))
             choices = []
             step_size = 16
@@ -106,7 +112,7 @@ class Handler(BaseHTTPRequestHandler):
                     if chunk:
                         data = json.loads(chunk.decode())
                         if data["error_code"] == 0:
-                            output[data["choice"]] = data["text"][len(prompt) + 1:].strip()
+                            output[data["choice"]] = data["text"][skip_echo_len:].strip()
                         else:
                             self.send_error(500, f"Error, code {data['error_code']}")
                     time.sleep(0.01)
