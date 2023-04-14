@@ -26,4 +26,4 @@ def chatglm_generate_stream(model, tokenizer, params, device,
 
     for response, new_hist in model.stream_chat(tokenizer, query, hist):
         output = query + " " + response
-        yield output
+        yield 0, output

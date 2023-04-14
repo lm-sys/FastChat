@@ -28,6 +28,7 @@ class SimpleChatIO(ChatIO):
     def stream_output(self, output_stream, skip_echo_len: int):
         pre = 0
         for outputs in output_stream:
+            outputs = outputs[1]
             outputs = outputs[skip_echo_len:].strip()
             outputs = outputs.split(" ")
             now = len(outputs) - 1
