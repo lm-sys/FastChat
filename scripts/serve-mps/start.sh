@@ -19,26 +19,33 @@ fi
 
 # for s in $(screen -ls|ggrep -o -P "\d+\.fastchat\.(.*)"); do screen -X -S $s quit; done;
 #for s in $(screen -ls|ggrep -o -P "\d+\.fastchat\.(.*)"); do screen -S $s -X stuff $'\003\003\003\003'; done;
-    
+export CONDA_BASE_ENV_DIR="/Users/panayao/mambaforge";
+export CONDA_ENV_NAME="ml";
+export FASTCHAT_PARENT_DIR="/Users/panayao/Documents"; # Do not include trailing slash
+
 screen -dmS fastchat.worker zsh -c "\
     sleep 0.5; \
-    source /Users/panayao/mambaforge/bin/activate &&\
-    conda activate ml; \
-    /Users/panayao/Documents/FastChat/scripts/serve-mps/worker.7B+Vicuna_HF.sh; \
+    source ${CONDA_BASE_ENV_DIR}/bin/activate && \
+    conda activate ${CONDA_ENV_NAME}; \
+    ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/worker.7B+Vicuna_HF.sh; \
     exec zsh" && echo "Launched 'fastchat.worker'"
     
 screen -dmS fastchat.controller zsh -c "\
     sleep 0.5; \
-    source /Users/panayao/mambaforge/bin/activate && \
-    conda activate ml; \
-    /Users/panayao/Documents/FastChat/scripts/serve-mps/controller.sh; \
+    source ${CONDA_BASE_ENV_DIR}/bin/activate && \
+    conda activate ${CONDA_ENV_NAME}; \
+    ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/controller.sh; \
     exec zsh" && echo "Launched 'fastchat.controller'"
     
 echo "sleeping for 30 seconds to allow worker to bind to controller ..." && sleep 30
     
 screen -dmS fastchat.webserver zsh -c "\
     sleep 0.5; \
-    source /Users/panayao/mambaforge/bin/activate &&\
-    conda activate ml; \
-    /Users/panayao/Documents/FastChat/scripts/serve-mps/webserver.sh; \
+    source ${CONDA_BASE_ENV_DIR}/bin/activate &&\
+    conda activate ${CONDA_ENV_NAME}; \
+    ${FASTCHAT_PARENT_DIR}/FastChat/scripts/serve-mps/webserver.sh; \
     exec zsh" && echo "Launched 'fastchat.webserver'"
+
+alias fsctrl='screen -x fastchat.controller'
+alias fsweb='screen -x fastchat.webserver'
+alias fsworker='screen -x fastchat.worker'
