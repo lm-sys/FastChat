@@ -2,7 +2,7 @@
 Apply the delta weights on top of a base model.
 
 Usage:
-python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta lmsys/vicuna-13b-delta
+python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta lmsys/vicuna-13b-delta-v1
 """
 import argparse
 
@@ -11,12 +11,13 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import LlamaTokenizer, AutoConfig
 import gc
+from torch import nn
 import shutil
 
 def apply_delta(base_model_path, target_model_path, delta_path):
 
     print(f"Loading the delta from {delta_path}")
-    delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
+    # delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
 
 
     DEFAULT_PAD_TOKEN = "[PAD]"
@@ -42,7 +43,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
         for name, param in tqdm(state_dict.items(), desc="Applying delta"):
 
-            while(name not in delta_state_dict):
+            while name not in delta_state_dict:
                 delta_num = (delta_num + 1) % 3
                 delta_state_dict = torch.load(f"{delta_path}/pytorch_model-0000{str(delta_num%3+1)}-of-00003.bin", map_location=torch.device('cpu'))
                 gc.collect()
@@ -54,7 +55,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
                 
             state_dict[name] += delta_state_dict[name]
 
-        # 保存更新后的 state_dict
+        # save state_dict
         torch.save(state_dict, f"{target_model_path}/{file_name}")
         state_dict = None 
         gc.collect()
@@ -62,7 +63,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
 
     print(f"Saving the target model to {target_model_path}")
-    delta_tokenizer.save_pretrained(target_model_path)
+    base_tokenizer.save_pretrained(target_model_path)
     config.save_pretrained(target_model_path)
     shutil.copyfile(f"{base_model_path}/pytorch_model.bin.index.json", f"{target_model_path}/pytorch_model.bin.index.json")
 
