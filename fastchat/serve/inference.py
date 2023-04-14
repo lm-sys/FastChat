@@ -172,7 +172,7 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
         }
 
         chatio.prompt_for_output(conv.roles[1])
-        output_stream = generate_stream_func(model, tokenizer, params, device)
+        output_stream = generate_stream_func(model, tokenizer, params, device, context_len=2048, stream_interval=1)
         outputs = chatio.stream_output(output_stream, skip_echo_len)
         # NOTE: strip is important to align with the training data.
         conv.messages[-1][-1] = outputs.strip()

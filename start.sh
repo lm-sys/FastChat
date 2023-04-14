@@ -6,6 +6,11 @@ for s in $(screen -ls|ggrep -o -P "\d+\.fastchat\.(.*)"); do screen -X -S $s qui
 
 sleep 3
 
+if [[ "${1}" == "stop" ]]; then
+    killall python3;
+    exit 0;
+fi
+
 # screen -x fastchat.worker
 # screen -x fastchat.controller
 # screen -x fastchat.webserver

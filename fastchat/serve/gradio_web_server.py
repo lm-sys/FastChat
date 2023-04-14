@@ -394,6 +394,6 @@ if __name__ == "__main__":
 
     logger.info(args)
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=5,
+    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=3,
                api_open=False).launch(server_name=args.host, server_port=args.port,
-                                      share=args.share, max_threads=400)
+                                      share=args.share, max_threads=200)
