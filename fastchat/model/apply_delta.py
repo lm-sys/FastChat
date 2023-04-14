@@ -66,10 +66,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
     print(f"Loading the delta from {delta_path}")
 
-    DEFAULT_PAD_TOKEN = "[PAD]"
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
-    num_new_tokens = base_tokenizer.add_special_tokens(dict(pad_token=DEFAULT_PAD_TOKEN))
-    print("num_new_tokens: ",num_new_tokens)
 
     config = AutoConfig.from_pretrained(base_model_path)
 
@@ -96,10 +93,6 @@ def apply_delta(base_model_path, target_model_path, delta_path):
                     gc.collect()
                     if name in delta_state_dict:
                         break
-        if param.shape != delta_state_dict[name].shape:
-            new_embeddings = torch.zeros(len(base_tokenizer),state_dict[name].shape[1])
-            new_embeddings[:len(base_tokenizer)-num_new_tokens] = state_dict[name]
-            state_dict[name] = new_embeddings
                 
         state_dict[name] += delta_state_dict[name]
         gc.collect()
