@@ -3,7 +3,7 @@ import json
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from fastchat.conversation import get_default_conv_template
+from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
 import requests
 
@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
                 "max_new_tokens": max_content,
                 "temperature": float(body.get("temperature", 0.5)),
                 "top_p": float(body.get("top_p", 1)),
-                "stop": conv.sep,
+                "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
             }
             # todo make possible to parameterize this all
             # question=prompt,
@@ -102,9 +102,9 @@ class Handler(BaseHTTPRequestHandler):
                 response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
                                          json=pload, stream=True)
                 output = ["" for _ in range(batch)]
-                for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+                for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                     if chunk:
-                        data = json.loads(chunk.decode("utf-8"))
+                        data = json.loads(chunk.decode())
                         if data["error_code"] == 0:
                             output[data["choice"]] = data["text"][len(prompt) + 1:].strip()
                         else:
