@@ -112,10 +112,11 @@ def generate_stream(model, tokenizer, params, device, context_len=2048, stream_i
 
             if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped[j]:
                 output = tokenizer.decode(output_ids[j], skip_special_tokens=True)
-                pos = output.rfind(stop_str, l_prompt)
-                if pos != -1:
-                    output = output[:pos]
-                    stopped[j] = True
+                if stop_str is not None:
+                    pos = output.rfind(stop_str, l_prompt)
+                    if pos != -1:
+                        output = output[:pos]
+                        stopped[j] = True
 
                 yield j, output
 
