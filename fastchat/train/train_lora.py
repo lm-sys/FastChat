@@ -40,6 +40,36 @@ class LoraArguments:
     lora_dropout: float = 0.05
     lora_target_modules: typing.List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     lora_weight_path: str = ""
+    bias: str = "none"
+
+
+def maybe_zero_3(param):
+    if hasattr(param, "ds_id"):
+        assert param.ds_status == ZeroParamStatus.NOT_AVAILABLE
+        with zero.GatheredParameters([param]):
+            param = param.data.cpu().clone().detach()
+    return param
+
+
+# Borrowed from peft.utils.get_peft_model_state_dict
+def get_peft_state_maybe_zero_3(state_dict, bias):
+    if bias == "none":
+        to_return = {k: state_dict[k].cpu().clone().detach() for k in state_dict if "lora_" in k}
+    elif bias == "all":
+        to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "bias" in k}
+    elif bias == "lora_only":
+        to_return = {}
+        for k in state_dict:
+            if "lora_" in k:
+                to_return[k] = state_dict[k]
+                bias_name = k.split("lora_")[0] + "bias"
+                if bias_name in state_dict:
+                    to_return[bias_name] = state_dict[bias_name]
+    else:
+        raise NotImplementedError
+    to_return = {k: maybe_zero_3(v) for k, v in to_return.items()}
+    return to_return
+
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -56,7 +86,7 @@ def train():
         lora_alpha=lora_args.lora_alpha,
         target_modules=lora_args.lora_target_modules,
         lora_dropout=lora_args.lora_dropout,
-        bias="none",
+        bias=lora_args.bias,
         task_type="CAUSAL_LM",
     )
     model = get_peft_model(model, lora_config)
@@ -86,15 +116,9 @@ def train():
     else:
         trainer.train()
     trainer.save_state()
-    state_dict = {}
-    for n, p in model.named_parameters():
-        if "lora_" in n:
-            if hasattr(p, "ds_id"):
-                assert p.ds_status == ZeroParamStatus.NOT_AVAILABLE
-                with zero.GatheredParameters([p]):
-                    p = p.data.cpu().clone().detach()
-        if training_args.local_rank == 0:
-            state_dict[n] = p
+
+    # Save states. Weights might be a placeholder in zero3 and need a gather
+    state_dict = get_peft_state_maybe_zero_3(model.state_dict(), lora_args.bias)
     if training_args.local_rank == 0:
         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 
