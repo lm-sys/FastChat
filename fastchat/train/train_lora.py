@@ -19,24 +19,19 @@ from dataclasses import dataclass, field
 import pathlib
 import typing
 
-from peft import (
-    LoraConfig,
-    get_peft_model,
-)
+from deepspeed import zero
+from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import Trainer
 
 from fastchat.train.train import (DataArguments, ModelArguments,
                                   TrainingArguments,
-                                  make_supervised_data_module,
-                                  smart_tokenizer_and_embedding_resize)
+                                  make_supervised_data_module)
 
-IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
+from fastchat.train.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
+replace_llama_attn_with_flash_attn()
 
 @dataclass
 class LoraArguments:
@@ -65,7 +60,8 @@ def train():
         task_type="CAUSAL_LM",
     )
     model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    if training_args.deepspeed is not None and training_args.local_rank == 0:
+        model.print_trainable_parameters()
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -74,18 +70,7 @@ def train():
         padding_side="right",
         use_fast=False,
     )
-    if tokenizer.pad_token is None:
-        smart_tokenizer_and_embedding_resize(
-            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-            tokenizer=tokenizer,
-            model=model,
-        )
-    if "llama" in model_args.model_name_or_path:
-        tokenizer.add_special_tokens({
-            "eos_token": DEFAULT_EOS_TOKEN,
-            "bos_token": DEFAULT_BOS_TOKEN,
-            "unk_token": DEFAULT_UNK_TOKEN,
-        })
+    tokenizer.pad_token = tokenizer.unk_token
 
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
@@ -101,7 +86,17 @@ def train():
     else:
         trainer.train()
     trainer.save_state()
-    model.save_pretrained(training_args.output_dir)
+    state_dict = {}
+    for n, p in model.named_parameters():
+        if "lora_" in n:
+            if hasattr(p, "ds_id"):
+                assert p.ds_status == ZeroParamStatus.NOT_AVAILABLE
+                with zero.GatheredParameters([p]):
+                    p = p.data.cpu().clone().detach()
+        if training_args.local_rank == 0:
+            state_dict[n] = p
+    if training_args.local_rank == 0:
+        model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 
 
 if __name__ == "__main__":
