@@ -16,6 +16,7 @@
 #    limitations under the License.
 
 from dataclasses import dataclass, field
+import logging
 import pathlib
 import typing
 
@@ -77,7 +78,7 @@ def train():
     (model_args, data_args, training_args,
      lora_args) = parser.parse_args_into_dataclasses()
 
-    model = transformers.LlamaForCausalLM.from_pretrained(
+    model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
@@ -92,6 +93,12 @@ def train():
     model = get_peft_model(model, lora_config)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
+
+    if training_args.gradient_checkpointing:
+        logging.warning("gradient checkpointing with lora makes requires_grad "
+                        "incorrect and needs a monkey patch in Trainer or the "
+                        "wrapped model's forward. ref: "
+                        "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198")
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
