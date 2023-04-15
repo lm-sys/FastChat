@@ -268,20 +268,21 @@ class SupervisedDataset(Dataset):
                  preprocessed_path,
                  num_data):
         super(SupervisedDataset, self).__init__()
-        logging.warning("Loading data...")
-        list_data_dict = json.load(open(data_path, "r"))
-
-        logging.warning("Formatting inputs...")
-        sources = []
 
         # save to file
-        self.preprocessed_path = preprocessed_path #"./preprocessed_data/processed.json"
+        self.preprocessed_path = preprocessed_path
         if not os.path.exists("./preprocessed_data/"):
             os.mkdir("preprocessed_data/")
         if os.path.exists(self.preprocessed_path):
             print("loading from preprocessed data")
             data_dict = json.load(open(self.preprocessed_path, "r"))
         else:
+            logging.warning("Loading data...")
+            list_data_dict = json.load(open(data_path, "r"))
+
+            logging.warning("Formatting inputs...")
+            sources = []
+          
             sources = [example["conversations"] for example in list_data_dict]
 
             data_dict = preprocess(sources, tokenizer)
