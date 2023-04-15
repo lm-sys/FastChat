@@ -17,6 +17,7 @@ class Conversation:
     roles: List[str]
     messages: List[List[str]]
     offset: int
+    model: str
     sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
     sep2: str = None
@@ -28,11 +29,22 @@ class Conversation:
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system
+            if self.model == "vicuna_v0":
+                ret += self.sep
             for role, message in self.messages:
                 if message:
-                    ret += self.sep + " " + role + ": " + message
+                    if self.model != "vicuna_v0":
+                        ret += self.sep + " "
+                    
+                    ret += role + ": " + message
+                    
+                    if self.model == "vicuna_v0":
+                        ret += self.sep
                 else:
-                    ret += self.sep + " " + role + ":"
+                    if self.model != "vicuna_v0":
+                        ret += self.sep + " "
+
+                    ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.TWO:
             seps = [self.sep, self.sep2]
@@ -75,6 +87,7 @@ class Conversation:
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
             offset=self.offset,
+            model=self.model,
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
@@ -86,13 +99,14 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
+            "model": self.model,
             "sep": self.sep,
             "sep2": self.sep2,
             "conv_id": self.conv_id,
         }
 
 
-conv_one_shot = Conversation(
+conv_vicuna_v0 = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
            "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
@@ -119,6 +133,7 @@ conv_one_shot = Conversation(
             "non-renewable sources are not, and their depletion can lead to economic and social instability.")
     ),
     offset=2,
+    model="vicuna_v0",
     sep_style=SeparatorStyle.SINGLE,
     sep="###",
 )
@@ -130,6 +145,7 @@ conv_vicuna_v1_1 = Conversation(
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
+    model="vicuna_v1.1",
     sep_style=SeparatorStyle.TWO,
     sep=" ",
     sep2="</s>",
@@ -141,10 +157,12 @@ conv_koala_v1 = Conversation(
     roles=("USER", "GPT"),
     messages=(),
     offset=0,
+    model="koala_v1",
     sep_style=SeparatorStyle.TWO,
     sep=" ",
     sep2="</s>",
 )
+
 
 conv_dolly = Conversation(
     system=
@@ -152,13 +170,15 @@ conv_dolly = Conversation(
     roles=('### Instruction', '### Response'),
     messages=(),
     offset=0,
+    model="dolly",
     sep_style=SeparatorStyle.DOLLY,
     sep="\n\n",
     sep2="### End",
 )
 
+
 conv_templates = {
-    "conv_one_shot": conv_one_shot,
+    "vicuna_v0": conv_vicuna_v0,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "koala_v1": conv_koala_v1,
     "dolly": conv_dolly,
@@ -167,13 +187,13 @@ conv_templates = {
 
 def get_default_conv_template(model_name):
     model_name = model_name.lower()
-    if "vicuna" in model_name or "output" in model_name:
+    if "vicuna-v1" in model_name or "output" in model_name:
         return conv_vicuna_v1_1
     elif "koala" in model_name:
         return conv_koala_v1
     elif "dolly" in model_name:
         return conv_dolly
-    return conv_one_shot
+    return conv_vicuna_v0
 
 
 if __name__ == "__main__":
