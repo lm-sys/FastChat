@@ -126,21 +126,33 @@ class ModelWorker:
         }
 
     def generate_stream_gate(self, params):
-        try:
-            for choice, output in self.generate_stream_func(self.model, self.tokenizer,
-                    params, self.device, self.context_len, args.stream_interval):
-                ret = {
-                    "text": output,
-                    "choice": choice,
-                    "error_code": 0,
-                }
-                yield json.dumps(ret).encode() + b"\0"
-        except torch.cuda.OutOfMemoryError:
-            ret = {
-                "text": server_error_msg,
-                "error_code": 1,
-            }
-            yield json.dumps(ret).encode() + b"\0"
+        n = params.get("n", 1)
+        step_size = n
+        success = False
+        while not success:
+            for k in range(0, n, step_size):
+                batch_size = min(step_size, n - k)
+                params["n"] = batch_size
+                try:
+                    for choice, output in self.generate_stream_func(self.model, self.tokenizer,
+                            params, self.device, self.context_len, args.stream_interval):
+                        ret = {
+                            "text": output,
+                            "choice": choice,
+                            "error_code": 0,
+                        }
+                        yield json.dumps(ret).encode() + b"\0"
+                except torch.cuda.OutOfMemoryError:
+                    if step_size == 1:
+                        ret = {
+                            "text": server_error_msg,
+                            "error_code": 1,
+                        }
+                        yield json.dumps(ret).encode() + b"\0"
+                    else:
+                        step_size = max(1, step_size//2)
+                        break
+            success = True
 
 
 app = FastAPI()
