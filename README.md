@@ -90,7 +90,7 @@ See [docs/weights_version.md](docs/weights_version.md) for all versions of weigh
 
 ### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
-1. You can append "--low-cpu-mem" to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 10GB.
+1. You can append "--low-cpu-mem" to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
 2. You can create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
 
 ## Inference with Command Line Interface
