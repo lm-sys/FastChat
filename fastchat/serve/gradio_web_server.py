@@ -16,6 +16,7 @@ from fastchat.utils import (build_logger, server_error_msg,
     violates_moderation, moderation_msg)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
+from fastchat.serve.inference import compute_skip_echo_len
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -206,17 +207,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Construct prompt
     if "chatglm" in model_name:
         prompt = state.messages[state.offset:]
-        skip_echo_len = len(state.messages[-2][1]) + 1
-    elif "dolly" in model_name:
-        prompt = state.get_prompt()
-        special_toks = ['### End', '### Instruction:', '### Response:']
-        prompt_tmp = prompt
-        for tok in special_toks:
-            prompt_tmp = prompt_tmp.replace(tok, "")
-        skip_echo_len = len(prompt_tmp)
     else:
         prompt = state.get_prompt()
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    skip_echo_len = compute_skip_echo_len(model_name, state, prompt)
 
     # Make requests
     pload = {
@@ -275,7 +268,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Evaluation]](https://vicuna.lmsys.org/eval/)
 - Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
 - This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
@@ -289,8 +282,6 @@ By using this service, users are required to agree to the following terms: The s
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models.
-
-Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
 
 
@@ -361,6 +352,8 @@ def build_demo():
             http_bot, [state, model_selector, temperature, max_output_tokens],
             [state, chatbot] + btn_list)
         clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+
+        model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
 
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],

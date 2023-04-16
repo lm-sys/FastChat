@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fschat"
-version = "0.2.1"
+version = "0.2.2"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -14,8 +14,8 @@ classifiers = [
 ]
 dependencies = [
     "accelerate", "fastapi", "gradio==3.23", "markdown2[all]", "numpy",
-    "requests", "sentencepiece", "tokenizers>=0.12.1",
-    "torch", "uvicorn", "wandb", "prompt_toolkit>=3.0.0", "rich>=10.0.0",
+    "prompt_toolkit>=3.0.0", "requests", "rich>=10.0.0", "sentencepiece",
+    "shortuuid", "tokenizers>=0.12.1", "torch", "uvicorn", "wandb",
     "transformers @ git+https://github.com/huggingface/transformers.git"
 ]
 

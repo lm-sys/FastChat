@@ -4,6 +4,7 @@ import json
 import requests
 
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
+from fastchat.serve.inference import compute_skip_echo_len
 
 
 def main():
@@ -47,7 +48,7 @@ def main():
     for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+            skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
             output = data["text"][skip_echo_len:].strip()
             print(f"{conv.roles[1]}: {output}", end="\r")
     print("")

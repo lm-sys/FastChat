@@ -9,7 +9,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from fastchat.conversation import get_default_conv_template
-from fastchat.serve.inference import load_model
+from fastchat.serve.inference import load_model, compute_skip_echo_len
 
 
 @torch.inference_mode()
@@ -31,7 +31,7 @@ def main(args):
         temperature=0.7,
         max_new_tokens=1024)
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-    skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    skip_echo_len = compute_skip_echo_len(args.model_path, conv, prompt)
     outputs = outputs[skip_echo_len:]
 
     print(f"{conv.roles[0]}: {msg}")

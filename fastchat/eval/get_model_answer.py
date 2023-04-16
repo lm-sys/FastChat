@@ -8,6 +8,7 @@ import shortuuid
 import ray
 
 from fastchat.conversation import get_default_conv_template
+from fastchat.serve.inference import compute_skip_echo_len
 from fastchat.utils import disable_torch_init
 
 
@@ -57,7 +58,7 @@ def get_model_answers(model_path, model_id, question_jsons):
             temperature=0.7,
             max_new_tokens=1024)
         outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+        skip_echo_len = compute_skip_echo_len(model_id, conv, prompt)
 
         outputs = outputs[skip_echo_len:].strip()
         ans_id = shortuuid.uuid()
