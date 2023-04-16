@@ -66,7 +66,7 @@ Please update your local packages accordingly. If you follow the above commands 
 
 ### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
-If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
+See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base /path/to/llama-7b \
@@ -76,7 +76,7 @@ python3 -m fastchat.model.apply_delta \
 
 ### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
-If you do not have enough memory, you can create a large swap file that allows the operating system to automatically utilize the disk as virtual memory.
+See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base /path/to/llama-13b \
@@ -86,6 +86,12 @@ python3 -m fastchat.model.apply_delta \
 
 ### Old weights
 See [docs/weights_version.md](docs/weights_version.md) for all versions of weights and their differences.
+
+
+### Low CPU Memory Conversion
+You can try these methods to reduce the CPU RAM requirement of weight conversion.
+1. You can append "--low-cpu-mem" to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
+2. You can create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
 
 ## Inference with Command Line Interface
 
