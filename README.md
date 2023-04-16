@@ -27,11 +27,7 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 ### Method 1: With pip
 
 ```bash
-# Install FastChat
 pip3 install fschat
-
-# Install the latest main branch of huggingface/transformers
-pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ### Method 2: From source
@@ -61,7 +57,7 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
 
 **NOTE**:
-Weights v1.1 are only compatible with the latest main branch of huggingface/transformers and ``fschat >= 0.2.0``.
+Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
 Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
 
 ### Vicuna-7B
@@ -90,8 +86,8 @@ See [docs/weights_version.md](docs/weights_version.md) for all versions of weigh
 
 ### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
-1. You can append "--low-cpu-mem" to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
-2. You can create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
+2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
 
 ## Inference with Command Line Interface
 
