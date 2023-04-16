@@ -353,6 +353,8 @@ def build_demo():
             [state, chatbot] + btn_list)
         clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
+        model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
