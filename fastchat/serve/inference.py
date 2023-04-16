@@ -1,12 +1,13 @@
 """Inference for FastChat models."""
 import abc
 from typing import Optional
+import warnings
 
 import torch
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM
 except ImportError:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
 from fastchat.serve.compression import compress_module
@@ -49,6 +50,15 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
+        if 'vicuna' in model_path:
+            try:
+                is_vicuna = isinstance(model, LlamaForCausalLM)
+            except Exception:
+                is_vicuna = isinstance(model, LLamaForCausalLM)
+            if is_vicuna and model.model.vocab_size > 32000:
+                warnings.warn('\nYou probably use the old Vicuna-v0 model, '
+                            'which will generate unexpected results with the '
+                            'current fschat.\nPlease check the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights')
 
     if load_8bit:
         compress_module(model, device)

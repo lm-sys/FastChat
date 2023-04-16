@@ -1,5 +1,5 @@
 import argparse
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaForCausalLM
 import torch
 import os
 import json
