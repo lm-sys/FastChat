@@ -15,7 +15,7 @@ from fastchat.serve.inference import load_model
 @torch.inference_mode()
 def main(args):
     model, tokenizer = load_model(args.model_path, args.device,
-        args.num_gpus, args.load_8bit, debug=args.debug, max_gpu_memory=args.max_gpu_memory)
+        args.num_gpus, args.max_gpu_memory, args.load_8bit, debug=args.debug)
 
     msg = args.message
 

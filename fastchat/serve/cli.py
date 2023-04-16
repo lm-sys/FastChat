@@ -105,9 +105,9 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
-        chat_loop(args.model_path, args.device, args.num_gpus, args.max_gpu_memory, args.load_8bit,
-                args.conv_template, args.temperature, args.max_new_tokens,
-                chatio, args.debug)
+        chat_loop(args.model_path, args.device, args.num_gpus, args.max_gpu_memory,
+            args.load_8bit, args.conv_template, args.temperature, args.max_new_tokens,
+            chatio, args.debug)
     except KeyboardInterrupt:
         print("exit...")
 

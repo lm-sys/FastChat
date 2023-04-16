@@ -57,7 +57,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
-            model_path, device, num_gpus, load_8bit, max_gpu_memory=max_gpu_memory)
+            model_path, device, num_gpus, max_gpu_memory, load_8bit)
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
