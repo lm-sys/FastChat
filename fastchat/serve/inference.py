@@ -31,6 +31,21 @@ def raise_warning_for_old_weights(model_path, model):
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n")
 
 
+def compute_skip_echo_len(model_name, conv, prompt):
+    model_name = model_name.lower()
+    if "chatglm" in model_name:
+        skip_echo_len = len(conv.messages[-2][1]) + 1
+    elif "dolly" in model_name:
+        special_toks = ["### Instruction:", "### Response:", "### End"]
+        prompt_tmp = prompt
+        for tok in special_toks:
+            prompt_tmp = prompt_tmp.replace(tok, "")
+        skip_echo_len = len(prompt_tmp)
+    else:
+        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
+    return skip_echo_len
+
+
 def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                load_8bit=False, debug=False):
     if device == "cpu":
@@ -189,11 +204,11 @@ def chat_loop(model_path: str, device: str, num_gpus: str,
         if is_chatglm:
             prompt = conv.messages[conv.offset:]
             generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(conv.messages[-2][1]) + 1
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+
+        skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
 
         params = {
             "model": model_path,
