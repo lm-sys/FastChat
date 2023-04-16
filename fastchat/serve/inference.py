@@ -14,7 +14,8 @@ from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
-def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
+def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
+               load_8bit=False, debug=False):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -26,7 +27,7 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
             if num_gpus != 1:
                 kwargs.update({
                     "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
+                    "max_memory": {i: max_gpu_memory for i in range(num_gpus)},
                 })
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
@@ -142,13 +143,14 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_path: str, device: str, num_gpus: str, load_8bit: bool,
+def chat_loop(model_path: str, device: str, num_gpus: str,
+              max_gpu_memory: str, load_8bit: bool,
               conv_template: Optional[str], temperature: float,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
     # Model
     model, tokenizer = load_model(model_path, device,
-        num_gpus, load_8bit, debug)
+        num_gpus, max_gpu_memory, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
     # Chat

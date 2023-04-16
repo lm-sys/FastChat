@@ -105,9 +105,9 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
-        chat_loop(args.model_path, args.device, args.num_gpus, args.load_8bit,
-                args.conv_template, args.temperature, args.max_new_tokens,
-                chatio, args.debug)
+        chat_loop(args.model_path, args.device, args.num_gpus, args.max_gpu_memory,
+            args.load_8bit, args.conv_template, args.temperature, args.max_new_tokens,
+            chatio, args.debug)
     except KeyboardInterrupt:
         print("exit...")
 
@@ -118,6 +118,7 @@ if __name__ == "__main__":
         help="The path to the weights")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--max-gpu-memory", type=str, default="13GiB")
     parser.add_argument("--load-8bit", action="store_true",
         help="Use 8-bit quantization.")
     parser.add_argument("--conv-template", type=str, default=None,

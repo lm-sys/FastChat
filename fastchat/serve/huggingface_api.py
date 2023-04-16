@@ -15,7 +15,7 @@ from fastchat.serve.inference import load_model
 @torch.inference_mode()
 def main(args):
     model, tokenizer = load_model(args.model_path, args.device,
-        args.num_gpus, args.load_8bit, debug=args.debug)
+        args.num_gpus, args.max_gpu_memory, args.load_8bit, debug=args.debug)
 
     msg = args.message
 
@@ -44,6 +44,7 @@ if __name__ == "__main__":
         help="The path to the weights")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--max-gpu-memory", type=str, default="13GiB")
     parser.add_argument("--load-8bit", action="store_true",
         help="Use 8-bit quantization.")
     parser.add_argument("--conv-template", type=str, default=None,
