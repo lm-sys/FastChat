@@ -15,6 +15,22 @@ from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
+def raise_warning_for_old_weights(model_path, model):
+    if "vicuna" in model_path.lower():
+        try:
+            is_vicuna = isinstance(model, LlamaForCausalLM)
+        except Exception:
+            is_vicuna = isinstance(model, LLamaForCausalLM)
+        if is_vicuna and model.model.vocab_size > 32000:
+            warnings.warn(
+                "\nYou are probably using the old Vicuna-v0 model, "
+                "which will generate unexpected results with the "
+                "current fschat.\nYou can try the following methods:\n"
+                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n")
+
+
 def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                load_8bit=False, debug=False):
     if device == "cpu":
@@ -50,15 +66,7 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
-        if 'vicuna' in model_path:
-            try:
-                is_vicuna = isinstance(model, LlamaForCausalLM)
-            except Exception:
-                is_vicuna = isinstance(model, LLamaForCausalLM)
-            if is_vicuna and model.model.vocab_size > 32000:
-                warnings.warn('\nYou probably use the old Vicuna-v0 model, '
-                            'which will generate unexpected results with the '
-                            'current fschat.\nPlease check the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights')
+        raise_warning_for_old_weights(model_path, model)
 
     if load_8bit:
         compress_module(model, device)
