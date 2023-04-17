@@ -98,6 +98,10 @@ def generate_payload(model_name: str, messages: List[Dict[str, str]],
     if stop is None:
         stop = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
 
+    # TODO(suquark): We should get the default `max_new_tokens`` from the model.
+    if max_tokens is None:
+        max_tokens = 512
+
     payload = {
         "model": model_name,
         "prompt": prompt,
