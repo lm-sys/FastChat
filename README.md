@@ -198,6 +198,7 @@ python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-pat
 Finally, launch the RESTful API server
 
 ```bash
+export FASTCHAT_CONTROLLER_URL=http://localhost:21001
 python3 -m fastchat.serve.api --host localhost --port 8000
 ```
 

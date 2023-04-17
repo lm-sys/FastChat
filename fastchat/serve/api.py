@@ -16,6 +16,7 @@ import logging
 import fastapi
 import httpx
 import uvicorn
+from pydantic import BaseSettings
 
 from fastchat.protocol.chat_completion import ChatCompletionRequest, ChatCompletionResponse
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
@@ -23,8 +24,14 @@ from fastchat.serve.inference import compute_skip_echo_len
 
 logger = logging.getLogger(__name__)
 
+
+class AppSettings(BaseSettings):
+    # The address of the model controller.
+    FASTCHAT_CONTROLLER_URL: str = "http://localhost:21001"
+
+
+app_settings = AppSettings()
 app = fastapi.FastAPI()
-controller_url = None
 headers = {"User-Agent": "FastChat API Server"}
 
 
@@ -104,6 +111,7 @@ def generate_payload(model_name: str, messages: List[Dict[str, str]],
 
 
 async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_len: int):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(controller_url + "/get_worker_address", json={"model": model_name})
         worker_addr = ret.json()["address"]
@@ -128,10 +136,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FastChat ChatGPT-compatible Restful API server.")
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
-    parser.add_argument("--controller-address", type=str, default="http://localhost:21001",
-        help="The address of the model controller.")
  
     args = parser.parse_args()
-    controller_url = args.controller_address
-
     uvicorn.run("fastchat.serve.api:app", host=args.host, port=args.port, reload=True)
