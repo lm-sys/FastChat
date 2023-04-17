@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import time
 
@@ -20,5 +20,5 @@ class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
-    choices: List[Dict[str, str]]
+    choices: List[Dict[str, Any]]
     usage: Optional[Dict[str, int]] = None

@@ -88,6 +88,9 @@ def generate_payload(model_name: str, messages: List[Dict[str, str]],
             conv.append_message(conv.roles[1], message["content"])
         else:
             raise ValueError(f"Unknown role: {msg_role}")
+    
+    # Add a blank message for the assistant.
+    conv.append_message(conv.roles[1], None)
 
     if is_chatglm:
         prompt = conv.messages[conv.offset:]
