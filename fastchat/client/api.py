@@ -42,7 +42,7 @@ class ChatCompletion:
         
         See `acreate` for more details.
         """
-        asyncio.run(cls.acreate(*args, **kwargs))
+        return asyncio.run(cls.acreate(*args, **kwargs))
 
     @classmethod
     async def acreate(cls,
