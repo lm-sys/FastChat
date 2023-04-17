@@ -177,9 +177,19 @@ See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
 
 ### OpenAI-compatible RESTful APIs & SDK
 
+(experimental, we will keep improving the API and SDK)
+
 #### Chat Completion
 
 Reference: https://platform.openai.com/docs/api-reference/chat/create
+
+Some features to be implemented:
+
+- [ ] streaming
+- [ ] some parameters like `top_p`, `presence_penalty`
+- [ ] proper error handling (e.g. model not found)
+- [ ] the return value in client SDK could be treated like a dict.
+
 
 **RESTful API Server**
 
