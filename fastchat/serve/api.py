@@ -19,6 +19,7 @@ import uvicorn
 
 from fastchat.protocol.chat_completion import ChatCompletionRequest, ChatCompletionResponse
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
+from fastchat.serve.inference import compute_skip_echo_len
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,10 @@ def generate_payload(model_name: str, messages: List[Dict[str, str]],
     is_chatglm = "chatglm" in model_name.lower()
     conv = get_default_conv_template(model_name)
 
+    # TODO(suquark): Conv.messages should be a list. But it is a tuple now.
+    #  We should change it to a list.
+    conv.messages = list(conv.messages)
+
     for message in messages:
         msg_role = message["role"]
         if msg_role == "system":
@@ -79,10 +84,9 @@ def generate_payload(model_name: str, messages: List[Dict[str, str]],
 
     if is_chatglm:
         prompt = conv.messages[conv.offset:]
-        skip_echo_len = len(conv.messages[-2][1]) + 1
     else:
         prompt = conv.get_prompt()
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
 
     if stop is None:
         stop = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
