@@ -3,7 +3,7 @@ import asyncio
 import os
 
 import httpx
-from fastchat.protocol.chat_completion import ChatCompletionRequest
+from fastchat.protocol.chat_completion import ChatCompletionRequest, ChatCompletionResponse
 
 _BASE_URL = "http://localhost:8000"
 
@@ -20,7 +20,9 @@ class ChatCompletionClient:
     def __init__(self, base_url: str):
         self.base_url = base_url
 
-    async def request_completion(self, request: ChatCompletionRequest, timeout: Optional[float] = None):
+    async def request_completion(self,
+                                 request: ChatCompletionRequest,
+                                 timeout: Optional[float] = None) -> ChatCompletionResponse:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/v1/chat/completions",
@@ -28,14 +30,14 @@ class ChatCompletionClient:
                 timeout=timeout
             )
             response.raise_for_status()
-            return response.json()
+            return ChatCompletionResponse.parse_obj(response.json())
 
 
 class ChatCompletion:
     OBJECT_NAME = "chat.completions"
 
     @classmethod
-    def create(cls, *args, **kwargs):
+    def create(cls, *args, **kwargs) -> ChatCompletionResponse:
         """Creates a new chat completion for the provided messages and parameters.
         
         See `acreate` for more details.
@@ -50,7 +52,7 @@ class ChatCompletion:
                       n: int = 1,
                       max_tokens: Optional[int] = None,
                       stop: Optional[str] = None,
-                      timeout: Optional[float] = None):
+                      timeout: Optional[float] = None) -> ChatCompletionResponse:
         """Creates a new chat completion for the provided messages and parameters."""
         request = ChatCompletionRequest(
             model=model,

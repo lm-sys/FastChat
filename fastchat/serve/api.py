@@ -18,7 +18,8 @@ import httpx
 import uvicorn
 from pydantic import BaseSettings
 
-from fastchat.protocol.chat_completion import ChatCompletionRequest, ChatCompletionResponse
+from fastchat.protocol.chat_completion import (
+    ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ChatCompletionResponseChoice)
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 from fastchat.serve.inference import compute_skip_echo_len
 
@@ -49,15 +50,13 @@ async def create_chat_completion(request: ChatCompletionRequest):
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     for i in range(request.n):
         content = await chat_completion(request.model, payload, skip_echo_len)
-        choices.append({
-            "index": i,
-            "message": {
-                "role": "assistant",
-                "content": content,
-            },
-            # TODO: support other finish_reason
-            "finish_reason": "stop"
-        })
+        choices.append(
+            ChatCompletionResponseChoice(
+                index=i,
+                message=ChatMessage(role="assistant", content=content),
+                # TODO: support other finish_reason
+                finish_reason="stop")
+        )
 
     # TODO: support usage field
     # "usage": {

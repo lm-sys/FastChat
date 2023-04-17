@@ -16,9 +16,20 @@ class ChatCompletionRequest(BaseModel):
     stop: Optional[str] = None
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatCompletionResponseChoice(BaseModel):
+    index: int
+    message: ChatMessage
+    finish_reason: str
+
+
 class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
-    choices: List[Dict[str, Any]]
+    choices: List[ChatCompletionResponseChoice]
     usage: Optional[Dict[str, int]] = None
