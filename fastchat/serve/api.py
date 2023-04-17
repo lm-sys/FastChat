@@ -72,7 +72,9 @@ async def create_chat_completion(request: ChatCompletionRequest):
 def generate_payload(model_name: str, messages: List[Dict[str, str]],
                      *, temperature: float, max_tokens: int, stop: Union[str, None]):
     is_chatglm = "chatglm" in model_name.lower()
-    conv = get_default_conv_template(model_name)
+    # TODO(suquark): The template is currently a reference. Here we have to make a copy.
+    # We use create a template factory to avoid this.
+    conv = get_default_conv_template(model_name).copy()
 
     # TODO(suquark): Conv.messages should be a list. But it is a tuple now.
     #  We should change it to a list.
