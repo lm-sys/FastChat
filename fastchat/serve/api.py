@@ -122,15 +122,20 @@ async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_le
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
         output = ""
+        delimiter = b"\0"
         async with client.stream("POST", worker_addr + "/worker_generate_stream",
                                  headers=headers, json=payload, timeout=20) as response:
-            async for chunk in response.aiter_lines(decode_unicode=False, delimiter=b"\0"):
-                if chunk:
-                    data = json.loads(chunk.decode())
-                    if data["error_code"] == 0:
-                        output = data["text"][skip_echo_len:].strip()
+            content = await response.aread()
+
+        for chunk in content.split(delimiter):
+            if not chunk:
+                continue
+            data = json.loads(chunk.decode())
+            if data["error_code"] == 0:
+                output = data["text"][skip_echo_len:].strip()
+
         return output
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FastChat ChatGPT-compatible Restful API server.")
