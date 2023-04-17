@@ -72,11 +72,11 @@ def load_model(model_path, device, num_gpus, max_gpu_memory=None,
             num_gpus = int(num_gpus)
             if max_gpu_memory is None:
                 available_gpu_memory = get_gpu_memory(num_gpus)
-                kwargs["max_memory"] = {i: available_gpu_memory[i] for i in range(num_gpus)}
+                kwargs["max_memory"] = {i: str(int(available_gpu_memory[i])) + 'GiB' for i in range(num_gpus)}
             else:
                 max_gpu_memory = float(max_gpu_memory[:-3])
                 kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
-            #print(f"kwargs[max_memory]: {kwargs['max_memory']}") #to see how much memory is being allocated
+            print(kwargs) #to see how much memory is being allocated
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
