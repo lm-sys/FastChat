@@ -118,8 +118,8 @@ def add_text(state0, state1, text, request: gr.Request):
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             for i in range(num_models):
                 states[i].skip_next = True
-        return states + [x.to_gradio_chatbot() for x in states] + [moderation_msg
-            ] + [no_change_btn,] * 5
+            return states + [x.to_gradio_chatbot() for x in states] + [moderation_msg
+                ] + [no_change_btn,] * 5
 
     text = text[:1536]  # Hard cut-off
     for i in range(num_models):
