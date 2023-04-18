@@ -307,7 +307,8 @@ pre {
 
 
 def build_demo():
-    with gr.Blocks(title="FastChat", theme=gr.themes.Base(), css=css) as demo:
+    with gr.Blocks(title="Chat with Open Large Language Models",
+                   theme=gr.themes.Base(), css=css) as demo:
         state = gr.State()
 
         # Draw layout

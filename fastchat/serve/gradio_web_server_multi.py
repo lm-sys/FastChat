@@ -171,10 +171,8 @@ def http_bot_all(state0, state1, model_selector0, model_selector1, temperature,
 
 
 notice_markdown = ("""
-# 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Evaluation]](https://vicuna.lmsys.org/eval/)
-- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
-- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
+# 🏔️ Compare Open Large Language Models Side-by-Side
+Chat with two models side-by-side and vote for which one is better!
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
@@ -208,7 +206,8 @@ pre {
 
 
 def build_demo():
-    with gr.Blocks(title="FastChat", theme=gr.themes.Base(), css=css) as demo:
+    with gr.Blocks(title="Compare Open Large Language Models Side-by-Side",
+                   theme=gr.themes.Base(), css=css) as demo:
         states = [gr.State() for _ in range(num_models)]
         model_selectors = [None] * num_models
         chatbots = [None] * num_models
