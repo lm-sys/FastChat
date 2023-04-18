@@ -26,6 +26,7 @@ headers = {"User-Agent": "fastchat Client"}
 no_change_btn = gr.Button.update()
 enable_btn = gr.Button.update(interactive=True)
 disable_btn = gr.Button.update(interactive=False)
+controller_url = None
 
 priority = {
     "vicuna-13b": "aaaaaaa",
@@ -35,6 +36,11 @@ priority = {
 }
 
 
+def set_controller_url(url):
+    global controller_url
+    controller_url = url
+
+
 def get_conv_log_filename():
     t = datetime.datetime.now()
     name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
@@ -42,9 +48,9 @@ def get_conv_log_filename():
 
 
 def get_model_list():
-    ret = requests.post(args.controller_url + "/refresh_all_workers")
+    ret = requests.post(controller_url + "/refresh_all_workers")
     assert ret.status_code == 200
-    ret = requests.post(args.controller_url + "/list_models")
+    ret = requests.post(controller_url + "/list_models")
     models = ret.json()["models"]
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
@@ -192,7 +198,6 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         state = new_state
 
     # Query worker address
-    controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model": model_name})
     worker_addr = ret.json()["address"]
@@ -322,7 +327,7 @@ def build_demo():
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=50):
-                submit_btn = gr.Button(value="Send", visible=False)
+                send_btn = gr.Button(value="Send", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -358,17 +363,14 @@ def build_demo():
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
-        submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        send_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row],
+                chatbot, textbox, send_btn, button_row, parameter_row],
                 _js=get_window_url_params)
-        elif args.model_list_mode == "reload":
-            demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -389,6 +391,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    set_controller_url(args.controller_url)
     models = get_model_list()
 
     logger.info(args)
