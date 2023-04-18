@@ -35,6 +35,10 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
     else:
         raise ValueError(f"Invalid device: {device}")
 
+    if load_8bit:
+        kwargs["device_map"] = "auto"
+        kwargs["load_in_8bit"] = True
+
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
@@ -43,11 +47,6 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
 
-    if load_8bit:
-        compress_module(model, device)
-
-    if (device == "cuda" and num_gpus == 1) or device == "mps":
-        model.to(device)
 
     if debug:
         print(model)
