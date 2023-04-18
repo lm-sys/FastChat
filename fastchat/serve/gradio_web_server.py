@@ -25,7 +25,10 @@ headers = {"User-Agent": "fastchat Client"}
 no_change_btn = gr.Button.update()
 enable_btn = gr.Button.update(interactive=True)
 disable_btn = gr.Button.update(interactive=False)
+
 controller_url = None
+enable_moderation = False
+models = []
 
 priority = {
     "vicuna-13b": "aaaaaaa",
@@ -35,9 +38,11 @@ priority = {
 }
 
 
-def set_controller_url(url):
-    global controller_url
-    controller_url = url
+def set_global_vars(controller_url_, enable_moderation_, models_):
+    global controller_url, enable_moderation, models
+    controller_url = controller_url_
+    enable_moderation = enable_moderation_
+    models = models_
 
 
 def get_conv_log_filename():
@@ -46,7 +51,7 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list():
+def get_model_list(controller_url):
     ret = requests.post(controller_url + "/refresh_all_workers")
     assert ret.status_code == 200
     ret = requests.post(controller_url + "/list_models")
@@ -66,9 +71,7 @@ function() {
 """
 
 
-def load_demo(url_params, request: gr.Request):
-    logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
-
+def load_demo_single(url_params):
     dropdown_update = gr.Dropdown.update(visible=True)
     if "model" in url_params:
         model = url_params["model"]
@@ -86,18 +89,9 @@ def load_demo(url_params, request: gr.Request):
             gr.Accordion.update(visible=True))
 
 
-def load_demo_refresh_model_list(request: gr.Request):
-    logger.info(f"load_demo. ip: {request.client.host}")
-    models = get_model_list()
-    state = None
-    return (state, gr.Dropdown.update(
-               choices=models,
-               value=models[0] if len(models) > 0 else ""),
-            gr.Chatbot.update(visible=True),
-            gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True))
+def load_demo(url_params, request: gr.Request):
+    logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
+    return load_demo_single(url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -152,7 +146,7 @@ def add_text(state, text, request: gr.Request):
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
-    if args.moderate:
+    if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
@@ -295,7 +289,7 @@ The service is a research preview intended for non-commercial use only, subject 
 """)
 
 
-css = code_highlight_css + """
+block_css = code_highlight_css + """
 pre {
     white-space: pre-wrap;       /* Since CSS 2.1 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -306,66 +300,73 @@ pre {
 """
 
 
+def build_single_model_ui():
+    state = gr.State()
+
+    # Draw layout
+    notice = gr.Markdown(notice_markdown)
+
+    with gr.Row(elem_id="model_selector_row"):
+        model_selector = gr.Dropdown(
+            choices=models,
+            value=models[0] if len(models) > 0 else "",
+            interactive=True,
+            show_label=False).style(container=False)
+
+    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
+    with gr.Row():
+        with gr.Column(scale=20):
+            textbox = gr.Textbox(show_label=False,
+                placeholder="Enter text and press ENTER", visible=False).style(container=False)
+        with gr.Column(scale=1, min_width=50):
+            send_btn = gr.Button(value="Send", visible=False)
+
+    with gr.Row(visible=False) as button_row:
+        upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
+        downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
+        flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
+        #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
+        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
+        temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
+        max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+
+    gr.Markdown(learn_more_markdown)
+
+    # Register listeners
+    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
+    upvote_btn.click(upvote_last_response,
+        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+    downvote_btn.click(downvote_last_response,
+        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+    flag_btn.click(flag_last_response,
+        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
+    regenerate_btn.click(regenerate, state,
+        [state, chatbot, textbox] + btn_list).then(
+        http_bot, [state, model_selector, temperature, max_output_tokens],
+        [state, chatbot] + btn_list)
+    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+
+    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+
+    textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+               [state, chatbot] + btn_list)
+    send_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
+               [state, chatbot] + btn_list)
+
+    return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
+
+
 def build_demo():
     with gr.Blocks(title="Chat with Open Large Language Models",
-                   theme=gr.themes.Base(), css=css) as demo:
-        state = gr.State()
-
-        # Draw layout
-        notice = gr.Markdown(notice_markdown)
-
-        with gr.Row(elem_id="model_selector_row"):
-            model_selector = gr.Dropdown(
-                choices=models,
-                value=models[0] if len(models) > 0 else "",
-                interactive=True,
-                show_label=False).style(container=False)
-
-        chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-        with gr.Row():
-            with gr.Column(scale=20):
-                textbox = gr.Textbox(show_label=False,
-                    placeholder="Enter text and press ENTER", visible=False).style(container=False)
-            with gr.Column(scale=1, min_width=50):
-                send_btn = gr.Button(value="Send", visible=False)
-
-        with gr.Row(visible=False) as button_row:
-            upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-            downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-            flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-            #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
-            regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-            clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
-
-        with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
-            temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
-            max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
-
-        gr.Markdown(learn_more_markdown)
+                   theme=gr.themes.Base(), css=block_css) as demo:
         url_params = gr.JSON(visible=False)
 
-        # Register listeners
-        btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-        upvote_btn.click(upvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-        downvote_btn.click(downvote_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-        flag_btn.click(flag_last_response,
-            [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-        regenerate_btn.click(regenerate, state,
-            [state, chatbot, textbox] + btn_list).then(
-            http_bot, [state, model_selector, temperature, max_output_tokens],
-            [state, chatbot] + btn_list)
-        clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-        model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-        textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-                   [state, chatbot] + btn_list)
-        send_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-            ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-                   [state, chatbot] + btn_list)
+        state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row = build_single_model_ui()
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
@@ -391,8 +392,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    set_controller_url(args.controller_url)
-    models = get_model_list()
+    models = get_model_list(args.controller_url)
+    set_global_vars(args.controller_url, args.moderate, models)
 
     logger.info(args)
     demo = build_demo()
