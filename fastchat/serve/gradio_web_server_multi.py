@@ -252,7 +252,7 @@ def build_demo():
                    theme=gr.themes.Base(), css=block_css) as demo:
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Single", id=0):
+            with gr.Tab("Single Model", id=0):
                 a_state, a_model_selector, a_chatbot, a_textbox, a_send_btn, a_button_row, a_parameter_row = build_single_model_ui()
                 a_list = [a_state, a_model_selector, a_chatbot, a_textbox, a_send_btn, a_button_row, a_parameter_row]
 
