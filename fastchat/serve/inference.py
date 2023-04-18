@@ -14,7 +14,16 @@ from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
-
+def check_gpu_memory(num_gpus):
+    for gpu_id in range(num_gpus):
+        torch.cuda.set_device(gpu_id)
+        device = torch.cuda.current_device()
+        gpu_properties = torch.cuda.get_device_properties(device)
+        total_memory = gpu_properties.total_memory / (1024**3)
+        if total_memory < 13:
+            return False
+    return True
+    
 def raise_warning_for_old_weights(model_path, model):
     if "vicuna" in model_path.lower():
         try:
@@ -57,10 +66,17 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         else:
             num_gpus = int(num_gpus)
             if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: max_gpu_memory for i in range(num_gpus)},
-                })
+                if check_gpu_memory(num_gpus):
+                    kwargs.update({
+                        "device_map": "auto",
+                        "max_memory": {i: max_gpu_memory for i in range(num_gpus)},
+                    })
+                else:
+                    max_memory_mapping = {0: "20GiB", 1: "6GiB"}
+                    kwargs.update({
+                    "device_map": "sequential",
+                    "max_memory": max_memory_mapping,
+                })    
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.

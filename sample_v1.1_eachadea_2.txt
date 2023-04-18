@@ -1,0 +1,58 @@
+mycat@mycat-hachi:~/FastChat$ python3 -m fastchat.serve.cli --style rich --model-path ~/LLM/vicuna-13b-1.1 --num-gpus 2
+Loading checkpoint shards: 100%|███████████████████████████████| 3/3 [00:12<00:00,  4.28s/it]
+USER:
+こんにちわ、雪国の温泉宿に泊まりたいのですが、何処の温泉宿がお勧めですか。
+
+ASSISTANT:
+皆様にお勧めできる日本の温泉宿としては、以下のような施設があります。                         
+
+ 1 北海道・札幌市・釧路市                                                                    
+   ・Sapporo Kanko Hotel                                                                     
+   ・Sapporo Bay Hotel                                                                       
+   ・Sapporo Albert Hotel                                                                    
+   ・Sapporo Garden Hotel                                                                    
+   ・Hotel Monterey Grasmere                                                                 
+   ・Hotel JAL City Sapporo                                                                  
+   ・APA Hotel Sapporo-Ekimae                                                                
+   ・Sapporo Tokyu Hotel                                                                     
+ 2 北海道・旭川市・小樽市                                                                    
+   ・Hoshino Resorts OIRATA YU                                                               
+   ・Hoshino Resorts KAI                                                                     
+   ・Hoshino Resorts Tomamu                                                                  
+   ・Hoshino Resorts UNIZAKI                                                                 
+   ・Hoshino Resorts YUFUIN                                                                  
+   ・Hoshino Resorts TOMAMU                                                                  
+   ・Hoshino Resorts YU                                                                      
+ 3 北海道・美深町・函館市                                                                    
+   ・Hoshino Resorts OMO                                                                     
+   ・Hoshino Resorts KAN                                                                     
+   ・Hoshino Resorts TOMAMU FUNATO                                                           
+   ・Hoshino Resorts YU                                                                      
+ 4 北海道・根庐市・余杭市                                                                    
+   ・Hoshino Resorts KARUI                                                                   
+   ・Hoshino Resorts OIRATA KARUI                                                            
+   ・Hoshino Resorts YU                                                                      
+
+以上の施設では、日本の伝統的な温泉旅体験を楽しめることができます。また、北海道ではスキーや温 
+泉溫泉などの観光アクティビティも楽しめます。おすすめの施設は個人の好みや目的によって異なりま 
+すので、よろしくお願いします。                                                               
+
+USER:
+あなた自身について教えてください。
+
+ASSISTANT:
+私は、2021年9月に開発されたGAFAインターナショナルのAlphabet                                                                   
+Inc.が開発した人工知能モデルです。私は、自然言語処理や機械学習を利用して、単語や文の理解や生成を行うことができます。また、   私は、2021年9月に開発されたGAFAインターナショナルのAlphabet                                                                   
+Inc.が開発した人工知能モデルです。私は、自然言語処理や機械学習を利用して、単語や文の理解や生成を行うことができます。また、   私は、2021年9月に開発されたGAFAインターナショナルのAlphabet                                                                  
+Inc.が開発した人工知能モデルです。私は、自然言語処理や機械学習を利用して、単語や文の理解や生成を行うことができます。また     
+、幅広い知識を保持しており、問題解決や説明などを行うことができます。私は、ユーザーとのコミュニケーションを通じて、より良いサ 
+ービスを提供し、より良い世界を築くことを目指しています。  
+
+USER:
+あなた自身について教えてください。
+
+ASSISTANT:
+私は、2021年9月に開発されたGAFAインターナショナルのAlphabet                                                                  
+Inc.が開発した人工知能モデルです。私は、自然言語処理や機械学習を利用して、単語や文の理解や生成を行うことができます。また     
+、幅広い知識を保持しており、問題解決や説明などを行うことができます。私は、ユーザーとのコミュニケーションを通じて、良いサービ 
+スを提供し、良い世界を築くことを目指しています。              
