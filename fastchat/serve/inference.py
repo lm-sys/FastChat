@@ -173,11 +173,15 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_path: str, device: str, num_gpus: str,
+def chat_loop(model_path: str, device: str, num_gpus: str, num_threads: int,
               max_gpu_memory: str, load_8bit: bool,
               conv_template: Optional[str], temperature: float,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
+    
+    if num_threads != None:
+        torch.set_num_threads(num_threads)
+    
     # Model
     model, tokenizer = load_model(model_path, device,
         num_gpus, max_gpu_memory, load_8bit, debug)
