@@ -16,6 +16,7 @@ from fastchat.utils import (build_logger, server_error_msg,
     violates_moderation, moderation_msg)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
+from fastchat.serve.inference import compute_skip_echo_len
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -25,6 +26,7 @@ headers = {"User-Agent": "fastchat Client"}
 no_change_btn = gr.Button.update()
 enable_btn = gr.Button.update(interactive=True)
 disable_btn = gr.Button.update(interactive=False)
+controller_url = None
 
 priority = {
     "vicuna-13b": "aaaaaaa",
@@ -34,6 +36,11 @@ priority = {
 }
 
 
+def set_controller_url(url):
+    global controller_url
+    controller_url = url
+
+
 def get_conv_log_filename():
     t = datetime.datetime.now()
     name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
@@ -41,9 +48,9 @@ def get_conv_log_filename():
 
 
 def get_model_list():
-    ret = requests.post(args.controller_url + "/refresh_all_workers")
+    ret = requests.post(controller_url + "/refresh_all_workers")
     assert ret.status_code == 200
-    ret = requests.post(args.controller_url + "/list_models")
+    ret = requests.post(controller_url + "/list_models")
     models = ret.json()["models"]
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
@@ -191,7 +198,6 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         state = new_state
 
     # Query worker address
-    controller_url = args.controller_url
     ret = requests.post(controller_url + "/get_worker_address",
             json={"model": model_name})
     worker_addr = ret.json()["address"]
@@ -206,17 +212,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     # Construct prompt
     if "chatglm" in model_name:
         prompt = state.messages[state.offset:]
-        skip_echo_len = len(state.messages[-2][1]) + 1
-    elif "dolly" in model_name:
-        prompt = state.get_prompt()
-        special_toks = ['### End', '### Instruction:', '### Response:']
-        prompt_tmp = prompt
-        for tok in special_toks:
-            prompt_tmp = prompt_tmp.replace(tok, "")
-        skip_echo_len = len(prompt_tmp)
     else:
         prompt = state.get_prompt()
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    skip_echo_len = compute_skip_echo_len(model_name, state, prompt)
 
     # Make requests
     pload = {
@@ -275,7 +273,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
 notice_markdown = ("""
 # 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Evaluation]](https://vicuna.lmsys.org/eval/)
 - Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
 - This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
@@ -289,8 +287,6 @@ By using this service, users are required to agree to the following terms: The s
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models.
-
-Note: If you are waiting in the queue, check out more benchmark results from GPT-4 on a static website [here](https://vicuna.lmsys.org/eval).
 """)
 
 
@@ -331,7 +327,7 @@ def build_demo():
                 textbox = gr.Textbox(show_label=False,
                     placeholder="Enter text and press ENTER", visible=False).style(container=False)
             with gr.Column(scale=1, min_width=50):
-                submit_btn = gr.Button(value="Send", visible=False)
+                send_btn = gr.Button(value="Send", visible=False)
 
         with gr.Row(visible=False) as button_row:
             upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -362,20 +358,19 @@ def build_demo():
             [state, chatbot] + btn_list)
         clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
+        model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+
         textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
-        submit_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        send_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
             ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
                    [state, chatbot] + btn_list)
 
         if args.model_list_mode == "once":
             demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row],
+                chatbot, textbox, send_btn, button_row, parameter_row],
                 _js=get_window_url_params)
-        elif args.model_list_mode == "reload":
-            demo.load(load_demo_refresh_model_list, None, [state, model_selector,
-                chatbot, textbox, submit_btn, button_row, parameter_row])
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -396,6 +391,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    set_controller_url(args.controller_url)
     models = get_model_list()
 
     logger.info(args)
