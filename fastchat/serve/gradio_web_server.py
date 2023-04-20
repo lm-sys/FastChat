@@ -176,6 +176,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
     model_name = model_selector
+    temperature = float(temperature)
+    max_new_tokens = int(max_new_tokens)
 
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
@@ -213,8 +215,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     pload = {
         "model": model_name,
         "prompt": prompt,
-        "temperature": float(temperature),
-        "max_new_tokens": int(max_new_tokens),
+        "temperature": temperature,
+        "max_new_tokens": max_new_tokens,
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"==== request ====\n{pload}")
@@ -256,6 +258,10 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
             "model": model_name,
+            "gen_params": {
+                "temperature": temperature,
+                "max_new_tokens": max_new_tokens,
+            },
             "start": round(start_tstamp, 4),
             "finish": round(start_tstamp, 4),
             "state": state.dict(),

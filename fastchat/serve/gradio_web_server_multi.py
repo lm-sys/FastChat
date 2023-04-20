@@ -36,6 +36,7 @@ def load_demo_side_by_side(url_params):
             (gr.Textbox.update(visible=True),
             gr.Button.update(visible=True),
             gr.Row.update(visible=True),
+            gr.Row.update(visible=True),
             gr.Accordion.update(visible=True)))
 
 
@@ -198,6 +199,11 @@ The service is a research preview intended for non-commercial use only, subject 
             with gr.Column():
                 chatbots[i] = grChatbot(elem_id="chatbot", visible=False).style(height=550)
 
+    with gr.Row(visible=False) as button_row:
+        leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
+        tie_btn = gr.Button(value="🤝 Tie", interactive=False)
+        rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
+
     with gr.Row():
         with gr.Column(scale=20):
             textbox = gr.Textbox(show_label=False,
@@ -205,10 +211,7 @@ The service is a research preview intended for non-commercial use only, subject 
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
-    with gr.Row(visible=False) as button_row:
-        leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
-        rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
-        tie_btn = gr.Button(value="🤝 Tie", interactive=False)
+    with gr.Row() as button_row2:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
@@ -245,7 +248,8 @@ The service is a research preview intended for non-commercial use only, subject 
         ).then(http_bot_all, states + model_selectors + [temperature, max_output_tokens],
                states + chatbots + btn_list)
 
-    return states, model_selectors, chatbots, textbox, send_btn, button_row, parameter_row
+    return (states, model_selectors, chatbots, textbox, send_btn, button_row, button_row2,
+            parameter_row)
 
 
 def build_demo():
@@ -258,10 +262,10 @@ def build_demo():
                 a_list = [a_state, a_model_selector, a_chatbot, a_textbox, a_send_btn, a_button_row, a_parameter_row]
 
             with gr.Tab("Side-by-Side", id=1):
-                b_states, b_model_selectors, b_chatbots, b_textbox, b_send_btn, b_button_row, b_parameter_row = (
+                b_states, b_model_selectors, b_chatbots, b_textbox, b_send_btn, b_button_row, b_button_row2, b_parameter_row = (
                     build_side_by_side_ui())
                 b_list = (b_states + b_model_selectors + b_chatbots
-                + [b_textbox, b_send_btn, b_button_row, b_parameter_row])
+                + [b_textbox, b_send_btn, b_button_row, b_button_row2, b_parameter_row])
 
         url_params = gr.JSON(visible=False)
 
