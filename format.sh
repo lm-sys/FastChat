@@ -21,8 +21,8 @@ tool_version_check() {
     fi
 }
 
-tool_version_check "black" $BLACK_VERSION "$(grep black requirements-dev.txt | cut -d'=' -f3)"
-tool_version_check "pylint" $PYLINT_VERSION "$(grep "pylint==" requirements-dev.txt | cut -d'=' -f3)"
+tool_version_check "black" $BLACK_VERSION "23.3.0"
+tool_version_check "pylint" $PYLINT_VERSION "2.8.2"
 
 # Format files that differ from main branch. Ignores dirs that are not slated
 # for autoformat yet.
