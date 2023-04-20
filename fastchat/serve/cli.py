@@ -118,7 +118,8 @@ if __name__ == "__main__":
         help="The path to the weights")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument("--max-gpu-memory", type=str, default="13GiB")
+    parser.add_argument("--max-gpu-memory", type=str,
+        help="The maximum memory per gpu. Use a string like '13Gib'")
     parser.add_argument("--load-8bit", action="store_true",
         help="Use 8-bit quantization.")
     parser.add_argument("--conv-template", type=str, default=None,

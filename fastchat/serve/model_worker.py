@@ -183,7 +183,8 @@ if __name__ == "__main__":
         help="Optional name")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=int, default=1)
-    parser.add_argument("--max-gpu-memory", type=str, default="13GiB")
+    parser.add_argument("--max-gpu-memory", type=str,
+        help="The maximum memory per gpu. Use a string like '13Gib'")
     parser.add_argument("--load-8bit", action="store_true")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
