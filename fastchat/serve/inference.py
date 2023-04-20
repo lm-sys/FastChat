@@ -4,10 +4,11 @@ from typing import Optional
 import warnings
 
 import torch
+
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, AutoModelForSeq2SeqLM
 except ImportError:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel, AutoModelForSeq2SeqLM
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
 from fastchat.serve.compression import compress_module
@@ -71,6 +72,10 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
+    elif "google/flan-t5" in model_path:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
+                                                      low_cpu_mem_usage=True, **kwargs)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     elif "dolly" in model_path:
         kwargs.update({"torch_dtype": torch.bfloat16})
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
@@ -114,16 +119,37 @@ def generate_stream(model, tokenizer, params, device,
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                encoder_outputs = model.encoder(
+                    input_ids=torch.as_tensor([input_ids], device=device))
+                out = model(
+                    torch.as_tensor([input_ids], device=device),
+                    decoder_input_ids=torch.as_tensor([[model.generation_config.decoder_start_token_id]],
+                                                      device=device),
+                    encoder_outputs=encoder_outputs,
+                    use_cache=True)
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                out = model(
+                    torch.as_tensor([input_ids], device=device), use_cache=True)
+                logits = out.logits
+                past_key_values = out.past_key_values
         else:
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        past_key_values=past_key_values)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                out = model(input_ids=torch.as_tensor([input_ids], device=device),
+                            use_cache=True,
+                            encoder_outputs=encoder_outputs,
+                            decoder_input_ids=torch.as_tensor([[token]], device=device),
+                            past_key_values=past_key_values)
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                out = model(input_ids=torch.as_tensor([[token]], device=device),
+                            use_cache=True,
+                            past_key_values=past_key_values)
+                logits = out.logits
+                past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
 
