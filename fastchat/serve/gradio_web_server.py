@@ -9,14 +9,13 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import (get_default_conv_template,
+from fastchat.conversation import (get_default_conv_template, compute_skip_echo_len,
                                    SeparatorStyle)
 from fastchat.constants import LOGDIR
 from fastchat.utils import (build_logger, server_error_msg,
     violates_moderation, moderation_msg)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
-from fastchat.serve.inference import compute_skip_echo_len
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
