@@ -40,5 +40,5 @@ There are some frequently asked tokenization issues reported by users (https://g
 Some of them are not only related to FastChat or Vicuna weights but are also related to how you convert the base llama model.
 
 We suggest you use `transformers>=4.28.0` and redo the weight conversion for the base llama model.
-After applying the delta, you should get a file named "special_tokens_map.json" in your converted weight (for both v0 or v1.1), with the same content as this file https://huggingface.co/lmsys/vicuna-13b-delta-v0/blob/main/special_tokens_map.json.
+After applying the delta, you should get a file named "special_tokens_map.json" in your converted weight (for either v0 or v1.1), with the same content as this file https://huggingface.co/lmsys/vicuna-13b-delta-v0/blob/main/special_tokens_map.json.
 If not, please copy `special_tokens_map.json` and `tokenizer_config.json` from https://huggingface.co/lmsys/vicuna-13b-delta-v0/tree/main to your converted weight folder (works for both v0 and v1.1)
