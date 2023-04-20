@@ -35,7 +35,7 @@ class CLinear(nn.Module):
 
     def forward(self, input: Tensor) -> Tensor:
         weight = decompress(self.weight, default_compression_config)
-        return F.linear(input, weight, self.bias)
+        return F.linear(input.half(), weight, self.bias)
 
 
 def compress_module(module, target_device):

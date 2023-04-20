@@ -13,7 +13,6 @@ from fastchat.conversation import conv_templates, get_default_conv_template, Sep
 from fastchat.serve.compression import compress_module, compress, CompressionConfig, get_compressed_list, apply_compressed_weight
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
-from memory_profiler import profile
 import glob
 import os
 import gc
@@ -111,7 +110,6 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
     return model, tokenizer
 
 
-@profile
 def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                         load_8bit=False, debug=False):
 
