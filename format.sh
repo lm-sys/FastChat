@@ -24,11 +24,6 @@ tool_version_check() {
 tool_version_check "black" $BLACK_VERSION "$(grep black requirements-dev.txt | cut -d'=' -f3)"
 tool_version_check "pylint" $PYLINT_VERSION "$(grep "pylint==" requirements-dev.txt | cut -d'=' -f3)"
 
-# Format specified files
-format() {
-    black "$@"
-}
-
 # Format files that differ from main branch. Ignores dirs that are not slated
 # for autoformat yet.
 format_changed() {
@@ -45,19 +40,15 @@ format_changed() {
     fi
 }
 
-# Format all files
-format_all() {
-    black fastchat
-}
-
 ## This flag formats individual files. --files *must* be the first command line
 ## arg to use this option.
 if [[ "$1" == '--files' ]]; then
-   format "${@:2}"
+   black "${@:2}"
    # If `--all` is passed, then any further arguments are ignored and the
    # entire python directory is formatted.
 elif [[ "$1" == '--all' ]]; then
-   format_all
+   # Format all files
+   black fastchat
 else
    # Format only the files that changed in last commit.
    format_changed
