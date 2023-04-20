@@ -132,6 +132,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
 def http_bot_all(state0, state1, model_selector0, model_selector1, temperature,
                  max_new_tokens, request: gr.Request):
+    logger.info(f"http_bot_all. ip: {request.client.host}")
     states = [state0, state1]
     model_selector = [model_selector0, model_selector1]
     gen = []
