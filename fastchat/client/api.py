@@ -48,7 +48,7 @@ class ChatCompletion:
     async def acreate(cls,
                       model: str,
                       messages: List[Dict[str, str]],
-                      temporature: Optional[float] = 0.7,
+                      temperature: Optional[float] = 0.7,
                       n: int = 1,
                       max_tokens: Optional[int] = None,
                       stop: Optional[str] = None,
@@ -57,7 +57,7 @@ class ChatCompletion:
         request = ChatCompletionRequest(
             model=model,
             messages=messages,
-            temperature=temporature,
+            temperature=temperature,
             n=n,
             max_tokens=max_tokens,
             stop=stop
