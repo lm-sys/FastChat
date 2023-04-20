@@ -1,3 +1,0 @@
-# formatting
-black==23.3.0
-pylint==2.8.2
