@@ -5,14 +5,23 @@ import warnings
 
 import torch
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
 except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import compress_module, compress, CompressionConfig, get_compressed_list, apply_compressed_weight
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
+import glob
+import os
+import gc
+from tqdm import tqdm
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from accelerate.utils import set_module_tensor_to_device
+
+default_compression_config = CompressionConfig(
+    num_bits=8, group_size=256, group_dim=1, symmetric=True, enabled=True)
 
 
 def raise_warning_for_old_weights(model_path, model):
@@ -45,7 +54,6 @@ def compute_skip_echo_len(model_name, conv, prompt):
         skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
     return skip_echo_len
 
-
 def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                load_8bit=False, debug=False):
     if device == "cpu":
@@ -68,6 +76,7 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
     else:
         raise ValueError(f"Invalid device: {device}")
 
+
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
@@ -79,6 +88,7 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        # with init_empty_weights():
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
         raise_warning_for_old_weights(model_path, model)
@@ -94,6 +104,47 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
 
     return model, tokenizer
 
+
+def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
+                        load_8bit=False, debug=False):
+
+    # partially load model
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
+    files = glob.glob(base_pattern)
+    print(files)
+    
+    with init_empty_weights():
+        config = AutoConfig.from_pretrained(model_path, low_cpu_mem_usage=True, device_map='auto',torch_dtype=torch.float16)
+        model = AutoModelForCausalLM.from_config(config)
+        linear_weights = get_compressed_list(model)
+        print(len(linear_weights),linear_weights)
+
+
+    compressed_state_dict = {}
+
+    for file in files:
+        tmp_state_dict = torch.load(file, map_location="cpu")
+        for name in tqdm(tmp_state_dict):
+            if name in linear_weights:
+                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+                tensor = compressed_state_dict[name].data
+                compressed_state_dict[name] = compress(tensor, default_compression_config)
+            else:
+                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+            tmp_state_dict[name] = None
+            tensor = None
+            gc.collect()
+            torch.cuda.empty_cache()
+
+    for name in model.state_dict():
+        if name not in linear_weights:
+            set_module_tensor_to_device(model, name, device, value=compressed_state_dict[name])
+    apply_compressed_weight(model, compressed_state_dict, device)
+
+    print(f"memory path: {model.get_memory_footprint()}")
+
+    return model, tokenizer
 
 @torch.inference_mode()
 def generate_stream(model, tokenizer, params, device,
@@ -179,7 +230,9 @@ def chat_loop(model_path: str, device: str, num_gpus: str,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
     # Model
-    model, tokenizer = load_model(model_path, device,
+    # model, tokenizer = load_model(model_path, device,
+    #     num_gpus, max_gpu_memory, load_8bit, debug)
+    model, tokenizer = load_compress_model(model_path, device,
         num_gpus, max_gpu_memory, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
