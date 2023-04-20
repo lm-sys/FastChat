@@ -23,10 +23,14 @@ default_compression_config = CompressionConfig(
 class CLinear(nn.Module):
     """Compressed Linear Layer."""
 
-    def __init__(self, weight, bias, device):
+    def __init__(self, weight=None, bias=None, device=None):
         super().__init__()
-
-        self.weight = compress(weight.data.to(device), default_compression_config)
+        if weight is None:
+            self.weight = None
+        elif isinstance(weight, Tensor):
+            self.weight = compress(weight.data.to(device), default_compression_config)
+        else:
+            self.weight = weight
         self.bias = bias
 
     def forward(self, input: Tensor) -> Tensor:
@@ -42,6 +46,32 @@ def compress_module(module, target_device):
                 CLinear(target_attr.weight, target_attr.bias, target_device))
     for name, child in module.named_children():
         compress_module(child, target_device)
+
+
+def get_compressed_list(module, prefix=''):
+    compressed_list = []
+    for attr_str in dir(module):
+        target_attr = getattr(module, attr_str)
+        if type(target_attr) == torch.nn.Linear:
+            full_name = f"{prefix}.{attr_str}.weight" if prefix else f"{attr_str}.weight"
+            compressed_list.append(full_name)
+    for name, child in module.named_children():
+        child_prefix = f"{prefix}.{name}" if prefix else name
+        for each in get_compressed_list(child, child_prefix):
+            compressed_list.append(each)
+    return compressed_list
+
+
+def apply_compressed_weight(module, compressed_state_dict, target_device, prefix=''):
+    for attr_str in dir(module):
+        target_attr = getattr(module, attr_str)
+        if type(target_attr) == torch.nn.Linear:
+            full_name = f"{prefix}.{attr_str}.weight" if prefix else f"{attr_str}.weight"
+            setattr(module, attr_str,
+                CLinear(compressed_state_dict[full_name], target_attr.bias, target_device))
+    for name, child in module.named_children():
+        child_prefix = f"{prefix}.{name}" if prefix else name
+        apply_compressed_weight(child, compressed_state_dict, target_device, child_prefix)
 
 
 def compress(tensor, config):

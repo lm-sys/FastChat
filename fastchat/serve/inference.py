@@ -1,20 +1,63 @@
 """Inference for FastChat models."""
 import abc
 from typing import Optional
+import warnings
 
 import torch
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
 except ImportError:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import compress_module, compress, CompressionConfig, get_compressed_list, apply_compressed_weight
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
+from memory_profiler import profile
+import glob
+import os
+import gc
+from tqdm import tqdm
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from accelerate.utils import set_module_tensor_to_device
+
+default_compression_config = CompressionConfig(
+    num_bits=8, group_size=256, group_dim=1, symmetric=True, enabled=True)
 
 
-def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
+def raise_warning_for_old_weights(model_path, model):
+    if "vicuna" in model_path.lower():
+        try:
+            is_vicuna = isinstance(model, LlamaForCausalLM)
+        except Exception:
+            is_vicuna = isinstance(model, LLamaForCausalLM)
+        if is_vicuna and model.model.vocab_size > 32000:
+            warnings.warn(
+                "\nYou are probably using the old Vicuna-v0 model, "
+                "which will generate unexpected results with the "
+                "current fschat.\nYou can try one of the following methods:\n"
+                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n")
+
+
+def compute_skip_echo_len(model_name, conv, prompt):
+    model_name = model_name.lower()
+    if "chatglm" in model_name:
+        skip_echo_len = len(conv.messages[-2][1]) + 1
+    elif "dolly" in model_name:
+        special_toks = ["### Instruction:", "### Response:", "### End"]
+        prompt_tmp = prompt
+        for tok in special_toks:
+            prompt_tmp = prompt_tmp.replace(tok, "")
+        skip_echo_len = len(prompt_tmp)
+    else:
+        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
+    return skip_echo_len
+
+@profile
+def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
+               load_8bit=False, debug=False):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -26,7 +69,7 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
             if num_gpus != 1:
                 kwargs.update({
                     "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
+                    "max_memory": {i: max_gpu_memory for i in range(num_gpus)},
                 })
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
@@ -34,25 +77,83 @@ def load_model(model_path, device, num_gpus, load_8bit=False, debug=False):
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
+    
+    # if load_8bit:
+    #     kwargs["device_map"] = "auto"
+    #     kwargs["load_in_8bit"] = True
 
-    if load_8bit:
-        kwargs["device_map"] = "auto"
-        kwargs["load_in_8bit"] = True
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
+    elif "dolly" in model_path:
+        kwargs.update({"torch_dtype": torch.bfloat16})
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        # 50277 means "### End"
+        tokenizer.eos_token_id = 50277
+        model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        # with init_empty_weights():
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
+        raise_warning_for_old_weights(model_path, model)
 
+    if load_8bit:
+        compress_module(model, device)
+
+    if (device == "cuda" and num_gpus == 1) or device == "mps":
+        model.to(device)
 
     if debug:
         print(model)
 
     return model, tokenizer
 
+
+@profile
+def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
+                        load_8bit=False, debug=False):
+
+    # partially load model
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
+    files = glob.glob(base_pattern)
+    print(files)
+    
+    with init_empty_weights():
+        config = AutoConfig.from_pretrained(model_path, low_cpu_mem_usage=True, device_map='auto',torch_dtype=torch.float16)
+        model = AutoModelForCausalLM.from_config(config)
+        linear_weights = get_compressed_list(model)
+        print(len(linear_weights),linear_weights)
+
+
+    compressed_state_dict = {}
+
+    for file in files:
+        tmp_state_dict = torch.load(file, map_location="cpu")
+        for name in tqdm(tmp_state_dict):
+            if name in linear_weights:
+                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+                tensor = compressed_state_dict[name].data
+                compressed_state_dict[name] = compress(tensor, default_compression_config)
+            else:
+                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+            tmp_state_dict[name] = None
+            tensor = None
+            gc.collect()
+            torch.cuda.empty_cache()
+
+    for name in model.state_dict():
+        if name not in linear_weights:
+            set_module_tensor_to_device(model, name, device, value=compressed_state_dict[name])
+    apply_compressed_weight(model, compressed_state_dict, device)
+
+    print(f"memory path: {model.get_memory_footprint()}")
+    # exit()
+    # print(model)
+
+    return model, tokenizer
 
 @torch.inference_mode()
 def generate_stream(model, tokenizer, params, device,
@@ -78,11 +179,8 @@ def generate_stream(model, tokenizer, params, device,
             logits = out.logits
             past_key_values = out.past_key_values
         else:
-            attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
             out = model(input_ids=torch.as_tensor([[token]], device=device),
                         use_cache=True,
-                        attention_mask=attention_mask,
                         past_key_values=past_key_values)
             logits = out.logits
             past_key_values = out.past_key_values
@@ -135,13 +233,16 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_path: str, device: str, num_gpus: str, load_8bit: bool,
+def chat_loop(model_path: str, device: str, num_gpus: str,
+              max_gpu_memory: str, load_8bit: bool,
               conv_template: Optional[str], temperature: float,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
     # Model
-    model, tokenizer = load_model(model_path, device,
-        num_gpus, load_8bit, debug)
+    # model, tokenizer = load_model(model_path, device,
+    #     num_gpus, max_gpu_memory, load_8bit, debug)
+    model, tokenizer = load_compress_model(model_path, device,
+        num_gpus, max_gpu_memory, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
     # Chat
@@ -165,11 +266,11 @@ def chat_loop(model_path: str, device: str, num_gpus: str, load_8bit: bool,
         if is_chatglm:
             prompt = conv.messages[conv.offset:]
             generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(conv.messages[-2][1]) + 1
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+
+        skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
 
         params = {
             "model": model_path,
