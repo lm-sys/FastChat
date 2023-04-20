@@ -31,10 +31,11 @@ enable_moderation = False
 models = []
 
 priority = {
-    "vicuna-13b": "aaaaaaa",
-    "koala-13b": "aaaaaab",
-    "dolly-v2-12b": "aaaaaac",
-    "chatglm-6b": "aaaaaad",
+    "vicuna-13b": "aaa",
+    "koala-13b": "aab",
+    "oasst-sft-1-pythia-12b": "aac",
+    "dolly-v2-12b": "aad",
+    "chatglm-6b": "aae",
 }
 
 
@@ -280,8 +281,9 @@ notice_markdown = ("""
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
 
 ### Choose a model to chat with
-- [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. This one is expected to perform best according to our evaluation.
-- [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. This one performs similarly to Vicuna.
+- [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations.
+- [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets.
+- [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone.
 - [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open LLM by Databricks.
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
