@@ -7,8 +7,7 @@ from tqdm import tqdm
 import shortuuid
 import ray
 
-from fastchat.conversation import get_default_conv_template
-from fastchat.serve.inference import compute_skip_echo_len
+from fastchat.conversation import get_default_conv_template, compute_skip_echo_len
 from fastchat.utils import disable_torch_init
 
 

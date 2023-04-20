@@ -10,7 +10,8 @@ try:
 except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel, AutoModelForSeq2SeqLM
 
-from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
+from fastchat.conversation import (conv_templates, get_default_conv_template,
+    compute_skip_echo_len, SeparatorStyle)
 from fastchat.serve.compression import compress_module
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
@@ -45,21 +46,6 @@ def get_gpu_memory(max_gpus=None):
             available_memory = total_memory - allocated_memory
             gpu_memory.append(available_memory)
     return gpu_memory
-
-
-def compute_skip_echo_len(model_name, conv, prompt):
-    model_name = model_name.lower()
-    if "chatglm" in model_name:
-        skip_echo_len = len(conv.messages[-2][1]) + 1
-    elif "dolly" in model_name:
-        special_toks = ["### Instruction:", "### Response:", "### End"]
-        prompt_tmp = prompt
-        for tok in special_toks:
-            prompt_tmp = prompt_tmp.replace(tok, "")
-        skip_echo_len = len(prompt_tmp)
-    else:
-        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
-    return skip_echo_len
 
 
 def load_model(model_path, device, num_gpus, max_gpu_memory=None,
@@ -100,6 +86,9 @@ def load_model(model_path, device, num_gpus, max_gpu_memory=None,
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
+        model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+    elif "pythia" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)

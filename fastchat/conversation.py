@@ -8,6 +8,7 @@ class SeparatorStyle(Enum):
     SINGLE = auto()
     TWO = auto()
     DOLLY = auto()
+    OASST_PYTHIA = auto()
 
 
 @dataclasses.dataclass
@@ -53,6 +54,14 @@ class Conversation:
                         ret += "\n\n"
                 else:
                     ret += role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.OASST_PYTHIA:
+            ret = ""
+            for role, message in self.messages:
+                if message:
+                    ret += role + message + self.sep
+                else:
+                    ret += role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -149,7 +158,7 @@ conv_koala_v1 = Conversation(
 conv_dolly = Conversation(
     system=
     "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
-    roles=('### Instruction', '### Response'),
+    roles=("### Instruction", "### Response"),
     messages=(),
     offset=0,
     sep_style=SeparatorStyle.DOLLY,
@@ -157,11 +166,21 @@ conv_dolly = Conversation(
     sep2="### End",
 )
 
+conv_oasst = Conversation(
+    system="",
+    roles=("<|prompter|>", "<|assistant|>"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep="<|endoftext|>"
+)
+
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "koala_v1": conv_koala_v1,
     "dolly": conv_dolly,
+    "oasst": conv_oasst,
 }
 
 
@@ -171,9 +190,30 @@ def get_default_conv_template(model_name):
         return conv_vicuna_v1_1
     elif "koala" in model_name:
         return conv_koala_v1
-    elif "dolly" in model_name:
+    elif "dolly-v2" in model_name:
         return conv_dolly
+    elif "oasst" in model_name and "pythia" in model_name:
+        return conv_oasst
     return conv_one_shot
+
+
+def compute_skip_echo_len(model_name, conv, prompt):
+    model_name = model_name.lower()
+    if "chatglm" in model_name:
+        skip_echo_len = len(conv.messages[-2][1]) + 1
+    elif "dolly-v2" in model_name:
+        special_toks = ["### Instruction:", "### Response:", "### End"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "oasst" in model_name and "pythia" in model_name:
+        special_toks = ["<|prompter|>", "<|assistant|>", "<|endoftext|>"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    else:
+        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
+    return skip_echo_len
 
 
 if __name__ == "__main__":
