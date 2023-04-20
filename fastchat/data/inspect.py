@@ -15,7 +15,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     content = json.load(open(args.in_file, "r"))
-    for sample in tqdm.tqdm(content[args.begin:]):
+    for sample in tqdm.tqdm(content[args.begin :]):
         print(f"id: {sample['id']}")
         for conv in sample["conversations"]:
             print(conv["from"] + ": ")

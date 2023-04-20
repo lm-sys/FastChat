@@ -9,6 +9,7 @@ from torch.nn import functional as F
 @dataclasses.dataclass
 class CompressionConfig:
     """Group-wise quantization."""
+
     num_bits: int
     group_size: int
     group_dim: int
@@ -17,7 +18,8 @@ class CompressionConfig:
 
 
 default_compression_config = CompressionConfig(
-    num_bits=8, group_size=256, group_dim=1, symmetric=True, enabled=True)
+    num_bits=8, group_size=256, group_dim=1, symmetric=True, enabled=True
+)
 
 
 class CLinear(nn.Module):
@@ -38,8 +40,11 @@ def compress_module(module, target_device):
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
         if type(target_attr) == torch.nn.Linear:
-            setattr(module, attr_str,
-                CLinear(target_attr.weight, target_attr.bias, target_device))
+            setattr(
+                module,
+                attr_str,
+                CLinear(target_attr.weight, target_attr.bias, target_device),
+            )
     for name, child in module.named_children():
         compress_module(child, target_device)
 
@@ -50,22 +55,31 @@ def compress(tensor, config):
         return tensor
 
     group_size, num_bits, group_dim, symmetric = (
-        config.group_size, config.num_bits, config.group_dim, config.symmetric)
+        config.group_size,
+        config.num_bits,
+        config.group_dim,
+        config.symmetric,
+    )
     assert num_bits <= 8
 
     original_shape = tensor.shape
     num_groups = (original_shape[group_dim] + group_size - 1) // group_size
-    new_shape = (original_shape[:group_dim] + (num_groups, group_size) +
-                 original_shape[group_dim+1:])
+    new_shape = (
+        original_shape[:group_dim]
+        + (num_groups, group_size)
+        + original_shape[group_dim + 1 :]
+    )
 
     # Pad
     pad_len = (group_size - original_shape[group_dim] % group_size) % group_size
     if pad_len != 0:
-        pad_shape = original_shape[:group_dim] + (pad_len,) + original_shape[group_dim+1:]
-        tensor = torch.cat([
-            tensor,
-            torch.zeros(pad_shape, dtype=tensor.dtype, device=tensor.device)],
-            dim=group_dim)
+        pad_shape = (
+            original_shape[:group_dim] + (pad_len,) + original_shape[group_dim + 1 :]
+        )
+        tensor = torch.cat(
+            [tensor, torch.zeros(pad_shape, dtype=tensor.dtype, device=tensor.device)],
+            dim=group_dim,
+        )
     data = tensor.view(new_shape)
 
     # Quantize
@@ -76,7 +90,7 @@ def compress(tensor, config):
         data = data.clamp_(-B, B).round_().to(torch.int8)
         return data, scale, original_shape
     else:
-        B = 2 ** num_bits - 1
+        B = 2**num_bits - 1
         mn = torch.min(data, dim=group_dim + 1, keepdim=True)[0]
         mx = torch.max(data, dim=group_dim + 1, keepdim=True)[0]
 
@@ -94,7 +108,11 @@ def decompress(packed_data, config):
         return packed_data
 
     group_size, num_bits, group_dim, symmetric = (
-        config.group_size, config.num_bits, config.group_dim, config.symmetric)
+        config.group_size,
+        config.num_bits,
+        config.group_dim,
+        config.symmetric,
+    )
 
     # Dequantize
     if symmetric:
@@ -109,9 +127,10 @@ def decompress(packed_data, config):
     pad_len = (group_size - original_shape[group_dim] % group_size) % group_size
     if pad_len:
         padded_original_shape = (
-            original_shape[:group_dim] +
-            (original_shape[group_dim] + pad_len,) +
-            original_shape[group_dim+1:])
+            original_shape[:group_dim]
+            + (original_shape[group_dim] + pad_len,)
+            + original_shape[group_dim + 1 :]
+        )
         data = data.reshape(padded_original_shape)
         indices = [slice(0, x) for x in original_shape]
         return data[indices].contiguous()

@@ -3,8 +3,11 @@ import json
 
 import requests
 
-from fastchat.conversation import (get_default_conv_template, compute_skip_echo_len
-    SeparatorStyle)
+from fastchat.conversation import (
+    get_default_conv_template,
+    compute_skip_echo_len,
+    SeparatorStyle,
+)
 
 
 def main():
@@ -20,8 +23,9 @@ def main():
         models.sort()
         print(f"Models: {models}")
 
-        ret = requests.post(controller_addr + "/get_worker_address",
-            json={"model": model_name})
+        ret = requests.post(
+            controller_addr + "/get_worker_address", json={"model": model_name}
+        )
         worker_addr = ret.json()["address"]
         print(f"worker_addr: {worker_addr}")
 
@@ -41,11 +45,17 @@ def main():
         "temperature": args.temperature,
         "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
     }
-    response = requests.post(worker_addr + "/worker_generate_stream", headers=headers,
-            json=pload, stream=True)
+    response = requests.post(
+        worker_addr + "/worker_generate_stream",
+        headers=headers,
+        json=pload,
+        stream=True,
+    )
 
     print(f"{conv.roles[0]}: {args.message}")
-    for chunk in response.iter_lines(chunk_size=8192, decode_unicode=False, delimiter=b"\0"):
+    for chunk in response.iter_lines(
+        chunk_size=8192, decode_unicode=False, delimiter=b"\0"
+    ):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
             skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
@@ -56,13 +66,16 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
+    parser.add_argument(
+        "--controller-address", type=str, default="http://localhost:21001"
+    )
     parser.add_argument("--worker-address", type=str)
     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-new-tokens", type=int, default=32)
-    parser.add_argument("--message", type=str, default=
-        "Tell me a story with more than 1000 words.")
+    parser.add_argument(
+        "--message", type=str, default="Tell me a story with more than 1000 words."
+    )
     args = parser.parse_args()
 
     main()

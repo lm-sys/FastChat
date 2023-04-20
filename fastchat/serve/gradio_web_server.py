@@ -9,11 +9,18 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import (get_default_conv_template, compute_skip_echo_len,
-                                   SeparatorStyle)
+from fastchat.conversation import (
+    get_default_conv_template,
+    compute_skip_echo_len,
+    SeparatorStyle,
+)
 from fastchat.constants import LOGDIR
-from fastchat.utils import (build_logger, server_error_msg,
-    violates_moderation, moderation_msg)
+from fastchat.utils import (
+    build_logger,
+    server_error_msg,
+    violates_moderation,
+    moderation_msg,
+)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 
@@ -77,17 +84,18 @@ def load_demo_single(url_params):
     if "model" in url_params:
         model = url_params["model"]
         if model in models:
-            dropdown_update = gr.Dropdown.update(
-                value=model, visible=True)
+            dropdown_update = gr.Dropdown.update(value=model, visible=True)
 
     state = None
-    return (state,
-            dropdown_update,
-            gr.Chatbot.update(visible=True),
-            gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True))
+    return (
+        state,
+        dropdown_update,
+        gr.Chatbot.update(visible=True),
+        gr.Textbox.update(visible=True),
+        gr.Button.update(visible=True),
+        gr.Row.update(visible=True),
+        gr.Accordion.update(visible=True),
+    )
 
 
 def load_demo(url_params, request: gr.Request):
@@ -153,7 +161,8 @@ def add_text(state, text, request: gr.Request):
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
-                no_change_btn,) * 5
+                no_change_btn,
+            ) * 5
 
     text = text[:1536]  # Hard cut-off
     state.append_message(state.roles[0], text)
@@ -194,20 +203,29 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         state = new_state
 
     # Query worker address
-    ret = requests.post(controller_url + "/get_worker_address",
-            json={"model": model_name})
+    ret = requests.post(
+        controller_url + "/get_worker_address", json={"model": model_name}
+    )
     worker_addr = ret.json()["address"]
     logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
     # No available worker
     if worker_addr == "":
         state.messages[-1][-1] = server_error_msg
-        yield (state, state.to_gradio_chatbot(), disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+        yield (
+            state,
+            state.to_gradio_chatbot(),
+            disable_btn,
+            disable_btn,
+            disable_btn,
+            enable_btn,
+            enable_btn,
+        )
         return
 
     # Construct prompt
     if "chatglm" in model_name:
-        prompt = state.messages[state.offset:]
+        prompt = state.messages[state.offset :]
     else:
         prompt = state.get_prompt()
     skip_echo_len = compute_skip_echo_len(model_name, state, prompt)
@@ -227,8 +245,13 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     try:
         # Stream output
-        response = requests.post(worker_addr + "/worker_generate_stream",
-            headers=headers, json=pload, stream=True, timeout=20)
+        response = requests.post(
+            worker_addr + "/worker_generate_stream",
+            headers=headers,
+            json=pload,
+            stream=True,
+            timeout=20,
+        )
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 data = json.loads(chunk.decode())
@@ -240,12 +263,24 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                 else:
                     output = data["text"] + f" (error_code: {data['error_code']})"
                     state.messages[-1][-1] = output
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                    yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn,
+                        disable_btn,
+                        disable_btn,
+                        enable_btn,
+                        enable_btn,
+                    )
                     return
                 time.sleep(0.02)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+        yield (state, state.to_gradio_chatbot()) + (
+            disable_btn,
+            disable_btn,
+            disable_btn,
+            enable_btn,
+            enable_btn,
+        )
         return
 
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
@@ -271,7 +306,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         fout.write(json.dumps(data) + "\n")
 
 
-notice_markdown = ("""
+notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Evaluation]](https://vicuna.lmsys.org/eval/)
 - Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
@@ -288,16 +323,18 @@ By using this service, users are required to agree to the following terms: The s
 - [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model | 开源双语对话语言模型
 - [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations.
 - [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models.
-""")
+"""
 
 
-learn_more_markdown = ("""
+learn_more_markdown = """
 ### License
 The service is a research preview intended for non-commercial use only, subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of LLaMA, [Terms of Use](https://openai.com/policies/terms-of-use) of the data generated by OpenAI, and [Privacy Practices](https://chrome.google.com/webstore/detail/sharegpt-share-your-chatg/daiacboceoaocpibfodeljbdfacokfjb) of ShareGPT. Please contact us if you find any potential violation.
-""")
+"""
 
 
-block_css = code_highlight_css + """
+block_css = (
+    code_highlight_css
+    + """
 pre {
     white-space: pre-wrap;       /* Since CSS 2.1 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -306,6 +343,7 @@ pre {
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 """
+)
 
 
 def build_single_model_ui():
@@ -319,13 +357,17 @@ def build_single_model_ui():
             choices=models,
             value=models[0] if len(models) > 0 else "",
             interactive=True,
-            show_label=False).style(container=False)
+            show_label=False,
+        ).style(container=False)
 
     chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
     with gr.Row():
         with gr.Column(scale=20):
-            textbox = gr.Textbox(show_label=False,
-                placeholder="Enter text and press ENTER", visible=False).style(container=False)
+            textbox = gr.Textbox(
+                show_label=False,
+                placeholder="Enter text and press ENTER",
+                visible=False,
+            ).style(container=False)
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
@@ -333,53 +375,107 @@ def build_single_model_ui():
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
         downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
         flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
+        # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
     with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
-        temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Temperature",)
-        max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+        temperature = gr.Slider(
+            minimum=0.0,
+            maximum=1.0,
+            value=0.7,
+            step=0.1,
+            interactive=True,
+            label="Temperature",
+        )
+        max_output_tokens = gr.Slider(
+            minimum=0,
+            maximum=1024,
+            value=512,
+            step=64,
+            interactive=True,
+            label="Max output tokens",
+        )
 
     gr.Markdown(learn_more_markdown)
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-    upvote_btn.click(upvote_last_response,
-        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-    downvote_btn.click(downvote_last_response,
-        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-    flag_btn.click(flag_last_response,
-        [state, model_selector], [textbox, upvote_btn, downvote_btn, flag_btn])
-    regenerate_btn.click(regenerate, state,
-        [state, chatbot, textbox] + btn_list).then(
-        http_bot, [state, model_selector, temperature, max_output_tokens],
-        [state, chatbot] + btn_list)
+    upvote_btn.click(
+        upvote_last_response,
+        [state, model_selector],
+        [textbox, upvote_btn, downvote_btn, flag_btn],
+    )
+    downvote_btn.click(
+        downvote_last_response,
+        [state, model_selector],
+        [textbox, upvote_btn, downvote_btn, flag_btn],
+    )
+    flag_btn.click(
+        flag_last_response,
+        [state, model_selector],
+        [textbox, upvote_btn, downvote_btn, flag_btn],
+    )
+    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
+        http_bot,
+        [state, model_selector, temperature, max_output_tokens],
+        [state, chatbot] + btn_list,
+    )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
     model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
 
-    textbox.submit(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-        ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-               [state, chatbot] + btn_list)
-    send_btn.click(add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-        ).then(http_bot, [state, model_selector, temperature, max_output_tokens],
-               [state, chatbot] + btn_list)
+    textbox.submit(
+        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+    ).then(
+        http_bot,
+        [state, model_selector, temperature, max_output_tokens],
+        [state, chatbot] + btn_list,
+    )
+    send_btn.click(
+        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+    ).then(
+        http_bot,
+        [state, model_selector, temperature, max_output_tokens],
+        [state, chatbot] + btn_list,
+    )
 
     return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
 
 
 def build_demo():
-    with gr.Blocks(title="Chat with Open Large Language Models",
-                   theme=gr.themes.Base(), css=block_css) as demo:
+    with gr.Blocks(
+        title="Chat with Open Large Language Models",
+        theme=gr.themes.Base(),
+        css=block_css,
+    ) as demo:
         url_params = gr.JSON(visible=False)
 
-        state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row = build_single_model_ui()
+        (
+            state,
+            model_selector,
+            chatbot,
+            textbox,
+            send_btn,
+            button_row,
+            parameter_row,
+        ) = build_single_model_ui()
 
         if args.model_list_mode == "once":
-            demo.load(load_demo, [url_params], [state, model_selector,
-                chatbot, textbox, send_btn, button_row, parameter_row],
-                _js=get_window_url_params)
+            demo.load(
+                load_demo,
+                [url_params],
+                [
+                    state,
+                    model_selector,
+                    chatbot,
+                    textbox,
+                    send_btn,
+                    button_row,
+                    parameter_row,
+                ],
+                _js=get_window_url_params,
+            )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -392,11 +488,13 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument("--model-list-mode", type=str, default="once",
-        choices=["once", "reload"])
+    parser.add_argument(
+        "--model-list-mode", type=str, default="once", choices=["once", "reload"]
+    )
     parser.add_argument("--share", action="store_true")
-    parser.add_argument("--moderate", action="store_true",
-        help="Enable content moderation")
+    parser.add_argument(
+        "--moderate", action="store_true", help="Enable content moderation"
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -405,6 +503,8 @@ if __name__ == "__main__":
 
     logger.info(args)
     demo = build_demo()
-    demo.queue(concurrency_count=args.concurrency_count, status_update_rate=10,
-               api_open=False).launch(server_name=args.host, server_port=args.port,
-                                      share=args.share, max_threads=200)
+    demo.queue(
+        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+    ).launch(
+        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+    )

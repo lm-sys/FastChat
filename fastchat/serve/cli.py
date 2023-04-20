@@ -41,7 +41,9 @@ class SimpleChatIO(ChatIO):
 class RichChatIO(ChatIO):
     def __init__(self):
         self._prompt_session = PromptSession(history=InMemoryHistory())
-        self._completer = WordCompleter(words=['!exit', '!reset'], pattern=re.compile('$'))
+        self._completer = WordCompleter(
+            words=["!exit", "!reset"], pattern=re.compile("$")
+        )
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
@@ -51,7 +53,8 @@ class RichChatIO(ChatIO):
             completer=self._completer,
             multiline=False,
             auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=None)
+            key_bindings=None,
+        )
         self._console.print()
         return prompt_input
 
@@ -105,29 +108,54 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
-        chat_loop(args.model_path, args.device, args.num_gpus, args.max_gpu_memory,
-            args.load_8bit, args.conv_template, args.temperature, args.max_new_tokens,
-            chatio, args.debug)
+        chat_loop(
+            args.model_path,
+            args.device,
+            args.num_gpus,
+            args.max_gpu_memory,
+            args.load_8bit,
+            args.conv_template,
+            args.temperature,
+            args.max_new_tokens,
+            chatio,
+            args.debug,
+        )
     except KeyboardInterrupt:
         print("exit...")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="facebook/opt-350m",
-        help="The path to the weights")
-    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="facebook/opt-350m",
+        help="The path to the weights",
+    )
+    parser.add_argument(
+        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda"
+    )
     parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument("--max-gpu-memory", type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'")
-    parser.add_argument("--load-8bit", action="store_true",
-        help="Use 8-bit quantization.")
-    parser.add_argument("--conv-template", type=str, default=None,
-        help="Conversation prompt template.")
+    parser.add_argument(
+        "--max-gpu-memory",
+        type=str,
+        help="The maximum memory per gpu. Use a string like '13Gib'",
+    )
+    parser.add_argument(
+        "--load-8bit", action="store_true", help="Use 8-bit quantization."
+    )
+    parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--style", type=str, default="simple",
-                        choices=["simple", "rich"], help="Display style.")
+    parser.add_argument(
+        "--style",
+        type=str,
+        default="simple",
+        choices=["simple", "rich"],
+        help="Display style.",
+    )
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     main(args)

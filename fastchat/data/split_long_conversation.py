@@ -20,7 +20,7 @@ def split_sample(sample, start_idx, end_idx):
     assert (end_idx - start_idx) % 2 == 0
     return {
         "id": sample["id"] + "_" + str(start_idx),
-        "conversations": sample["conversations"][start_idx:end_idx]
+        "conversations": sample["conversations"][start_idx:end_idx],
     }
 
 
@@ -34,7 +34,7 @@ def split_contents(content, begin, end, tokenizer, max_length):
     for sample in tqdm.tqdm(content):
         tokenized_lens = []
         conversations = sample["conversations"]
-        conversations = conversations[:len(conversations) // 2 * 2]
+        conversations = conversations[: len(conversations) // 2 * 2]
         for c in conversations:
             length = len(tokenizer(c["value"]).input_ids) + 5
             tokenized_lens.append(length)
@@ -44,13 +44,13 @@ def split_contents(content, begin, end, tokenizer, max_length):
         sample
         assert len(conversations) % 2 == 0, f"id: {sample['id']}"
         for i in range(0, len(conversations), 2):
-            tmp_len = tokenized_lens[i] + tokenized_lens[i+1]
+            tmp_len = tokenized_lens[i] + tokenized_lens[i + 1]
             if cur_len + tmp_len > max_length:
                 new_content.append(split_sample(sample, start_idx, i))
                 start_idx = i
                 cur_len = 0
             elif i == len(conversations) - 2:
-                new_content.append(split_sample(sample, start_idx, i+2))
+                new_content.append(split_sample(sample, start_idx, i + 2))
 
             cur_len += tmp_len
 
@@ -84,8 +84,9 @@ def main(args):
         padding_side="right",
         use_fast=False,
     )
-    new_content = split_contents(content, args.begin, args.end,
-        tokenizer, args.max_length)
+    new_content = split_contents(
+        content, args.begin, args.end, tokenizer, args.max_length
+    )
     new_content = filter_invalid_roles(new_content)
 
     print(f"total: {len(content)}, new: {len(new_content)}")

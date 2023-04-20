@@ -18,7 +18,9 @@ import tqdm
 
 div_pattern = re.compile("<div.*?>")
 span_pattern = re.compile("<span.*?>")
-code_lang_pattern = re.compile("```\s*" + "(.*?)" + "(?:Copy code)+" + "(.+?)" + "\s*?```", re.DOTALL)
+code_lang_pattern = re.compile(
+    "```\s*" + "(.*?)" + "(?:Copy code)+" + "(.+?)" + "\s*?```", re.DOTALL
+)
 code_lang_format = "```\g<1>\n\g<2>\n```"
 regenerate_pattern = re.compile("\d+ / \d+")
 copy_chars_pattern = re.compile("Copy\d+ chars / \d+ words")
@@ -48,7 +50,7 @@ def html_to_markdown(val: str) -> str:
     # Remove noisy "[number] / [number]" at the beginning
     noise = re.search(regenerate_pattern, val)
     if noise and noise.start() == 0:
-        val = val[noise.end():]
+        val = val[noise.end() :]
     # Remove noisy "Copy[number] chars / [number] words"
     val = re.sub(copy_chars_pattern, "", val)
     # Remove empty code block ```\nCopy code\n```
@@ -106,7 +108,10 @@ def clean_html_source(content, begin, end, check_tag, check_num):
             print(f"id {cid} is an id duplication of {visited[cid]}")
             cnt_id_duplication += 1
             skipped = True
-        elif (sample["conversations"][1]["value"], len(sample["conversations"])) in visited:
+        elif (
+            sample["conversations"][1]["value"],
+            len(sample["conversations"]),
+        ) in visited:
             key = (sample["conversations"][1]["value"], len(sample["conversations"]))
             print(f"id {cid} is a value duplication of {visited[key]}")
             cnt_value_duplication += 1
@@ -131,10 +136,21 @@ def clean_html_source(content, begin, end, check_tag, check_num):
                 c["value"] = new_val
 
                 # Debug
-                if (check_tag is not None and check_tag in c["value"]
-                        and cnt_tag < check_num):
-                    logging.debug(BARRIER + c["value"] + "\n" + BARRIER + new_val +
-                                  "\n" + BARRIER + "\n")
+                if (
+                    check_tag is not None
+                    and check_tag in c["value"]
+                    and cnt_tag < check_num
+                ):
+                    logging.debug(
+                        BARRIER
+                        + c["value"]
+                        + "\n"
+                        + BARRIER
+                        + new_val
+                        + "\n"
+                        + BARRIER
+                        + "\n"
+                    )
                     cnt_tag += 1
                     if cnt_tag == check_num:
                         break
@@ -144,19 +160,21 @@ def clean_html_source(content, begin, end, check_tag, check_num):
         else:
             cnt_skip += 1
 
-    print(f"total: {len(content)}, skip: {cnt_skip}, new: {len(new_content)}, "
-          f"cnt_too_short: {cnt_too_short}, cnt_id_duplication: {cnt_id_duplication}, "
-          f"cnt_value_duplication: {cnt_value_duplication}, cnt_filter: {cnt_filter}")
+    print(
+        f"total: {len(content)}, skip: {cnt_skip}, new: {len(new_content)}, "
+        f"cnt_too_short: {cnt_too_short}, cnt_id_duplication: {cnt_id_duplication}, "
+        f"cnt_value_duplication: {cnt_value_duplication}, cnt_filter: {cnt_filter}"
+    )
 
     return new_content
 
 
 def main(args):
-    content = json.load(open(args['in_file'], "r"))
+    content = json.load(open(args["in_file"], "r"))
     content = clean_html_source(
-        content, args['begin'], args['end'],
-        args['check_tag'], args['check_num'])
-    json.dump(content, open(args['out_file'], "w"), indent=2)
+        content, args["begin"], args["end"], args["check_tag"], args["check_num"]
+    )
+    json.dump(content, open(args["out_file"], "w"), indent=2)
 
 
 if __name__ == "__main__":

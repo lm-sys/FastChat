@@ -108,13 +108,14 @@ def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
                 weight_map[name] = file_name
                 total_size += param.numel() * param.element_size()
                 gc.collect()
-            torch.save(state_dict,os.path.join(target_model_path, file_name))
+            torch.save(state_dict, os.path.join(target_model_path, file_name))
 
-        with open(os.path.join(target_model_path,
-                "pytorch_model.bin.index.json"), "w") as f:
-            json.dump({
-                "weight_map":weight_map,
-                "metadata":{"total_size":total_size}}, f)
+        with open(
+            os.path.join(target_model_path, "pytorch_model.bin.index.json"), "w"
+        ) as f:
+            json.dump(
+                {"weight_map": weight_map, "metadata": {"total_size": total_size}}, f
+            )
 
     print(f"Saving the target model to {target_model_path}")
     base_tokenizer.save_pretrained(target_model_path)
@@ -124,12 +125,14 @@ def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
 def apply_delta(base_model_path, target_model_path, delta_path):
     print(f"Loading the base model from {base_model_path}")
     base = AutoModelForCausalLM.from_pretrained(
-        base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
-    base_tokenizer = AutoTokenizer.from_pretrained(
-        base_model_path, use_fast=False)
+        base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+    )
+    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
 
     print(f"Loading the delta from {delta_path}")
-    delta = AutoModelForCausalLM.from_pretrained(delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+    delta = AutoModelForCausalLM.from_pretrained(
+        delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+    )
 
     print("Applying the delta")
     for name, param in tqdm(base.state_dict().items(), desc="Applying delta"):
@@ -146,12 +149,17 @@ if __name__ == "__main__":
     parser.add_argument("--base-model-path", type=str, required=True)
     parser.add_argument("--target-model-path", type=str, required=True)
     parser.add_argument("--delta-path", type=str, required=True)
-    parser.add_argument("--low-cpu-mem", action="store_true",
+    parser.add_argument(
+        "--low-cpu-mem",
+        action="store_true",
         help="Lower the cpu memory usage. This will split large files and use "
-             "disk as swap to reduce the memory usage below 10GB.")
+        "disk as swap to reduce the memory usage below 10GB.",
+    )
     args = parser.parse_args()
 
     if args.low_cpu_mem:
-        apply_delta_low_cpu_mem(args.base_model_path, args.target_model_path, args.delta_path)
+        apply_delta_low_cpu_mem(
+            args.base_model_path, args.target_model_path, args.delta_path
+        )
     else:
         apply_delta(args.base_model_path, args.target_model_path, args.delta_path)

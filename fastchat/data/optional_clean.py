@@ -42,16 +42,20 @@ def skip(conv, args):
                 return True
 
     return False
- 
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--in-file", type=str, required=True)
     parser.add_argument("--out-file", type=str)
-    parser.add_argument("--keep-lang", type=str, default="all", choices=["all", "en"],
-        help="Only keep certain langauges.")
-    parser.add_argument("--skip-lang", type=str,
-        help="Skip a specific language.")
+    parser.add_argument(
+        "--keep-lang",
+        type=str,
+        default="all",
+        choices=["all", "en"],
+        help="Only keep certain langauges.",
+    )
+    parser.add_argument("--skip-lang", type=str, help="Skip a specific language.")
     # NOTE: Be careful about reduce_rep which may remove some good data.
     # For example, addresses could have long consecutive 0's
     parser.add_argument("--reduce-rep", action="store_true")
@@ -62,7 +66,7 @@ if __name__ == "__main__":
     keep_lang = args.keep_lang
     skip_lang = args.skip_lang
     reduce_rep = args.reduce_rep
-    assert (keep_lang == "all" or skip_lang is None)
+    assert keep_lang == "all" or skip_lang is None
 
     if out_file is None:
         out_file = "sharegpt_clean"
@@ -73,7 +77,7 @@ if __name__ == "__main__":
         if reduce_rep:
             out_file += "_reduce_rep"
         out_file += ".json"
- 
+
     content = json.load(open(in_file, "r"))
     num_conv = len(content)
 
