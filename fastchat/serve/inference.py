@@ -5,7 +5,7 @@ import warnings
 
 import torch
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM
 except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
 
@@ -13,15 +13,6 @@ from fastchat.conversation import conv_templates, get_default_conv_template, Sep
 from fastchat.serve.compression import compress_module, compress, CompressionConfig, get_compressed_list, apply_compressed_weight
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
-import glob
-import os
-import gc
-from tqdm import tqdm
-from accelerate import init_empty_weights, load_checkpoint_and_dispatch
-from accelerate.utils import set_module_tensor_to_device
-
-default_compression_config = CompressionConfig(
-    num_bits=8, group_size=256, group_dim=1, symmetric=True, enabled=True)
 
 
 def raise_warning_for_old_weights(model_path, model):
@@ -54,7 +45,7 @@ def compute_skip_echo_len(model_name, conv, prompt):
         skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
     return skip_echo_len
 
-@profile
+
 def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                load_8bit=False, debug=False):
     if device == "cpu":
@@ -237,9 +228,7 @@ def chat_loop(model_path: str, device: str, num_gpus: str,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
     # Model
-    # model, tokenizer = load_model(model_path, device,
-    #     num_gpus, max_gpu_memory, load_8bit, debug)
-    model, tokenizer = load_compress_model(model_path, device,
+    model, tokenizer = load_model(model_path, device,
         num_gpus, max_gpu_memory, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 

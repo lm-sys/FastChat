@@ -15,36 +15,62 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import logging
 import pathlib
 import typing
 
-from peft import (
-    LoraConfig,
-    get_peft_model,
-)
+from deepspeed import zero
+from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import Trainer
 
 from fastchat.train.train import (DataArguments, ModelArguments,
                                   TrainingArguments,
-                                  make_supervised_data_module,
-                                  smart_tokenizer_and_embedding_resize)
+                                  make_supervised_data_module)
 
-IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
+from fastchat.train.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
-# TODO: the lora_target_modules cannot support list
+replace_llama_attn_with_flash_attn()
+
 @dataclass
 class LoraArguments:
-    lora_r: int = 8,
-    lora_alpha: int = 16,
-    lora_dropout: float = 0.05,
-    lora_target_modules: typing.List[str] = ["q_proj", "v_proj"],
+    lora_r: int = 8
+    lora_alpha: int = 16
+    lora_dropout: float = 0.05
+    lora_target_modules: typing.List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     lora_weight_path: str = ""
+    bias: str = "none"
+
+
+def maybe_zero_3(param):
+    if hasattr(param, "ds_id"):
+        assert param.ds_status == ZeroParamStatus.NOT_AVAILABLE
+        with zero.GatheredParameters([param]):
+            param = param.data.cpu().clone().detach()
+    return param
+
+
+# Borrowed from peft.utils.get_peft_model_state_dict
+def get_peft_state_maybe_zero_3(state_dict, bias):
+    if bias == "none":
+        to_return = {k: state_dict[k].cpu().clone().detach() for k in state_dict if "lora_" in k}
+    elif bias == "all":
+        to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "bias" in k}
+    elif bias == "lora_only":
+        to_return = {}
+        for k in state_dict:
+            if "lora_" in k:
+                to_return[k] = state_dict[k]
+                bias_name = k.split("lora_")[0] + "bias"
+                if bias_name in state_dict:
+                    to_return[bias_name] = state_dict[bias_name]
+    else:
+        raise NotImplementedError
+    to_return = {k: maybe_zero_3(v) for k, v in to_return.items()}
+    return to_return
+
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -52,20 +78,27 @@ def train():
     (model_args, data_args, training_args,
      lora_args) = parser.parse_args_into_dataclasses()
 
-    model = transformers.LlamaForCausalLM.from_pretrained(
+    model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
-        target_modules=["q_proj", "v_proj"],
+        target_modules=lora_args.lora_target_modules,
         lora_dropout=lora_args.lora_dropout,
-        bias="none",
+        bias=lora_args.bias,
         task_type="CAUSAL_LM",
     )
     model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    if training_args.deepspeed is not None and training_args.local_rank == 0:
+        model.print_trainable_parameters()
+
+    if training_args.gradient_checkpointing:
+        logging.warning("gradient checkpointing with lora makes requires_grad "
+                        "incorrect and needs a monkey patch in Trainer or the "
+                        "wrapped model's forward. ref: "
+                        "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198")
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -74,18 +107,7 @@ def train():
         padding_side="right",
         use_fast=False,
     )
-    if tokenizer.pad_token is None:
-        smart_tokenizer_and_embedding_resize(
-            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-            tokenizer=tokenizer,
-            model=model,
-        )
-    if "llama" in model_args.model_name_or_path:
-        tokenizer.add_special_tokens({
-            "eos_token": DEFAULT_EOS_TOKEN,
-            "bos_token": DEFAULT_BOS_TOKEN,
-            "unk_token": DEFAULT_UNK_TOKEN,
-        })
+    tokenizer.pad_token = tokenizer.unk_token
 
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
@@ -101,7 +123,11 @@ def train():
     else:
         trainer.train()
     trainer.save_state()
-    model.save_pretrained(training_args.output_dir)
+
+    # Save states. Weights might be a placeholder in zero3 and need a gather
+    state_dict = get_peft_state_maybe_zero_3(model.state_dict(), lora_args.bias)
+    if training_args.local_rank == 0:
+        model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 
 
 if __name__ == "__main__":

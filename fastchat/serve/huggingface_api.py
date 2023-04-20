@@ -1,3 +1,7 @@
+"""
+Usage:
+python3 -m fastchat.serve.huggingface_api --model ~/model_weights/vicuna-7b/
+"""
 import argparse
 import json
 
@@ -5,13 +9,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from fastchat.conversation import get_default_conv_template
-from fastchat.serve.inference import load_model
+from fastchat.serve.inference import load_model, compute_skip_echo_len
 
 
 @torch.inference_mode()
 def main(args):
     model, tokenizer = load_model(args.model_path, args.device,
-        args.num_gpus, args.load_8bit, debug=args.debug)
+        args.num_gpus, args.max_gpu_memory, args.load_8bit, debug=args.debug)
 
     msg = args.message
 
@@ -27,7 +31,7 @@ def main(args):
         temperature=0.7,
         max_new_tokens=1024)
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-    skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    skip_echo_len = compute_skip_echo_len(args.model_path, conv, prompt)
     outputs = outputs[skip_echo_len:]
 
     print(f"{conv.roles[0]}: {msg}")
@@ -40,6 +44,7 @@ if __name__ == "__main__":
         help="The path to the weights")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda")
     parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--max-gpu-memory", type=str, default="13GiB")
     parser.add_argument("--load-8bit", action="store_true",
         help="Use 8-bit quantization.")
     parser.add_argument("--conv-template", type=str, default=None,

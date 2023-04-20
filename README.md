@@ -27,11 +27,7 @@ Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter
 ### Method 1: With pip
 
 ```bash
-# Install FastChat
 pip3 install fschat
-
-# Install the latest main branch of huggingface/transformers
-pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ### Method 2: From source
@@ -61,8 +57,8 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
 
 **NOTE**:
-Our released weights are only compatible with the latest main branch of huggingface/transformers.
-We install the correct version of transformers when fastchat is installed.
+Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
+Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
 
 ### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
@@ -90,8 +86,8 @@ See [docs/weights_version.md](docs/weights_version.md) for all versions of weigh
 
 ### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
-1. You can append "--low-cpu-mem" to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
-2. You can create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
+2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
 
 ## Inference with Command Line Interface
 
@@ -179,8 +175,73 @@ By following these steps, you will be able to serve your models using the web UI
 ### Huggingface Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
 
-### OpenAI-compatible RESTful APIs
-Coming soon.
+### OpenAI-compatible RESTful APIs & SDK
+
+(Experimental. We will keep improving the API and SDK.)
+
+#### Chat Completion
+
+Reference: https://platform.openai.com/docs/api-reference/chat/create
+
+Some features/compatibilities to be implemented:
+
+- [ ] streaming
+- [ ] support of some parameters like `top_p`, `presence_penalty`
+- [ ] proper error handling (e.g. model not found)
+- [ ] the return value in the client SDK could be used like a dict
+
+
+**RESTful API Server**
+
+First, launch the controller
+
+```bash
+python3 -m fastchat.serve.controller
+```
+
+Then, launch the model worker(s)
+
+```bash
+python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-path /path/to/vicuna/weights
+```
+
+Finally, launch the RESTful API server
+
+```bash
+export FASTCHAT_CONTROLLER_URL=http://localhost:21001
+python3 -m fastchat.serve.api --host localhost --port 8000
+```
+
+Test the API server
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "vicuna-7b-v1.1",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+**Client SDK**
+
+Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e.g., `http://localhost:8000`), you can use the following code to send a request to the API server:
+
+```python
+import os
+from fastchat import client
+
+client.set_baseurl(os.getenv("FASTCHAT_BASEURL"))
+
+completion = client.ChatCompletion.create(
+  model="vicuna-7b-v1.1",
+  messages=[
+    {"role": "user", "content": "Hello!"}
+  ]
+)
+
+print(completion.choices[0].message)
+```
 
 ## Evaluation
 

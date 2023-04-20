@@ -37,7 +37,7 @@ def split_files(model_path, tmp_path, split_size):
         new_state_dict = {}
 
         current_size = 0
-
+    try:
         for name, param in state_dict.items():
             param_size = param.numel() * param.element_size()
 
@@ -61,6 +61,10 @@ def split_files(model_path, tmp_path, split_size):
         gc.collect()
         new_state_dict = {}
         part += 1
+    except Exception as e:
+        print(f"An error occurred during split_files: {e}")
+        shutil.rmtree(tmp_path)
+        raise
 
 
 def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
