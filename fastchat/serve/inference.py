@@ -30,18 +30,19 @@ def raise_warning_for_old_weights(model_path, model):
                 "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n")
 
+
 def get_gpu_memory(max_gpus=None):
     gpu_memory = []
     num_gpus = torch.cuda.device_count() if max_gpus is None else min(max_gpus, torch.cuda.device_count())
     
     for gpu_id in range(num_gpus):
-        torch.cuda.set_device(gpu_id)
-        device = torch.cuda.current_device()
-        gpu_properties = torch.cuda.get_device_properties(device)
-        total_memory = gpu_properties.total_memory / (1024**3)
-        allocated_memory = torch.cuda.memory_allocated() / (1024**3)
-        available_memory = total_memory - allocated_memory
-        gpu_memory.append(available_memory)
+        with torch.cuda.device(gpu_id):
+            device = torch.cuda.current_device()
+            gpu_properties = torch.cuda.get_device_properties(device)
+            total_memory = gpu_properties.total_memory / (1024**3)
+            allocated_memory = torch.cuda.memory_allocated() / (1024**3)
+            available_memory = total_memory - allocated_memory
+            gpu_memory.append(available_memory)
     return gpu_memory
 
 
@@ -70,13 +71,15 @@ def load_model(model_path, device, num_gpus, max_gpu_memory=None,
             kwargs["device_map"] = "auto"
         else:
             num_gpus = int(num_gpus)
-            if max_gpu_memory is None:
-                available_gpu_memory = get_gpu_memory(num_gpus)
-                kwargs["max_memory"] = {i: str(int(available_gpu_memory[i])) + 'GiB' for i in range(num_gpus)}
-            else:
-                max_gpu_memory = float(max_gpu_memory[:-3])
-                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
-            print(kwargs) #to see how much memory is being allocated
+            if num_gpus != 1:
+                kwargs["device_map"] = "auto"
+                if max_gpu_memory is None:
+                    available_gpu_memory = get_gpu_memory(num_gpus)
+                    kwargs["max_memory"] = {i: str(int(available_gpu_memory[i] * 0.85)) +
+                        "GiB" for i in range(num_gpus)}
+                else:
+                    kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+        print("init_kwargs", kwargs)
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
@@ -220,7 +223,6 @@ def chat_loop(model_path: str, device: str, num_gpus: str,
         if is_chatglm:
             prompt = conv.messages[conv.offset:]
             generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(conv.messages[-2][1]) + 1
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
