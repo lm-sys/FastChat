@@ -156,6 +156,9 @@ def generate_stream(
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
+    seed = params.get("seed", None)
+    if seed is not None:
+        torch.manual_seed(seed)
 
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)

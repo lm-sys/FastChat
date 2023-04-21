@@ -54,6 +54,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     for i in range(request.n):
+        payload["seed"] = request.seed + i
         content = await chat_completion(request.model, payload, skip_echo_len)
         choices.append(
             ChatCompletionResponseChoice(

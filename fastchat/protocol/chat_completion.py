@@ -14,6 +14,7 @@ class ChatCompletionRequest(BaseModel):
     n: int = 1
     max_tokens: Optional[int] = None
     stop: Optional[str] = None
+    seed: Optional[int] = 0
 
 
 class ChatMessage(BaseModel):
