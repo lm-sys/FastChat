@@ -42,7 +42,7 @@ headers = {"User-Agent": "FastChat API Server"}
 
 origins = ["*"]
 
-@app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=False,
