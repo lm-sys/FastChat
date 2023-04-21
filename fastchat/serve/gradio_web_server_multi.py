@@ -60,7 +60,7 @@ def load_demo_side_by_side(url_params):
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
     selected = 0
-    if "compare" in url_params:
+    if "arena" in url_params or "compare" in url_params:
         selected = 1
     single_updates = load_demo_single(url_params)
     side_by_side_updates = load_demo_side_by_side(url_params)
