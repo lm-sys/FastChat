@@ -1,6 +1,5 @@
 """
 Split long conversations based on certain max length.
-
 Usage: python3 -m fastchat.data.split_long_conversation \
     --in sharegpt_clean.json \
     --out sharegpt_split.json \
@@ -12,8 +11,6 @@ from typing import Dict, Sequence, Optional
 
 import transformers
 import tqdm
-
-from fastchat import conversation as conversation_lib
 
 
 def split_sample(sample, start_idx, end_idx):
@@ -53,8 +50,24 @@ def split_contents(content, begin, end, tokenizer, max_length):
                 new_content.append(split_sample(sample, start_idx, i + 2))
 
             cur_len += tmp_len
+    
+    new_content_1 = []
+    for sample in tqdm.tqdm(new_content):
+        tokenized_lens = []
+        
+        conversations = sample["conversations"]
+        conversations = conversations[: len(conversations) // 2 * 2]
+        
+        cur_len = 0
+        
+        for c in conversations:
+            length = len(tokenizer(c["value"]).input_ids) + 5
+            cur_len += length
+        
+        if cur_len <= 2048:
+            new_content_1.append(sample)
 
-    return new_content
+    return new_content_1
 
 
 def filter_invalid_roles(content):
