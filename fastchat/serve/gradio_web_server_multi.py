@@ -49,7 +49,7 @@ def load_demo_side_by_side(url_params):
         + (gr.Chatbot.update(visible=True),) * num_models
         + (
             gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
+            gr.Box.update(visible=True),
             gr.Row.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True),
@@ -210,6 +210,13 @@ def http_bot_all(
         if stop:
             break
 
+    for i in range(10):
+        if i % 2 == 0:
+            yield states + chatbots + [disable_btn] * 3 + list(buttons)[3:]
+        else:
+            yield states + chatbots + list(buttons)
+        time.sleep(0.2)
+
 
 def build_side_by_side_ui():
     notice_markdown = """
@@ -240,27 +247,29 @@ The service is a research preview intended for non-commercial use only, subject 
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Row():
-        for i in range(num_models):
-            with gr.Column():
-                model_selectors[i] = gr.Dropdown(
-                    choices=models,
-                    value=models[i] if len(models) > i else "",
-                    interactive=True,
-                    show_label=False,
-                ).style(container=False)
+    with gr.Box(elem_id="share-region"):
+        with gr.Row():
+            for i in range(num_models):
+                with gr.Column():
+                    model_selectors[i] = gr.Dropdown(
+                        choices=models,
+                        value=models[i] if len(models) > i else "",
+                        interactive=True,
+                        show_label=False,
+                    ).style(container=False)
 
-    with gr.Row():
-        for i in range(num_models):
-            with gr.Column():
-                chatbots[i] = grChatbot(elem_id="chatbot", visible=False).style(
-                    height=550
-                )
+        with gr.Row():
+            for i in range(num_models):
+                with gr.Column():
+                    chatbots[i] = grChatbot(elem_id=f"chatbot{i}", visible=False).style(
+                        height=550
+                    )
 
-    with gr.Row(visible=False) as button_row:
-        leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
-        tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-        rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
+        with gr.Box() as button_row:
+            with gr.Row():
+                leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
+                tie_btn = gr.Button(value="🤝 Tie", interactive=False)
+                rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):
@@ -275,6 +284,7 @@ The service is a research preview intended for non-commercial use only, subject 
     with gr.Row() as button_row2:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        share_btn = gr.Button(value="📷  Share")
 
     with gr.Accordion("Parameters", open=False, visible=True) as parameter_row:
         temperature = gr.Slider(
@@ -321,6 +331,27 @@ The service is a research preview intended for non-commercial use only, subject 
         states + chatbots + btn_list,
     )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+
+    share_js="""
+function () {
+    const captureElement = document.querySelector('#share-region');
+    html2canvas(captureElement)
+        .then(canvas => {
+            canvas.style.display = 'none'
+            document.body.appendChild(canvas)
+            return canvas
+        })
+        .then(canvas => {
+            const image = canvas.toDataURL('image/png')
+            const a = document.createElement('a')
+            a.setAttribute('download', 'fastchat-results.png')
+            a.setAttribute('href', image)
+            a.click()
+            canvas.remove()
+        });
+}
+"""
+    share_btn.click(None, [], [], _js=share_js)
 
     for i in range(num_models):
         model_selectors[i].change(
