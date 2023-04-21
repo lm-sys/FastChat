@@ -122,7 +122,7 @@ def load_model(
         )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
-    elif "pythia" in model_path or "stablelm" in model_path or "":
+    elif "pythia" in model_path or "stablelm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
