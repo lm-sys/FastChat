@@ -61,6 +61,7 @@ def load_model(model_path, device, num_gpus, max_gpu_memory=None,
             if num_gpus != 1:
                 kwargs["device_map"] = "auto"
                 if max_gpu_memory is None:
+                    kwargs["device_map"] = "sequential" # This is important for not the same VRAM sizes 
                     available_gpu_memory = get_gpu_memory(num_gpus)
                     kwargs["max_memory"] = {i: str(int(available_gpu_memory[i] * 0.85)) +
                         "GiB" for i in range(num_gpus)}
