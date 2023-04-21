@@ -87,7 +87,9 @@ def load_model(
             if num_gpus != 1:
                 kwargs["device_map"] = "auto"
                 if max_gpu_memory is None:
-                    kwargs["device_map"] = "sequential" # This is important for not the same VRAM sizes 
+                    kwargs[
+                        "device_map"
+                    ] = "sequential"  # This is important for not the same VRAM sizes
                     available_gpu_memory = get_gpu_memory(num_gpus)
                     kwargs["max_memory"] = {
                         i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -105,23 +107,22 @@ def load_model(
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = (
-            AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
-        )
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **kwargs
+        ).cuda()
     elif "google/flan-t5" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     elif "dolly" in model_path:
-        kwargs.update({"torch_dtype": torch.bfloat16})
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        # 50277 means "### End"
-        tokenizer.eos_token_id = 50277
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
-    elif "pythia" in model_path:
+        # 50277 means "### End"
+        tokenizer.eos_token_id = 50277
+    elif "pythia" in model_path or "stablelm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
@@ -154,8 +155,7 @@ def generate_stream(
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
-    if stop_str == tokenizer.eos_token:
-        stop_str = None
+    stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
 
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
@@ -218,7 +218,7 @@ def generate_stream(
 
         output_ids.append(token)
 
-        if token == tokenizer.eos_token_id:
+        if token in stop_token_ids:
             stopped = True
         else:
             stopped = False
@@ -302,7 +302,7 @@ def chat_loop(
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else None,
         }
 
         chatio.prompt_for_output(conv.roles[1])

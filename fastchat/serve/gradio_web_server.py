@@ -236,7 +236,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_new_tokens,
-        "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
+        "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else None,
     }
     logger.info(f"==== request ====\n{pload}")
 

@@ -1,3 +1,16 @@
+"""
+Conversation prompt template.
+
+Now we support
+- Vicuna
+- Koala
+- OpenAssistant/oasst-sft-1-pythia-12b
+- StabilityAI/stablelm-tuned-alpha-7b
+- databricks/dolly-v2-12b
+- THUDM/chatglm-6b
+- Alpaca/LLaMa
+"""
+
 import dataclasses
 from enum import auto, Enum
 from typing import List, Tuple, Any
@@ -58,7 +71,7 @@ class Conversation:
                     ret += role + ":\n"
             return ret
         elif self.sep_style == SeparatorStyle.OASST_PYTHIA:
-            ret = ""
+            ret = self.system
             for role, message in self.messages:
                 if message:
                     ret += role + message + self.sep
@@ -182,6 +195,20 @@ conv_oasst = Conversation(
     sep="<|endoftext|>",
 )
 
+conv_stablelm = Conversation(
+    system="""<|SYSTEM|># StableLM Tuned (Alpha version)
+- StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
+- StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
+- StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
+- StableLM will refuse to participate in anything that could harm a human.
+""",
+    roles=("<|USER|>", "<|ASSISTANT|>"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep="",
+)
+
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1.1": conv_vicuna_v1_1,
@@ -201,6 +228,8 @@ def get_default_conv_template(model_name):
         return conv_dolly
     elif "oasst" in model_name and "pythia" in model_name:
         return conv_oasst
+    elif "stablelm" in model_name:
+        return conv_stablelm
     return conv_one_shot
 
 
@@ -215,6 +244,11 @@ def compute_skip_echo_len(model_name, conv, prompt):
             skip_echo_len -= prompt.count(tok) * len(tok)
     elif "oasst" in model_name and "pythia" in model_name:
         special_toks = ["<|prompter|>", "<|assistant|>", "<|endoftext|>"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "stablelm" in model_name:
+        special_toks = ["<|SYSTEM|>", "<|USER|>", "<|ASSISTANT|>"]
         skip_echo_len = len(prompt)
         for tok in special_toks:
             skip_echo_len -= prompt.count(tok) * len(tok)
