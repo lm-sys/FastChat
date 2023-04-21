@@ -6,12 +6,9 @@ python3 -m fastchat.model.apply_lora --base ~/model_weights/llama-7b --target ~/
 """
 import argparse
 
-from huggingface_hub import snapshot_download
 import torch
-from torch import nn
-from tqdm import tqdm
 from peft import PeftModel
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 def apply_lora(base_model_path, target_model_path, lora_path):
