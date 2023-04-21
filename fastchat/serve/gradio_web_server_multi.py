@@ -221,10 +221,11 @@ def http_bot_all(
 def build_side_by_side_ui():
     notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ 
-Chat with state-of-the-art open models **side-by-side** and vote for which one is better!
+- Chat with state-of-the-art open models **side-by-side** and vote for which one is better!
+- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
 
 ### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
 The demo works better on desktop devices with a wide screen.
 
 ### Choose two models to chat with
