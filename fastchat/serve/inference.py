@@ -87,7 +87,9 @@ def load_model(
             if num_gpus != 1:
                 kwargs["device_map"] = "auto"
                 if max_gpu_memory is None:
-                    kwargs["device_map"] = "sequential" # This is important for not the same VRAM sizes 
+                    kwargs[
+                        "device_map"
+                    ] = "sequential"  # This is important for not the same VRAM sizes
                     available_gpu_memory = get_gpu_memory(num_gpus)
                     kwargs["max_memory"] = {
                         i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -105,14 +107,19 @@ def load_model(
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_path, trust_remote_code=True, **kwargs).cuda()
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **kwargs
+        ).cuda()
     elif "google/flan-t5" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
-                                                      low_cpu_mem_usage=True, **kwargs)
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
     elif "dolly" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
     elif "pythia" in model_path or "stablelm" in model_path:
