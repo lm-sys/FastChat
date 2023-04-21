@@ -1,17 +1,81 @@
 """Inference for FastChat models."""
 import abc
+from typing import Optional
+import warnings
+
 import torch
+
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, AutoModel
+    from transformers import (
+        AutoTokenizer,
+        AutoModelForCausalLM,
+        LlamaTokenizer,
+        LlamaForCausalLM,
+        AutoModel,
+        AutoModelForSeq2SeqLM,
+    )
 except ImportError:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, AutoModel
-from fastchat.conversation import conv_templates, SeparatorStyle
+    from transformers import (
+        AutoTokenizer,
+        AutoModelForCausalLM,
+        LLaMATokenizer,
+        LLamaForCausalLM,
+        AutoModel,
+        AutoModelForSeq2SeqLM,
+    )
+
+from fastchat.conversation import (
+    conv_templates,
+    get_default_conv_template,
+    compute_skip_echo_len,
+    SeparatorStyle,
+)
 from fastchat.serve.compression import compress_module
-from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
+from fastchat.serve.monkey_patch_non_inplace import (
+    replace_llama_attn_with_non_inplace_operations,
+)
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
-def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
+def raise_warning_for_old_weights(model_path, model):
+    if "vicuna" in model_path.lower():
+        try:
+            is_vicuna = isinstance(model, LlamaForCausalLM)
+        except Exception:
+            is_vicuna = isinstance(model, LLamaForCausalLM)
+        if is_vicuna and model.model.vocab_size > 32000:
+            warnings.warn(
+                "\nYou are probably using the old Vicuna-v0 model, "
+                "which will generate unexpected results with the "
+                "current fschat.\nYou can try one of the following methods:\n"
+                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
+            )
+
+
+def get_gpu_memory(max_gpus=None):
+    gpu_memory = []
+    num_gpus = (
+        torch.cuda.device_count()
+        if max_gpus is None
+        else min(max_gpus, torch.cuda.device_count())
+    )
+
+    for gpu_id in range(num_gpus):
+        with torch.cuda.device(gpu_id):
+            device = torch.cuda.current_device()
+            gpu_properties = torch.cuda.get_device_properties(device)
+            total_memory = gpu_properties.total_memory / (1024**3)
+            allocated_memory = torch.cuda.memory_allocated() / (1024**3)
+            available_memory = total_memory - allocated_memory
+            gpu_memory.append(available_memory)
+    return gpu_memory
+
+
+def load_model(
+    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
+):
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
@@ -21,10 +85,19 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
         else:
             num_gpus = int(num_gpus)
             if num_gpus != 1:
-                kwargs.update({
-                    "device_map": "auto",
-                    "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                })
+                kwargs["device_map"] = "auto"
+                if max_gpu_memory is None:
+                    kwargs[
+                        "device_map"
+                    ] = "sequential"  # This is important for not the same VRAM sizes
+                    available_gpu_memory = get_gpu_memory(num_gpus)
+                    kwargs["max_memory"] = {
+                        i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                        for i in range(num_gpus)
+                    }
+                else:
+                    kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+        print("init_kwargs", kwargs)
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
@@ -32,13 +105,40 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    if "chatglm" in model_name:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_name, trust_remote_code=True).half().cuda()
+    if "chatglm" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **kwargs
+        ).cuda()
+    elif "google/flan-t5" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
+    elif "dolly" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
+        # 50277 means "### End"
+        tokenizer.eos_token_id = 50277
+    elif "pythia" in model_path or "stablelm" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
+    elif "mpt" in model_path:
+        tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b", use_fast=True)
+        print("Special token", tokenizer.special_tokens_map)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, trust_remote_code=True, low_cpu_mem_usage=True, attn_impl='triton', **kwargs
+        )
     else:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-        model = AutoModelForCausalLM.from_pretrained(model_name,
-            low_cpu_mem_usage=True, **kwargs)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **kwargs
+        )
+        raise_warning_for_old_weights(model_path, model)
 
     if load_8bit:
         compress_module(model, device)
@@ -53,13 +153,15 @@ def load_model(model_name, device, num_gpus, load_8bit=False, debug=False):
 
 
 @torch.inference_mode()
-def generate_stream(model, tokenizer, params, device,
-                    context_len=2048, stream_interval=2):
+def generate_stream(
+    model, tokenizer, params, device, context_len=2048, stream_interval=2
+):
     prompt = params["prompt"]
     l_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
+    stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
 
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
@@ -69,19 +171,44 @@ def generate_stream(model, tokenizer, params, device,
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                encoder_outputs = model.encoder(
+                    input_ids=torch.as_tensor([input_ids], device=device)
+                )
+                out = model(
+                    torch.as_tensor([input_ids], device=device),
+                    decoder_input_ids=torch.as_tensor(
+                        [[model.generation_config.decoder_start_token_id]],
+                        device=device,
+                    ),
+                    encoder_outputs=encoder_outputs,
+                    use_cache=True,
+                )
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
+                logits = out.logits
+                past_key_values = out.past_key_values
         else:
-            attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
-            logits = out.logits
-            past_key_values = out.past_key_values
+            if model.config.is_encoder_decoder:
+                out = model(
+                    input_ids=torch.as_tensor([input_ids], device=device),
+                    use_cache=True,
+                    encoder_outputs=encoder_outputs,
+                    decoder_input_ids=torch.as_tensor([[token]], device=device),
+                    past_key_values=past_key_values,
+                )
+                logits = out.logits
+                past_key_values = out.past_key_values
+            else:
+                out = model(
+                    input_ids=torch.as_tensor([[token]], device=device),
+                    use_cache=True,
+                    past_key_values=past_key_values,
+                )
+                logits = out.logits
+                past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
 
@@ -97,17 +224,18 @@ def generate_stream(model, tokenizer, params, device,
 
         output_ids.append(token)
 
-        if token == tokenizer.eos_token_id:
+        if token in stop_token_ids:
             stopped = True
         else:
             stopped = False
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
-            pos = output.rfind(stop_str, l_prompt)
-            if pos != -1:
-                output = output[:pos]
-                stopped = True
+            if stop_str:
+                pos = output.rfind(stop_str, l_prompt)
+                if pos != -1:
+                    output = output[:pos]
+                    stopped = True
             yield output
 
         if stopped:
@@ -130,16 +258,30 @@ class ChatIO(abc.ABC):
         """Stream output."""
 
 
-def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
-              conv_template: str, temperature: float, max_new_tokens: int,
-              chatio: ChatIO, debug: bool):
+def chat_loop(
+    model_path: str,
+    device: str,
+    num_gpus: str,
+    max_gpu_memory: str,
+    load_8bit: bool,
+    conv_template: Optional[str],
+    temperature: float,
+    max_new_tokens: int,
+    chatio: ChatIO,
+    debug: bool,
+):
     # Model
-    model, tokenizer = load_model(model_name, device,
-        num_gpus, load_8bit, debug)
+    model, tokenizer = load_model(
+        model_path, device, num_gpus, max_gpu_memory, load_8bit, debug
+    )
     is_chatglm = "chatglm" in str(type(model)).lower()
 
     # Chat
-    conv = conv_templates[conv_template].copy()
+    if conv_template:
+        conv = conv_templates[conv_template].copy()
+    else:
+        conv = get_default_conv_template(model_path).copy()
+
     while True:
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
@@ -153,20 +295,20 @@ def chat_loop(model_name: str, device: str, num_gpus: str, load_8bit: bool,
         conv.append_message(conv.roles[1], None)
 
         if is_chatglm:
-            prompt = conv.messages[conv.offset:]
+            prompt = conv.messages[conv.offset :]
             generate_stream_func = chatglm_generate_stream
-            skip_echo_len = len(conv.messages[-2][1]) + 1
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+
+        skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
 
         params = {
-            "model": model_name,
+            "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else None,
         }
 
         chatio.prompt_for_output(conv.roles[1])
