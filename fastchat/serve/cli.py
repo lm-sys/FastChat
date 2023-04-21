@@ -5,6 +5,7 @@ Usage:
 python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
 """
 import argparse
+import os
 import re
 
 from prompt_toolkit import PromptSession
@@ -101,6 +102,10 @@ class RichChatIO(ChatIO):
 
 
 def main(args):
+    if args.gpus:
+        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
+            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
     if args.style == "simple":
         chatio = SimpleChatIO()
     elif args.style == "rich":
@@ -134,6 +139,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda"
+    )
+    parser.add_argument(
+        "--gpus",
+        type=str,
+        default=None,
+        help="A single GPU like 1 or multiple GPUs like 0,2"
     )
     parser.add_argument("--num-gpus", type=str, default="1")
     parser.add_argument(
