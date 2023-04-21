@@ -14,6 +14,7 @@ import json
 import logging
 
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import uvicorn
 from pydantic import BaseSettings
@@ -38,6 +39,16 @@ class AppSettings(BaseSettings):
 app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
+
+origins = ["*"]
+
+@app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/v1/chat/completions")
