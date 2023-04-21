@@ -2,7 +2,7 @@ import json
 
 
 def identity_questions():
-    """"
+    """ "
     Adopted from https://github.com/young-geng/koala_data_pipeline/blob/main/process_hard_coded_data.py
     """
     content = []
@@ -19,7 +19,7 @@ def identity_questions():
                         "conversations": [
                             {"from": "human", "value": q},
                             {"from": "gpt", "value": a},
-                        ]
+                        ],
                     }
                 )
 
@@ -39,7 +39,7 @@ def identity_questions():
         f"My name is {name}, and I'm a language model developed by {org}.",
         f"You can call me {name}, and I was trained by {org} researchers as a language model.",
         f"As a language model, I go by the name {name} and was trained by researchers from {org}.",
-        f"I'm a language model called {name}, and I was trained by {org} researchers."
+        f"I'm a language model called {name}, and I was trained by {org} researchers.",
     ]
     generate_conversations(questions, answers)
 

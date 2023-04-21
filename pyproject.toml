@@ -19,6 +19,9 @@ dependencies = [
     "uvicorn", "wandb", "httpx", "shortuuid", "pydantic",
 ]
 
+[project.optional-dependencies]
+dev = ["black==23.3.0", "pylint==2.8.2"]
+
 [project.urls]
 "Homepage" = "https://github.com/lm-sys/fastchat"
 "Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
