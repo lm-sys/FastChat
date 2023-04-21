@@ -40,6 +40,17 @@ app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
 
+@app.get("/v1/models")
+async def show_available_models():
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(controller_url + "/refresh_all_workers")
+        ret = await client.post(controller_url + "/list_models")
+    models = ret.json()["models"]
+    models.sort()
+    return {"data": [{"id": m} for m in models], "object": "list"}
+
+
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
