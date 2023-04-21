@@ -16,9 +16,11 @@ dependencies = [
     "accelerate", "fastapi", "gradio==3.23", "markdown2[all]", "numpy",
     "prompt_toolkit>=3.0.0", "requests", "rich>=10.0.0", "sentencepiece",
     "shortuuid", "transformers>=4.28.0", "tokenizers>=0.12.1", "torch",
-    "uvicorn", "wandb", "httpx", "shortuuid", "pydantic", "black==23.3.0",
-    "pylint==2.8.2",
+    "uvicorn", "wandb", "httpx", "shortuuid", "pydantic", 
 ]
+
+[project.optional-dependencies]
+dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
 "Homepage" = "https://github.com/lm-sys/fastchat"
