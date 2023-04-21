@@ -8,6 +8,7 @@ Now we support
 - StabilityAI/stablelm-tuned-alpha-7b
 - databricks/dolly-v2-12b
 - THUDM/chatglm-6b
+- project-baize/baize-lora-7B
 - Alpaca/LLaMa
 """
 
