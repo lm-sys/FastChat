@@ -213,8 +213,8 @@ def http_bot_all(
 
 def build_side_by_side_ui():
     notice_markdown = """
-# ⚔️  Compare Open Large Language Models Side-by-Side
-Chat with two models side-by-side and vote for which one is better!
+# ⚔️  Chatbot Arena ⚔️ 
+Chat with two models **side-by-side** and vote for which one is better!
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
