@@ -40,7 +40,7 @@ models = []
 priority = {
     "vicuna-13b": "aaa",
     "koala-13b": "aab",
-    "oasst-sft-1-pythia-12b": "aac",
+    "oasst-pythia-12b": "aac",
     "dolly-v2-12b": "aad",
     "chatglm-6b": "aae",
     "stablelm-tuned-alpha-7b": "aaf",
