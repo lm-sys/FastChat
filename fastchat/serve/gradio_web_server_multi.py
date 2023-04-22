@@ -123,6 +123,15 @@ def clear_history(request: gr.Request):
     return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 5
 
 
+def share_click(state0, state1, model_selector0, model_selector1,
+                request: gr.Request):
+    logger.info(f"share. ip: {request.client.host}")
+    if state0 is not None and state1 is not None:
+        vote_last_response(
+            [state0, state1], "share", [model_selector0, model_selector1], request
+        )
+
+
 def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
@@ -334,7 +343,7 @@ The service is a research preview intended for non-commercial use only, subject 
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
 
     share_js="""
-function () {
+function (a, b, c, d) {
     const captureElement = document.querySelector('#share-region');
     html2canvas(captureElement)
         .then(canvas => {
@@ -345,14 +354,15 @@ function () {
         .then(canvas => {
             const image = canvas.toDataURL('image/png')
             const a = document.createElement('a')
-            a.setAttribute('download', 'fastchat-results.png')
+            a.setAttribute('download', 'chatbot-arena.png')
             a.setAttribute('href', image)
             a.click()
             canvas.remove()
         });
+    return [a, b, c, d];
 }
 """
-    share_btn.click(None, [], [], _js=share_js)
+    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
     for i in range(num_models):
         model_selectors[i].change(
