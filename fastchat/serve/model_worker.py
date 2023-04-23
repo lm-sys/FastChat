@@ -1,6 +1,7 @@
 """
 A model worker executes the model.
 """
+import os
 import argparse
 import asyncio
 import dataclasses
@@ -230,6 +231,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
+        "--gpus",
+        type=str,
+        default=None,
+        help="A single GPU like 1 or multiple GPUs like 0,2"
+    )
+    parser.add_argument(
         "--max-gpu-memory",
         type=str,
         help="The maximum memory per gpu. Use a string like '13Gib'",
@@ -241,6 +248,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    if args.gpus:
+        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
+            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+    
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
