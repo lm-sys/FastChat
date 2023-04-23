@@ -75,7 +75,9 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
-
+    
+    if load_8bit:
+        return load_compress_model(model_path=model_path,device=device)
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -93,8 +95,6 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
             low_cpu_mem_usage=True, **kwargs)
         raise_warning_for_old_weights(model_path, model)
 
-    if load_8bit:
-        compress_module(model, device)
 
     if (device == "cuda" and num_gpus == 1) or device == "mps":
         model.to(device)
@@ -105,20 +105,17 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
     return model, tokenizer
 
 
-def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
-                        load_8bit=False, debug=False):
+def load_compress_model(model_path, device):
 
     # partially load model
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
     files = glob.glob(base_pattern)
-    print(files)
     
     with init_empty_weights():
         config = AutoConfig.from_pretrained(model_path, low_cpu_mem_usage=True, device_map='auto',torch_dtype=torch.float16)
         model = AutoModelForCausalLM.from_config(config)
         linear_weights = get_compressed_list(model)
-        print(len(linear_weights),linear_weights)
 
 
     compressed_state_dict = {}
@@ -142,7 +139,7 @@ def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
             set_module_tensor_to_device(model, name, device, value=compressed_state_dict[name])
     apply_compressed_weight(model, compressed_state_dict, device)
 
-    print(f"memory path: {model.get_memory_footprint()}")
+    model.to(device)
 
     return model, tokenizer
 
@@ -230,9 +227,7 @@ def chat_loop(model_path: str, device: str, num_gpus: str,
               max_new_tokens: int, chatio: ChatIO,
               debug: bool):
     # Model
-    # model, tokenizer = load_model(model_path, device,
-    #     num_gpus, max_gpu_memory, load_8bit, debug)
-    model, tokenizer = load_compress_model(model_path, device,
+    model, tokenizer = load_model(model_path, device,
         num_gpus, max_gpu_memory, load_8bit, debug)
     is_chatglm = "chatglm" in str(type(model)).lower()
 
