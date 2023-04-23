@@ -19,6 +19,7 @@ import json
 import pathlib
 from typing import Dict, Optional, Sequence
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 import transformers
@@ -150,13 +151,11 @@ def preprocess(
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(self, raw_data, tokenizer: transformers.PreTrainedTokenizer):
         super(SupervisedDataset, self).__init__()
-        rank0_print("Loading data...")
-        list_data_dict = json.load(open(data_path, "r"))
 
         rank0_print("Formatting inputs...")
-        sources = [example["conversations"] for example in list_data_dict]
+        sources = [example["conversations"] for example in raw_data]
         data_dict = preprocess(sources, tokenizer)
 
         self.input_ids = data_dict["input_ids"]
@@ -177,32 +176,31 @@ class SupervisedDataset(Dataset):
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(self, raw_data, tokenizer: transformers.PreTrainedTokenizer):
         super(LazySupervisedDataset, self).__init__()
         self.tokenizer = tokenizer
 
-        rank0_print("Loading data...")
-        list_data_dict = json.load(open(data_path, "r"))
-
         rank0_print("Formatting inputs...Skip in lazy mode")
         self.tokenizer = tokenizer
-        self.list_data_dict = list_data_dict
+        self.raw_data = raw_data
+        self.cached_data_dict = {}
 
     def __len__(self):
-        return len(self.list_data_dict)
+        return len(self.raw_data)
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        sources = self.list_data_dict[i]
-        if isinstance(i, int):
-            sources = [sources]
-        data_dict = preprocess([e["conversations"] for e in sources], self.tokenizer)
-        if isinstance(i, int):
-            data_dict = dict(
-                input_ids=data_dict["input_ids"][0],
-                labels=data_dict["labels"][0],
-                attention_mask=data_dict["attention_mask"][0],
-            )
-        return data_dict
+        if i in self.cached_data_dict:
+            return self.cached_data_dict[i]
+
+        ret = preprocess([self.raw_data[i]["conversations"]], self.tokenizer)
+        ret = dict(
+            input_ids=ret["input_ids"][0],
+            labels=ret["labels"][0],
+            attention_mask=ret["attention_mask"][0],
+        )
+        self.cached_data_dict[i] = ret
+
+        return ret
 
 
 def make_supervised_data_module(
@@ -212,8 +210,20 @@ def make_supervised_data_module(
     dataset_cls = (
         LazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
-    train_dataset = dataset_cls(tokenizer=tokenizer, data_path=data_args.data_path)
-    return dict(train_dataset=train_dataset, eval_dataset=None)
+    rank0_print("Loading data...")
+    raw_data = json.load(open(data_args.data_path, "r"))
+
+    # Split train/test
+    perm = np.random.permutation(len(raw_data))
+    split = int(len(perm) * 0.95)
+    train_indices = perm[:split]
+    eval_indices = perm[split:]
+    train_raw_data = [raw_data[i] for i in train_indices]
+    eval_raw_data = [raw_data[i] for i in eval_indices]
+
+    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
+    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
+    return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
 def train():

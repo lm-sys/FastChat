@@ -1,17 +1,16 @@
 torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train.py \
-    --model_name_or_path ~/model_weights/llama-7b \
+    --model_name_or_path ~/model_weights/llama-7b  \
     --data_path ~/datasets/sampled.json \
-    --bf16 False \
     --fp16 True \
     --output_dir output \
     --num_train_epochs 3 \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 8 \
-    --evaluation_strategy "no" \
+    --per_device_train_batch_size 2 \
+    --per_device_eval_batch_size 2 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "steps" \
+    --eval_steps 2 \
     --save_strategy "steps" \
     --save_steps 1200 \
-    --save_total_limit 10 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
@@ -20,4 +19,4 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train.py \
     --tf32 False \
     --model_max_length 2048 \
     --gradient_checkpointing True \
-    --lazy_preprocess False
+    --lazy_preprocess True
