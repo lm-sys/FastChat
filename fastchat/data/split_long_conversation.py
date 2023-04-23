@@ -102,9 +102,7 @@ def main(args):
         padding_side="right",
         use_fast=False,
     )
-    new_content = split_all(
-        content, args.begin, args.end, tokenizer, args.max_length
-    )
+    new_content = split_all(content, args.begin, args.end, tokenizer, args.max_length)
     new_content = filter_invalid_roles(new_content)
 
     print(f"total: {len(content)}, new: {len(new_content)}")

@@ -121,12 +121,14 @@ def clean_html_all(content, begin, end):
     content = content[begin:end]
     processed = []
     with ProcessPoolExecutor() as executor:
-        for result in tqdm(executor.map(clean_html_one_sample, content), total=len(content)):
+        for result in tqdm(
+            executor.map(clean_html_one_sample, content), total=len(content)
+        ):
             processed.append(result)
 
     visited = {}
     new_content = []
-    for (sample, error_code) in tqdm(processed):
+    for sample, error_code in tqdm(processed):
         cid = sample["id"]
         skipped = True
 
