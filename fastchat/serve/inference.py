@@ -2,6 +2,9 @@
 import abc
 from typing import Optional
 import warnings
+import sys
+import math
+import psutil
 
 import torch
 
@@ -53,6 +56,22 @@ def raise_warning_for_old_weights(model_path, model):
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
 
+def raise_warning_for_incompatible_cpu_offloading_configuration(device: str, load_8bit: bool, cpu_offloading: bool):
+    if cpu_offloading:
+        if not load_8bit:
+            warnings.warn("The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
+                          "Use '--load-8bit' to enable 8-bit-quantization\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if not "linux" in sys.platform:
+            warnings.warn("CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if device != "cuda":
+            warnings.warn("CPU-offloading is only enabled when using CUDA-devices\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+    return cpu_offloading
 
 def get_gpu_memory(max_gpus=None):
     gpu_memory = []
@@ -74,29 +93,25 @@ def get_gpu_memory(max_gpus=None):
 
 
 def load_model(
-    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
+    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, cpu_offloading=False, debug=False
 ):
+    cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(device, load_8bit, cpu_offloading)
     if device == "cpu":
         kwargs = {}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
-            kwargs["device_map"] = "auto"
+        num_gpus = int(num_gpus)
+        if num_gpus > 1 and max_gpu_memory is None:
+            kwargs["device_map"] = "sequential"  # This is important for not the same VRAM sizes
+            available_gpu_memory = get_gpu_memory(num_gpus)
+            kwargs["max_memory"] = {
+                i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                for i in range(num_gpus)
+            }
         else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs["device_map"] = "auto"
-                if max_gpu_memory is None:
-                    kwargs[
-                        "device_map"
-                    ] = "sequential"  # This is important for not the same VRAM sizes
-                    available_gpu_memory = get_gpu_memory(num_gpus)
-                    kwargs["max_memory"] = {
-                        i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
-                        for i in range(num_gpus)
-                    }
-                else:
-                    kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+            kwargs["device_map"] = "auto"
+            if not max_gpu_memory is None:
+                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
         print("init_kwargs", kwargs)
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
@@ -104,6 +119,14 @@ def load_model(
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
+
+    if cpu_offloading:
+        # raises an error on incompatible platforms
+        from transformers import BitsAndBytesConfig
+        if "max_memory" in kwargs:
+            kwargs["max_memory"]["cpu"] = str(math.floor(psutil.virtual_memory().available / 2**20)) + 'Mib'
+        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit_fp32_cpu_offload=cpu_offloading)
+        kwargs["load_in_8bit"] = load_8bit
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -134,10 +157,11 @@ def load_model(
         )
         raise_warning_for_old_weights(model_path, model)
 
-    if load_8bit:
+    # bitsandbytes does the compression and .to() automatically
+    if load_8bit and not cpu_offloading:
         compress_module(model, device)
 
-    if (device == "cuda" and num_gpus == 1) or device == "mps":
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
 
     if debug:
@@ -258,6 +282,7 @@ def chat_loop(
     num_gpus: str,
     max_gpu_memory: str,
     load_8bit: bool,
+    cpu_offloading: bool,
     conv_template: Optional[str],
     temperature: float,
     max_new_tokens: int,
@@ -266,7 +291,7 @@ def chat_loop(
 ):
     # Model
     model, tokenizer = load_model(
-        model_path, device, num_gpus, max_gpu_memory, load_8bit, debug
+        model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
 

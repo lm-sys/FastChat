@@ -20,6 +20,7 @@ def main(args):
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
         debug=args.debug,
     )
 
@@ -64,6 +65,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization."
+    )
+    parser.add_argument(
+        "--cpu-offloading", action="store_true", help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
     )
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
