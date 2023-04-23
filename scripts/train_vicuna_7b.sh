@@ -13,7 +13,7 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --save_steps 1200 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
-    --warmup_ratio 0.03 \
+    --warmup_ratio 0.05 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --fsdp "full_shard auto_wrap" \
