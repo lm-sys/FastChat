@@ -2,18 +2,18 @@ torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train_mem.py \
     --model_name_or_path ~/model_weights/llama-13b  \
     --data_path ~/datasets/sharegpt_20230422_clean_lang_split_identity.json \
     --bf16 True \
-    --output_dir output13b \
+    --output_dir output_13b \
     --num_train_epochs 3 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 16 \
     --evaluation_strategy "steps" \
     --eval_steps 1200 \
     --save_strategy "steps" \
     --save_steps 1200 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
-    --warmup_ratio 0.05 \
+    --warmup_ratio 0.04 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --fsdp "full_shard auto_wrap" \

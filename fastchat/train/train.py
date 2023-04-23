@@ -137,8 +137,10 @@ def preprocess(
 
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
+                target[:] = IGNORE_TOKEN_ID
                 rank0_print(
-                    f"WARNING: tokenization mismatch " f"{cur_len} vs. {total_len}"
+                    f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
+                    f" (ignored)"
                 )
 
     return dict(
