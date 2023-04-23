@@ -106,7 +106,6 @@ def load_model(
     else:
         raise ValueError(f"Invalid device: {device}")
 
-
     if cpu_offloading:
         # raises an error on incompatible platforms
         from transformers import BitsAndBytesConfig
