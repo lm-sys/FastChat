@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fschat"
-version = "0.1.3"
+version = "0.2.3"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -14,10 +14,13 @@ classifiers = [
 ]
 dependencies = [
     "accelerate", "fastapi", "gradio==3.23", "markdown2[all]", "numpy",
-    "requests", "sentencepiece", "tokenizers==0.12.1",
-    "torch", "uvicorn", "wandb",
-    "transformers @ git+https://github.com/huggingface/transformers.git@c612628045822f909020f7eb6784c79700813eda"
+    "prompt_toolkit>=3.0.0", "requests", "rich>=10.0.0", "sentencepiece",
+    "shortuuid", "transformers>=4.28.0,<4.29.0", "tokenizers>=0.12.1", "torch",
+    "uvicorn", "wandb", "httpx", "shortuuid", "pydantic",
 ]
+
+[project.optional-dependencies]
+dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
 "Homepage" = "https://github.com/lm-sys/fastchat"
