@@ -75,6 +75,25 @@ def split_all(content, begin, end, tokenizer_, max_length_):
     return new_content
 
 
+def filter_invalid_roles(content):
+    new_content = []
+    for i, c in enumerate(content):
+        roles = ["human", "gpt"]
+        if len(c["conversations"]) <= 0:
+            continue
+
+        valid = True
+        for j, s in enumerate(c["conversations"]):
+            if s["from"] != roles[j % 2]:
+                valid = False
+                break
+
+        if valid:
+            new_content.append(c)
+
+    return new_content
+
+
 def main(args):
     content = json.load(open(args.in_file, "r"))
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -86,6 +105,7 @@ def main(args):
     new_content = split_all(
         content, args.begin, args.end, tokenizer, args.max_length
     )
+    new_content = filter_invalid_roles(new_content)
 
     print(f"total: {len(content)}, new: {len(new_content)}")
     json.dump(new_content, open(args.out_file, "w"), indent=2)
