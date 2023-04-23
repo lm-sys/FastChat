@@ -112,6 +112,7 @@ def preprocess(
 
         rounds = conversation.split(conv.sep2)
         cur_len = 1
+        target[:cur_len] = IGNORE_TOKEN_ID
         for i, rou in enumerate(rounds):
             if rou == "":
                 break
@@ -125,10 +126,13 @@ def preprocess(
 
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
 
-            # rank0_print(tokenizer.decode(target[cur_len+instruction_len:cur_len+round_len]))
-
             cur_len += round_len
         target[cur_len:] = IGNORE_TOKEN_ID
+
+        if False:
+            z = target.clone()
+            z = torch.where(z == IGNORE_TOKEN_ID, tokenizer.unk_token_id, z)
+            rank0_print(tokenizer.decode(z))
 
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:

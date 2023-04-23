@@ -1,6 +1,6 @@
 torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train.py \
-    --model_name_or_path facebook/opt-350m \
-    --data_path ~/datasets/hardcoded.json \
+    --model_name_or_path ~/model_weights/llama-7b \
+    --data_path ~/datasets/sampled.json \
     --bf16 False \
     --fp16 True \
     --output_dir output \
@@ -18,5 +18,6 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train.py \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --tf32 False \
+    --model_max_length 2048 \
     --gradient_checkpointing True \
     --lazy_preprocess False
