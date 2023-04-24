@@ -82,7 +82,6 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        # with init_empty_weights():
         model = AutoModelForCausalLM.from_pretrained(model_path,
             low_cpu_mem_usage=True, **kwargs)
         raise_warning_for_old_weights(model_path, model)
