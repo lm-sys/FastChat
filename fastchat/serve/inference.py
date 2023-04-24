@@ -2,6 +2,7 @@
 import abc
 from typing import Optional
 import warnings
+from collections import deque
 
 import torch
 
@@ -163,6 +164,8 @@ def generate_stream(
     max_src_len = context_len - max_new_tokens - 8
     input_ids = input_ids[-max_src_len:]
 
+    # Create a FixedLengthQueue with the desired stop sequence and a maximum length.
+    queue = FixedLengthQueue(stop_str)
     for i in range(max_new_tokens):
         if i == 0:
             if model.config.is_encoder_decoder:
@@ -226,7 +229,8 @@ def generate_stream(
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
             if stop_str:
-                pos = output.rfind(stop_str, l_prompt)
+                queue.add(output)
+                pos = queue.contains_stop_sequence()
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
@@ -236,6 +240,45 @@ def generate_stream(
             break
 
     del past_key_values
+
+
+class FixedLengthQueue:
+    def __init__(self, stop_sequence):
+        if stop_sequence is None:
+            self.stop_sequence = []
+            self.max_length = 0
+        elif isinstance(stop_sequence, str):
+            self.stop_sequence = [stop_sequence]
+            self.max_length = 1
+        else:
+            self.stop_sequence = stop_sequence
+            self.max_length = len(''.join(stop_str))
+
+        self.queue = deque(maxlen=self.max_length)
+
+    def add(self, item):
+        for char in item:
+            self.queue.append(char)
+
+    def contains_stop_sequence(self):
+        joined_queue = ''.join(self.queue)
+        # Initialize a variable to store the index of the last found stop string
+        last_stop_str_index = -1
+
+        # Iterate through the stop string list
+        for stop_word in self.stop_sequence:
+            # Find the last occurrence of the stop string in the output
+            stop_word_index = joined_queue.rfind(stop_word)
+
+            # If the stop string is found, compare the index with the previously found index
+            if stop_word_index != -1 and stop_word_index > last_stop_str_index:
+                last_stop_str_index = stop_word_index
+
+        # Handle the last found stop string index here
+        return last_stop_str_index
+
+    def __repr__(self):
+        return str(self.queue)
 
 
 class ChatIO(abc.ABC):
@@ -296,18 +339,13 @@ def chat_loop(
             prompt = conv.get_prompt()
 
         skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
-        stop_str = (
-            conv.sep
-            if conv.sep_style in [SeparatorStyle.SINGLE, SeparatorStyle.BAIZE]
-            else None
-        )
 
         params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": stop_str,
+            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else None,
         }
 
         chatio.prompt_for_output(conv.roles[1])
