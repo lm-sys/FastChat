@@ -62,7 +62,7 @@ def build_demo(models):
                     a_parameter_row,
                 ]
 
-            with gr.Tab("Chatbot Arena (anonymous)", id=1):
+            with gr.Tab("Chatbot Arena (battle)", id=1):
                 (
                     b_states,
                     b_model_selectors,
@@ -86,7 +86,7 @@ def build_demo(models):
                     ]
                 )
 
-            with gr.Tab("Chatbot Arena (named)", id=2):
+            with gr.Tab("Chatbot Arena (side-by-side)", id=2):
                 (
                     c_states,
                     c_model_selectors,
