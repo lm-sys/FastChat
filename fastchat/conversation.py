@@ -226,7 +226,7 @@ conv_baize = Conversation(
         ("[|Human|]", "Hello!"),
         ("[|AI|]", "Hi!"),
     ),
-    offset=0,
+    offset=2,
     sep_style=SeparatorStyle.BAIZE,
     sep="[|Human|]",
 )
