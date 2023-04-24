@@ -296,13 +296,18 @@ def chat_loop(
             prompt = conv.get_prompt()
 
         skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
+        stop_str = (
+            conv.sep
+            if conv.sep_style in [SeparatorStyle.SINGLE, SeparatorStyle.BAIZE]
+            else None
+        )
 
         params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else None,
+            "stop": stop_str,
         }
 
         chatio.prompt_for_output(conv.roles[1])
