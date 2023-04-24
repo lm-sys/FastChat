@@ -4,9 +4,9 @@ A model worker executes the model.
 import argparse
 import asyncio
 import dataclasses
-import os
 import logging
 import json
+import os
 import time
 from typing import List, Union
 import threading
