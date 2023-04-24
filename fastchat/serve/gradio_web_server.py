@@ -136,7 +136,10 @@ def flag_last_response(state, model_selector, request: gr.Request):
 
 def regenerate(state, request: gr.Request):
     logger.info(f"regenerate. ip: {request.client.host}")
-    state.messages[-1][-1] = None
+    state.messages[-1][2] = False
+    state.messages[-2][2] = False
+    state.append_message(state.roles[0], state.messages[-2][1], False)
+    state.append_message(state.roles[1], None, False)
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
@@ -160,14 +163,16 @@ def add_text(state, text, request: gr.Request):
         flagged = violates_moderation(text)
         if flagged:
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
+            state.append_message(state.roles[0], text, False)
+            state.append_message(state.roles[1], moderation_msg, False)
             state.skip_next = True
-            return (state, state.to_gradio_chatbot(), moderation_msg) + (
+            return (state, state.to_gradio_chatbot(), "") + (
                 no_change_btn,
             ) * 5
 
     text = text[:1536]  # Hard cut-off
-    state.append_message(state.roles[0], text)
-    state.append_message(state.roles[1], None)
+    state.append_message(state.roles[0], text, False)
+    state.append_message(state.roles[1], None, False)
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
@@ -199,8 +204,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # First round of conversation
         new_state = get_default_conv_template(model_name).copy()
         new_state.conv_id = uuid.uuid4().hex
-        new_state.append_message(new_state.roles[0], state.messages[-2][1])
-        new_state.append_message(new_state.roles[1], None)
+        new_state.append_message(new_state.roles[0], state.messages[-2][1], False)
+        new_state.append_message(new_state.roles[1], None, False)
         state = new_state
 
     # Query worker address
@@ -212,7 +217,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # No available worker
     if worker_addr == "":
-        state.messages[-1][-1] = server_error_msg
+        state.messages[-1][1] = server_error_msg
         yield (
             state,
             state.to_gradio_chatbot(),
@@ -226,7 +231,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # Construct prompt
     if "chatglm" in model_name:
-        prompt = state.messages[state.offset :]
+        prompt = [[x, y] for x, y, is_prompt in state.messages[state.offset :] if is_prompt]
     else:
         prompt = state.get_prompt()
     skip_echo_len = compute_skip_echo_len(model_name, state, prompt)
@@ -241,7 +246,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     }
     logger.info(f"==== request ====\n{pload}")
 
-    state.messages[-1][-1] = "▌"
+    state.messages[-1][1] = "▌"
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
@@ -259,11 +264,11 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                 if data["error_code"] == 0:
                     output = data["text"][skip_echo_len:].strip()
                     output = post_process_code(output)
-                    state.messages[-1][-1] = output + "▌"
+                    state.messages[-1][1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
                     output = data["text"] + f" (error_code: {data['error_code']})"
-                    state.messages[-1][-1] = output
+                    state.messages[-1][1] = output
                     yield (state, state.to_gradio_chatbot()) + (
                         disable_btn,
                         disable_btn,
@@ -274,7 +279,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
                     return
                 time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+        state.messages[-1][1] = server_error_msg + f" (error_code: 4)"
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -284,7 +289,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         )
         return
 
-    state.messages[-1][-1] = state.messages[-1][-1][:-1]
+    state.messages[-1][1] = state.messages[-1][1][:-1]
+    state.messages[-1][2] = True
+    state.messages[-2][2] = True
     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     finish_tstamp = time.time()

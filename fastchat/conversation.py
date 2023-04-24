@@ -46,7 +46,9 @@ class Conversation:
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system
-            for role, message in self.messages:
+            for role, message, is_prompt in self.messages:
+                if not is_prompt:
+                    continue
                 if message:
                     ret += self.sep + " " + role + ": " + message
                 else:
@@ -55,7 +57,9 @@ class Conversation:
         elif self.sep_style == SeparatorStyle.TWO:
             seps = [self.sep, self.sep2]
             ret = self.system + seps[0]
-            for i, (role, message) in enumerate(self.messages):
+            for i, (role, message, is_prompt) in enumerate(self.messages):
+                if not is_prompt:
+                    continue
                 if message:
                     ret += role + ": " + message + seps[i % 2]
                 else:
@@ -64,8 +68,10 @@ class Conversation:
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
             ret = self.system
-            for i, (role, message) in enumerate(self.messages):
-                if message:
+            for i, (role, message, is_prompt) in enumerate(self.messages):
+                if not is_prompt:
+                    continue
+                if message and is_prompt:
                     ret += role + ":\n" + message + seps[i % 2]
                     if i % 2 == 1:
                         ret += "\n\n"
@@ -74,7 +80,9 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.OASST_PYTHIA:
             ret = self.system
-            for role, message in self.messages:
+            for role, message, is_prompt in self.messages:
+                if not is_prompt:
+                    continue
                 if message:
                     ret += role + message + self.sep
                 else:
@@ -82,7 +90,9 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.BAIZE:
             ret = self.system
-            for role, message in self.messages:
+            for role, message, is_prompt in self.messages:
+                if not is_prompt:
+                    continue
                 if message:
                     ret += "\n" + role + message
                 else:
@@ -91,8 +101,8 @@ class Conversation:
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
-    def append_message(self, role, message):
-        self.messages.append([role, message])
+    def append_message(self, role, message, is_prompt):
+        self.messages.append([role, message, is_prompt])
 
     def to_gradio_chatbot(self):
         ret = []
@@ -107,7 +117,7 @@ class Conversation:
         return Conversation(
             system=self.system,
             roles=self.roles,
-            messages=[[x, y] for x, y in self.messages],
+            messages=[[x, y, z] for x, y, z in self.messages],
             offset=self.offset,
             sep_style=self.sep_style,
             sep=self.sep,
@@ -135,6 +145,7 @@ conv_one_shot = Conversation(
         (
             "Human",
             "What are the key differences between renewable and non-renewable energy sources?",
+            True,
         ),
         (
             "Assistant",
@@ -156,6 +167,7 @@ conv_one_shot = Conversation(
             "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
             "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
             "non-renewable sources are not, and their depletion can lead to economic and social instability.",
+            True,
         ),
     ),
     offset=2,
@@ -223,8 +235,8 @@ conv_baize = Conversation(
     system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
     roles=("[|Human|]", "[|AI|]"),
     messages=(
-        ("[|Human|]", "Hello!"),
-        ("[|AI|]", "Hi!"),
+        ("[|Human|]", "Hello!", True),
+        ("[|AI|]", "Hi!", True),
     ),
     offset=2,
     sep_style=SeparatorStyle.BAIZE,
