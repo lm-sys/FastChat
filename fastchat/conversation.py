@@ -106,7 +106,7 @@ class Conversation:
 
     def to_gradio_chatbot(self):
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg, is_prompt) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append([msg, None])
             else:
