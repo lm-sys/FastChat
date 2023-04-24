@@ -1,9 +1,19 @@
 import dataclasses
+import glob
+import os
+import gc
+from tqdm import tqdm
 
 import torch
 from torch import Tensor
 import torch.nn as nn
 from torch.nn import functional as F
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
+except ImportError:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from accelerate.utils import set_module_tensor_to_device
 
 
 @dataclasses.dataclass
@@ -73,6 +83,42 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         child_prefix = f"{prefix}.{name}" if prefix else name
         apply_compressed_weight(child, compressed_state_dict, target_device, child_prefix)
 
+def load_compress_model(model_path, device):
+
+    # partially load model
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
+    files = glob.glob(base_pattern)
+    
+    with init_empty_weights():
+        config = AutoConfig.from_pretrained(model_path, low_cpu_mem_usage=True, torch_dtype=torch.float16)
+        model = AutoModelForCausalLM.from_config(config)
+        linear_weights = get_compressed_list(model)
+
+
+    compressed_state_dict = {}
+
+    for file in files:
+        tmp_state_dict = torch.load(file, map_location="cpu")
+        for name in tqdm(tmp_state_dict):
+            if name in linear_weights:
+                tensor = tmp_state_dict[name].to(device).data
+                compressed_state_dict[name] = compress(tensor, default_compression_config)
+            else:
+                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+            tmp_state_dict[name] = None
+            tensor = None
+            gc.collect()
+            torch.cuda.empty_cache()
+
+    for name in model.state_dict():
+        if name not in linear_weights:
+            set_module_tensor_to_device(model, name, device, value=compressed_state_dict[name])
+    apply_compressed_weight(model, compressed_state_dict, device)
+
+    model.to(device)
+
+    return model, tokenizer
 
 def compress(tensor, config):
     """Simulate group-wise quantization."""
