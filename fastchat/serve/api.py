@@ -6,7 +6,7 @@ python3 -m fastchat.serve.api
 
 Reference: https://platform.openai.com/docs/api-reference/chat/create
 """
-
+import asyncio
 from typing import Union, Dict, List, Any
 
 import argparse
@@ -40,6 +40,18 @@ app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
+
+@app.get("/v1/models")
+async def show_available_models():
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(controller_url + "/refresh_all_workers")
+        ret = await client.post(controller_url + "/list_models")
+    models = ret.json()["models"]
+    models.sort()
+    return {"data": [{"id": m} for m in models], "object": "list"}
+
+
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
@@ -53,8 +65,13 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
+    chat_completions = []
     for i in range(request.n):
-        content = await chat_completion(request.model, payload, skip_echo_len)
+        content = asyncio.create_task(chat_completion(request.model, payload, skip_echo_len))
+        chat_completions.append(content)
+
+    for i, content_task in enumerate(chat_completions):
+        content = await content_task
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,

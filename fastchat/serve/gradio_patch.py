@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from gradio.components import *
 from markdown2 import Markdown
+import nh3
 
 
 class _Keywords(Enum):
@@ -144,7 +145,7 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
                 (
                     # self._process_chat_messages(message_pair[0]),
                     '<pre style="font-family: var(--font)">'
-                    + message_pair[0]
+                    + nh3.clean(message_pair[0])
                     + "</pre>",
                     self._process_chat_messages(message_pair[1]),
                 )
