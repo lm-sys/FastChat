@@ -5,6 +5,7 @@ import warnings
 import sys
 import math
 import psutil
+import gc
 
 import torch
 
@@ -259,7 +260,9 @@ def generate_stream(
         if stopped:
             break
 
-    del past_key_values
+    del past_key_values, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 class ChatIO(abc.ABC):
