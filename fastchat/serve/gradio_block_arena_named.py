@@ -23,7 +23,7 @@ from fastchat.serve.gradio_web_server import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_models = 2
-enable_moderation = True
+enable_moderation = False
 
 
 def set_global_vars_named(enable_moderation_):
@@ -42,14 +42,14 @@ def load_demo_side_by_side_named(models, url_params):
     else:
         model_right = model_left
 
-    dropdown_updates = (
+    selector_updates = (
         gr.Dropdown.update(model_left, visible=True),
         gr.Dropdown.update(model_right, visible=True),
     )
 
     return (
         states
-        + dropdown_updates
+        + selector_updates
         + (gr.Chatbot.update(visible=True),) * num_models
         + (
             gr.Textbox.update(visible=True),
@@ -76,7 +76,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 def leftvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"leftvote. ip: {request.client.host}")
+    logger.info(f"leftvote (named). ip: {request.client.host}")
     vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
     )
@@ -86,7 +86,7 @@ def leftvote_last_response(
 def rightvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"rightvote. ip: {request.client.host}")
+    logger.info(f"rightvote (named). ip: {request.client.host}")
     vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
     )
@@ -96,7 +96,7 @@ def rightvote_last_response(
 def tievote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"tievote. ip: {request.client.host}")
+    logger.info(f"tievote (named). ip: {request.client.host}")
     vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
     )

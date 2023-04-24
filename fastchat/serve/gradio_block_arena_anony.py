@@ -23,33 +23,28 @@ from fastchat.serve.gradio_web_server import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_models = 2
-enable_moderation = True
-
+enable_moderation = False
+anony_names = ["### Left: Model A ", "### Right: Model B"]
+models = []
 
 def set_global_vars_anony(enable_moderation_):
     global enable_moderation
     enable_moderation = enable_moderation_
 
 
-def load_demo_side_by_side_anony(models, url_params):
+def load_demo_side_by_side_anony(models_, url_params):
+    global models
+    models = models_
+
     states = (None,) * num_models
-
-    model_left = models[0]
-    if len(models) > 1:
-        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
-        weights = weights / np.sum(weights)
-        model_right = np.random.choice(models[1:], p=weights)
-    else:
-        model_right = model_left
-
-    dropdown_updates = (
-        gr.Dropdown.update(model_left, visible=True),
-        gr.Dropdown.update(model_right, visible=True),
+    selector_updates = (
+        gr.Markdown.update(visible=True),
+        gr.Markdown.update(visible=True),
     )
 
     return (
         states
-        + dropdown_updates
+        + selector_updates
         + (gr.Chatbot.update(visible=True),) * num_models
         + (
             gr.Textbox.update(visible=True),
@@ -72,35 +67,44 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         }
         fout.write(json.dumps(data) + "\n")
 
+    if "Model" in model_selectors[0]:
+        for i in range(15):
+            names = ("### Left: " + states[0].model_name, "### Right: " + states[1].model_name)
+            yield names + ("",) + (disable_btn,) * 3
+            time.sleep(0.2)
+    else:
+        names = ("### Left: " + states[0].model_name, "### Right: " + states[1].model_name)
+        yield names + ("",) + (disable_btn,) * 3
+
 
 def leftvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"leftvote. ip: {request.client.host}")
-    vote_last_response(
+    logger.info(f"leftvote (anony). ip: {request.client.host}")
+    for x in vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
-    )
-    return ("",) + (disable_btn,) * 3
+    ):
+        yield x
 
 
 def rightvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"rightvote. ip: {request.client.host}")
-    vote_last_response(
+    logger.info(f"rightvote (anony). ip: {request.client.host}")
+    for x in vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
-    )
-    return ("",) + (disable_btn,) * 3
+    ):
+        yield x
 
 
 def tievote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"tievote. ip: {request.client.host}")
-    vote_last_response(
+    logger.info(f"tievote (anony). ip: {request.client.host}")
+    for x in vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
-    )
-    return ("",) + (disable_btn,) * 3
+    ):
+        yield x
 
 
 def regenerate(state0, state1, request: gr.Request):
@@ -114,7 +118,7 @@ def regenerate(state0, state1, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
-    return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 5
+    return [None] * num_models + [None] * num_models + anony_names + [""] + [disable_btn] * 5
 
 
 def share_click(state0, state1, model_selector0, model_selector1,
@@ -130,9 +134,22 @@ def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
 
-    for i in range(num_models):
-        if states[i] is None:
-            states[i] = get_default_conv_template("vicuna").copy()
+    if states[0] is None:
+        assert states[1] is None
+        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models)]
+        if len(models) > 1:
+            weights = weights / np.sum(weights)
+            model_left, model_right = np.random.choice(
+                models, size=(2,), p=weights, replace=False)
+        else:
+            model_left = model_right = models[0]
+
+        states = [
+            get_default_conv_template("vicuna").copy(),
+            get_default_conv_template("vicuna").copy(),
+        ]
+        states[0].model_name = model_left
+        states[1].model_name = model_right
 
     if len(text) <= 0:
         for i in range(num_models):
@@ -191,7 +208,7 @@ def http_bot_all(
 ):
     logger.info(f"http_bot_all. ip: {request.client.host}")
     states = [state0, state1]
-    model_selector = [model_selector0, model_selector1]
+    model_selector = [state0.model_name, state1.model_name]
     gen = []
     for i in range(num_models):
         gen.append(
@@ -259,12 +276,7 @@ The service is a research preview intended for non-commercial use only, subject 
         with gr.Row():
             for i in range(num_models):
                 with gr.Column():
-                    model_selectors[i] = gr.Dropdown(
-                        choices=models,
-                        value=models[i] if len(models) > i else "",
-                        interactive=True,
-                        show_label=False,
-                    ).style(container=False)
+                    model_selectors[i] = gr.Markdown(anony_names[i])
 
         with gr.Row():
             for i in range(num_models):
@@ -319,17 +331,17 @@ The service is a research preview intended for non-commercial use only, subject 
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn],
     )
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
@@ -338,7 +350,8 @@ The service is a research preview intended for non-commercial use only, subject 
         states + model_selectors + [temperature, max_output_tokens],
         states + chatbots + btn_list,
     )
-    clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+    clear_btn.click(clear_history, None, states + chatbots + model_selectors + [
+        textbox] + btn_list)
 
     share_js="""
 function (a, b, c, d) {
@@ -361,11 +374,6 @@ function (a, b, c, d) {
 }
 """
     share_btn.click(share_click, states + model_selectors, [], _js=share_js)
-
-    for i in range(num_models):
-        model_selectors[i].change(
-            clear_history, None, states + chatbots + [textbox] + btn_list
-        )
 
     textbox.submit(
         add_text, states + [textbox], states + chatbots + [textbox] + btn_list
