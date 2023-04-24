@@ -6,11 +6,11 @@ import asyncio
 import dataclasses
 import logging
 import json
-import os
 import time
 from typing import List, Union
 import threading
 import uuid
+import gc
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
@@ -54,6 +54,9 @@ def heart_beat_worker(controller):
 
 
 class ModelWorker:
+
+    llm_device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
     def __init__(
         self,
         controller_addr,
@@ -164,17 +167,18 @@ class ModelWorker:
     def generate_stream_gate(self, params):
         try:
             for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                args.stream_interval,
+                    self.model,
+                    self.tokenizer,
+                    params,
+                    self.device,
+                    self.context_len,
+                    args.stream_interval,
             ):
                 ret = {
                     "text": output,
                     "error_code": 0,
                 }
+                self.clear_torch_cache()
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -182,6 +186,15 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
+
+    def clear_torch_cache(self):
+        gc.collect()
+        if self.device != 'cpu':
+            device_id = "0" if torch.cuda.is_available() else None
+            CUDA_DEVICE = f"{self.llm_device}:{device_id}" if device_id else self.llm_device
+            with torch.cuda.device(CUDA_DEVICE):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
 
 app = FastAPI()
@@ -231,12 +244,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
-        "--gpus",
-        type=str,
-        default=None,
-        help="A single GPU like 1 or multiple GPUs like 0,2"
-    )
-    parser.add_argument(
         "--max-gpu-memory",
         type=str,
         help="The maximum memory per gpu. Use a string like '13Gib'",
@@ -248,11 +255,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    if args.gpus:
-        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
-            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-    
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
