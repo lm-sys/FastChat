@@ -3,6 +3,9 @@ Apply the LoRA weights on top of a base model.
 
 Usage:
 python3 -m fastchat.model.apply_lora --base ~/model_weights/llama-7b --target ~/model_weights/baize-7b --lora project-baize/baize-lora-7B
+
+Dependency:
+pip3 install git+https://github.com/huggingface/peft.git@2822398fbe896f25d4dac5e468624dc5fd65a51b
 """
 import argparse
 
