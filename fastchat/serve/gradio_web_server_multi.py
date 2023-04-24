@@ -7,6 +7,7 @@ import time
 import uuid
 
 import gradio as gr
+import numpy as np
 import requests
 
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
@@ -41,7 +42,19 @@ num_models = 2
 
 def load_demo_side_by_side(url_params):
     states = (None,) * num_models
-    dropdown_updates = (gr.Dropdown.update(visible=True),) * num_models
+
+    model_left = models[0]
+    if len(models) > 1:
+        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
+        weights = weights / np.sum(weights)
+        model_right = np.random.choice(models[1:], p=weights)
+    else:
+        model_right = model_left
+
+    dropdown_updates = (
+        gr.Dropdown.update(model_left, visible=True),
+        gr.Dropdown.update(model_right, visible=True),
+    )
 
     return (
         states
@@ -49,7 +62,7 @@ def load_demo_side_by_side(url_params):
         + (gr.Chatbot.update(visible=True),) * num_models
         + (
             gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
+            gr.Box.update(visible=True),
             gr.Row.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True),
@@ -60,7 +73,7 @@ def load_demo_side_by_side(url_params):
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
     selected = 0
-    if "compare" in url_params:
+    if "arena" in url_params or "compare" in url_params:
         selected = 1
     single_updates = load_demo_single(url_params)
     side_by_side_updates = load_demo_side_by_side(url_params)
@@ -121,6 +134,15 @@ def regenerate(state0, state1, request: gr.Request):
 def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
     return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 5
+
+
+def share_click(state0, state1, model_selector0, model_selector1,
+                request: gr.Request):
+    logger.info(f"share. ip: {request.client.host}")
+    if state0 is not None and state1 is not None:
+        vote_last_response(
+            [state0, state1], "share", [model_selector0, model_selector1], request
+        )
 
 
 def add_text(state0, state1, text, request: gr.Request):
@@ -210,23 +232,31 @@ def http_bot_all(
         if stop:
             break
 
+    for i in range(10):
+        if i % 2 == 0:
+            yield states + chatbots + [disable_btn] * 3 + list(buttons)[3:]
+        else:
+            yield states + chatbots + list(buttons)
+        time.sleep(0.2)
+
 
 def build_side_by_side_ui():
     notice_markdown = """
-# ⚔️  Compare Open Large Language Models Side-by-Side
-Chat with two models side-by-side and vote for which one is better!
+# ⚔️  Chatbot Arena ⚔️ 
+- Chat with state-of-the-art open models **side-by-side** and vote for which one is better!
+- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
 The demo works better on desktop devices with a wide screen.
 
 ### Choose two models to chat with
 | | |
 | ---- | ---- |
-| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. |
-| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open LLM by Databricks. |
-| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model 开源双语对话语言模型 | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
-| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models. |
+| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a dialogue model for academic research by BAIR |
+| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone by LAION. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open large language model by Databricks. |
+| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model by Tsinghua University | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
+| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models by Meta. |
 """
 
     learn_more_markdown = """
@@ -240,27 +270,29 @@ The service is a research preview intended for non-commercial use only, subject 
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Row():
-        for i in range(num_models):
-            with gr.Column():
-                model_selectors[i] = gr.Dropdown(
-                    choices=models,
-                    value=models[i] if len(models) > i else "",
-                    interactive=True,
-                    show_label=False,
-                ).style(container=False)
+    with gr.Box(elem_id="share-region"):
+        with gr.Row():
+            for i in range(num_models):
+                with gr.Column():
+                    model_selectors[i] = gr.Dropdown(
+                        choices=models,
+                        value=models[i] if len(models) > i else "",
+                        interactive=True,
+                        show_label=False,
+                    ).style(container=False)
 
-    with gr.Row():
-        for i in range(num_models):
-            with gr.Column():
-                chatbots[i] = grChatbot(elem_id="chatbot", visible=False).style(
-                    height=550
-                )
+        with gr.Row():
+            for i in range(num_models):
+                label = "Left" if i == 0 else "Right"
+                with gr.Column():
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
+                        visible=False).style(height=550)
 
-    with gr.Row(visible=False) as button_row:
-        leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
-        tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-        rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
+        with gr.Box() as button_row:
+            with gr.Row():
+                leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
+                tie_btn = gr.Button(value="🤝 Tie", interactive=False)
+                rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):
@@ -275,6 +307,7 @@ The service is a research preview intended for non-commercial use only, subject 
     with gr.Row() as button_row2:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        share_btn = gr.Button(value="📷  Share")
 
     with gr.Accordion("Parameters", open=False, visible=True) as parameter_row:
         temperature = gr.Slider(
@@ -321,6 +354,28 @@ The service is a research preview intended for non-commercial use only, subject 
         states + chatbots + btn_list,
     )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+
+    share_js="""
+function (a, b, c, d) {
+    const captureElement = document.querySelector('#share-region');
+    html2canvas(captureElement)
+        .then(canvas => {
+            canvas.style.display = 'none'
+            document.body.appendChild(canvas)
+            return canvas
+        })
+        .then(canvas => {
+            const image = canvas.toDataURL('image/png')
+            const a = document.createElement('a')
+            a.setAttribute('download', 'chatbot-arena.png')
+            a.setAttribute('href', image)
+            a.click()
+            canvas.remove()
+        });
+    return [a, b, c, d];
+}
+"""
+    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
     for i in range(num_models):
         model_selectors[i].change(
@@ -381,7 +436,7 @@ def build_demo():
                     a_parameter_row,
                 ]
 
-            with gr.Tab("Side-by-Side", id=1):
+            with gr.Tab("Chatbot Arena", id=1):
                 (
                     b_states,
                     b_model_selectors,
