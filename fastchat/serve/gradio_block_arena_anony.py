@@ -24,7 +24,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_models = 2
 enable_moderation = False
-anony_names = ["### Left: Model A ", "### Right: Model B"]
+anony_names = ["### Model A", "### Model B"]
 models = []
 
 def set_global_vars_anony(enable_moderation_):
@@ -67,13 +67,13 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         }
         fout.write(json.dumps(data) + "\n")
 
-    if "Model" in model_selectors[0]:
+    if ":" not in model_selectors[0]:
         for i in range(15):
-            names = ("### Left: " + states[0].model_name, "### Right: " + states[1].model_name)
+            names = ("### Model A: " + states[0].model_name, "### Model B: " + states[1].model_name)
             yield names + ("",) + (disable_btn,) * 3
             time.sleep(0.2)
     else:
-        names = ("### Left: " + states[0].model_name, "### Right: " + states[1].model_name)
+        names = ("### Model A: " + states[0].model_name, "### Model B: " + states[1].model_name)
         yield names + ("",) + (disable_btn,) * 3
 
 
@@ -280,16 +280,16 @@ The service is a research preview intended for non-commercial use only, subject 
 
         with gr.Row():
             for i in range(num_models):
-                label = "Left" if i == 0 else "Right"
+                label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
                         visible=False).style(height=550)
 
         with gr.Box() as button_row:
             with gr.Row():
-                leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
+                leftvote_btn = gr.Button(value="👈 A is better", interactive=False)
                 tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-                rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
+                rightvote_btn = gr.Button(value="👉 B is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):

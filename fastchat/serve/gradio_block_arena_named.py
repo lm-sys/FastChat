@@ -268,16 +268,16 @@ The service is a research preview intended for non-commercial use only, subject 
 
         with gr.Row():
             for i in range(num_models):
-                label = "Left" if i == 0 else "Right"
+                label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
                         visible=False).style(height=550)
 
         with gr.Box() as button_row:
             with gr.Row():
-                leftvote_btn = gr.Button(value="👈 Left is better", interactive=False)
+                leftvote_btn = gr.Button(value="👈 A is better", interactive=False)
                 tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-                rightvote_btn = gr.Button(value="👉 Right is better", interactive=False)
+                rightvote_btn = gr.Button(value="👉 B is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):
