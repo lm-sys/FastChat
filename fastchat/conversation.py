@@ -101,7 +101,7 @@ class Conversation:
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
-    def append_message(self, role, message, is_prompt):
+    def append_message(self, role, message, is_prompt=True):
         self.messages.append([role, message, is_prompt])
 
     def to_gradio_chatbot(self):
