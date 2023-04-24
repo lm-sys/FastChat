@@ -5,12 +5,13 @@ torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train_mem.py \
     --output_dir output_13b \
     --num_train_epochs 3 \
     --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
+    --per_device_eval_batch_size 32 \
     --gradient_accumulation_steps 4 \
     --evaluation_strategy "steps" \
-    --eval_steps 1200 \
+    --eval_steps 1500 \
     --save_strategy "steps" \
-    --save_steps 1200 \
+    --save_steps 1500 \
+    --save_total_limit 8 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.04 \
