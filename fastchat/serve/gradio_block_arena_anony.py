@@ -245,7 +245,7 @@ Rules:
 - Chat with two anonymous models side-by-side and vote for which one is better!
 - The names of the models will be revealed after your vote.
 - You can continue chating and voting or click "Clear history" to start a new round.
-- A leaderboard will be avaiable soon.
+- A leaderboard will be available soon.
 - [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
