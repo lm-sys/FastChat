@@ -16,7 +16,7 @@ from huggingface_hub import snapshot_download
 import torch
 from torch import nn
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+from transformers import LlamaTokenizer, LlamaForCausalLM, LlamaConfig
 
 
 GB = 1 << 30
@@ -68,8 +68,8 @@ def split_files(model_path, tmp_path, split_size):
 
 
 def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
-    base_config = AutoConfig.from_pretrained(base_model_path)
+    base_tokenizer = LlamaTokenizer.from_pretrained(base_model_path, use_fast=False)
+    base_config = LlamaConfig.from_pretrained(base_model_path)
 
     if os.path.exists(target_model_path):
         shutil.rmtree(target_model_path)
@@ -124,13 +124,13 @@ def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
 
 def apply_delta(base_model_path, target_model_path, delta_path):
     print(f"Loading the base model from {base_model_path}")
-    base = AutoModelForCausalLM.from_pretrained(
+    base = LlamaForCausalLM.from_pretrained(
         base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
     )
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
+    base_tokenizer = LlamaTokenizer.from_pretrained(base_model_path, use_fast=False)
 
     print(f"Loading the delta from {delta_path}")
-    delta = AutoModelForCausalLM.from_pretrained(
+    delta = LlamaForCausalLM.from_pretrained(
         delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
     )
 
