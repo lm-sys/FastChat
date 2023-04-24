@@ -24,7 +24,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_models = 2
 enable_moderation = False
-anony_names = ["### Model A", "### Model B"]
+anony_names = ["", ""]
 models = []
 
 def set_global_vars_anony(enable_moderation_):
@@ -287,9 +287,9 @@ The service is a research preview intended for non-commercial use only, subject 
 
         with gr.Box() as button_row:
             with gr.Row():
-                leftvote_btn = gr.Button(value="👈 A is better", interactive=False)
-                tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-                rightvote_btn = gr.Button(value="👉 B is better", interactive=False)
+                leftvote_btn = gr.Button(value="👈  A is better", interactive=False)
+                tie_btn = gr.Button(value="🤝  Tie", interactive=False)
+                rightvote_btn = gr.Button(value="👉  B is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):

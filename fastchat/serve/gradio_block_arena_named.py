@@ -275,9 +275,9 @@ The service is a research preview intended for non-commercial use only, subject 
 
         with gr.Box() as button_row:
             with gr.Row():
-                leftvote_btn = gr.Button(value="👈 A is better", interactive=False)
-                tie_btn = gr.Button(value="🤝 Tie", interactive=False)
-                rightvote_btn = gr.Button(value="👉 B is better", interactive=False)
+                leftvote_btn = gr.Button(value="👈  A is better", interactive=False)
+                tie_btn = gr.Button(value="🤝  Tie", interactive=False)
+                rightvote_btn = gr.Button(value="👉  B is better", interactive=False)
 
     with gr.Row():
         with gr.Column(scale=20):
