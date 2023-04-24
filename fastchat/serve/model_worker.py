@@ -1,10 +1,10 @@
 """
 A model worker executes the model.
 """
-import os
 import argparse
 import asyncio
 import dataclasses
+import os
 import logging
 import json
 import time
