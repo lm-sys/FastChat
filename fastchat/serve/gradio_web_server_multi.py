@@ -7,6 +7,7 @@ import time
 import uuid
 
 import gradio as gr
+import numpy as np
 import requests
 
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
@@ -41,7 +42,19 @@ num_models = 2
 
 def load_demo_side_by_side(url_params):
     states = (None,) * num_models
-    dropdown_updates = (gr.Dropdown.update(visible=True),) * num_models
+
+    model_left = models[0]
+    if len(models) > 1:
+        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
+        weights = weights / np.sum(weights)
+        model_right = np.random.choice(models[1:], p=weights)
+    else:
+        model_right = model_left
+
+    dropdown_updates = (
+        gr.Dropdown.update(model_left, visible=True),
+        gr.Dropdown.update(model_right, visible=True),
+    )
 
     return (
         states
@@ -231,7 +244,7 @@ def build_side_by_side_ui():
     notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ 
 - Chat with state-of-the-art open models **side-by-side** and vote for which one is better!
-- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
+- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
@@ -240,10 +253,10 @@ The demo works better on desktop devices with a wide screen.
 ### Choose two models to chat with
 | | |
 | ---- | ---- |
-| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. |
-| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open LLM by Databricks. |
-| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model 开源双语对话语言模型 | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
-| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models. |
+| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a dialogue model for academic research by BAIR |
+| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone by LAION. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open large language model by Databricks. |
+| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model by Tsinghua University | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
+| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models by Meta. |
 """
 
     learn_more_markdown = """
@@ -270,10 +283,10 @@ The service is a research preview intended for non-commercial use only, subject 
 
         with gr.Row():
             for i in range(num_models):
+                label = "Left" if i == 0 else "Right"
                 with gr.Column():
-                    chatbots[i] = grChatbot(elem_id=f"chatbot{i}", visible=False).style(
-                        height=550
-                    )
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
+                        visible=False).style(height=550)
 
         with gr.Box() as button_row:
             with gr.Row():
