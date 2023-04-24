@@ -65,6 +65,7 @@ class ModelWorker:
         num_gpus,
         max_gpu_memory,
         load_8bit=False,
+        cpu_offloading=False,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -76,7 +77,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
-            model_path, device, num_gpus, max_gpu_memory, load_8bit
+            model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
 
         if hasattr(self.model.config, "max_sequence_length"):
@@ -235,6 +236,9 @@ if __name__ == "__main__":
         help="The maximum memory per gpu. Use a string like '13Gib'",
     )
     parser.add_argument("--load-8bit", action="store_true")
+    parser.add_argument(
+        "--cpu-offloading", action="store_true", help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
+    )
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -252,5 +256,6 @@ if __name__ == "__main__":
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
