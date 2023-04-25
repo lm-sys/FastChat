@@ -7,16 +7,17 @@ Usage: python3 -m fastchat.data.split_long_conversation \
     --model-name-or-path $<model-name>
 """
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import json
 from typing import Dict, Sequence, Optional
 
 import transformers
-import tqdm
+from tqdm import tqdm
 
 from fastchat import conversation as conversation_lib
 
 
-def split_sample(sample, start_idx, end_idx):
+def make_sample(sample, start_idx, end_idx):
     assert (end_idx - start_idx) % 2 == 0
     return {
         "id": sample["id"] + "_" + str(start_idx),
@@ -24,35 +25,52 @@ def split_sample(sample, start_idx, end_idx):
     }
 
 
-def split_contents(content, begin, end, tokenizer, max_length):
+tokenizer = max_length = None
+
+
+def split_one_sample(sample):
+    tokenized_lens = []
+    conversations = sample["conversations"]
+    conversations = conversations[: len(conversations) // 2 * 2]
+    for c in conversations:
+        length = len(tokenizer(c["value"]).input_ids) + 6
+        tokenized_lens.append(length)
+
+    start_idx = 0
+    cur_len = 0
+
+    if len(conversations) % 2 != 0 or len(conversations) < 2:
+        return []
+
+    new_samples = []
+    for i in range(0, len(conversations), 2):
+        tmp_len = tokenized_lens[i] + tokenized_lens[i + 1]
+        if cur_len + tmp_len > max_length:
+            new_samples.append(make_sample(sample, start_idx, i))
+            start_idx = i
+            cur_len = 0
+        elif i == len(conversations) - 2:
+            new_samples.append(make_sample(sample, start_idx, i + 2))
+
+        cur_len += tmp_len
+
+    return new_samples
+
+
+def split_all(content, begin, end, tokenizer_, max_length_):
     """
     Keep the maximum round of conversations within the max token length constraint
     """
+    global tokenizer, max_length
+    tokenizer = tokenizer_
+    max_length = max_length_
+
     content = content[begin:end]
     new_content = []
 
-    for sample in tqdm.tqdm(content):
-        tokenized_lens = []
-        conversations = sample["conversations"]
-        conversations = conversations[: len(conversations) // 2 * 2]
-        for c in conversations:
-            length = len(tokenizer(c["value"]).input_ids) + 5
-            tokenized_lens.append(length)
-
-        start_idx = 0
-        cur_len = 0
-        sample
-        assert len(conversations) % 2 == 0, f"id: {sample['id']}"
-        for i in range(0, len(conversations), 2):
-            tmp_len = tokenized_lens[i] + tokenized_lens[i + 1]
-            if cur_len + tmp_len > max_length:
-                new_content.append(split_sample(sample, start_idx, i))
-                start_idx = i
-                cur_len = 0
-            elif i == len(conversations) - 2:
-                new_content.append(split_sample(sample, start_idx, i + 2))
-
-            cur_len += tmp_len
+    with ProcessPoolExecutor() as executor:
+        for result in tqdm(executor.map(split_one_sample, content), total=len(content)):
+            new_content.extend(result)
 
     return new_content
 
@@ -84,9 +102,7 @@ def main(args):
         padding_side="right",
         use_fast=False,
     )
-    new_content = split_contents(
-        content, args.begin, args.end, tokenizer, args.max_length
-    )
+    new_content = split_all(content, args.begin, args.end, tokenizer, args.max_length)
     new_content = filter_invalid_roles(new_content)
 
     print(f"total: {len(content)}, new: {len(new_content)}")
