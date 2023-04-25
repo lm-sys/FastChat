@@ -35,7 +35,7 @@ disable_btn = gr.Button.update(interactive=False)
 
 controller_url = None
 enable_moderation = False
-models = []
+
 
 priority = {
     "vicuna-13b": "aaa",
@@ -47,11 +47,10 @@ priority = {
 }
 
 
-def set_global_vars(controller_url_, enable_moderation_, models_):
-    global controller_url, enable_moderation, models
+def set_global_vars(controller_url_, enable_moderation_):
+    global controller_url, enable_moderation
     controller_url = controller_url_
     enable_moderation = enable_moderation_
-    models = models_
 
 
 def get_conv_log_filename():
@@ -80,7 +79,7 @@ function() {
 """
 
 
-def load_demo_single(url_params):
+def load_demo_single(models, url_params):
     dropdown_update = gr.Dropdown.update(visible=True)
     if "model" in url_params:
         model = url_params["model"]
@@ -101,7 +100,7 @@ def load_demo_single(url_params):
 
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
-    return load_demo_single(url_params)
+    return load_demo_single(models, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -199,6 +198,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # First round of conversation
         new_state = get_default_conv_template(model_name).copy()
         new_state.conv_id = uuid.uuid4().hex
+        new_state.model_name = state.model_name or model_selector
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
@@ -324,7 +324,7 @@ pre {
 )
 
 
-def build_single_model_ui():
+def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[Evaluation]](https://vicuna.lmsys.org/eval/)
@@ -442,7 +442,7 @@ The service is a research preview intended for non-commercial use only, subject 
     return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
 
 
-def build_demo():
+def build_demo(models):
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Base(),
@@ -458,7 +458,7 @@ def build_demo():
             send_btn,
             button_row,
             parameter_row,
-        ) = build_single_model_ui()
+        ) = build_single_model_ui(models)
 
         if args.model_list_mode == "once":
             demo.load(
@@ -497,11 +497,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
-    set_global_vars(args.controller_url, args.moderate, models)
 
     logger.info(args)
-    demo = build_demo()
+    demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(

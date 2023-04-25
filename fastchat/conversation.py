@@ -39,9 +39,11 @@ class Conversation:
     sep: str = "###"
     sep2: str = None
 
-    # Used for gradio server
-    skip_next: bool = False
+    # Used for the state in the gradio servers.
+    # TODO(lmzheng): refactor this
     conv_id: Any = None
+    skip_next: bool = False
+    model_name: str = None
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
@@ -113,6 +115,7 @@ class Conversation:
             sep=self.sep,
             sep2=self.sep2,
             conv_id=self.conv_id,
+            model_name=self.model_name,
         )
 
     def dict(self):
@@ -124,6 +127,7 @@ class Conversation:
             "sep": self.sep,
             "sep2": self.sep2,
             "conv_id": self.conv_id,
+            "model_name": self.model_name,
         }
 
 
