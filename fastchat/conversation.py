@@ -71,7 +71,7 @@ class Conversation:
             for i, (role, message, is_prompt) in enumerate(self.messages):
                 if not is_prompt:
                     continue
-                if message and is_prompt:
+                if message:
                     ret += role + ":\n" + message + seps[i % 2]
                     if i % 2 == 1:
                         ret += "\n\n"
