@@ -15,7 +15,6 @@ from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
 
-
 def raise_warning_for_old_weights(model_path, model):
     if "vicuna" in model_path.lower():
         try:
@@ -46,6 +45,7 @@ def compute_skip_echo_len(model_name, conv, prompt):
         skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
     return skip_echo_len
 
+
 def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
                load_8bit=False, debug=False):
     if device == "cpu":
@@ -69,6 +69,8 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
         raise ValueError(f"Invalid device: {device}")
     
     if load_8bit:
+        if num_gpus > 1:
+            raise ValueError("8-bit quantization is not supported for multi-gpu inference.")
         return load_compress_model(model_path=model_path,device=device)
 
     if "chatglm" in model_path:

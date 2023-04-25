@@ -2,8 +2,8 @@ import dataclasses
 import glob
 import os
 import gc
-from tqdm import tqdm
 
+from tqdm import tqdm
 import torch
 from torch import Tensor
 import torch.nn as nn
@@ -95,11 +95,10 @@ def load_compress_model(model_path, device):
         model = AutoModelForCausalLM.from_config(config)
         linear_weights = get_compressed_list(model)
 
-
     compressed_state_dict = {}
 
     for file in files:
-        tmp_state_dict = torch.load(file, map_location="cpu")
+        tmp_state_dict = torch.load(file)
         for name in tqdm(tmp_state_dict):
             if name in linear_weights:
                 tensor = tmp_state_dict[name].to(device).data
