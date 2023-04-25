@@ -70,8 +70,9 @@ def load_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
     
     if load_8bit:
         if num_gpus > 1:
-            raise ValueError("8-bit quantization is not supported for multi-gpu inference.")
-        return load_compress_model(model_path=model_path,device=device)
+            warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
+        else:
+            return load_compress_model(model_path=model_path,device=device)
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
