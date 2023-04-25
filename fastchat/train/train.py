@@ -12,6 +12,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import warnings
 
 import copy
 from dataclasses import dataclass, field
@@ -24,6 +25,8 @@ from torch.utils.data import Dataset
 import transformers
 from transformers import Trainer
 from transformers.trainer_pt_utils import LabelSmoother
+from torch.distributed.fsdp.api import ShardedOptimStateDictConfig, ShardedStateDictConfig, StateDictType
+import torch.distributed.fsdp.fully_sharded_data_parallel as FSDP
 
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
@@ -237,7 +240,18 @@ def train():
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
-
+    
+    # Hao: fix the FSDP save error
+    if int(torch.__version__[0]) < 2:
+        warnings.warn("You might run out of GPU memory when you call `safe_save_model_for_hf_trainer()` "
+                      "at the end of your training if you are running on a GPU with less than 40GB memory. "
+                      "Please refer to https://github.com/tatsu-lab/stanford_alpaca/issues/81 about how to "
+                      "work around it.")
+    else:
+        FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+                                                          StateDictType.SHARDED_STATE_DICT,
+                                                          ShardedStateDictConfig(offload_to_cpu=True),
+                                                          ShardedOptimStateDictConfig(offload_to_cpu=True))
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
