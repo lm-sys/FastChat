@@ -277,7 +277,8 @@ The demo works better on desktop devices with a wide screen.
     model_selectors = [None] * num_models
     chatbots = [None] * num_models
 
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    notice = gr.HTML(notice_html, elem_id="notice_html")
+    leaderboard = gr.HTML(leaderboard_html)
 
     with gr.Box(elem_id="share-region-anony"):
         with gr.Row():
