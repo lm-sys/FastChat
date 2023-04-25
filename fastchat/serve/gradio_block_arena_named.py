@@ -104,7 +104,7 @@ def tievote_last_response(
 
 
 def regenerate(state0, state1, request: gr.Request):
-    logger.info(f"regenerate. ip: {request.client.host}")
+    logger.info(f"regenerate (named). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_models):
         states[i].messages[-1][-1] = None
@@ -113,13 +113,13 @@ def regenerate(state0, state1, request: gr.Request):
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history. ip: {request.client.host}")
+    logger.info(f"clear_history (named). ip: {request.client.host}")
     return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 5
 
 
 def share_click(state0, state1, model_selector0, model_selector1,
                 request: gr.Request):
-    logger.info(f"share. ip: {request.client.host}")
+    logger.info(f"share (named). ip: {request.client.host}")
     if state0 is not None and state1 is not None:
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
@@ -127,7 +127,7 @@ def share_click(state0, state1, model_selector0, model_selector1,
 
 
 def add_text(state0, state1, text, request: gr.Request):
-    logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
+    logger.info(f"add_text (named). ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
 
     for i in range(num_models):
@@ -150,7 +150,7 @@ def add_text(state0, state1, text, request: gr.Request):
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
-            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
+            logger.info(f"violate moderation (named). ip: {request.client.host}. text: {text}")
             for i in range(num_models):
                 states[i].skip_next = True
             return (
@@ -189,7 +189,7 @@ def http_bot_all(
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"http_bot_all. ip: {request.client.host}")
+    logger.info(f"http_bot_all (named). ip: {request.client.host}")
     states = [state0, state1]
     model_selector = [model_selector0, model_selector1]
     gen = []

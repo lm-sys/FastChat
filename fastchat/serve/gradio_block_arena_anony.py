@@ -108,7 +108,7 @@ def tievote_last_response(
 
 
 def regenerate(state0, state1, request: gr.Request):
-    logger.info(f"regenerate. ip: {request.client.host}")
+    logger.info(f"regenerate (anony). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_models):
         states[i].messages[-1][-1] = None
@@ -117,13 +117,13 @@ def regenerate(state0, state1, request: gr.Request):
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history. ip: {request.client.host}")
+    logger.info(f"clear_history (anony). ip: {request.client.host}")
     return [None] * num_models + [None] * num_models + anony_names + [""] + [disable_btn] * 5
 
 
 def share_click(state0, state1, model_selector0, model_selector1,
                 request: gr.Request):
-    logger.info(f"share. ip: {request.client.host}")
+    logger.info(f"share (anony). ip: {request.client.host}")
     if state0 is not None and state1 is not None:
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
@@ -131,7 +131,7 @@ def share_click(state0, state1, model_selector0, model_selector1,
 
 
 def add_text(state0, state1, text, request: gr.Request):
-    logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
+    logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
 
     if states[0] is None:
@@ -167,7 +167,7 @@ def add_text(state0, state1, text, request: gr.Request):
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
-            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
+            logger.info(f"violate moderation (anony). ip: {request.client.host}. text: {text}")
             for i in range(num_models):
                 states[i].skip_next = True
             return (
@@ -252,7 +252,7 @@ Rules:
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
 The demo works better on desktop devices with a wide screen.
 
-### The Participated Models
+### The participated models
 | | |
 | ---- | ---- |
 | [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a dialogue model for academic research by BAIR |
