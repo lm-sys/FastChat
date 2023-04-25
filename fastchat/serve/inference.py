@@ -10,7 +10,7 @@ except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
 
 from fastchat.conversation import conv_templates, get_default_conv_template, SeparatorStyle
-from fastchat.serve.compression import  load_compress_model
+from fastchat.serve.compression import load_compress_model
 from fastchat.serve.monkey_patch_non_inplace import replace_llama_attn_with_non_inplace_operations
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
