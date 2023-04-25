@@ -290,4 +290,5 @@ def compute_skip_echo_len(model_name, conv, prompt):
 
 
 if __name__ == "__main__":
+    default_conversation = conv_templates["vicuna_v1.1"]
     print(default_conversation.get_prompt())
