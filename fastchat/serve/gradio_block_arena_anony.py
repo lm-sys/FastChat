@@ -206,7 +206,7 @@ def http_bot_all(
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"http_bot_all. ip: {request.client.host}")
+    logger.info(f"http_bot_all (anony). ip: {request.client.host}")
     states = [state0, state1]
     model_selector = [state0.model_name, state1.model_name]
     gen = []
