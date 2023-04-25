@@ -39,17 +39,20 @@ if __name__ == "__main__":
         "table/answer/answer_vicuna-13b.jsonl", key="question_id"
     )
 
+    #REVIEW_BASE = "vicuna-13b-20230322-clean-lang"
+    REVIEW_BASE = "vicuna-13b-20230322-new-hp-fp16"
+    #REVIEW_BASE = "vicuna-7b-20230322-fp16"
     review_alpaca = read_jsonl(
-        "table/review/review_alpaca-13b_vicuna-13b.jsonl", key="question_id"
+        f"table/review/{REVIEW_BASE}/review_alpaca-13b_{REVIEW_BASE}.jsonl", key="question_id"
     )
     review_bard = read_jsonl(
-        "table/review/review_bard_vicuna-13b.jsonl", key="question_id"
+        f"table/review/{REVIEW_BASE}/review_bard_{REVIEW_BASE}.jsonl", key="question_id"
     )
     review_gpt35 = read_jsonl(
-        "table/review/review_gpt35_vicuna-13b.jsonl", key="question_id"
+        f"table/review/{REVIEW_BASE}/review_gpt35_{REVIEW_BASE}.jsonl", key="question_id"
     )
     review_llama = read_jsonl(
-        "table/review/review_llama-13b_vicuna-13b.jsonl", key="question_id"
+        f"table/review/{REVIEW_BASE}/review_llama_{REVIEW_BASE}.jsonl", key="question_id"
     )
 
     records = []
