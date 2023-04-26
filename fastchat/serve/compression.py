@@ -1,19 +1,19 @@
 import dataclasses
+import gc
 import glob
 import os
-import gc
 
-from tqdm import tqdm
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from accelerate.utils import set_module_tensor_to_device
 import torch
 from torch import Tensor
 import torch.nn as nn
 from torch.nn import functional as F
+from tqdm import tqdm
 try:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
 except ImportError:
     from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
-from accelerate import init_empty_weights, load_checkpoint_and_dispatch
-from accelerate.utils import set_module_tensor_to_device
 
 
 @dataclasses.dataclass
@@ -45,7 +45,7 @@ class CLinear(nn.Module):
 
     def forward(self, input: Tensor) -> Tensor:
         weight = decompress(self.weight, default_compression_config)
-        return F.linear(input.half(), weight, self.bias)
+        return F.linear(input.to(weight.dtype), weight, self.bias)
 
 
 def compress_module(module, target_device):
