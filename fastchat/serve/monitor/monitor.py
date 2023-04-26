@@ -1,5 +1,5 @@
-from fastchat.serve.logstats import print_query_rate
-from fastchat.serve.mle_rating import print_ratings, print_rating_algo
+from fastchat.serve.monitor.logstats import print_query_rate
+from fastchat.serve.monitor.mle_rating import print_ratings, print_rating_algo
 
 LOG_DIR = "/home/Ying/arena_logs"
 MARKDOWN = "leaderboard.md"

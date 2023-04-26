@@ -13,6 +13,8 @@ log_dir = "/Users/Ying/work/project/chatbot/arena_logs"
 elo_k = 5
 BOOTSTRAP_ROUNDS = 100
 
+# TODO compute likelihood
+
 
 def unique(models: List):
     return tuple(sorted(models))
