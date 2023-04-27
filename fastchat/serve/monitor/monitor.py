@@ -7,7 +7,8 @@ import time
 
 import gradio as gr
 
-from fastchat.serve.monitor.basic_stats import report_basic_stats
+from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
+from fastchat.serve.monitor.elo_rating_linear_update import report_ratings_linear_update
 from fastchat.utils import build_logger, get_window_url_params_js
 
 logger = build_logger("monitor", "monitor.log")
@@ -17,42 +18,39 @@ basic_stats_md = "Loading ..."
 leaderboard_md = "Loading ..."
 
 
-def get_log_files():
-    dates = []
-    for month in [4]:
-        for day in range(24, 32):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-    num_servers = 10
-
-    filenames = []
-    for d in dates:
-        for i in range(num_servers):
-            name = f"/home/ubuntu/fastchat_logs/server{i}/{d}-conv.json"
-            if os.path.exists(name):
-                filenames.append(name)
-
-    return filenames
-
-
 def update_md_content():
     global basic_stats_md, leaderboard_md
     log_files = get_log_files()
 
     # Basic stats
-    basic_stats_md = "Updating..."
-    basic_stats = report_basic_stats(log_files)
-    basic_stats_tmp = ""
-    basic_stats_tmp += "### Action Histogram\n"
-    basic_stats_tmp += basic_stats["action_hist_md"] + "\n"
-    basic_stats_tmp += "### Anony. Vote Histogram\n"
-    basic_stats_tmp += basic_stats["anony_vote_hist_md"] + "\n"
-    basic_stats_tmp += "### Model Call Histogram\n"
-    basic_stats_tmp += basic_stats["model_hist_md"] + "\n"
-    basic_stats_tmp += "### Model Call (Last 24 Hours)\n"
-    basic_stats_tmp += basic_stats["num_chats_last_24_hours"] + "\n"
+    if False:
+        basic_stats_md = "Updating ..."
+        basic_stats = report_basic_stats(log_files)
+        basic_stats_tmp = ""
+        basic_stats_tmp += "### Action Histogram\n"
+        basic_stats_tmp += basic_stats["action_hist_md"] + "\n"
+        basic_stats_tmp += "### Anony. Vote Histogram\n"
+        basic_stats_tmp += basic_stats["anony_vote_hist_md"] + "\n"
+        basic_stats_tmp += "### Model Call Histogram\n"
+        basic_stats_tmp += basic_stats["model_hist_md"] + "\n"
+        basic_stats_tmp += "### Model Call (Last 24 Hours)\n"
+        basic_stats_tmp += basic_stats["num_chats_last_24_hours"] + "\n"
+        date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y-%m-%d %H:%M:%S %Z")
+        basic_stats_tmp += f"\n\nLast update: {date}"
+        basic_stats_md = basic_stats_tmp
+
+    # Leaderboard
+    leaderboard_md = "Updating ..."
+    leader_stats = report_ratings_linear_update(log_files)
+    leaderboard_tmp = ""
+    leaderboard_tmp += "### Leaderboard\n"
+    leaderboard_tmp += leader_stats["anony_rating_md"] + "\n"
+    leaderboard_tmp += f"\nlog likelihood: {leader_stats['anony_log_likelihood']:.3f}\n"
+    leaderboard_tmp += "### Battle Coverage\n"
+    leaderboard_tmp += leader_stats["anony_cov_md"] + "\n"
     date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y-%m-%d %H:%M:%S %Z")
-    basic_stats_tmp += f"\n\nLast update: {date}"
-    basic_stats_md = basic_stats_tmp
+    leaderboard_tmp += f"\n\nLast update: {date}"
+    leaderboard_md = leaderboard_tmp
 
 
 def update_worker(interval):

@@ -29,8 +29,7 @@ def get_log_files():
 def load_log_files(log_files):
     dfs = []
     for filename in tqdm(log_files):
-        with open(filename, "r") as f:
-            dfs.append(pd.DataFrame([json.loads(l) for l in f]))
+        dfs.append(pd.read_json(filename, lines=True))
     df = pd.concat(dfs).reset_index(drop=True)
     return df
 

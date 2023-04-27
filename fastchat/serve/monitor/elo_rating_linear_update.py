@@ -1,12 +1,17 @@
 import argparse
+from collections import defaultdict
 import json
 import math
-import numpy as np
 import os
+from typing import List, Dict
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
-from typing import List, Dict
+
+from fastchat.serve.monitor.basic_stats import get_log_files
+
 
 MODELS = ["vicuna-13b", "alpaca-13b", "dolly-v2-12b", "oasst-pythia-12b",
           "koala-13b", "llama-13b", "stablelm-tuned-alpha-7b", "chatglm-6b"]
@@ -68,23 +73,28 @@ def collect_data(log_files):
         if not models[0] in MODELS:
             models = models2
             anonymous.append((models, x["type"]))
-            if unique(models) not in battle_cnt:
-                battle_cnt[unique(models)] = 0
-            battle_cnt[unique(models)] += 1
+            um = unique(models)
+            if um not in battle_cnt:
+                battle_cnt[um] = 0
+            battle_cnt[um] += 1
+
         battles.append((models, x["type"]))
-    print("number of model name inconsistent rounds", inconsist)
+    print("#inconsistent model name rounds", inconsist)
     print("anony. battle pair counts", sorted(battle_cnt.values()))
-    print("number of occurred pairs", len(battle_cnt))
+    print("#battles", len(battle_cnt))
 
     ub = min(battle_cnt.values()) * 1.5
     normalized = []
     cur_cnt = {}
+    perm = np.random.permutation(len(anonymous))
+    anonymous = [anonymous[i] for i in perm]
     for models, vote in anonymous:
-        if unique(models) not in cur_cnt:
-            cur_cnt[unique(models)] = 0
-        if cur_cnt[unique(models)] < ub:
+        um = unique(models)
+        if um not in cur_cnt:
+            cur_cnt[um] = 0
+        if cur_cnt[um] < ub:
             normalized.append((models, vote))
-            cur_cnt[unique(models)] += 1
+            cur_cnt[um] += 1
 
     print("len(battles), len(anonymous), len(normalized):",
           len(battles), len(anonymous), len(normalized))
@@ -156,69 +166,80 @@ def plot_bootstrap_scores(df, battles, title):
     bars = bars.rename(columns={"index": "model"})
     bars['rank'] = range(1, len(bars) + 1)
 
-    likelihood = get_likelihood(bars[["model", "score"]], battles)
+    llh = get_likelihood(bars[["model", "score"]], battles)
 
-    print("=" * 15, f"Elo Ratings (linear update), likelihood: {likelihood:.3f}", "=" * 15)
-    print(bars[["rank", "model", "score", "lower", "upper", "error_y_minus", "error_y"]])
+    indices = ["score", "lower", "upper"]
+    bars[indices] = bars[indices].astype(int)
 
-    ret_md = f"## Elo Ratings (linear update), likelihood: {likelihood:.3f}\n"
-    ret_md += bars[["rank", "model", "score", "lower", "upper", "error_y_minus", "error_y"]
-        ].to_markdown(index=False) + "\n"
+    ret_md = bars[["rank", "model", "score", "lower", "upper"]
+        ].to_markdown(index=False, tablefmt="github")
     #px.scatter(bars, x="model", y="score", error_y="error_y",
     #          error_y_minus="error_y_minus", title=title, height = 600)
-    return ret_md
+    return {
+        "log_likelihood": llh,
+        "md": ret_md,
+    }
 
 
-def print_ratings_linear_update(log_files):
+def compute_coverage(rows):
+    pairs = defaultdict(lambda: defaultdict(lambda :0))
+    names = set()
+    for models, _ in rows:
+        models = unique(models)
+        pairs[models[0]][models[1]] += 1
+        names.add(models[0])
+        names.add(models[1])
+
+    names = sorted(names)
+    data = {
+        left: [pairs[left].get(right, "") for right in names]
+        for left in names
+    }
+
+    df = pd.DataFrame(data, index=names).reset_index()
+    df = df.rename(columns={"index": "model"})
+    return df
+
+
+def report_ratings_linear_update(log_files):
     battles, anonymous, normalized = collect_data(log_files)
 
-    # get ratings
+    # Plot coverage
+    battles_cov = compute_coverage(battles)
+    battles_cov_md = battles_cov.to_markdown(index=False, tablefmt="github")
+
+    anony_cov = compute_coverage(anonymous)
+    anony_cov_md = anony_cov.to_markdown(index=False, tablefmt="github")
+
+    # Get ratings
     rating = [None] * 3
     for i, subset in enumerate([battles, anonymous, normalized]):
         rating[i] = compute_elo(subset)
-
         print("=" * 30, len(subset), ["battles", "anonymous", "normalized"][i], "=" * 30)
         leaderboard = sorted(rating[i].items(), key=lambda item: -item [1])
         for x in leaderboard:
             print(f"{x[0]}: {x[1]:.2f}")
 
-    # get bootstrap result
+    # Get bootstrap result
     ratings = get_bootstrap_result(anonymous)
-    ret_md = plot_bootstrap_scores(ratings, anonymous, "boostrap elo")
+    plots = plot_bootstrap_scores(ratings, anonymous, "boostrap elo")
+    return {
+        #"battles_cov_md": battles_cov_md,
+        "anony_cov_md": anony_cov_md,
+        "anony_rating_md": plots["md"],
+        "anony_log_likelihood": plots["log_likelihood"],
+    }
 
-    # get bootstrap result
-    # ratings = get_bootstrap_result(battles)
-    # ret_md = plot_bootstrap_scores(ratings, battles, "boostrap elo")
- 
-    return ret_md
-
-
-def print_rating_linear_update_algo(outfile):
-    desc = '''
-# elo rating algorithm (linear update) description
-
-https://medium.com/purple-theory/what-is-elo-rating-c4eb7a9061e0
-
-If players A and B have ratings R_A and R_B, then the expected scores are given by
-E_A = 1 / (1 + 10 ^ ((R_B - R_A) / 400))
-E_B = 1 / (1 + 10 ^ ((R_A - R_B) / 400))
-
-Linear update:
-
-R_A' = R_A + K(S_A - E_A)
-
-S_A is the outcome (1 for win, 0 for lose)
-
-Notes:
-A player’s expected score = their probability of winning + half their probability of drawing.
-
-TODO
-'''
-    outfile.write(desc)
-    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log-dir", type=str, default="../../../../arena_logs")
     args = parser.parse_args()
 
+    np.random.seed(0)
+
+    log_files = get_log_files()
+    elo_ratings = report_ratings_linear_update(log_files)
+    print(elo_ratings["anony_cov_md"])
+
+    print(f"log-likelihood: {elo_ratings['anony_log_likelihood']:.2f}")
+    print(elo_ratings["anony_rating_md"])
