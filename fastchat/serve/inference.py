@@ -13,6 +13,7 @@ try:
         LlamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 except ImportError:
     from transformers import (
@@ -22,6 +23,7 @@ except ImportError:
         LLamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 
 from fastchat.conversation import (
@@ -30,7 +32,7 @@ from fastchat.conversation import (
     compute_skip_echo_len,
     SeparatorStyle,
 )
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import load_compress_model
 from fastchat.serve.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
@@ -77,7 +79,7 @@ def load_model(
     model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
 ):
     if device == "cpu":
-        kwargs = {}
+        kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if num_gpus == "auto":
@@ -104,6 +106,12 @@ def load_model(
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
+    
+    if load_8bit:
+        if num_gpus != 1 and num_gpus != "1":
+            warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
+        else:
+            return load_compress_model(model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"])
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -134,8 +142,6 @@ def load_model(
         )
         raise_warning_for_old_weights(model_path, model)
 
-    if load_8bit:
-        compress_module(model, device)
 
     if (device == "cuda" and num_gpus == 1) or device == "mps":
         model.to(device)
