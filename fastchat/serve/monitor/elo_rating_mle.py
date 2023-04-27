@@ -10,9 +10,9 @@ import plotly.express as px
 from tqdm import tqdm
 
 
-ROUNDS = 50
+ROUNDS = 100
 
-BASE = 10
+BASE = math.e
 SCALE = 400
 
 
@@ -213,7 +213,7 @@ def print_ratings_mle(log_files, outfile=None):
     #     plot_bootstrap_scores(sample_battle(sym, n_per_battle), f"ELO for {n_per_battle} Battles from Each Combination")
 
     n_per_battle = 50
-    plot_bootstrap_scores(sample_battle(sym, n_per_battle), sym, f"ELO for {n_per_battle} Battles from Each Combination", outfile)
+    # plot_bootstrap_scores(sample_battle(sym, n_per_battle), sym, f"ELO for {n_per_battle} Battles from Each Combination", outfile)
      
     # px.violin(df.melt(), x="model", y="value")
 

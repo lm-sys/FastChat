@@ -185,6 +185,11 @@ def print_ratings_linear_update(log_files):
     # get bootstrap result
     ratings = get_bootstrap_result(anonymous)
     ret_md = plot_bootstrap_scores(ratings, anonymous, "boostrap elo")
+
+    # get bootstrap result
+    # ratings = get_bootstrap_result(battles)
+    # ret_md = plot_bootstrap_scores(ratings, battles, "boostrap elo")
+ 
     return ret_md
 
 
