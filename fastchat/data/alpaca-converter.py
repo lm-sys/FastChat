@@ -22,37 +22,46 @@ def main(args):
     with data_path.open() as f:
         data = json.load(f)
 
-    prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+    prompt_input, prompt_no_input = (
+        PROMPT_DICT["prompt_input"],
+        PROMPT_DICT["prompt_no_input"],
+    )
     sources = [
-        prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
+        prompt_input.format_map(example)
+        if example.get("input", "") != ""
+        else prompt_no_input.format_map(example)
         for example in data
     ]
-    targets = [example['output'] for example in data]
+    targets = [example["output"] for example in data]
 
     new_data = []
     cnt = 1
     for s, t in zip(sources, targets):
-        new_data.append({
-            'id': str(cnt),
-            'conversations': [
-                {
-                    'from': 'human',
-                    'value': s,
-                },
-                {
-                    'from': 'gpt',
-                    'value': t,
-                }
-            ]
-        })
+        new_data.append(
+            {
+                "id": str(cnt),
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": s,
+                    },
+                    {
+                        "from": "gpt",
+                        "value": t,
+                    },
+                ],
+            }
+        )
         cnt += 1
 
-    json.dump(new_data, open(args.output_path, 'w'), indent=2)
+    json.dump(new_data, open(args.output_path, "w"), indent=2)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='alpaca-data.json')
-    parser.add_argument('--output_path', type=str, default='alpaca-data-conversation.json')
+    parser.add_argument("--data_path", type=str, default="alpaca-data.json")
+    parser.add_argument(
+        "--output_path", type=str, default="alpaca-data-conversation.json"
+    )
     args = parser.parse_args()
     main(args)
-

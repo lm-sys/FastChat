@@ -1,3 +1,16 @@
+"""
+Conversation prompt template.
+
+Now we support
+- Vicuna
+- Koala
+- OpenAssistant/oasst-sft-1-pythia-12b
+- StabilityAI/stablelm-tuned-alpha-7b
+- databricks/dolly-v2-12b
+- THUDM/chatglm-6b
+- Alpaca/LLaMa
+"""
+
 import dataclasses
 from enum import auto, Enum
 from typing import List, Tuple, Any
@@ -5,14 +18,17 @@ from typing import List, Tuple, Any
 
 class SeparatorStyle(Enum):
     """Different separator style."""
+
     SINGLE = auto()
     TWO = auto()
     DOLLY = auto()
+    OASST_PYTHIA = auto()
 
 
 @dataclasses.dataclass
 class Conversation:
     """A class that keeps all conversation history."""
+
     system: str
     roles: List[str]
     messages: List[List[str]]
@@ -54,6 +70,14 @@ class Conversation:
                 else:
                     ret += role + ":\n"
             return ret
+        elif self.sep_style == SeparatorStyle.OASST_PYTHIA:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += role + message + self.sep
+                else:
+                    ret += role
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -62,7 +86,7 @@ class Conversation:
 
     def to_gradio_chatbot(self):
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append([msg, None])
             else:
@@ -78,7 +102,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            conv_id=self.conv_id)
+            conv_id=self.conv_id,
+        )
 
     def dict(self):
         return {
@@ -94,11 +119,15 @@ class Conversation:
 
 conv_one_shot = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+    "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
     messages=(
-        ("Human", "What are the key differences between renewable and non-renewable energy sources?"),
-        ("Assistant",
+        (
+            "Human",
+            "What are the key differences between renewable and non-renewable energy sources?",
+        ),
+        (
+            "Assistant",
             "Renewable energy sources are those that can be replenished naturally in a relatively "
             "short amount of time, such as solar, wind, hydro, geothermal, and biomass. "
             "Non-renewable energy sources, on the other hand, are finite and will eventually be "
@@ -116,7 +145,8 @@ conv_one_shot = Conversation(
             "5. Flexibility: Renewable energy sources are often more flexible and can be adapted to different "
             "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
             "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
-            "non-renewable sources are not, and their depletion can lead to economic and social instability.")
+            "non-renewable sources are not, and their depletion can lead to economic and social instability.",
+        ),
     ),
     offset=2,
     sep_style=SeparatorStyle.SINGLE,
@@ -126,7 +156,7 @@ conv_one_shot = Conversation(
 
 conv_vicuna_v1_1 = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+    "The assistant gives helpful, detailed, and polite answers to the user's questions.",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
@@ -147,9 +177,8 @@ conv_koala_v1 = Conversation(
 )
 
 conv_dolly = Conversation(
-    system=
-    "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
-    roles=('### Instruction', '### Response'),
+    system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
+    roles=("### Instruction", "### Response"),
     messages=(),
     offset=0,
     sep_style=SeparatorStyle.DOLLY,
@@ -157,11 +186,35 @@ conv_dolly = Conversation(
     sep2="### End",
 )
 
+conv_oasst = Conversation(
+    system="",
+    roles=("<|prompter|>", "<|assistant|>"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep="<|endoftext|>",
+)
+
+conv_stablelm = Conversation(
+    system="""<|SYSTEM|># StableLM Tuned (Alpha version)
+- StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
+- StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
+- StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
+- StableLM will refuse to participate in anything that could harm a human.
+""",
+    roles=("<|USER|>", "<|ASSISTANT|>"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep="",
+)
+
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "koala_v1": conv_koala_v1,
     "dolly": conv_dolly,
+    "oasst": conv_oasst,
 }
 
 
@@ -171,9 +224,37 @@ def get_default_conv_template(model_name):
         return conv_vicuna_v1_1
     elif "koala" in model_name:
         return conv_koala_v1
-    elif "dolly" in model_name:
+    elif "dolly-v2" in model_name:
         return conv_dolly
+    elif "oasst" in model_name and "pythia" in model_name:
+        return conv_oasst
+    elif "stablelm" in model_name:
+        return conv_stablelm
     return conv_one_shot
+
+
+def compute_skip_echo_len(model_name, conv, prompt):
+    model_name = model_name.lower()
+    if "chatglm" in model_name:
+        skip_echo_len = len(conv.messages[-2][1]) + 1
+    elif "dolly-v2" in model_name:
+        special_toks = ["### Instruction:", "### Response:", "### End"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "oasst" in model_name and "pythia" in model_name:
+        special_toks = ["<|prompter|>", "<|assistant|>", "<|endoftext|>"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "stablelm" in model_name:
+        special_toks = ["<|SYSTEM|>", "<|USER|>", "<|ASSISTANT|>"]
+        skip_echo_len = len(prompt)
+        for tok in special_toks:
+            skip_echo_len -= prompt.count(tok) * len(tok)
+    else:
+        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
+    return skip_echo_len
 
 
 if __name__ == "__main__":
