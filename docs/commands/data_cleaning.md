@@ -3,7 +3,7 @@
 ## Requirements
 ```
 pip3 install bs4 markdownify
-pip3 install polyglot icu pyicu pycld2 morfessor
+pip3 install polyglot pyicu pycld2
 ```
 
 ## Steps
