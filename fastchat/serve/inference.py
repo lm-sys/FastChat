@@ -108,7 +108,7 @@ def load_model(
         raise ValueError(f"Invalid device: {device}")
     
     if load_8bit:
-        if num_gpus > 1:
+        if num_gpus != 1:
             warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
         else:
             return load_compress_model(model_path=model_path,device=device)
