@@ -13,8 +13,8 @@ from fastchat.utils import build_logger, get_window_url_params_js
 logger = build_logger("monitor", "monitor.log")
 
 
-basic_stats_md = ""
-leaderboard_md = ""
+basic_stats_md = "Loading ..."
+leaderboard_md = "Loading ..."
 
 
 def get_log_files():
