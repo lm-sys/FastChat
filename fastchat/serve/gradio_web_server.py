@@ -19,6 +19,7 @@ from fastchat.utils import (
     server_error_msg,
     violates_moderation,
     moderation_msg,
+    get_window_url_params_js,
 )
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
@@ -84,16 +85,6 @@ def get_model_list(controller_url):
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
     return models
-
-
-get_window_url_params = """
-function() {
-    const params = new URLSearchParams(window.location.search);
-    url_params = Object.fromEntries(params);
-    console.log("url_params", url_params);
-    return url_params;
-    }
-"""
 
 
 def load_demo_single(models, url_params):
@@ -481,7 +472,7 @@ def build_demo(models):
                     button_row,
                     parameter_row,
                 ],
-                _js=get_window_url_params,
+                _js=get_window_url_params_js,
             )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")

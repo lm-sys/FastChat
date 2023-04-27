@@ -2,11 +2,9 @@ import argparse
 
 import gradio as gr
 
-from fastchat.utils import build_logger
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     set_global_vars,
-    get_window_url_params,
     block_css,
     build_single_model_ui,
     get_model_list,
@@ -16,6 +14,7 @@ from fastchat.serve.gradio_block_arena_anony import (build_side_by_side_ui_anony
     load_demo_side_by_side_anony, set_global_vars_anony)
 from fastchat.serve.gradio_block_arena_named import (build_side_by_side_ui_named,
     load_demo_side_by_side_named, set_global_vars_named)
+from fastchat.utils import build_logger, get_window_url_params_js
 
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -117,7 +116,7 @@ def build_demo(models):
                 load_demo,
                 [url_params],
                 [tabs] + a_list + b_list + c_list,
-                _js=get_window_url_params,
+                _js=get_window_url_params_js,
             )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
