@@ -146,7 +146,6 @@ if __name__ == "__main__":
     set_global_vars_anony(args.moderate)
     models = get_model_list(args.controller_url)
 
-    logger.info(args)
     demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False

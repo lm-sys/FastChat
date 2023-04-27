@@ -1,19 +1,21 @@
 # elo algo adapted from Joey
 import glob
 import json
-import numpy as np
 import os
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 
+
 ROUNDS = 50
 
 
-def get_battle_data(logdir):
+def get_battle_data(log_files):
     # Loading Data
     dfs = []
-    for filename in glob.glob(os.path.join(logdir, "*.json")):
+    for filename in log_files:
         with open(filename, "r") as f:
             lines = f.readlines()
         dfs.append(pd.DataFrame([json.loads(l) for l in lines]))
@@ -38,10 +40,10 @@ def get_battle_data(logdir):
         .str.replace("<h3>|</h3>|Model A: |Model B: |Model A|Model B|Left: |Right: |\n", "", regex=True)
     )
     # print(model_pairs)
-    
+
     # Address missing models
     missing_models = model_pairs == " vs "
-    np.sum(missing_models)
+    # np.sum(missing_models)
     
     def extract_models(state):
         return state[0]["model_name"] + " vs " + state[1]["model_name"]
@@ -51,8 +53,8 @@ def get_battle_data(logdir):
     battles['battle'] = model_pairs
     battles.drop(columns=["Left", "Right"], inplace=True, errors="ignore")
     battles = battles.join(model_pairs.str.split(" vs ", expand=True).set_axis(["Left", "Right"], axis=1))
-    # print(battles[:5])
-
+    battles = battles.drop(battles[battles['Left'] == ''].index)
+    battles = battles.drop(battles[battles['Right'] == ''].index)
     return battles
 
 
@@ -154,9 +156,9 @@ def get_symmetric_data(battles):
     return sym
 
 
-def print_ratings_mle(logdir, outfile):
+def print_ratings_mle(log_files, outfile):
     # print ratings
-    battles = get_battle_data(logdir)
+    battles = get_battle_data(log_files)
     scores = compute_elo(battles)
     print("=" * 20, "ratings from unsymmetric data", "=" * 20)
     print(scores)
@@ -196,4 +198,3 @@ def print_rating_mle_algo(outfile):
 TODO
 '''
     outfile.write(desc)
-
