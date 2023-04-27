@@ -79,7 +79,7 @@ def load_model(
     model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
 ):
     if device == "cpu":
-        kwargs = {}
+        kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if num_gpus == "auto":
@@ -101,8 +101,6 @@ def load_model(
                     kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
         print("init_kwargs", kwargs)
     elif device == "mps":
-        assert num_gpus != "auto"
-        num_gpus = int(num_gpus)
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
@@ -110,10 +108,10 @@ def load_model(
         raise ValueError(f"Invalid device: {device}")
     
     if load_8bit:
-        if num_gpus != 1:
+        if num_gpus != 1 and num_gpus != "1":
             warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
         else:
-            return load_compress_model(model_path=model_path,device=device)
+            return load_compress_model(model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"])
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
