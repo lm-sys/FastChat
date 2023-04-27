@@ -16,7 +16,7 @@ def get_log_files():
     filenames = []
     for i in range(num_servers):
         for d in dates:
-            filenames.append(f"/home/ubuntu/fastchat_logs/server{i}/{d}-conv.json")
+            filenames.append(f"/home/Ying/fastchat_logs/server{i}/{d}-conv.json")
 
     return filenames
 

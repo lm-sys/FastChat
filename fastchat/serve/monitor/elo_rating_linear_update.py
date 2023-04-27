@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import numpy as np
 import os
 import pandas as pd
@@ -11,6 +12,12 @@ MODELS = ["vicuna-13b", "alpaca-13b", "dolly-v2-12b", "oasst-pythia-12b",
           "koala-13b", "llama-13b", "stablelm-tuned-alpha-7b", "chatglm-6b"]
 VOTES = ["tievote", "leftvote", "rightvote"]
 BOOTSTRAP_ROUNDS = 100
+
+INIT_RATING = 1000
+BASE = 10
+SCALE = 400
+K = 32
+
 
 # TODO compute likelihood
 
@@ -85,11 +92,6 @@ def collect_data(log_files):
 
 
 def compute_elo(battles):
-    INIT_RATING = 1000
-    BASE = 10
-    SCALE = 400
-    K = 32
-
     rating = {}
     for model in MODELS:
         rating[model] = INIT_RATING
@@ -128,7 +130,23 @@ def get_bootstrap_result(battles: List[Dict]):
     return pd.DataFrame(rows)
 
 
-def plot_bootstrap_scores(df, title):
+def get_likelihood(ratings, battles):
+    llh = 0
+    for rd, (models, vote) in enumerate(battles):
+        ra = ratings.loc[ratings["model"] == models[0], "score"].item()
+        rb = ratings.loc[ratings["model"] == models[1], "score"].item()
+        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
+        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
+        if vote == "leftvote":
+            llh += math.log(ea) / len(battles)
+        elif vote == "rightvote":
+            llh += math.log(eb) / len(battles)
+        elif vote == "tievote":
+            llh += math.log(0.5) / len(battles)
+    return llh
+
+
+def plot_bootstrap_scores(df, battles, title):
     bars = pd.DataFrame(dict(
         lower = df.quantile(.025),
         score = df.quantile(.5),
@@ -138,10 +156,12 @@ def plot_bootstrap_scores(df, title):
     bars = bars.rename(columns={"index": "model"})
     bars['rank'] = range(1, len(bars) + 1)
 
-    print("=" * 20, "bootstrap scores", "=" * 20)
+    likelihood = get_likelihood(bars[["model", "score"]], battles)
+
+    print("=" * 15, f"Elo Ratings (linear update), likelihood: {likelihood:.3f}", "=" * 15)
     print(bars[["rank", "model", "score", "lower", "upper", "error_y_minus", "error_y"]])
 
-    ret_md = "## Elo Ratings (linear update)\n"
+    ret_md = f"## Elo Ratings (linear update), likelihood: {likelihood:.3f}\n"
     ret_md += bars[["rank", "model", "score", "lower", "upper", "error_y_minus", "error_y"]
         ].to_markdown(index=False) + "\n"
     #px.scatter(bars, x="model", y="score", error_y="error_y",
@@ -164,7 +184,7 @@ def print_ratings_linear_update(log_files):
 
     # get bootstrap result
     ratings = get_bootstrap_result(anonymous)
-    ret_md = plot_bootstrap_scores(ratings, "boostrap elo")
+    ret_md = plot_bootstrap_scores(ratings, anonymous, "boostrap elo")
     return ret_md
 
 
