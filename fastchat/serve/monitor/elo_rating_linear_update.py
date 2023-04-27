@@ -8,7 +8,11 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import polyglot
+from polyglot.detect import Detector
+import pycld2
 from tqdm import tqdm
+
 
 from fastchat.serve.monitor.basic_stats import get_log_files
 
@@ -37,6 +41,14 @@ def remove_html(raw):
     return raw
 
 
+def detect_lang(text):
+    try:
+        lang_code = Detector(text).language.code
+    except (pycld2.error, polyglot.detect.base.UnknownLanguage):
+        lang_code = "unknown"
+    return lang_code
+
+
 def collect_data(log_files):
     data = []
     for filename in log_files:
@@ -45,6 +57,10 @@ def collect_data(log_files):
         for l in lines:
             dp = json.loads(l)
             if "models" in dp and dp["type"] in VOTES:
+                state = dp["states"][0]
+                #lang_code = detect_lang(state["messages"][state["offset"]][1])
+                #if lang_code != "en":
+                #    continue
                 data.append(dp)
     print("number of rounds", len(data))
 
@@ -152,7 +168,7 @@ def get_likelihood(ratings, battles):
         elif vote == "rightvote":
             llh += math.log(eb) / len(battles)
         elif vote == "tievote":
-            llh += math.log(0.5) / len(battles)
+            llh += (0.5 * math.log(ea) + 0.5 * math.log(eb)) / len(battles)
     return llh
 
 
@@ -224,7 +240,7 @@ def report_ratings_linear_update(log_files):
     ratings = get_bootstrap_result(anonymous)
     plots = plot_bootstrap_scores(ratings, anonymous, "boostrap elo")
     return {
-        #"battles_cov_md": battles_cov_md,
+        "battles_cov_md": battles_cov_md,
         "anony_cov_md": anony_cov_md,
         "anony_rating_md": plots["md"],
         "anony_log_likelihood": plots["log_likelihood"],

@@ -23,7 +23,7 @@ def update_md_content():
     log_files = get_log_files()
 
     # Basic stats
-    if False:
+    if True:
         basic_stats_md = "Updating ..."
         basic_stats = report_basic_stats(log_files)
         basic_stats_tmp = ""
