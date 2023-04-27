@@ -104,12 +104,11 @@ def plot_bootstrap_scores(df, title, outfile=None):
         upper = df.quantile(.975))).reset_index().sort_values("score", ascending=False)
     bars['error_y'] = bars['upper'] - bars["score"]
     bars['error_y_minus'] = bars['score'] - bars["lower"]
-    if outfile is None:
-        print("=" * 20, "bootstrap scores", "=" * 20)
-        print(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]])
-    else:
-        outfile.write("## bootstrap scores\n")
-        outfile.write(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]].to_markdown())
+    print("=" * 20, "bootstrap scores", "=" * 20)
+    print(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]])
+    if outfile is not None:
+        outfile.write("## elo ratings (bootstrap scores - MLE)\n")
+        outfile.write(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]].to_markdown() + "\n")
     return px.scatter(bars, x="model", y="score", error_y="error_y", 
                       error_y_minus="error_y_minus", 
                       title=title, height = 600)
@@ -155,7 +154,7 @@ def get_symmetric_data(battles):
     return sym
 
 
-def print_ratings(logdir, outfile):
+def print_ratings_mle(logdir, outfile):
     # print ratings
     battles = get_battle_data(logdir)
     scores = compute_elo(battles)
@@ -191,9 +190,9 @@ def print_ratings(logdir, outfile):
     # px.violin(df.melt(), x="model", y="value")
 
 
-def print_rating_algo(outfile):
+def print_rating_mle_algo(outfile):
     desc = '''
-# Rating algorithm description
+# elo rating algorithm (MLE) description - Joey?
 TODO
 '''
     outfile.write(desc)

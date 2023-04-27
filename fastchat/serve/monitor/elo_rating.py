@@ -25,78 +25,11 @@ def remove_html(raw):
     return raw
 
 
-def compute_elo(battles):
-    INIT_RATING = 1000
-    BASE = 10
-    SCALE = 400
-    K = 16
-
-    rating = {}
-    for model in MODELS:
-        rating[model] = INIT_RATING
- 
-    for rd, (models, vote) in enumerate(battles):
-        ra = rating[models[0]]
-        rb = rating[models[1]]
-        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
-        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
-        # linear update
-        if vote == "leftvote":
-            sa = 1
-        elif vote == "rightvote":
-            sa = 0
-        elif vote == "tievote":
-            sa = 0.5
-        else:
-            raise Exception(f"unexpected vote {vote}")
-        rating[models[0]] += K * (sa - ea)
-        rating[models[1]] += K * (1 - sa - eb)
-   
-        # if rd % 100 == 0:
-        #     print("=" * 30, rd, ["battles", "anonymous", "normalized"][i], "=" * 30)
-        #     for model in MODELS:
-        #         print(f"{model}: {rating[i][model]:.2f}")
-    return rating
-
-
-def get_bootstrap_result(battles: List[Dict]):
-    df = pd.DataFrame(battles)
-    rows = []
-    for i in tqdm(range(BOOTSTRAP_ROUNDS), desc="bootstrap"):
-        subset = df.sample(frac=1, replace=True).values
-        elo = compute_elo(subset)
-        rows.append(elo)
-    return pd.DataFrame(rows)
-
-
-def plot_bootstrap_scores(df, title, outfile=None):
-    bars = pd.DataFrame(dict(
-        lower = df.quantile(.025),
-        score = df.quantile(.5),
-        upper = df.quantile(.975))).reset_index().sort_values("score", ascending=False)
-    bars['error_y'] = bars['upper'] - bars["score"]
-    bars['error_y_minus'] = bars['score'] - bars["lower"]
-    bars = bars.rename(columns={"index": "model"})
-    if outfile is None:
-        print("=" * 20, "bootstrap scores", "=" * 20)
-        print(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]])
-    else:
-        outfile.write("## bootstrap scores\n")
-        outfile.write(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]].to_markdown())
-    return px.scatter(bars, x="model", y="score", error_y="error_y",
-                      error_y_minus="error_y_minus",
-                      title=title, height = 600)
-    
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--log-dir", type=str, default="../../../../arena_logs")
-    args = parser.parse_args()
-
+def collect_data(log_dir):
     data = []
     for i in range(10):
         for day in ["24", "25"]:
-            filename = os.path.join(args.log_dir, f"server{i}_2023-04-{day}-conv.json")
+            filename = os.path.join(log_dir, f"server{i}_2023-04-{day}-conv.json")
             with open(filename) as f:
                 lines = f.readlines()
             for l in lines:
@@ -150,6 +83,72 @@ if __name__ == "__main__":
 
     print("len(battles), len(anonymous), len(normalized):",
           len(battles), len(anonymous), len(normalized))
+    return battles, anonymous, normalized
+
+
+def compute_elo(battles):
+    INIT_RATING = 1000
+    BASE = 10
+    SCALE = 400
+    K = 16
+
+    rating = {}
+    for model in MODELS:
+        rating[model] = INIT_RATING
+ 
+    for rd, (models, vote) in enumerate(battles):
+        ra = rating[models[0]]
+        rb = rating[models[1]]
+        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
+        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
+        # linear update
+        if vote == "leftvote":
+            sa = 1
+        elif vote == "rightvote":
+            sa = 0
+        elif vote == "tievote":
+            sa = 0.5
+        else:
+            raise Exception(f"unexpected vote {vote}")
+        rating[models[0]] += K * (sa - ea)
+        rating[models[1]] += K * (1 - sa - eb)
+   
+        # if rd % 100 == 0:
+        #     print("=" * 30, rd, ["battles", "anonymous", "normalized"][i], "=" * 30)
+        #     for model in MODELS:
+        #         print(f"{model}: {rating[i][model]:.2f}")
+    return rating
+
+
+def get_bootstrap_result(battles: List[Dict]):
+    df = pd.DataFrame(battles)
+    rows = []
+    for i in tqdm(range(BOOTSTRAP_ROUNDS), desc="bootstrap"):
+        subset = df.sample(frac=1, replace=True).values
+        elo = compute_elo(subset)
+        rows.append(elo)
+    return pd.DataFrame(rows)
+
+
+def plot_bootstrap_scores(df, title, outfile=None):
+    bars = pd.DataFrame(dict(
+        lower = df.quantile(.025),
+        score = df.quantile(.5),
+        upper = df.quantile(.975))).reset_index().sort_values("score", ascending=False)
+    bars['error_y'] = bars['upper'] - bars["score"]
+    bars['error_y_minus'] = bars['score'] - bars["lower"]
+    bars = bars.rename(columns={"index": "model"})
+    print("=" * 20, "bootstrap scores", "=" * 20)
+    print(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]])
+    if outfile is not None:
+        outfile.write("## elo ratings (bootstrap scores - linear update)\n")
+        outfile.write(bars[["model", "score", "lower", "upper", "error_y_minus", "error_y"]].to_markdown() + "\n")
+    return px.scatter(bars, x="model", y="score", error_y="error_y",
+                      error_y_minus="error_y_minus",
+                      title=title, height = 600)
+
+def print_ratings_linear_update(log_dir, outfile=None):
+    battles, anonymous, normalized = collect_data(log_dir)
 
     # get ratings
     rating = [None] * 3
@@ -163,6 +162,39 @@ if __name__ == "__main__":
 
     # get bootstrap result
     ratings = get_bootstrap_result(anonymous)
-    fig = plot_bootstrap_scores(ratings, "boostrap elo")
+    fig = plot_bootstrap_scores(ratings, "boostrap elo", outfile)
+    return fig
+
+
+def print_rating_linear_update_algo(outfile):
+    desc = '''
+# elo rating algorithm (linear update) description
+
+https://medium.com/purple-theory/what-is-elo-rating-c4eb7a9061e0
+
+If players A and B have ratings R_A and R_B, then the expected scores are given by
+E_A = 1 / (1 + 10 ^ ((R_B - R_A) / 400))
+E_B = 1 / (1 + 10 ^ ((R_A - R_B) / 400))
+
+Linear update:
+
+R_A' = R_A + K(S_A - E_A)
+
+S_A is the outcome (1 for win, 0 for lose)
+
+Notes:
+A player’s expected score = their probability of winning + half their probability of drawing.
+
+TODO
+'''
+    outfile.write(desc)
+    
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log-dir", type=str, default="../../../../arena_logs")
+    args = parser.parse_args()
+
+    fig = print_ratings_linear_update(args.log_dir)
     fig.show()
 
