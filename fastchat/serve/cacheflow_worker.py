@@ -31,7 +31,7 @@ from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import build_logger, pretty_print_semaphore
 
 GB = 1 << 30
-TIMEOUT_TO_PREVENT_DEADLOCK = 1 # seconds
+TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
@@ -40,26 +40,27 @@ seed = torch.cuda.current_device()
 
 
 def heart_beat_worker(controller):
-
     while True:
         time.sleep(WORKER_HEART_BEAT_INTERVAL)
         controller.send_heart_beat()
 
 
 class CacheFlowWorker:
-    def __init__(self,
-                 controller_addr,
-                 worker_addr,
-                 worker_id,
-                 no_register,
-                 model_path,
-                 model_name,
-                 block_size,
-                 seed,
-                 swap_space,
-                 max_num_batched_tokens,
-                 distributed_init_method,
-                 all_stage_devices):
+    def __init__(
+        self,
+        controller_addr,
+        worker_addr,
+        worker_id,
+        no_register,
+        model_path,
+        model_name,
+        block_size,
+        seed,
+        swap_space,
+        max_num_batched_tokens,
+        distributed_init_method,
+        all_stage_devices,
+    ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -105,7 +106,8 @@ class CacheFlowWorker:
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
-                target=heart_beat_worker, args=(self,))
+                target=heart_beat_worker, args=(self,)
+            )
             self.heart_beat_thread.start()
 
     def register_to_controller(self):
@@ -115,23 +117,30 @@ class CacheFlowWorker:
         data = {
             "worker_name": self.worker_addr,
             "check_heart_beat": True,
-            "worker_status": self.get_status()
+            "worker_status": self.get_status(),
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
 
     def send_heart_beat(self):
-        logger.info(f"Send heart beat. Models: {[self.model_name]}. "
-                    f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
-                    f"global_counter: {global_counter}")
+        logger.info(
+            f"Send heart beat. Models: {[self.model_name]}. "
+            f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
+            f"global_counter: {global_counter}"
+        )
 
         url = self.controller_addr + "/receive_heart_beat"
 
         while True:
             try:
-                ret = requests.post(url, json={
-                    "worker_name": self.worker_addr,
-                    "queue_length": self.get_queue_length()}, timeout=5)
+                ret = requests.post(
+                    url,
+                    json={
+                        "worker_name": self.worker_addr,
+                        "queue_length": self.get_queue_length(),
+                    },
+                    timeout=5,
+                )
                 exist = ret.json()["exist"]
                 break
             except requests.exceptions.RequestException as e:
@@ -142,11 +151,18 @@ class CacheFlowWorker:
             self.register_to_controller()
 
     def get_queue_length(self):
-        if model_semaphore is None or model_semaphore._value is None or model_semaphore._waiters is None:
+        if (
+            model_semaphore is None
+            or model_semaphore._value is None
+            or model_semaphore._waiters is None
+        ):
             return 0
         else:
-            return args.limit_model_concurrency - model_semaphore._value + len(
-                model_semaphore._waiters)
+            return (
+                args.limit_model_concurrency
+                - model_semaphore._value
+                + len(model_semaphore._waiters)
+            )
 
     def get_status(self):
         return {
@@ -203,7 +219,9 @@ class CacheFlowWorker:
             if not self.is_server_running:
                 await self.server_step()
             try:
-                await asyncio.wait_for(group_event.wait(), timeout=TIMEOUT_TO_PREVENT_DEADLOCK)
+                await asyncio.wait_for(
+                    group_event.wait(), timeout=TIMEOUT_TO_PREVENT_DEADLOCK
+                )
             except:
                 pass
             group_event.clear()
@@ -214,7 +232,7 @@ class CacheFlowWorker:
                 output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
                 if stop_str is not None:
                     if output.endswith(stop_str):
-                        output = output[:-len(stop_str)]
+                        output = output[: -len(stop_str)]
                 all_outputs.append(output)
             assert len(seq_group.seqs) == 1
             ret = {
@@ -248,7 +266,9 @@ async def generate_stream(request: Request):
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     # return StreamingResponse(generator, background=background_tasks)
-    return StreamingResponse(worker.generate_stream(params), background=background_tasks)
+    return StreamingResponse(
+        worker.generate_stream(params), background=background_tasks
+    )
 
 
 @app.post("/worker_get_status")
@@ -260,39 +280,51 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str,
-        default="http://localhost:21002")
-    parser.add_argument("--controller-address", type=str,
-        default="http://localhost:21001")
-    parser.add_argument("--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b")
+    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
+    parser.add_argument(
+        "--controller-address", type=str, default="http://localhost:21001"
+    )
+    parser.add_argument(
+        "--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b"
+    )
     parser.add_argument("--model-name", type=str)
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     # cacheflow specific params
-    parser.add_argument('--block-size', type=int, default=8, choices=[8, 16],
-                        help='token block size')
-    parser.add_argument('--swap-space', type=int, default=20,
-                        help='CPU swap space size (GiB) per GPU')
-    parser.add_argument('--max-num-batched-tokens', type=int, default=2560,
-                        help='maximum number of batched tokens')
+    parser.add_argument(
+        "--block-size", type=int, default=8, choices=[8, 16], help="token block size"
+    )
+    parser.add_argument(
+        "--swap-space", type=int, default=20, help="CPU swap space size (GiB) per GPU"
+    )
+    parser.add_argument(
+        "--max-num-batched-tokens",
+        type=int,
+        default=2560,
+        help="maximum number of batched tokens",
+    )
     args = parser.parse_args()
 
-    (num_nodes, num_devices_per_node, distributed_init_method,
-    all_stage_devices) = initialize_ray_cluster(
-            pipeline_parallel_size=1, tensor_parallel_size=1)
+    (
+        num_nodes,
+        num_devices_per_node,
+        distributed_init_method,
+        all_stage_devices,
+    ) = initialize_ray_cluster(pipeline_parallel_size=1, tensor_parallel_size=1)
 
-    worker = CacheFlowWorker(args.controller_address,
-                             args.worker_address,
-                             worker_id,
-                             args.no_register,
-                             args.model_path,
-                             args.model_name,
-                             args.block_size,
-                             seed,
-                             args.swap_space,
-                             args.max_num_batched_tokens,
-                             distributed_init_method,
-                             all_stage_devices)
+    worker = CacheFlowWorker(
+        args.controller_address,
+        args.worker_address,
+        worker_id,
+        args.no_register,
+        args.model_path,
+        args.model_name,
+        args.block_size,
+        seed,
+        args.swap_space,
+        args.max_num_batched_tokens,
+        distributed_init_method,
+        all_stage_devices,
+    )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-

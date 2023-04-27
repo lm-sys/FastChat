@@ -65,9 +65,9 @@ This conversion command needs around 30 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
-    --base /path/to/llama-7b \
-    --target /output/path/to/vicuna-7b \
-    --delta lmsys/vicuna-7b-delta-v1.1
+    --base-model-path /path/to/llama-7b \
+    --target-model-path /output/path/to/vicuna-7b \
+    --delta-path lmsys/vicuna-7b-delta-v1.1
 ```
 
 ### Vicuna-13B
@@ -75,9 +75,9 @@ This conversion command needs around 60 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
 python3 -m fastchat.model.apply_delta \
-    --base /path/to/llama-13b \
-    --target /output/path/to/vicuna-13b \
-    --delta lmsys/vicuna-13b-delta-v1.1
+    --base-model-path /path/to/llama-13b \
+    --target-model-path /output/path/to/vicuna-13b \
+    --delta-path lmsys/vicuna-13b-delta-v1.1
 ```
 
 ### Old weights

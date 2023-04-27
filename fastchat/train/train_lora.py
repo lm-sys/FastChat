@@ -26,20 +26,28 @@ from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import Trainer
 
-from fastchat.train.train import (DataArguments, ModelArguments,
-                                  TrainingArguments,
-                                  make_supervised_data_module)
+from fastchat.train.train import (
+    DataArguments,
+    ModelArguments,
+    TrainingArguments,
+    make_supervised_data_module,
+)
 
-from fastchat.train.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+from fastchat.train.llama_flash_attn_monkey_patch import (
+    replace_llama_attn_with_flash_attn,
+)
 
 replace_llama_attn_with_flash_attn()
+
 
 @dataclass
 class LoraArguments:
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
-    lora_target_modules: typing.List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
+    lora_target_modules: typing.List[str] = field(
+        default_factory=lambda: ["q_proj", "v_proj"]
+    )
     lora_weight_path: str = ""
     bias: str = "none"
 
@@ -55,9 +63,13 @@ def maybe_zero_3(param):
 # Borrowed from peft.utils.get_peft_model_state_dict
 def get_peft_state_maybe_zero_3(state_dict, bias):
     if bias == "none":
-        to_return = {k: state_dict[k].cpu().clone().detach() for k in state_dict if "lora_" in k}
+        to_return = {
+            k: state_dict[k].cpu().clone().detach() for k in state_dict if "lora_" in k
+        }
     elif bias == "all":
-        to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "bias" in k}
+        to_return = {
+            k: state_dict[k] for k in state_dict if "lora_" in k or "bias" in k
+        }
     elif bias == "lora_only":
         to_return = {}
         for k in state_dict:
@@ -74,9 +86,14 @@ def get_peft_state_maybe_zero_3(state_dict, bias):
 
 def train():
     parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments, LoraArguments))
-    (model_args, data_args, training_args,
-     lora_args) = parser.parse_args_into_dataclasses()
+        (ModelArguments, DataArguments, TrainingArguments, LoraArguments)
+    )
+    (
+        model_args,
+        data_args,
+        training_args,
+        lora_args,
+    ) = parser.parse_args_into_dataclasses()
 
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
@@ -95,10 +112,12 @@ def train():
         model.print_trainable_parameters()
 
     if training_args.gradient_checkpointing:
-        logging.warning("gradient checkpointing with lora makes requires_grad "
-                        "incorrect and needs a monkey patch in Trainer or the "
-                        "wrapped model's forward. ref: "
-                        "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198")
+        logging.warning(
+            "gradient checkpointing with lora makes requires_grad "
+            "incorrect and needs a monkey patch in Trainer or the "
+            "wrapped model's forward. ref: "
+            "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198"
+        )
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -109,12 +128,10 @@ def train():
     )
     tokenizer.pad_token = tokenizer.unk_token
 
-    data_module = make_supervised_data_module(tokenizer=tokenizer,
-                                              data_args=data_args)
-    trainer = Trainer(model=model,
-                      tokenizer=tokenizer,
-                      args=training_args,
-                      **data_module)
+    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    trainer = Trainer(
+        model=model, tokenizer=tokenizer, args=training_args, **data_module
+    )
 
     model.config.use_cache = False
 
