@@ -1,3 +1,4 @@
+import argparse
 import json
 import numpy as np
 import os
@@ -8,9 +9,7 @@ from typing import List, Dict
 
 MODELS = ["vicuna-13b", "alpaca-13b", "dolly-v2-12b", "oasst-pythia-12b",
           "koala-13b", "llama-13b", "stablelm-tuned-alpha-7b", "chatglm-6b"]
-VOTES = ["tievote", "leftvote", "rightvote", "share"]
-log_dir = "/Users/Ying/work/project/chatbot/arena_logs"
-elo_k = 5
+VOTES = ["tievote", "leftvote", "rightvote"]
 BOOTSTRAP_ROUNDS = 100
 
 # TODO compute likelihood
@@ -27,20 +26,32 @@ def remove_html(raw):
 
 
 def compute_elo(battles):
+    INIT_RATING = 1000
+    BASE = 10
+    SCALE = 400
+    K = 16
+
     rating = {}
     for model in MODELS:
-        rating[model] = 1000
+        rating[model] = INIT_RATING
  
     for rd, (models, vote) in enumerate(battles):
-        p1 = rating[models[0]] / (rating[models[0]] + rating[models[1]])
-        p2 = rating[models[1]] / (rating[models[0]] + rating[models[1]])
+        ra = rating[models[0]]
+        rb = rating[models[1]]
+        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
+        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
+        # linear update
         if vote == "leftvote":
-            rating[models[0]] += elo_k * (1 - p1)
-            rating[models[1]] -= elo_k * p2
-        if vote == "rightvote":
-            rating[models[0]] -= elo_k * p1
-            rating[models[1]] += elo_k * (1 - p2)
-    
+            sa = 1
+        elif vote == "rightvote":
+            sa = 0
+        elif vote == "tievote":
+            sa = 0.5
+        else:
+            raise Exception(f"unexpected vote {vote}")
+        rating[models[0]] += K * (sa - ea)
+        rating[models[1]] += K * (1 - sa - eb)
+   
         # if rd % 100 == 0:
         #     print("=" * 30, rd, ["battles", "anonymous", "normalized"][i], "=" * 30)
         #     for model in MODELS:
@@ -78,15 +89,19 @@ def plot_bootstrap_scores(df, title, outfile=None):
     
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log-dir", type=str, default="../../../../arena_logs")
+    args = parser.parse_args()
+
     data = []
     for i in range(10):
         for day in ["24", "25"]:
-            filename = os.path.join(log_dir, f"server{i}_2023-04-{day}-conv.json")
+            filename = os.path.join(args.log_dir, f"server{i}_2023-04-{day}-conv.json")
             with open(filename) as f:
                 lines = f.readlines()
             for l in lines:
                 dp = json.loads(l)
-                if "models" in dp and dp["type"] != "bothbad_vote":
+                if "models" in dp and dp["type"] in VOTES:
                     data.append(dp)
     print("number of rounds", len(data))
 
@@ -151,4 +166,3 @@ if __name__ == "__main__":
     fig = plot_bootstrap_scores(ratings, "boostrap elo")
     fig.show()
 
- 
