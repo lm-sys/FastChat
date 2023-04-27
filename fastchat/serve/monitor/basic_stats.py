@@ -12,7 +12,7 @@ from tqdm import tqdm
 def get_log_files():
     dates = []
     for month in [4]:
-        for day in range(25, 28):
+        for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     num_servers = 10
 
@@ -60,7 +60,7 @@ def report_basic_stats(log_files):
     model_hist_1_day =  df_1_day[df_1_day["type"] == "chat"]["model"].value_counts()
     model_hist_1_hour = df_1_hour[df_1_hour["type"] == "chat"]["model"].value_counts()
     model_hist = merge_counts([model_hist_all, model_hist_1_day, model_hist_1_hour],
-        on="model", names=["All", "1 Day", "1 Hour"])
+        on="model", names=["All", "Last Day", "Last Hour"])
     model_hist_md = model_hist.to_markdown(index=False, tablefmt="github")
 
     # Action counts
@@ -68,7 +68,7 @@ def report_basic_stats(log_files):
     action_hist_1_day =  df_1_day["type"].value_counts()
     action_hist_1_hour = df_1_hour["type"].value_counts()
     action_hist = merge_counts([action_hist_all, action_hist_1_day, action_hist_1_hour],
-        on="type", names=["All", "1 Day", "1 Hour"])
+        on="type", names=["All", "Last Day", "Last Hour"])
     action_hist_md = action_hist.to_markdown(index=False, tablefmt="github")
 
     # Anony vote counts
@@ -85,7 +85,7 @@ def report_basic_stats(log_files):
     anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
 
     anony_vote_hist = merge_counts([anony_vote_hist_all, anony_vote_hist_1_day, anony_vote_hist_1_hour],
-        on="type", names=["All", "1 Day", "1 Hour"])
+        on="type", names=["All", "Last Day", "Last Hour"])
     anony_vote_hist_md = anony_vote_hist.to_markdown(index=False, tablefmt="github")
 
     # Last 24 hours

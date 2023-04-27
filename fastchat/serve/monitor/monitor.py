@@ -20,7 +20,7 @@ leaderboard_md = ""
 def get_log_files():
     dates = []
     for month in [4]:
-        for day in range(25, 32):
+        for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     num_servers = 10
 
