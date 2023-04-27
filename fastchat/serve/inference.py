@@ -3,6 +3,7 @@ import abc
 from typing import Optional
 import warnings
 
+from accelerate import init_empty_weights
 import torch
 
 try:
@@ -13,6 +14,7 @@ try:
         LlamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 except ImportError:
     from transformers import (
@@ -22,6 +24,7 @@ except ImportError:
         LLamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 
 from fastchat.conversation import (
@@ -30,7 +33,7 @@ from fastchat.conversation import (
     compute_skip_echo_len,
     SeparatorStyle,
 )
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import load_compress_model
 from fastchat.serve.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
@@ -149,49 +152,6 @@ def load_model(
 
     return model, tokenizer
 
-
-def load_compress_model(model_path, device, num_gpus, max_gpu_memory="13GiB",
-                        load_8bit=False, debug=False):
-
-    # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
-    files = glob.glob(base_pattern)
-    print(files)
-    
-    with init_empty_weights():
-        config = AutoConfig.from_pretrained(model_path, low_cpu_mem_usage=True, device_map='auto',torch_dtype=torch.float16)
-        model = AutoModelForCausalLM.from_config(config)
-        linear_weights = get_compressed_list(model)
-        print(len(linear_weights),linear_weights)
-
-
-    compressed_state_dict = {}
-
-    for file in files:
-        tmp_state_dict = torch.load(file, map_location="cpu")
-        for name in tqdm(tmp_state_dict):
-            if name in linear_weights:
-                compressed_state_dict[name] = tmp_state_dict[name].to(device)
-                tensor = compressed_state_dict[name].data
-                compressed_state_dict[name] = compress(tensor, default_compression_config)
-            else:
-                compressed_state_dict[name] = tmp_state_dict[name].to(device)
-            tmp_state_dict[name] = None
-            tensor = None
-            gc.collect()
-            torch.cuda.empty_cache()
-
-    for name in model.state_dict():
-        if name not in linear_weights:
-            set_module_tensor_to_device(model, name, device, value=compressed_state_dict[name])
-    apply_compressed_weight(model, compressed_state_dict, device)
-
-    print(f"memory path: {model.get_memory_footprint()}")
-    # exit()
-    # print(model)
-
-    return model, tokenizer
 
 @torch.inference_mode()
 def generate_stream(
