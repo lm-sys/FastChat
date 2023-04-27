@@ -3,17 +3,14 @@ import gc
 import glob
 import os
 
-from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from accelerate import init_empty_weights
 from accelerate.utils import set_module_tensor_to_device
 import torch
 from torch import Tensor
 import torch.nn as nn
 from torch.nn import functional as F
 from tqdm import tqdm
-try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, LlamaForCausalLM, AutoModel, LlamaForCausalLM, AutoConfig 
-except ImportError:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, LLaMATokenizer, LLamaForCausalLM, AutoModel
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig 
 
 
 @dataclasses.dataclass

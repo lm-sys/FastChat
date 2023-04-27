@@ -3,7 +3,6 @@ import abc
 from typing import Optional
 import warnings
 
-from accelerate import init_empty_weights
 import torch
 
 try:
