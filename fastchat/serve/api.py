@@ -14,6 +14,7 @@ import json
 import logging
 
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import uvicorn
 from pydantic import BaseSettings
@@ -38,6 +39,17 @@ class AppSettings(BaseSettings):
 app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
+
+
+@app.get("/v1/models")
+async def show_available_models():
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(controller_url + "/refresh_all_workers")
+        ret = await client.post(controller_url + "/list_models")
+    models = ret.json()["models"]
+    models.sort()
+    return {"data": [{"id": m} for m in models], "object": "list"}
 
 
 @app.post("/v1/chat/completions")
@@ -174,6 +186,21 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
+    parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
+    parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
+    parser.add_argument("--allowed-headers", type=json.loads, default=["*"], help="allowed headers")
 
     args = parser.parse_args()
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=args.allowed_origins,
+        allow_credentials=args.allow_credentials,
+        allow_methods=args.allowed_methods,
+        allow_headers=args.allowed_headers,
+    )
+
+    logger.debug(f"==== args ====\n{args}")
+
     uvicorn.run("fastchat.serve.api:app", host=args.host, port=args.port, reload=True)

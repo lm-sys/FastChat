@@ -17,6 +17,7 @@ try:
         LlamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 except ImportError:
     from transformers import (
@@ -26,6 +27,7 @@ except ImportError:
         LLamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        AutoConfig,
     )
 
 from fastchat.conversation import (
@@ -34,7 +36,7 @@ from fastchat.conversation import (
     compute_skip_echo_len,
     SeparatorStyle,
 )
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import load_compress_model
 from fastchat.serve.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
@@ -98,7 +100,7 @@ def load_model(
 ):
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(device, load_8bit, cpu_offloading)
     if device == "cpu":
-        kwargs = {}
+        kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         num_gpus = int(num_gpus)
@@ -120,6 +122,12 @@ def load_model(
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
+    
+    if load_8bit:
+        if num_gpus != 1 and num_gpus != "1":
+            warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
+        else:
+            return load_compress_model(model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"])
 
     if cpu_offloading:
         # raises an error on incompatible platforms
@@ -157,10 +165,6 @@ def load_model(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
         raise_warning_for_old_weights(model_path, model)
-
-    # bitsandbytes does the compression and .to() automatically
-    if load_8bit and not cpu_offloading:
-        compress_module(model, device)
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
@@ -324,13 +328,18 @@ def chat_loop(
             prompt = conv.get_prompt()
 
         skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
+        stop_str = (
+            conv.sep
+            if conv.sep_style in [SeparatorStyle.SINGLE, SeparatorStyle.BAIZE]
+            else None
+        )
 
         params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else None,
+            "stop": stop_str,
         }
 
         chatio.prompt_for_output(conv.roles[1])

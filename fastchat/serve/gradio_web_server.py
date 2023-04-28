@@ -35,23 +35,22 @@ disable_btn = gr.Button.update(interactive=False)
 
 controller_url = None
 enable_moderation = False
-models = []
+
 
 priority = {
     "vicuna-13b": "aaa",
     "koala-13b": "aab",
-    "oasst-sft-1-pythia-12b": "aac",
+    "oasst-pythia-12b": "aac",
     "dolly-v2-12b": "aad",
     "chatglm-6b": "aae",
     "stablelm-tuned-alpha-7b": "aaf",
 }
 
 
-def set_global_vars(controller_url_, enable_moderation_, models_):
-    global controller_url, enable_moderation, models
+def set_global_vars(controller_url_, enable_moderation_):
+    global controller_url, enable_moderation
     controller_url = controller_url_
     enable_moderation = enable_moderation_
-    models = models_
 
 
 def get_conv_log_filename():
@@ -74,13 +73,13 @@ get_window_url_params = """
 function() {
     const params = new URLSearchParams(window.location.search);
     url_params = Object.fromEntries(params);
-    console.log(url_params);
+    console.log("url_params", url_params);
     return url_params;
     }
 """
 
 
-def load_demo_single(url_params):
+def load_demo_single(models, url_params):
     dropdown_update = gr.Dropdown.update(visible=True)
     if "model" in url_params:
         model = url_params["model"]
@@ -101,7 +100,7 @@ def load_demo_single(url_params):
 
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
-    return load_demo_single(url_params)
+    return load_demo_single(models, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -199,6 +198,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # First round of conversation
         new_state = get_default_conv_template(model_name).copy()
         new_state.conv_id = uuid.uuid4().hex
+        new_state.model_name = state.model_name or model_selector
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
@@ -324,23 +324,23 @@ pre {
 )
 
 
-def build_single_model_ui():
+def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[GitHub]](https://github.com/lm-sys/FastChat) [[Evaluation]](https://vicuna.lmsys.org/eval/)
-- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/) [[GitHub]](https://github.com/young-geng/EasyLM)
-- This demo server. [[GitHub]](https://github.com/lm-sys/FastChat)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[Evaluation]](https://vicuna.lmsys.org/eval/)
+- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
+- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. The service may collect user dialogue data for future research.
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
 
 ### Choose a model to chat with
 | | |
-| --- | --- |
-| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a chatbot fine-tuned from LLaMA on user-shared conversations and open-source datasets. |
-| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open LLM by Databricks. |
-| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model 开源双语对话语言模型 | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
-| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on 52K instruction-following demonstrations. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models. |
+| ---- | ---- |
+| [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a dialogue model for academic research by BAIR |
+| [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone by LAION. | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open large language model by Databricks. |
+| [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model by Tsinghua University | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
+| [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models by Meta. |
 """
 
     learn_more_markdown = """
@@ -442,7 +442,7 @@ The service is a research preview intended for non-commercial use only, subject 
     return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
 
 
-def build_demo():
+def build_demo(models):
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Base(),
@@ -458,7 +458,7 @@ def build_demo():
             send_btn,
             button_row,
             parameter_row,
-        ) = build_single_model_ui()
+        ) = build_single_model_ui(models)
 
         if args.model_list_mode == "once":
             demo.load(
@@ -497,11 +497,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
-    set_global_vars(args.controller_url, args.moderate, models)
 
     logger.info(args)
-    demo = build_demo()
+    demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(

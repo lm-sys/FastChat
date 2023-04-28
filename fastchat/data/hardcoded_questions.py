@@ -26,6 +26,7 @@ def identity_questions():
     questions = [
         "Who are you?",
         "What is your name?",
+        "Can you introduce yourself?",
         "What's your name?",
         "What are you called?",
         "What are you?",

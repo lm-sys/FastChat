@@ -16,7 +16,7 @@ dependencies = [
     "accelerate", "fastapi", "gradio==3.23", "markdown2[all]", "numpy",
     "prompt_toolkit>=3.0.0", "requests", "rich>=10.0.0", "sentencepiece",
     "shortuuid", "transformers>=4.28.0,<4.29.0", "tokenizers>=0.12.1", "torch",
-    "uvicorn", "wandb", "httpx", "shortuuid", "pydantic",
+    "uvicorn", "wandb", "httpx", "shortuuid", "pydantic", "nh3",
 ]
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ Now we support
 - StabilityAI/stablelm-tuned-alpha-7b
 - databricks/dolly-v2-12b
 - THUDM/chatglm-6b
+- project-baize/baize-lora-7B
 - Alpaca/LLaMa
 """
 
@@ -23,6 +24,7 @@ class SeparatorStyle(Enum):
     TWO = auto()
     DOLLY = auto()
     OASST_PYTHIA = auto()
+    BAIZE = auto()
 
 
 @dataclasses.dataclass
@@ -37,9 +39,11 @@ class Conversation:
     sep: str = "###"
     sep2: str = None
 
-    # Used for gradio server
-    skip_next: bool = False
+    # Used for the state in the gradio servers.
+    # TODO(lmzheng): refactor this
     conv_id: Any = None
+    skip_next: bool = False
+    model_name: str = None
 
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
@@ -78,6 +82,14 @@ class Conversation:
                 else:
                     ret += role
             return ret
+        elif self.sep_style == SeparatorStyle.BAIZE:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += "\n" + role + message
+                else:
+                    ret += "\n" + role
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -103,6 +115,7 @@ class Conversation:
             sep=self.sep,
             sep2=self.sep2,
             conv_id=self.conv_id,
+            model_name=self.model_name,
         )
 
     def dict(self):
@@ -114,6 +127,7 @@ class Conversation:
             "sep": self.sep,
             "sep2": self.sep2,
             "conv_id": self.conv_id,
+            "model_name": self.model_name,
         }
 
 
@@ -209,12 +223,26 @@ conv_stablelm = Conversation(
     sep="",
 )
 
+conv_baize = Conversation(
+    system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
+    roles=("[|Human|]", "[|AI|]"),
+    messages=(
+        ("[|Human|]", "Hello!"),
+        ("[|AI|]", "Hi!"),
+    ),
+    offset=2,
+    sep_style=SeparatorStyle.BAIZE,
+    sep="[|Human|]",
+)
+
+
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "koala_v1": conv_koala_v1,
     "dolly": conv_dolly,
     "oasst": conv_oasst,
+    "baize": conv_baize,
 }
 
 
@@ -228,6 +256,8 @@ def get_default_conv_template(model_name):
         return conv_dolly
     elif "oasst" in model_name and "pythia" in model_name:
         return conv_oasst
+    elif "baize" in model_name:
+        return conv_baize
     elif "stablelm" in model_name:
         return conv_stablelm
     return conv_one_shot
@@ -252,10 +282,13 @@ def compute_skip_echo_len(model_name, conv, prompt):
         skip_echo_len = len(prompt)
         for tok in special_toks:
             skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "baize" in model_name:
+        skip_echo_len = len(prompt)
     else:
         skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
     return skip_echo_len
 
 
 if __name__ == "__main__":
+    default_conversation = conv_templates["vicuna_v1.1"]
     print(default_conversation.get_prompt())
