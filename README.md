@@ -84,7 +84,7 @@ python3 -m fastchat.model.apply_delta \
 ### Fastchat-T5
 This model is stored in Huggingface Hub. Simply run the line below to start chatting.
 ```bash
-python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5
+python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 ```
 
 ### Old weights
