@@ -272,6 +272,8 @@ def compute_skip_echo_len(model_name, conv, prompt):
         skip_echo_len = len(prompt)
         for tok in special_toks:
             skip_echo_len -= prompt.count(tok) * len(tok)
+    elif "t5" in model_name:
+         skip_echo_len = len(prompt)
     elif "oasst" in model_name and "pythia" in model_name:
         special_toks = ["<|prompter|>", "<|assistant|>", "<|endoftext|>"]
         skip_echo_len = len(prompt)

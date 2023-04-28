@@ -13,6 +13,7 @@ try:
         LlamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        T5Tokenizer,
         AutoConfig,
     )
 except ImportError:
@@ -23,6 +24,7 @@ except ImportError:
         LLamaForCausalLM,
         AutoModel,
         AutoModelForSeq2SeqLM,
+        T5Tokenizer,
         AutoConfig,
     )
 
@@ -118,11 +120,10 @@ def load_model(
         model = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, **kwargs
         ).cuda()
-    elif "google/flan-t5" in model_path:
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **kwargs
-        )
+    elif "t5" in model_path:
+         model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
+                                                       low_cpu_mem_usage=True, **kwargs)
+         tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
     elif "dolly" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
@@ -166,41 +167,38 @@ def generate_stream(
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
 
-    max_src_len = context_len - max_new_tokens - 8
+    if model.config.is_encoder_decoder:
+         max_src_len = context_len
+    else:
+         max_src_len = context_len - max_new_tokens - 8
+
     input_ids = input_ids[-max_src_len:]
+
+    if model.config.is_encoder_decoder:
+         encoder_output = model.encoder(input_ids=torch.as_tensor([input_ids],
+                                                      device=device))[0]
+         start_ids = torch.as_tensor([[model.generation_config.decoder_start_token_id]],
+                     dtype=torch.int64, device=device)
 
     for i in range(max_new_tokens):
         if i == 0:
             if model.config.is_encoder_decoder:
-                encoder_outputs = model.encoder(
-                    input_ids=torch.as_tensor([input_ids], device=device)
-                )
-                out = model(
-                    torch.as_tensor([input_ids], device=device),
-                    decoder_input_ids=torch.as_tensor(
-                        [[model.generation_config.decoder_start_token_id]],
-                        device=device,
-                    ),
-                    encoder_outputs=encoder_outputs,
-                    use_cache=True,
-                )
-                logits = out.logits
-                past_key_values = out.past_key_values
+                 out = model.decoder(input_ids=start_ids,
+                                     encoder_hidden_states=encoder_output,
+                                     use_cache=True)
+                 logits = model.lm_head(out[0])
             else:
                 out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
                 logits = out.logits
-                past_key_values = out.past_key_values
+            past_key_values = out.past_key_values
         else:
             if model.config.is_encoder_decoder:
-                out = model(
-                    input_ids=torch.as_tensor([input_ids], device=device),
-                    use_cache=True,
-                    encoder_outputs=encoder_outputs,
-                    decoder_input_ids=torch.as_tensor([[token]], device=device),
-                    past_key_values=past_key_values,
-                )
-                logits = out.logits
-                past_key_values = out.past_key_values
+                out = model.decoder(input_ids=torch.as_tensor([[token]], device=device),
+                             encoder_hidden_states=encoder_output,
+                             use_cache=True,
+                             past_key_values=past_key_values)
+
+                logits = model.lm_head(out[0])
             else:
                 out = model(
                     input_ids=torch.as_tensor([[token]], device=device),
@@ -208,7 +206,7 @@ def generate_stream(
                     past_key_values=past_key_values,
                 )
                 logits = out.logits
-                past_key_values = out.past_key_values
+            past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
 
@@ -230,7 +228,11 @@ def generate_stream(
             stopped = False
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-            output = tokenizer.decode(output_ids, skip_special_tokens=True)
+            if "t5" in model.config._name_or_path:
+                output = tokenizer.decode(output_ids, skip_special_tokens=True, 
+                                          spaces_between_special_tokens=False)
+            else:
+                output = tokenizer.decode(output_ids, skip_special_tokens=True)
             if stop_str:
                 pos = output.rfind(stop_str, l_prompt)
                 if pos != -1:
