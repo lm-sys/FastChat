@@ -8,7 +8,7 @@ An open platform for training, serving, and evaluating large language model base
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
 
-- 🔥 We released fastchat-t5 compatible with commercial usage. Checkout [weights](#fastchat-t5).
+- 🔥 We released **FastChat-T5** compatible with commercial usage. Checkout [weights](#fastchat-t5).
 
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
@@ -82,7 +82,7 @@ python3 -m fastchat.model.apply_delta \
 ```
 
 ### Fastchat-T5
-This model is stored in Huggingface Hub. Simply run the line below to start chatting.
+This model is stored in a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). Simply run the line below to start chatting.
 ```bash
 python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 ```
