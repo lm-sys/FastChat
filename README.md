@@ -6,7 +6,9 @@ An open platform for training, serving, and evaluating large language model base
 <p align="center">
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
-- We released fastchat-t5 that can be used for commercial purposes. Checkout [weights](https://huggingface.co/lmsys/fastchat-t5).
+
+- 🔥 We released fastchat-t5 compatible with commercial usage. Checkout [weights](https://huggingface.co/lmsys/fastchat-t5).
+
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
