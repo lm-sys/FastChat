@@ -6,7 +6,7 @@ An open platform for training, serving, and evaluating large language model base
 <p align="center">
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
-
+- We released fastchat-t5 that can be used for commercial purposes. Checkout [weights](https://huggingface.co/lmsys/fastchat-t5).
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
@@ -59,6 +59,12 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 **NOTE**:
 Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
 Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
+
+### Fastchat-t5
+This model is stored in Huggingface Hub. Simply run the line below to start chatting.
+```bash
+python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5
+```
 
 ### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
