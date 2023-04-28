@@ -36,8 +36,8 @@ def clean_battle_data(log_files):
                 data.append(dp)
 
     convert_type = {
-        "leftvote": "A",
-        "rightvote": "B",
+        "leftvote": "model_a",
+        "rightvote": "model_b",
         "tievote": "tie",
         "bothbad_vote": "tie (bothbad)",
     }
