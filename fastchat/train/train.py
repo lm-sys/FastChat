@@ -83,6 +83,14 @@ def preprocess(
     # Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
+        if len(source) == 0:
+            rank0_print(f"WARNING: size of source is 0.")
+            conversations.append(conv.get_prompt())
+            continue
+        if source[0]["from"] not in roles:
+            rank0_print(f"WARNING: `{source[0]['from']} is not in roles.")
+            conversations.append(conv.get_prompt())
+            continue
         if roles[source[0]["from"]] != conv.roles[0]:
             # Skip the first one if it is not from human
             source = source[1:]
@@ -90,7 +98,10 @@ def preprocess(
         conv.messages = []
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
-            assert role == conv.roles[j % 2], f"{i}"
+            if role != conv.roles[j % 2]:
+                rank0_print(f'WARNING: `{role}` == `{conv.roles[j % 2]}` mismatch.')
+                conv.messages = []
+                break
             conv.append_message(role, sentence["value"])
         conversations.append(conv.get_prompt())
 
