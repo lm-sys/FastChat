@@ -121,7 +121,6 @@ def load_model(
             model_path, trust_remote_code=True, **kwargs
         ).cuda()
     elif "t5" in model_path:
-         kwargs.update({"torch_dtype": torch.bfloat16})
          model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
                                                        low_cpu_mem_usage=True, **kwargs)
          tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
@@ -231,7 +230,7 @@ def generate_stream(
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             if "t5" in model.config._name_or_path:
                 output = tokenizer.decode(output_ids, skip_special_tokens=True, 
-                                           spaces_between_special_tokens = False)
+                                          spaces_between_special_tokens=False)
             else:
                 output = tokenizer.decode(output_ids, skip_special_tokens=True)
             if stop_str:
