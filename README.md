@@ -1,17 +1,18 @@
 # FastChat
+| [Discord](https://discord.gg/h6kCZb72G7) | [Twitter](https://twitter.com/lmsysorg) |
+
 An open platform for training, serving, and evaluating large language model based chatbots.
 
 ## Release
-
 <p align="center">
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
 
+- 🔥 We released **FastChat-T5** compatible with commercial usage. Checkout [weights](#fastchat-t5).
+
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
-
-Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
 
 ## Contents
 - [Install](#install)
@@ -78,6 +79,12 @@ python3 -m fastchat.model.apply_delta \
     --base-model-path /path/to/llama-13b \
     --target-model-path /output/path/to/vicuna-13b \
     --delta-path lmsys/vicuna-13b-delta-v1.1
+```
+
+### Fastchat-T5
+This model is stored in a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). Simply run the line below to start chatting.
+```bash
+python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 ```
 
 ### Old weights
