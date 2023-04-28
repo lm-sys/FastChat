@@ -84,11 +84,17 @@ def preprocess(
     conversations = []
     for i, source in enumerate(sources):
         if len(source) == 0:
-            rank0_print(f"WARNING: size of source is 0.")
+            rank0_print(
+                f"WARNING: size of source is 0."
+                f" (ignored)"
+            )
             conversations.append(conv.get_prompt())
             continue
         if source[0]["from"] not in roles:
-            rank0_print(f"WARNING: `{source[0]['from']} is not in roles.")
+            rank0_print(
+                f"WARNING: `{source[0]['from']} is not in roles."
+                f" (ignored)"
+            )
             conversations.append(conv.get_prompt())
             continue
         if roles[source[0]["from"]] != conv.roles[0]:
@@ -99,7 +105,10 @@ def preprocess(
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
             if role != conv.roles[j % 2]:
-                rank0_print(f'WARNING: `{role}` == `{conv.roles[j % 2]}` mismatch.')
+                rank0_print(
+                    f'WARNING: `{role}` == `{conv.roles[j % 2]}` mismatch.'
+                    f' (ignored)'
+                )
                 conv.messages = []
                 break
             conv.append_message(role, sentence["value"])
