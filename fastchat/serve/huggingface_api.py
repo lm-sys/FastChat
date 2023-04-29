@@ -53,9 +53,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     add_model_args(parser)
     parser.add_argument(
-        "--cpu-offloading", action="store_true", help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
-    )
-    parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
     parser.add_argument("--temperature", type=float, default=0.7)
