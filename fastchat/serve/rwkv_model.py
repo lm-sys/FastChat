@@ -22,7 +22,7 @@ class rwkv_model():
     def __call__(self, input_ids, use_cache, past_key_values=None):
         assert use_cache == True
         input_ids = input_ids[0].detach().cpu().numpy()
-        print(input_ids)
+        # print(input_ids)
         logits, state = self.model.forward(input_ids, past_key_values)
         # print(logits)
         out = SimpleNamespace(logits = [[logits]], past_key_values=state)
