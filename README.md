@@ -16,7 +16,7 @@ An open platform for training, serving, and evaluating large language model base
 
 ## Contents
 - [Install](#install)
-- [Vicuna Weights](#vicuna-weights)
+- [Model Weights](#model-weights)
 - [Inference with Command Line Interface](#inference-with-command-line-interface)
 - [Serving with Web GUI](#serving-with-web-gui)
 - [API](#api)
@@ -50,7 +50,8 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-## Vicuna Weights
+## Model Weights
+### Vicuna Weights
 We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
@@ -61,7 +62,7 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
 Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
 
-### Vicuna-7B
+#### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
@@ -71,7 +72,7 @@ python3 -m fastchat.model.apply_delta \
     --delta-path lmsys/vicuna-7b-delta-v1.1
 ```
 
-### Vicuna-13B
+#### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
@@ -81,26 +82,31 @@ python3 -m fastchat.model.apply_delta \
     --delta-path lmsys/vicuna-13b-delta-v1.1
 ```
 
-### Fastchat-T5
-This model is stored in a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). Simply run the line below to start chatting.
-```bash
-python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
-```
+#### Old weights
+See [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
-### Old weights
-See [docs/weights_version.md](docs/weights_version.md) for all versions of weights and their differences.
-
-
-### Low CPU Memory Conversion
+#### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
 1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
 2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+
+### FastChat-T5
+Simply run the line below to start chatting.
+It will automatically download the weights from a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). 
+
+```bash
+python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
+```
 
 ## Inference with Command Line Interface
 
 (Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
+
+
+#### Supported Models
+
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
