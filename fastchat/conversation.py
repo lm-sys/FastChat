@@ -279,10 +279,6 @@ def get_default_conv_template(model_name):
     return conv_one_shot
 
 
-def compute_skip_echo_len():
-    raise NotImplementedError()
-
-
 if __name__ == "__main__":
     conv = conv_templates["vicuna_v1.1"].copy()
     conv.append_message(conv.roles[0], "Hello!")
