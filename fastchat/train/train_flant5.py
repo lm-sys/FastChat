@@ -29,7 +29,7 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer, AddedToken
 
-from fastchat import conversation as conversation_lib
+from fastchat.conversation import conv_one_shot as default_conversation
 
 # TODO: import and use code from ../data/dataset.py
 
@@ -173,8 +173,8 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
     
     unknown_role = "unknown"  # use default unknown role
     roles = {
-        "human": conversation_lib.default_conversation.roles[0],  # human role
-        "gpt": conversation_lib.default_conversation.roles[1],  # gpt role
+        "human": default_conversation.roles[0],  # human role
+        "gpt": default_conversation.roles[1],  # gpt role
     }
 
     for i in range(len(source)):
@@ -223,7 +223,7 @@ def preprocess(
     """
     # add end signal and concatenate together
     conversations = []
-    header = f"{conversation_lib.default_conversation.system}\n\n"
+    header = f"{default_conversation.system}\n\n"
     for source in sources:
         conversation = _add_speaker_and_signal(header, source, tokenizer)
         conversations.append(conversation)

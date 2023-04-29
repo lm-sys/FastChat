@@ -7,7 +7,7 @@ from tqdm import tqdm
 import shortuuid
 import ray
 
-from fastchat.conversation import get_default_conv_template, compute_skip_echo_len
+from fastchat.conversation import get_default_conv_template
 from fastchat.utils import disable_torch_init
 
 
@@ -55,17 +55,16 @@ def get_model_answers(model_path, model_id, question_jsons):
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-        inputs = tokenizer([prompt])
+        input_ids = tokenizer([prompt]).input_ids
         output_ids = model.generate(
-            torch.as_tensor(inputs.input_ids).cuda(),
+            torch.as_tensor(input_ids).cuda(),
             do_sample=True,
             temperature=0.7,
             max_new_tokens=1024,
         )
-        outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-        skip_echo_len = compute_skip_echo_len(model_id, conv, prompt)
+        output_ids = output_ids[0][len(input_ids[0]):]
+        outputs = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
 
-        outputs = outputs[skip_echo_len:].strip()
         ans_id = shortuuid.uuid()
         ans_jsons.append(
             {

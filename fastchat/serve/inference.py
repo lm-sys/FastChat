@@ -4,34 +4,20 @@ from typing import Optional
 import warnings
 
 import torch
-
-try:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LlamaTokenizer,
-        LlamaForCausalLM,
-        AutoModel,
-        AutoModelForSeq2SeqLM,
-        T5Tokenizer,
-        AutoConfig,
-    )
-except ImportError:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LLaMATokenizer,
-        LLamaForCausalLM,
-        AutoModel,
-        AutoModelForSeq2SeqLM,
-        T5Tokenizer,
-        AutoConfig,
-    )
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    LlamaTokenizer,
+    LlamaForCausalLM,
+    AutoModel,
+    AutoModelForSeq2SeqLM,
+    T5Tokenizer,
+    AutoConfig,
+)
 
 from fastchat.conversation import (
     conv_templates,
     get_default_conv_template,
-    compute_skip_echo_len,
     SeparatorStyle,
 )
 from fastchat.serve.compression import load_compress_model
@@ -39,23 +25,6 @@ from fastchat.serve.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
-
-
-def raise_warning_for_old_weights(model_path, model):
-    if "vicuna" in model_path.lower():
-        try:
-            is_vicuna = isinstance(model, LlamaForCausalLM)
-        except Exception:
-            is_vicuna = isinstance(model, LLamaForCausalLM)
-        if is_vicuna and model.model.vocab_size > 32000:
-            warnings.warn(
-                "\nYou are probably using the old Vicuna-v0 model, "
-                "which will generate unexpected results with the "
-                "current fschat.\nYou can try one of the following methods:\n"
-                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
-                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
-                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
-            )
 
 
 def get_gpu_memory(max_gpus=None):
@@ -76,6 +45,18 @@ def get_gpu_memory(max_gpus=None):
             gpu_memory.append(available_memory)
     return gpu_memory
 
+
+def raise_warning_for_old_weights(model_path, model):
+    if "vicuna" in model_path.lower() and isinstance(model, LlamaForCausalLM):
+        if model.model.vocab_size > 32000:
+            warnings.warn(
+                "\nYou are probably using the old Vicuna-v0 model, "
+                "which will generate unexpected results with the "
+                "current fastchat.\nYou can try one of the following methods:\n"
+                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
+            )
 
 def load_model(
     model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
@@ -113,17 +94,12 @@ def load_model(
         if num_gpus != 1 and num_gpus != "1":
             warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
         else:
-            return load_compress_model(model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"])
+            return load_compress_model(model_path=model_path,
+                device=device, torch_dtype=kwargs["torch_dtype"])
 
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, **kwargs
-        ).cuda()
-    elif "t5" in model_path:
-         model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
-                                                       low_cpu_mem_usage=True, **kwargs)
-         tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModel.from_pretrained(model_path, trust_remote_code=True, **kwargs)
     elif "dolly" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
@@ -136,13 +112,16 @@ def load_model(
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
+    elif "t5" in model_path:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
+                                                      low_cpu_mem_usage=True, **kwargs)
+        tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
         raise_warning_for_old_weights(model_path, model)
-
 
     if (device == "cuda" and num_gpus == 1) or device == "mps":
         model.to(device)
@@ -158,13 +137,16 @@ def generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     prompt = params["prompt"]
-    l_prompt = len(prompt)
+    len_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
-    stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
+    echo = params.get("echo", True)
+    stop_token_ids = params.get("stop_token_ids", None) or []
+    stop_token_ids.append(tokenizer.eos_token_id)
 
     input_ids = tokenizer(prompt).input_ids
+    input_echo_len = len(input_ids)
     output_ids = list(input_ids)
 
     if model.config.is_encoder_decoder:
@@ -228,13 +210,17 @@ def generate_stream(
             stopped = False
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-            if "t5" in model.config._name_or_path:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True, 
-                                          spaces_between_special_tokens=False)
+            if echo:
+                tmp_output_ids = output_ids
+                rfind_start = len_prompt
             else:
-                output = tokenizer.decode(output_ids, skip_special_tokens=True)
+                tmp_output_ids = output_ids[input_echo_len:]
+                rfind_start = 0
+
+            output = tokenizer.decode(tmp_output_ids, skip_special_tokens=True, 
+                                      spaces_between_special_tokens=False)
             if stop_str:
-                pos = output.rfind(stop_str, l_prompt)
+                pos = output.rfind(stop_str, rfind_start)
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
@@ -256,7 +242,7 @@ class ChatIO(abc.ABC):
         """Prompt for output from a role."""
 
     @abc.abstractmethod
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         """Stream output."""
 
 
@@ -297,30 +283,25 @@ def chat_loop(
         conv.append_message(conv.roles[1], None)
 
         if is_chatglm:
-            prompt = conv.messages[conv.offset :]
             generate_stream_func = chatglm_generate_stream
+            prompt = conv.messages[conv.offset:]
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
 
-        skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
-        stop_str = (
-            conv.sep
-            if conv.sep_style in [SeparatorStyle.SINGLE, SeparatorStyle.BAIZE]
-            else None
-        )
-
-        params = {
+        gen_params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": stop_str,
+            "stop": conv.stop_str,
+            "stop_token_ids": conv.stop_token_ids,
+            "echo": False,
         }
 
         chatio.prompt_for_output(conv.roles[1])
-        output_stream = generate_stream_func(model, tokenizer, params, device)
-        outputs = chatio.stream_output(output_stream, skip_echo_len)
+        output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        outputs = chatio.stream_output(output_stream)
         # NOTE: strip is important to align with the training data.
         conv.messages[-1][-1] = outputs.strip()
 

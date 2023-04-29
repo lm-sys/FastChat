@@ -8,7 +8,7 @@ import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from fastchat.conversation import get_default_conv_template, compute_skip_echo_len
+from fastchat.conversation import get_default_conv_template
 from fastchat.serve.inference import load_model
 
 
@@ -30,16 +30,15 @@ def main(args):
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    inputs = tokenizer([prompt])
+    input_ids = tokenizer([prompt]).input_ids
     output_ids = model.generate(
-        torch.as_tensor(inputs.input_ids).cuda(),
+        torch.as_tensor(input_ids).cuda(),
         do_sample=True,
         temperature=0.7,
         max_new_tokens=1024,
     )
-    outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-    skip_echo_len = compute_skip_echo_len(args.model_path, conv, prompt)
-    outputs = outputs[skip_echo_len:]
+    output_ids = output_ids[0][len(input_ids[0]):]
+    outputs = tokenizer.decode(output_ids, skip_special_tokens=True)
 
     print(f"{conv.roles[0]}: {msg}")
     print(f"{conv.roles[1]}: {outputs}")
