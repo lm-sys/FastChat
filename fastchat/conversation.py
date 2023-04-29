@@ -27,6 +27,7 @@ class SeparatorStyle(Enum):
     NO_COLON_SINGLE = auto()
     BAIZE = auto()
     DOLLY = auto()
+    CHATML = auto()
 
 
 @dataclasses.dataclass
@@ -42,6 +43,9 @@ class Conversation:
     sep_style: SeparatorStyle
     sep: str
     sep2: str = None
+    # Prefix before the role
+    prefix: str = ""
+    role_sep: str = ""
     # Stop criteria (the default one is EOS token)
     stop_str: str = None
     stop_token_ids: List[int] = None
@@ -57,45 +61,53 @@ class Conversation:
             ret = self.system + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += role + ": " + message + self.sep
+                    ret += self.prefix + role + ": " + message + self.sep
                 else:
-                    ret += role + ":"
+                    ret += self.prefix + role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.ADD_COLON_TWO:
             seps = [self.sep, self.sep2]
             ret = self.system + seps[0]
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + ": " + message + seps[i % 2]
+                    ret += self.prefix + role + ": " + message + seps[i % 2]
                 else:
-                    ret += role + ":"
+                    ret += self.prefix + role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = self.system
             for role, message in self.messages:
                 if message:
-                    ret += role + message + self.sep
+                    ret += self.prefix + role + message + self.sep
                 else:
-                    ret += role
+                    ret += self.prefix + role
             return ret
         elif self.sep_style == SeparatorStyle.BAIZE:
             ret = self.system + "\n"
             for role, message in self.messages:
                 if message:
-                    ret += role + message + "\n"
+                    ret += self.prefix + role + message + "\n"
                 else:
-                    ret += role
+                    ret += self.prefix + role
             return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
             ret = self.system
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + ":\n" + message + seps[i % 2]
+                    ret += self.prefix + role + ":\n" + message + seps[i % 2]
                     if i % 2 == 1:
                         ret += "\n\n"
                 else:
-                    ret += role + ":\n"
+                    ret += self.prefix + role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATML:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += self.prefix + role + self.role_sep + message + self.sep
+                else:
+                    ret += self.prefix + role + self.role_sep
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -121,6 +133,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
+            prefix=self.prefix,
+            role_sep=self.role_sep,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
             conv_id=self.conv_id,
@@ -171,6 +185,7 @@ conv_one_shot = Conversation(
         ),
     ),
     offset=2,
+    prefix="",
     sep_style=SeparatorStyle.ADD_COLON_SINGLE,
     sep="\n### ",
     stop_str="###",
@@ -251,6 +266,19 @@ conv_baize = Conversation(
     stop_str="[|Human|]",
 )
 
+# ChatML-style default template
+conv_chatml = Conversation(
+    system="""<|im_start|>system<|im_sep|>You are a large language model.<|im_end|>""",
+    roles=("user", "assistant"),
+    messages=(),
+    offset=0,
+    prefix="<|im_start|>",
+    role_sep="<|im_sep|>",
+    sep_style=SeparatorStyle.CHATML,
+    sep="<|im_end|>", # Add \n if you want more readable output at the cost of extra tokens
+    stop_str="<|im_end|>"
+)
+
 
 conv_templates = {
     "baize": conv_baize,
@@ -260,6 +288,7 @@ conv_templates = {
     "oasst": conv_oasst,
     "stablelm": conv_stablelm,
     "vicuna_v1.1": conv_vicuna_v1_1,
+    "chatml": conv_chatml,
 }
 
 
@@ -277,6 +306,8 @@ def get_default_conv_template(model_name):
         return conv_baize
     elif "stablelm" in model_name:
         return conv_stablelm
+    elif "chatml" in model_name:
+        return conv_chatml
     return conv_one_shot
 
 
