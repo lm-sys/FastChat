@@ -39,8 +39,8 @@ enable_moderation = False
 priority = {
     "vicuna-13b": "aaa",
     "koala-13b": "aab",
-    "oasst-pythia-12b": "aac",
-    "fastchat-t5-3b": "aad",
+    "fastchat-t5-3b": "aac",
+    "oasst-pythia-12b": "aad",
     "chatglm-6b": "aae",
     "stablelm-tuned-alpha-7b": "aaf",
     "alpaca-13b": "aag",
