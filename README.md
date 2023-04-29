@@ -104,9 +104,15 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
 
-
 #### Supported Models
-
+The following models are tested:
+- Vicuna, Alpaca, LLaMA, Koala
+- databricks/dolly-v2-12b
+- lmsys/fastchat-t5-3b-v1.0
+- OpenAssistant/oasst-sft-1-pythia-12b
+- project-baize/baize-lora-7B
+- StabilityAI/stablelm-tuned-alpha-7b
+- THUDM/chatglm-6b
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
