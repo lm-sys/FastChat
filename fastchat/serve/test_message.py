@@ -29,6 +29,7 @@ def main():
         print(f"worker_addr: {worker_addr}")
 
     if worker_addr == "":
+        print(f"No available workers for {model_name}")
         return
 
     conv = get_default_conv_template(model_name).copy()
@@ -38,15 +39,14 @@ def main():
 
     headers = {"User-Agent": "FastChat Client"}
     gen_params = {
-        "model": model_path,
+        "model": model_name,
         "prompt": prompt,
-        "temperature": temperature,
-        "max_new_tokens": max_new_tokens,
+        "temperature": args.temperature,
+        "max_new_tokens": args.max_new_tokens,
         "stop": conv.stop_str,
         "stop_token_ids": conv.stop_token_ids,
         "echo": False,
     }
-    logger.info(f"==== request ====\n{gen_params}")
     response = requests.post(
         worker_addr + "/worker_generate_stream",
         headers=headers,
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--worker-address", type=str)
-    parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-name", type=str, required=True)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-new-tokens", type=int, default=32)
     parser.add_argument(
