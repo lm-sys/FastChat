@@ -116,6 +116,12 @@ def load_model(
         model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
                                                       low_cpu_mem_usage=True, **kwargs)
         tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
+    elif "RWKV-4" in model_path:
+        import os, sys, pathlib
+        sys.path.append(os.path.join(pathlib.Path(__file__).parent.resolve()))
+        from rwkv_model import rwkv_model
+        model = rwkv_model(model_path)
+        tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
