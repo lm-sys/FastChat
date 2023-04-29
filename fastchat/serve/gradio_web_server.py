@@ -52,7 +52,7 @@ model_description_md = """
 | | |
 | ---- | ---- |
 | [Vicuna](https://vicuna.lmsys.org): a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS. | [Koala](https://bair.berkeley.edu/blog/2023/04/03/koala/): a dialogue model for academic research by BAIR |
-| [FastChat-T5](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0): a chat assistant fine-tuned from T5 by LMSYS. | [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone by LAION. |
+| [FastChat-T5](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0): a chat assistant fine-tuned from FLAN-T5 by LMSYS. | [OpenAssistant (oasst)](https://open-assistant.io/): a chat-based assistant for everyone by LAION. |
 | [ChatGLM](https://chatglm.cn/blog): an open bilingual dialogue language model by Tsinghua University | [StableLM](https://github.com/stability-AI/stableLM/): Stability AI language models. |
 | [Alpaca](https://crfm.stanford.edu/2023/03/13/alpaca.html): a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford. | [LLaMA](https://arxiv.org/abs/2302.13971): open and efficient foundation language models by Meta. |
 | [Dolly](https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm): an instruction-tuned open large language model by Databricks. | |
