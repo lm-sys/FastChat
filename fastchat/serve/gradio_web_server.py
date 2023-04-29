@@ -232,7 +232,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     # Make requests
     gen_params = {
-        "model": model_path,
+        "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_new_tokens,
