@@ -104,7 +104,7 @@ def preprocess(
     ).input_ids
     targets = input_ids.clone()
 
-    assert conv.sep_style == SeparatorStyle.TWO
+    assert conv.sep_style == SeparatorStyle.ADD_COLON_TWO
 
     # Mask targets
     sep = conv.sep + conv.roles[1] + ": "

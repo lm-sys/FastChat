@@ -187,6 +187,8 @@ class CacheFlowWorker:
         temperature = float(params.get("temperature", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
+        echo = params.get("echo", True)
+        params["stop_token_ids"] = params.get("stop_token_ids", None) or []
 
         input_ids = tokenizer(context).input_ids
         max_src_len = self.context_len - max_new_tokens - 8
@@ -229,6 +231,8 @@ class CacheFlowWorker:
             all_outputs = []
             for seq in seq_group.seqs:
                 token_ids = seq.get_token_ids()
+                if not echo:
+                    token_ids = token_ids[len(input_ids):]
                 output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
                 if stop_str is not None:
                     if output.endswith(stop_str):

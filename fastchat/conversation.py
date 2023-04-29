@@ -1,15 +1,17 @@
 """
 Conversation prompt template.
 
-Now we support
-- Vicuna
-- Koala
-- OpenAssistant/oasst-sft-1-pythia-12b
-- StabilityAI/stablelm-tuned-alpha-7b
+Supported models (alphabetical order)
+- Alpaca
 - databricks/dolly-v2-12b
-- THUDM/chatglm-6b
+- Koala
+- LLaMA
+- lmsys/fastchat-t5-3b-v1.0
+- OpenAssistant/oasst-sft-1-pythia-12b
 - project-baize/baize-lora-7B
-- Alpaca/LLaMa
+- StabilityAI/stablelm-tuned-alpha-7b
+- THUDM/chatglm-6b
+- Vicuna
 """
 
 import dataclasses
@@ -20,11 +22,11 @@ from typing import List, Tuple, Any
 class SeparatorStyle(Enum):
     """Different separator style."""
 
-    SINGLE = auto()
-    TWO = auto()
-    DOLLY = auto()
-    OASST_PYTHIA = auto()
+    ADD_COLON_SINGLE = auto()
+    ADD_COLON_TWO = auto()
+    NO_COLON_SINGLE = auto()
     BAIZE = auto()
+    DOLLY = auto()
 
 
 @dataclasses.dataclass
@@ -34,10 +36,15 @@ class Conversation:
     system: str
     roles: List[str]
     messages: List[List[str]]
+    # Offset of few shot examples
     offset: int
-    sep_style: SeparatorStyle = SeparatorStyle.SINGLE
-    sep: str = "###"
+    # Separator
+    sep_style: SeparatorStyle
+    sep: str
     sep2: str = None
+    # Stop criteria (the default one is EOS token)
+    stop_str: str = None
+    stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
     # TODO(lmzheng): refactor this
@@ -46,15 +53,15 @@ class Conversation:
     model_name: str = None
 
     def get_prompt(self):
-        if self.sep_style == SeparatorStyle.SINGLE:
-            ret = self.system
+        if self.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
+            ret = self.system + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += self.sep + " " + role + ": " + message
+                    ret += role + ": " + message + self.sep
                 else:
-                    ret += self.sep + " " + role + ":"
+                    ret += role + ":"
             return ret
-        elif self.sep_style == SeparatorStyle.TWO:
+        elif self.sep_style == SeparatorStyle.ADD_COLON_TWO:
             seps = [self.sep, self.sep2]
             ret = self.system + seps[0]
             for i, (role, message) in enumerate(self.messages):
@@ -62,6 +69,22 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += role + message + self.sep
+                else:
+                    ret += role
+            return ret
+        elif self.sep_style == SeparatorStyle.BAIZE:
+            ret = self.system + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + message + "\n"
+                else:
+                    ret += role
             return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
@@ -73,22 +96,6 @@ class Conversation:
                         ret += "\n\n"
                 else:
                     ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.OASST_PYTHIA:
-            ret = self.system
-            for role, message in self.messages:
-                if message:
-                    ret += role + message + self.sep
-                else:
-                    ret += role
-            return ret
-        elif self.sep_style == SeparatorStyle.BAIZE:
-            ret = self.system
-            for role, message in self.messages:
-                if message:
-                    ret += "\n" + role + message
-                else:
-                    ret += "\n" + role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -114,6 +121,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
+            stop_str=self.stop_str,
+            stop_token_ids=self.stop_token_ids,
             conv_id=self.conv_id,
             model_name=self.model_name,
         )
@@ -124,13 +133,12 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
-            "sep": self.sep,
-            "sep2": self.sep2,
             "conv_id": self.conv_id,
             "model_name": self.model_name,
         }
 
 
+# A template with one conversation example
 conv_one_shot = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
     "The assistant gives helpful, detailed, and polite answers to the human's questions.",
@@ -163,33 +171,36 @@ conv_one_shot = Conversation(
         ),
     ),
     offset=2,
-    sep_style=SeparatorStyle.SINGLE,
-    sep="###",
+    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+    sep="\n### ",
+    stop_str="###",
 )
 
 
+# Vicuna v1.1 template
 conv_vicuna_v1_1 = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant. "
     "The assistant gives helpful, detailed, and polite answers to the user's questions.",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.TWO,
+    sep_style=SeparatorStyle.ADD_COLON_TWO,
     sep=" ",
     sep2="</s>",
 )
 
-
+# Koala default template
 conv_koala_v1 = Conversation(
     system="BEGINNING OF CONVERSATION:",
     roles=("USER", "GPT"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.TWO,
+    sep_style=SeparatorStyle.ADD_COLON_TWO,
     sep=" ",
     sep2="</s>",
 )
 
+# Dolly V2 default template
 conv_dolly = Conversation(
     system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
     roles=("### Instruction", "### Response"),
@@ -200,15 +211,17 @@ conv_dolly = Conversation(
     sep2="### End",
 )
 
+# OpenAssistant Pythia default template
 conv_oasst = Conversation(
     system="",
     roles=("<|prompter|>", "<|assistant|>"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep_style=SeparatorStyle.NO_COLON_SINGLE,
     sep="<|endoftext|>",
 )
 
+# StableLM Alpha default template
 conv_stablelm = Conversation(
     system="""<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
@@ -219,10 +232,12 @@ conv_stablelm = Conversation(
     roles=("<|USER|>", "<|ASSISTANT|>"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.OASST_PYTHIA,
+    sep_style=SeparatorStyle.NO_COLON_SINGLE,
     sep="",
+    stop_token_ids=[50278, 50279, 50277, 1, 0],
 )
 
+# Baize default template
 conv_baize = Conversation(
     system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
     roles=("[|Human|]", "[|AI|]"),
@@ -233,16 +248,18 @@ conv_baize = Conversation(
     offset=2,
     sep_style=SeparatorStyle.BAIZE,
     sep="[|Human|]",
+    stop_str="[|Human|]",
 )
 
 
 conv_templates = {
-    "conv_one_shot": conv_one_shot,
-    "vicuna_v1.1": conv_vicuna_v1_1,
-    "koala_v1": conv_koala_v1,
-    "dolly": conv_dolly,
-    "oasst": conv_oasst,
     "baize": conv_baize,
+    "conv_one_shot": conv_one_shot,
+    "dolly": conv_dolly,
+    "koala_v1": conv_koala_v1,
+    "oasst": conv_oasst,
+    "stablelm": conv_stablelm,
+    "vicuna_v1.1": conv_vicuna_v1_1,
 }
 
 
@@ -263,34 +280,10 @@ def get_default_conv_template(model_name):
     return conv_one_shot
 
 
-def compute_skip_echo_len(model_name, conv, prompt):
-    model_name = model_name.lower()
-    if "chatglm" in model_name:
-        skip_echo_len = len(conv.messages[-2][1]) + 1
-    elif "dolly-v2" in model_name:
-        special_toks = ["### Instruction:", "### Response:", "### End"]
-        skip_echo_len = len(prompt)
-        for tok in special_toks:
-            skip_echo_len -= prompt.count(tok) * len(tok)
-    elif "t5" in model_name:
-         skip_echo_len = len(prompt)
-    elif "oasst" in model_name and "pythia" in model_name:
-        special_toks = ["<|prompter|>", "<|assistant|>", "<|endoftext|>"]
-        skip_echo_len = len(prompt)
-        for tok in special_toks:
-            skip_echo_len -= prompt.count(tok) * len(tok)
-    elif "stablelm" in model_name:
-        special_toks = ["<|SYSTEM|>", "<|USER|>", "<|ASSISTANT|>"]
-        skip_echo_len = len(prompt)
-        for tok in special_toks:
-            skip_echo_len -= prompt.count(tok) * len(tok)
-    elif "baize" in model_name:
-        skip_echo_len = len(prompt)
-    else:
-        skip_echo_len = len(prompt) + 1 - prompt.count("</s>") * 3
-    return skip_echo_len
-
-
 if __name__ == "__main__":
-    default_conversation = conv_templates["vicuna_v1.1"]
-    print(default_conversation.get_prompt())
+    conv = conv_templates["vicuna_v1.1"].copy()
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
