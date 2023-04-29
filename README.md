@@ -118,26 +118,26 @@ The following models are tested:
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 See the "No Enough Memory" section below if you do not have enough memory.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights
 ```
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --num-gpus 2
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --num-gpus 2
 ```
 
 #### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device cpu
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
@@ -146,10 +146,10 @@ Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
-Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/V100(16GB) GPU.
+Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
 
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --load-8bit
 ```
 
 Besides, we are actively exploring more methods to make the model easier to run on more platforms.
@@ -170,14 +170,15 @@ This controller manages the distributed workers.
 
 #### Launch the model worker
 ```bash
-python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
+python3 -m fastchat.serve.model_worker --model-path /path/to/model/weights
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
-python3 -m fastchat.serve.test_message --model-name vicuna-13b
+python3 -m fastchat.serve.test_message --model-name vicuna-7b
 ```
+You will see a short output.
 
 #### Launch the Gradio web server
 ```bash
