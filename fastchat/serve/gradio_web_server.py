@@ -11,7 +11,6 @@ import requests
 
 from fastchat.conversation import (
     get_default_conv_template,
-    compute_skip_echo_len,
     SeparatorStyle,
 )
 from fastchat.constants import LOGDIR
@@ -229,17 +228,22 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         prompt = state.messages[state.offset :]
     else:
         prompt = state.get_prompt()
-    skip_echo_len = compute_skip_echo_len(model_name, state, prompt)
 
     # Make requests
-    pload = {
+    stop_str = (
+        state.sep
+        if state.sep_style in [SeparatorStyle.ADD_COLON_SINGLE, SeparatorStyle.BAIZE]
+        else None
+    )
+    gen_params = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_new_tokens,
-        "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else None,
+        "stop": stop_str,
+        "echo": False,
     }
-    logger.info(f"==== request ====\n{pload}")
+    logger.info(f"==== request ====\n{gen_params}")
 
     state.messages[-1][-1] = "▌"
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -249,7 +253,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         response = requests.post(
             worker_addr + "/worker_generate_stream",
             headers=headers,
-            json=pload,
+            json=gen_params,
             stream=True,
             timeout=20,
         )
@@ -257,7 +261,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             if chunk:
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"][skip_echo_len:].strip()
+                    output = data["text"].strip()
                     output = post_process_code(output)
                     state.messages[-1][-1] = output + "▌"
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5

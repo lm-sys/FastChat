@@ -26,11 +26,10 @@ class SimpleChatIO(ChatIO):
     def prompt_for_output(self, role: str):
         print(f"{role}: ", end="", flush=True)
 
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         pre = 0
         for outputs in output_stream:
-            outputs = outputs[skip_echo_len:].strip()
-            outputs = outputs.split(" ")
+            outputs = outputs.strip().split(" ")
             now = len(outputs) - 1
             if now > pre:
                 print(" ".join(outputs[pre:now]), end=" ", flush=True)
@@ -62,7 +61,7 @@ class RichChatIO(ChatIO):
     def prompt_for_output(self, role: str):
         self._console.print(f"[bold]{role}:")
 
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         """Stream output from a role."""
         # TODO(suquark): the console flickers when there is a code block
         #  above it. We need to cut off "live" when a code block is done.
@@ -71,8 +70,7 @@ class RichChatIO(ChatIO):
         with Live(console=self._console, refresh_per_second=4) as live:
             # Read lines from the stream
             for outputs in output_stream:
-                accumulated_text = outputs[skip_echo_len:]
-                if not accumulated_text:
+                if not outputs:
                     continue
                 # Render the accumulated text as Markdown
                 # NOTE: this is a workaround for the rendering "unstandard markdown"
@@ -86,7 +84,7 @@ class RichChatIO(ChatIO):
                 #  especially for console output, because in general the console does not
                 #  care about trailing spaces.
                 lines = []
-                for line in accumulated_text.splitlines():
+                for line in outputs.splitlines():
                     lines.append(line)
                     if line.startswith("```"):
                         # Code block marker - do not add trailing spaces, as it would
@@ -98,7 +96,7 @@ class RichChatIO(ChatIO):
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
-        return outputs[skip_echo_len:]
+        return outputs
 
 
 def main(args):
