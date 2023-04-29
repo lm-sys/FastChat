@@ -5,7 +5,6 @@ import requests
 
 from fastchat.conversation import (
     get_default_conv_template,
-    compute_skip_echo_len,
     SeparatorStyle,
 )
 
@@ -37,18 +36,21 @@ def main():
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    headers = {"User-Agent": "fastchat Client"}
-    pload = {
-        "model": model_name,
+    headers = {"User-Agent": "FastChat Client"}
+    gen_params = {
+        "model": model_path,
         "prompt": prompt,
-        "max_new_tokens": args.max_new_tokens,
-        "temperature": args.temperature,
-        "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+        "temperature": temperature,
+        "max_new_tokens": max_new_tokens,
+        "stop": conv.stop_str,
+        "stop_token_ids": conv.stop_token_ids,
+        "echo": False,
     }
+    logger.info(f"==== request ====\n{gen_params}")
     response = requests.post(
         worker_addr + "/worker_generate_stream",
         headers=headers,
-        json=pload,
+        json=gen_params,
         stream=True,
     )
 
@@ -58,8 +60,7 @@ def main():
     ):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
-            output = data["text"][skip_echo_len:].strip()
+            output = data["text"].strip()
             print(f"{conv.roles[1]}: {output}", end="\r")
     print("")
 
