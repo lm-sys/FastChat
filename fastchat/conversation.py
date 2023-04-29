@@ -6,6 +6,7 @@ Supported models (alphabetical order)
 - databricks/dolly-v2-12b
 - Koala
 - LLaMA
+- lmsys/fastchat-t5-3b-v1.0
 - OpenAssistant/oasst-sft-1-pythia-12b
 - project-baize/baize-lora-7B
 - StabilityAI/stablelm-tuned-alpha-7b
