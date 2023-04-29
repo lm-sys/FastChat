@@ -35,10 +35,15 @@ class Conversation:
     system: str
     roles: List[str]
     messages: List[List[str]]
+    # Offset of few shot examples
     offset: int
+    # Separator
     sep_style: SeparatorStyle
     sep: str
     sep2: str = None
+    # Stop criteria (the default one is EOS token)
+    stop_str: str = None
+    stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
     # TODO(lmzheng): refactor this
@@ -115,6 +120,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
+            stop_str=self.stop_str,
+            stop_token_ids=self.stop_token_ids,
             conv_id=self.conv_id,
             model_name=self.model_name,
         )
@@ -125,8 +132,6 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
-            "sep": self.sep,
-            "sep2": self.sep2,
             "conv_id": self.conv_id,
             "model_name": self.model_name,
         }
@@ -166,7 +171,8 @@ conv_one_shot = Conversation(
     ),
     offset=2,
     sep_style=SeparatorStyle.ADD_COLON_SINGLE,
-    sep="###",
+    sep="\n### ",
+    stop_str="###",
 )
 
 
@@ -227,6 +233,7 @@ conv_stablelm = Conversation(
     offset=0,
     sep_style=SeparatorStyle.NO_COLON_SINGLE,
     sep="",
+    stop_token_ids=[50278, 50279, 50277, 1, 0],
 )
 
 # Baize default template
@@ -240,16 +247,18 @@ conv_baize = Conversation(
     offset=2,
     sep_style=SeparatorStyle.BAIZE,
     sep="[|Human|]",
+    stop_str="[|Human|]",
 )
 
 
 conv_templates = {
-    "conv_one_shot": conv_one_shot,
-    "vicuna_v1.1": conv_vicuna_v1_1,
-    "koala_v1": conv_koala_v1,
-    "dolly": conv_dolly,
-    "oasst": conv_oasst,
     "baize": conv_baize,
+    "conv_one_shot": conv_one_shot,
+    "dolly": conv_dolly,
+    "koala_v1": conv_koala_v1,
+    "oasst": conv_oasst,
+    "stablelm": conv_stablelm,
+    "vicuna_v1.1": conv_vicuna_v1_1,
 }
 
 

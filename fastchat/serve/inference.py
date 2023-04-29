@@ -137,12 +137,13 @@ def generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     prompt = params["prompt"]
-    l_prompt = len(prompt)
+    len_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
     echo = params.get("echo", True)
-    stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
+    stop_token_ids = params.get("stop_token_ids", None) or []
+    stop_token_ids.append(tokenizer.eos_token_id)
 
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
@@ -211,13 +212,15 @@ def generate_stream(
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             if echo:
                 tmp_output_ids = output_ids
+                rfind_start = len_prompt
             else:
                 tmp_output_ids = output_ids[input_echo_len:]
+                rfind_start = 0
 
             output = tokenizer.decode(tmp_output_ids, skip_special_tokens=True, 
                                       spaces_between_special_tokens=False)
             if stop_str:
-                pos = output.rfind(stop_str, l_prompt)
+                pos = output.rfind(stop_str, rfind_start)
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
@@ -286,18 +289,13 @@ def chat_loop(
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
 
-        stop_str = (
-            conv.sep
-            if conv.sep_style in [SeparatorStyle.ADD_COLON_SINGLE, SeparatorStyle.BAIZE]
-            else None
-        )
-
         gen_params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": stop_str,
+            "stop": conv.stop_str,
+            "stop_token_ids": conv.stop_token_ids,
             "echo": False,
         }
 

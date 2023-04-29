@@ -224,23 +224,20 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         return
 
     # Construct prompt
+    conv = state
     if "chatglm" in model_name:
-        prompt = state.messages[state.offset :]
+        prompt = conv.messages[conv.offset :]
     else:
-        prompt = state.get_prompt()
+        prompt = conv.get_prompt()
 
     # Make requests
-    stop_str = (
-        state.sep
-        if state.sep_style in [SeparatorStyle.ADD_COLON_SINGLE, SeparatorStyle.BAIZE]
-        else None
-    )
     gen_params = {
-        "model": model_name,
+        "model": model_path,
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_new_tokens,
-        "stop": stop_str,
+        "stop": conv.stop_str,
+        "stop_token_ids": conv.stop_token_ids,
         "echo": False,
     }
     logger.info(f"==== request ====\n{gen_params}")
