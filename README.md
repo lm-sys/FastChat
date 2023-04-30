@@ -155,7 +155,7 @@ In addition to that, you can add `--cpu-offloading` to commands above to offload
 
 #### More Platforms
 
-- [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones and consumer-class GPUs via Vulkan, Metal and CUDA.
+- [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
 ## Serving with Web GUI
 
