@@ -22,8 +22,11 @@ class SeparatorStyle(Enum):
 class Conversation:
     """A class that keeps all conversation history."""
 
+    # System prompts
     system: str
+    # Two roles
     roles: List[str]
+    # All messages
     messages: List[List[str]]
     # Offset of few shot examples
     offset: int
@@ -33,6 +36,7 @@ class Conversation:
     sep2: str = None
     # Stop criteria (the default one is EOS token)
     stop_str: str = None
+    # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
