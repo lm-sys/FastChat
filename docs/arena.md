@@ -5,7 +5,7 @@ We invite the entire community to join this benchmarking effort by contributing 
 ## How to add a new model
 If you want to see a specific model in the arena, you can follow the steps below.
 
-1. Contribute code to support the new model in FastChat and submit a pull request.
+1. Contribute code to support the new model in FastChat by submitting a pull request.  
    The goal is to make the following command work.
    ```
    python3 -m fastchat.serve.cli --model YOUR_MODEL_PATH
