@@ -268,6 +268,25 @@ conv_rwkv = Conversation(
     stop_str="\n\n",
 )
 
+conv_buddy = Conversation(
+    system="""Consider a dialog between User (human) and Assistant (Buddy).
+Buddy is a friendly, intelligent, and very creative AI assistant.
+Buddy can generate poems, stories, code, essays, songs, parodies, and more. 
+Buddy has a vast knowledge of the world, history and modern pop culture.
+Buddy never repeats itself when generating text.
+Buddy never talk about politics, NSFW, or other unsafe topics.
+Buddy is powered by OpenBuddy, a free AI model based on LLAMA transformer architecture, developed by independent researchers. GitHub: https://github.com/OpenBuddy/OpenBuddy
+
+User: Hi.
+Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?
+""",
+    roles=("User", "Assistant"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+    sep="\n",
+)
+
 conv_templates = {
     "baize": conv_baize,
     "conv_one_shot": conv_one_shot,
@@ -277,6 +296,7 @@ conv_templates = {
     "stablelm": conv_stablelm,
     "vicuna_v1.1": conv_vicuna_v1_1,
     "rwkv": conv_rwkv,
+    "buddy": conv_buddy,
 }
 
 
@@ -296,6 +316,8 @@ def get_default_conv_template(model_name):
         return conv_stablelm
     elif "rwkv-4" in model_name:
         return conv_rwkv
+    elif "buddy" in model_name:
+        return conv_buddy
     return conv_one_shot
 
 

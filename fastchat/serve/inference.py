@@ -144,6 +144,9 @@ def load_model(
         from fastchat.serve.rwkv_model import RwkvModel
         model = RwkvModel(model_path)
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
+    elif "buddy" in model_path:
+        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+        tokenizer = LlamaTokenizer.from_pretrained(model_path + "/tokenizer.model")
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
