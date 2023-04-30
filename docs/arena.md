@@ -17,7 +17,7 @@ If you want to see a specific model in the arena, you can follow the steps below
    ```
    
    Some major files you need to modify include
-   - Add a conversation template for your model at https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py, you can following the existing templates and register the new one at `get_default_conv_template`.
+   - Add a conversation template for your model at https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py, you can follow the existing templates and register the new one at `get_default_conv_template`.
    - Make sure functions like `load_model` and `generate_stream` work at https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py)
 2. After the model is supported, we will try to schedule some computing resources to host the model in the arena.
    However, due to the limited resource we have, we may not be able to serve every model.
