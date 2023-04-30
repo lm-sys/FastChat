@@ -18,6 +18,7 @@ from transformers import (
     T5Tokenizer,
     AutoConfig,
 )
+from transformers.generation.logits_process import RepetitionPenaltyLogitsProcessor
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
@@ -53,6 +54,12 @@ def generate_stream(
                                                       device=device))[0]
          start_ids = torch.as_tensor([[model.generation_config.decoder_start_token_id]],
                      dtype=torch.int64, device=device)
+    # Optionally defines logits processor
+    logits_processor = None
+    if "t5" in model.config._name_or_path:
+        # Reduce repetitaion in T5-based models.
+        # Using Default value 1.2 as in https://arxiv.org/abs/1909.05858.
+        logits_processor = RepetitionPenaltyLogitsProcessor(penalty=1.2)
 
     for i in range(max_new_tokens):
         if i == 0:
@@ -82,8 +89,12 @@ def generate_stream(
                 logits = out.logits
             past_key_values = out.past_key_values
 
-        last_token_logits = logits[0][-1]
-
+        if logits_processor:
+            last_token_logits = logits[:][-1]
+            last_token_logits = logits_processor(torch.as_tensor([output_ids], device=device), last_token_logits)
+            last_token_logits = last_token_logits[0]
+        else:
+            last_token_logits = logits[0][-1]
         if device == "mps":
             # Switch to CPU by avoiding some bugs in mps backend.
             last_token_logits = last_token_logits.float().to("cpu")
