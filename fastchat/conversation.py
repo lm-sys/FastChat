@@ -94,7 +94,11 @@ class Conversation:
             ret = self.system
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + ": " + message.replace('\r\n','\n').replace('\n\n','\n')
+                    ret += (
+                        role
+                        + ": "
+                        + message.replace("\r\n", "\n").replace("\n\n", "\n")
+                    )
                     ret += "\n\n"
                 else:
                     ret += role + ":"
@@ -272,7 +276,7 @@ conv_templates = {
     "oasst": conv_oasst,
     "stablelm": conv_stablelm,
     "vicuna_v1.1": conv_vicuna_v1_1,
-    "rwkv": conv_rwkv
+    "rwkv": conv_rwkv,
 }
 
 
