@@ -265,8 +265,7 @@ conv_baize = Conversation(
 conv_rwkv = Conversation(
     system="",
     roles=("Bob", "Alice"),
-    messages=(
-    ),
+    messages=(),
     offset=0,
     sep_style=SeparatorStyle.RWKV,
     sep="",
