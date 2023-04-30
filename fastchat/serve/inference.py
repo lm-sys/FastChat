@@ -1,12 +1,12 @@
 """Inference for FastChat models."""
 import abc
-from typing import Optional
-import warnings
-import sys
-import math
-import psutil
 import gc
+import math
+from typing import Optional
+import sys
+import warnings
 
+import psutil
 import torch
 from transformers import (
     AutoTokenizer,
@@ -86,7 +86,6 @@ def load_model(
         kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        num_gpus = int(num_gpus)
         if num_gpus > 1 and max_gpu_memory is None:
             kwargs["device_map"] = "sequential"  # This is important for not the same VRAM sizes
             available_gpu_memory = get_gpu_memory(num_gpus)
@@ -114,7 +113,7 @@ def load_model(
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit_fp32_cpu_offload=cpu_offloading)
         kwargs["load_in_8bit"] = load_8bit
     elif load_8bit:
-        if num_gpus != 1 and num_gpus != "1":
+        if num_gpus != 1:
             warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
         else:
             return load_compress_model(model_path=model_path,
@@ -274,7 +273,7 @@ class ChatIO(abc.ABC):
 def chat_loop(
     model_path: str,
     device: str,
-    num_gpus: str,
+    num_gpus: int,
     max_gpu_memory: str,
     load_8bit: bool,
     cpu_offloading: bool,
@@ -352,7 +351,7 @@ def add_model_args(parser):
         default=None,
         help="A single GPU like 1 or multiple GPUs like 0,2"
     )
-    parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
         "--max-gpu-memory",
         type=str,

@@ -43,7 +43,7 @@ def get_model_answers(model_path, model_id, question_jsons):
     model_path = os.path.expanduser(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.float16
+        model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
     ).cuda()
 
     ans_jsons = []
