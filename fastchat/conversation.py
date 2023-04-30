@@ -1,17 +1,5 @@
 """
-Conversation prompt template.
-
-Supported models (alphabetical order)
-- Alpaca
-- databricks/dolly-v2-12b
-- Koala
-- LLaMA
-- lmsys/fastchat-t5-3b-v1.0
-- OpenAssistant/oasst-sft-1-pythia-12b
-- project-baize/baize-lora-7B
-- StabilityAI/stablelm-tuned-alpha-7b
-- THUDM/chatglm-6b
-- Vicuna
+Conversation prompt templates.
 """
 
 import dataclasses
