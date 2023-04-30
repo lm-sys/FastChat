@@ -8,7 +8,6 @@ import shortuuid
 import ray
 
 from fastchat.conversation import get_default_conv_template
-from fastchat.utils import disable_torch_init
 
 
 def run_eval(model_path, model_id, question_file, answer_file, num_gpus):
@@ -39,11 +38,10 @@ def run_eval(model_path, model_id, question_file, answer_file, num_gpus):
 @ray.remote(num_gpus=1)
 @torch.inference_mode()
 def get_model_answers(model_path, model_id, question_jsons):
-    disable_torch_init()
     model_path = os.path.expanduser(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.float16
+        model_path, low_cpu_mem_usage=True, torch_dtype=torch.float16
     ).cuda()
 
     ans_jsons = []

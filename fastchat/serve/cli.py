@@ -101,9 +101,10 @@ class RichChatIO(ChatIO):
 
 def main(args):
     if args.gpus:
-        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
+        if len(args.gpus.split(",")) < args.num_gpus:
             raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+
     if args.style == "simple":
         chatio = SimpleChatIO()
     elif args.style == "rich":
@@ -117,6 +118,7 @@ def main(args):
             args.num_gpus,
             args.max_gpu_memory,
             args.load_8bit,
+            args.cpu_offloading,
             args.conv_template,
             args.temperature,
             args.max_new_tokens,

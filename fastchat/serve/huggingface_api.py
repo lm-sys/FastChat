@@ -20,6 +20,7 @@ def main(args):
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
         debug=args.debug,
     )
 

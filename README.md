@@ -142,18 +142,16 @@ python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps -
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 
-#### No Enough Memory or Other Platforms
+#### No Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
-
 ```
 python3 -m fastchat.serve.cli --model-path /path/to/model/weights --load-8bit
 ```
 
-Besides, we are actively exploring more methods to make the model easier to run on more platforms.
-Contributions and pull requests are welcome.
+In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
 
 ## Serving with Web GUI
 

@@ -1,8 +1,12 @@
 """Inference for FastChat models."""
 import abc
+import gc
+import math
 from typing import Optional
+import sys
 import warnings
 
+import psutil
 import torch
 from transformers import (
     AutoTokenizer,
@@ -26,6 +30,22 @@ from fastchat.serve.monkey_patch_non_inplace import (
 )
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
+def raise_warning_for_incompatible_cpu_offloading_configuration(device: str, load_8bit: bool, cpu_offloading: bool):
+    if cpu_offloading:
+        if not load_8bit:
+            warnings.warn("The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
+                          "Use '--load-8bit' to enable 8-bit-quantization\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if not "linux" in sys.platform:
+            warnings.warn("CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if device != "cuda":
+            warnings.warn("CPU-offloading is only enabled when using CUDA-devices\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+    return cpu_offloading
 
 def get_gpu_memory(max_gpus=None):
     gpu_memory = []
@@ -59,29 +79,26 @@ def raise_warning_for_old_weights(model_path, model):
             )
 
 def load_model(
-    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
+    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, cpu_offloading=False, debug=False
 ):
+    cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(device, load_8bit, cpu_offloading)
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
+        if num_gpus != 1:
             kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs["device_map"] = "auto"
-                if max_gpu_memory is None:
-                    kwargs[
-                        "device_map"
-                    ] = "sequential"  # This is important for not the same VRAM sizes
-                    available_gpu_memory = get_gpu_memory(num_gpus)
-                    kwargs["max_memory"] = {
-                        i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
-                        for i in range(num_gpus)
-                    }
-                else:
-                    kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+            if max_gpu_memory is None:
+                kwargs[
+                    "device_map"
+                ] = "sequential"  # This is important for not the same VRAM sizes
+                available_gpu_memory = get_gpu_memory(num_gpus)
+                kwargs["max_memory"] = {
+                    i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                    for i in range(num_gpus)
+                }
+            else:
+                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
         print("init_kwargs", kwargs)
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
@@ -89,9 +106,16 @@ def load_model(
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
-    
-    if load_8bit:
-        if num_gpus != 1 and num_gpus != "1":
+
+    if cpu_offloading:
+        # raises an error on incompatible platforms
+        from transformers import BitsAndBytesConfig
+        if "max_memory" in kwargs:
+            kwargs["max_memory"]["cpu"] = str(math.floor(psutil.virtual_memory().available / 2**20)) + 'Mib'
+        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit_fp32_cpu_offload=cpu_offloading)
+        kwargs["load_in_8bit"] = load_8bit
+    elif load_8bit:
+        if num_gpus != 1:
             warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
         else:
             return load_compress_model(model_path=model_path,
@@ -123,7 +147,7 @@ def load_model(
         )
         raise_warning_for_old_weights(model_path, model)
 
-    if (device == "cuda" and num_gpus == 1) or device == "mps":
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
 
     if debug:
@@ -229,7 +253,9 @@ def generate_stream(
         if stopped:
             break
 
-    del past_key_values
+    del past_key_values, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 class ChatIO(abc.ABC):
@@ -249,9 +275,10 @@ class ChatIO(abc.ABC):
 def chat_loop(
     model_path: str,
     device: str,
-    num_gpus: str,
+    num_gpus: int,
     max_gpu_memory: str,
     load_8bit: bool,
+    cpu_offloading: bool,
     conv_template: Optional[str],
     temperature: float,
     max_new_tokens: int,
@@ -260,7 +287,7 @@ def chat_loop(
 ):
     # Model
     model, tokenizer = load_model(
-        model_path, device, num_gpus, max_gpu_memory, load_8bit, debug
+        model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
 
@@ -326,7 +353,7 @@ def add_model_args(parser):
         default=None,
         help="A single GPU like 1 or multiple GPUs like 0,2"
     )
-    parser.add_argument("--num-gpus", type=str, default="1")
+    parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
         "--max-gpu-memory",
         type=str,
@@ -334,4 +361,7 @@ def add_model_args(parser):
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
+    )
+    parser.add_argument(
+        "--cpu-offloading", action="store_true", help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
     )

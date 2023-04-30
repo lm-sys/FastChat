@@ -66,6 +66,7 @@ class ModelWorker:
         num_gpus,
         max_gpu_memory,
         load_8bit=False,
+        cpu_offloading=False,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -77,7 +78,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
-            model_path, device, num_gpus, max_gpu_memory, load_8bit
+            model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
 
         if hasattr(self.model.config, "max_sequence_length"):
@@ -228,7 +229,7 @@ if __name__ == "__main__":
     logger.info(f"args: {args}")
 
     if args.gpus:
-        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
+        if len(args.gpus.split(",")) < args.num_gpus:
             raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
     
@@ -243,5 +244,6 @@ if __name__ == "__main__":
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
