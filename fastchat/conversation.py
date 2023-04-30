@@ -22,8 +22,11 @@ class SeparatorStyle(Enum):
 class Conversation:
     """A class that keeps all conversation history."""
 
+    # System prompts
     system: str
+    # Two roles
     roles: List[str]
+    # All messages
     messages: List[List[str]]
     # Offset of few shot examples
     offset: int
@@ -33,6 +36,7 @@ class Conversation:
     sep2: str = None
     # Stop criteria (the default one is EOS token)
     stop_str: str = None
+    # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
@@ -90,7 +94,11 @@ class Conversation:
             ret = self.system
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + ": " + message.replace('\r\n','\n').replace('\n\n','\n')
+                    ret += (
+                        role
+                        + ": "
+                        + message.replace("\r\n", "\n").replace("\n\n", "\n")
+                    )
                     ret += "\n\n"
                 else:
                     ret += role + ":"
@@ -268,7 +276,7 @@ conv_templates = {
     "oasst": conv_oasst,
     "stablelm": conv_stablelm,
     "vicuna_v1.1": conv_vicuna_v1_1,
-    "rwkv": conv_rwkv
+    "rwkv": conv_rwkv,
 }
 
 
