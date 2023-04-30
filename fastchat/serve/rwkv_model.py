@@ -1,20 +1,21 @@
-import torch, os
+import os
+from types import SimpleNamespace
+import warnings
+
+import torch
 
 os.environ["RWKV_JIT_ON"] = '1'
 os.environ["RWKV_CUDA_ON"] = '1'
 
 from rwkv.model import RWKV
 from rwkv.utils import PIPELINE, PIPELINE_ARGS
-from types import SimpleNamespace
 
-class rwkv_model():
+
+class RwkvModel:
     def __init__(self, model_path):
-        for i in range(5):
-            print('!!! This is only for testing. Use ChatRWKV if you want to chat with RWKV !!!\n')
-        self.config = SimpleNamespace(is_encoder_decoder = False)
+        warnings.warn("Experimental support. Please use ChatRWKV if you want to chat with RWKV")
+        self.config = SimpleNamespace(is_encoder_decoder=False)
         self.model = RWKV(model=model_path, strategy='cuda fp16')
-        for i in range(5):
-            print('!!! This is only for testing. Use ChatRWKV if you want to chat with RWKV !!!\n')
 
     def to(self, target):
         assert target == 'cuda'
