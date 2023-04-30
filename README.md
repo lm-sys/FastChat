@@ -1,21 +1,21 @@
 # FastChat
+| [Demo](https://chat.lmsys.org/) | [Arena](https://arena.lmsys.org) | [Discord](https://discord.gg/h6kCZb72G7) | [Twitter](https://twitter.com/lmsysorg) |
+
 An open platform for training, serving, and evaluating large language model based chatbots.
 
 ## Release
-
 <p align="center">
 <a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
 </p>
 
+- 🔥 We released **FastChat-T5** compatible with commercial usage. Checkout [weights](#fastchat-t5).
 - 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
 
-Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
-
 ## Contents
 - [Install](#install)
-- [Vicuna Weights](#vicuna-weights)
+- [Model Weights](#model-weights)
 - [Inference with Command Line Interface](#inference-with-command-line-interface)
 - [Serving with Web GUI](#serving-with-web-gui)
 - [API](#api)
@@ -49,7 +49,8 @@ pip3 install --upgrade pip  # enable PEP 660 support
 pip3 install -e .
 ```
 
-## Vicuna Weights
+## Model Weights
+### Vicuna Weights
 We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
@@ -60,7 +61,7 @@ You can add our delta to the original LLaMA weights to obtain the Vicuna weights
 Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
 Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
 
-### Vicuna-7B
+#### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
@@ -70,7 +71,7 @@ python3 -m fastchat.model.apply_delta \
     --delta-path lmsys/vicuna-7b-delta-v1.1
 ```
 
-### Vicuna-13B
+#### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
 ```bash
@@ -80,14 +81,21 @@ python3 -m fastchat.model.apply_delta \
     --delta-path lmsys/vicuna-13b-delta-v1.1
 ```
 
-### Old weights
-See [docs/weights_version.md](docs/weights_version.md) for all versions of weights and their differences.
+#### Old weights
+See [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
-
-### Low CPU Memory Conversion
+#### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
 1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
 2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+
+### FastChat-T5
+Simply run the line below to start chatting.
+It will automatically download the weights from a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). 
+
+```bash
+python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
+```
 
 ## Inference with Command Line Interface
 
@@ -95,46 +103,59 @@ You can try these methods to reduce the CPU RAM requirement of weight conversion
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
 
+#### Supported Models
+The following models are tested:
+- Vicuna, Alpaca, LLaMA, Koala
+- [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
+- [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
+- [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+- [OpenAssistant/oasst-sft-1-pythia-12b](https://huggingface.co/OpenAssistant/oasst-sft-1-pythia-12b)
+- [project-baize/baize-lora-7B](https://huggingface.co/project-baize/baize-lora-7B)
+- [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
+- [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
+
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 See the "No Enough Memory" section below if you do not have enough memory.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights
 ```
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --num-gpus 2
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --num-gpus 2
 ```
 
 #### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device cpu
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 
-#### No Enough Memory or Other Platforms
+#### No Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
-Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/V100(16GB) GPU.
-
+Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/vicuna/weights --load-8bit
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --load-8bit
 ```
 
-Besides, we are actively exploring more methods to make the model easier to run on more platforms.
-Contributions and pull requests are welcome.
+In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
+
+#### More Platforms
+
+- [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
 ## Serving with Web GUI
 
@@ -151,14 +172,15 @@ This controller manages the distributed workers.
 
 #### Launch the model worker
 ```bash
-python3 -m fastchat.serve.model_worker --model-path /path/to/vicuna/weights
+python3 -m fastchat.serve.model_worker --model-path /path/to/model/weights
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
-python3 -m fastchat.serve.test_message --model-name vicuna-13b
+python3 -m fastchat.serve.test_message --model-name vicuna-7b
 ```
+You will see a short output.
 
 #### Launch the Gradio web server
 ```bash
