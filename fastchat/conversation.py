@@ -1,17 +1,5 @@
 """
-Conversation prompt template.
-
-Supported models (alphabetical order)
-- Alpaca
-- databricks/dolly-v2-12b
-- Koala
-- LLaMA
-- lmsys/fastchat-t5-3b-v1.0
-- OpenAssistant/oasst-sft-1-pythia-12b
-- project-baize/baize-lora-7B
-- StabilityAI/stablelm-tuned-alpha-7b
-- THUDM/chatglm-6b
-- Vicuna
+Conversation prompt templates.
 """
 
 import dataclasses
@@ -27,6 +15,7 @@ class SeparatorStyle(Enum):
     NO_COLON_SINGLE = auto()
     BAIZE = auto()
     DOLLY = auto()
+    RWKV = auto()
 
 
 @dataclasses.dataclass
@@ -96,6 +85,15 @@ class Conversation:
                         ret += "\n\n"
                 else:
                     ret += role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.RWKV:
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ": " + message.replace('\r\n','\n').replace('\n\n','\n')
+                    ret += "\n\n"
+                else:
+                    ret += role + ":"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -251,6 +249,16 @@ conv_baize = Conversation(
     stop_str="[|Human|]",
 )
 
+# RWKV-4-Raven default template
+conv_rwkv = Conversation(
+    system="",
+    roles=("Bob", "Alice"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.RWKV,
+    sep="",
+    stop_str="\n\n",
+)
 
 conv_templates = {
     "baize": conv_baize,
@@ -260,6 +268,7 @@ conv_templates = {
     "oasst": conv_oasst,
     "stablelm": conv_stablelm,
     "vicuna_v1.1": conv_vicuna_v1_1,
+    "rwkv": conv_rwkv
 }
 
 
@@ -277,6 +286,8 @@ def get_default_conv_template(model_name):
         return conv_baize
     elif "stablelm" in model_name:
         return conv_stablelm
+    elif "rwkv-4" in model_name:
+        return conv_rwkv
     return conv_one_shot
 
 
