@@ -86,16 +86,18 @@ def load_model(
         kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        if num_gpus > 1 and max_gpu_memory is None:
-            kwargs["device_map"] = "sequential"  # This is important for not the same VRAM sizes
-            available_gpu_memory = get_gpu_memory(num_gpus)
-            kwargs["max_memory"] = {
-                i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
-                for i in range(num_gpus)
-            }
-        else:
+        if num_gpus != 1:
             kwargs["device_map"] = "auto"
-            if not max_gpu_memory is None:
+            if max_gpu_memory is None:
+                kwargs[
+                    "device_map"
+                ] = "sequential"  # This is important for not the same VRAM sizes
+                available_gpu_memory = get_gpu_memory(num_gpus)
+                kwargs["max_memory"] = {
+                    i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                    for i in range(num_gpus)
+                }
+            else:
                 kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
         print("init_kwargs", kwargs)
     elif device == "mps":
