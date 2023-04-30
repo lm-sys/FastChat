@@ -145,7 +145,8 @@ def load_model(
         model = RwkvModel(model_path)
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     elif "buddy" in model_path:
-        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+        # We hardcoded bfloat16 for buddy here for better quality, since all buddy models are released in bfloat16.
+        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16) 
         tokenizer = LlamaTokenizer.from_pretrained(model_path + "/tokenizer.model")
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
