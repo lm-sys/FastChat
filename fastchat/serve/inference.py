@@ -146,8 +146,9 @@ def load_model(
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     elif "buddy" in model_path:
         # We hardcoded bfloat16 for buddy here for better quality, since all buddy models are released in bfloat16.
+        print("## Welcome to OpenBuddy! Please note that this model needs a GPU with bfloat16 support.")
         model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16) 
-        tokenizer = LlamaTokenizer.from_pretrained(model_path + "/tokenizer.model")
+        tokenizer = LlamaTokenizer.from_pretrained(model_path)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
