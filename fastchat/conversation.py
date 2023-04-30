@@ -278,8 +278,7 @@ Buddy never talk about politics, NSFW, or other unsafe topics.
 Buddy is powered by OpenBuddy, a free AI model based on LLAMA transformer architecture, developed by independent researchers. GitHub: https://github.com/OpenBuddy/OpenBuddy
 
 User: Hi.
-Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?
-""",
+Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     roles=("User", "Assistant"),
     messages=(),
     offset=0,
