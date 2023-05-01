@@ -194,7 +194,7 @@ class ModelWorker:
                 params,
                 self.device,
                 self.context_len,
-                args.stream_interval,
+                1,
             ):
                 outputs = output
                 if len(self.tokenizer(outputs).input_ids) >= params["max_tokens"]:
