@@ -187,7 +187,6 @@ class ModelWorker:
     def generate_completion(self, params):
         try:
             outputs = ""
-            token_num = 0
             finish_reason = "stop"
             for output in self.generate_stream_func(
                 self.model,
@@ -198,11 +197,10 @@ class ModelWorker:
                 args.stream_interval,
             ):
                 outputs = output
-                token_num += 1
-                if token_num == params["max_tokens"]:
+                if len(self.tokenizer(outputs).input_ids) >= params["max_tokens"]:
                     finish_reason = "length"
                     break
-            return json.dumps({"text": outputs, "finish_reason": finish_reason, "completion_tokens": token_num, "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids)})
+            return json.dumps({"text": outputs, "finish_reason": finish_reason, "completion_tokens": len(self.tokenizer(outputs).input_ids), "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids)})
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
