@@ -24,6 +24,9 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
+    EmbeddingsRequest,
+    CompletionRequest,
+    CompletionResponse,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
@@ -170,6 +173,107 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
                 output = data["text"].strip()
 
         return output
+    
+@app.post("/v1/completions")
+async def create_completion(request: CompletionRequest):
+
+    payload = {
+        "model": request.model,
+        "prompt": request.prompt,
+        "temperature": request.temperature,
+        "max_tokens": request.max_tokens,
+        "logprobs": request.logprobs
+    }
+
+
+    if request.stream:
+        # generator = worker.generate_stream_gate(payload)
+        # Warning.warn("streaming is not supported yet")
+        raise NotImplementedError("streaming is not supported yet")
+    else:
+        completions = []
+        prompt_tokens = 0
+        completion_tokens = 0
+        for i in range(request.n):
+            content = await generate_completion(payload)
+            content = json.loads(content)
+            content["index"] = i
+            completion_tokens += content["completion_tokens"]
+            prompt_tokens = content["prompt_tokens"]
+            content.pop("completion_tokens")
+            content.pop("prompt_tokens")
+            completions.append(content)
+    #todo: support usage field
+    return CompletionResponse(model=request.model, choices=completions, usage={"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens, "total_tokens": prompt_tokens + completion_tokens})
+    
+async def generate_completion(payload: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": payload["model"]}
+        )
+        worker_addr = ret.json()["address"]
+        # No available worker
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {payload['model']}")
+
+        logger.debug(f"model_name: {payload['model']}, worker_addr: {worker_addr}")
+
+        response = await client.post(
+            worker_addr + "/worker_generate_completion",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+        completion = response.json()
+        return completion
+
+@app.post("/v1/create_embeddings")
+async def create_embeddings(request: EmbeddingsRequest):
+    """Creates embeddings for the text"""
+
+    def generate_embeddings_payload(model_name: str, input: str):
+        payload = {
+            "model": model_name,
+            "input": input,
+        }
+        return payload
+
+    embeddings_payload = generate_embeddings_payload(request.model, request.input)
+    embeddings = await get_embeddings(embeddings_payload)
+    embedding = json.loads(embeddings[:-1])["embedding"]
+    data = json.dumps(
+        {
+            "object": "lists",
+            "data": [{"object": "embedding", "embedding": embedding, "index": 0}],
+            "model": request.model,
+            "usage": {"prompt_tokens": len(embedding), "total_tokens": len(embedding)},
+        }
+    )
+    return data
+
+
+async def get_embeddings(payload: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    model_name = payload["model"]
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": model_name}
+        )
+        worker_addr = ret.json()["address"]
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {model_name}")
+
+        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+
+        response = await client.post(
+            worker_addr + "/worker_generate_embeddings",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+        embeddings = response.json()
+        return embeddings[0]
 
 
 if __name__ == "__main__":

@@ -224,6 +224,56 @@ class Controller:
             }
             yield json.dumps(ret).encode() + b"\0"
 
+    def worker_api_generate_completion(self, params):
+        worker_addr = self.get_worker_address(params["model"])
+        if not worker_addr:
+            logger.info(f"no worker: {params['model']}")
+            ret = {
+                "text": server_error_msg,
+                "error_code": 2,
+            }
+            yield json.dumps(ret).encode() + b"\0"
+
+        try:
+            response = requests.post(
+                worker_addr + "/worker_generate_completion",
+                json=params,
+                timeout=15,
+            )
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.info(f"worker timeout: {worker_addr}")
+            ret = {
+                "text": server_error_msg,
+                "error_code": 3,
+            }
+            yield json.dumps(ret).encode() + b"\0"
+
+    def worker_api_generate_embeddings(self, params):
+        worker_addr = self.get_worker_address(params["model"])
+        if not worker_addr:
+            logger.info(f"no worker: {params['model']}")
+            ret = {
+                "text": server_error_msg,
+                "error_code": 2,
+            }
+            yield json.dumps(ret).encode() + b"\0"
+        
+        try:
+            response = requests.post(
+                worker_addr + "/worker_generate_embeddings",
+                json=params,
+                timeout=15,
+            )
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.info(f"worker timeout: {worker_addr}")
+            ret = {
+                "text": server_error_msg,
+                "error_code": 3,
+            }
+            yield json.dumps(ret).encode() + b"\0"
+
     # Let the controller act as a worker to achieve hierarchical
     # management. This can be used to connect isolated sub networks.
     def worker_api_get_status(self):
@@ -285,6 +335,20 @@ async def receive_heart_beat(request: Request):
 async def worker_api_generate_stream(request: Request):
     params = await request.json()
     generator = controller.worker_api_generate_stream(params)
+    return StreamingResponse(generator)
+
+
+@app.post("/worker_generate_completion")
+async def worker_api_generate_completion(request: Request):
+    params = await request.json()
+    output = controller.worker_api_generate_completion(params)
+    return output
+
+
+@app.post("/worker_generate_embeddings")
+async def worker_api_generate_embeddings(request: Request):
+    params = await request.json()
+    generator = controller.worker_api_generate_embeddings(params)
     return StreamingResponse(generator)
 
 
