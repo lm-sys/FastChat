@@ -161,6 +161,10 @@ class Session:
     def append_output(self, text):
         self.current.output = text
 
+    def append_fail(self, text):
+        self.append_output(text)
+        self.current.is_prompt = False
+
     def get_prompt(self):
         return self.currentPrompt.get_prompt(self.history, self.current)
     
@@ -174,6 +178,8 @@ if __name__ == '__main__':
     session.set_model_name("vacuna")
     session.append_input("Hello!")
     session.append_output("Hi!")
+    session.append_input("Fuck!")
+    session.append_fail("YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE TRY AGAIN.")
     session.append_input("How are you?")
     print(session.get_prompt())
     print(session.to_gradio_chatbot())
