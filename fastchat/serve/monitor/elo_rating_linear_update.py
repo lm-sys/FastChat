@@ -17,18 +17,15 @@ from tqdm import tqdm
 from fastchat.serve.monitor.basic_stats import get_log_files
 
 
-MODELS = ["vicuna-13b", "alpaca-13b", "dolly-v2-12b", "oasst-pythia-12b",
-          "koala-13b", "llama-13b", "stablelm-tuned-alpha-7b", "chatglm-6b"]
-VOTES = ["tievote", "leftvote", "rightvote"]
+MODELS = ["vicuna-13b", "alpaca-13b", "dolly-v2-12b", "oasst-pythia-12b", "koala-13b",
+          "llama-13b", "stablelm-tuned-alpha-7b", "chatglm-6b", "fastchat-t5-3b"]
+VOTES = ["tievote", "leftvote", "rightvote", "tievote (bothbad)"]
 BOOTSTRAP_ROUNDS = 100
 
 INIT_RATING = 1000
 BASE = 10
 SCALE = 400
 K = 32
-
-
-# TODO compute likelihood
 
 
 def unique(models: List):
@@ -82,7 +79,7 @@ def collect_data(log_files):
             if models2[0] not in MODELS:
                 assert models2[0] is None
             if models[0] not in MODELS:
-                assert models[0] == '' or models[0] == "Model A"
+                assert models[0] == '' or models[0] == "Model A", f"unrecognized {models[0]}"
         assert models[0] in MODELS or models2[0] in MODELS
         assert x["type"] in VOTES
 
