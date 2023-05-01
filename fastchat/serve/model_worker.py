@@ -213,7 +213,7 @@ class ModelWorker:
     def generate_embeddings(self, params):
         tokenizer = self.tokenizer
         data = tokenizer(params["input"]).input_ids
-        yield json.dumps({"embedding":data}).encode() + b"\0"
+        return data
 
 
 app = FastAPI()

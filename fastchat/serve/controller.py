@@ -348,8 +348,8 @@ async def worker_api_generate_completion(request: Request):
 @app.post("/worker_generate_embeddings")
 async def worker_api_generate_embeddings(request: Request):
     params = await request.json()
-    generator = controller.worker_api_generate_embeddings(params)
-    return StreamingResponse(generator)
+    output = controller.worker_api_generate_embeddings(params)
+    return output
 
 
 @app.post("/worker_get_status")

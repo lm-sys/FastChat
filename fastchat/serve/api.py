@@ -240,8 +240,8 @@ async def create_embeddings(request: EmbeddingsRequest):
         return payload
 
     embeddings_payload = generate_embeddings_payload(request.model, request.input)
-    embeddings = await get_embeddings(embeddings_payload)
-    embedding = json.loads(embeddings[:-1])["embedding"]
+    embedding = await get_embedding(embeddings_payload)
+    # embedding = json.loads(embeddings[:-1])["embedding"]
     data = json.dumps(
         {
             "object": "lists",
@@ -253,7 +253,7 @@ async def create_embeddings(request: EmbeddingsRequest):
     return data
 
 
-async def get_embeddings(payload: Dict[str, Any]):
+async def get_embedding(payload: Dict[str, Any]):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     model_name = payload["model"]
     async with httpx.AsyncClient() as client:
@@ -272,8 +272,8 @@ async def get_embeddings(payload: Dict[str, Any]):
             json=payload,
             timeout=20,
         )
-        embeddings = response.json()
-        return embeddings[0]
+        embedding = response.json()
+        return embedding
 
 
 if __name__ == "__main__":
