@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import logging
 import json
+import os
 import time
 from typing import List, Union
 import threading
@@ -33,7 +34,7 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.inference import load_model, generate_stream
+from fastchat.serve.inference import load_model, generate_stream, add_model_args
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 from fastchat.utils import build_logger, server_error_msg, pretty_print_semaphore
 
@@ -65,6 +66,7 @@ class ModelWorker:
         num_gpus,
         max_gpu_memory,
         load_8bit=False,
+        cpu_offloading=False,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -76,7 +78,7 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
-            model_path, device, num_gpus, max_gpu_memory, load_8bit
+            model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
 
         if hasattr(self.model.config, "max_sequence_length"):
@@ -218,29 +220,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default="facebook/opt-350m",
-        help="The path to the weights",
-    )
-    parser.add_argument("--model-name", type=str, help="Optional name")
-    parser.add_argument(
-        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda"
-    )
-    parser.add_argument("--num-gpus", type=int, default=1)
-    parser.add_argument(
-        "--max-gpu-memory",
-        type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'",
-    )
-    parser.add_argument("--load-8bit", action="store_true")
+    add_model_args(parser)
+    parser.add_argument("--model-name", type=str, help="Optional display name")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    if args.gpus:
+        if len(args.gpus.split(",")) < args.num_gpus:
+            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+    
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
@@ -252,5 +244,6 @@ if __name__ == "__main__":
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

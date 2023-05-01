@@ -8,8 +8,8 @@ import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from fastchat.conversation import get_default_conv_template, compute_skip_echo_len
-from fastchat.serve.inference import load_model
+from fastchat.conversation import get_default_conv_template
+from fastchat.serve.inference import load_model, add_model_args
 
 
 @torch.inference_mode()
@@ -20,6 +20,7 @@ def main(args):
         args.num_gpus,
         args.max_gpu_memory,
         args.load_8bit,
+        args.cpu_offloading,
         debug=args.debug,
     )
 
@@ -30,16 +31,19 @@ def main(args):
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    inputs = tokenizer([prompt])
+    input_ids = tokenizer([prompt]).input_ids
     output_ids = model.generate(
-        torch.as_tensor(inputs.input_ids).cuda(),
+        torch.as_tensor(input_ids).cuda(),
         do_sample=True,
         temperature=0.7,
         max_new_tokens=1024,
     )
-    outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-    skip_echo_len = compute_skip_echo_len(args.model_path, conv, prompt)
-    outputs = outputs[skip_echo_len:]
+    if model.config.is_encoder_decoder:
+        output_ids = output_ids[0]
+    else:
+        output_ids = output_ids[0][len(input_ids[0]):]
+    outputs = tokenizer.decode(output_ids, skip_special_tokens=True,
+                               spaces_between_special_tokens=False)
 
     print(f"{conv.roles[0]}: {msg}")
     print(f"{conv.roles[1]}: {outputs}")
@@ -47,24 +51,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default="facebook/opt-350m",
-        help="The path to the weights",
-    )
-    parser.add_argument(
-        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda"
-    )
-    parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument(
-        "--max-gpu-memory",
-        type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'",
-    )
-    parser.add_argument(
-        "--load-8bit", action="store_true", help="Use 8-bit quantization."
-    )
+    add_model_args(parser)
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )

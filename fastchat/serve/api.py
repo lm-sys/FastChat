@@ -6,7 +6,7 @@ python3 -m fastchat.serve.api
 
 Reference: https://platform.openai.com/docs/api-reference/chat/create
 """
-
+import asyncio
 from typing import Union, Dict, List, Any
 
 import argparse
@@ -14,6 +14,7 @@ import json
 import logging
 
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import uvicorn
 from pydantic import BaseSettings
@@ -25,7 +26,6 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponseChoice,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
-from fastchat.serve.inference import compute_skip_echo_len
 
 logger = logging.getLogger(__name__)
 
@@ -40,22 +40,40 @@ app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
 
+@app.get("/v1/models")
+async def show_available_models():
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(controller_url + "/refresh_all_workers")
+        ret = await client.post(controller_url + "/list_models")
+    models = ret.json()["models"]
+    models.sort()
+    return {"data": [{"id": m} for m in models], "object": "list"}
+
+
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
-    payload, skip_echo_len = generate_payload(
+    gen_params = get_gen_params(
         request.model,
         request.messages,
         temperature=request.temperature,
         max_tokens=request.max_tokens,
+        echo=False,
         stop=request.stop,
     )
 
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
+    chat_completions = []
     for i in range(request.n):
-        payload["seed"] = request.seed + i
-        content = await chat_completion(request.model, payload, skip_echo_len)
+        gen_params_i = gen_params.copy()
+        gen_params_i["seed"] = request.seed + i
+        content = asyncio.create_task(chat_completion(request.model, gen_params_i))
+        chat_completions.append(content)
+
+    for i, content_task in enumerate(chat_completions):
+        content = await content_task
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
@@ -74,22 +92,18 @@ async def create_chat_completion(request: ChatCompletionRequest):
     return ChatCompletionResponse(choices=choices)
 
 
-def generate_payload(
+def get_gen_params(
     model_name: str,
     messages: List[Dict[str, str]],
     *,
     temperature: float,
     max_tokens: int,
+    echo: bool,
     stop: Union[str, None],
 ):
     is_chatglm = "chatglm" in model_name.lower()
     # TODO(suquark): The template is currently a reference. Here we have to make a copy.
-    # We use create a template factory to avoid this.
     conv = get_default_conv_template(model_name).copy()
-
-    # TODO(suquark): Conv.messages should be a list. But it is a tuple now.
-    #  We should change it to a list.
-    conv.messages = list(conv.messages)
 
     for message in messages:
         msg_role = message["role"]
@@ -109,28 +123,24 @@ def generate_payload(
         prompt = conv.messages[conv.offset :]
     else:
         prompt = conv.get_prompt()
-    skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
 
-    if stop is None:
-        stop = conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2
-
-    # TODO(suquark): We should get the default `max_new_tokens`` from the model.
     if max_tokens is None:
         max_tokens = 512
 
-    payload = {
+    gen_params = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_tokens,
-        "stop": stop,
+        "echo": echo,
+        "stop": conv.stop_str,
+        "stop_token_ids": conv.stop_token_ids,
     }
+    logger.debug(f"==== request ====\n{gen_params}")
+    return gen_params
 
-    logger.debug(f"==== request ====\n{payload}")
-    return payload, skip_echo_len
 
-
-async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_len: int):
+async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(
@@ -149,7 +159,7 @@ async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_le
             "POST",
             worker_addr + "/worker_generate_stream",
             headers=headers,
-            json=payload,
+            json=gen_params,
             timeout=20,
         ) as response:
             content = await response.aread()
@@ -159,7 +169,7 @@ async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_le
                 continue
             data = json.loads(chunk.decode())
             if data["error_code"] == 0:
-                output = data["text"][skip_echo_len:].strip()
+                output = data["text"].strip()
 
         return output
 
@@ -170,6 +180,21 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
+    parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
+    parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
+    parser.add_argument("--allowed-headers", type=json.loads, default=["*"], help="allowed headers")
 
     args = parser.parse_args()
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=args.allowed_origins,
+        allow_credentials=args.allow_credentials,
+        allow_methods=args.allowed_methods,
+        allow_headers=args.allowed_headers,
+    )
+
+    logger.debug(f"==== args ====\n{args}")
+
     uvicorn.run("fastchat.serve.api:app", host=args.host, port=args.port, reload=True)

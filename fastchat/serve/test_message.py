@@ -5,7 +5,6 @@ import requests
 
 from fastchat.conversation import (
     get_default_conv_template,
-    compute_skip_echo_len,
     SeparatorStyle,
 )
 
@@ -30,6 +29,7 @@ def main():
         print(f"worker_addr: {worker_addr}")
 
     if worker_addr == "":
+        print(f"No available workers for {model_name}")
         return
 
     conv = get_default_conv_template(model_name).copy()
@@ -37,18 +37,20 @@ def main():
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    headers = {"User-Agent": "fastchat Client"}
-    pload = {
+    headers = {"User-Agent": "FastChat Client"}
+    gen_params = {
         "model": model_name,
         "prompt": prompt,
-        "max_new_tokens": args.max_new_tokens,
         "temperature": args.temperature,
-        "stop": conv.sep if conv.sep_style == SeparatorStyle.SINGLE else conv.sep2,
+        "max_new_tokens": args.max_new_tokens,
+        "stop": conv.stop_str,
+        "stop_token_ids": conv.stop_token_ids,
+        "echo": False,
     }
     response = requests.post(
         worker_addr + "/worker_generate_stream",
         headers=headers,
-        json=pload,
+        json=gen_params,
         stream=True,
     )
 
@@ -58,8 +60,7 @@ def main():
     ):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-            skip_echo_len = compute_skip_echo_len(model_name, conv, prompt)
-            output = data["text"][skip_echo_len:].strip()
+            output = data["text"].strip()
             print(f"{conv.roles[1]}: {output}", end="\r")
     print("")
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--worker-address", type=str)
-    parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
+    parser.add_argument("--model-name", type=str, required=True)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-new-tokens", type=int, default=32)
     parser.add_argument(

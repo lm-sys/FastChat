@@ -68,8 +68,8 @@ def split_files(model_path, tmp_path, split_size):
 
 
 def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
-    base_config = AutoConfig.from_pretrained(base_model_path)
+    delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
+    delta_config = AutoConfig.from_pretrained(delta_path)
 
     if os.path.exists(target_model_path):
         shutil.rmtree(target_model_path)
@@ -80,7 +80,7 @@ def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
     with tempfile.TemporaryDirectory() as tmp_base_path, tempfile.TemporaryDirectory() as tmp_delta_path:
         print(f"Split files for the base model to {tmp_base_path}")
         split_files(base_model_path, tmp_base_path, split_size)
-        print(f"Split files for the delta model to {tmp_delta_path}")
+        print(f"Split files for the delta weights to {tmp_delta_path}")
         split_files(delta_path, tmp_delta_path, split_size)
 
         base_pattern = os.path.join(tmp_base_path, "pytorch_model-*.bin")
@@ -118,20 +118,20 @@ def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
             )
 
     print(f"Saving the target model to {target_model_path}")
-    base_tokenizer.save_pretrained(target_model_path)
-    base_config.save_pretrained(target_model_path)
+    delta_tokenizer.save_pretrained(target_model_path)
+    delta_config.save_pretrained(target_model_path)
 
 
 def apply_delta(base_model_path, target_model_path, delta_path):
+    print(f"Loading the delta weights from {delta_path}")
+    delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
+    delta = AutoModelForCausalLM.from_pretrained(
+        delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+    )
+
     print(f"Loading the base model from {base_model_path}")
     base = AutoModelForCausalLM.from_pretrained(
         base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-    )
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
-
-    print(f"Loading the delta from {delta_path}")
-    delta = AutoModelForCausalLM.from_pretrained(
-        delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
     )
 
     print("Applying the delta")
@@ -141,7 +141,7 @@ def apply_delta(base_model_path, target_model_path, delta_path):
 
     print(f"Saving the target model to {target_model_path}")
     base.save_pretrained(target_model_path)
-    base_tokenizer.save_pretrained(target_model_path)
+    delta_tokenizer.save_pretrained(target_model_path)
 
 
 if __name__ == "__main__":
