@@ -1,5 +1,7 @@
 import argparse
+import datetime
 import json
+from pytz import timezone
 
 import polyglot
 from polyglot.detect import Detector
@@ -10,6 +12,7 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
+
 
 def detect_lang(text):
     try:
@@ -100,4 +103,6 @@ if __name__ == "__main__":
     for i in range(4):
         print(battles[i])
 
-    json.dump(battles, open("clean_battle.json", "w"), indent=2)
+    date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y%m%d")
+    with open(f"clean_battle_{date}.json", "w") as fout:
+        json.dump(battles, fout, indent=2)

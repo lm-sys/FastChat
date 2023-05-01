@@ -12,14 +12,17 @@ from tqdm import tqdm
 def get_log_files():
     dates = []
     for month in [4]:
-        for day in range(24, 32):
+        for day in range(27, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
-    num_servers = 10
+    for month in [5]:
+        for day in range(1, 32):
+            dates.append(f"2023-{month:02d}-{day:02d}")
 
+    num_servers = 10
     filenames = []
     for d in dates:
         for i in range(num_servers):
-            name = f"/home/Ying/fastchat_logs/server{i}/{d}-conv.json"
+            name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)
 
