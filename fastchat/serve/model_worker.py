@@ -212,8 +212,10 @@ class ModelWorker:
 
     def generate_embeddings(self, params):
         tokenizer = self.tokenizer
-        data = tokenizer(params["input"]).input_ids
-        return data
+        input_ids = tokenizer.encode(params["input"], return_tensors='pt').to(self.device)
+        model_output = self.model(input_ids, output_hidden_states=True)
+        data = model_output.hidden_states[0][0]
+        return data.tolist()
 
 
 app = FastAPI()
