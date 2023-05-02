@@ -186,21 +186,27 @@ class ModelWorker:
 
     def generate_completion(self, params):
         try:
-            outputs = ""
-            finish_reason = "stop"
-            for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                1,
-            ):
-                outputs = output
-                if len(self.tokenizer(outputs).input_ids) >= params["max_tokens"]:
-                    finish_reason = "length"
-                    break
-            return json.dumps({"text": outputs, "finish_reason": finish_reason, "completion_tokens": len(self.tokenizer(outputs).input_ids), "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids)})
+            input_ids = self.tokenizer([params["prompt"]]).input_ids
+            output_ids = self.model.generate(
+                torch.as_tensor(input_ids).cuda(),
+                do_sample=True,
+                temperature=params["temperature"],
+                max_new_tokens=params["max_tokens"]-1, # generate max_new_tokens + 1 tokens
+            )
+            if self.model.config.is_encoder_decoder:
+                output_ids = output_ids[0]
+            else:
+                output_ids = output_ids[0][len(input_ids[0]):]
+            outputs = self.tokenizer.decode(output_ids, skip_special_tokens=True,
+                                       spaces_between_special_tokens=False)
+            completion_tokens = len(self.tokenizer(outputs).input_ids)
+            if completion_tokens >= params["max_tokens"]:
+                finish_reason = "length"
+            else:
+                finish_reason = "stop"
+            outputs = params["prompt"] + outputs
+            return json.dumps({"text": outputs, "finish_reason": finish_reason, "completion_tokens": completion_tokens, "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids)})
+        
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
