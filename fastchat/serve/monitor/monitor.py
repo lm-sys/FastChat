@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import pickle
 from pytz import timezone
 import os
 import threading
@@ -17,7 +18,7 @@ logger = build_logger("monitor", "monitor.log")
 
 
 basic_component_values = ["Loading ..."]
-leader_component_values = [None, None, None, None]
+leader_component_values = ["Loading ...", None, None, None, None]
 
 
 table_css = """
@@ -60,20 +61,27 @@ def gen_leaderboard_md(rating):
     return md
 
 
-def update_md_content(max_num_files):
+def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
     # Leaderboard
-    results = report_elo_analysis_results(log_files)
+    if elo_results_file is None:
+        battles = clean_battle_data(log_files)
+        elo_results = report_elo_analysis_results(battles)
+    else:
+        with open(elo_results_file, "rb") as fin:
+            elo_results = pickle.load(fin)
+
     leader_component_values[0] = ("""
 # Leaderboard
 We use the Elo rating system to calculate the relative performance of the models.
 This [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing) shares the voting data, basic analyses, and computation procedure. (Update date: May 1, 2023)
-""" + gen_leaderboard_md(results["elo_rating"]))
+""" + gen_leaderboard_md(elo_results["elo_rating"]))
 
-    leader_component_values[1] = results["win_fraction_heatmap"]
-    leader_component_values[2] = results["battle_count_heatmap"]
-    leader_component_values[3] = results["average_win_rate_bar"]
+    leader_component_values[1] = elo_results["win_fraction_heatmap"]
+    leader_component_values[2] = elo_results["battle_count_heatmap"]
+    leader_component_values[3] = elo_results["average_win_rate_bar"]
+    leader_component_values[4] = elo_results["bootstrap_elo_rating"]
 
     # Basic stats
     basic_stats = report_basic_stats(log_files)
@@ -91,9 +99,9 @@ This [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaC
     basic_component_values[0] = basic_stats_md
 
 
-def update_worker(max_num_files, interval):
+def update_worker(max_num_files, interval, elo_results_file):
     while True:
-        update_md_content(max_num_files)
+        update_elo_components(max_num_files, elo_results_file)
         time.sleep(interval)
 
 
@@ -119,15 +127,17 @@ def build_leaderboard_tab():
             plot_2 = gr.Plot()
     with gr.Row():
         with gr.Column():
-            gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties")
+            gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
             plot_3 = gr.Plot()
-    return [md_1, plot_1, plot_2, plot_3]
+        with gr.Column():
+            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates")
+            plot_4 = gr.Plot()
+    return [md_1, plot_1, plot_2, plot_3, plot_4]
 
 
 def build_demo():
     with gr.Blocks(
         title="Monitor",
-        css=table_css,
         theme=gr.themes.Base(),
     ) as demo:
         with gr.Tabs() as tabs:
@@ -155,12 +165,13 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--update-interval", type=int, default=1800)
+    parser.add_argument("--elo-results-file", type=str)
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     update_thread = threading.Thread(target=update_worker,
-        args=(args.max_num_files, args.update_interval))
+        args=(args.max_num_files, args.update_interval, args.elo_results_file))
     update_thread.start()
 
     demo = build_demo()

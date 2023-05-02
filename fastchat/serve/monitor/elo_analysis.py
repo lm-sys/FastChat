@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 import json
 import math
+import pickle
 
 import gdown
 import numpy as np
@@ -35,7 +36,30 @@ def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
         rating[model_a] += K * (sa - ea)
         rating[model_b] += K * (1 - sa - eb)
     
-    return rating
+    return dict(rating)
+
+
+def get_bootstrap_result(battles, func_compute_elo, num_round):
+    rows = []
+    for i in tqdm(range(num_round), desc="bootstrap"):
+        rows.append(func_compute_elo(battles.sample(frac=1.0, replace=True)))
+    df = pd.DataFrame(rows)
+    return df[df.median().sort_values(ascending=False).index]
+
+
+def visualize_bootstrap_elo_rating(battles, num_round=1000):
+    df = get_bootstrap_result(battles, compute_elo, num_round)
+
+    bars = pd.DataFrame(dict(
+        lower = df.quantile(.025),
+        rating = df.quantile(.5),
+        upper = df.quantile(.975))).reset_index(names="model").sort_values("rating", ascending=False)
+    bars['error_y'] = bars['upper'] - bars["rating"]
+    bars['error_y_minus'] = bars['rating'] - bars["lower"]
+    bars['rating_rounded'] = np.round(bars['rating'], 2)
+    fig = px.scatter(bars, x="model", y="rating", error_y="error_y", 
+                      error_y_minus="error_y_minus", text="rating_rounded")
+    return fig
 
 
 def compute_pairwise_win_fraction(battles, model_order):
@@ -78,7 +102,7 @@ def visualize_pairwise_win_fraction(battles, model_order):
                   xaxis_side="top",
                   title_y=0.07, title_x=0.5)
     fig.update_traces(hovertemplate=
-                  "Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>")
+        "Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>")
 
     return fig
 
@@ -100,16 +124,14 @@ def visualize_battle_count(battles, model_order):
 def visualize_average_win_rate(battles):
     row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
     fig = px.bar(row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
-                 title="Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)", 
                  text_auto=".2f")
     fig.update_layout(yaxis_title="Average Win Rate", xaxis_title="Model",
                       showlegend=False)
     return fig
 
 
-def report_elo_analysis_results(log_files):
-    battles = clean_battle_data(log_files)
-    battles = pd.DataFrame(battles)
+def report_elo_analysis_results(battles_json):
+    battles = pd.DataFrame(battles_json)
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)
     battles_no_ties = battles[~battles["win"].str.contains("tie")]
@@ -122,12 +144,14 @@ def report_elo_analysis_results(log_files):
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
     average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
+    bootstrap_elo_rating = visualize_bootstrap_elo_rating(battles)
 
     return {
         "elo_rating": elo_rating,
         "win_fraction_heatmap": win_fraction_heatmap,
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
+        "bootstrap_elo_rating": bootstrap_elo_rating,
     }
 
 
@@ -140,11 +164,21 @@ def pretty_print_elo_rating(rating):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--clean-battle-file", type=str)
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
 
-    log_files = get_log_files(args.max_num_files)
-    results = report_elo_analysis_results(log_files)
+    if args.clean_battle_file:
+        # Read data from a cleaned battle files
+        battles = pd.read_json(args.clean_battle_file)
+    else:
+        # Read data from all log files
+        log_files = get_log_files(args.max_num_files)
+        battles = clean_battle_data(log_files)
 
-    print()
+    results = report_elo_analysis_results(battles)
+
     pretty_print_elo_rating(results["elo_rating"])
+
+    with open("elo_results.pkl", "wb") as fout:
+        pickle.dump(results, fout)

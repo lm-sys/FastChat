@@ -11,11 +11,8 @@ from tqdm import tqdm
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4]:
-        for day in range(24, 32):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-    for month in [5]:
-        for day in range(1, 2):
+    for month in [4, 5]:
+        for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     num_servers = 10

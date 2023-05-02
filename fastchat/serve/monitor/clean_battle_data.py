@@ -2,6 +2,7 @@ import argparse
 import datetime
 import json
 from pytz import timezone
+import os
 
 import polyglot
 from polyglot.detect import Detector
@@ -20,6 +21,27 @@ IDENTITY_WORDS = [
     "lmsys", "vicuna", "koala", "laion", "open assistant"
     "chatglm",
 ]
+
+def get_log_files(max_num_files=None):
+    dates = []
+    for month in [4]:
+        for day in range(24, 32):
+            dates.append(f"2023-{month:02d}-{day:02d}")
+    for month in [5]:
+        for day in range(1, 2):
+            dates.append(f"2023-{month:02d}-{day:02d}")
+
+    num_servers = 10
+    filenames = []
+    for d in dates:
+        for i in range(num_servers):
+            name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
+            if os.path.exists(name):
+                filenames.append(name)
+    max_num_files = max_num_files or len(filenames)
+    filenames = filenames[-max_num_files:]
+    return filenames
+
 
 def detect_lang(text):
     try:
@@ -137,5 +159,7 @@ if __name__ == "__main__":
         print(battles[i])
 
     date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y%m%d")
-    with open(f"clean_battle_{date}.json", "w") as fout:
+    output = f"clean_battle_{date}.json"
+    with open(output, "w") as fout:
         json.dump(battles, fout, indent=2)
+    print(f"Write cleaned data to {output}")
