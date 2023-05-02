@@ -15,6 +15,7 @@ import logging
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import httpx
 import uvicorn
 from pydantic import BaseSettings
@@ -24,6 +25,7 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
@@ -138,18 +140,66 @@ def get_gen_params(
     return gen_params
 
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
-    async with httpx.AsyncClient() as client:
-        ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": model_name}
-        )
-        worker_addr = ret.json()["address"]
-        # No available worker
-        if worker_addr == "":
-            raise ValueError(f"No available worker for {model_name}")
+async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str:
+    """
+    Get worker address based on the requested model
 
-        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+    :param model_name: The worker's model name
+    :param client: The httpx client to use
+    :return: Worker address from the controller
+    :raises: :class:`ValueError`: No available worker for requested model
+    """
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+
+    ret = await client.post(
+        controller_url + "/get_worker_address", json={"model": model_name}
+    )
+    worker_addr = ret.json()["address"]
+    # No available worker
+    if worker_addr == "":
+        raise ValueError(f"No available worker for {model_name}")
+
+    logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+    return worker_addr
+
+
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(model_name, client)
+
+        async def create_stream():
+            delimiter = b"\0"
+            async with client.stream(
+                "POST",
+                worker_addr + "/worker_generate_stream",
+                headers=headers,
+                json=gen_params,
+                stream=True,
+                timeout=20,
+            ) as response:
+                i = 0
+                async for chunk in response.iter_lines(
+                    decode_unicode=False, delimiter=delimiter
+                ):
+                    if not chunk:
+                        continue
+
+                    data = json.loads(chunk.decode())
+                    if data["error_code"] == 0:
+                        output = data["text"].strip()
+                        yield json.dumps(
+                            ChatCompletionResponseStreamChoice(
+                                index=i, delta=output, finish_reason="stop"
+                            ).dict()
+                        )
+                        i += 1
+
+        return StreamingResponse(create_stream())
+
+
+async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(model_name, client)
 
         output = ""
         delimiter = b"\0"
@@ -178,10 +228,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
-    parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
-    parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
-    parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
-    parser.add_argument("--allowed-headers", type=json.loads, default=["*"], help="allowed headers")
+    parser.add_argument(
+        "--allow-credentials", action="store_true", help="allow credentials"
+    )
+    parser.add_argument(
+        "--allowed-origins", type=json.loads, default=["*"], help="allowed origins"
+    )
+    parser.add_argument(
+        "--allowed-methods", type=json.loads, default=["*"], help="allowed methods"
+    )
+    parser.add_argument(
+        "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
+    )
 
     args = parser.parse_args()
 
