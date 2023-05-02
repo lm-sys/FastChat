@@ -1,4 +1,5 @@
 import argparse
+import pickle
 
 import gradio as gr
 
@@ -14,6 +15,7 @@ from fastchat.serve.gradio_block_arena_anony import (build_side_by_side_ui_anony
     load_demo_side_by_side_anony, set_global_vars_anony)
 from fastchat.serve.gradio_block_arena_named import (build_side_by_side_ui_named,
     load_demo_side_by_side_named, set_global_vars_named)
+from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
@@ -27,6 +29,8 @@ def load_demo(url_params, request: gr.Request):
         selected = 1
     elif "compare" in url_params:
         selected = 2
+    elif "leaderboard" in url_params:
+        selected = 3
     single_updates = load_demo_single(models, url_params)
     side_by_side_anony_updates = load_demo_side_by_side_anony(models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -34,7 +38,7 @@ def load_demo(url_params, request: gr.Request):
             side_by_side_anony_updates + side_by_side_named_updates)
 
 
-def build_demo(models):
+def build_demo(models, elo_results_file):
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Base(),
@@ -109,6 +113,10 @@ def build_demo(models):
                     ]
                 )
 
+            if elo_results_file:
+                with gr.Tab("Leaderboard", id=3):
+                    build_leaderboard_tab(elo_results_file)
+
         url_params = gr.JSON(visible=False)
 
         if args.model_list_mode == "once":
@@ -137,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--moderate", action="store_true", help="Enable content moderation"
     )
+    parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -145,7 +154,7 @@ if __name__ == "__main__":
     set_global_vars_anony(args.moderate)
     models = get_model_list(args.controller_url)
 
-    demo = build_demo(models)
+    demo = build_demo(models, args.elo_results_file)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(

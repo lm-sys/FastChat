@@ -18,7 +18,7 @@ logger = build_logger("monitor", "monitor.log")
 
 
 basic_component_values = ["Loading ..."]
-leader_component_values = ["Loading ...", None, None, None, None]
+leader_component_values = [None, None, None, None, None]
 
 
 table_css = """
@@ -27,40 +27,6 @@ table {
 }
 """
 
-model_info = {
-    "vicuna-13b": ("https://vicuna.lmsys.org", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
-    "koala-13b": ("https://bair.berkeley.edu/blog/2023/04/03/koala", "a dialogue model for academic research by BAIR"),
-    "fastchat-t5-3b": ("https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
-    "oasst-pythia-12b": ("https://open-assistant.io", "an Open Assistant for everyone by LAION"),
-    "chatglm-6b": ("https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
-    "stablelm-tuned-alpha-7b": ("https://github.com/stability-AI/stableLM", "Stability AI language models"),
-    "alpaca-13b": ("https://crfm.stanford.edu/2023/03/13/alpaca.html", "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford"),
-    "llama-13b": ("https://arxiv.org/abs/2302.13971", "open and efficient foundation language models by Meta"),
-    "dolly-v2-12b": ("https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks"),
-}
-
-
-def gen_leaderboard_md(rating):
-    models = list(rating.keys())
-    models.sort(key=lambda k: -rating[k])
-
-    emoji_dict = {
-        1: "🥇",
-        2: "🥈",
-        3: "🥉",
-    }
-
-    md = "| Rank | Model | Elo Rating | Description |\n"
-    md += "| --- | --- | --- | --- |\n"
-    for i, model in enumerate(models):
-        rank = i + 1
-        link, desc = model_info[model]
-        emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({link}) | {rating[model]:.0f} | {desc} |\n"
-
-    return md
-
-
 def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
@@ -68,20 +34,11 @@ def update_elo_components(max_num_files, elo_results_file):
     if elo_results_file is None:
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
-    else:
-        with open(elo_results_file, "rb") as fin:
-            elo_results = pickle.load(fin)
-
-    leader_component_values[0] = ("""
-# Leaderboard
-We use the Elo rating system to calculate the relative performance of the models.
-This [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing) shares the voting data, basic analyses, and computation procedure. (Update date: May 1, 2023)
-""" + gen_leaderboard_md(elo_results["elo_rating"]))
-
-    leader_component_values[1] = elo_results["win_fraction_heatmap"]
-    leader_component_values[2] = elo_results["battle_count_heatmap"]
-    leader_component_values[3] = elo_results["average_win_rate_bar"]
-    leader_component_values[4] = elo_results["bootstrap_elo_rating"]
+        leader_component_values[0] = elo_results["leaderboard_md"]
+        leader_component_values[1] = elo_results["win_fraction_heatmap"]
+        leader_component_values[2] = elo_results["battle_count_heatmap"]
+        leader_component_values[3] = elo_results["average_win_rate_bar"]
+        leader_component_values[4] = elo_results["bootstrap_elo_rating"]
 
     # Basic stats
     basic_stats = report_basic_stats(log_files)
@@ -115,34 +72,49 @@ def build_basic_stats_tab():
     return [md]
 
 
-def build_leaderboard_tab():
-    md_1 = gr.Markdown()
-    gr.Markdown("### More Statistics")
+def build_leaderboard_tab(elo_results_file):
+    if elo_results_file is not None:
+        with open(elo_results_file, "rb") as fin:
+            elo_results = pickle.load(fin)
+
+        md = elo_results["leaderboard_md"]
+        p1 = elo_results["win_fraction_heatmap"]
+        p2 = elo_results["battle_count_heatmap"]
+        p3 = elo_results["average_win_rate_bar"]
+        p4 = elo_results["bootstrap_elo_rating"]
+    else:
+        md = "Loading ..."
+        p1 = p2 = p3 = p4 = None
+
+    leader_component_values[:] = [md, p1, p2, p3, p4]
+
+    md_1 = gr.Markdown(md)
+    gr.Markdown("## More Statistics")
     with gr.Row():
         with gr.Column():
             gr.Markdown("#### Figure 1: Fraction of model A wins for all non-tied A vs. B battles")
-            plot_1 = gr.Plot()
+            plot_1 = gr.Plot(p1)
         with gr.Column():
             gr.Markdown("#### Figure 2: Battle Count for Each Combination of Models (without Ties)")
-            plot_2 = gr.Plot()
+            plot_2 = gr.Plot(p2)
     with gr.Row():
         with gr.Column():
             gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
-            plot_3 = gr.Plot()
+            plot_3 = gr.Plot(p3)
         with gr.Column():
             gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates")
-            plot_4 = gr.Plot()
+            plot_4 = gr.Plot(p4)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
 
-def build_demo():
+def build_demo(elo_results_file):
     with gr.Blocks(
         title="Monitor",
         theme=gr.themes.Base(),
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
-                leader_components = build_leaderboard_tab()
+                leader_components = build_leaderboard_tab(elo_results_file)
 
             with gr.Tab("Basic Stats", id=1):
                 basic_components = build_basic_stats_tab()
@@ -165,8 +137,8 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--update-interval", type=int, default=1800)
-    parser.add_argument("--elo-results-file", type=str)
     parser.add_argument("--max-num-files", type=int)
+    parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -174,7 +146,7 @@ if __name__ == "__main__":
         args=(args.max_num_files, args.update_interval, args.elo_results_file))
     update_thread.start()
 
-    demo = build_demo()
+    demo = build_demo(args.elo_results_file)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(

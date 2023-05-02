@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
+from fastchat.serve.gradio_web_server import model_info
 
 
 pd.options.display.float_format = "{:.2f}".format
@@ -46,6 +47,30 @@ def get_bootstrap_result(battles, func_compute_elo, num_round):
     df = pd.DataFrame(rows)
     return df[df.median().sort_values(ascending=False).index]
 
+
+def visualize_leaderboard_md(rating):
+    models = list(rating.keys())
+    models.sort(key=lambda k: -rating[k])
+
+    emoji_dict = {
+        1: "🥇",
+        2: "🥈",
+        3: "🥉",
+    }
+   
+    md = """
+# Leaderboard
+We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).  The current leaderboard is based on the data we collected before May 1, 2023.
+"""
+    md += "| Rank | Model | Elo Rating | Description |\n"
+    md += "| --- | --- | --- | --- |\n"
+    for i, model in enumerate(models):
+        rank = i + 1
+        _, link, desc = model_info[model]
+        emoji = emoji_dict.get(rank, "")
+        md += f"| {rank} | {emoji} [{model}]({link}) | {rating[model]:.0f} | {desc} |\n"
+
+    return md
 
 def visualize_bootstrap_elo_rating(battles, num_round=1000):
     df = get_bootstrap_result(battles, compute_elo, num_round)
@@ -141,6 +166,7 @@ def report_elo_analysis_results(battles_json):
     model_order = list(elo_rating.keys())
     model_order.sort(key=lambda k: -elo_rating[k])
 
+    leaderboard_md = visualize_leaderboard_md(elo_rating)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
     average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
@@ -148,6 +174,7 @@ def report_elo_analysis_results(battles_json):
 
     return {
         "elo_rating": elo_rating,
+        "leaderboard_md": leaderboard_md,
         "win_fraction_heatmap": win_fraction_heatmap,
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
