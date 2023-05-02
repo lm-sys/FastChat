@@ -92,18 +92,18 @@ def build_leaderboard_tab(elo_results_file):
     gr.Markdown("## More Statistics")
     with gr.Row():
         with gr.Column():
-            gr.Markdown("#### Figure 1: Fraction of model A wins for all non-tied A vs. B battles")
-            plot_1 = gr.Plot(p1)
+            gr.Markdown("#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles")
+            plot_1 = gr.Plot(p1, show_label=False)
         with gr.Column():
             gr.Markdown("#### Figure 2: Battle Count for Each Combination of Models (without Ties)")
-            plot_2 = gr.Plot(p2)
+            plot_2 = gr.Plot(p2, show_label=False)
     with gr.Row():
         with gr.Column():
             gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
-            plot_3 = gr.Plot(p3)
+            plot_3 = gr.Plot(p3, show_label=False)
         with gr.Column():
             gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates")
-            plot_4 = gr.Plot(p4)
+            plot_4 = gr.Plot(p4, show_label=False)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
 

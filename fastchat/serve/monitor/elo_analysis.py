@@ -83,7 +83,9 @@ def visualize_bootstrap_elo_rating(battles, num_round=1000):
     bars['error_y_minus'] = bars['rating'] - bars["lower"]
     bars['rating_rounded'] = np.round(bars['rating'], 2)
     fig = px.scatter(bars, x="model", y="rating", error_y="error_y", 
-                      error_y_minus="error_y_minus", text="rating_rounded")
+                     error_y_minus="error_y_minus", text="rating_rounded",
+                     width=450)
+    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
 
 
@@ -121,7 +123,7 @@ def compute_pairwise_win_fraction(battles, model_order):
 def visualize_pairwise_win_fraction(battles, model_order):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
     fig = px.imshow(row_beats_col, color_continuous_scale='RdBu',
-                    text_auto=".2f")
+                    text_auto=".2f", height=500, width=500)
     fig.update_layout(xaxis_title="Model B", 
                   yaxis_title="Model A",
                   xaxis_side="top",
@@ -136,7 +138,8 @@ def visualize_battle_count(battles, model_order):
     ptbl = pd.pivot_table(battles, index="model_a", columns="model_b", aggfunc="size", 
                           fill_value=0)
     battle_counts = ptbl + ptbl.T
-    fig = px.imshow(battle_counts.loc[model_order, model_order], text_auto=True)
+    fig = px.imshow(battle_counts.loc[model_order, model_order], text_auto=True,
+                    height=500, width=500)
     fig.update_layout(xaxis_title="Model B", 
                       yaxis_title="Model A",
                       xaxis_side="top",
@@ -149,7 +152,7 @@ def visualize_battle_count(battles, model_order):
 def visualize_average_win_rate(battles):
     row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
     fig = px.bar(row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
-                 text_auto=".2f")
+                 text_auto=".2f", width=450)
     fig.update_layout(yaxis_title="Average Win Rate", xaxis_title="Model",
                       showlegend=False)
     return fig
