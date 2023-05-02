@@ -5,14 +5,21 @@ from pytz import timezone
 
 import polyglot
 from polyglot.detect import Detector
+from polyglot.detect.base import logger as polyglot_logger
 import pycld2
 from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import get_log_files
 
 
-VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
+polyglot_logger.setLevel("ERROR")
 
+
+VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
+IDENTITY_WORDS = [
+    "lmsys", "vicuna", "koala", "laion", "open assistant"
+    "chatglm",
+]
 
 def detect_lang(text):
     try:
@@ -48,8 +55,10 @@ def clean_battle_data(log_files):
     all_models = set()
     ct_annoy = 0
     ct_invalid = 0
+    ct_leaked_identity = 0
     battles = []
     for row in data:
+        # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
             models_hidden = [row["states"][0]["model_name"], row["states"][1]["model_name"]]
@@ -74,9 +83,28 @@ def clean_battle_data(log_files):
                 ct_invalid += 1
                 continue
 
+        # Detect langauge
         state = row["states"][0]
         lang_code = detect_lang(state["messages"][state["offset"]][1])
 
+        # Drop conversations if the model names are leaked
+        leaked_identity = False
+        messages = ""
+        for i in range(2):
+            state = row["states"][i]
+            for role, msg in state["messages"][state["offset"]:]:
+                if msg:
+                    messages += msg.lower()
+        for word in IDENTITY_WORDS:
+            if word in messages:
+                leaked_identity = True
+                break
+
+        if leaked_identity:
+            ct_leaked_identity += 1
+            continue
+
+        # Keep the result
         battles.append(dict(
             model_a=models[0],
             model_b=models[1],
@@ -88,7 +116,8 @@ def clean_battle_data(log_files):
 
         all_models.update(models_hidden)
 
-    print(f"#votes: {len(data)}, #invalid votes: {ct_invalid}")
+    print(f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
+          f"#leaked_identity: {ct_leaked_identity}")
     print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
     print(f"#models: {len(all_models)}, {all_models}")
 
@@ -96,7 +125,11 @@ def clean_battle_data(log_files):
 
 
 if __name__ == "__main__":
-    log_files = get_log_files()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max-num-files", type=int)
+    args = parser.parse_args()
+
+    log_files = get_log_files(args.max_num_files)
     battles = clean_battle_data(log_files)
 
     print("Samples:")
