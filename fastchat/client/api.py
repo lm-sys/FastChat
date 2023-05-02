@@ -1,11 +1,14 @@
-from typing import Dict, List, Optional
 import asyncio
+import json
 import os
+from typing import Dict, List, Optional, Generator, Union
 
 import httpx
+
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
+    ChatCompletionResponseStreamChoice,
 )
 
 _BASE_URL = "http://localhost:8000"
@@ -35,17 +38,51 @@ class ChatCompletionClient:
             response.raise_for_status()
             return ChatCompletionResponse.parse_obj(response.json())
 
+    async def request_completion_stream(
+        self, request: ChatCompletionRequest, timeout: Optional[float] = None
+    ):
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/v1/chat/completions",
+                json=request.dict(),
+                timeout=timeout,
+            ) as response:
+                async for chunk in response.aiter_lines():
+                    if not chunk:
+                        continue
+                    try:
+                        data = json.loads(chunk)
+                    except json.JSONDecodeError:
+                        continue
+                    yield ChatCompletionResponseStreamChoice.parse_obj(data)
+
+
+def iter_over_async(gen, loop):
+    # ait = ait.__aiter__()
+    while True:
+        try:
+            yield loop.run_until_complete(gen.__anext__())
+        except StopAsyncIteration:
+            break
+
 
 class ChatCompletion:
     OBJECT_NAME = "chat.completions"
 
     @classmethod
-    def create(cls, *args, **kwargs) -> ChatCompletionResponse:
+    def create(cls, *args, **kwargs) -> Union[ChatCompletionResponse, Generator]:
         """Creates a new chat completion for the provided messages and parameters.
 
         See `acreate` for more details.
         """
-        return asyncio.run(cls.acreate(*args, **kwargs))
+        if kwargs.get("stream"):
+            loop = asyncio.get_event_loop()
+            async_gen = cls.acreate(*args, **kwargs)
+            sync_gen = iter_over_async(async_gen, loop)
+            return sync_gen
+        else:
+            return asyncio.run(cls.acreate(*args, **kwargs))
 
     @classmethod
     async def acreate(
@@ -57,7 +94,8 @@ class ChatCompletion:
         max_tokens: Optional[int] = None,
         stop: Optional[str] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletionResponse:
+        stream: Optional[bool] = False,
+    ):
         """Creates a new chat completion for the provided messages and parameters."""
         request = ChatCompletionRequest(
             model=model,
@@ -66,7 +104,10 @@ class ChatCompletion:
             n=n,
             max_tokens=max_tokens,
             stop=stop,
+            stream=stream,
         )
         client = ChatCompletionClient(_BASE_URL)
-        response = await client.request_completion(request, timeout=timeout)
-        return response
+        if stream:
+            return client.request_completion_stream(request, timeout=timeout)
+        else:
+            return await client.request_completion(request, timeout=timeout)

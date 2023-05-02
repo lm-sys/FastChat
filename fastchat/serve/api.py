@@ -28,6 +28,7 @@ from fastchat.protocol.chat_completion import (
     ChatMessage,
     ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
+    DeltaMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,9 @@ load_dotenv()
 
 class AppSettings(BaseSettings):
     # The address of the model controller.
-    FASTCHAT_CONTROLLER_URL: str = os.getenv("FASTCHAT_CONTROLLER_URL", "http://localhost:21001")
+    FASTCHAT_CONTROLLER_URL: str = os.getenv(
+        "FASTCHAT_CONTROLLER_URL", "http://localhost:21001"
+    )
 
 
 app_settings = AppSettings()
@@ -67,14 +70,15 @@ async def create_chat_completion(request: ChatCompletionRequest):
         echo=False,
         stop=request.stop,
     )
-
-    func = chat_completion_stream if request.stream else chat_completion
+    if request.stream:
+        response_stream = chat_completion_stream(request.model, gen_params)
+        return StreamingResponse(response_stream)
 
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
-        content = asyncio.create_task(func(request.model, gen_params))
+        content = asyncio.create_task(chat_completion(request.model, gen_params))
         chat_completions.append(content)
 
     for i, content_task in enumerate(chat_completions):
@@ -171,35 +175,34 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
-
-        async def create_stream():
-            delimiter = b"\0"
-            async with client.stream(
-                "POST",
-                worker_addr + "/worker_generate_stream",
-                headers=headers,
-                json=gen_params,
-                stream=True,
-                timeout=20,
-            ) as response:
-                i = 0
-                async for chunk in response.iter_lines(
-                    decode_unicode=False, delimiter=delimiter
-                ):
-                    if not chunk:
+        delimiter = "\0"
+        async with client.stream(
+            "POST",
+            worker_addr + "/worker_generate_stream",
+            headers=headers,
+            json=gen_params,
+            timeout=20,
+        ) as response:
+            i = 0
+            async for chunk in response.aiter_text():
+                if not chunk:
+                    continue
+                lines = chunk.split(delimiter)
+                for line in lines:
+                    if not line:
                         continue
 
-                    data = json.loads(chunk.decode())
+                    data = json.loads(line)
                     if data["error_code"] == 0:
                         output = data["text"].strip()
                         yield json.dumps(
                             ChatCompletionResponseStreamChoice(
-                                index=i, delta=output, finish_reason="stop"
+                                index=i,
+                                delta=DeltaMessage(content=output),
+                                finish_reason="stop",
                             ).dict()
                         )
                         i += 1
-
-        return StreamingResponse(create_stream())
 
 
 async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
