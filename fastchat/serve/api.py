@@ -6,20 +6,22 @@ python3 -m fastchat.serve.api
 
 Reference: https://platform.openai.com/docs/api-reference/chat/create
 """
-import asyncio
-from typing import Union, Dict, List, Any
-
 import argparse
+import asyncio
 import json
 import logging
+import os
+from typing import Union, Dict, List, Any
 
 import fastapi
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 import httpx
 import uvicorn
+from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseSettings
 
+from fastchat.conversation import get_default_conv_template
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -27,14 +29,15 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
 )
-from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 
 class AppSettings(BaseSettings):
     # The address of the model controller.
-    FASTCHAT_CONTROLLER_URL: str = "http://localhost:21001"
+    FASTCHAT_CONTROLLER_URL: str = os.getenv("FASTCHAT_CONTROLLER_URL", "http://localhost:21001")
 
 
 app_settings = AppSettings()
@@ -65,11 +68,13 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stop=request.stop,
     )
 
+    func = chat_completion_stream if request.stream else chat_completion
+
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
-        content = asyncio.create_task(chat_completion(request.model, gen_params))
+        content = asyncio.create_task(func(request.model, gen_params))
         chat_completions.append(content)
 
     for i, content_task in enumerate(chat_completions):
