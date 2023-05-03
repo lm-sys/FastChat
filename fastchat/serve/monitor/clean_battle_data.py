@@ -4,16 +4,9 @@ import json
 from pytz import timezone
 import os
 
-import polyglot
-from polyglot.detect import Detector
-from polyglot.detect.base import logger as polyglot_logger
-import pycld2
 from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import get_log_files
-
-
-polyglot_logger.setLevel("ERROR")
 
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
@@ -21,6 +14,7 @@ IDENTITY_WORDS = [
     "lmsys", "vicuna", "koala", "laion", "open assistant"
     "chatglm",
 ]
+
 
 def get_log_files(max_num_files=None):
     dates = []
@@ -44,6 +38,12 @@ def get_log_files(max_num_files=None):
 
 
 def detect_lang(text):
+    import polyglot
+    from polyglot.detect import Detector
+    from polyglot.detect.base import logger as polyglot_logger
+    import pycld2
+    polyglot_logger.setLevel("ERROR")
+
     try:
         lang_code = Detector(text).language.name
     except (pycld2.error, polyglot.detect.base.UnknownLanguage):
