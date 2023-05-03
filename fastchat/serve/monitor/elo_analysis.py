@@ -160,11 +160,13 @@ def visualize_average_win_rate(battles):
 
 def report_elo_analysis_results(battles_json):
     battles = pd.DataFrame(battles_json)
+    battles = battles.sort_values(ascending=True, by=["tstamp"])
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)
     battles_no_ties = battles[~battles["win"].str.contains("tie")]
 
     elo_rating = compute_elo(battles)
+    elo_rating = {k: int(v) for k, v in elo_rating.items()}
 
     model_order = list(elo_rating.keys())
     model_order.sort(key=lambda k: -elo_rating[k])

@@ -89,7 +89,9 @@ def build_leaderboard_tab(elo_results_file):
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
     md_1 = gr.Markdown(md)
-    gr.Markdown("## More Statistics")
+    gr.Markdown('''## More Statistics\n
+\* You may see different orders from different ranking methods. This is in expectation for models performing similarly.
+Going forward we will stick with the classical Elo ranking both because its scalability and its interpretability. Detailed calculation see [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).''')
     with gr.Row():
         with gr.Column():
             gr.Markdown("#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles")
@@ -102,7 +104,7 @@ def build_leaderboard_tab(elo_results_file):
             gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
             plot_3 = gr.Plot(p3, show_label=False)
         with gr.Column():
-            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates")
+            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates (aggregated from random orders)")
             plot_4 = gr.Plot(p4, show_label=False)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
