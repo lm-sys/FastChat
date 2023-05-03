@@ -32,7 +32,13 @@ def load_demo(url_params, request: gr.Request):
     elif "leaderboard" in url_params:
         selected = 3
     single_updates = load_demo_single(models, url_params)
-    side_by_side_anony_updates = load_demo_side_by_side_anony(models, url_params)
+
+    if args.add_gpt35:
+        models_anony = ["gpt-3.5-turbo"] + models
+    else:
+        models_anony = models
+
+    side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
     return ((gr.Tabs.update(selected=selected),) + single_updates +
             side_by_side_anony_updates + side_by_side_named_updates)
@@ -144,6 +150,9 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
         "--moderate", action="store_true", help="Enable content moderation"
+    )
+    parser.add_argument(
+        "--add-gpt35", action="store_true", help="Enable gpt-3.5-turbo"
     )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
