@@ -13,7 +13,7 @@ import threading
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 
 try:
@@ -219,7 +219,8 @@ class ModelWorker:
         input_ids = tokenizer.encode(params["input"], return_tensors='pt').to(self.device)
         model_output = self.model(input_ids, output_hidden_states=True)
         data = model_output.hidden_states[-1][0]
-        return data.tolist()
+        embedding = torch.mean(data, dim=0)
+        return json.dumps({"embedding": embedding.tolist(),"token_num": len(self.tokenizer(params["input"]).input_ids)})
 
 
 app = FastAPI()
@@ -252,7 +253,10 @@ async def api_generate_completion(request: Request):
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-    return worker.generate_completion(params)
+    completion = worker.generate_completion(params)
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(release_model_semaphore)
+    return JSONResponse(content=completion, background=background_tasks)
 
 
 @app.post("/worker_generate_embeddings")
@@ -264,8 +268,10 @@ async def api_generate_embeddings(request: Request):
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-    return worker.generate_embeddings(params)
-
+    embedding = worker.generate_embeddings(params)
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(release_model_semaphore)
+    return JSONResponse(content=embedding, background=background_tasks)
 
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):

@@ -27,6 +27,7 @@ from fastchat.protocol.chat_completion import (
     EmbeddingsRequest,
     CompletionRequest,
     CompletionResponse,
+    EmbeddingsResponse,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
@@ -241,16 +242,9 @@ async def create_embeddings(request: EmbeddingsRequest):
 
     embeddings_payload = generate_embeddings_payload(request.model, request.input)
     embedding = await get_embedding(embeddings_payload)
-    # embedding = json.loads(embeddings[:-1])["embedding"]
-    data = json.dumps(
-        {
-            "object": "lists",
-            "data": [{"object": "embedding", "embedding": embedding, "index": 0}],
-            "model": request.model,
-            "usage": {"prompt_tokens": len(embedding), "total_tokens": len(embedding)},
-        }
-    )
-    return data
+    embedding = json.loads(embedding)
+    data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
+    return EmbeddingsResponse(data=data, model=request.model, usage={"prompt_tokens": embedding["token_num"], "total_tokens": embedding["token_num"]})
 
 
 async def get_embedding(payload: Dict[str, Any]):
