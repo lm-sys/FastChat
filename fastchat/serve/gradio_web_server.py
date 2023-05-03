@@ -546,7 +546,7 @@ if __name__ == "__main__":
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
 
-    if args.add_gpt35:
+    if args.add_gpt_35:
         models.append("gpt-3.5-turbo")
 
     demo = build_demo(models)

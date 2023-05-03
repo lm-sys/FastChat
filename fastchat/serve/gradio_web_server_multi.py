@@ -33,7 +33,7 @@ def load_demo(url_params, request: gr.Request):
         selected = 3
     single_updates = load_demo_single(models, url_params)
 
-    if args.add_gpt35:
+    if args.add_gpt_35:
         models_anony = ["gpt-3.5-turbo"] + models
     else:
         models_anony = models
