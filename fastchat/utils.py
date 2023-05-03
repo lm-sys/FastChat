@@ -165,3 +165,13 @@ def pretty_print_semaphore(semaphore):
     if semaphore is None:
         return "None"
     return f"Semaphore(value={semaphore._value}, locked={semaphore.locked()})"
+
+
+get_window_url_params_js = """
+function() {
+    const params = new URLSearchParams(window.location.search);
+    url_params = Object.fromEntries(params);
+    console.log("url_params", url_params);
+    return url_params;
+    }
+"""
