@@ -538,7 +538,7 @@ if __name__ == "__main__":
         "--moderate", action="store_true", help="Enable content moderation"
     )
     parser.add_argument(
-        "--add-gpt35", action="store_true", help="Enable gpt-3.5-turbo"
+        "--add-gpt-35", action="store_true", help="Enable gpt-3.5-turbo"
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
