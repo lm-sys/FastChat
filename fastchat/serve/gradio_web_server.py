@@ -180,6 +180,58 @@ def post_process_code(code):
     return code
 
 
+def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
+    import openai
+
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = openai.ChatCompletion.create(
+        model=model_name, messages=messages,
+        temperature=temperature, stream=True)
+    text = ""
+    for chunk in res:
+        text += chunk["choices"][0]["delta"].get("content", "")
+        data = {
+            "text": text,
+            "error_code": 0,
+        }
+        yield data
+
+
+def model_worker_stream_iter(conv, model_name, worker_addr,
+        prompt, temperature, max_new_tokens):
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": prompt,
+        "temperature": temperature,
+        "max_new_tokens": max_new_tokens,
+        "stop": conv.stop_str,
+        "stop_token_ids": conv.stop_token_ids,
+        "echo": False,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    # Stream output
+    response = requests.post(
+        worker_addr + "/worker_generate_stream",
+        headers=headers,
+        json=gen_params,
+        stream=True,
+        timeout=20,
+    )
+    for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+        if chunk:
+            data = json.loads(chunk.decode())
+            yield data
+
+
 def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
@@ -201,78 +253,62 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         new_state.append_message(new_state.roles[1], None)
         state = new_state
 
-    # Query worker address
-    ret = requests.post(
-        controller_url + "/get_worker_address", json={"model": model_name}
-    )
-    worker_addr = ret.json()["address"]
-    logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
-
-    # No available worker
-    if worker_addr == "":
-        state.messages[-1][-1] = server_error_msg
-        yield (
-            state,
-            state.to_gradio_chatbot(),
-            disable_btn,
-            disable_btn,
-            disable_btn,
-            enable_btn,
-            enable_btn,
-        )
-        return
-
-    # Construct prompt
-    conv = state
-    if "chatglm" in model_name:
-        prompt = conv.messages[conv.offset :]
+    if "gpt-3.5-turbo" in model_name:
+        prompt = state.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
     else:
-        prompt = conv.get_prompt()
+        # Query worker address
+        ret = requests.post(
+            controller_url + "/get_worker_address", json={"model": model_name}
+        )
+        worker_addr = ret.json()["address"]
+        logger.info(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
-    # Make requests
-    gen_params = {
-        "model": model_name,
-        "prompt": prompt,
-        "temperature": temperature,
-        "max_new_tokens": max_new_tokens,
-        "stop": conv.stop_str,
-        "stop_token_ids": conv.stop_token_ids,
-        "echo": False,
-    }
-    logger.info(f"==== request ====\n{gen_params}")
+        # No available worker
+        if worker_addr == "":
+            state.messages[-1][-1] = server_error_msg
+            yield (
+                state,
+                state.to_gradio_chatbot(),
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+
+        # Construct prompt
+        conv = state
+        if "chatglm" in model_name:
+            prompt = conv.messages[conv.offset :]
+        else:
+            prompt = conv.get_prompt()
+        stream_iter = model_worker_stream_iter(conv, model_name, worker_addr,
+            prompt, temperature, max_new_tokens)
 
     state.messages[-1][-1] = "▌"
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
-        # Stream output
-        response = requests.post(
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            stream=True,
-            timeout=20,
-        )
-        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                data = json.loads(chunk.decode())
-                if data["error_code"] == 0:
-                    output = data["text"].strip()
-                    output = post_process_code(output)
-                    state.messages[-1][-1] = output + "▌"
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-                else:
-                    output = data["text"] + f" (error_code: {data['error_code']})"
-                    state.messages[-1][-1] = output
-                    yield (state, state.to_gradio_chatbot()) + (
-                        disable_btn,
-                        disable_btn,
-                        disable_btn,
-                        enable_btn,
-                        enable_btn,
-                    )
-                    return
-                time.sleep(0.02)
+        for data in stream_iter:
+            if data["error_code"] == 0:
+                output = data["text"].strip()
+                output = post_process_code(output)
+                state.messages[-1][-1] = output + "▌"
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+            else:
+                output = data["text"] + f" (error_code: {data['error_code']})"
+                state.messages[-1][-1] = output
+                yield (state, state.to_gradio_chatbot()) + (
+                    disable_btn,
+                    disable_btn,
+                    disable_btn,
+                    enable_btn,
+                    enable_btn,
+                )
+                return
+            time.sleep(0.02)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
         yield (state, state.to_gradio_chatbot()) + (
@@ -501,11 +537,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--moderate", action="store_true", help="Enable content moderation"
     )
+    parser.add_argument(
+        "--add-gpt35", action="store_true", help="Enable gpt-3.5-turbo"
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
+
+    if args.add_gpt35:
+        models.append("gpt-3.5-turbo")
 
     demo = build_demo(models)
     demo.queue(
