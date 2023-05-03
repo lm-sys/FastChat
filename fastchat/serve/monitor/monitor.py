@@ -90,8 +90,10 @@ def build_leaderboard_tab(elo_results_file):
 
     md_1 = gr.Markdown(md)
     gr.Markdown('''## More Statistics\n
-\* You may see different orders from different ranking methods. This is in expectation for models performing similarly.
-Going forward we will stick with the classical Elo ranking both because its scalability and its interpretability. Detailed calculation see [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).''')
+Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
+Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we will use the classical Elo calculation because of its scalability and interpretability.
+''')
+    
     with gr.Row():
         with gr.Column():
             gr.Markdown("#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles")
