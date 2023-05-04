@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class AppSettings(BaseSettings):
     # The address of the model controller.
-    FASTCHAT_CONTROLLER_URL: str = "http://localhost:21001"
+    controller_url: str = "http://localhost:21001"
 
 
 app_settings = AppSettings()
@@ -42,7 +42,7 @@ headers = {"User-Agent": "FastChat API Server"}
 
 @app.get("/v1/models")
 async def show_available_models():
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_url = app_settings.controller_url
     async with httpx.AsyncClient() as client:
         ret = await client.post(controller_url + "/refresh_all_workers")
         ret = await client.post(controller_url + "/list_models")
@@ -139,7 +139,7 @@ def get_gen_params(
 
 
 async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_url = app_settings.controller_url
     async with httpx.AsyncClient() as client:
         ret = await client.post(
             controller_url + "/get_worker_address", json={"model": model_name}
@@ -178,6 +178,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
     parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
     parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
@@ -193,6 +194,8 @@ if __name__ == "__main__":
         allow_headers=args.allowed_headers,
     )
 
+    app_settings.controller_url = args.controller_url
+
     logger.debug(f"==== args ====\n{args}")
 
-    uvicorn.run("fastchat.serve.api:app", host=args.host, port=args.port, reload=True)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
