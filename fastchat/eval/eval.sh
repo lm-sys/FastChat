@@ -1,6 +1,6 @@
 #/bin/sh
 
-export OPENAI_API_KEY='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'
+export OPENAI_API_KEY=YOUR_API_KEY
 
 # table/answer/answer_alpaca-13b.jsonl
 # table/answer/answer_bard.jsonl
