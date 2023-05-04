@@ -189,8 +189,7 @@ class ModelWorker:
         try:
             ret = {
                 "text": "",
-                "error_code": 0,
-                "usage": None
+                "error_code": 0
             }
             for output in self.generate_stream_func(
                 self.model,
@@ -200,8 +199,7 @@ class ModelWorker:
                 self.context_len,
                 args.stream_interval,
             ):
-                ret["text"] += output
-                ret["usage"] = output["usage"]
+                ret["text"] = output
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,

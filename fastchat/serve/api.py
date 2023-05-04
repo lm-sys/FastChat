@@ -70,24 +70,26 @@ async def create_chat_completion(request: ChatCompletionRequest):
         content = asyncio.create_task(chat_completion(request.model, gen_params))
         chat_completions.append(content)
 
+    usage = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
     for i, content_task in enumerate(chat_completions):
         content = await content_task
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
-                message=ChatMessage(role="assistant", content=content),
+                message=ChatMessage(role="assistant", content=content["output"]),
                 # TODO: support other finish_reason
                 finish_reason="stop",
             )
         )
 
-    # TODO: support usage field
-    # "usage": {
-    #     "prompt_tokens": 9,
-    #     "completion_tokens": 12,
-    #     "total_tokens": 21
-    # }
-    return ChatCompletionResponse(choices=choices)
+        for usage_k, usage_v in content["usage"].items():
+            usage[usage_k] += usage_v
+
+    return ChatCompletionResponse(choices=choices, usage=usage)
 
 
 def get_gen_params(
@@ -138,7 +140,7 @@ def get_gen_params(
     return gen_params
 
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: bool):
+async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: bool=True):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(
@@ -151,8 +153,8 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: b
 
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
+        output = None
         if stream:
-            output = ""
             delimiter = b"\0"
             async with client.stream(
                 "POST",
@@ -168,16 +170,20 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: b
                     continue
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"].strip()
+                    output = data["text"]
         else:
-            with client.request(
+            response = await client.request(
                 "POST",
                 worker_addr + "/worker_generate",
                 headers=headers,
                 json=gen_params,
                 timeout=20,
-            ) as response:
-                output = response.read()
+            )
+            content = await response.aread()
+
+            data = json.loads(content.decode())
+            if data["error_code"] == 0:
+                output = data["text"]
         return output
 
 
