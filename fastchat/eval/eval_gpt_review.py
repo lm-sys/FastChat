@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 MAX_API_RETRY = 5
 REQ_TIME_GAP = 10
 
+#EVAL_MODEL = "gpt-4"
+EVAL_MODEL = "gpt-3.5-turbo"
+
 
 @ray.remote(num_cpus=4)
 def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
@@ -23,7 +26,7 @@ def get_eval(sys_prompt, user_prompt: str, max_tokens: int):
     for i in range(MAX_API_RETRY):
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-4",
+                model=EVAL_MODEL,
                 messages=[
                     {"role": "system", "content": sys_prompt},
                     {
