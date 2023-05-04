@@ -191,22 +191,33 @@ class ModelWorker:
                 torch.as_tensor(input_ids).cuda(),
                 do_sample=True,
                 temperature=params["temperature"],
-                max_new_tokens=params["max_tokens"]-1, # generate max_new_tokens + 1 tokens
+                max_new_tokens=params["max_tokens"]
+                - 1,  # generate max_new_tokens + 1 tokens
             )
             if self.model.config.is_encoder_decoder:
                 output_ids = output_ids[0]
             else:
-                output_ids = output_ids[0][len(input_ids[0]):]
-            outputs = self.tokenizer.decode(output_ids, skip_special_tokens=True,
-                                       spaces_between_special_tokens=False)
+                output_ids = output_ids[0][len(input_ids[0]) :]
+            outputs = self.tokenizer.decode(
+                output_ids,
+                skip_special_tokens=True,
+                spaces_between_special_tokens=False,
+            )
             completion_tokens = len(self.tokenizer(outputs).input_ids)
             if completion_tokens >= params["max_tokens"]:
                 finish_reason = "length"
             else:
                 finish_reason = "stop"
             outputs = params["prompt"] + outputs
-            return json.dumps({"text": outputs, "finish_reason": finish_reason, "completion_tokens": completion_tokens, "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids)})
-        
+            return json.dumps(
+                {
+                    "text": outputs,
+                    "finish_reason": finish_reason,
+                    "completion_tokens": completion_tokens,
+                    "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids),
+                }
+            )
+
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
@@ -216,11 +227,18 @@ class ModelWorker:
 
     def generate_embeddings(self, params):
         tokenizer = self.tokenizer
-        input_ids = tokenizer.encode(params["input"], return_tensors='pt').to(self.device)
+        input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
+            self.device
+        )
         model_output = self.model(input_ids, output_hidden_states=True)
         data = model_output.hidden_states[-1][0]
         embedding = torch.mean(data, dim=0)
-        return json.dumps({"embedding": embedding.tolist(),"token_num": len(self.tokenizer(params["input"]).input_ids)})
+        return json.dumps(
+            {
+                "embedding": embedding.tolist(),
+                "token_num": len(self.tokenizer(params["input"]).input_ids),
+            }
+        )
 
 
 app = FastAPI()
@@ -243,6 +261,7 @@ async def api_generate_stream(request: Request):
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     return StreamingResponse(generator, background=background_tasks)
+
 
 @app.post("/worker_generate_completion")
 async def api_generate_completion(request: Request):
@@ -272,6 +291,7 @@ async def api_generate_embeddings(request: Request):
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     return JSONResponse(content=embedding, background=background_tasks)
+
 
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):

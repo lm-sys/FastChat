@@ -236,9 +236,7 @@ class Controller:
 
         try:
             response = requests.post(
-                worker_addr + "/worker_generate_completion",
-                json=params,
-                timeout=15,
+                worker_addr + "/worker_generate_completion", json=params, timeout=15,
             )
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -258,12 +256,10 @@ class Controller:
                 "error_code": 2,
             }
             yield json.dumps(ret).encode() + b"\0"
-        
+
         try:
             response = requests.post(
-                worker_addr + "/worker_generate_embeddings",
-                json=params,
-                timeout=15,
+                worker_addr + "/worker_generate_embeddings", json=params, timeout=15,
             )
             return response.json()
         except requests.exceptions.RequestException as e:

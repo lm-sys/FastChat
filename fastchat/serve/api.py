@@ -24,9 +24,9 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
-    EmbeddingsRequest,
     CompletionRequest,
     CompletionResponse,
+    EmbeddingsRequest,
     EmbeddingsResponse,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
@@ -174,7 +174,8 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
                 output = data["text"].strip()
 
         return output
-    
+
+
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
 
@@ -183,13 +184,10 @@ async def create_completion(request: CompletionRequest):
         "prompt": request.prompt,
         "temperature": request.temperature,
         "max_tokens": request.max_tokens,
-        "logprobs": request.logprobs
+        "logprobs": request.logprobs,
     }
 
-
     if request.stream:
-        # generator = worker.generate_stream_gate(payload)
-        # Warning.warn("streaming is not supported yet")
         raise NotImplementedError("streaming is not supported yet")
     else:
         completions = []
@@ -204,9 +202,17 @@ async def create_completion(request: CompletionRequest):
             content.pop("completion_tokens")
             content.pop("prompt_tokens")
             completions.append(content)
-    #todo: support usage field
-    return CompletionResponse(model=request.model, choices=completions, usage={"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens, "total_tokens": prompt_tokens + completion_tokens})
-    
+    return CompletionResponse(
+        model=request.model,
+        choices=completions,
+        usage={
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        },
+    )
+
+
 async def generate_completion(payload: Dict[str, Any]):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
@@ -229,6 +235,7 @@ async def generate_completion(payload: Dict[str, Any]):
         completion = response.json()
         return completion
 
+
 @app.post("/v1/create_embeddings")
 async def create_embeddings(request: EmbeddingsRequest):
     """Creates embeddings for the text"""
@@ -244,7 +251,14 @@ async def create_embeddings(request: EmbeddingsRequest):
     embedding = await get_embedding(embeddings_payload)
     embedding = json.loads(embedding)
     data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
-    return EmbeddingsResponse(data=data, model=request.model, usage={"prompt_tokens": embedding["token_num"], "total_tokens": embedding["token_num"]})
+    return EmbeddingsResponse(
+        data=data,
+        model=request.model,
+        usage={
+            "prompt_tokens": embedding["token_num"],
+            "total_tokens": embedding["token_num"],
+        },
+    )
 
 
 async def get_embedding(payload: Dict[str, Any]):
