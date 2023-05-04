@@ -17,7 +17,6 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    model_description_md,
     learn_more_md,
 )
 
@@ -257,27 +256,26 @@ def http_bot_all(
 
 
 def build_side_by_side_ui_anony(models):
-    notice_markdown = ("""
+    notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ 
-Rules:
+### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
 - The names of the models will be revealed after your vote.
 - You can continue chating and voting or click "Clear history" to start a new round.
-- A leaderboard will be available soon.
-- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+- [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data for future research.**
-The demo works better on desktop devices with a wide screen.
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
-### The participated models
-""" + model_description_md)
+### Battle
+Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard).
+"""
 
     states = [gr.State() for _ in range(num_models)]
     model_selectors = [None] * num_models
     chatbots = [None] * num_models
 
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Box(elem_id="share-region-anony"):
         with gr.Row():

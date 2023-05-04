@@ -118,6 +118,17 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
+    def to_openai_api_messages(self):
+        ret = [{"role": "system", "content": self.system}]
+
+        for i, (_, msg) in enumerate(self.messages[self.offset:]):
+            if i % 2 == 0:
+                ret.append({"role": "user", "content": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "assistant", "content": msg})
+        return ret
+
     def copy(self):
         return Conversation(
             system=self.system,
@@ -287,6 +298,15 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     sep="\n",
 )
 
+conv_gpt35 = Conversation(
+    system="You are a helpful assistant.",
+    roles=("user", "assistant"),
+    messages=(),
+    offset=0,
+    sep_style=None,
+    sep=None,
+)
+
 conv_templates = {
     "baize": conv_baize,
     "conv_one_shot": conv_one_shot,
@@ -316,6 +336,8 @@ def get_default_conv_template(model_name):
         return conv_stablelm
     elif "rwkv-4" in model_name:
         return conv_rwkv
+    elif "gpt-3.5-turbo" in model_name:
+        return conv_gpt35
     elif "buddy" in model_name:
         return conv_buddy
     return conv_one_shot
