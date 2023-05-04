@@ -208,13 +208,12 @@ class ModelWorker:
                 finish_reason = "length"
             else:
                 finish_reason = "stop"
-            outputs = params["prompt"] + outputs
             return json.dumps(
                 {
                     "text": outputs,
                     "finish_reason": finish_reason,
                     "completion_tokens": completion_tokens,
-                    "prompt_tokens": len(self.tokenizer(params["prompt"]).input_ids),
+                    "prompt_tokens": len(input_ids[0]),
                 }
             )
 
