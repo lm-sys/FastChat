@@ -1,9 +1,9 @@
 # OpenAI-Compatible RESTful APIs & SDK
 
 Now FastChat supports:
-- Chat Completion. (Reference: https://platform.openai.com/docs/api-reference/chat/create)
-- Create Embedding. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
-- Text Completion. (Reference: https://platform.openai.com/docs/api-reference/completions/create)
+- Chat Completions. (Reference: https://platform.openai.com/docs/api-reference/chat)
+- Completions. (Reference: https://platform.openai.com/docs/api-reference/completions)
+- Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
 
 ## RESTful API Server
 First, launch the controller
@@ -21,14 +21,13 @@ python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-pat
 Finally, launch the RESTful API server
 
 ```bash
-export FASTCHAT_CONTROLLER_URL=http://localhost:21001
-python3 -m fastchat.serve.api --host localhost --port 8000
+python3 -m fastchat.serve.api_server --host localhost --port 8000
 ```
 
 Test the API server
 
+### Chat Completions
 ```bash
-# chat completion
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -36,17 +35,9 @@ curl http://localhost:8000/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
+
+### Text Completions
 ```bash
-# create embedding
-curl http://localhost:8000/v1/create_embeddings \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "vicuna-7b-v1.1",
-    "input": "Hello, can you tell me a joke"
-  }'
-```
-```bash
-# text completion
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -54,6 +45,16 @@ curl http://localhost:8000/v1/completions \
     "prompt": "Once upon a time",
     "max_tokens": 41,
     "temperature": 0.5
+  }'
+```
+
+### Embeddings
+```bash
+curl http://localhost:8000/v1/create_embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "vicuna-7b-v1.1",
+    "input": "Hello, can you tell me a joke"
   }'
 ```
 
@@ -94,8 +95,8 @@ python3 playground/test_embedding/test_classification.py
 ```
 and you will train a classifier based on `vicuna-7b`, `text-similarity-ada-001` and `text-embedding-ada-002`
 
-### Todos
-Some features/compatibilities to be implemented:
+## Todos
+Some features to be implemented:
 
 - [ ] Streaming
 - [ ] Support of some parameters like `top_p`, `presence_penalty`
