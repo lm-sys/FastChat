@@ -1,58 +1,51 @@
 """Inference for FastChat models."""
 import abc
+import gc
+import math
 from typing import Optional
+import sys
 import warnings
 
+import psutil
 import torch
-
-try:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LlamaTokenizer,
-        LlamaForCausalLM,
-        AutoModel,
-        AutoModelForSeq2SeqLM,
-    )
-except ImportError:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LLaMATokenizer,
-        LLamaForCausalLM,
-        AutoModel,
-        AutoModelForSeq2SeqLM,
-    )
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    LlamaTokenizer,
+    LlamaForCausalLM,
+    AutoModel,
+    AutoModelForSeq2SeqLM,
+    T5Tokenizer,
+    AutoConfig,
+)
 
 from fastchat.conversation import (
     conv_templates,
     get_default_conv_template,
-    compute_skip_echo_len,
     SeparatorStyle,
 )
-from fastchat.serve.compression import compress_module
+from fastchat.serve.compression import load_compress_model
 from fastchat.serve.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
 from fastchat.serve.serve_chatglm import chatglm_generate_stream
 
-
-def raise_warning_for_old_weights(model_path, model):
-    if "vicuna" in model_path.lower():
-        try:
-            is_vicuna = isinstance(model, LlamaForCausalLM)
-        except Exception:
-            is_vicuna = isinstance(model, LLamaForCausalLM)
-        if is_vicuna and model.model.vocab_size > 32000:
-            warnings.warn(
-                "\nYou are probably using the old Vicuna-v0 model, "
-                "which will generate unexpected results with the "
-                "current fschat.\nYou can try one of the following methods:\n"
-                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
-                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
-                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
-            )
-
+def raise_warning_for_incompatible_cpu_offloading_configuration(device: str, load_8bit: bool, cpu_offloading: bool):
+    if cpu_offloading:
+        if not load_8bit:
+            warnings.warn("The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
+                          "Use '--load-8bit' to enable 8-bit-quantization\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if not "linux" in sys.platform:
+            warnings.warn("CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+        if device != "cuda":
+            warnings.warn("CPU-offloading is only enabled when using CUDA-devices\n"
+                          "Continuing without cpu-offloading enabled\n")
+            return False
+    return cpu_offloading
 
 def get_gpu_memory(max_gpus=None):
     gpu_memory = []
@@ -73,30 +66,39 @@ def get_gpu_memory(max_gpus=None):
     return gpu_memory
 
 
+def raise_warning_for_old_weights(model_path, model):
+    if "vicuna" in model_path.lower() and isinstance(model, LlamaForCausalLM):
+        if model.model.vocab_size > 32000:
+            warnings.warn(
+                "\nYou are probably using the old Vicuna-v0 model, "
+                "which will generate unexpected results with the "
+                "current fastchat.\nYou can try one of the following methods:\n"
+                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
+            )
+
 def load_model(
-    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, debug=False
+    model_path, device, num_gpus, max_gpu_memory=None, load_8bit=False, cpu_offloading=False, debug=False
 ):
+    cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(device, load_8bit, cpu_offloading)
     if device == "cpu":
-        kwargs = {}
+        kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
-        if num_gpus == "auto":
+        if num_gpus != 1:
             kwargs["device_map"] = "auto"
-        else:
-            num_gpus = int(num_gpus)
-            if num_gpus != 1:
-                kwargs["device_map"] = "auto"
-                if max_gpu_memory is None:
-                    kwargs[
-                        "device_map"
-                    ] = "sequential"  # This is important for not the same VRAM sizes
-                    available_gpu_memory = get_gpu_memory(num_gpus)
-                    kwargs["max_memory"] = {
-                        i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
-                        for i in range(num_gpus)
-                    }
-                else:
-                    kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+            if max_gpu_memory is None:
+                kwargs[
+                    "device_map"
+                ] = "sequential"  # This is important for not the same VRAM sizes
+                available_gpu_memory = get_gpu_memory(num_gpus)
+                kwargs["max_memory"] = {
+                    i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                    for i in range(num_gpus)
+                }
+            else:
+                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
         print("init_kwargs", kwargs)
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
@@ -105,16 +107,23 @@ def load_model(
     else:
         raise ValueError(f"Invalid device: {device}")
 
+    if cpu_offloading:
+        # raises an error on incompatible platforms
+        from transformers import BitsAndBytesConfig
+        if "max_memory" in kwargs:
+            kwargs["max_memory"]["cpu"] = str(math.floor(psutil.virtual_memory().available / 2**20)) + 'Mib'
+        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit_fp32_cpu_offload=cpu_offloading)
+        kwargs["load_in_8bit"] = load_8bit
+    elif load_8bit:
+        if num_gpus != 1:
+            warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
+        else:
+            return load_compress_model(model_path=model_path,
+                device=device, torch_dtype=kwargs["torch_dtype"])
+
     if "chatglm" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, **kwargs
-        ).cuda()
-    elif "google/flan-t5" in model_path:
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **kwargs
-        )
+        model = AutoModel.from_pretrained(model_path, trust_remote_code=True, **kwargs)
     elif "dolly" in model_path:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
@@ -127,6 +136,14 @@ def load_model(
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **kwargs
         )
+    elif "t5" in model_path:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
+                                                      low_cpu_mem_usage=True, **kwargs)
+        tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
+    elif "RWKV-4" in model_path:
+        from fastchat.serve.rwkv_model import RwkvModel
+        model = RwkvModel(model_path)
+        tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
@@ -134,10 +151,7 @@ def load_model(
         )
         raise_warning_for_old_weights(model_path, model)
 
-    if load_8bit:
-        compress_module(model, device)
-
-    if (device == "cuda" and num_gpus == 1) or device == "mps":
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
 
     if debug:
@@ -151,50 +165,50 @@ def generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     prompt = params["prompt"]
-    l_prompt = len(prompt)
+    len_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
-    stop_token_ids = params.get("stop_ids", [tokenizer.eos_token_id])
+    echo = params.get("echo", True)
+    stop_token_ids = params.get("stop_token_ids", None) or []
+    stop_token_ids.append(tokenizer.eos_token_id)
 
     input_ids = tokenizer(prompt).input_ids
+    input_echo_len = len(input_ids)
     output_ids = list(input_ids)
 
-    max_src_len = context_len - max_new_tokens - 8
+    if model.config.is_encoder_decoder:
+         max_src_len = context_len
+    else:
+         max_src_len = context_len - max_new_tokens - 8
+
     input_ids = input_ids[-max_src_len:]
+
+    if model.config.is_encoder_decoder:
+         encoder_output = model.encoder(input_ids=torch.as_tensor([input_ids],
+                                                      device=device))[0]
+         start_ids = torch.as_tensor([[model.generation_config.decoder_start_token_id]],
+                     dtype=torch.int64, device=device)
 
     for i in range(max_new_tokens):
         if i == 0:
             if model.config.is_encoder_decoder:
-                encoder_outputs = model.encoder(
-                    input_ids=torch.as_tensor([input_ids], device=device)
-                )
-                out = model(
-                    torch.as_tensor([input_ids], device=device),
-                    decoder_input_ids=torch.as_tensor(
-                        [[model.generation_config.decoder_start_token_id]],
-                        device=device,
-                    ),
-                    encoder_outputs=encoder_outputs,
-                    use_cache=True,
-                )
-                logits = out.logits
-                past_key_values = out.past_key_values
+                 out = model.decoder(input_ids=start_ids,
+                                     encoder_hidden_states=encoder_output,
+                                     use_cache=True)
+                 logits = model.lm_head(out[0])
             else:
                 out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
                 logits = out.logits
-                past_key_values = out.past_key_values
+            past_key_values = out.past_key_values
         else:
             if model.config.is_encoder_decoder:
-                out = model(
-                    input_ids=torch.as_tensor([input_ids], device=device),
-                    use_cache=True,
-                    encoder_outputs=encoder_outputs,
-                    decoder_input_ids=torch.as_tensor([[token]], device=device),
-                    past_key_values=past_key_values,
-                )
-                logits = out.logits
-                past_key_values = out.past_key_values
+                out = model.decoder(input_ids=torch.as_tensor([[token]], device=device),
+                             encoder_hidden_states=encoder_output,
+                             use_cache=True,
+                             past_key_values=past_key_values)
+
+                logits = model.lm_head(out[0])
             else:
                 out = model(
                     input_ids=torch.as_tensor([[token]], device=device),
@@ -202,7 +216,7 @@ def generate_stream(
                     past_key_values=past_key_values,
                 )
                 logits = out.logits
-                past_key_values = out.past_key_values
+            past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
 
@@ -224,9 +238,17 @@ def generate_stream(
             stopped = False
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
-            output = tokenizer.decode(output_ids, skip_special_tokens=True)
+            if echo:
+                tmp_output_ids = output_ids
+                rfind_start = len_prompt
+            else:
+                tmp_output_ids = output_ids[input_echo_len:]
+                rfind_start = 0
+
+            output = tokenizer.decode(tmp_output_ids, skip_special_tokens=True, 
+                                      spaces_between_special_tokens=False)
             if stop_str:
-                pos = output.rfind(stop_str, l_prompt)
+                pos = output.rfind(stop_str, rfind_start)
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
@@ -235,7 +257,9 @@ def generate_stream(
         if stopped:
             break
 
-    del past_key_values
+    del past_key_values, out
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 class ChatIO(abc.ABC):
@@ -248,16 +272,17 @@ class ChatIO(abc.ABC):
         """Prompt for output from a role."""
 
     @abc.abstractmethod
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         """Stream output."""
 
 
 def chat_loop(
     model_path: str,
     device: str,
-    num_gpus: str,
+    num_gpus: int,
     max_gpu_memory: str,
     load_8bit: bool,
+    cpu_offloading: bool,
     conv_template: Optional[str],
     temperature: float,
     max_new_tokens: int,
@@ -266,7 +291,7 @@ def chat_loop(
 ):
     # Model
     model, tokenizer = load_model(
-        model_path, device, num_gpus, max_gpu_memory, load_8bit, debug
+        model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
 
@@ -289,32 +314,58 @@ def chat_loop(
         conv.append_message(conv.roles[1], None)
 
         if is_chatglm:
-            prompt = conv.messages[conv.offset :]
             generate_stream_func = chatglm_generate_stream
+            prompt = conv.messages[conv.offset:]
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
 
-        skip_echo_len = compute_skip_echo_len(model_path, conv, prompt)
-        stop_str = (
-            conv.sep
-            if conv.sep_style in [SeparatorStyle.SINGLE, SeparatorStyle.BAIZE]
-            else None
-        )
-
-        params = {
+        gen_params = {
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": stop_str,
+            "stop": conv.stop_str,
+            "stop_token_ids": conv.stop_token_ids,
+            "echo": False,
         }
 
         chatio.prompt_for_output(conv.roles[1])
-        output_stream = generate_stream_func(model, tokenizer, params, device)
-        outputs = chatio.stream_output(output_stream, skip_echo_len)
+        output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        outputs = chatio.stream_output(output_stream)
         # NOTE: strip is important to align with the training data.
         conv.messages[-1][-1] = outputs.strip()
 
         if debug:
             print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
+
+
+def add_model_args(parser):
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="lmsys/fastchat-t5-3b-v1.0",
+        help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
+    )
+    parser.add_argument(
+        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda",
+        help="The device type"
+    )
+    parser.add_argument(
+        "--gpus",
+        type=str,
+        default=None,
+        help="A single GPU like 1 or multiple GPUs like 0,2"
+    )
+    parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument(
+        "--max-gpu-memory",
+        type=str,
+        help="The maximum memory per gpu. Use a string like '13Gib'",
+    )
+    parser.add_argument(
+        "--load-8bit", action="store_true", help="Use 8-bit quantization"
+    )
+    parser.add_argument(
+        "--cpu-offloading", action="store_true", help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
+    )

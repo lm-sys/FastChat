@@ -21,6 +21,9 @@ def make_delta(base_model_path, target_model_path, delta_path):
     target = AutoModelForCausalLM.from_pretrained(
         target_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
     )
+    target_tokenizer = AutoTokenizer.from_pretrained(
+        target_model_path, use_fast=False
+    )
 
     print("Calculating the delta")
     for name, param in tqdm(target.state_dict().items(), desc="Calculating delta"):
@@ -33,6 +36,7 @@ def make_delta(base_model_path, target_model_path, delta_path):
     else:
         kwargs = {}
     target.save_pretrained(delta_path, **kwargs)
+    target_tokenizer.save_pretrained(delta_path, **kwargs)
 
 
 if __name__ == "__main__":

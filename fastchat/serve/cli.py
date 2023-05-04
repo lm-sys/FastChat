@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
 
-from fastchat.serve.inference import chat_loop, ChatIO
+from fastchat.serve.inference import chat_loop, ChatIO, add_model_args
 
 
 class SimpleChatIO(ChatIO):
@@ -26,11 +26,10 @@ class SimpleChatIO(ChatIO):
     def prompt_for_output(self, role: str):
         print(f"{role}: ", end="", flush=True)
 
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         pre = 0
         for outputs in output_stream:
-            outputs = outputs[skip_echo_len:].strip()
-            outputs = outputs.split(" ")
+            outputs = outputs.strip().split(" ")
             now = len(outputs) - 1
             if now > pre:
                 print(" ".join(outputs[pre:now]), end=" ", flush=True)
@@ -62,7 +61,7 @@ class RichChatIO(ChatIO):
     def prompt_for_output(self, role: str):
         self._console.print(f"[bold]{role}:")
 
-    def stream_output(self, output_stream, skip_echo_len: int):
+    def stream_output(self, output_stream):
         """Stream output from a role."""
         # TODO(suquark): the console flickers when there is a code block
         #  above it. We need to cut off "live" when a code block is done.
@@ -71,8 +70,7 @@ class RichChatIO(ChatIO):
         with Live(console=self._console, refresh_per_second=4) as live:
             # Read lines from the stream
             for outputs in output_stream:
-                accumulated_text = outputs[skip_echo_len:]
-                if not accumulated_text:
+                if not outputs:
                     continue
                 # Render the accumulated text as Markdown
                 # NOTE: this is a workaround for the rendering "unstandard markdown"
@@ -86,7 +84,7 @@ class RichChatIO(ChatIO):
                 #  especially for console output, because in general the console does not
                 #  care about trailing spaces.
                 lines = []
-                for line in accumulated_text.splitlines():
+                for line in outputs.splitlines():
                     lines.append(line)
                     if line.startswith("```"):
                         # Code block marker - do not add trailing spaces, as it would
@@ -98,14 +96,17 @@ class RichChatIO(ChatIO):
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
-        return outputs[skip_echo_len:]
+        return outputs
 
 
 def main(args):
     if args.gpus:
-        if args.num_gpus and len(args.gpus.split(",")) < int(args.num_gpus):
-            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
+        if len(args.gpus.split(",")) < args.num_gpus:
+            raise ValueError(
+                f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
+            )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+
     if args.style == "simple":
         chatio = SimpleChatIO()
     elif args.style == "rich":
@@ -119,6 +120,7 @@ def main(args):
             args.num_gpus,
             args.max_gpu_memory,
             args.load_8bit,
+            args.cpu_offloading,
             args.conv_template,
             args.temperature,
             args.max_new_tokens,
@@ -131,30 +133,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default="facebook/opt-350m",
-        help="The path to the weights",
-    )
-    parser.add_argument(
-        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda"
-    )
-    parser.add_argument(
-        "--gpus",
-        type=str,
-        default=None,
-        help="A single GPU like 1 or multiple GPUs like 0,2"
-    )
-    parser.add_argument("--num-gpus", type=str, default="1")
-    parser.add_argument(
-        "--max-gpu-memory",
-        type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'",
-    )
-    parser.add_argument(
-        "--load-8bit", action="store_true", help="Use 8-bit quantization."
-    )
+    add_model_args(parser)
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
@@ -167,6 +146,6 @@ if __name__ == "__main__":
         choices=["simple", "rich"],
         help="Display style.",
     )
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--debug", action="store_true", help="Print debug information")
     args = parser.parse_args()
     main(args)

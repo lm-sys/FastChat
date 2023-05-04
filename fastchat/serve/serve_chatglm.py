@@ -11,6 +11,7 @@ def chatglm_generate_stream(
     max_new_tokens = int(params.get("max_new_tokens", 256))
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 0.7))
+    echo = params.get("echo", True)
 
     gen_kwargs = {
         "max_new_tokens": max_new_tokens,
@@ -26,5 +27,9 @@ def chatglm_generate_stream(
     query = messages[-2][1]
 
     for response, new_hist in model.stream_chat(tokenizer, query, hist):
-        output = query + " " + response
+        if echo:
+            output = query + " " + response
+        else:
+            output = response
+
         yield output
