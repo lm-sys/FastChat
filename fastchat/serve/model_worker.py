@@ -315,9 +315,11 @@ if __name__ == "__main__":
 
     if args.gpus:
         if len(args.gpus.split(",")) < args.num_gpus:
-            raise ValueError(f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!")
+            raise ValueError(
+                f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
+            )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-    
+
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,

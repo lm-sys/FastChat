@@ -178,7 +178,6 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
 
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
-
     payload = {
         "model": request.model,
         "prompt": request.prompt,
@@ -290,10 +289,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
-    parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
-    parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
-    parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
-    parser.add_argument("--allowed-headers", type=json.loads, default=["*"], help="allowed headers")
+    parser.add_argument(
+        "--allow-credentials", action="store_true", help="allow credentials"
+    )
+    parser.add_argument(
+        "--allowed-origins", type=json.loads, default=["*"], help="allowed origins"
+    )
+    parser.add_argument(
+        "--allowed-methods", type=json.loads, default=["*"], help="allowed methods"
+    )
+    parser.add_argument(
+        "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
+    )
 
     args = parser.parse_args()
 
