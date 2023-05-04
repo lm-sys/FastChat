@@ -178,16 +178,16 @@ def generate_stream(
     output_ids = list(input_ids)
 
     if model.config.is_encoder_decoder:
-         max_src_len = context_len
+        max_src_len = context_len
     else:
-         max_src_len = context_len - max_new_tokens - 8
+        max_src_len = context_len - max_new_tokens - 8
 
     input_ids = input_ids[-max_src_len:]
 
     if model.config.is_encoder_decoder:
-         encoder_output = model.encoder(input_ids=torch.as_tensor([input_ids],
+        encoder_output = model.encoder(input_ids=torch.as_tensor([input_ids],
                                                       device=device))[0]
-         start_ids = torch.as_tensor([[model.generation_config.decoder_start_token_id]],
+        start_ids = torch.as_tensor([[model.generation_config.decoder_start_token_id]],
                      dtype=torch.int64, device=device)
 
     for i in range(max_new_tokens):
@@ -252,7 +252,14 @@ def generate_stream(
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
-            yield output
+            yield {
+                "output": output,
+                "usage": {
+                    "prompt_tokens": input_echo_len,
+                    "completion_tokens": i,
+                    "total_tokens": input_echo_len + i,
+                }
+            }
 
         if stopped:
             break

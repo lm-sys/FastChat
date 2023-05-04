@@ -138,7 +138,7 @@ def get_gen_params(
     return gen_params
 
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
+async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: bool):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(
@@ -151,24 +151,33 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
 
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
-        output = ""
-        delimiter = b"\0"
-        async with client.stream(
-            "POST",
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            timeout=20,
-        ) as response:
-            content = await response.aread()
+        if stream:
+            output = ""
+            delimiter = b"\0"
+            async with client.stream(
+                "POST",
+                worker_addr + "/worker_generate_stream",
+                headers=headers,
+                json=gen_params,
+                timeout=20,
+            ) as response:
+                content = await response.aread()
 
-        for chunk in content.split(delimiter):
-            if not chunk:
-                continue
-            data = json.loads(chunk.decode())
-            if data["error_code"] == 0:
-                output = data["text"].strip()
-
+            for chunk in content.split(delimiter):
+                if not chunk:
+                    continue
+                data = json.loads(chunk.decode())
+                if data["error_code"] == 0:
+                    output = data["text"].strip()
+        else:
+            with client.request(
+                "POST",
+                worker_addr + "/worker_generate",
+                headers=headers,
+                json=gen_params,
+                timeout=20,
+            ) as response:
+                output = response.read()
         return output
 
 

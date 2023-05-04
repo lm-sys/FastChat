@@ -26,10 +26,20 @@ def chatglm_generate_stream(
         hist.append((messages[i][1], messages[i + 1][1]))
     query = messages[-2][1]
 
-    for response, new_hist in model.stream_chat(tokenizer, query, hist):
+    input_echo = tokenizer(query)
+    input_echo_len = len(input_echo)
+
+    for i, (response, new_hist) in enumerate(model.stream_chat(tokenizer, query, hist)):
         if echo:
             output = query + " " + response
         else:
             output = response
 
-        yield output
+        yield {
+            "output": output,
+            "usage": {
+                "prompt_tokens": input_echo_len,
+                "completion_tokens": i,
+                "total_tokens": input_echo_len + i,
+            }
+        }

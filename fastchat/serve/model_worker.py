@@ -13,7 +13,7 @@ import threading
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 
 try:
@@ -88,12 +88,13 @@ class ModelWorker:
         else:
             self.context_len = 2048
 
+        # generate_stream
         is_chatglm = "chatglm" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = chatglm_generate_stream
         else:
             self.generate_stream_func = generate_stream
-
+        
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -183,6 +184,30 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
+    
+    def generate_gate(self, params):
+        try:
+            ret = {
+                "text": "",
+                "error_code": 0,
+                "usage": None
+            }
+            for output in self.generate_stream_func(
+                self.model,
+                self.tokenizer,
+                params,
+                self.device,
+                self.context_len,
+                args.stream_interval,
+            ):
+                ret["text"] += output
+                ret["usage"] = output["usage"]
+        except torch.cuda.OutOfMemoryError:
+            ret = {
+                "text": server_error_msg,
+                "error_code": 1,
+            }
+        return ret
 
 
 app = FastAPI()
@@ -206,6 +231,18 @@ async def api_generate_stream(request: Request):
     background_tasks.add_task(release_model_semaphore)
     return StreamingResponse(generator, background=background_tasks)
 
+@app.post("/worker_generate")
+async def api_generate(request: Request):
+    global model_semaphore, global_counter
+    global_counter += 1
+    params = await request.json()
+
+    if model_semaphore is None:
+        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
+    await model_semaphore.acquire()
+    output = worker.generate_gate(params)
+    release_model_semaphore()
+    return JSONResponse(output)
 
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):
