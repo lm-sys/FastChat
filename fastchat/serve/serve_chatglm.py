@@ -48,7 +48,7 @@ def chatglm_generate_stream(
             output = response
 
         yield {
-            "output": output,
+            "text": output,
             "usage": {
                 "prompt_tokens": input_echo_len,
                 "completion_tokens": i,

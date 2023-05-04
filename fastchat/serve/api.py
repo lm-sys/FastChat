@@ -80,7 +80,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
-                message=ChatMessage(role="assistant", content=content["output"]),
+                message=ChatMessage(role="assistant", content=content["text"]),
                 # TODO: support other finish_reason
                 finish_reason="stop",
             )
@@ -170,7 +170,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: b
                     continue
                 data = json.loads(chunk.decode())
                 if data["error_code"] == 0:
-                    output = data["text"]
+                    output = data
         else:
             response = await client.request(
                 "POST",
@@ -183,7 +183,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: b
 
             data = json.loads(content.decode())
             if data["error_code"] == 0:
-                output = data["text"]
+                output = data
         return output
 
 

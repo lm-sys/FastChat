@@ -174,9 +174,11 @@ class ModelWorker:
                 args.stream_interval,
             ):
                 ret = {
-                    "text": output,
+                    "text": output["text"],
                     "error_code": 0,
                 }
+                if "usage" in output:
+                    ret["usage"] = output["usage"]
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -199,7 +201,9 @@ class ModelWorker:
                 self.context_len,
                 args.stream_interval,
             ):
-                ret["text"] = output
+                ret["text"] = output["text"]
+            if "usage" in output:
+                ret["usage"] = output["usage"]
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
