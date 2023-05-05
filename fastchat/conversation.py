@@ -298,7 +298,7 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     sep="\n",
 )
 
-conv_gpt35 = Conversation(
+conv_chatgpt = Conversation(
     system="You are a helpful assistant.",
     roles=("user", "assistant"),
     messages=(),
@@ -306,6 +306,16 @@ conv_gpt35 = Conversation(
     sep_style=None,
     sep=None,
 )
+
+conv_claude = Conversation(
+    system="",
+    roles=("Human", "Assistant"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+    sep="\n\n",
+)
+
 
 conv_templates = {
     "baize": conv_baize,
@@ -323,24 +333,28 @@ conv_templates = {
 def get_default_conv_template(model_name):
     model_name = model_name.lower()
     if "vicuna" in model_name or "output" in model_name:
-        return conv_vicuna_v1_1
+        ret = conv_vicuna_v1_1
     elif "koala" in model_name:
-        return conv_koala_v1
+        ret = conv_koala_v1
     elif "dolly-v2" in model_name:
-        return conv_dolly
+        ret = conv_dolly
     elif "oasst" in model_name and "pythia" in model_name:
-        return conv_oasst
+        ret = conv_oasst
     elif "baize" in model_name:
-        return conv_baize
+        ret = conv_baize
     elif "stablelm" in model_name:
-        return conv_stablelm
+        ret = conv_stablelm
     elif "rwkv-4" in model_name:
-        return conv_rwkv
-    elif "gpt-3.5-turbo" in model_name:
-        return conv_gpt35
+        ret = conv_rwkv
     elif "buddy" in model_name:
-        return conv_buddy
-    return conv_one_shot
+        ret = conv_buddy
+    elif model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
+        ret = conv_chatgpt
+    elif model_name == "claude-v1":
+        ret = conv_claude
+    else:
+        ret = conv_one_shot
+    return ret.copy()
 
 
 if __name__ == "__main__":

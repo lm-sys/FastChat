@@ -106,7 +106,7 @@ Please note that you may see different orders from different ranking methods. Th
             gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
             plot_3 = gr.Plot(p3, show_label=False)
         with gr.Column():
-            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates (aggregated from random orders)")
+            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)")
             plot_4 = gr.Plot(p4, show_label=False)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument("--update-interval", type=int, default=1800)
+    parser.add_argument("--update-interval", type=int, default=600)
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()

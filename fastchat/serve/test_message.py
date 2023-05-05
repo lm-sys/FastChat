@@ -32,7 +32,7 @@ def main():
         print(f"No available workers for {model_name}")
         return
 
-    conv = get_default_conv_template(model_name).copy()
+    conv = get_default_conv_template(model_name)
     conv.append_message(conv.roles[0], args.message)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()

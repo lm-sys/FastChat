@@ -1,3 +1,7 @@
+"""
+The gradio demo server for chatting with a single model.
+"""
+
 import argparse
 from collections import defaultdict
 import datetime
@@ -38,15 +42,19 @@ enable_moderation = False
 
 
 model_info = {
-    "vicuna-13b": ("Vicuna", "https://vicuna.lmsys.org", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
+    "gpt-4": ("ChatGPT-4", "https://chat.openai.com/", "ChatGPT-4 by OpenAI"),
+    "gpt-3.5-turbo": ("ChatGPT-3.5", "https://chat.openai.com/", "ChatGPT-3.5 by OpenAI"),
+    "claude-v1": ("Claude", "https://www.anthropic.com/index/introducing-claude", "Claude by Anthropic"),
+    "vicuna-13b": ("Vicuna", "https://lmsys.org/blog/2023-03-30-vicuna/", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
     "koala-13b": ("Koala", "https://bair.berkeley.edu/blog/2023/04/03/koala", "a dialogue model for academic research by BAIR"),
-    "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
     "oasst-pythia-12b": ("OpenAssistant", "https://open-assistant.io", "an Open Assistant for everyone by LAION"),
-    "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
-    "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
+    "RWKV-4-Raven-14B": ("RMKV-4-Raven", "https://huggingface.co/BlinkDL/rwkv-4-raven", "an RNN with transformer-level LLM performance"),
     "alpaca-13b": ("Alpaca", "https://crfm.stanford.edu/2023/03/13/alpaca.html", "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford"),
+    "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
     "llama-13b": ("LLaMA", "https://arxiv.org/abs/2302.13971", "open and efficient foundation language models by Meta"),
     "dolly-v2-12b": ("Dolly", "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks"),
+    "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
+    "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
 }
 
 learn_more_md = """
@@ -148,7 +156,7 @@ def add_text(state, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
 
     if state is None:
-        state = get_default_conv_template("vicuna").copy()
+        state = get_default_conv_template("vicuna")
 
     if len(text) <= 0:
         state.skip_next = True
@@ -204,6 +212,35 @@ def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
         yield data
 
 
+def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
+    import anthropic
+
+    c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": prompt,
+        "temperature": temperature,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = c.completion_stream(
+        prompt=prompt,
+        stop_sequences=[anthropic.HUMAN_PROMPT],
+        max_tokens_to_sample=max_new_tokens,
+        temperature=temperature,
+        model=model_name,
+        stream=True,
+    )
+    for chunk in res:
+        data = {
+            "text": chunk["completion"],
+            "error_code": 0,
+        }
+        yield data
+
+
 def model_worker_stream_iter(conv, model_name, worker_addr,
         prompt, temperature, max_new_tokens):
     # Make requests
@@ -246,16 +283,19 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        new_state = get_default_conv_template(model_name).copy()
+        new_state = get_default_conv_template(model_name)
         new_state.conv_id = uuid.uuid4().hex
         new_state.model_name = state.model_name or model_selector
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
 
-    if "gpt-3.5-turbo" in model_name:
+    if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
+    elif model_name == "claude-v1":
+        prompt = state.get_prompt()
+        stream_iter = anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
     else:
         # Query worker address
         ret = requests.post(
@@ -281,7 +321,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # Construct prompt
         conv = state
         if "chatglm" in model_name:
-            prompt = conv.messages[conv.offset :]
+            prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
             prompt = conv.get_prompt()
         stream_iter = model_worker_stream_iter(conv, model_name, worker_addr,
@@ -294,7 +334,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         for data in stream_iter:
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                output = post_process_code(output)
+                if "vicuna" in model_name:
+                    output = post_process_code(output)
                 state.messages[-1][-1] = output + "▌"
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
@@ -311,6 +352,16 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+        yield (state, state.to_gradio_chatbot()) + (
+            disable_btn,
+            disable_btn,
+            disable_btn,
+            enable_btn,
+            enable_btn,
+        )
+        return
+    except Exception as e:
+        state.messages[-1][-1] = server_error_msg + f" (error_code: 5, {e})"
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -363,7 +414,7 @@ pre {
 def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[Evaluation]](https://vicuna.lmsys.org/eval/)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
 - Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
 - [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
@@ -538,16 +589,24 @@ if __name__ == "__main__":
         "--moderate", action="store_true", help="Enable content moderation"
     )
     parser.add_argument(
-        "--add-gpt-35", action="store_true", help="Enable gpt-3.5-turbo"
+        "--add-chatgpt", action="store_true",
+        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)"
     )
+    parser.add_argument(
+        "--add-claude", action="store_true",
+        help="Add Anthropic's Claude models (claude-v1)"
+    )
+
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
 
-    if args.add_gpt_35:
-        models.append("gpt-3.5-turbo")
+    if args.add_chatgpt:
+        models = ["gpt-3.5-turbo", "gpt-4"] + models
+    if args.add_claude:
+        models = ["claude-v1"] + models
 
     demo = build_demo(models)
     demo.queue(

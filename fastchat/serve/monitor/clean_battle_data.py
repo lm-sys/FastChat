@@ -11,8 +11,8 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
 IDENTITY_WORDS = [
-    "lmsys", "vicuna", "koala", "laion", "open assistant"
-    "chatglm",
+    "lmsys", "vicuna", "koala", "uc berkeley", "open assistant", "laion",
+    "chatglm", "chatgpt", "openai", "anthropic", "claude"
 ]
 
 
@@ -107,6 +107,9 @@ def clean_battle_data(log_files):
 
         # Detect langauge
         state = row["states"][0]
+        if state["offset"] >= len(state["messages"]):
+            ct_invalid += 1
+            continue
         lang_code = detect_lang(state["messages"][state["offset"]][1])
 
         # Drop conversations if the model names are leaked

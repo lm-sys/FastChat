@@ -100,8 +100,7 @@ def get_gen_params(
     stop: Union[str, None],
 ):
     is_chatglm = "chatglm" in model_name.lower()
-    # TODO(suquark): The template is currently a reference. Here we have to make a copy.
-    conv = get_default_conv_template(model_name).copy()
+    conv = get_default_conv_template(model_name)
 
     for message in messages:
         msg_role = message["role"]
