@@ -25,12 +25,28 @@ from fastchat.serve.gradio_web_server import (
     build_single_model_ui,
     get_model_list,
     load_demo_single,
+    load_demo_refresh_model_list,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+
+def load_demo_reload_mode(url_params, request: gr.Request):
+    logger.info(f"load_demo_reload_mode. ip: {request.client.host}. params: {url_params}")
+    selected = 0
+    if "arena" in url_params:
+        selected = 1
+    elif "compare" in url_params:
+        selected = 2
+
+    models = get_model_list(args.controller_url)
+    single_updates = load_demo_refresh_model_list(url_params)
+    side_by_side_anony_updates = load_demo_side_by_side_anony(models, url_params)
+    side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
+    return ((gr.Tabs.update(selected=selected),) + single_updates +
+            side_by_side_anony_updates + side_by_side_named_updates)
 
 
 def load_demo(url_params, request: gr.Request):
@@ -148,6 +164,13 @@ def build_demo(models, elo_results_file):
                 [tabs] + a_list + b_list + c_list,
                 _js=get_window_url_params_js,
             )
+        elif args.model_list_mode == "reload":
+            demo.load(
+                load_demo_reload_mode,
+                [url_params],
+                [tabs] + a_list + b_list + c_list,
+                _js=get_window_url_params_js,
+            )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -161,7 +184,7 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once", "reload"]
+        "--model-list-mode", type=str, default="reload", choices=["once", "reload"]
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
