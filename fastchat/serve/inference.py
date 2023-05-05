@@ -145,9 +145,11 @@ def load_model(
         model = RwkvModel(model_path)
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     elif "buddy" in model_path:
-        # We hardcoded bfloat16 for buddy here for better quality, since all buddy models are released in bfloat16.
-        print("## Welcome to OpenBuddy! Please note that this model needs a GPU with bfloat16 support.")
-        model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16) 
+        print("## Welcome to OpenBuddy! Please report any issues to https://github.com/OpenBuddy/OpenBuddy/issues")
+        if "-bf16" in model_path:
+            kwargs["torch_dtype"] = torch.bfloat16
+            warnings.warn("## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16.")
+        model = LlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
