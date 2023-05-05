@@ -250,7 +250,8 @@ def build_side_by_side_ui_named(models):
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
-- You can continue chating and voting or click "Clear history" to start a new round.
+- You can do multiple rounds of conversations before voting.
+- Click "Clear history" to start a new round.
 - [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
