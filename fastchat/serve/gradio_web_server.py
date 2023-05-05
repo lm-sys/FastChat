@@ -51,6 +51,7 @@ model_info = {
     "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
     "alpaca-13b": ("Alpaca", "https://crfm.stanford.edu/2023/03/13/alpaca.html", "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford"),
     "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
+    "RWKV-4-Raven-14B": ("RMKV-4-Raven", "https://huggingface.co/BlinkDL/rwkv-4-raven", "an RNN with transformer-level LLM performance"),
     "llama-13b": ("LLaMA", "https://arxiv.org/abs/2302.13971", "open and efficient foundation language models by Meta"),
     "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
     "dolly-v2-12b": ("Dolly", "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks"),
