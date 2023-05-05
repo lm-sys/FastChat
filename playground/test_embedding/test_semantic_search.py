@@ -95,7 +95,9 @@ def print_model_search(input_path, model):
 
 input_datapath = "../data/fine_food_reviews_1k.csv"
 if not os.path.exists(input_datapath):
-    raise Exception(f"Please download data from: https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews")
+    raise Exception(
+        f"Please download data from: https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews"
+    )
 
 
 print_model_search(input_datapath, "vicuna-7b-v1.1")
