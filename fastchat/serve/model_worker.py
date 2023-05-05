@@ -225,23 +225,30 @@ class ModelWorker:
             return json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, params):
-        tokenizer = self.tokenizer
-        input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
-            self.device
-        )
-        model_output = self.model(input_ids, output_hidden_states=True)
-        is_chatglm = "chatglm" in str(type(self.model)).lower()
-        if is_chatglm:
-            data = (model_output.hidden_states[-1].transpose(0, 1))[0]
-        else:
-            data = model_output.hidden_states[-1][0]
-        embedding = torch.mean(data, dim=0)
-        return json.dumps(
-            {
-                "embedding": embedding.tolist(),
-                "token_num": len(self.tokenizer(params["input"]).input_ids),
+        try:
+            tokenizer = self.tokenizer
+            input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
+                self.device
+            )
+            model_output = self.model(input_ids, output_hidden_states=True)
+            is_chatglm = "chatglm" in str(type(self.model)).lower()
+            if is_chatglm:
+                data = (model_output.hidden_states[-1].transpose(0,1))[0]
+            else:
+                data = model_output.hidden_states[-1][0]
+            embedding = torch.mean(data, dim=0)
+            return json.dumps(
+                {
+                    "embedding": embedding.tolist(),
+                    "token_num": len(self.tokenizer(params["input"]).input_ids),
+                }
+            )
+        except torch.cuda.OutOfMemoryError:
+            ret = {
+                "text": server_error_msg,
+                "error_code": 1,
             }
-        )
+            return json.dumps(ret).encode() + b"\0"
 
 
 app = FastAPI()
