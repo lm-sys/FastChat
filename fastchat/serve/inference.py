@@ -144,6 +144,12 @@ def load_model(
         from fastchat.serve.rwkv_model import RwkvModel
         model = RwkvModel(model_path)
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
+    elif "buddy" in model_path:
+        if "-bf16" in model_path:
+            kwargs["torch_dtype"] = torch.bfloat16
+            warnings.warn("## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16.")
+        model = LlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+        tokenizer = LlamaTokenizer.from_pretrained(model_path)
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
