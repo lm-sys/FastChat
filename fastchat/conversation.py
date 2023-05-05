@@ -311,6 +311,16 @@ conv_chatgpt = Conversation(
     sep=None,
 )
 
+conv_claude = Conversation(
+    system="",
+    roles=("Human", "Assistant"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+    sep="\n\n",
+)
+
+
 conv_templates = {
     "baize": conv_baize,
     "conv_one_shot": conv_one_shot,
@@ -327,26 +337,28 @@ conv_templates = {
 def get_default_conv_template(model_name):
     model_name = model_name.lower()
     if "vicuna" in model_name or "output" in model_name:
-        return conv_vicuna_v1_1
+        ret = conv_vicuna_v1_1
     elif "koala" in model_name:
-        return conv_koala_v1
+        ret = conv_koala_v1
     elif "dolly-v2" in model_name:
-        return conv_dolly
+        ret = conv_dolly
     elif "oasst" in model_name and "pythia" in model_name:
-        return conv_oasst
+        ret = conv_oasst
     elif "baize" in model_name:
-        return conv_baize
+        ret = conv_baize
     elif "stablelm" in model_name:
-        return conv_stablelm
+        ret = conv_stablelm
     elif "rwkv-4" in model_name:
-        return conv_rwkv
+        ret = conv_rwkv
     elif "buddy" in model_name:
-        return conv_buddy
-    elif "gpt-3.5-turbo" in model_name:
-        return conv_gpt35
+        ret = conv_buddy
     elif model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
-        return conv_chatgpt
-    return conv_one_shot
+        ret = conv_chatgpt
+    elif model_name == "claude-v1":
+        ret = conv_claude
+    else:
+        ret = conv_one_shot
+    return ret.copy()
 
 
 if __name__ == "__main__":

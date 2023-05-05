@@ -305,7 +305,7 @@ def chat_loop(
     if conv_template:
         conv = conv_templates[conv_template].copy()
     else:
-        conv = get_default_conv_template(model_path).copy()
+        conv = get_default_conv_template(model_path)
 
     while True:
         try:

@@ -1,3 +1,7 @@
+"""
+The gradio demo server for chatting with a single model.
+"""
+
 import argparse
 from collections import defaultdict
 import datetime
@@ -40,6 +44,7 @@ enable_moderation = False
 model_info = {
     "gpt-4": ("ChatGPT-4", "https://chat.openai.com/", "ChatGPT-4 by OpenAI"),
     "gpt-3.5-turbo": ("ChatGPT-3.5", "https://chat.openai.com/", "ChatGPT-3.5 by OpenAI"),
+    "claude-v1": ("Claude", "https://www.anthropic.com/index/introducing-claude", "Claude by Anthropic"),
     "vicuna-13b": ("Vicuna", "https://lmsys.org/blog/2023-03-30-vicuna/", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
     "koala-13b": ("Koala", "https://bair.berkeley.edu/blog/2023/04/03/koala", "a dialogue model for academic research by BAIR"),
     "oasst-pythia-12b": ("OpenAssistant", "https://open-assistant.io", "an Open Assistant for everyone by LAION"),
@@ -150,7 +155,7 @@ def add_text(state, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
 
     if state is None:
-        state = get_default_conv_template("vicuna").copy()
+        state = get_default_conv_template("vicuna")
 
     if len(text) <= 0:
         state.skip_next = True
@@ -206,6 +211,34 @@ def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
         yield data
 
 
+def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
+    import anthropic
+
+    c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": prompt,
+        "temperature": temperature,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = c.completion_stream(
+        prompt=prompt,
+        stop_sequences=[anthropic.HUMAN_PROMPT],
+        max_tokens_to_sample=max_new_tokens,
+        model=model_name,
+        stream=True,
+    )
+    for chunk in res:
+        data = {
+            "text": chunk["completion"],
+            "error_code": 0,
+        }
+        yield data
+
+
 def model_worker_stream_iter(conv, model_name, worker_addr,
         prompt, temperature, max_new_tokens):
     # Make requests
@@ -248,7 +281,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        new_state = get_default_conv_template(model_name).copy()
+        new_state = get_default_conv_template(model_name)
         new_state.conv_id = uuid.uuid4().hex
         new_state.model_name = state.model_name or model_selector
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
@@ -258,6 +291,9 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
+    elif model_name == "claude-v1":
+        prompt = state.get_prompt()
+        stream_iter = anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
     else:
         # Query worker address
         ret = requests.post(
@@ -540,17 +576,24 @@ if __name__ == "__main__":
         "--moderate", action="store_true", help="Enable content moderation"
     )
     parser.add_argument(
-        "--add-gpt-35", action="store_true", help="Enable gpt-3.5-turbo"
+        "--add-chatgpt", action="store_true",
+        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)"
     )
+    parser.add_argument(
+        "--add-claude", action="store_true",
+        help="Add Anthropic's Claude models (claude-v1)"
+    )
+
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
 
-    if args.add_gpt_35:
-        models.append("gpt-3.5-turbo")
-        models.append("gpt-4")
+    if args.add_chatgpt:
+        models = ["gpt-3.5-turbo", "gpt-4"] + models
+    if args.add_claude:
+        models = ["claude-v1"] + models
 
     demo = build_demo(models)
     demo.queue(

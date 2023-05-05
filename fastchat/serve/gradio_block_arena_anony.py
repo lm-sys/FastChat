@@ -147,7 +147,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     if states[0] is None:
         assert states[1] is None
-        weights = ([2] * 2 + [1.5] * 5 + [1] * 32)[:len(models)]
+        weights = ([1, 2, 2] * 2 + [1.5] * 5 + [1] * 32)[:len(models)]
         if len(models) > 1:
             weights = weights / np.sum(weights)
             model_left, model_right = np.random.choice(
@@ -156,8 +156,8 @@ def add_text(state0, state1, text, request: gr.Request):
             model_left = model_right = models[0]
 
         states = [
-            get_default_conv_template("vicuna").copy(),
-            get_default_conv_template("vicuna").copy(),
+            get_default_conv_template("vicuna"),
+            get_default_conv_template("vicuna"),
         ]
         states[0].model_name = model_left
         states[1].model_name = model_right
@@ -269,7 +269,7 @@ def build_side_by_side_ui_anony(models):
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
 ### Battle
-Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard). We also added ChatGPT recently.
+Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard). We also added ChatGPT and Claude.
 """
 
     states = [gr.State() for _ in range(num_models)]

@@ -144,7 +144,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     for i in range(num_models):
         if states[i] is None:
-            states[i] = get_default_conv_template("vicuna").copy()
+            states[i] = get_default_conv_template("vicuna")
 
     if len(text) <= 0:
         for i in range(num_models):
