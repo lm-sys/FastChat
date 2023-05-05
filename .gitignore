@@ -19,4 +19,8 @@ dist
 .DS_Store
 wandb
 output
+
+# Data
+*.pkl
+
 .venv/
