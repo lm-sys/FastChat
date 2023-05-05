@@ -38,14 +38,16 @@ enable_moderation = False
 
 
 model_info = {
-    "vicuna-13b": ("Vicuna", "https://vicuna.lmsys.org", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
+    "gpt-4": ("ChatGPT-4", "https://chat.openai.com/", "ChatGPT-4 by OpenAI"),
+    "gpt-3.5-turbo": ("ChatGPT-3.5", "https://chat.openai.com/", "ChatGPT-3.5 by OpenAI"),
+    "vicuna-13b": ("Vicuna", "https://lmsys.org/blog/2023-03-30-vicuna/", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
     "koala-13b": ("Koala", "https://bair.berkeley.edu/blog/2023/04/03/koala", "a dialogue model for academic research by BAIR"),
-    "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
     "oasst-pythia-12b": ("OpenAssistant", "https://open-assistant.io", "an Open Assistant for everyone by LAION"),
-    "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
-    "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
+    "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
     "alpaca-13b": ("Alpaca", "https://crfm.stanford.edu/2023/03/13/alpaca.html", "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford"),
+    "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
     "llama-13b": ("LLaMA", "https://arxiv.org/abs/2302.13971", "open and efficient foundation language models by Meta"),
+    "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
     "dolly-v2-12b": ("Dolly", "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks"),
 }
 
@@ -253,7 +255,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         new_state.append_message(new_state.roles[1], None)
         state = new_state
 
-    if "gpt-3.5-turbo" in model_name:
+    if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
     else:
@@ -281,7 +283,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         # Construct prompt
         conv = state
         if "chatglm" in model_name:
-            prompt = conv.messages[conv.offset :]
+            prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
             prompt = conv.get_prompt()
         stream_iter = model_worker_stream_iter(conv, model_name, worker_addr,
@@ -363,7 +365,7 @@ pre {
 def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://vicuna.lmsys.org) [[Evaluation]](https://vicuna.lmsys.org/eval/)
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
 - Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
 - [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
@@ -548,6 +550,7 @@ if __name__ == "__main__":
 
     if args.add_gpt_35:
         models.append("gpt-3.5-turbo")
+        models.append("gpt-4")
 
     demo = build_demo(models)
     demo.queue(

@@ -279,6 +279,7 @@ conv_rwkv = Conversation(
     stop_str="\n\n",
 )
 
+<<<<<<< HEAD
 conv_buddy = Conversation(
     system="""Consider a conversation between User (a human) and Assistant (named Buddy).
 Buddy is an INTP-T, a friendly, intelligent and multilingual AI assistant, by OpenBuddy team. GitHub: https://github.com/OpenBuddy/OpenBuddy
@@ -299,6 +300,9 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
 )
 
 conv_gpt35 = Conversation(
+=======
+conv_chatgpt = Conversation(
+>>>>>>> Add gpt-4 and fix descriptions
     system="You are a helpful assistant.",
     roles=("user", "assistant"),
     messages=(),
@@ -336,10 +340,12 @@ def get_default_conv_template(model_name):
         return conv_stablelm
     elif "rwkv-4" in model_name:
         return conv_rwkv
-    elif "gpt-3.5-turbo" in model_name:
-        return conv_gpt35
     elif "buddy" in model_name:
         return conv_buddy
+    elif "gpt-3.5-turbo" in model_name:
+        return conv_gpt35
+    elif model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
+        return conv_chatgpt
     return conv_one_shot
 
 
