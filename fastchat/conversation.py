@@ -279,7 +279,6 @@ conv_rwkv = Conversation(
     stop_str="\n\n",
 )
 
-<<<<<<< HEAD
 conv_buddy = Conversation(
     system="""Consider a conversation between User (a human) and Assistant (named Buddy).
 Buddy is an INTP-T, a friendly, intelligent and multilingual AI assistant, by OpenBuddy team. GitHub: https://github.com/OpenBuddy/OpenBuddy
@@ -299,10 +298,7 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     sep="\n",
 )
 
-conv_gpt35 = Conversation(
-=======
 conv_chatgpt = Conversation(
->>>>>>> Add gpt-4 and fix descriptions
     system="You are a helpful assistant.",
     roles=("user", "assistant"),
     messages=(),
