@@ -1,11 +1,12 @@
 import json
+import os
 
 import numpy as np
 import openai
 import requests
 from scipy.spatial.distance import cosine
 
-openai.api_key = "sk-xxx"
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def get_embedding_from_api(word, model="vicuna-7b-v1.1"):

@@ -1,4 +1,5 @@
 import json
+import os
 
 import numpy as np
 import openai
@@ -8,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 
-openai.api_key = "sk-xxx"
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 np.set_printoptions(threshold=10000)
 
