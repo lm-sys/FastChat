@@ -57,6 +57,7 @@ class CompletionRequest(BaseModel):
     stop: Optional[str] = None
     stream: bool = False
     logprobs: Optional[int] = None
+    echo: bool = False
 
 
 class CompletionResponse(BaseModel):

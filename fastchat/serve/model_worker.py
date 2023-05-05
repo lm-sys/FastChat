@@ -224,7 +224,7 @@ class ModelWorker:
             }
             return json.dumps(ret).encode() + b"\0"
 
-    def generate_embeddings(self, params):
+    def get_embeddings(self, params):
         tokenizer = self.tokenizer
         input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
             self.device
@@ -251,48 +251,43 @@ def release_model_semaphore():
     model_semaphore.release()
 
 
-@app.post("/worker_generate_stream")
-async def api_generate_stream(request: Request):
+async def acquire_model_semaphore():
     global model_semaphore, global_counter
     global_counter += 1
-    params = await request.json()
-
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
-    generator = worker.generate_stream_gate(params)
+
+
+def create_background_tasks():
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
+    return background_tasks
+
+
+@app.post("/worker_generate_stream")
+async def api_generate_stream(request: Request):
+    params = await request.json()
+    await acquire_model_semaphore()
+    generator = worker.generate_stream_gate(params)
+    background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_generate_completion")
 async def api_generate_completion(request: Request):
-    global model_semaphore, global_counter
-    global_counter += 1
     params = await request.json()
-
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
+    await acquire_model_semaphore()
     completion = worker.generate_completion(params)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    background_tasks = create_background_tasks()
     return JSONResponse(content=completion, background=background_tasks)
 
-
-@app.post("/worker_generate_embeddings")
-async def api_generate_embeddings(request: Request):
-    global model_semaphore, global_counter
-    global_counter += 1
+@app.post("/worker_get_embeddings")
+async def api_get_embeddings(request: Request):
     params = await request.json()
-
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
-    embedding = worker.generate_embeddings(params)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    await acquire_model_semaphore()
+    embedding = worker.get_embeddings(params)
+    background_tasks = create_background_tasks()
     return JSONResponse(content=embedding, background=background_tasks)
 
 

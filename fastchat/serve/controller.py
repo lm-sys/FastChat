@@ -249,7 +249,7 @@ class Controller:
             }
             yield json.dumps(ret).encode() + b"\0"
 
-    def worker_api_generate_embeddings(self, params):
+    def worker_api_embeddings(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
             logger.info(f"no worker: {params['model']}")
@@ -261,7 +261,7 @@ class Controller:
 
         try:
             response = requests.post(
-                worker_addr + "/worker_generate_embeddings",
+                worker_addr + "/worker_get_embeddings",
                 json=params,
                 timeout=15,
             )
@@ -345,10 +345,10 @@ async def worker_api_generate_completion(request: Request):
     return output
 
 
-@app.post("/worker_generate_embeddings")
-async def worker_api_generate_embeddings(request: Request):
+@app.post("/worker_get_embeddings")
+async def worker_api_embeddings(request: Request):
     params = await request.json()
-    output = controller.worker_api_generate_embeddings(params)
+    output = controller.worker_api_embeddings(params)
     return output
 
 

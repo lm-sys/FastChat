@@ -200,6 +200,8 @@ async def create_completion(request: CompletionRequest):
             prompt_tokens = content["prompt_tokens"]
             content.pop("completion_tokens")
             content.pop("prompt_tokens")
+            if request.echo:
+                content["text"] = request.prompt + content["text"]
             completions.append(content)
     return CompletionResponse(
         model=request.model,
@@ -274,7 +276,7 @@ async def get_embedding(payload: Dict[str, Any]):
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
         response = await client.post(
-            worker_addr + "/worker_generate_embeddings",
+            worker_addr + "/worker_get_embeddings",
             headers=headers,
             json=payload,
             timeout=20,
