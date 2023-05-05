@@ -1,3 +1,8 @@
+"""
+Chatbot Arena (side-by-side) tab.
+Users chat with two chosen models.
+"""
+
 import json
 import time
 
@@ -36,7 +41,7 @@ def set_global_vars_named(enable_moderation_):
 def load_demo_side_by_side_named(models, url_params):
     states = (None,) * num_models
 
-    model_left = models[0]
+    model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
         weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
         weights = weights / np.sum(weights)

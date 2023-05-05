@@ -1,3 +1,8 @@
+"""
+Chatbot Arena (battle) tab.
+Users chat with two anonymous models.
+"""
+
 import json
 import time
 
@@ -140,6 +145,7 @@ def share_click(state0, state1, model_selector0, model_selector1,
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
+DEFAULT_WEIGHTS = [1.5] * 8 + [1] * 32
 
 def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
@@ -147,7 +153,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     if states[0] is None:
         assert states[1] is None
-        weights = ([1, 2, 2] * 2 + [1.5] * 5 + [1] * 32)[:len(models)]
+        weights = DEFAULT_WEIGHTS[:len(models)]
         if len(models) > 1:
             weights = weights / np.sum(weights)
             model_left, model_right = np.random.choice(
