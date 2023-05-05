@@ -145,7 +145,6 @@ def load_model(
         model = RwkvModel(model_path)
         tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
     elif "buddy" in model_path:
-        print("## Welcome to OpenBuddy! Please report any issues to https://github.com/OpenBuddy/OpenBuddy/issues")
         if "-bf16" in model_path:
             kwargs["torch_dtype"] = torch.bfloat16
             warnings.warn("## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16.")
