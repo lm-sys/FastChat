@@ -11,8 +11,8 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
 IDENTITY_WORDS = [
-    "lmsys", "vicuna", "koala", "laion", "open assistant"
-    "chatglm",
+    "lmsys", "vicuna", "koala", "uc berkeley", "open assistant", "laion",
+    "chatglm", "chatgpt", "openai", "anthropic", "claude"
 ]
 
 
