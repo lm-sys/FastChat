@@ -294,7 +294,7 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot",
                         visible=False).style(height=550)
 
         with gr.Box() as button_row:

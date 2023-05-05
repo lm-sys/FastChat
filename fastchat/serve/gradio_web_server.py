@@ -228,6 +228,7 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
         prompt=prompt,
         stop_sequences=[anthropic.HUMAN_PROMPT],
         max_tokens_to_sample=max_new_tokens,
+        temperature=temperature,
         model=model_name,
         stream=True,
     )
@@ -332,7 +333,8 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         for data in stream_iter:
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                output = post_process_code(output)
+                if "vicuna" in model_name:
+                    output = post_process_code(output)
                 state.messages[-1][-1] = output + "▌"
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
