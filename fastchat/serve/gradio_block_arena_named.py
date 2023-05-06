@@ -1,3 +1,8 @@
+"""
+Chatbot Arena (side-by-side) tab.
+Users chat with two chosen models.
+"""
+
 import json
 import time
 
@@ -36,9 +41,9 @@ def set_global_vars_named(enable_moderation_):
 def load_demo_side_by_side_named(models, url_params):
     states = (None,) * num_models
 
-    model_left = models[0]
+    model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([1, 1, 1, 1] + [1] * 32)[:len(models) - 1]
+        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
@@ -144,7 +149,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     for i in range(num_models):
         if states[i] is None:
-            states[i] = get_default_conv_template("vicuna").copy()
+            states[i] = get_default_conv_template("vicuna")
 
     if len(text) <= 0:
         for i in range(num_models):
@@ -245,7 +250,8 @@ def build_side_by_side_ui_named(models):
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
-- You can continue chating and voting or click "Clear history" to start a new round.
+- You can do multiple rounds of conversations before voting.
+- Click "Clear history" to start a new round.
 - [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
@@ -292,7 +298,7 @@ By using this service, users are required to agree to the following terms: The s
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot",
                         visible=False).style(height=550)
 
         with gr.Box() as button_row:
