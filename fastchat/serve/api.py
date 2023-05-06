@@ -185,6 +185,7 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
             timeout=20,
         ) as response:
             i = 0
+            prev_total = ""
             async for chunk in response.aiter_text():
                 if not chunk:
                     continue
@@ -195,15 +196,13 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
 
                     data = json.loads(line)
                     if data["error_code"] == 0:
-                        # print("*" * 30)
-                        # print(line)  # TODO: Remove
-                        # print("*" * 30)
-
                         output = data["text"].strip()
+                        delta = output.replace(prev_total, "")
+                        prev_total = output
                         yield json.dumps(
                             ChatCompletionResponseStreamChoice(
                                 index=i,
-                                delta=DeltaMessage(content=output),
+                                delta=DeltaMessage(content=delta),
                                 finish_reason="",
                             ).dict()
                         )
