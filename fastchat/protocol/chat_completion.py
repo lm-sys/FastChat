@@ -16,6 +16,9 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: Optional[int] = None
     stream: Optional[bool] = False
     stop: Optional[Union[str, List[str]]] = None
+    presence_penalty: Optional[float] = 0.0
+    frequency_penalty: Optional[float] = 0.0
+    user: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -76,7 +79,7 @@ class CompletionRequest(BaseModel):
 
 
 class CompletionResponse(BaseModel):
-    id: str = Field(default_factory=shortuuid.random)
+    id: str = Field(default_factory=lambda: f"cmpl-{shortuuid.random()}")
     object: str = "text_completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str

@@ -313,13 +313,8 @@ async def api_generate_stream(request: Request):
 
 @app.post("/worker_generate")
 async def api_generate(request: Request):
-    global model_semaphore, global_counter
-    global_counter += 1
     params = await request.json()
-
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
+    await acquire_model_semaphore()
     output = worker.generate_gate(params)
     release_model_semaphore()
     return JSONResponse(output)
