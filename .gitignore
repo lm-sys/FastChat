@@ -23,4 +23,4 @@ output
 # Data
 *.pkl
 
-venv/
+.venv

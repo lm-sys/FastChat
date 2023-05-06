@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Generator, Union
 
 import httpx
 
+from fastchat.helper.async_to_sync import iter_over_async
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -48,23 +49,19 @@ class ChatCompletionClient:
                 json=request.dict(),
                 timeout=timeout,
             ) as response:
-                async for chunk in response.aiter_lines():
+                async for chunk in response.aiter_text():
                     if not chunk:
                         continue
-                    try:
-                        data = json.loads(chunk)
-                    except json.JSONDecodeError:
-                        continue
-                    yield ChatCompletionResponseStreamChoice.parse_obj(data)
 
-
-def iter_over_async(gen, loop):
-    # ait = ait.__aiter__()
-    while True:
-        try:
-            yield loop.run_until_complete(gen.__anext__())
-        except StopAsyncIteration:
-            break
+                    lines = chunk.split("\n")
+                    for line in lines:
+                        if not line:
+                            continue
+                        try:
+                            data = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        yield ChatCompletionResponseStreamChoice.parse_obj(data)
 
 
 class ChatCompletion:
@@ -79,7 +76,8 @@ class ChatCompletion:
         if kwargs.get("stream"):
             loop = asyncio.get_event_loop()
             async_gen = cls.acreate(*args, **kwargs)
-            sync_gen = iter_over_async(async_gen, loop)
+            async_gen_after_start = loop.run_until_complete(async_gen)
+            sync_gen = iter_over_async(async_gen_after_start, loop)
             return sync_gen
         else:
             return asyncio.run(cls.acreate(*args, **kwargs))

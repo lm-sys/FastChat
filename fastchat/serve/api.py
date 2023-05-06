@@ -176,6 +176,7 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
         delimiter = "\0"
+
         async with client.stream(
             "POST",
             worker_addr + "/worker_generate_stream",
@@ -194,15 +195,27 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
 
                     data = json.loads(line)
                     if data["error_code"] == 0:
+                        # print("*" * 30)
+                        # print(line)  # TODO: Remove
+                        # print("*" * 30)
+
                         output = data["text"].strip()
                         yield json.dumps(
                             ChatCompletionResponseStreamChoice(
                                 index=i,
                                 delta=DeltaMessage(content=output),
-                                finish_reason="stop",
+                                finish_reason="",
                             ).dict()
                         )
                         i += 1
+            # Streaming the finsihg token
+            yield json.dumps(
+                ChatCompletionResponseStreamChoice(
+                    index=i,
+                    delta=DeltaMessage(content=""),
+                    finish_reason="stop",
+                ).dict()
+            )
 
 
 async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
