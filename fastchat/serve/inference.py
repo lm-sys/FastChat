@@ -2,7 +2,7 @@
 import abc
 import gc
 import math
-from typing import Optional
+from typing import Iterable, Optional
 import sys
 import warnings
 
@@ -254,11 +254,21 @@ def generate_stream(
             output = tokenizer.decode(tmp_output_ids, skip_special_tokens=True, 
                                       spaces_between_special_tokens=False)
             if stop_str:
-                pos = output.rfind(stop_str, rfind_start)
-                if pos != -1:
-                    output = output[:pos]
-                    stopped = True
-            
+                if isinstance(stop_str, str):
+                    pos = output.rfind(stop_str, rfind_start)
+                    if pos != -1:
+                        output = output[:pos]
+                        stopped = True
+                elif isinstance(stop_str, Iterable):
+                    for each_stop in stop_str:
+                        pos = output.rfind(each_stop, rfind_start)
+                        if pos != -1:
+                            output = output[:pos]
+                            stopped = True
+                            break
+                else:
+                    raise ValueError("Invalid stop field type.")
+
             if i == max_new_tokens - 1:
                 finish_reason = "length"
             elif stopped:

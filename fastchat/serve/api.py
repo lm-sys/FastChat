@@ -7,7 +7,7 @@ python3 -m fastchat.serve.api
 Reference: https://platform.openai.com/docs/api-reference/chat/create
 """
 import asyncio
-from typing import Union, Dict, List, Any
+from typing import Optional, Union, Dict, List, Any
 
 import argparse
 import json
@@ -74,23 +74,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     stream = gen_params.get("stream", False)
 
     if stream:
-        async def chat_completion_stream_generator():
-            id = f"chatcmpl-{shortuuid.random()}"
-            for i in range(request.n):
-                async for content in chat_completion_stream(request.model, gen_params):
-                    chunk = ChatCompletionStreamingChunkResponse(
-                        id=id,
-                        choices=[
-                            ChatCompletionResponseChoice(
-                                index=i,
-                                message=ChatMessage(role="assistant", content=content["text"]),
-                                finish_reason=content.get("finish_reason", "stop"),
-                            )
-                        ]
-                    )
-                    yield f"data: {chunk.json(ensure_ascii=False)}\n\n"
-            yield "data: [DONE]\n\n"
-        generator = chat_completion_stream_generator()
+        generator = chat_completion_stream_generator(request.model, request.n, gen_params)
         return StreamingResponse(generator)
     else:
         choices = []
@@ -129,7 +113,7 @@ def get_gen_params(
     max_tokens: int,
     echo: bool,
     stream: bool,
-    stop: Union[str, None],
+    stop: Optional[Union[str, List[str]]],
 ):
     is_chatglm = "chatglm" in model_name.lower()
     conv = get_default_conv_template(model_name)
@@ -162,10 +146,19 @@ def get_gen_params(
         "temperature": temperature,
         "max_new_tokens": max_tokens,
         "echo": echo,
-        "stream": stream,
-        "stop": conv.stop_str,
-        "stop_token_ids": conv.stop_token_ids,
+        "stream": stream
     }
+
+    if stop is None:
+        gen_params.update({
+            "stop": conv.stop_str,
+            "stop_token_ids": conv.stop_token_ids
+        })
+    else:
+        gen_params.update({
+            "stop": stop
+        })
+
     logger.debug(f"==== request ====\n{gen_params}")
     return gen_params
 
@@ -198,6 +191,25 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
         else:
             output = None
         return output
+
+async def chat_completion_stream_generator(model_name: str, n: int, gen_params: Dict[str, Any]):
+    """
+    Event stream format: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
+    """
+    id = f"chatcmpl-{shortuuid.random()}"
+    for i in range(n):
+        async for content in chat_completion_stream(model_name, gen_params):
+            choice_data = ChatCompletionResponseChoice(
+                index=i,
+                message=ChatMessage(role="assistant", content=content["text"]),
+                finish_reason=content.get("finish_reason", "stop"),
+            )
+            chunk = ChatCompletionStreamingChunkResponse(
+                id=id,
+                choices=[choice_data]
+            )
+            yield f"data: {chunk.json(ensure_ascii=False)}\n\n"
+    yield "data: [DONE]\n\n"
 
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
