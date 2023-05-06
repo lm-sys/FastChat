@@ -14,6 +14,7 @@ import logging
 from typing import Union, Dict, List, Any
 
 import fastapi
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import uvicorn
@@ -67,6 +68,10 @@ async def create_chat_completion(request: ChatCompletionRequest):
         echo=False,
         stop=request.stop,
     )
+
+    if request.stream:
+        generator = chat_completion_stream(request.model, gen_params)
+        return StreamingResponse(generator, media_type="text/event-stream")
 
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
@@ -175,6 +180,35 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
 
         return output
 
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": model_name}
+        )
+        worker_addr = ret.json()["address"]
+        # No available worker
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {model_name}")
+
+        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+
+        output = ""
+        delimiter = b"\0"
+        async with client.stream(
+            "POST",
+            worker_addr + "/worker_generate_stream",
+            headers=headers,
+            json=gen_params,
+            timeout=20,
+        ) as response:
+            async for chunk in response.aiter_raw():
+                if not chunk:
+                    continue
+                data = json.loads(chunk.decode("utf-8").replace('\x00', ''))
+                if data["error_code"] == 0:
+                    output = data["text"].strip()
+                    yield output
 
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
