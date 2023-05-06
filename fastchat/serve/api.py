@@ -24,11 +24,13 @@ from pydantic import BaseSettings
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
-    ChatCompletionStreamingChunkResponse,
+    ChatCompletionResponseStreamChunk,
+    ChatCompletionResponseStreamChoice,
     ChatMessage,
     ChatCompletionResponseChoice,
     CompletionRequest,
     CompletionResponse,
+    DeltaMessage,
     EmbeddingsRequest,
     EmbeddingsResponse,
 )
@@ -65,6 +67,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         request.model,
         request.messages,
         temperature=request.temperature,
+        top_p=request.top_p,
         max_tokens=request.max_tokens,
         echo=False,
         stream=request.stream,
@@ -104,12 +107,12 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
         return ChatCompletionResponse(choices=choices, usage=usage)
 
-
 def get_gen_params(
     model_name: str,
     messages: List[Dict[str, str]],
     *,
     temperature: float,
+    top_p: float,
     max_tokens: int,
     echo: bool,
     stream: bool,
@@ -144,6 +147,7 @@ def get_gen_params(
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "top_p": top_p,
         "max_new_tokens": max_tokens,
         "echo": echo,
         "stream": stream
@@ -197,18 +201,31 @@ async def chat_completion_stream_generator(model_name: str, n: int, gen_params: 
     Event stream format: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
     """
     id = f"chatcmpl-{shortuuid.random()}"
+
+    finish_stream_events = []
     for i in range(n):
+        previous_text = ""
         async for content in chat_completion_stream(model_name, gen_params):
-            choice_data = ChatCompletionResponseChoice(
+            decoded_unicode = content["text"].replace('\ufffd', '')
+            delta_text = decoded_unicode[len(previous_text):]
+            previous_text = decoded_unicode
+            choice_data = ChatCompletionResponseStreamChoice(
                 index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
-                finish_reason=content.get("finish_reason", "stop"),
+                delta=DeltaMessage(content=delta_text),
+                finish_reason=content.get("finish_reason", None),
             )
-            chunk = ChatCompletionStreamingChunkResponse(
+            chunk = ChatCompletionResponseStreamChunk(
                 id=id,
                 choices=[choice_data]
             )
+            if len(delta_text) == 0:
+                if content.get("finish_reason", None) is not None:
+                    finish_stream_events.append(chunk)
+                continue
             yield f"data: {chunk.json(ensure_ascii=False)}\n\n"
+    # FIXME: In the OpenAI API, there is not "content" field in delta message
+    for finish_chunk in finish_stream_events:
+        yield f"data: {finish_chunk.json(ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"
 
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):

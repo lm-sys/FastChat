@@ -35,11 +35,19 @@ class ChatCompletionResponse(BaseModel):
     choices: List[ChatCompletionResponseChoice]
     usage: Optional[Dict[str, int]] = None
 
-class ChatCompletionStreamingChunkResponse(BaseModel):
+class DeltaMessage(BaseModel):
+    content: str
+
+class ChatCompletionResponseStreamChoice(BaseModel):
+    index: int
+    delta: DeltaMessage
+    finish_reason: Optional[Literal["stop", "length"]]
+
+class ChatCompletionResponseStreamChunk(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
     object: str = "chat.completion.chunk"
     created: int = Field(default_factory=lambda: int(time.time()))
-    choices: List[ChatCompletionResponseChoice]
+    choices: List[ChatCompletionResponseStreamChoice]
     # Similar to OpenAI, the stream mode does not return usage information
 
 class EmbeddingsRequest(BaseModel):
