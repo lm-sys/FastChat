@@ -41,19 +41,13 @@ def chatglm_generate_stream(
 
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 
-    ret = None
-
     for i, (response, new_hist) in enumerate(model.stream_chat(tokenizer, query, hist)):
         if echo:
             output = query + " " + response
         else:
             output = response
 
-        # Yield previous iteration output. Find the last iteration and set finish_reason value
-        if ret is not None:
-            yield ret
-
-        ret = {
+        yield {
             "text": output,
             "usage": {
                 "prompt_tokens": input_echo_len,
@@ -64,7 +58,7 @@ def chatglm_generate_stream(
         }
 
     # TODO: ChatGLM stop when it reach max length
-    # Here is last generation result, set finish_reason as stop
+    # Only last stream result contains finish_reason, we set finish_reason as stop
     ret = {
         "text": output,
         "usage": {
