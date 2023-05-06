@@ -70,8 +70,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     )
 
     if request.stream:
-        generator = chat_completion_stream(request.model, gen_params)
-        return StreamingResponse(generator, media_type="text/event-stream")
+        return StreamingResponse(chat_completion_stream(request.model, gen_params, request.n), media_type="text/event-stream")
 
     choices = []
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
@@ -180,7 +179,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
 
         return output
 
-async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n: int):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(
@@ -193,23 +192,44 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
 
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
-        output = ""
-        delimiter = b"\0"
-        async with client.stream(
-            "POST",
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            timeout=20,
-        ) as response:
-            async for chunk in response.aiter_raw():
-                if not chunk:
-                    continue
-                data = json.loads(chunk.decode("utf-8").replace('\x00', ''))
-                if data["error_code"] == 0:
-                    output = data["text"].strip()
-                    yield output
-
+        delta_position_by_index = {}
+        for idx in range(n):
+            delta_position_by_index[idx] = 0
+            delimiter = b"\0"
+            async with client.stream(
+                "POST",
+                worker_addr + "/worker_generate_stream",
+                headers=headers,
+                json=gen_params,
+                timeout=20,
+            ) as response:
+                # Stream begins with a single delta containing the role and a null finish reason
+                yield json.dumps({
+                    "choices": [{"delta": {"role": "assistant"}, "finish_reason": None, "index": idx}],
+                    "object": "chat.completion.chunk",
+                })
+                async for raw_chunk in response.aiter_raw():
+                    for chunk in raw_chunk.split(delimiter):
+                        if not chunk:
+                            continue
+                        data = json.loads(chunk.decode())
+                        if data["error_code"] == 0:
+                            last_delta_position = delta_position_by_index[idx]
+                            output = data["text"]
+                            delta_position_by_index[idx] = len(output)
+                            delta_diff = delta_position_by_index[idx] - last_delta_position
+                            if delta_diff > 0:
+                                delta = output[last_delta_position:]
+                                yield json.dumps({
+                                    "choices": [{ "delta": delta, "finish_reason": None, "index": idx }],
+                                    "object": "chat.completion.chunk",
+                                })
+                # Stream is over. Send an empty delta and provide stop reason.
+                yield json.dumps({
+                    "choices": [{"delta": {}, "finish_reason": "stop", "index": idx}],
+                    "object": "chat.completion.chunk",
+                })
+            
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
     payload = {
