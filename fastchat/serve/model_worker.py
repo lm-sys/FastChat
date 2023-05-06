@@ -179,6 +179,8 @@ class ModelWorker:
                 }
                 if "usage" in output:
                     ret["usage"] = output["usage"]
+                if "finish_reason" in output:
+                    ret["finish_reason"] = output["finish_reason"]
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -204,6 +206,8 @@ class ModelWorker:
                 ret["text"] = output["text"]
             if "usage" in output:
                 ret["usage"] = output["usage"]
+            if "finish_reason" in output:
+                ret["finish_reason"] = output["finish_reason"]
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,

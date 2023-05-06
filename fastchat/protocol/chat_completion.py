@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any
+from typing import Literal, Optional, List, Dict, Any, Union
 
 import time
 
@@ -11,9 +11,11 @@ class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[Dict[str, str]]
     temperature: Optional[float] = 0.7
+    top_p: Optional[float] = 1.0
     n: int = 1
     max_tokens: Optional[int] = None
-    stop: Optional[str] = None
+    stream: Optional[bool] = False
+    stop: Optional[Union[str, List[str]]] = None
 
 
 class ChatMessage(BaseModel):
@@ -24,16 +26,21 @@ class ChatMessage(BaseModel):
 class ChatCompletionResponseChoice(BaseModel):
     index: int
     message: ChatMessage
-    finish_reason: str
-
+    finish_reason: Optional[Literal["stop", "length"]]
 
 class ChatCompletionResponse(BaseModel):
-    id: str = Field(default_factory=shortuuid.random)
+    id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     choices: List[ChatCompletionResponseChoice]
     usage: Optional[Dict[str, int]] = None
 
+class ChatCompletionStreamingChunkResponse(BaseModel):
+    id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
+    object: str = "chat.completion.chunk"
+    created: int = Field(default_factory=lambda: int(time.time()))
+    choices: List[ChatCompletionResponseChoice]
+    # Similar to OpenAI, the stream mode does not return usage information
 
 class EmbeddingsRequest(BaseModel):
     model: str

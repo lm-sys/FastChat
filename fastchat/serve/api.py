@@ -15,13 +15,16 @@ import logging
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
+import shortuuid
 import uvicorn
 from pydantic import BaseSettings
 
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
+    ChatCompletionStreamingChunkResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
     CompletionRequest,
@@ -64,36 +67,58 @@ async def create_chat_completion(request: ChatCompletionRequest):
         temperature=request.temperature,
         max_tokens=request.max_tokens,
         echo=False,
+        stream=request.stream,
         stop=request.stop,
     )
 
-    choices = []
-    # TODO: batch the requests. maybe not necessary if using CacheFlow worker
-    chat_completions = []
-    for i in range(request.n):
-        content = asyncio.create_task(chat_completion(request.model, gen_params))
-        chat_completions.append(content)
+    stream = gen_params.get("stream", False)
 
-    usage = {
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "total_tokens": 0,
-    }
-    for i, content_task in enumerate(chat_completions):
-        content = await content_task
-        choices.append(
-            ChatCompletionResponseChoice(
-                index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
-                # TODO: support other finish_reason
-                finish_reason="stop",
+    if stream:
+        async def chat_completion_stream_generator():
+            id = f"chatcmpl-{shortuuid.random()}"
+            for i in range(request.n):
+                async for content in chat_completion_stream(request.model, gen_params):
+                    chunk = ChatCompletionStreamingChunkResponse(
+                        id=id,
+                        choices=[
+                            ChatCompletionResponseChoice(
+                                index=i,
+                                message=ChatMessage(role="assistant", content=content["text"]),
+                                finish_reason=content.get("finish_reason", "stop"),
+                            )
+                        ]
+                    )
+                    yield f"data: {chunk.json(ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+        generator = chat_completion_stream_generator()
+        return StreamingResponse(generator)
+    else:
+        choices = []
+        # TODO: batch the requests. maybe not necessary if using CacheFlow worker
+        chat_completions = []
+        for i in range(request.n):
+            content = asyncio.create_task(chat_completion(request.model, gen_params))
+            chat_completions.append(content)
+
+        usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+        }
+        for i, content_task in enumerate(chat_completions):
+            content = await content_task
+            choices.append(
+                ChatCompletionResponseChoice(
+                    index=i,
+                    message=ChatMessage(role="assistant", content=content["text"]),
+                    finish_reason=content.get("finish_reason", "stop"),
+                )
             )
-        )
 
-        for usage_k, usage_v in content["usage"].items():
-            usage[usage_k] += usage_v
+            for usage_k, usage_v in content["usage"].items():
+                usage[usage_k] += usage_v
 
-    return ChatCompletionResponse(choices=choices, usage=usage)
+        return ChatCompletionResponse(choices=choices, usage=usage)
 
 
 def get_gen_params(
@@ -103,6 +128,7 @@ def get_gen_params(
     temperature: float,
     max_tokens: int,
     echo: bool,
+    stream: bool,
     stop: Union[str, None],
 ):
     is_chatglm = "chatglm" in model_name.lower()
@@ -136,6 +162,7 @@ def get_gen_params(
         "temperature": temperature,
         "max_new_tokens": max_tokens,
         "echo": echo,
+        "stream": stream,
         "stop": conv.stop_str,
         "stop_token_ids": conv.stop_token_ids,
     }
@@ -143,7 +170,36 @@ def get_gen_params(
     return gen_params
 
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: bool=True):
+async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": model_name}
+        )
+        worker_addr = ret.json()["address"]
+        # No available worker
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {model_name}")
+
+        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+
+        response = await client.request(
+            "POST",
+            worker_addr + "/worker_generate",
+            headers=headers,
+            json=gen_params,
+            timeout=20,
+        )
+        content = await response.aread()
+
+        data = json.loads(content.decode())
+        if data["error_code"] == 0:
+            output = data
+        else:
+            output = None
+        return output
+
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
     controller_url = app_settings.FASTCHAT_CONTROLLER_URL
     async with httpx.AsyncClient() as client:
         ret = await client.post(
@@ -157,37 +213,21 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any], stream: b
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
         output = None
-        if stream:
-            delimiter = b"\0"
-            async with client.stream(
-                "POST",
-                worker_addr + "/worker_generate_stream",
-                headers=headers,
-                json=gen_params,
-                timeout=20,
-            ) as response:
-                content = await response.aread()
-
-            for chunk in content.split(delimiter):
-                if not chunk:
-                    continue
-                data = json.loads(chunk.decode())
-                if data["error_code"] == 0:
-                    output = data
-        else:
-            response = await client.request(
-                "POST",
-                worker_addr + "/worker_generate",
-                headers=headers,
-                json=gen_params,
-                timeout=20,
-            )
+        delimiter = b"\0"
+        async with client.stream(
+            "POST",
+            worker_addr + "/worker_generate_stream",
+            headers=headers,
+            json=gen_params,
+            timeout=20,
+        ) as response:
             content = await response.aread()
 
-            data = json.loads(content.decode())
-            if data["error_code"] == 0:
-                output = data
-        return output
+        for chunk in content.split(delimiter):
+            if not chunk:
+                continue
+            data = json.loads(chunk.decode())
+            yield data
 
 
 @app.post("/v1/completions")

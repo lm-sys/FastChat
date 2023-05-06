@@ -258,13 +258,21 @@ def generate_stream(
                 if pos != -1:
                     output = output[:pos]
                     stopped = True
+            
+            if i == max_new_tokens - 1:
+                finish_reason = "length"
+            elif stopped:
+                finish_reason = "stop"
+            else:
+                finish_reason = None
             yield {
                 "text": output,
                 "usage": {
                     "prompt_tokens": input_echo_len,
                     "completion_tokens": i,
                     "total_tokens": input_echo_len + i,
-                }
+                },
+                "finish_reason": finish_reason
             }
 
         if stopped:
