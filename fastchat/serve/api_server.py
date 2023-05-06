@@ -70,6 +70,8 @@ async def create_chat_completion(request: ChatCompletionRequest):
     )
 
     if request.stream:
+        # Streaming chat completion behavior is based on the following notebook:
+        # https://github.com/openai/openai-cookbook/blob/b92d7e7b9204ecf914a91a2781dd967aa7c52be1/examples/How_to_stream_completions.ipynb
         return StreamingResponse(chat_completion_stream(request.model, gen_params, request.n), media_type="text/event-stream")
 
     choices = []
