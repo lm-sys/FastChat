@@ -25,6 +25,7 @@ from fastchat.conversation import get_default_conv_template
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
+    ChatCompletionStreamResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
@@ -203,19 +204,28 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
                         delta = output.replace(prev_total, "")
                         prev_total = output
                         yield json.dumps(
-                            ChatCompletionResponseStreamChoice(
-                                index=i,
-                                delta=DeltaMessage(content=delta),
-                                finish_reason="",
+                            ChatCompletionStreamResponse(
+                                choices=[
+                                    ChatCompletionResponseStreamChoice(
+                                        index=i,
+                                        delta=DeltaMessage(content=delta),
+                                        finish_reason="",
+                                    )
+                                ]
                             ).dict()
                         )
                         i += 1
+
             # Streaming the finsihg token
             yield json.dumps(
-                ChatCompletionResponseStreamChoice(
-                    index=i,
-                    delta=DeltaMessage(content=""),
-                    finish_reason="stop",
+                ChatCompletionStreamResponse(
+                    choices=[
+                        ChatCompletionResponseStreamChoice(
+                            index=i,
+                            delta=DeltaMessage(content=""),
+                            finish_reason="stop",
+                        )
+                    ]
                 ).dict()
             )
 

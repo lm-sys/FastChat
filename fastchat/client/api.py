@@ -9,7 +9,7 @@ from fastchat.helper.async_to_sync import iter_over_async
 from fastchat.protocol.chat_completion import (
     ChatCompletionRequest,
     ChatCompletionResponse,
-    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
 )
 
 _BASE_URL = "http://localhost:8000"
@@ -73,7 +73,7 @@ class ChatCompletionClient:
                             data = json.loads(line)
                         except json.JSONDecodeError:
                             continue
-                        yield ChatCompletionResponseStreamChoice.parse_obj(data)
+                        yield ChatCompletionStreamResponse.parse_obj(data)
 
 
 class ChatCompletion:

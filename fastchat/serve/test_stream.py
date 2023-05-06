@@ -16,7 +16,9 @@ async def async_main():
         stream=True,
     )
     async for chunk in res:
-        print(chunk.delta.content, end="")
+        content = chunk.choices[0].delta.content
+        if content is not None:
+            print(content, end="")
 
 
 def sync_main():
@@ -31,7 +33,9 @@ def sync_main():
         stream=True,
     )
     for chunk in res:
-        print(chunk.delta.content, end="")
+        content = chunk.choices[0].delta.content
+        if content is not None:
+            print(content, end="")
 
 
 if __name__ == "__main__":
