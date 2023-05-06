@@ -26,7 +26,7 @@ def main(args):
 
     msg = args.message
 
-    conv = get_default_conv_template(args.model_path).copy()
+    conv = get_default_conv_template(args.model_path)
     conv.append_message(conv.roles[0], msg)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()

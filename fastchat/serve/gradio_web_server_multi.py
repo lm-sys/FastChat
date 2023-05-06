@@ -1,3 +1,8 @@
+"""
+The gradio demo server with multiple tabs.
+It supports chatting with a single model or chatting with two models side-by-side.
+"""
+
 import argparse
 import pickle
 
@@ -33,10 +38,11 @@ def load_demo(url_params, request: gr.Request):
         selected = 3
     single_updates = load_demo_single(models, url_params)
 
-    if args.add_gpt_35:
-        models_anony = ["gpt-3.5-turbo"] + models
-    else:
-        models_anony = models
+    models_anony = models
+    if args.add_chatgpt:
+        models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
+    if args.add_claude:
+        models_anony = ["claude-v1"] + models_anony
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -152,7 +158,12 @@ if __name__ == "__main__":
         "--moderate", action="store_true", help="Enable content moderation"
     )
     parser.add_argument(
-        "--add-gpt-35", action="store_true", help="Enable gpt-3.5-turbo"
+        "--add-chatgpt", action="store_true",
+        help="Add OpenAI ChatGPT models (gpt-3.5-turbo, gpt-4)"
+    )
+    parser.add_argument(
+        "--add-claude", action="store_true",
+        help="Add Anthropic's Claude models (claude-v1)"
     )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()

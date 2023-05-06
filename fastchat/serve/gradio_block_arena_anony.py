@@ -1,3 +1,8 @@
+"""
+Chatbot Arena (battle) tab.
+Users chat with two anonymous models.
+"""
+
 import json
 import time
 
@@ -140,6 +145,7 @@ def share_click(state0, state1, model_selector0, model_selector1,
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
+DEFAULT_WEIGHTS = [1.5] * 8 + [1] * 32
 
 def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
@@ -147,7 +153,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     if states[0] is None:
         assert states[1] is None
-        weights = ([1, 1, 1, 1] + [1] * 32)[:len(models)]
+        weights = DEFAULT_WEIGHTS[:len(models)]
         if len(models) > 1:
             weights = weights / np.sum(weights)
             model_left, model_right = np.random.choice(
@@ -156,8 +162,8 @@ def add_text(state0, state1, text, request: gr.Request):
             model_left = model_right = models[0]
 
         states = [
-            get_default_conv_template("vicuna").copy(),
-            get_default_conv_template("vicuna").copy(),
+            get_default_conv_template("vicuna"),
+            get_default_conv_template("vicuna"),
         ]
         states[0].model_name = model_left
         states[1].model_name = model_right
@@ -260,15 +266,16 @@ def build_side_by_side_ui_anony(models):
 # ⚔️  Chatbot Arena ⚔️ 
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
+- You can do multiple rounds of conversations before voting.
 - The names of the models will be revealed after your vote.
-- You can continue chating and voting or click "Clear history" to start a new round.
+- Click "Clear history" to start a new round.
 - [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
 ### Battle
-Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard).
+Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard). We also added ChatGPT and Claude.
 """
 
     states = [gr.State() for _ in range(num_models)]
@@ -287,7 +294,7 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot{i}",
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot",
                         visible=False).style(height=550)
 
         with gr.Box() as button_row:

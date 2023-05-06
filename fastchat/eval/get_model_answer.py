@@ -49,7 +49,7 @@ def get_model_answers(model_path, model_id, question_jsons):
         ques_json = json.loads(line)
         idx = ques_json["question_id"]
         qs = ques_json["text"]
-        conv = get_default_conv_template(model_id).copy()
+        conv = get_default_conv_template(model_id)
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
