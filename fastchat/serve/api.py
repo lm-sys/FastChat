@@ -24,6 +24,10 @@ from fastchat.protocol.chat_completion import (
     ChatCompletionResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
+    CompletionRequest,
+    CompletionResponse,
+    EmbeddingsRequest,
+    EmbeddingsResponse,
 )
 from fastchat.conversation import get_default_conv_template, SeparatorStyle
 
@@ -171,16 +175,133 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
         return output
 
 
+@app.post("/v1/completions")
+async def create_completion(request: CompletionRequest):
+    payload = {
+        "model": request.model,
+        "prompt": request.prompt,
+        "temperature": request.temperature,
+        "max_tokens": request.max_tokens,
+        "logprobs": request.logprobs,
+    }
+
+    if request.stream:
+        raise NotImplementedError("streaming is not supported yet")
+    else:
+        completions = []
+        prompt_tokens = 0
+        completion_tokens = 0
+        for i in range(request.n):
+            content = await generate_completion(payload)
+            content = json.loads(content)
+            content["index"] = i
+            completion_tokens += content["completion_tokens"]
+            prompt_tokens = content["prompt_tokens"]
+            content.pop("completion_tokens")
+            content.pop("prompt_tokens")
+            if request.echo:
+                content["text"] = request.prompt + content["text"]
+            completions.append(content)
+    return CompletionResponse(
+        model=request.model,
+        choices=completions,
+        usage={
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        },
+    )
+
+
+async def generate_completion(payload: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": payload["model"]}
+        )
+        worker_addr = ret.json()["address"]
+        # No available worker
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {payload['model']}")
+
+        logger.debug(f"model_name: {payload['model']}, worker_addr: {worker_addr}")
+
+        response = await client.post(
+            worker_addr + "/worker_generate_completion",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+        completion = response.json()
+        return completion
+
+
+@app.post("/v1/create_embeddings")
+async def create_embeddings(request: EmbeddingsRequest):
+    """Creates embeddings for the text"""
+
+    def generate_embeddings_payload(model_name: str, input: str):
+        payload = {
+            "model": model_name,
+            "input": input,
+        }
+        return payload
+
+    embeddings_payload = generate_embeddings_payload(request.model, request.input)
+    embedding = await get_embedding(embeddings_payload)
+    embedding = json.loads(embedding)
+    data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
+    return EmbeddingsResponse(
+        data=data,
+        model=request.model,
+        usage={
+            "prompt_tokens": embedding["token_num"],
+            "total_tokens": embedding["token_num"],
+        },
+    )
+
+
+async def get_embedding(payload: Dict[str, Any]):
+    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    model_name = payload["model"]
+    async with httpx.AsyncClient() as client:
+        ret = await client.post(
+            controller_url + "/get_worker_address", json={"model": model_name}
+        )
+        worker_addr = ret.json()["address"]
+        if worker_addr == "":
+            raise ValueError(f"No available worker for {model_name}")
+
+        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+
+        response = await client.post(
+            worker_addr + "/worker_get_embeddings",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+        embedding = response.json()
+        return embedding
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="FastChat ChatGPT-compatible Restful API server."
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
-    parser.add_argument("--allow-credentials", action="store_true", help="allow credentials")
-    parser.add_argument("--allowed-origins", type=json.loads, default=["*"], help="allowed origins")
-    parser.add_argument("--allowed-methods", type=json.loads, default=["*"], help="allowed methods")
-    parser.add_argument("--allowed-headers", type=json.loads, default=["*"], help="allowed headers")
+    parser.add_argument(
+        "--allow-credentials", action="store_true", help="allow credentials"
+    )
+    parser.add_argument(
+        "--allowed-origins", type=json.loads, default=["*"], help="allowed origins"
+    )
+    parser.add_argument(
+        "--allowed-methods", type=json.loads, default=["*"], help="allowed methods"
+    )
+    parser.add_argument(
+        "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
+    )
 
     args = parser.parse_args()
 
