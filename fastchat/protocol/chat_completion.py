@@ -36,7 +36,7 @@ class ChatCompletionResponse(BaseModel):
     usage: Optional[Dict[str, int]] = None
 
 class DeltaMessage(BaseModel):
-    content: str
+    content: Optional[str]
 
 class ChatCompletionResponseStreamChoice(BaseModel):
     index: int

@@ -270,12 +270,6 @@ def generate_stream(
                 else:
                     raise ValueError("Invalid stop field type.")
 
-            if i == max_new_tokens - 1:
-                finish_reason = "length"
-            elif stopped:
-                finish_reason = "stop"
-            else:
-                finish_reason = None
             yield {
                 "text": output,
                 "usage": {
@@ -283,12 +277,31 @@ def generate_stream(
                     "completion_tokens": i,
                     "total_tokens": input_echo_len + i,
                 },
-                "finish_reason": finish_reason
+                "finish_reason": None
             }
 
         if stopped:
             break
+    
+    # finish stream event, which contains finish reason
+    if i == max_new_tokens - 1:
+        finish_reason = "length"
+    elif stopped:
+        finish_reason = "stop"
+    else:
+        finish_reason = None
+    
+    yield {
+        "text": output,
+        "usage": {
+            "prompt_tokens": input_echo_len,
+            "completion_tokens": i,
+            "total_tokens": input_echo_len + i,
+        },
+        "finish_reason": finish_reason
+    }
 
+    # clean
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()

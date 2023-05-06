@@ -209,6 +209,9 @@ async def chat_completion_stream_generator(model_name: str, n: int, gen_params: 
             decoded_unicode = content["text"].replace('\ufffd', '')
             delta_text = decoded_unicode[len(previous_text):]
             previous_text = decoded_unicode
+
+            if len(delta_text) == 0:
+                delta_text = None
             choice_data = ChatCompletionResponseStreamChoice(
                 index=i,
                 delta=DeltaMessage(content=delta_text),
@@ -218,14 +221,14 @@ async def chat_completion_stream_generator(model_name: str, n: int, gen_params: 
                 id=id,
                 choices=[choice_data]
             )
-            if len(delta_text) == 0:
+            if delta_text is None:
                 if content.get("finish_reason", None) is not None:
                     finish_stream_events.append(chunk)
                 continue
             yield f"data: {chunk.json(ensure_ascii=False)}\n\n"
-    # FIXME: In the OpenAI API, there is not "content" field in delta message
+    # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
     for finish_chunk in finish_stream_events:
-        yield f"data: {finish_chunk.json(ensure_ascii=False)}\n\n"
+        yield f"data: {finish_chunk.json(exclude_none=True, ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"
 
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
@@ -241,7 +244,6 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
 
         logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
 
-        output = None
         delimiter = b"\0"
         async with client.stream(
             "POST",
