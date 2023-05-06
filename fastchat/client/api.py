@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from typing import Dict, List, Optional, Generator, Union
+from typing import AsyncGenerator, Dict, List, Optional, Generator, Union
 
 import httpx
 
@@ -30,6 +30,12 @@ class ChatCompletionClient:
     async def request_completion(
         self, request: ChatCompletionRequest, timeout: Optional[float] = None
     ) -> ChatCompletionResponse:
+        """
+        Create chat completion request
+        :param request: The request data
+        :param timeout: The timeout of the request
+        :returns: Compleation stream
+        """
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/v1/chat/completions",
@@ -41,7 +47,13 @@ class ChatCompletionClient:
 
     async def request_completion_stream(
         self, request: ChatCompletionRequest, timeout: Optional[float] = None
-    ):
+    ) -> AsyncGenerator:
+        """
+        Create chat completion as a stream
+        :param request: The request data
+        :param timeout: The timeout of the request
+        :returns: Compleation stream
+        """
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
