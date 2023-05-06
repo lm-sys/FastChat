@@ -3,37 +3,7 @@
 
 An open platform for training, serving, and evaluating large language model based chatbots.
 
-## fork 以后修改的记录：
-
-增加了流式API调用，后台将生成的结果存到缓存，客户端反复向http://IP:8000/v1/chat/completions/stream POST同一个请求，可返回增量结果。
-
-起动程序命令：
-
-```bash
-# 批量结束进程
-pkill -9 -f fastchat
-# 起动controller
-nohup python -u -m fastchat.serve.controller >> fastchat.log  2>&1 &
-# 起动worker
-CUDA_VISIBLE_DEVICES=1 nohup python -u -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-path vicuna_data/vicuna-7b-v1.1 >> fastchat.log  2>&1 &
-# 起动流式API
-FASTCHAT_CONTROLLER_URL=http://localhost:21001 CUDA_VISIBLE_DEVICES=1 nohup python -u -m fastchat.serve.api_stream --host 0.0.0.0 --port 8000 >> fastchat.log  2>&1 &
-# 看日志
-tail -f  fastchat.log
-```
-
-调用命令：
-
-```bash
-curl http://localhost:8000/v1/chat/completions/stream   \
--H "Content-Type: application/json"  \
--d '{"model": "vicuna-7b-v1.1","messages": [{"role": "user", "content": "请写一篇100字的日记"}]}'
-```
-
-安装测试环境参见：https://zhuanlan.zhihu.com/p/624286959
-
 ## News
-
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
 - [2023/04] We released **FastChat-T5** compatible with commercial usage. Check out the [weights](#fastchat-t5) and [demo](https://chat.lmsys.org).
 - [2023/03] We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Check out the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org).
