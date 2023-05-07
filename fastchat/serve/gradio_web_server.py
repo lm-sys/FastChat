@@ -418,8 +418,8 @@ By using this service, users are required to agree to the following terms: The s
             model_description_md += "|"
 
         if name in model_info:
-            name, link, desc = model_info[name]
-            model_description_md += f" [{name}]({link}): {desc} |"
+            minfo = model_info[name]
+            model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
         else:
             model_description_md += f" |"
         if i % 3 == 2:
