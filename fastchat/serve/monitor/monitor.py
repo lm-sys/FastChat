@@ -20,7 +20,7 @@ from fastchat.utils import build_logger, get_window_url_params_js
 logger = build_logger("monitor", "monitor.log")
 
 
-basic_component_values = ["Loading ... (under development)"]
+basic_component_values = ["Loading ..."]
 leader_component_values = [None, None, None, None, None]
 
 
@@ -49,9 +49,6 @@ Last update: {elo_results["last_update_datetime"]}
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
         leader_component_values[4] = elo_results["bootstrap_elo_rating"]
-
-    # TODO fix this
-    return
 
     # Basic stats
     basic_stats = report_basic_stats(log_files)

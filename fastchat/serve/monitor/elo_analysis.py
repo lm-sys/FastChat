@@ -12,9 +12,9 @@ import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 
+from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
-from fastchat.serve.gradio_web_server import model_info
 
 
 pd.options.display.float_format = "{:.2f}".format
@@ -100,9 +100,9 @@ def visualize_leaderboard_table(rating):
     md += "| --- | --- | --- | --- |\n"
     for i, model in enumerate(models):
         rank = i + 1
-        _, link, desc = model_info[model]
+        minfo = get_model_info(model)
         emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({link}) | {rating[model]:.0f} | {desc} |\n"
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
 
     return md
 
@@ -218,8 +218,8 @@ if __name__ == "__main__":
 
     results = report_elo_analysis_results(battles)
 
-    print(results["elo_rating"])
-    print(results["last_update_datetime"])
+    pretty_print_elo_rating(results["elo_rating"])
+    print(f"last update : {results['last_update_datetime']}")
 
     with open("elo_results.pkl", "wb") as fout:
         pickle.dump(results, fout)
