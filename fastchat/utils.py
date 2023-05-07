@@ -61,7 +61,7 @@ def build_logger(logger_name, logger_filename):
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True
+            filename, when="D", utc=True, encoding='utf-8'
         )
         handler.setFormatter(formatter)
 
