@@ -59,7 +59,7 @@ def remove_html(raw):
 
 def clean_battle_data(log_files):
     data = []
-    for filename in tqdm(log_files):
+    for filename in tqdm(log_files, desc="read files"):
         with open(filename) as f:
             lines = f.readlines()
         for l in lines:
