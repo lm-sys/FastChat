@@ -1,5 +1,5 @@
 # sudo apt install pkg-config libicu-dev
-# pip install pytz gradio gdown plotly polyglot pyicu pycld2
+# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
 import datetime
