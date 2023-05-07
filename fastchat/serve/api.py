@@ -216,7 +216,7 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
                         )
                         i += 1
 
-            # Streaming the finsihg token
+            # Streaming the finishing token
             yield json.dumps(
                 ChatCompletionStreamResponse(
                     choices=[
