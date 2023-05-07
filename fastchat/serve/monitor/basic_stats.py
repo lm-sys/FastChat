@@ -1,3 +1,4 @@
+import argparse
 import code
 import datetime
 import json
@@ -28,11 +29,19 @@ def get_log_files(max_num_files=None):
 
 
 def load_log_files(log_files):
-    dfs = []
-    for filename in tqdm(log_files):
-        dfs.append(pd.read_json(filename, lines=True))
-    df = pd.concat(dfs).reset_index(drop=True)
-    return df
+    data = []
+    for filename in tqdm(log_files, desc="read files"):
+        for l in open(filename):
+            row = json.loads(l)
+
+            data.append(dict(
+                type=row["type"],
+                tstamp=row["tstamp"],
+                model=row.get("model", ""),
+                models=row.get("models", ["", ""]),
+            ))
+
+    return data
 
 
 def merge_counts(series, on, names):
@@ -50,6 +59,7 @@ def merge_counts(series, on, names):
 
 def report_basic_stats(log_files):
     df_all = load_log_files(log_files)
+    df_all = pd.DataFrame(df_all)
     now_t = df_all["tstamp"].max()
 
     df_1_hour = df_all[df_all["tstamp"] > (now_t - 3600)]
@@ -113,7 +123,11 @@ def report_basic_stats(log_files):
 
 
 if __name__ == "__main__":
-    log_files = get_log_files()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max-num-files", type=int)
+    args = parser.parse_args()
+
+    log_files = get_log_files(args.max_num_files)
     basic_stats = report_basic_stats(log_files)
 
     print(basic_stats["model_hist_md"] + "\n")

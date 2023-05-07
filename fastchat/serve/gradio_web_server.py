@@ -18,6 +18,10 @@ from fastchat.conversation import (
     SeparatorStyle,
 )
 from fastchat.constants import LOGDIR
+
+from fastchat.serve.gradio_patch import Chatbot as grChatbot
+from fastchat.serve.gradio_css import code_highlight_css
+from fastchat.model.model_registry import model_info
 from fastchat.utils import (
     build_logger,
     server_error_msg,
@@ -25,8 +29,6 @@ from fastchat.utils import (
     moderation_msg,
     get_window_url_params_js,
 )
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
-from fastchat.serve.gradio_css import code_highlight_css
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -39,23 +41,6 @@ disable_btn = gr.Button.update(interactive=False)
 
 controller_url = None
 enable_moderation = False
-
-
-model_info = {
-    "gpt-4": ("ChatGPT-4", "https://chat.openai.com/", "ChatGPT-4 by OpenAI"),
-    "gpt-3.5-turbo": ("ChatGPT-3.5", "https://chat.openai.com/", "ChatGPT-3.5 by OpenAI"),
-    "claude-v1": ("Claude", "https://www.anthropic.com/index/introducing-claude", "Claude by Anthropic"),
-    "vicuna-13b": ("Vicuna", "https://lmsys.org/blog/2023-03-30-vicuna/", "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS"),
-    "koala-13b": ("Koala", "https://bair.berkeley.edu/blog/2023/04/03/koala", "a dialogue model for academic research by BAIR"),
-    "oasst-pythia-12b": ("OpenAssistant", "https://open-assistant.io", "an Open Assistant for everyone by LAION"),
-    "RWKV-4-Raven-14B": ("RMKV-4-Raven", "https://huggingface.co/BlinkDL/rwkv-4-raven", "an RNN with transformer-level LLM performance"),
-    "alpaca-13b": ("Alpaca", "https://crfm.stanford.edu/2023/03/13/alpaca.html", "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford"),
-    "chatglm-6b": ("ChatGLM", "https://chatglm.cn/blog", "an open bilingual dialogue language model by Tsinghua University"),
-    "llama-13b": ("LLaMA", "https://arxiv.org/abs/2302.13971", "open and efficient foundation language models by Meta"),
-    "dolly-v2-12b": ("Dolly", "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks"),
-    "stablelm-tuned-alpha-7b": ("StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models"),
-    "fastchat-t5-3b": ("FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS"),
-}
 
 learn_more_md = """
 ### License
@@ -433,8 +418,8 @@ By using this service, users are required to agree to the following terms: The s
             model_description_md += "|"
 
         if name in model_info:
-            name, link, desc = model_info[name]
-            model_description_md += f" [{name}]({link}): {desc} |"
+            minfo = model_info[name]
+            model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
         else:
             model_description_md += f" |"
         if i % 3 == 2:

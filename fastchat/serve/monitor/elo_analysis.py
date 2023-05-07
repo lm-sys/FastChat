@@ -1,8 +1,10 @@
 import argparse
 from collections import defaultdict
+import datetime
 import json
 import math
 import pickle
+from pytz import timezone
 
 import gdown
 import numpy as np
@@ -10,9 +12,9 @@ import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 
+from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
-from fastchat.serve.gradio_web_server import model_info
 
 
 pd.options.display.float_format = "{:.2f}".format
@@ -40,7 +42,7 @@ def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
     return dict(rating)
 
 
-def get_bootstrap_result(battles, func_compute_elo, num_round):
+def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     rows = []
     for i in tqdm(range(num_round), desc="bootstrap"):
         rows.append(func_compute_elo(battles.sample(frac=1.0, replace=True)))
@@ -48,47 +50,8 @@ def get_bootstrap_result(battles, func_compute_elo, num_round):
     return df[df.median().sort_values(ascending=False).index]
 
 
-def visualize_leaderboard_md(rating):
-    models = list(rating.keys())
-    models.sort(key=lambda k: -rating[k])
-
-    emoji_dict = {
-        1: "🥇",
-        2: "🥈",
-        3: "🥉",
-    }
-   
-    md = """
-# Leaderboard
-[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
-
-We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing). The current leaderboard is based on the data we collected before May 1, 2023. We will periodically release new leaderboards.\n
-"""
-    md += "| Rank | Model | Elo Rating | Description |\n"
-    md += "| --- | --- | --- | --- |\n"
-    for i, model in enumerate(models):
-        rank = i + 1
-        _, link, desc = model_info[model]
-        emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({link}) | {rating[model]:.0f} | {desc} |\n"
-
-    return md
-
-def visualize_bootstrap_elo_rating(battles, num_round=1000):
-    df = get_bootstrap_result(battles, compute_elo, num_round)
-
-    bars = pd.DataFrame(dict(
-        lower = df.quantile(.025),
-        rating = df.quantile(.5),
-        upper = df.quantile(.975))).reset_index(names="model").sort_values("rating", ascending=False)
-    bars['error_y'] = bars['upper'] - bars["rating"]
-    bars['error_y_minus'] = bars['rating'] - bars["lower"]
-    bars['rating_rounded'] = np.round(bars['rating'], 2)
-    fig = px.scatter(bars, x="model", y="rating", error_y="error_y", 
-                     error_y_minus="error_y_minus", text="rating_rounded",
-                     width=450)
-    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
+def get_elo_from_bootstrap(bootstrap_df):
+    return dict(bootstrap_df.quantile(.5))
 
 
 def compute_pairwise_win_fraction(battles, model_order):
@@ -120,7 +83,44 @@ def compute_pairwise_win_fraction(battles, model_order):
     # Arrange ordering according to proprition of wins
     row_beats_col = row_beats_col_freq.loc[model_order, model_order]
     return row_beats_col
-  
+ 
+
+def visualize_leaderboard_table(rating):
+    models = list(rating.keys())
+    models.sort(key=lambda k: -rating[k])
+
+    emoji_dict = {
+        1: "🥇",
+        2: "🥈",
+        3: "🥉",
+    }
+   
+    md = ""
+    md += "| Rank | Model | Elo Rating | Description |\n"
+    md += "| --- | --- | --- | --- |\n"
+    for i, model in enumerate(models):
+        rank = i + 1
+        minfo = get_model_info(model)
+        emoji = emoji_dict.get(rank, "")
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
+
+    return md
+
+
+def visualize_bootstrap_elo_rating(df):
+    bars = pd.DataFrame(dict(
+        lower = df.quantile(.025),
+        rating = df.quantile(.5),
+        upper = df.quantile(.975))).reset_index(names="model").sort_values("rating", ascending=False)
+    bars['error_y'] = bars['upper'] - bars["rating"]
+    bars['error_y_minus'] = bars['rating'] - bars["lower"]
+    bars['rating_rounded'] = np.round(bars['rating'], 2)
+    fig = px.scatter(bars, x="model", y="rating", error_y="error_y", 
+                     error_y_minus="error_y_minus", text="rating_rounded",
+                     width=450)
+    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
+    return fig
+ 
 
 def visualize_pairwise_win_fraction(battles, model_order):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
@@ -167,25 +167,31 @@ def report_elo_analysis_results(battles_json):
     battles = battles[battles["anony"]].reset_index(drop=True)
     battles_no_ties = battles[~battles["win"].str.contains("tie")]
 
-    elo_rating = compute_elo(battles)
+    bootstrap_df = get_bootstrap_result(battles, compute_elo)
+    elo_rating = get_elo_from_bootstrap(bootstrap_df)
     elo_rating = {k: int(v) for k, v in elo_rating.items()}
 
     model_order = list(elo_rating.keys())
     model_order.sort(key=lambda k: -elo_rating[k])
 
-    leaderboard_md = visualize_leaderboard_md(elo_rating)
+    leaderboard_table = visualize_leaderboard_table(elo_rating)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
     average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
-    bootstrap_elo_rating = visualize_bootstrap_elo_rating(battles)
+    bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
+
+    last_update_tstamp = battles["tstamp"].max()
+    last_update_datetime = datetime.datetime.fromtimestamp(last_update_tstamp,
+        tz=timezone('US/Pacific')).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     return {
         "elo_rating": elo_rating,
-        "leaderboard_md": leaderboard_md,
+        "leaderboard_table": leaderboard_table,
         "win_fraction_heatmap": win_fraction_heatmap,
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
+        "last_update_datetime": f"{last_update_datetime}",
     }
 
 
@@ -213,6 +219,7 @@ if __name__ == "__main__":
     results = report_elo_analysis_results(battles)
 
     pretty_print_elo_rating(results["elo_rating"])
+    print(f"last update : {results['last_update_datetime']}")
 
     with open("elo_results.pkl", "wb") as fout:
         pickle.dump(results, fout)
