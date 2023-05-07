@@ -78,7 +78,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     if stream:
         generator = chat_completion_stream_generator(request.model, request.n, gen_params)
-        return StreamingResponse(generator)
+        return StreamingResponse(generator, media_type="text/event-stream")
     else:
         choices = []
         # TODO: batch the requests. maybe not necessary if using CacheFlow worker
