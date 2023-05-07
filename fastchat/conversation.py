@@ -121,7 +121,7 @@ class Conversation:
     def to_openai_api_messages(self):
         ret = [{"role": "system", "content": self.system}]
 
-        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+        for i, (_, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
             else:

@@ -33,7 +33,6 @@ enable_moderation = False
 anony_names = ["", ""]
 models = []
 
-
 def set_global_vars_anony(enable_moderation_):
     global enable_moderation
     enable_moderation = enable_moderation_
@@ -76,17 +75,11 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 
     if ":" not in model_selectors[0]:
         for i in range(15):
-            names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
-            )
+            names = ("### Model A: " + states[0].model_name, "### Model B: " + states[1].model_name)
             yield names + ("",) + (disable_btn,) * 4
             time.sleep(0.2)
     else:
-        names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
-        )
+        names = ("### Model A: " + states[0].model_name, "### Model B: " + states[1].model_name)
         yield names + ("",) + (disable_btn,) * 4
 
 
@@ -141,25 +134,18 @@ def regenerate(state0, state1, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history (anony). ip: {request.client.host}")
-    return (
-        [None] * num_models
-        + [None] * num_models
-        + anony_names
-        + [""]
-        + [disable_btn] * 6
-    )
+    return [None] * num_models + [None] * num_models + anony_names + [""] + [disable_btn] * 6
 
 
-def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
+def share_click(state0, state1, model_selector0, model_selector1,
+                request: gr.Request):
     logger.info(f"share (anony). ip: {request.client.host}")
     if state0 is not None and state1 is not None:
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
-
 DEFAULT_WEIGHTS = [1.5] * 8 + [1] * 32
-
 
 def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
@@ -167,12 +153,11 @@ def add_text(state0, state1, text, request: gr.Request):
 
     if states[0] is None:
         assert states[1] is None
-        weights = DEFAULT_WEIGHTS[: len(models)]
+        weights = DEFAULT_WEIGHTS[:len(models)]
         if len(models) > 1:
             weights = weights / np.sum(weights)
             model_left, model_right = np.random.choice(
-                models, size=(2,), p=weights, replace=False
-            )
+                models, size=(2,), p=weights, replace=False)
         else:
             model_left = model_right = models[0]
 
@@ -199,9 +184,7 @@ def add_text(state0, state1, text, request: gr.Request):
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
-            logger.info(
-                f"violate moderation (anony). ip: {request.client.host}. text: {text}"
-            )
+            logger.info(f"violate moderation (anony). ip: {request.client.host}. text: {text}")
             for i in range(num_models):
                 states[i].skip_next = True
             return (
@@ -244,12 +227,8 @@ def http_bot_all(
 
     if state0.skip_next:
         # This generate call is skipped due to invalid inputs
-        yield (
-            state0,
-            state1,
-            state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot(),
-        ) + (no_change_btn,) * 6
+        yield (state0, state1, state0.to_gradio_chatbot(),
+            state1.to_gradio_chatbot()) + (no_change_btn,) * 6
         return
 
     states = [state0, state1]
@@ -315,9 +294,8 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(
-                        label=label, elem_id=f"chatbot", visible=False
-                    ).style(height=550)
+                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot",
+                        visible=False).style(height=550)
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -362,14 +340,8 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
     gr.Markdown(learn_more_md)
 
     # Register listeners
-    btn_list = [
-        leftvote_btn,
-        rightvote_btn,
-        tie_btn,
-        bothbad_btn,
-        regenerate_btn,
-        clear_btn,
-    ]
+    btn_list = [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn,
+                regenerate_btn, clear_btn]
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
@@ -397,11 +369,10 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
         states + model_selectors + [temperature, max_output_tokens],
         states + chatbots + btn_list,
     )
-    clear_btn.click(
-        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list
-    )
+    clear_btn.click(clear_history, None, states + chatbots + model_selectors + [
+        textbox] + btn_list)
 
-    share_js = """
+    share_js="""
 function (a, b, c, d) {
     const captureElement = document.querySelector('#share-region-anony');
     html2canvas(captureElement)
@@ -448,3 +419,4 @@ function (a, b, c, d) {
         button_row2,
         parameter_row,
     )
+
