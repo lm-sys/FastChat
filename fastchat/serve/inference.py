@@ -18,10 +18,34 @@ from transformers import (
     T5Tokenizer,
     AutoConfig,
 )
+try:
+    from transformers.generation_logits_process import (
+        LogitsProcessorList,
+        TemperatureLogitsWarper,
+        TopKLogitsWarper,
+        TopPLogitsWarper,
+    )
+except ImportError:
+    from transformers.generation import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper
+
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
+
+
+def prepare_logits_processor(temperature: Optional[float] = None,
+                             top_p: Optional[float] = None,
+                             top_k: Optional[int] = None) -> LogitsProcessorList:
+    processor_list = LogitsProcessorList()
+    # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
+    if temperature is not None and temperature >= 1e-4 and temperature != 1.0:
+        processor_list.append(TemperatureLogitsWarper(temperature))
+    if top_p is not None and top_p < 1.0:
+        processor_list.append(TopPLogitsWarper(top_p))
+    if top_k is not None and top_k > 0:
+        processor_list.append(TopKLogitsWarper(top_k))
+    return processor_list
 
 
 @torch.inference_mode()
@@ -31,16 +55,16 @@ def generate_stream(
     prompt = params["prompt"]
     len_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
-    top_k = int(params.get("top_k", 50))
-    top_p = min(float(params.get("top_p", 0.7)), 1.0)
+    top_p = float(params.get("top_p", 1.0))
+    top_k = int(params.get("top_k", -1))   # -1 means disable
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_str = params.get("stop", None)
-    echo = params.get("echo", True)
+    echo = bool(params.get("echo", True))
     stop_token_ids = params.get("stop_token_ids", None) or []
     stop_token_ids.append(tokenizer.eos_token_id)
 
-    logits_processor = prepare_logits_processor(top_k, top_p, temperature)
-    
+    logits_processor = prepare_logits_processor(temperature, top_p, top_k)
+
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
     output_ids = list(input_ids)
@@ -94,8 +118,7 @@ def generate_stream(
 
         last_token_logits = logits_processor(input_ids, last_token_logits)
         probs = torch.softmax(last_token_logits, dim=-1, dtype=torch.float)
-        next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
-        token = int(next_tokens[-1])
+        token = int(torch.multinomial(probs, num_samples=1))
 
         output_ids.append(token)
 
