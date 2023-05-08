@@ -453,7 +453,6 @@ By using this service, users are required to agree to the following terms: The s
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
         downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
         flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
