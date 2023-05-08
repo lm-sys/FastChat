@@ -5,31 +5,38 @@
 - Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
 
 Usage:
-python3 -m fastchat.serve.api_server
+python3 -m fastchat.serve.openai_api_server
 """
 import asyncio
 import argparse
+import asyncio
 import json
 import logging
+import os
 from typing import Union, Dict, List, Any
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import httpx
 import uvicorn
 from pydantic import BaseSettings
 
-from fastchat.protocol.chat_completion import (
+from fastchat.constants import WORKER_API_TIMEOUT
+from fastchat.model.model_adapter import get_conversation_template
+from fastchat.protocol.openai_api_protocol import (
     ChatCompletionRequest,
     ChatCompletionResponse,
+    ChatCompletionStreamResponse,
     ChatMessage,
     ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
+    DeltaMessage,
     CompletionRequest,
     CompletionResponse,
     EmbeddingsRequest,
     EmbeddingsResponse,
 )
-from fastchat.model.model_adapter import get_conversation_template
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +60,8 @@ async def show_available_models():
         ret = await client.post(controller_address + "/list_models")
     models = ret.json()["models"]
     models.sort()
-    return {"data": [{"id": m} for m in models], "object": "list"}
+    return {"data": [{"id": m, "object": "model"} for m in models],
+            "object": "list"}
 
 
 @app.post("/v1/chat/completions")
@@ -67,9 +75,13 @@ async def create_chat_completion(request: ChatCompletionRequest):
         echo=False,
         stop=request.stop,
     )
+    if request.stream:
+        response_stream = chat_completion_stream(
+            request.model, gen_params, request.n)
+        return StreamingResponse(response_stream, media_type="text/event-stream")
 
+    # TODO: batch the requests
     choices = []
-    # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
         content = asyncio.create_task(chat_completion(request.model, gen_params))
@@ -87,12 +99,12 @@ async def create_chat_completion(request: ChatCompletionRequest):
         )
 
     # TODO: support usage field
-    # "usage": {
-    #     "prompt_tokens": 9,
-    #     "completion_tokens": 12,
-    #     "total_tokens": 21
-    # }
-    return ChatCompletionResponse(choices=choices)
+    usage = {
+        "prompt_tokens": -1,
+        "completion_tokens": -1,
+        "total_tokens": -1,
+    }
+    return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
 
 
 def get_gen_params(
@@ -142,18 +154,79 @@ def get_gen_params(
     return gen_params
 
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
-    controller_address = app_settings.controller_address
-    async with httpx.AsyncClient() as client:
-        ret = await client.post(
-            controller_address + "/get_worker_address", json={"model": model_name}
-        )
-        worker_addr = ret.json()["address"]
-        # No available worker
-        if worker_addr == "":
-            raise ValueError(f"No available worker for {model_name}")
+async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str:
+    """
+    Get worker address based on the requested model
 
-        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+    :param model_name: The worker's model name
+    :param client: The httpx client to use
+    :return: Worker address from the controller
+    :raises: :class:`ValueError`: No available worker for requested model
+    """
+    controller_address = app_settings.controller_address
+
+    ret = await client.post(
+        controller_address + "/get_worker_address", json={"model": model_name}
+    )
+    worker_addr = ret.json()["address"]
+    # No available worker
+    if worker_addr == "":
+        raise ValueError(f"No available worker for {model_name}")
+
+    logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+    return worker_addr
+
+
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n: int):
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(model_name, client)
+        delimiter = b"\0"
+ 
+        for idx in range(n):
+            delta_position = 0
+            response = ChatCompletionStreamResponse(
+                model=model_name,
+                choices=[
+                    ChatCompletionResponseStreamChoice(
+                        index=idx,
+                        delta=DeltaMessage(content=""),
+                        finish_reason=None,
+                    )
+                ]
+            )
+
+            async with client.stream(
+                "POST",
+                worker_addr + "/worker_generate_stream",
+                headers=headers,
+                json=gen_params,
+                timeout=WORKER_API_TIMEOUT,
+            ) as post_response:
+                # TODO: begins with a single delta containing the role and a null finish reason
+                async for raw_chunk in post_response.aiter_raw():
+                    for chunk in raw_chunk.split(delimiter):
+                        if not chunk:
+                            continue
+                        data = json.loads(chunk.decode())
+                        if data["error_code"] == 0:
+                            last_delta_position = delta_position
+                            output = data["text"].strip()
+                            delta_position = len(output)
+                            delta_diff = delta_position - last_delta_position
+                            if delta_diff > 0:
+                                delta = output[last_delta_position:]
+                                response.choices[0].delta.content = delta
+                                yield json.dumps(response.dict())
+
+                # Streaming the finishing token
+                response.choices[0].delta.content = ""
+                response.choices[0].finish_reason = "stop"
+                yield json.dumps(response.dict())
+
+
+async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(model_name, client)
 
         output = ""
         delimiter = b"\0"
@@ -162,7 +235,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
             worker_addr + "/worker_generate_stream",
             headers=headers,
             json=gen_params,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         ) as response:
             content = await response.aread()
 
@@ -217,21 +290,13 @@ async def create_completion(request: CompletionRequest):
 async def generate_completion(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        ret = await client.post(
-            controller_address + "/get_worker_address", json={"model": payload["model"]}
-        )
-        worker_addr = ret.json()["address"]
-        # No available worker
-        if worker_addr == "":
-            raise ValueError(f"No available worker for {payload['model']}")
-
-        logger.debug(f"model_name: {payload['model']}, worker_addr: {worker_addr}")
+        worker_addr = await _get_worker_address(payload["model"], client)
 
         response = await client.post(
             worker_addr + "/worker_generate_completion",
             headers=headers,
             json=payload,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         )
         completion = response.json()
         return completion
@@ -240,16 +305,12 @@ async def generate_completion(payload: Dict[str, Any]):
 @app.post("/v1/create_embeddings")
 async def create_embeddings(request: EmbeddingsRequest):
     """Creates embeddings for the text"""
+    payload = {
+        "model": request.model,
+        "input": request.input,
+    }
 
-    def generate_embeddings_payload(model_name: str, input: str):
-        payload = {
-            "model": model_name,
-            "input": input,
-        }
-        return payload
-
-    embeddings_payload = generate_embeddings_payload(request.model, request.input)
-    embedding = await get_embedding(embeddings_payload)
+    embedding = await get_embedding(payload)
     embedding = json.loads(embedding)
     data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
     return EmbeddingsResponse(
@@ -266,20 +327,13 @@ async def get_embedding(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
     model_name = payload["model"]
     async with httpx.AsyncClient() as client:
-        ret = await client.post(
-            controller_address + "/get_worker_address", json={"model": model_name}
-        )
-        worker_addr = ret.json()["address"]
-        if worker_addr == "":
-            raise ValueError(f"No available worker for {model_name}")
-
-        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
+        worker_addr = await _get_worker_address(model_name, client)
 
         response = await client.post(
             worker_addr + "/worker_get_embeddings",
             headers=headers,
             json=payload,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         )
         embedding = response.json()
         return embedding
@@ -287,7 +341,7 @@ async def get_embedding(payload: Dict[str, Any]):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="FastChat ChatGPT-compatible Restful API server."
+        description="FastChat ChatGPT-Compatible RESTful API server."
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")

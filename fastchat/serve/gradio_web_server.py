@@ -14,7 +14,7 @@ import gradio as gr
 import requests
 
 from fastchat.conversation import SeparatorStyle
-from fastchat.constants import LOGDIR
+from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
@@ -249,7 +249,7 @@ def model_worker_stream_iter(
         headers=headers,
         json=gen_params,
         stream=True,
-        timeout=20,
+        timeout=WORKER_API_TIMEOUT,
     )
     for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
         if chunk:

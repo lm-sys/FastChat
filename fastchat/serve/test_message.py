@@ -52,13 +52,14 @@ def main():
     )
 
     print(f"{conv.roles[0]}: {args.message}")
-    for chunk in response.iter_lines(
-        chunk_size=8192, decode_unicode=False, delimiter=b"\0"
-    ):
+    print(f"{conv.roles[1]}: ", end="")
+    prev = 0
+    for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
         if chunk:
-            data = json.loads(chunk.decode("utf-8"))
+            data = json.loads(chunk.decode())
             output = data["text"].strip()
-            print(f"{conv.roles[1]}: {output}", end="\r")
+            print(output[prev:], end="", flush=True)
+            prev = len(output)
     print("")
 
 

@@ -7,13 +7,14 @@ from pydantic import BaseModel, Field
 
 
 class ChatCompletionRequest(BaseModel):
-    # TODO: support streaming, stop with a list of text etc.
+    # TODO: support stop with a list of text etc.
     model: str
     messages: List[Dict[str, str]]
     temperature: Optional[float] = 0.7
     n: int = 1
     max_tokens: Optional[int] = None
     stop: Optional[str] = None
+    stream: Optional[bool] = None
 
 
 class ChatMessage(BaseModel):
@@ -31,8 +32,27 @@ class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
     choices: List[ChatCompletionResponseChoice]
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
+
+
+class DeltaMessage(BaseModel):
+    content: str
+
+
+class ChatCompletionResponseStreamChoice(BaseModel):
+    index: int
+    delta: DeltaMessage
+    finish_reason: Optional[str]
+
+
+class ChatCompletionStreamResponse(BaseModel):
+    id: str = Field(default_factory=shortuuid.random)
+    object: str = "chat.completion.chunk"
+    created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
+    choices: List[ChatCompletionResponseStreamChoice]
 
 
 class EmbeddingsRequest(BaseModel):
@@ -41,10 +61,10 @@ class EmbeddingsRequest(BaseModel):
 
 
 class EmbeddingsResponse(BaseModel):
-    object: str = "lists"
+    object: str = "list"
     data: List[Dict[str, Any]]
     model: str
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
 
 
 class CompletionRequest(BaseModel):
@@ -66,4 +86,4 @@ class CompletionResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[Dict[str, Any]]
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
