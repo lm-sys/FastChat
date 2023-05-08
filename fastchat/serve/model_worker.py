@@ -182,6 +182,8 @@ class ModelWorker:
                     ret["usage"] = output["usage"]
                 if "finish_reason" in output:
                     ret["finish_reason"] = output["finish_reason"]
+                if "logprobs" in output:
+                    ret["logprobs"] = output["logprobs"]
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -209,6 +211,8 @@ class ModelWorker:
                 ret["usage"] = output["usage"]
             if "finish_reason" in output:
                 ret["finish_reason"] = output["finish_reason"]
+            if "logprobs" in output:
+                ret["logprobs"] = output["logprobs"]
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
@@ -296,6 +300,7 @@ async def api_generate_completion(request: Request):
     completion = worker.generate_gate(params)
     background_tasks = create_background_tasks()
     return JSONResponse(content=completion, background=background_tasks)
+
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):

@@ -10,6 +10,11 @@ class ErrorResponse(BaseModel):
     message: str
     code: int
 
+class UsageInfo(BaseModel):
+    prompt_tokens: int = 0
+    total_tokens: int = 0
+    completion_tokens: Optional[int] = 0
+
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[Dict[str, str]]
@@ -40,7 +45,7 @@ class ChatCompletionResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[ChatCompletionResponseChoice]
-    usage: Dict[str, int]
+    usage: UsageInfo
 
 
 class DeltaMessage(BaseModel):
@@ -65,13 +70,14 @@ class ChatCompletionStreamResponse(BaseModel):
 class EmbeddingsRequest(BaseModel):
     model: str
     input: str
+    user: Optional[str] = None
 
 
 class EmbeddingsResponse(BaseModel):
     object: str = "list"
     data: List[Dict[str, Any]]
     model: str
-    usage: Dict[str, int]
+    usage: UsageInfo
 
 
 class CompletionRequest(BaseModel):
@@ -86,6 +92,9 @@ class CompletionRequest(BaseModel):
     top_p: Optional[float] = 1.0
     logprobs: Optional[int] = None
     echo: Optional[bool] = False
+    presence_penalty: Optional[float] = 0.0
+    frequency_penalty: Optional[float] = 0.0
+    user: Optional[str] = None
 
 
 class CompletionResponseChoice(BaseModel):
@@ -101,7 +110,7 @@ class CompletionResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[CompletionResponseChoice]
-    usage: Dict[str, int]
+    usage: UsageInfo
 
 
 class CompletionResponseStreamChoice(BaseModel):
