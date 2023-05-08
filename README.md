@@ -51,7 +51,7 @@ pip3 install -e .
 We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
-1. Get the original LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
+1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
 2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
 
 **NOTE**:
@@ -190,11 +190,10 @@ By following these steps, you will be able to serve your models using the web UI
 
 
 ## API
-
 ### OpenAI-Compatible RESTful APIs & SDK
 See [docs/openai_api.md](docs/openai_api.md)
 
-### Huggingface Generation APIs
+### Hugging Face Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
 
 
