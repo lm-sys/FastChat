@@ -19,48 +19,9 @@ from transformers import (
     AutoConfig,
 )
 
-from fastchat.conversation import (
-    conv_templates,
-    get_default_conv_template,
-    SeparatorStyle,
-)
-from fastchat.model import load_model
-from fastchat.serve.compression import load_compress_model
-from fastchat.serve.monkey_patch_non_inplace import (
-    replace_llama_attn_with_non_inplace_operations,
-)
-from fastchat.serve.serve_chatglm import chatglm_generate_stream
-
-def get_gpu_memory(max_gpus=None):
-    gpu_memory = []
-    num_gpus = (
-        torch.cuda.device_count()
-        if max_gpus is None
-        else min(max_gpus, torch.cuda.device_count())
-    )
-
-    for gpu_id in range(num_gpus):
-        with torch.cuda.device(gpu_id):
-            device = torch.cuda.current_device()
-            gpu_properties = torch.cuda.get_device_properties(device)
-            total_memory = gpu_properties.total_memory / (1024**3)
-            allocated_memory = torch.cuda.memory_allocated() / (1024**3)
-            available_memory = total_memory - allocated_memory
-            gpu_memory.append(available_memory)
-    return gpu_memory
-
-
-def raise_warning_for_old_weights(model_path, model):
-    if "vicuna" in model_path.lower() and isinstance(model, LlamaForCausalLM):
-        if model.model.vocab_size > 32000:
-            warnings.warn(
-                "\nYou are probably using the old Vicuna-v0 model, "
-                "which will generate unexpected results with the "
-                "current fastchat.\nYou can try one of the following methods:\n"
-                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
-                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
-                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
-            )
+from fastchat.conversation import get_conv_template, SeparatorStyle
+from fastchat.model.model_adapter import load_model, get_conversation_template
+from fastchat.model.chatglm_model import chatglm_generate_stream
 
 
 @torch.inference_mode()
@@ -200,9 +161,9 @@ def chat_loop(
 
     # Chat
     if conv_template:
-        conv = conv_templates[conv_template].copy()
+        conv = get_conv_template(conv_template)
     else:
-        conv = get_default_conv_template(model_path)
+        conv = get_conversation_template(model_path)
 
     while True:
         try:
