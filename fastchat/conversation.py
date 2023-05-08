@@ -342,6 +342,7 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
 
 # Phoenix default template
 register_conv_template(Conversation(
+    name="phoenix",
     system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
     roles=("Human", "Assistant"),
     messages=(),
