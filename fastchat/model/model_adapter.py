@@ -45,7 +45,7 @@ class BaseAdapter:
 model_adapters: List[BaseAdapter] = []
 
 
-def register_adapter(cls):
+def register_model_adapter(cls):
     """Register a model adapter."""
     model_adapters.append(cls())
 
@@ -370,17 +370,20 @@ class ClaudeAdapter(BaseAdapter):
 
 
 # Note: the registration order matters.
-# The one registered ealier has a higher matching priority.
-register_adapter(VicunaAdapter)
-register_adapter(T5Adapter)
-register_adapter(KoalaAdapter)
-register_adapter(ChatGLMAdapter)
-register_adapter(DollyV2Adapter)
-register_adapter(OasstPythiaAdapter)
-register_adapter(StableLMAdapter)
-register_adapter(BaizeAdapter)
-register_adapter(RwkvAdapter)
-register_adapter(OpenBuddyAdapter)
-register_adapter(ChatGPTAdapter)
-register_adapter(ClaudeAdapter)
-register_adapter(BaseAdapter)
+# The one registered earlier has a higher matching priority.
+register_model_adapter(VicunaAdapter)
+register_model_adapter(T5Adapter)
+register_model_adapter(KoalaAdapter)
+register_model_adapter(ChatGLMAdapter)
+register_model_adapter(DollyV2Adapter)
+register_model_adapter(OasstPythiaAdapter)
+register_model_adapter(StableLMAdapter)
+register_model_adapter(BaizeAdapter)
+register_model_adapter(RwkvAdapter)
+register_model_adapter(OpenBuddyAdapter)
+register_model_adapter(ChatGPTAdapter)
+register_model_adapter(ClaudeAdapter)
+
+
+# After all adapters, try the default base adapter.
+register_model_adapter(BaseAdapter)
