@@ -49,16 +49,6 @@ def set_global_vars(controller_url_, enable_moderation_):
     global controller_url, enable_moderation
     controller_url = controller_url_
     enable_moderation = enable_moderation_
-<<<<<<< HEAD
-
-
-def set_global_vars(controller_url_, enable_moderation_, models_):
-    global controller_url, enable_moderation, models
-    controller_url = controller_url_
-    enable_moderation = enable_moderation_
-    models = models_
-=======
->>>>>>> main
 
 
 def get_conv_log_filename():
@@ -414,117 +404,6 @@ pre {
 #notice_markdown th {
     display: none;
 }
-<<<<<<< HEAD
-"""
-)
-
-    state = gr.State()
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
-
-    with gr.Row(elem_id="model_selector_row"):
-        model_selector = gr.Dropdown(
-            choices=models,
-            value=models[0] if len(models) > 0 else "",
-            interactive=True,
-            show_label=False,
-        ).style(container=False)
-
-    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-    with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter text and press ENTER",
-                visible=False,
-            ).style(container=False)
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False)
-
-    with gr.Row(visible=False) as button_row:
-        upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-        downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-        flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
-
-    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
-        temperature = gr.Slider(
-            minimum=0.0,
-            maximum=1.0,
-            value=0.7,
-            step=0.1,
-            interactive=True,
-            label="Temperature",
-        )
-        max_output_tokens = gr.Slider(
-            minimum=0,
-            maximum=1024,
-            value=512,
-            step=64,
-            interactive=True,
-            label="Max output tokens",
-        )
-
-    gr.Markdown(learn_more_markdown)
-
-    # Register listeners
-    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-    upvote_btn.click(
-        upvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    downvote_btn.click(
-        downvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    flag_btn.click(
-        flag_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
-        http_bot,
-        [state, model_selector, temperature, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-    textbox.submit(
-        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-    ).then(
-        http_bot,
-        [state, model_selector, temperature, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-    send_btn.click(
-        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-    ).then(
-        http_bot,
-        [state, model_selector, temperature, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-
-    return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
-
-
-def build_single_model_ui(models):
-    notice_markdown = """
-# 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
-- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
-- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
-
-### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.**
-
-### Choose a model to chat with
-=======
->>>>>>> main
 """
 )
 
@@ -536,8 +415,6 @@ By using this service, users are required to agree to the following terms: The s
         if i % 3 == 0:
             model_description_md += "|"
 
-<<<<<<< HEAD
-=======
 def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
@@ -559,7 +436,6 @@ By using this service, users are required to agree to the following terms: The s
         if i % 3 == 0:
             model_description_md += "|"
 
->>>>>>> main
         if name in model_info:
             minfo = model_info[name]
             model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
