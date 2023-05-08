@@ -340,6 +340,23 @@ class OpenBuddyAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("openbuddy")
+    
+    
+class PhoenixAdapter(BaseAdapter):
+    """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
+
+    def match(self, model_path: str):
+        return "phoenix" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("phoenix")
 
 
 class ChatGPTAdapter(BaseAdapter):
@@ -381,6 +398,7 @@ register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
 register_model_adapter(OpenBuddyAdapter)
+register_model_adapter(PhoenixAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 

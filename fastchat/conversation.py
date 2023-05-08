@@ -16,6 +16,7 @@ class SeparatorStyle(Enum):
     BAIZE = auto()
     DOLLY = auto()
     RWKV = auto()
+    PHOENIX = auto()
 
 
 @dataclasses.dataclass
@@ -105,6 +106,14 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.PHOENIX:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + "<s>" + message + "</s>"
+                else:
+                    ret += role + ": " + "<s>"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -329,6 +338,17 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     offset=0,
     sep_style=SeparatorStyle.ADD_COLON_SINGLE,
     sep="\n",
+))
+
+# Phoenix default template
+register_conv_template(Conversation(
+    name="phoenix",
+    system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+    roles=("Human", "Assistant"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.PHOENIX,
+    sep="</s>",
 ))
 
 # ChatGPT default template
