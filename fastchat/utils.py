@@ -36,8 +36,10 @@ def build_logger(logger_name, logger_filename):
             logging.basicConfig(level=logging.INFO, encoding="utf-8")
         else:
             if platform.system() == "Windows":
-                warnings.warn("If you are running on Windows, "
-                              "we recommend you use Python >= 3.9 for UTF-8 encoding.")
+                warnings.warn(
+                    "If you are running on Windows, "
+                    "we recommend you use Python >= 3.9 for UTF-8 encoding."
+                )
             logging.basicConfig(level=logging.INFO)
     logging.getLogger().handlers[0].setFormatter(formatter)
 
@@ -61,7 +63,7 @@ def build_logger(logger_name, logger_filename):
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True, encoding='utf-8'
+            filename, when="D", utc=True, encoding="utf-8"
         )
         handler.setFormatter(formatter)
 

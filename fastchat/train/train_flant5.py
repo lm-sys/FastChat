@@ -49,12 +49,14 @@ class ModelArguments:
 
 @dataclass
 class DataArguments:
-    data_path: str = field(default=None,
-                           metadata={"help": "Path to the training data."})
+    data_path: str = field(
+        default=None, metadata={"help": "Path to the training data."}
+    )
     lazy_preprocess: bool = False
     num_data: int = -1
-    preprocessed_path: str = field(default=None,
-                                       metadata={"help": "Path to the preprocessed training data."})
+    preprocessed_path: str = field(
+        default=None, metadata={"help": "Path to the preprocessed training data."}
+    )
 
 
 @dataclass
@@ -64,21 +66,16 @@ class TrainingArguments(transformers.TrainingArguments):
     model_max_length: int = field(
         default=2048,
         metadata={
-            "help":
-            "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
+            "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
         },
     )
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
-                                   output_dir: str):
+def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
     state_dict = trainer.model.state_dict()
     if trainer.args.should_save:
-        cpu_state_dict = {
-            key: value.cpu()
-            for key, value in state_dict.items()
-        }
+        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
         # potential bug for T5 model
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
@@ -105,16 +102,19 @@ def smart_tokenizer_and_embedding_resize(
         output_embeddings = model.get_output_embeddings().weight.data
 
         input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(
-            dim=0, keepdim=True)
+            dim=0, keepdim=True
+        )
         output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(
-            dim=0, keepdim=True)
+            dim=0, keepdim=True
+        )
 
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
 
-def _tokenize_fn(strings: Sequence[str],
-                 tokenizer: transformers.PreTrainedTokenizer) -> Dict:
+def _tokenize_fn(
+    strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer
+) -> Dict:
     """Tokenize a list of strings."""
     tokenized_list = [
         tokenizer(
@@ -123,11 +123,10 @@ def _tokenize_fn(strings: Sequence[str],
             padding="longest",
             max_length=tokenizer.model_max_length,
             truncation=True,
-        ) for text in strings
+        )
+        for text in strings
     ]
-    input_ids = labels = [
-        tokenized.input_ids[0] for tokenized in tokenized_list
-    ]
+    input_ids = labels = [tokenized.input_ids[0] for tokenized in tokenized_list]
     input_ids_lens = labels_lens = [
         tokenized.input_ids.ne(tokenizer.pad_token_id).sum().item()
         for tokenized in tokenized_list
@@ -140,7 +139,16 @@ def _tokenize_fn(strings: Sequence[str],
     )
 
 
-def _form_qa(q_list, a_list, tokenized_conversation, tokenized_lens, speakers, header_len, max_length, eos_id):
+def _form_qa(
+    q_list,
+    a_list,
+    tokenized_conversation,
+    tokenized_lens,
+    speakers,
+    header_len,
+    max_length,
+    eos_id,
+):
     cur_idx = header_len
     conv_len = len(tokenized_conversation)
 
@@ -151,14 +159,14 @@ def _form_qa(q_list, a_list, tokenized_conversation, tokenized_lens, speakers, h
             # truncate answer if it is too long
             content_a = None
             if tokenized_len > max_length:
-                content_a = tokenized_conversation[cur_idx:cur_idx + max_length]
+                content_a = tokenized_conversation[cur_idx : cur_idx + max_length]
             else:
-                content_a = tokenized_conversation[cur_idx:cur_idx + tokenized_len]
+                content_a = tokenized_conversation[cur_idx : cur_idx + tokenized_len]
             content_a.append(eos_id)
             a_list.append(content_a)
             content_q = None
             if cur_idx >= max_length:
-                content_q = tokenized_conversation[cur_idx-max_length: cur_idx]
+                content_q = tokenized_conversation[cur_idx - max_length : cur_idx]
             else:
                 content_q = tokenized_conversation[:cur_idx]
             content_q.append(eos_id)
@@ -167,12 +175,13 @@ def _form_qa(q_list, a_list, tokenized_conversation, tokenized_lens, speakers, h
             assert a_list[-1][-1] == eos_id, "Last Token is not EOS!"
         cur_idx += tokenized_len
 
+
 def _add_speaker_and_signal(header, source, get_conversation=True):
     """Add speaker and start/end signal on each round."""
     BEGIN_SIGNAL = "### "
     END_SIGNAL = "\n"
     conversation = header
-    
+
     unknown_role = "unknown"  # use default unknown role
     roles = {
         "human": default_conversation.roles[0],  # human role
@@ -182,33 +191,30 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
     for i in range(len(source)):
         sentence = source[i]
         sentence_from = sentence["from"].lower()
-  
+
         # TODO(Dacheng): verify this is a good way to split sentences
         if sentence_from == "human":
             # if this is not the last sentence
             if i != len(source) - 1:
-                next_sentence = source[i+1]
+                next_sentence = source[i + 1]
                 sentence["value"] = (
-                BEGIN_SIGNAL
-                + roles.get(sentence_from, unknown_role)
-                + ": "
-                + sentence["value"]
-                + END_SIGNAL
-                + BEGIN_SIGNAL
-                + roles.get(next_sentence["from"].lower(), unknown_role)
-                + ": "
-            )
+                    BEGIN_SIGNAL
+                    + roles.get(sentence_from, unknown_role)
+                    + ": "
+                    + sentence["value"]
+                    + END_SIGNAL
+                    + BEGIN_SIGNAL
+                    + roles.get(next_sentence["from"].lower(), unknown_role)
+                    + ": "
+                )
             else:
-            # if human is the last speaker, it does not contribute to an answer
+                # if human is the last speaker, it does not contribute to an answer
                 pass
         else:
-            sentence["value"] = (
-                sentence["value"]
-                + END_SIGNAL
-            )
+            sentence["value"] = sentence["value"] + END_SIGNAL
         if get_conversation:
             conversation += sentence["value"]
-       
+
     return conversation
 
 
@@ -237,23 +243,36 @@ def preprocess(
     # count for EOS length
     header_len = _tokenize_fn([header], tokenizer)["input_ids_lens"][0] - 1
     from tqdm import tqdm
+
     for tokenized_conversation, source in tqdm(zip(tokenized_conversations, sources)):
         tokenized_sentence = _tokenize_fn([s["value"] for s in source], tokenizer)
         tokenized_lens = tokenized_sentence["input_ids_lens"]
-        tokenized_lens = [l-1 for l in tokenized_lens]
+        tokenized_lens = [l - 1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
         ids = tokenized_sentence["input_ids"]
-        _form_qa(q_list, a_list, tokenized_conversation, tokenized_lens, speakers, header_len, tokenizer.model_max_length, tokenizer.eos_token_id)
+        _form_qa(
+            q_list,
+            a_list,
+            tokenized_conversation,
+            tokenized_lens,
+            speakers,
+            header_len,
+            tokenizer.model_max_length,
+            tokenizer.eos_token_id,
+        )
     return dict(input_ids=q_list, labels=a_list)
 
 
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str,
-                 tokenizer: transformers.PreTrainedTokenizer,
-                 preprocessed_path,
-                 num_data):
+    def __init__(
+        self,
+        data_path: str,
+        tokenizer: transformers.PreTrainedTokenizer,
+        preprocessed_path,
+        num_data,
+    ):
         super(SupervisedDataset, self).__init__()
 
         # save to file
@@ -269,22 +288,22 @@ class SupervisedDataset(Dataset):
 
             logging.warning("Formatting inputs...")
             sources = []
-          
+
             sources = [example["conversations"] for example in list_data_dict]
 
             data_dict = preprocess(sources, tokenizer)
             json_data_dict = json.dumps(data_dict)
 
-            # open file for writing, "w" 
-            f = open(self.preprocessed_path,"w")
+            # open file for writing, "w"
+            f = open(self.preprocessed_path, "w")
 
             # write json object to file
             f.write(json_data_dict)
-     
+
         if num_data != -1:
             data_dict["input_ids"] = data_dict["input_ids"][:num_data]
             data_dict["labels"] = data_dict["labels"][:num_data]
-       
+
         # Shuffle data to see more conversations, if only train on partial data
         temp = list(zip(data_dict["input_ids"], data_dict["labels"]))
         random.shuffle(temp)
@@ -295,7 +314,9 @@ class SupervisedDataset(Dataset):
         self.input_ids = copy.deepcopy(data_dict["input_ids"])
         self.labels = copy.deepcopy(data_dict["labels"])
         length_arr = defaultdict(int)
-        for idx, (input, label) in enumerate(zip(data_dict["input_ids"], data_dict["labels"])):
+        for idx, (input, label) in enumerate(
+            zip(data_dict["input_ids"], data_dict["labels"])
+        ):
             length_arr[str(len(label) // 100)] += 1
             if len(input) <= 5:
                 del_idx = self.input_ids.index(input)
@@ -305,7 +326,7 @@ class SupervisedDataset(Dataset):
                 del_idx = self.labels.index(label)
                 self.input_ids.pop(del_idx)
                 self.labels.pop(del_idx)
-        
+
         for input, label in zip(self.input_ids, self.labels):
             assert len(input) >= 5
             assert len(label) >= 5
@@ -324,15 +345,19 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        input_ids, labels = tuple([torch.as_tensor(instance[key], dtype=torch.int64) for instance in instances]
-                                  for key in ("input_ids", "labels"))
+        input_ids, labels = tuple(
+            [
+                torch.as_tensor(instance[key], dtype=torch.int64)
+                for instance in instances
+            ]
+            for key in ("input_ids", "labels")
+        )
         input_ids = torch.nn.utils.rnn.pad_sequence(
-            input_ids,
-            batch_first=True,
-            padding_value=self.tokenizer.pad_token_id)
-        labels = torch.nn.utils.rnn.pad_sequence(labels,
-                                                 batch_first=True,
-                                                 padding_value=IGNORE_INDEX)
+            input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        labels = torch.nn.utils.rnn.pad_sequence(
+            labels, batch_first=True, padding_value=IGNORE_INDEX
+        )
         ret = dict(
             input_ids=input_ids,
             labels=labels,
@@ -342,30 +367,34 @@ class DataCollatorForSupervisedDataset(object):
         return ret
 
 
-def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
-                                data_args) -> Dict:
+def make_supervised_data_module(
+    tokenizer: transformers.PreTrainedTokenizer, data_args
+) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     dataset_cls = SupervisedDataset
-    train_dataset = dataset_cls(tokenizer=tokenizer,
-                                data_path=data_args.data_path,
-                                preprocessed_path=data_args.preprocessed_path,
-                                num_data=data_args.num_data)
+    train_dataset = dataset_cls(
+        tokenizer=tokenizer,
+        data_path=data_args.data_path,
+        preprocessed_path=data_args.preprocessed_path,
+        num_data=data_args.num_data,
+    )
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-    return dict(train_dataset=train_dataset,
-                eval_dataset=None,
-                data_collator=data_collator)
+    return dict(
+        train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator
+    )
 
 
 def train():
     parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments))
+        (ModelArguments, DataArguments, TrainingArguments)
+    )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     model = transformers.AutoModelForSeq2SeqLM.from_pretrained(
-             model_args.model_name_or_path,
+        model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    # Dacheng: Note we can only use T5Tokenizer, otherwise it will prepend 
+    # Dacheng: Note we can only use T5Tokenizer, otherwise it will prepend
     # a space before special tokens.
     tokenizer = transformers.T5Tokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -382,20 +411,17 @@ def train():
         model=model,
     )
 
-    data_module = make_supervised_data_module(tokenizer=tokenizer,
-                                              data_args=data_args)
-    trainer = Trainer(model=model,
-                    tokenizer=tokenizer,
-                    args=training_args,
-                    **data_module)
+    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    trainer = Trainer(
+        model=model, tokenizer=tokenizer, args=training_args, **data_module
+    )
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
     trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer,
-                                   output_dir=training_args.output_dir)
+    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
 
 
 if __name__ == "__main__":
