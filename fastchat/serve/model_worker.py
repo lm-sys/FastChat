@@ -189,32 +189,6 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
-    
-    def generate_gate(self, params):
-        try:
-            ret = {
-                "text": "",
-                "error_code": 0
-            }
-            for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                args.stream_interval,
-            ):
-                ret["text"] = output["text"]
-            if "usage" in output:
-                ret["usage"] = output["usage"]
-            if "finish_reason" in output:
-                ret["finish_reason"] = output["finish_reason"]
-        except torch.cuda.OutOfMemoryError:
-            ret = {
-                "text": server_error_msg,
-                "error_code": 1,
-            }
-        return ret
 
     def generate_completion(self, params):
         try:
@@ -312,13 +286,6 @@ async def api_generate_stream(request: Request):
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
-@app.post("/worker_generate")
-async def api_generate(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    output = worker.generate_gate(params)
-    release_model_semaphore()
-    return JSONResponse(output)
 
 @app.post("/worker_generate_completion")
 async def api_generate_completion(request: Request):

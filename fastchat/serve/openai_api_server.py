@@ -54,12 +54,16 @@ class AppSettings(BaseSettings):
 
 app_settings = AppSettings()
 
-app = fastapi.FastAPI(debug=True)
+app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
+
+def create_error_response(code: int, message: str) -> JSONResponse:
+    return JSONResponse(ErrorResponse(message=message, code=code).dict(), status_code=500) 
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    return JSONResponse(ErrorResponse(message="Internal Serverless Error", code=50001).dict(), status_code=500) 
+    return create_error_response(50001, "Internal Serverless Error")
 
 
 @app.get("/v1/models")
@@ -70,8 +74,7 @@ async def show_available_models():
         ret = await client.post(controller_address + "/list_models")
     models = ret.json()["models"]
     models.sort()
-    return {"data": [{"id": m, "object": "model"} for m in models],
-            "object": "list"}
+    return {"data": [{"id": m, "object": "model"} for m in models], "object": "list"}
 
 
 @app.post("/v1/chat/completions")
@@ -79,17 +82,35 @@ async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
     # First check all params
     if request.max_tokens <= 0:
-        return JSONResponse(ErrorResponse(message=f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'", code=50099).dict(), status_code=500)
+        return create_error_response(
+            50099,
+            f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'"
+        )
     if request.n <= 0:
-        return JSONResponse(ErrorResponse(message=f"{request.n} is less than the minimum of 1 - 'n'", code=50099).dict(), status_code=500)
+        return create_error_response(
+            50099,
+            f"{request.n} is less than the minimum of 1 - 'n'"
+        )
     if request.temperature < 0:
-        return JSONResponse(ErrorResponse(message=f"{request.temperature} is less than the minimum of 0 - 'temperature'", code=50099).dict(), status_code=500)
+        return create_error_response(
+            50099,
+            f"{request.temperature} is less than the minimum of 0 - 'temperature'"
+        )
     if request.temperature > 2:
-        return JSONResponse(ErrorResponse(message=f"{request.temperature} is greater than the maximum of 2 - 'temperature'", code=50098).dict(), status_code=500)
+        return create_error_response(
+            50098,
+            f"{request.temperature} is greater than the maximum of 2 - 'temperature'"
+        )
     if request.top_p < 0:
-        return JSONResponse(ErrorResponse(message=f"{request.top_p} is less than the minimum of 0 - 'top_p'", code=50099).dict(), status_code=500)
+        return create_error_response(
+            50099,
+            f"{request.top_p} is less than the minimum of 0 - 'top_p'"
+        )
     if request.top_p > 1:
-        return JSONResponse(ErrorResponse(message=f"{request.top_p} is greater than the maximum of 1 - 'temperature'", code=50098).dict(), status_code=500) 
+        return create_error_response(
+            50098,
+            f"{request.top_p} is greater than the maximum of 1 - 'temperature'"
+        )
 
     # Generate params dict
     gen_params = get_gen_params(
