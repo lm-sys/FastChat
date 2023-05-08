@@ -7,8 +7,6 @@ import pandas as pd
 import requests
 from scipy.spatial.distance import cosine
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 
 def cosine_similarity(vec1, vec2):
     try:
@@ -19,16 +17,12 @@ def cosine_similarity(vec1, vec2):
 
 def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
     if "ada" in model:
-        try:
-            resp = openai.Embedding.create(
-                model=model,
-                input=word,
-            )
-            embedding = np.array(resp["data"][0]["embedding"])
-            return embedding
-        except:
-            print("Error: OpenAI API call failed")
-            return None
+        resp = openai.Embedding.create(
+            model=model,
+            input=word,
+        )
+        embedding = np.array(resp["data"][0]["embedding"])
+        return embedding
 
     url = "http://localhost:8000/v1/create_embeddings"
     headers = {"Content-Type": "application/json"}
@@ -93,7 +87,7 @@ def print_model_search(input_path, model):
     print(results)
 
 
-input_datapath = "../data/fine_food_reviews_1k.csv"
+input_datapath = "amazon_fine_food_review.csv"
 if not os.path.exists(input_datapath):
     raise Exception(
         f"Please download data from: https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews"

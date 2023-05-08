@@ -1,3 +1,6 @@
+# sudo apt install pkg-config libicu-dev
+# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+
 import argparse
 import datetime
 import pickle
@@ -27,6 +30,7 @@ table {
 }
 """
 
+
 def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
@@ -34,7 +38,14 @@ def update_elo_components(max_num_files, elo_results_file):
     if elo_results_file is None:
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
-        leader_component_values[0] = elo_results["leaderboard_md"]
+        leaderboard_md = f"""
+# Leaderboard
+[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+
+We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
+Last update: {elo_results["last_update_datetime"]}
+"""
+        leader_component_values[0] = leaderboard_md + elo_results["leaderboard_table"]
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
@@ -51,7 +62,9 @@ def update_elo_components(max_num_files, elo_results_file):
     basic_stats_md += basic_stats["model_hist_md"] + "\n"
     basic_stats_md += "### Model Call (Last 24 Hours)\n"
     basic_stats_md += basic_stats["num_chats_last_24_hours"] + "\n"
-    date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y-%m-%d %H:%M:%S %Z")
+    date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime(
+        "%Y-%m-%d %H:%M:%S %Z"
+    )
     basic_stats_md += f"\n\nLast update: {date}"
     basic_component_values[0] = basic_stats_md
 
@@ -89,24 +102,34 @@ def build_leaderboard_tab(elo_results_file):
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
     md_1 = gr.Markdown(md)
-    gr.Markdown('''## More Statistics\n
+    gr.Markdown(
+        """## More Statistics\n
 Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
-''')
-    
+"""
+    )
+
     with gr.Row():
         with gr.Column():
-            gr.Markdown("#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles")
+            gr.Markdown(
+                "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles"
+            )
             plot_1 = gr.Plot(p1, show_label=False)
         with gr.Column():
-            gr.Markdown("#### Figure 2: Battle Count for Each Combination of Models (without Ties)")
+            gr.Markdown(
+                "#### Figure 2: Battle Count for Each Combination of Models (without Ties)"
+            )
             plot_2 = gr.Plot(p2, show_label=False)
     with gr.Row():
         with gr.Column():
-            gr.Markdown("#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)")
+            gr.Markdown(
+                "#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
+            )
             plot_3 = gr.Plot(p3, show_label=False)
         with gr.Column():
-            gr.Markdown("#### Figure 4: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)")
+            gr.Markdown(
+                "#### Figure 4: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
+            )
             plot_4 = gr.Plot(p4, show_label=False)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
@@ -140,14 +163,16 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument("--update-interval", type=int, default=600)
+    parser.add_argument("--update-interval", type=int, default=300)
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    update_thread = threading.Thread(target=update_worker,
-        args=(args.max_num_files, args.update_interval, args.elo_results_file))
+    update_thread = threading.Thread(
+        target=update_worker,
+        args=(args.max_num_files, args.update_interval, args.elo_results_file),
+    )
     update_thread.start()
 
     demo = build_demo(args.elo_results_file)

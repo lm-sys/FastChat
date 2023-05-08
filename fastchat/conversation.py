@@ -4,11 +4,11 @@ Conversation prompt templates.
 
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict
 
 
 class SeparatorStyle(Enum):
-    """Different separator style."""
+    """Separator styles."""
 
     ADD_COLON_SINGLE = auto()
     ADD_COLON_TWO = auto()
@@ -16,12 +16,15 @@ class SeparatorStyle(Enum):
     BAIZE = auto()
     DOLLY = auto()
     RWKV = auto()
+    PHOENIX = auto()
 
 
 @dataclasses.dataclass
 class Conversation:
     """A class that keeps all conversation history."""
 
+    # The name of this template
+    name: str
     # System prompts
     system: str
     # Two roles
@@ -30,7 +33,7 @@ class Conversation:
     messages: List[List[str]]
     # Offset of few shot examples
     offset: int
-    # Separator
+    # Separators
     sep_style: SeparatorStyle
     sep: str
     sep2: str = None
@@ -45,7 +48,8 @@ class Conversation:
     skip_next: bool = False
     model_name: str = None
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
+        """Get the prompt for generation."""
         if self.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
             ret = self.system + self.sep
             for role, message in self.messages:
@@ -103,13 +107,23 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.PHOENIX:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + "<s>" + message + "</s>"
+                else:
+                    ret += role + ": " + "<s>"
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
-    def append_message(self, role, message):
+    def append_message(self, role: str, message: str):
+        """Append a new message."""
         self.messages.append([role, message])
 
     def to_gradio_chatbot(self):
+        """Convert the history to gradio chatbot format"""
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -119,9 +133,10 @@ class Conversation:
         return ret
 
     def to_openai_api_messages(self):
+        """Convert the conversation to OpenAI chat completion format."""
         ret = [{"role": "system", "content": self.system}]
 
-        for i, (_, msg) in enumerate(self.messages[self.offset:]):
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
             else:
@@ -131,6 +146,7 @@ class Conversation:
 
     def copy(self):
         return Conversation(
+            name=self.name,
             system=self.system,
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
@@ -146,6 +162,7 @@ class Conversation:
 
     def dict(self):
         return {
+            "name": self.name,
             "system": self.system,
             "roles": self.roles,
             "messages": self.messages,
@@ -155,132 +172,174 @@ class Conversation:
         }
 
 
+# A global registry for all conversation templates
+conv_templates: Dict[str, Conversation] = {}
+
+
+def register_conv_template(template: Conversation, override: bool = False):
+    """Register a new conversation template."""
+    if not override:
+        assert template.name not in conv_templates, f"{name} has been registered."
+    conv_templates[template.name] = template
+
+
+def get_conv_template(name: str) -> Conversation:
+    """Get a conversation template."""
+    return conv_templates[name].copy()
+
+
 # A template with one conversation example
-conv_one_shot = Conversation(
-    system="A chat between a curious human and an artificial intelligence assistant. "
-    "The assistant gives helpful, detailed, and polite answers to the human's questions.",
-    roles=("Human", "Assistant"),
-    messages=(
-        (
-            "Human",
-            "What are the key differences between renewable and non-renewable energy sources?",
+register_conv_template(
+    Conversation(
+        name="one_shot",
+        system="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant"),
+        messages=(
+            (
+                "Human",
+                "What are the key differences between renewable and non-renewable energy sources?",
+            ),
+            (
+                "Assistant",
+                "Renewable energy sources are those that can be replenished naturally in a relatively "
+                "short amount of time, such as solar, wind, hydro, geothermal, and biomass. "
+                "Non-renewable energy sources, on the other hand, are finite and will eventually be "
+                "depleted, such as coal, oil, and natural gas. Here are some key differences between "
+                "renewable and non-renewable energy sources:\n"
+                "1. Availability: Renewable energy sources are virtually inexhaustible, while non-renewable "
+                "energy sources are finite and will eventually run out.\n"
+                "2. Environmental impact: Renewable energy sources have a much lower environmental impact "
+                "than non-renewable sources, which can lead to air and water pollution, greenhouse gas emissions, "
+                "and other negative effects.\n"
+                "3. Cost: Renewable energy sources can be more expensive to initially set up, but they typically "
+                "have lower operational costs than non-renewable sources.\n"
+                "4. Reliability: Renewable energy sources are often more reliable and can be used in more remote "
+                "locations than non-renewable sources.\n"
+                "5. Flexibility: Renewable energy sources are often more flexible and can be adapted to different "
+                "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
+                "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
+                "non-renewable sources are not, and their depletion can lead to economic and social instability.",
+            ),
         ),
-        (
-            "Assistant",
-            "Renewable energy sources are those that can be replenished naturally in a relatively "
-            "short amount of time, such as solar, wind, hydro, geothermal, and biomass. "
-            "Non-renewable energy sources, on the other hand, are finite and will eventually be "
-            "depleted, such as coal, oil, and natural gas. Here are some key differences between "
-            "renewable and non-renewable energy sources:\n"
-            "1. Availability: Renewable energy sources are virtually inexhaustible, while non-renewable "
-            "energy sources are finite and will eventually run out.\n"
-            "2. Environmental impact: Renewable energy sources have a much lower environmental impact "
-            "than non-renewable sources, which can lead to air and water pollution, greenhouse gas emissions, "
-            "and other negative effects.\n"
-            "3. Cost: Renewable energy sources can be more expensive to initially set up, but they typically "
-            "have lower operational costs than non-renewable sources.\n"
-            "4. Reliability: Renewable energy sources are often more reliable and can be used in more remote "
-            "locations than non-renewable sources.\n"
-            "5. Flexibility: Renewable energy sources are often more flexible and can be adapted to different "
-            "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
-            "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
-            "non-renewable sources are not, and their depletion can lead to economic and social instability.",
-        ),
-    ),
-    offset=2,
-    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
-    sep="\n### ",
-    stop_str="###",
+        offset=2,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
+    )
 )
 
-
 # Vicuna v1.1 template
-conv_vicuna_v1_1 = Conversation(
-    system="A chat between a curious user and an artificial intelligence assistant. "
-    "The assistant gives helpful, detailed, and polite answers to the user's questions.",
-    roles=("USER", "ASSISTANT"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.ADD_COLON_TWO,
-    sep=" ",
-    sep2="</s>",
+register_conv_template(
+    Conversation(
+        name="vicuna_v1.1",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep=" ",
+        sep2="</s>",
+    )
 )
 
 # Koala default template
-conv_koala_v1 = Conversation(
-    system="BEGINNING OF CONVERSATION:",
-    roles=("USER", "GPT"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.ADD_COLON_TWO,
-    sep=" ",
-    sep2="</s>",
+register_conv_template(
+    Conversation(
+        name="koala_v1",
+        system="BEGINNING OF CONVERSATION:",
+        roles=("USER", "GPT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep=" ",
+        sep2="</s>",
+    )
 )
 
 # Dolly V2 default template
-conv_dolly = Conversation(
-    system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
-    roles=("### Instruction", "### Response"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.DOLLY,
-    sep="\n\n",
-    sep2="### End",
+register_conv_template(
+    Conversation(
+        name="dolly_v2",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.DOLLY,
+        sep="\n\n",
+        sep2="### End",
+    )
 )
 
 # OpenAssistant Pythia default template
-conv_oasst = Conversation(
-    system="",
-    roles=("<|prompter|>", "<|assistant|>"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.NO_COLON_SINGLE,
-    sep="<|endoftext|>",
+register_conv_template(
+    Conversation(
+        name="oasst_pythia",
+        system="",
+        roles=("<|prompter|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="<|endoftext|>",
+    )
 )
 
 # StableLM Alpha default template
-conv_stablelm = Conversation(
-    system="""<|SYSTEM|># StableLM Tuned (Alpha version)
+register_conv_template(
+    Conversation(
+        name="stablelm",
+        system="""<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
 - StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
 - StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
 - StableLM will refuse to participate in anything that could harm a human.
 """,
-    roles=("<|USER|>", "<|ASSISTANT|>"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.NO_COLON_SINGLE,
-    sep="",
-    stop_token_ids=[50278, 50279, 50277, 1, 0],
+        roles=("<|USER|>", "<|ASSISTANT|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+        stop_token_ids=[50278, 50279, 50277, 1, 0],
+    )
 )
 
 # Baize default template
-conv_baize = Conversation(
-    system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
-    roles=("[|Human|]", "[|AI|]"),
-    messages=(
-        ("[|Human|]", "Hello!"),
-        ("[|AI|]", "Hi!"),
-    ),
-    offset=2,
-    sep_style=SeparatorStyle.BAIZE,
-    sep="[|Human|]",
-    stop_str="[|Human|]",
+register_conv_template(
+    Conversation(
+        name="baize",
+        system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
+        roles=("[|Human|]", "[|AI|]"),
+        messages=(
+            ("[|Human|]", "Hello!"),
+            ("[|AI|]", "Hi!"),
+        ),
+        offset=2,
+        sep_style=SeparatorStyle.BAIZE,
+        sep="[|Human|]",
+        stop_str="[|Human|]",
+    )
 )
 
 # RWKV-4-Raven default template
-conv_rwkv = Conversation(
-    system="",
-    roles=("Bob", "Alice"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.RWKV,
-    sep="",
-    stop_str="\n\n",
+register_conv_template(
+    Conversation(
+        name="rwkv",
+        system="",
+        roles=("Bob", "Alice"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.RWKV,
+        sep="",
+        stop_str="\n\n",
+    )
 )
 
-conv_buddy = Conversation(
-    system="""Consider a conversation between User (a human) and Assistant (named Buddy).
+# Buddy default template
+register_conv_template(
+    Conversation(
+        name="openbuddy",
+        system="""Consider a conversation between User (a human) and Assistant (named Buddy).
 Buddy is an INTP-T, a friendly, intelligent and multilingual AI assistant, by OpenBuddy team. GitHub: https://github.com/OpenBuddy/OpenBuddy
 Buddy cannot access the Internet.
 Buddy can fluently speak the user's language (e.g. English, Chinese).
@@ -291,74 +350,56 @@ Buddy strictly refuses to discuss political, NSFW, or other unsafe topics.
 
 User: Hi.
 Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
-    roles=("User", "Assistant"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
-    sep="\n",
+        roles=("User", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+    )
 )
 
-conv_chatgpt = Conversation(
-    system="You are a helpful assistant.",
-    roles=("user", "assistant"),
-    messages=(),
-    offset=0,
-    sep_style=None,
-    sep=None,
+# Phoenix default template
+register_conv_template(
+    Conversation(
+        name="phoenix",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.PHOENIX,
+        sep="</s>",
+    )
 )
 
-conv_claude = Conversation(
-    system="",
-    roles=("Human", "Assistant"),
-    messages=(),
-    offset=0,
-    sep_style=SeparatorStyle.ADD_COLON_SINGLE,
-    sep="\n\n",
+# ChatGPT default template
+register_conv_template(
+    Conversation(
+        name="chatgpt",
+        system="You are a helpful assistant.",
+        roles=("user", "assistant"),
+        messages=(),
+        offset=0,
+        sep_style=None,
+        sep=None,
+    )
 )
 
-
-conv_templates = {
-    "baize": conv_baize,
-    "conv_one_shot": conv_one_shot,
-    "dolly": conv_dolly,
-    "koala_v1": conv_koala_v1,
-    "oasst": conv_oasst,
-    "stablelm": conv_stablelm,
-    "vicuna_v1.1": conv_vicuna_v1_1,
-    "rwkv": conv_rwkv,
-    "buddy": conv_buddy,
-}
-
-
-def get_default_conv_template(model_name):
-    model_name = model_name.lower()
-    if "vicuna" in model_name or "output" in model_name:
-        ret = conv_vicuna_v1_1
-    elif "koala" in model_name:
-        ret = conv_koala_v1
-    elif "dolly-v2" in model_name:
-        ret = conv_dolly
-    elif "oasst" in model_name and "pythia" in model_name:
-        ret = conv_oasst
-    elif "baize" in model_name:
-        ret = conv_baize
-    elif "stablelm" in model_name:
-        ret = conv_stablelm
-    elif "rwkv-4" in model_name:
-        ret = conv_rwkv
-    elif "buddy" in model_name:
-        ret = conv_buddy
-    elif model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
-        ret = conv_chatgpt
-    elif model_name == "claude-v1":
-        ret = conv_claude
-    else:
-        ret = conv_one_shot
-    return ret.copy()
+# Claude default template
+register_conv_template(
+    Conversation(
+        name="claude",
+        system="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n\n",
+    )
+)
 
 
 if __name__ == "__main__":
-    conv = conv_templates["vicuna_v1.1"].copy()
+    conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
