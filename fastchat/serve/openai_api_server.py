@@ -67,8 +67,22 @@ def create_error_response(code: int, message: str) -> JSONResponse:
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    return create_error_response(50001, "Internal Serverless Error")
+    return create_error_response(50001, str(exc))
 
+async def check_model(request) -> Optional[JSONResponse]:
+    controller_address = app_settings.controller_address
+    ret = None
+    async with httpx.AsyncClient() as client:
+        try:
+            _worker_addr = await _get_worker_address(request.model, client)
+        except:
+            models_ret = await client.post(controller_address + "/list_models")
+            models = models_ret.json()["models"]
+            ret = create_error_response(
+                40302,
+                f"Only {'&&'.join(models)} allowed now, your model {request.model}"
+            )
+    return ret
 
 def check_requests(request) -> Optional[JSONResponse]:
     # Check all params
@@ -102,6 +116,13 @@ def check_requests(request) -> Optional[JSONResponse]:
             50098,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'"
         )
+    if request.stop is not None and \
+        (not isinstance(request.stop, str) and not isinstance(request.stop, list)):
+        return create_error_response(
+            50098,
+            f"{request.stop} is not valid under any of the given schemas - 'stop'"
+        )
+        
     return None
 
 
@@ -205,6 +226,9 @@ async def show_available_models():
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
+    error_check_ret = await check_model(request)
+    if error_check_ret is not None:
+        return error_check_ret
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
@@ -219,7 +243,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stream=request.stream,
         stop=request.stop,
     )
-
     if request.stream:
         generator = chat_completion_stream_generator(request.model, gen_params, request.n)
         return StreamingResponse(generator, media_type="text/event-stream")
@@ -244,6 +267,8 @@ async def create_chat_completion(request: ChatCompletionRequest):
                 50090,
                 str(e)
             )
+        if content["error_code"] != 0:
+            return create_error_response(content["error_code"], content["text"])
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
@@ -288,6 +313,10 @@ async def chat_completion_stream_generator(
 
         previous_text = ""
         async for content in chat_completion_stream(model_name, gen_params):
+            if content["error_code"] != 0:
+                yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
             decoded_unicode = content["text"].replace('\ufffd', '')
             delta_text = decoded_unicode[len(previous_text):]
             previous_text = decoded_unicode
@@ -362,6 +391,9 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]) -> Option
 
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
+    error_check_ret = await check_model(request)
+    if error_check_ret is not None:
+        return error_check_ret
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
@@ -400,6 +432,8 @@ async def create_completion(request: CompletionRequest):
                     50090,
                     str(e)
                 )
+            if content["error_code"] != 0:
+                return create_error_response(content["error_code"], content["text"])
             choices.append(
                 CompletionResponseChoice(
                     index=i,
@@ -424,6 +458,10 @@ async def generate_completion_stream_generator(payload: Dict[str, Any], n: int):
     for i in range(n):
         previous_text = ""
         async for content in generate_completion_stream(payload):
+            if content["error_code"] != 0:
+                yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
             decoded_unicode = content["text"].replace('\ufffd', '')
             delta_text = decoded_unicode[len(previous_text):]
             previous_text = decoded_unicode
@@ -491,6 +529,9 @@ async def generate_completion(payload: Dict[str, Any]):
 @app.post("/v1/embeddings")
 async def create_embeddings(request: EmbeddingsRequest):
     """Creates embeddings for the text"""
+    error_check_ret = await check_model(request)
+    if error_check_ret is not None:
+        return error_check_ret
     payload = {
         "model": request.model,
         "input": request.input,

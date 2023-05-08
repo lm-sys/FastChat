@@ -70,6 +70,13 @@ def generate_stream(
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
     output_ids = list(input_ids)
+    
+    if len(input_ids) + max_new_tokens > context_len:
+        raise ValueError(f"This model's maximum context length is {context_len} tokens. "
+                         f"However, you requested {max_new_tokens + len(input_ids)} tokens "
+                         f"({len(input_ids)} in the messages, "
+                         f"{max_new_tokens} in the completion). "
+                         f"Please reduce the length of the messages or completion.")
 
     if model.config.is_encoder_decoder:
         max_src_len = context_len

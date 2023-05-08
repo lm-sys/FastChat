@@ -190,7 +190,12 @@ class ModelWorker:
                 "text": server_error_msg,
                 "error_code": 1,
             }
-            yield json.dumps(ret).encode() + b"\0"
+        except ValueError as e:
+            ret = {
+                "text": str(e),
+                "error_code": 2,
+            }
+        yield json.dumps(ret).encode() + b"\0"
     
     def generate_gate(self, params):
         try:
@@ -217,6 +222,11 @@ class ModelWorker:
             ret = {
                 "text": server_error_msg,
                 "error_code": 1,
+            }
+        except ValueError as e:
+            ret = {
+                "text": str(e),
+                "error_code": 2,
             }
         return ret
     
