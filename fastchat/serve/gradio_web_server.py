@@ -170,7 +170,7 @@ def post_process_code(code):
     return code
 
 
-def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
+def openai_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
     import openai
 
     # Make requests
@@ -178,6 +178,7 @@ def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
         "model": model_name,
         "prompt": messages,
         "temperature": temperature,
+        "top_p": top_p,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
@@ -194,7 +195,7 @@ def openai_api_stream_iter(model_name, messages, temperature, max_new_tokens):
         yield data
 
 
-def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
+def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
     import anthropic
 
     c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
@@ -204,6 +205,7 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "top_p": top_p,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
@@ -212,6 +214,7 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
         stop_sequences=[anthropic.HUMAN_PROMPT],
         max_tokens_to_sample=max_new_tokens,
         temperature=temperature,
+        top_p=top_p,
         model=model_name,
         stream=True,
     )
@@ -224,12 +227,13 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens):
 
 
 def model_worker_stream_iter(conv, model_name, worker_addr,
-        prompt, temperature, max_new_tokens):
+        prompt, temperature, top_p, max_new_tokens):
     # Make requests
     gen_params = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "top_p": top_p,
         "max_new_tokens": max_new_tokens,
         "stop": conv.stop_str,
         "stop_token_ids": conv.stop_token_ids,
@@ -251,11 +255,13 @@ def model_worker_stream_iter(conv, model_name, worker_addr,
             yield data
 
 
-def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Request):
+def http_bot(state, model_selector, temperature, top_p,
+             max_new_tokens, request: gr.Request):
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
     model_name = model_selector
     temperature = float(temperature)
+    top_p = float(top_p)
     max_new_tokens = int(max_new_tokens)
 
     if state.skip_next:
@@ -274,10 +280,12 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
+        stream_iter = openai_api_stream_iter(model_name, prompt,
+            temperature, top_p, max_new_tokens)
     elif model_name == "claude-v1":
         prompt = state.get_prompt()
-        stream_iter = anthropic_api_stream_iter(model_name, prompt, temperature, max_new_tokens)
+        stream_iter = anthropic_api_stream_iter(model_name, prompt,
+            temperature, top_p, max_new_tokens)
     else:
         # Query worker address
         ret = requests.post(
@@ -307,7 +315,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
         else:
             prompt = conv.get_prompt()
         stream_iter = model_worker_stream_iter(conv, model_name, worker_addr,
-            prompt, temperature, max_new_tokens)
+            prompt, temperature, top_p, max_new_tokens)
 
     state.messages[-1][-1] = "▌"
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -366,6 +374,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
             "model": model_name,
             "gen_params": {
                 "temperature": temperature,
+                "top_p": top_p,
                 "max_new_tokens": max_new_tokens,
             },
             "start": round(start_tstamp, 4),
@@ -462,6 +471,14 @@ By using this service, users are required to agree to the following terms: The s
             interactive=True,
             label="Temperature",
         )
+        top_p = gr.Slider(
+            minimum=0.0,
+            maximum=1.0,
+            value=1.0,
+            step=0.1,
+            interactive=True,
+            label="Top P",
+        )
         max_output_tokens = gr.Slider(
             minimum=0,
             maximum=1024,
@@ -492,7 +509,7 @@ By using this service, users are required to agree to the following terms: The s
     )
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, model_selector, temperature, max_output_tokens],
+        [state, model_selector, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -503,14 +520,14 @@ By using this service, users are required to agree to the following terms: The s
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, model_selector, temperature, max_output_tokens],
+        [state, model_selector, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     send_btn.click(
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, model_selector, temperature, max_output_tokens],
+        [state, model_selector, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
