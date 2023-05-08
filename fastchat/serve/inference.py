@@ -18,32 +18,32 @@ from transformers import (
     T5Tokenizer,
     AutoConfig,
 )
-try:
-    from transformers.generation_logits_process import (
-        LogitsProcessorList,
-        TemperatureLogitsWarper,
-        TopKLogitsWarper,
-        TopPLogitsWarper,
-    )
-except ImportError:
-    from transformers.generation import LogitsProcessorList, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper
-
+from transformers.generation.logits_process import (
+    LogitsProcessorList,
+    RepetitionPenaltyLogitsProcessor,
+    TemperatureLogitsWarper,
+    TopKLogitsWarper,
+    TopPLogitsWarper,
+)
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
 
 
-def prepare_logits_processor(temperature: Optional[float] = None,
-                             top_p: Optional[float] = None,
-                             top_k: Optional[int] = None) -> LogitsProcessorList:
+def prepare_logits_processor(temperature: float,
+                             repetition_penalty: float,
+                             top_p: float,
+                             top_k: int) -> LogitsProcessorList:
     processor_list = LogitsProcessorList()
     # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
-    if temperature is not None and temperature >= 1e-4 and temperature != 1.0:
+    if temperature >= 1e-4 and temperature != 1.0:
         processor_list.append(TemperatureLogitsWarper(temperature))
-    if top_p is not None and top_p < 1.0:
+    if repetition_penalty > 1.0:
+        processor_list.append(RepetitionPenaltyLogitsProcessor(repetition_penalty))
+    if top_p < 1.0:
         processor_list.append(TopPLogitsWarper(top_p))
-    if top_k is not None and top_k > 0:
+    if top_k > 0:
         processor_list.append(TopKLogitsWarper(top_k))
     return processor_list
 
@@ -55,6 +55,7 @@ def generate_stream(
     prompt = params["prompt"]
     len_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
+    repetition_penalty = float(params.get("repetition_penalty", 1.0))
     top_p = float(params.get("top_p", 1.0))
     top_k = int(params.get("top_k", -1))   # -1 means disable
     max_new_tokens = int(params.get("max_new_tokens", 256))
@@ -63,7 +64,8 @@ def generate_stream(
     stop_token_ids = params.get("stop_token_ids", None) or []
     stop_token_ids.append(tokenizer.eos_token_id)
 
-    logits_processor = prepare_logits_processor(temperature, top_p, top_k)
+    logits_processor = prepare_logits_processor(temperature,
+        repetition_penalty, top_p, top_k)
 
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
@@ -110,15 +112,24 @@ def generate_stream(
                 logits = out.logits
             past_key_values = out.past_key_values
 
-        last_token_logits = logits[:, -1, :]
+        if logits_processor:
+            if repetition_penalty > 1.0:
+                tmp_output_ids = torch.as_tensor([output_ids], device=logits.device)
+            else:
+                tmp_output_ids = None
+            last_token_logits = logits_processor(tmp_output_ids, logits[:,-1,:])[0]
+        else:
+            last_token_logits = logits[0,-1,:]
 
         if device == "mps":
             # Switch to CPU by avoiding some bugs in mps backend.
             last_token_logits = last_token_logits.float().to("cpu")
 
-        last_token_logits = logits_processor(input_ids, last_token_logits)
-        probs = torch.softmax(last_token_logits, dim=-1, dtype=torch.float)
-        token = int(torch.multinomial(probs, num_samples=1))
+        if temperature < 1e-4:  # greedy
+            token = int(torch.argmax(last_token_logits))
+        else:
+            probs = torch.softmax(last_token_logits, dim=-1)
+            token = int(torch.multinomial(probs, num_samples=1))
 
         output_ids.append(token)
 
