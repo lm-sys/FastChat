@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 import warnings
+from functools import cache
 
 import torch
 from transformers import (
@@ -44,7 +45,17 @@ model_adapters: List[BaseAdapter] = []
 
 
 def register_adapter(cls):
+    """Register a model adapter."""
     model_adapters.append(cls())
+
+
+@cache
+def get_model_adapter(model_path: str) -> BaseAdapter:
+    """Get a model adapter for a model_path."""
+    for adapter in model_adapters:
+        if adapter.match(model_path):
+            return adapter
+    raise ValueError(f"No valid model adapter for {model_path}")
 
 
 def raise_warning_for_incompatible_cpu_offloading_configuration(device: str, load_8bit: bool, cpu_offloading: bool):
@@ -118,9 +129,8 @@ def load_model(
                 device=device, torch_dtype=kwargs["torch_dtype"])
 
     # Load model
-    for adapter in model_adapters:
-        if adapter.match(model_path):
-            model, tokenizer = adapter.load_model(model_path, kwargs)
+    adapter = get_model_adapter(model_path)
+    model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
@@ -132,9 +142,8 @@ def load_model(
 
 
 def get_conversation_template(model_path: str) -> Conversation:
-    for adapter in model_adapters:
-        if adapter.match(model_path):
-            return adapter.get_default_conv_template(model_path)
+    adapter = get_model_adapter(model_path)
+    return adapter.get_default_conv_template(model_path)
 
 
 def add_model_args(parser):
