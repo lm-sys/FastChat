@@ -181,11 +181,12 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
 
         return output
 
+
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n: int):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": model_name}
+            controller_address + "/get_worker_address", json={"model": model_name}
         )
         worker_addr = ret.json()["address"]
         # No available worker
@@ -231,7 +232,8 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n:
                     "choices": [{"delta": {}, "finish_reason": "stop", "index": idx}],
                     "object": "chat.completion.chunk",
                 })
-            
+
+
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
     payload = {

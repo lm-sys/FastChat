@@ -98,7 +98,6 @@ The script will train classifiers based on `vicuna-7b`, `text-similarity-ada-001
 ## Todos
 Some features to be implemented:
 
-- [ ] Streaming
 - [ ] Support of some parameters like `top_p`, `presence_penalty`
 - [ ] Proper error handling (e.g. model not found)
 - [ ] The return value in the client SDK could be used like a dict
