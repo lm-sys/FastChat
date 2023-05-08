@@ -22,7 +22,7 @@ python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-pat
 Finally, launch the RESTful API server
 
 ```bash
-python3 -m fastchat.serve.api_server --host localhost --port 8000
+python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 ```
 
 Test the API server
@@ -65,9 +65,9 @@ Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e
 
 ```python
 import os
-from fastchat import client
+from fastchat.client import openai_api_client as client
 
-client.set_baseurl(os.getenv("FASTCHAT_BASEURL"))
+client.set_baseurl(os.getenv("FASTCHAT_BASEURL", "http://localhost:8000"))
 
 completion = client.ChatCompletion.create(
   model="vicuna-7b-v1.1",
@@ -76,7 +76,7 @@ completion = client.ChatCompletion.create(
   ]
 )
 
-print(completion.choices[0].message)
+print(completion.choices[0].message.content)
 ```
 
 ## Machine Learning with Embeddings

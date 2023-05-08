@@ -14,8 +14,8 @@ from fastchat.protocol.openai_api_protocol import (
 
 _BASE_URL = "http://localhost:8000"
 
-if os.environ.get("FASTCHAT_BASE_URL"):
-    _BASE_URL = os.environ.get("FASTCHAT_BASE_URL")
+if os.environ.get("FASTCHAT_API_BASE_URL"):
+    _BASE_URL = os.environ.get("FASTCHAT_API_BASE_URL")
 
 
 def set_baseurl(base_url: str):
@@ -86,7 +86,14 @@ class ChatCompletion:
         See `acreate` for more details.
         """
         if kwargs.get("stream"):
-            loop = asyncio.get_event_loop()
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError as e:
+                if str(e).startswith('There is no current event loop in thread'):
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                else:
+                    raise
             async_gen = cls.acreate(*args, **kwargs)
             async_gen_after_start = loop.run_until_complete(async_gen)
             sync_gen = iter_over_async(async_gen_after_start, loop)
