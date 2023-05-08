@@ -63,7 +63,7 @@ Please update your local packages accordingly. If you follow the above commands 
 #### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/\*` with the real paths.
+Replace `/path/to/*` with the real paths.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base-model-path /path/to/llama-7b \
@@ -74,7 +74,7 @@ python3 -m fastchat.model.apply_delta \
 #### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/\*` with the real paths.
+Replace `/path/to/*` with the real paths.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base-model-path /path/to/llama-13b \
