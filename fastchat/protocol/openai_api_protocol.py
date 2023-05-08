@@ -79,12 +79,20 @@ class CompletionRequest(BaseModel):
     prompt: str
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.7
-    n: int = 1
-    max_tokens: int
-    stop: Optional[str] = None
+    n: Optional[int] = 1
+    max_tokens: Optional[int] = None
+    stop: Optional[Union[str, List[str]]] = None
     stream: bool = False
+    top_p: Optional[float] = 1.0
     logprobs: Optional[int] = None
-    echo: bool = False
+    echo: Optional[bool] = False
+
+
+class CompletionResponseChoice(BaseModel):
+    index: int
+    text: str
+    logprobs: Optional[int] = None
+    finish_reason: Optional[Literal["stop", "length"]]
 
 
 class CompletionResponse(BaseModel):
@@ -92,5 +100,20 @@ class CompletionResponse(BaseModel):
     object: str = "text_completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
-    choices: List[Dict[str, Any]]
+    choices: List[CompletionResponseChoice]
     usage: Dict[str, int]
+
+
+class CompletionResponseStreamChoice(BaseModel):
+    index: int
+    text: str
+    logprobs: Optional[float] = None
+    finish_reason: Optional[Literal["stop", "length"]] = None
+
+
+class CompletionStreamResponse(BaseModel):
+    id: str = Field(default_factory=lambda: f"cmpl-{shortuuid.random()}")
+    object: str = "text_completion"
+    created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
+    choices: List[CompletionResponseStreamChoice]

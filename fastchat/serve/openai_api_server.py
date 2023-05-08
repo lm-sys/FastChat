@@ -38,7 +38,10 @@ from fastchat.protocol.openai_api_protocol import (
     ChatCompletionResponseChoice,
     CompletionRequest,
     CompletionResponse,
+    CompletionResponseChoice,
     DeltaMessage,
+    CompletionResponseStreamChoice,
+    CompletionStreamResponse,
     EmbeddingsRequest,
     EmbeddingsResponse,
     ErrorResponse,
@@ -81,32 +84,32 @@ async def show_available_models():
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
     # First check all params
-    if request.max_tokens <= 0:
+    if request.max_tokens is not None and request.max_tokens <= 0:
         return create_error_response(
             50099,
             f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'"
         )
-    if request.n <= 0:
+    if request.n is not None and request.n <= 0:
         return create_error_response(
             50099,
             f"{request.n} is less than the minimum of 1 - 'n'"
         )
-    if request.temperature < 0:
+    if request.temperature is not None and request.temperature < 0:
         return create_error_response(
             50099,
             f"{request.temperature} is less than the minimum of 0 - 'temperature'"
         )
-    if request.temperature > 2:
+    if request.temperature is not None and request.temperature > 2:
         return create_error_response(
             50098,
             f"{request.temperature} is greater than the maximum of 2 - 'temperature'"
         )
-    if request.top_p < 0:
+    if request.top_p is not None and request.top_p < 0:
         return create_error_response(
             50099,
             f"{request.top_p} is less than the minimum of 0 - 'top_p'"
         )
-    if request.top_p > 1:
+    if request.top_p is not None and request.top_p > 1:
         return create_error_response(
             50098,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'"
@@ -156,7 +159,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
 def get_gen_params(
     model_name: str,
-    messages: List[Dict[str, str]],
+    messages: Union[str, List[Dict[str, str]]],
     *,
     temperature: float,
     top_p: float,
@@ -168,24 +171,27 @@ def get_gen_params(
     is_chatglm = "chatglm" in model_name.lower()
     conv = get_conversation_template(model_name)
 
-    for message in messages:
-        msg_role = message["role"]
-        if msg_role == "system":
-            conv.system = message["content"]
-        elif msg_role == "user":
-            conv.append_message(conv.roles[0], message["content"])
-        elif msg_role == "assistant":
-            conv.append_message(conv.roles[1], message["content"])
-        else:
-            raise ValueError(f"Unknown role: {msg_role}")
-
-    # Add a blank message for the assistant.
-    conv.append_message(conv.roles[1], None)
-
-    if is_chatglm:
-        prompt = conv.messages[conv.offset :]
+    if isinstance(messages, str):
+        prompt = messages
     else:
-        prompt = conv.get_prompt()
+        for message in messages:
+            msg_role = message["role"]
+            if msg_role == "system":
+                conv.system = message["content"]
+            elif msg_role == "user":
+                conv.append_message(conv.roles[0], message["content"])
+            elif msg_role == "assistant":
+                conv.append_message(conv.roles[1], message["content"])
+            else:
+                raise ValueError(f"Unknown role: {msg_role}")
+
+        # Add a blank message for the assistant.
+        conv.append_message(conv.roles[1], None)
+
+        if is_chatglm:
+            prompt = conv.messages[conv.offset :]
+        else:
+            prompt = conv.get_prompt()
 
     if max_tokens is None:
         max_tokens = 512
@@ -240,7 +246,8 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
 async def chat_completion_stream_generator(
         model_name: str,
         gen_params: Dict[str, Any],
-        n: int) -> Generator[str, Any, None]:
+        n: int
+    ) -> Generator[str, Any, None]:
     """
     Event stream format:
     https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
@@ -293,16 +300,7 @@ async def chat_completion_stream_generator(
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
     controller_url = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": model_name}
-        )
-        worker_addr = ret.json()["address"]
-        # No available worker
-        if worker_addr == "":
-            raise ValueError(f"No available worker for {model_name}")
-
-        logger.debug(f"model_name: {model_name}, worker_addr: {worker_addr}")
-
+        worker_addr = await _get_worker_address(model_name, client)
         delimiter = b"\0"
         async with client.stream(
             "POST",
@@ -346,40 +344,131 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]) -> Option
 
 @app.post("/v1/completions")
 async def create_completion(request: CompletionRequest):
-    payload = {
-        "model": request.model,
-        "prompt": request.prompt,
-        "temperature": request.temperature,
-        "max_tokens": request.max_tokens,
-        "logprobs": request.logprobs,
-    }
+    # First check all params
+    if request.max_tokens is not None and request.max_tokens <= 0:
+        return create_error_response(
+            50099,
+            f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'"
+        )
+    if request.n is not None and request.n <= 0:
+        return create_error_response(
+            50099,
+            f"{request.n} is less than the minimum of 1 - 'n'"
+        )
+    if request.temperature is not None and request.temperature < 0:
+        return create_error_response(
+            50099,
+            f"{request.temperature} is less than the minimum of 0 - 'temperature'"
+        )
+    if request.temperature is not None and request.temperature > 2:
+        return create_error_response(
+            50098,
+            f"{request.temperature} is greater than the maximum of 2 - 'temperature'"
+        )
+    if request.top_p is not None and request.top_p < 0:
+        return create_error_response(
+            50099,
+            f"{request.top_p} is less than the minimum of 0 - 'top_p'"
+        )
+    if request.top_p is not None and request.top_p > 1:
+        return create_error_response(
+            50098,
+            f"{request.top_p} is greater than the maximum of 1 - 'temperature'"
+        )
+    payload = get_gen_params(
+        request.model,
+        request.prompt,
+        temperature=request.temperature,
+        top_p=request.top_p,
+        max_tokens=request.max_tokens,
+        echo=False,
+        stream=request.stream,
+        stop=request.stop,
+    )
 
     if request.stream:
-        raise NotImplementedError("streaming is not supported yet")
+        generator = generate_completion_stream_generator(payload, request.n)
+        return StreamingResponse(generator, media_type="text/event-stream")
     else:
-        completions = []
-        prompt_tokens = 0
-        completion_tokens = 0
+        text_completions = []
         for i in range(request.n):
-            content = await generate_completion(payload)
-            content = json.loads(content)
-            content["index"] = i
-            completion_tokens += content["completion_tokens"]
-            prompt_tokens = content["prompt_tokens"]
-            content.pop("completion_tokens")
-            content.pop("prompt_tokens")
-            if request.echo:
-                content["text"] = request.prompt + content["text"]
-            completions.append(content)
-    return CompletionResponse(
-        model=request.model,
-        choices=completions,
-        usage={
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-        },
-    )
+            content = asyncio.create_task(generate_completion(payload))
+            text_completions.append(content)
+
+        choices = []
+        usage = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+        }
+        for i, content_task in enumerate(text_completions):
+            content = await content_task
+            choices.append(
+                CompletionResponseChoice(
+                    index=i,
+                    text=content["text"],
+                    logprobs=content.get("logprobs", None),
+                    finish_reason=content.get("finish_reason", "stop"),
+                )
+            )
+            for usage_k, usage_v in content["usage"].items():
+                usage[usage_k] += usage_v
+
+        return CompletionResponse(model=request.model, choices=choices, usage=usage)
+
+async def generate_completion_stream_generator(payload: Dict[str, Any], n: int):
+    model_name = payload["model"]
+    id = f"cmpl-{shortuuid.random()}"
+    finish_stream_events = []
+    for i in range(n):
+        previous_text = ""
+        async for content in generate_completion_stream(payload):
+            decoded_unicode = content["text"].replace('\ufffd', '')
+            delta_text = decoded_unicode[len(previous_text):]
+            previous_text = decoded_unicode
+
+            choice_data = CompletionResponseStreamChoice(
+                index=i,
+                text=delta_text,
+                logprobs=None,
+                finish_reason=content.get("finish_reason", None),
+            )
+            chunk = CompletionStreamResponse(
+                id=id,
+                choices=[choice_data],
+                model=model_name
+            )
+            if len(delta_text) == 0:
+                if content.get("finish_reason", None) is not None:
+                    finish_stream_events.append(chunk)
+                continue
+            yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+    # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
+    for finish_chunk in finish_stream_events:
+        yield f"data: {finish_chunk.json(exclude_none=True, ensure_ascii=False)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
+async def generate_completion_stream(payload: Dict[str, Any]):
+    controller_address = app_settings.controller_address
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(payload["model"], client)
+
+        delimiter = b"\0"
+        async with client.stream(
+            "POST",
+            worker_addr + "/worker_generate_completion_stream",
+            headers=headers,
+            json=payload,
+            timeout=WORKER_API_TIMEOUT,
+        ) as response:
+            # content = await response.aread()
+            async for raw_chunk in response.aiter_raw():
+                for chunk in raw_chunk.split(delimiter):
+                    if not chunk:
+                        continue
+                    data = json.loads(chunk.decode())
+                    yield data
 
 
 async def generate_completion(payload: Dict[str, Any]):

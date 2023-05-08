@@ -189,47 +189,33 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
-
-    def generate_completion(self, params):
+    
+    def generate_gate(self, params):
         try:
-            input_ids = self.tokenizer([params["prompt"]]).input_ids
-            output_ids = self.model.generate(
-                torch.as_tensor(input_ids).cuda(),
-                do_sample=True,
-                temperature=params["temperature"],
-                max_new_tokens=params["max_tokens"]
-                - 1,  # generate max_new_tokens + 1 tokens
-            )
-            if self.model.config.is_encoder_decoder:
-                output_ids = output_ids[0]
-            else:
-                output_ids = output_ids[0][len(input_ids[0]) :]
-            outputs = self.tokenizer.decode(
-                output_ids,
-                skip_special_tokens=True,
-                spaces_between_special_tokens=False,
-            )
-            completion_tokens = len(self.tokenizer(outputs).input_ids)
-            if completion_tokens >= params["max_tokens"]:
-                finish_reason = "length"
-            else:
-                finish_reason = "stop"
-            return json.dumps(
-                {
-                    "text": outputs,
-                    "finish_reason": finish_reason,
-                    "completion_tokens": completion_tokens,
-                    "prompt_tokens": len(input_ids[0]),
-                }
-            )
-
+            ret = {
+                "text": "",
+                "error_code": 0
+            }
+            for output in self.generate_stream_func(
+                self.model,
+                self.tokenizer,
+                params,
+                self.device,
+                self.context_len,
+                args.stream_interval,
+            ):
+                ret["text"] = output["text"]
+            if "usage" in output:
+                ret["usage"] = output["usage"]
+            if "finish_reason" in output:
+                ret["finish_reason"] = output["finish_reason"]
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
                 "error_code": 1,
             }
-            return json.dumps(ret).encode() + b"\0"
-
+        return ret
+    
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
@@ -286,15 +272,30 @@ async def api_generate_stream(request: Request):
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
+@app.post("/worker_generate")
+async def api_generate(request: Request):
+    params = await request.json()
+    await acquire_model_semaphore()
+    output = worker.generate_gate(params)
+    release_model_semaphore()
+    return JSONResponse(output)
+
+@app.post("/worker_generate_completion_stream")
+async def api_generate_completion_stream(request: Request):
+    params = await request.json()
+    await acquire_model_semaphore()
+    generator = worker.generate_stream_gate(params)
+    background_tasks = create_background_tasks()
+    return StreamingResponse(generator, background=background_tasks)
+
 
 @app.post("/worker_generate_completion")
 async def api_generate_completion(request: Request):
     params = await request.json()
     await acquire_model_semaphore()
-    completion = worker.generate_completion(params)
+    completion = worker.generate_gate(params)
     background_tasks = create_background_tasks()
     return JSONResponse(content=completion, background=background_tasks)
-
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
