@@ -407,14 +407,6 @@ pre {
 """
 )
 
-    model_description_md = """
-| | | |
-| ---- | ---- | ---- |
-"""
-    for i, name in enumerate(models):
-        if i % 3 == 0:
-            model_description_md += "|"
-
 def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
