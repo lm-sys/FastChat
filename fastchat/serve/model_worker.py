@@ -259,12 +259,12 @@ def release_model_semaphore():
     model_semaphore.release()
 
 
-async def acquire_model_semaphore():
+def acquire_model_semaphore():
     global model_semaphore, global_counter
     global_counter += 1
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
+    return model_semaphore.acquire()
 
 
 def create_background_tasks():
