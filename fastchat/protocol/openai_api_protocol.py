@@ -33,7 +33,7 @@ class ChatCompletionResponse(BaseModel):
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     choices: List[ChatCompletionResponseChoice]
-    usage: Optional[Dict[str, int]] = None
+    usage: Optional[Dict[str, int]]
 
 
 class DeltaMessage(BaseModel):
@@ -59,7 +59,7 @@ class EmbeddingsRequest(BaseModel):
 
 
 class EmbeddingsResponse(BaseModel):
-    object: str = "lists"
+    object: str = "list"
     data: List[Dict[str, Any]]
     model: str
     usage: Optional[Dict[str, int]] = None

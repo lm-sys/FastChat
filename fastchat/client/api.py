@@ -5,8 +5,8 @@ from typing import AsyncGenerator, Dict, List, Optional, Generator, Union
 
 import httpx
 
-from fastchat.helper.async_to_sync import iter_over_async
-from fastchat.protocol.chat_completion import (
+from fastchat.utils import iter_over_async
+from fastchat.protocol.openai_api_protocol import (
     ChatCompletionRequest,
     ChatCompletionResponse,
     ChatCompletionStreamResponse,
