@@ -219,7 +219,6 @@ def http_bot_all(
     model_selector0,
     model_selector1,
     temperature,
-    top_k,
     top_p,
     max_new_tokens,
     request: gr.Request,
@@ -237,7 +236,7 @@ def http_bot_all(
     gen = []
     for i in range(num_models):
         gen.append(
-            http_bot(states[i], model_selector[i], temperature, top_k, top_p, max_new_tokens, request)
+            http_bot(states[i], model_selector[i], temperature, top_p, max_new_tokens, request)
         )
 
     chatbots = [None] * num_models
@@ -329,14 +328,6 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
             interactive=True,
             label="Temperature",
         )
-        top_k = gr.Slider(
-            minimum=0,
-            maximum=100,
-            value=50,
-            step=1,
-            interactive=True,
-            label="Top K",
-        )
         top_p = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -383,7 +374,7 @@ Please scroll down and start chatting. You can view a leaderboard of the partici
         regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_k, top_p, max_output_tokens],
+        states + model_selectors + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
     clear_btn.click(clear_history, None, states + chatbots + model_selectors + [
@@ -415,14 +406,14 @@ function (a, b, c, d) {
         add_text, states + [textbox], states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_k, top_p, max_output_tokens],
+        states + model_selectors + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
     send_btn.click(
         add_text, states + [textbox], states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_k, top_p, max_output_tokens],
+        states + model_selectors + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
 

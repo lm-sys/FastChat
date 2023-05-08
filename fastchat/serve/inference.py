@@ -37,11 +37,11 @@ def prepare_logits_processor(temperature: float,
                              top_k: int) -> LogitsProcessorList:
     processor_list = LogitsProcessorList()
     # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
-    if temperature >= 1e-4 and temperature != 1.0:
+    if temperature >= 1e-5 and temperature != 1.0:
         processor_list.append(TemperatureLogitsWarper(temperature))
     if repetition_penalty > 1.0:
         processor_list.append(RepetitionPenaltyLogitsProcessor(repetition_penalty))
-    if top_p < 1.0:
+    if 1e-8 <= top_p < 1.0:
         processor_list.append(TopPLogitsWarper(top_p))
     if top_k > 0:
         processor_list.append(TopKLogitsWarper(top_k))
@@ -125,7 +125,7 @@ def generate_stream(
             # Switch to CPU by avoiding some bugs in mps backend.
             last_token_logits = last_token_logits.float().to("cpu")
 
-        if temperature < 1e-4:  # greedy
+        if temperature < 1e-5 or top_p < 1e-8:  # greedy
             token = int(torch.argmax(last_token_logits))
         else:
             probs = torch.softmax(last_token_logits, dim=-1)
