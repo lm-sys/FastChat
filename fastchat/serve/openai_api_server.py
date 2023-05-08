@@ -15,18 +15,20 @@ import json
 import logging
 
 import os
-from typing import Optional, Union, Dict, List, Any
+from typing import Generator, Optional, Union, Dict, List, Any
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
 import shortuuid
 import uvicorn
 from pydantic import BaseSettings
 
+from fastapi import HTTPException
 from fastchat.constants import WORKER_API_TIMEOUT
 from fastchat.model.model_adapter import get_conversation_template
+from fastapi.exceptions import RequestValidationError
 from fastchat.protocol.openai_api_protocol import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -39,6 +41,7 @@ from fastchat.protocol.openai_api_protocol import (
     DeltaMessage,
     EmbeddingsRequest,
     EmbeddingsResponse,
+    ErrorResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,6 +56,10 @@ app_settings = AppSettings()
 
 app = fastapi.FastAPI(debug=True)
 headers = {"User-Agent": "FastChat API Server"}
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(ErrorResponse(message="Internal Serverless Error", code=50001).dict(), status_code=500) 
 
 
 @app.get("/v1/models")
@@ -70,6 +77,21 @@ async def show_available_models():
 @app.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
+    # First check all params
+    if request.max_tokens <= 0:
+        return JSONResponse(ErrorResponse(message=f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'", code=50099).dict(), status_code=500)
+    if request.n <= 0:
+        return JSONResponse(ErrorResponse(message=f"{request.n} is less than the minimum of 1 - 'n'", code=50099).dict(), status_code=500)
+    if request.temperature < 0:
+        return JSONResponse(ErrorResponse(message=f"{request.temperature} is less than the minimum of 0 - 'temperature'", code=50099).dict(), status_code=500)
+    if request.temperature > 2:
+        return JSONResponse(ErrorResponse(message=f"{request.temperature} is greater than the maximum of 2 - 'temperature'", code=50098).dict(), status_code=500)
+    if request.top_p < 0:
+        return JSONResponse(ErrorResponse(message=f"{request.top_p} is less than the minimum of 0 - 'top_p'", code=50099).dict(), status_code=500)
+    if request.top_p > 1:
+        return JSONResponse(ErrorResponse(message=f"{request.top_p} is greater than the maximum of 1 - 'temperature'", code=50098).dict(), status_code=500) 
+
+    # Generate params dict
     gen_params = get_gen_params(
         request.model,
         request.messages,
@@ -106,7 +128,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
-        print(content)
         for usage_k, usage_v in content["usage"].items():
             usage[usage_k] += usage_v
 
@@ -122,7 +143,7 @@ def get_gen_params(
     echo: Optional[bool],
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
-):
+) -> Dict[str, Any]:
     is_chatglm = "chatglm" in model_name.lower()
     conv = get_conversation_template(model_name)
 
@@ -195,7 +216,10 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
     return worker_addr
 
 
-async def chat_completion_stream_generator(model_name: str, gen_params: Dict[str, Any], n: int):
+async def chat_completion_stream_generator(
+        model_name: str,
+        gen_params: Dict[str, Any],
+        n: int) -> Generator[str, Any, None]:
     """
     Event stream format:
     https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
@@ -274,24 +298,29 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
                     data = json.loads(chunk.decode())
                     yield data
 
-async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
+async def chat_completion(model_name: str, gen_params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
 
-        response = await client.request(
+        output = None
+        delimiter = b"\0"
+
+        async with client.stream(
             "POST",
-            worker_addr + "/worker_generate",
+            worker_addr + "/worker_generate_stream",
             headers=headers,
             json=gen_params,
             timeout=WORKER_API_TIMEOUT,
-        )
-        content = await response.aread()
+        ) as response:
+            content = await response.aread()
 
-        data = json.loads(content.decode())
-        if data["error_code"] == 0:
-            output = data
-        else:
-            output = None
+        for chunk in content.split(delimiter):
+            if not chunk:
+                continue
+            data = json.loads(chunk.decode())
+            if data["error_code"] == 0:
+                output = data
+
         return output
 
 @app.post("/v1/completions")

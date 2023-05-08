@@ -5,9 +5,12 @@ import time
 import shortuuid
 from pydantic import BaseModel, Field
 
+class ErrorResponse(BaseModel):
+    object: str = "error"
+    message: str
+    code: int
 
 class ChatCompletionRequest(BaseModel):
-    # TODO: support stop with a list of text etc.
     model: str
     messages: List[Dict[str, str]]
     temperature: Optional[float] = 0.7
