@@ -16,12 +16,13 @@ def chatglm_generate_stream(
 
     gen_kwargs = {
         #"max_new_tokens": max_new_tokens,  disabled due to a warning.
-        "do_sample": True,
+        "do_sample": True if temperature > 1e-5 else False,
         "top_p": top_p,
-        "temperature": temperature,
         "repetition_penalty": repetition_penalty,
         "logits_processor": None,
     }
+    if temperature > 1e-5:
+        gen_kwargs["temperature"] = temperature
 
     hist = []
     for i in range(0, len(messages) - 2, 2):
