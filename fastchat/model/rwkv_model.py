@@ -28,5 +28,6 @@ class RwkvModel:
         # print(input_ids)
         logits, state = self.model.forward(input_ids, past_key_values)
         # print(logits)
-        out = SimpleNamespace(logits=[[logits]], past_key_values=state)
+        logits = logits.unsqueeze(0).unsqueeze(0)
+        out = SimpleNamespace(logits=logits, past_key_values=state)
         return out
