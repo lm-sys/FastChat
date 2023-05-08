@@ -9,7 +9,7 @@ import os
 import argparse
 import numpy as np
 
-def create_deltas(original_file, new_file, delta_file):
+def create_delta_file(original_file, new_file, delta_file):
     buffer_size = 4096 * 1024
     
     if os.path.exists(delta_file):
@@ -46,7 +46,7 @@ def make_delta(base_model_path, target_model_path, delta_path):
             new_file = os.path.join(target_model_path, file)
             deltas = os.path.join(delta_path, file)
 
-            create_deltas(original_file, new_file, deltas)
+            create_delta_file(original_file, new_file, deltas)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
