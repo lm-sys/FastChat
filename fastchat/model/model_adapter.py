@@ -342,7 +342,7 @@ class OpenBuddyAdapter(BaseAdapter):
         return get_conv_template("openbuddy")
     
     
- class PhoenixAdapter(BaseAdapter):
+class PhoenixAdapter(BaseAdapter):
     """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
 
     def match(self, model_path: str):
