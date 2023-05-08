@@ -29,17 +29,11 @@ from fastchat.protocol.chat_completion import (
     EmbeddingsRequest,
     EmbeddingsResponse,
 )
-from fastchat.conversation import get_default_conv_template, SeparatorStyle
+from fastchat.model.model_adapter import get_conversation_template
 
 logger = logging.getLogger(__name__)
 
 
-class AppSettings(BaseSettings):
-    # The address of the model controller.
-    FASTCHAT_CONTROLLER_URL: str = "http://localhost:21001"
-
-
-app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
@@ -104,7 +98,7 @@ def get_gen_params(
     stop: Union[str, None],
 ):
     is_chatglm = "chatglm" in model_name.lower()
-    conv = get_default_conv_template(model_name)
+    conv = get_conversation_template(model_name)
 
     for message in messages:
         msg_role = message["role"]

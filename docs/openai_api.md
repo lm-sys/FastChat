@@ -1,28 +1,11 @@
-# Openai API
-<!-- (Experimental. We will keep improving the API and SDK.) -->
+# OpenAI-Compatible RESTful APIs & SDK
 
-## Chat Completion
+Now FastChat supports:
+- Chat Completion. (Reference: https://platform.openai.com/docs/api-reference/chat/create)
+- Create Embedding. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
+- Text Completion. (Reference: https://platform.openai.com/docs/api-reference/completions/create)
 
-Reference: https://platform.openai.com/docs/api-reference/chat/create
-
-Some features/compatibilities to be implemented:
-
-- [ ] streaming
-- [ ] support of some parameters like `top_p`, `presence_penalty`
-- [ ] proper error handling (e.g. model not found)
-- [ ] the return value in the client SDK could be used like a dict
-
-## Create Embedding
-
-Reference: https://platform.openai.com/docs/api-reference/embeddings
-
-## Text Completion
-
-Reference: https://platform.openai.com/docs/api-reference/completions/create
-
-
-**RESTful API Server**
-
+## RESTful API Server
 First, launch the controller
 
 ```bash
@@ -74,7 +57,7 @@ curl http://localhost:8000/v1/completions \
   }'
 ```
 
-**Client SDK**
+## Client SDK
 
 Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e.g., `http://localhost:8000`), you can use the following code to send a request to the API server:
 
@@ -94,19 +77,27 @@ completion = client.ChatCompletion.create(
 print(completion.choices[0].message)
 ```
 
-**Machine Learning with Embeddings**
+## Machine Learning with Embeddings
 
 See [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
 
 Feel free to use `create_embedding` to 
 - build your own classifier, see [fastchat/playground/test_embedding/test_classification.py](../playground/test_embedding/test_classification.py)
-- evaluate texts' similarity, see [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
+- evaluate text similarity, see [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
 - search relative texts, see [fastchat/playground/test_embedding/test_semantic_search.py](../playground/test_embedding/test_semantic_search.py)
 
-To run the tests, you need to download the data [here](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews), and openai api key is required to make comparation.
+To run the tests, you need to download the data [here](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews), and openai api key is required to make comparison.
 
 Run with:
-~~~bash
+```bash
 python3 playground/test_embedding/test_classification.py
-~~~
+```
 and you will train a classifier based on `vicuna-7b`, `text-similarity-ada-001` and `text-embedding-ada-002`
+
+### Todos
+Some features/compatibilities to be implemented:
+
+- [ ] Streaming
+- [ ] Support of some parameters like `top_p`, `presence_penalty`
+- [ ] Proper error handling (e.g. model not found)
+- [ ] The return value in the client SDK could be used like a dict

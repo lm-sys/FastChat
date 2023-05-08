@@ -3,10 +3,7 @@ import json
 
 import requests
 
-from fastchat.conversation import (
-    get_default_conv_template,
-    SeparatorStyle,
-)
+from fastchat.model.model_adapter import get_conversation_template
 
 
 def main():
@@ -32,7 +29,7 @@ def main():
         print(f"No available workers for {model_name}")
         return
 
-    conv = get_default_conv_template(model_name)
+    conv = get_conversation_template(model_name)
     conv.append_message(conv.roles[0], args.message)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
