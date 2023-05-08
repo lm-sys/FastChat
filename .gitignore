@@ -22,3 +22,4 @@ output
 
 # Data
 *.pkl
+*.csv

@@ -13,15 +13,12 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import (
-    get_default_conv_template,
-    SeparatorStyle,
-)
+from fastchat.conversation import SeparatorStyle
 from fastchat.constants import LOGDIR
-
+from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_registry import model_info
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
-from fastchat.model.model_registry import model_info
 from fastchat.utils import (
     build_logger,
     server_error_msg,
@@ -141,7 +138,7 @@ def add_text(state, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
 
     if state is None:
-        state = get_default_conv_template("vicuna")
+        state = get_conversation_template("vicuna")
 
     if len(text) <= 0:
         state.skip_next = True
@@ -268,7 +265,7 @@ def http_bot(state, model_selector, temperature, max_new_tokens, request: gr.Req
 
     if len(state.messages) == state.offset + 2:
         # First round of conversation
-        new_state = get_default_conv_template(model_name)
+        new_state = get_conversation_template(model_name)
         new_state.conv_id = uuid.uuid4().hex
         new_state.model_name = state.model_name or model_selector
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
@@ -421,7 +418,7 @@ By using this service, users are required to agree to the following terms: The s
             minfo = model_info[name]
             model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
         else:
-            model_description_md += f" |"
+            model_description_md += f" {name} |"
         if i % 3 == 2:
             model_description_md += "\n"
 
@@ -453,7 +450,6 @@ By using this service, users are required to agree to the following terms: The s
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
         downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
         flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 

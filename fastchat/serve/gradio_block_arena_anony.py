@@ -9,12 +9,7 @@ import time
 import gradio as gr
 import numpy as np
 
-from fastchat.conversation import get_default_conv_template
-from fastchat.utils import (
-    build_logger,
-    violates_moderation,
-    moderation_msg,
-)
+from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     http_bot,
@@ -24,7 +19,11 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     learn_more_md,
 )
-
+from fastchat.utils import (
+    build_logger,
+    violates_moderation,
+    moderation_msg,
+)
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -162,8 +161,8 @@ def add_text(state0, state1, text, request: gr.Request):
             model_left = model_right = models[0]
 
         states = [
-            get_default_conv_template("vicuna"),
-            get_default_conv_template("vicuna"),
+            get_conversation_template("vicuna"),
+            get_conversation_template("vicuna"),
         ]
         states[0].model_name = model_left
         states[1].model_name = model_right
