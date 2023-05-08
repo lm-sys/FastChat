@@ -31,6 +31,8 @@ python3 -m fastchat.serve.gradio_web_server --controller http://localhost:21001 
 One process (do not need reboot)
 ```
 sudo prlimit --nofile=1048576:1048576 --pid=$id
+
+for id in $(ps -ef | grep gradio_web_server | awk '{print $2}'); do echo $id; prlimit --nofile=1048576:1048576 --pid=$id; done
 ```
 
 System (need reboot): Add the lines below to `/etc/security/limits.conf`
