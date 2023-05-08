@@ -253,16 +253,15 @@ async def create_chat_completion(request: ChatCompletionRequest):
     for i in range(request.n):
         content = asyncio.create_task(chat_completion(request.model, gen_params))
         chat_completions.append(content)
-
+    try:
+        all_tasks = await asyncio.gather(*chat_completions)
+    except Exception as e:
+        return create_error_response(
+            ErrorCode.INTERNAL_ERROR,
+            str(e)
+        )
     usage = UsageInfo()
-    for i, content_task in enumerate(chat_completions):
-        try:
-            content = await content_task
-        except Exception as e:
-            return create_error_response(
-                ErrorCode.INTERNAL_ERROR,
-                str(e)
-            )
+    for i, content in enumerate(all_tasks):
         if content["error_code"] != 0:
             return create_error_response(content["error_code"], content["text"])
         choices.append(
@@ -413,17 +412,18 @@ async def create_completion(request: CompletionRequest):
         for i in range(request.n):
             content = asyncio.create_task(generate_completion(payload))
             text_completions.append(content)
+        
+        try:
+            all_tasks = await asyncio.gather(*text_completions)
+        except Exception as e:
+            return create_error_response(
+                ErrorCode.INTERNAL_ERROR,
+                str(e)
+            )
 
         choices = []
         usage = UsageInfo()
-        for i, content_task in enumerate(text_completions):
-            try:
-                content = await content_task
-            except Exception as e:
-                return create_error_response(
-                    ErrorCode.INTERNAL_ERROR,
-                    str(e)
-                )
+        for i, content in enumerate(all_tasks):
             if content["error_code"] != 0:
                 return create_error_response(content["error_code"], content["text"])
             choices.append(
