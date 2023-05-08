@@ -211,8 +211,12 @@ async def chat_completion(model_name: str, payload: Dict[str, Any], skip_echo_le
                 content = chunk.encode('utf-8').decode('unicode_escape')
                 if content.strip() != "":
                     now = datetime.datetime.now()
-                    b = content.rindex('ASSISTANT: ')
-                    e = content.index('", "error_code"')
+                    try:
+                        b = content.rindex('ASSISTANT: ')
+                        e = content.index('", "error_code"')
+                    except ValueError:
+                        b = 0
+                        e = 0
                     if (b * e) > 0:
                         output = content[b+11:e]
                         stream_buffer[msgid] = {
