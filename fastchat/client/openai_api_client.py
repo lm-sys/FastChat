@@ -62,9 +62,13 @@ class ChatCompletionClient:
                 async for chunk in response.aiter_text():
                     if not chunk:
                         continue
-                    for line in chunk.split("\n"):
+                    for line in chunk.split("\n\n"):
                         if not line:
                             continue
+                        if line.startswith("data: "):
+                            line = line.removeprefix("data: ")
+                        if line.strip() == "[DONE]":
+                            break
                         yield ChatCompletionStreamResponse.parse_obj(json.loads(line))
 
 
