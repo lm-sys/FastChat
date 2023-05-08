@@ -1,7 +1,11 @@
 # FastChat
 | [**Demo**](https://chat.lmsys.org/) | [**Arena**](https://arena.lmsys.org) | [**Discord**](https://discord.gg/h6kCZb72G7) | [**Twitter**](https://twitter.com/lmsysorg) |
 
-An open platform for training, serving, and evaluating large language model based chatbots.
+FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
+
+Core features:
+- This is the release repo for state-of-the-art models (Vicuna, FastChat-T5), with weights, training code, and evaluation code.
+- A distributed multi-model serving system with Web UI and OpenAI-Compatible RESTful APIs.
 
 ## News
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
