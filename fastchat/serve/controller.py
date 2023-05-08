@@ -203,7 +203,7 @@ class Controller:
             "error_code": 2,
         }
         return json.dumps(ret).encode() + b"\0"
-    
+
     def handle_worker_timeout(worker_address, server_error_msg):
         logger.info(f"worker timeout: {worker_address}")
         ret = {

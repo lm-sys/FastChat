@@ -59,20 +59,28 @@ def get_model_adapter(model_path: str) -> BaseAdapter:
     raise ValueError(f"No valid model adapter for {model_path}")
 
 
-def raise_warning_for_incompatible_cpu_offloading_configuration(device: str, load_8bit: bool, cpu_offloading: bool):
+def raise_warning_for_incompatible_cpu_offloading_configuration(
+    device: str, load_8bit: bool, cpu_offloading: bool
+):
     if cpu_offloading:
         if not load_8bit:
-            warnings.warn("The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
-                          "Use '--load-8bit' to enable 8-bit-quantization\n"
-                          "Continuing without cpu-offloading enabled\n")
+            warnings.warn(
+                "The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
+                "Use '--load-8bit' to enable 8-bit-quantization\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
             return False
         if not "linux" in sys.platform:
-            warnings.warn("CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
-                          "Continuing without cpu-offloading enabled\n")
+            warnings.warn(
+                "CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
             return False
         if device != "cuda":
-            warnings.warn("CPU-offloading is only enabled when using CUDA-devices\n"
-                          "Continuing without cpu-offloading enabled\n")
+            warnings.warn(
+                "CPU-offloading is only enabled when using CUDA-devices\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
             return False
     return cpu_offloading
 
@@ -90,7 +98,8 @@ def load_model(
 
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
-        device, load_8bit, cpu_offloading)
+        device, load_8bit, cpu_offloading
+    )
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
@@ -118,16 +127,24 @@ def load_model(
     if cpu_offloading:
         # raises an error on incompatible platforms
         from transformers import BitsAndBytesConfig
+
         if "max_memory" in kwargs:
-            kwargs["max_memory"]["cpu"] = str(math.floor(psutil.virtual_memory().available / 2**20)) + 'Mib'
-        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit_fp32_cpu_offload=cpu_offloading)
+            kwargs["max_memory"]["cpu"] = (
+                str(math.floor(psutil.virtual_memory().available / 2**20)) + "Mib"
+            )
+        kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_8bit_fp32_cpu_offload=cpu_offloading
+        )
         kwargs["load_in_8bit"] = load_8bit
     elif load_8bit:
         if num_gpus != 1:
-            warnings.warn("8-bit quantization is not supported for multi-gpu inference.")
+            warnings.warn(
+                "8-bit quantization is not supported for multi-gpu inference."
+            )
         else:
-            return load_compress_model(model_path=model_path,
-                device=device, torch_dtype=kwargs["torch_dtype"])
+            return load_compress_model(
+                model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"]
+            )
 
     # Load model
     adapter = get_model_adapter(model_path)
@@ -155,14 +172,17 @@ def add_model_args(parser):
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
-        "--device", type=str, choices=["cpu", "cuda", "mps"], default="cuda",
-        help="The device type"
+        "--device",
+        type=str,
+        choices=["cpu", "cuda", "mps"],
+        default="cuda",
+        help="The device type",
     )
     parser.add_argument(
         "--gpus",
         type=str,
         default=None,
-        help="A single GPU like 1 or multiple GPUs like 0,2"
+        help="A single GPU like 1 or multiple GPUs like 0,2",
     )
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
@@ -174,8 +194,9 @@ def add_model_args(parser):
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
     )
     parser.add_argument(
-        "--cpu-offloading", action="store_true",
-        help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU"
+        "--cpu-offloading",
+        action="store_true",
+        help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU",
     )
 
 
@@ -188,7 +209,9 @@ class VicunaAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         self.raise_warning_for_old_weights(model)
         return model, tokenizer
@@ -217,7 +240,8 @@ class T5Adapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = T5Tokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs)
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
         return model, tokenizer
 
 
@@ -239,8 +263,9 @@ class ChatGLMAdapter(BaseAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
-            **from_pretrained_kwargs)
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **from_pretrained_kwargs
+        )
         return model, tokenizer
 
 
@@ -253,7 +278,9 @@ class DollyV2Adapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
@@ -272,7 +299,9 @@ class OasstPythiaAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
@@ -289,7 +318,9 @@ class StableLMAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
@@ -315,8 +346,11 @@ class RwkvAdapter(BaseAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         from fastchat.model.rwkv_model import RwkvModel
+
         model = RwkvModel(model_path)
-        tokenizer = AutoTokenizer.from_pretrained('EleutherAI/pythia-160m', use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            "EleutherAI/pythia-160m", use_fast=True
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -332,16 +366,19 @@ class OpenBuddyAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         if "-bf16" in model_path:
             from_pretrained_kwargs["torch_dtype"] = torch.bfloat16
-            warnings.warn("## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16.")
+            warnings.warn(
+                "## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16."
+            )
         model = LlamaForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs)
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("openbuddy")
-    
-    
+
+
 class PhoenixAdapter(BaseAdapter):
     """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
 
@@ -351,7 +388,9 @@ class PhoenixAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs,
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
@@ -383,7 +422,6 @@ class ClaudeAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("claude")
-
 
 
 # Note: the registration order matters.
