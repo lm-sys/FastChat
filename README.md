@@ -190,12 +190,12 @@ By following these steps, you will be able to serve your models using the web UI
 
 
 ## API
+### OpenAI-Compatible RESTful APIs & SDK
+See [docs/openai_api.md](docs/openai_api.md)
 
 ### Hugging Face Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
 
-### OpenAI-compatible RESTful APIs & SDK
-See [docs/openai_api.md](docs/openai_api.md)
 
 ## Evaluation
 

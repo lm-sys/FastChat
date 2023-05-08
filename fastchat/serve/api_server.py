@@ -1,17 +1,17 @@
-"""This module provides a ChatGPT-compatible Restful API for chat completion.
+"""A server that provides OpenAI-compatible RESTful APIs. It supports:
+
+- Chat Completions. (Reference: https://platform.openai.com/docs/api-reference/chat)
+- Completions. (Reference: https://platform.openai.com/docs/api-reference/completions)
+- Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
 
 Usage:
-
-python3 -m fastchat.serve.api
-
-Reference: https://platform.openai.com/docs/api-reference/chat/create
+python3 -m fastchat.serve.api_server
 """
 import asyncio
-from typing import Union, Dict, List, Any
-
 import argparse
 import json
 import logging
+from typing import Union, Dict, List, Any
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,27 +29,28 @@ from fastchat.protocol.chat_completion import (
     EmbeddingsRequest,
     EmbeddingsResponse,
 )
-from fastchat.conversation import get_default_conv_template, SeparatorStyle
+from fastchat.model.model_adapter import get_conversation_template
 
 logger = logging.getLogger(__name__)
 
 
 class AppSettings(BaseSettings):
     # The address of the model controller.
-    FASTCHAT_CONTROLLER_URL: str = "http://localhost:21001"
+    controller_address: str = "http://localhost:21001"
 
 
 app_settings = AppSettings()
+
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
 
 @app.get("/v1/models")
 async def show_available_models():
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        ret = await client.post(controller_url + "/refresh_all_workers")
-        ret = await client.post(controller_url + "/list_models")
+        ret = await client.post(controller_address + "/refresh_all_workers")
+        ret = await client.post(controller_address + "/list_models")
     models = ret.json()["models"]
     models.sort()
     return {"data": [{"id": m} for m in models], "object": "list"}
@@ -104,7 +105,7 @@ def get_gen_params(
     stop: Union[str, None],
 ):
     is_chatglm = "chatglm" in model_name.lower()
-    conv = get_default_conv_template(model_name)
+    conv = get_conversation_template(model_name)
 
     for message in messages:
         msg_role = message["role"]
@@ -142,10 +143,10 @@ def get_gen_params(
 
 
 async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": model_name}
+            controller_address + "/get_worker_address", json={"model": model_name}
         )
         worker_addr = ret.json()["address"]
         # No available worker
@@ -214,10 +215,10 @@ async def create_completion(request: CompletionRequest):
 
 
 async def generate_completion(payload: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": payload["model"]}
+            controller_address + "/get_worker_address", json={"model": payload["model"]}
         )
         worker_addr = ret.json()["address"]
         # No available worker
@@ -262,11 +263,11 @@ async def create_embeddings(request: EmbeddingsRequest):
 
 
 async def get_embedding(payload: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_address = app_settings.controller_address
     model_name = payload["model"]
     async with httpx.AsyncClient() as client:
         ret = await client.post(
-            controller_url + "/get_worker_address", json={"model": model_name}
+            controller_address + "/get_worker_address", json={"model": model_name}
         )
         worker_addr = ret.json()["address"]
         if worker_addr == "":
@@ -290,6 +291,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
     parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
     parser.add_argument(
         "--allow-credentials", action="store_true", help="allow credentials"
     )
@@ -302,7 +304,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
-
     args = parser.parse_args()
 
     app.add_middleware(
@@ -312,7 +313,8 @@ if __name__ == "__main__":
         allow_methods=args.allowed_methods,
         allow_headers=args.allowed_headers,
     )
+    app_settings.controller_address = args.controller_address
 
     logger.debug(f"==== args ====\n{args}")
 
-    uvicorn.run("fastchat.serve.api:app", host=args.host, port=args.port, reload=True)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")

@@ -1,3 +1,6 @@
+# sudo apt install pkg-config libicu-dev
+# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+
 import argparse
 import datetime
 import pickle
@@ -34,7 +37,14 @@ def update_elo_components(max_num_files, elo_results_file):
     if elo_results_file is None:
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
-        leader_component_values[0] = elo_results["leaderboard_md"]
+        leaderboard_md = f"""
+# Leaderboard
+[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+
+We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
+Last update: {elo_results["last_update_datetime"]}
+"""
+        leader_component_values[0] = leaderboard_md + elo_results["leaderboard_table"]
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
@@ -140,7 +150,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument("--update-interval", type=int, default=600)
+    parser.add_argument("--update-interval", type=int, default=300)
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()

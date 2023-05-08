@@ -34,8 +34,9 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.inference import load_model, generate_stream, add_model_args
-from fastchat.serve.serve_chatglm import chatglm_generate_stream
+from fastchat.model.model_adapter import load_model, add_model_args
+from fastchat.model.chatglm_model import chatglm_generate_stream
+from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, server_error_msg, pretty_print_semaphore
 
 GB = 1 << 30
@@ -258,12 +259,12 @@ def release_model_semaphore():
     model_semaphore.release()
 
 
-async def acquire_model_semaphore():
+def acquire_model_semaphore():
     global model_semaphore, global_counter
     global_counter += 1
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
+    return model_semaphore.acquire()
 
 
 def create_background_tasks():

@@ -61,7 +61,7 @@ def build_logger(logger_name, logger_filename):
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True
+            filename, when="D", utc=True, encoding='utf-8'
         )
         handler.setFormatter(formatter)
 
@@ -116,6 +116,26 @@ def disable_torch_init():
 
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
+
+
+def get_gpu_memory(max_gpus=None):
+    """Get available memory for each GPU."""
+    gpu_memory = []
+    num_gpus = (
+        torch.cuda.device_count()
+        if max_gpus is None
+        else min(max_gpus, torch.cuda.device_count())
+    )
+
+    for gpu_id in range(num_gpus):
+        with torch.cuda.device(gpu_id):
+            device = torch.cuda.current_device()
+            gpu_properties = torch.cuda.get_device_properties(device)
+            total_memory = gpu_properties.total_memory / (1024**3)
+            allocated_memory = torch.cuda.memory_allocated() / (1024**3)
+            available_memory = total_memory - allocated_memory
+            gpu_memory.append(available_memory)
+    return gpu_memory
 
 
 def violates_moderation(text):
