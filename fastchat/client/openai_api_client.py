@@ -12,10 +12,8 @@ from fastchat.protocol.openai_api_protocol import (
     ChatCompletionStreamResponse,
 )
 
-_BASE_URL = "http://localhost:8000"
 
-if os.environ.get("FASTCHAT_API_BASE_URL"):
-    _BASE_URL = os.environ.get("FASTCHAT_API_BASE_URL")
+_BASE_URL = os.environ.get("FASTCHAT_API_BASE_URL", "http://localhost:8000")
 
 
 def set_baseurl(base_url: str):
@@ -64,16 +62,10 @@ class ChatCompletionClient:
                 async for chunk in response.aiter_text():
                     if not chunk:
                         continue
-
-                    lines = chunk.split("\n")
-                    for line in lines:
+                    for line in chunk.split("\n"):
                         if not line:
                             continue
-                        try:
-                            data = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        yield ChatCompletionStreamResponse.parse_obj(data)
+                        yield ChatCompletionStreamResponse.parse_obj(json.loads(line))
 
 
 class ChatCompletion:
