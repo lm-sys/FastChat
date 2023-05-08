@@ -6,8 +6,6 @@ import openai
 import requests
 from scipy.spatial.distance import cosine
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 
 def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
     if "ada" in model:
@@ -19,8 +17,7 @@ def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
             embedding = np.array(resp["data"][0]["embedding"])
             return embedding
         except:
-            print("Error: OpenAI API call failed")
-            return None
+            raise RuntimeError("OpenAI API call failed")
 
     url = "http://localhost:8000/v1/create_embeddings"
     headers = {"Content-Type": "application/json"}

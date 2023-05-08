@@ -9,7 +9,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 np.set_printoptions(threshold=10000)
 
@@ -24,8 +23,7 @@ def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
             embedding = np.array(resp["data"][0]["embedding"])
             return embedding
         except:
-            print("Error: OpenAI API call failed")
-            return None
+            raise RuntimeError("OpenAI API call failed")
 
     url = "http://localhost:8000/v1/create_embeddings"
     headers = {"Content-Type": "application/json"}
@@ -71,7 +69,7 @@ def train_random_forest(df):
     return clf, accuracy, report
 
 
-input_datapath = "../data/fine_food_reviews_1k.csv"
+input_datapath = "amazon_fine_food_review.csv"
 if not os.path.exists(input_datapath):
     raise Exception(
         f"Please download data from: https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews"

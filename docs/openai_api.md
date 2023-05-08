@@ -1,6 +1,7 @@
 # OpenAI-Compatible RESTful APIs & SDK
 
-Now FastChat supports:
+FastChat provides OpenAI-Compatible RESTful APIs for the its supported models (e.g. Vicuna).
+The following OpenAI APIs are supported:
 - Chat Completions. (Reference: https://platform.openai.com/docs/api-reference/chat)
 - Completions. (Reference: https://platform.openai.com/docs/api-reference/completions)
 - Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
@@ -80,20 +81,19 @@ print(completion.choices[0].message)
 
 ## Machine Learning with Embeddings
 
-See [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
+You can use `create_embedding` to 
+- Build your own classifier, see [fastchat/playground/test_embedding/test_classification.py](../playground/test_embedding/test_classification.py)
+- Evaluate text similarity, see [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
+- Search relative texts, see [fastchat/playground/test_embedding/test_semantic_search.py](../playground/test_embedding/test_semantic_search.py)
 
-Feel free to use `create_embedding` to 
-- build your own classifier, see [fastchat/playground/test_embedding/test_classification.py](../playground/test_embedding/test_classification.py)
-- evaluate text similarity, see [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)
-- search relative texts, see [fastchat/playground/test_embedding/test_semantic_search.py](../playground/test_embedding/test_semantic_search.py)
-
-To run the tests, you need to download the data [here](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews), and openai api key is required to make comparison.
+To these tests, you need to download the data [here](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews). You also need an OpenAI API key for comparison.
 
 Run with:
 ```bash
-python3 playground/test_embedding/test_classification.py
+cd playground/test_embedding
+python3 test_classification.py
 ```
-and you will train a classifier based on `vicuna-7b`, `text-similarity-ada-001` and `text-embedding-ada-002`
+The script will train classifiers based on `vicuna-7b`, `text-similarity-ada-001` and `text-embedding-ada-002` and report the accuracy of each classifier.
 
 ## Todos
 Some features to be implemented:
