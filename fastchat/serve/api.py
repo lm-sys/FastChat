@@ -201,7 +201,6 @@ async def chat_completion_stream_generator(model_name: str, n: int, gen_params: 
     Event stream format: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
     """
     id = f"chatcmpl-{shortuuid.random()}"
-
     finish_stream_events = []
     for i in range(n):
         previous_text = ""
@@ -252,13 +251,13 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
             json=gen_params,
             timeout=20,
         ) as response:
-            content = await response.aread()
-
-        for chunk in content.split(delimiter):
-            if not chunk:
-                continue
-            data = json.loads(chunk.decode())
-            yield data
+            # content = await response.aread()
+            async for raw_chunk in response.aiter_raw():
+                for chunk in raw_chunk.split(delimiter):
+                    if not chunk:
+                        continue
+                    data = json.loads(chunk.decode())
+                    yield data
 
 
 @app.post("/v1/completions")
