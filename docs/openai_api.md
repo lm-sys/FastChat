@@ -27,6 +27,11 @@ python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 
 Test the API server
 
+### List Models
+```bash
+curl http://localhost:8000/v1/models
+```
+
 ### Chat Completions
 ```bash
 curl http://localhost:8000/v1/chat/completions \
@@ -79,8 +84,10 @@ completion = client.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
-## Machine Learning with Embeddings
+### Streaming
+See [test_openai_client.py](../tests/test_openai_client.py).
 
+## Machine Learning with Embeddings
 You can use `create_embedding` to 
 - Build your own classifier, see [fastchat/playground/test_embedding/test_classification.py](../playground/test_embedding/test_classification.py)
 - Evaluate text similarity, see [fastchat/playground/test_embedding/test_sentence_similarity.py](../playground/test_embedding/test_sentence_similarity.py)

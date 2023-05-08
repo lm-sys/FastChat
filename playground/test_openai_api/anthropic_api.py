@@ -1,6 +1,6 @@
 import os
 
-from fastchat import get_conversation_template
+from fastchat.model import get_conversation_template
 
 
 def claude():
