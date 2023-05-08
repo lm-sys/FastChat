@@ -33,7 +33,7 @@ except ImportError:
 import torch
 import uvicorn
 
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
+from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode
 from fastchat.model.model_adapter import load_model, add_model_args
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.serve.inference import generate_stream
@@ -188,12 +188,12 @@ class ModelWorker:
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
-                "error_code": 1,
+                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except ValueError as e:
             ret = {
                 "text": str(e),
-                "error_code": 2,
+                "error_code": ErrorCode.INTERNAL_ERROR,
             }
         yield json.dumps(ret).encode() + b"\0"
     
@@ -221,12 +221,12 @@ class ModelWorker:
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
-                "error_code": 1,
+                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except ValueError as e:
             ret = {
                 "text": str(e),
-                "error_code": 2,
+                "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
     
@@ -252,7 +252,7 @@ class ModelWorker:
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
-                "error_code": 1,
+                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             return json.dumps(ret).encode() + b"\0"
 
