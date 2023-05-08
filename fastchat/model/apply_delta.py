@@ -82,6 +82,9 @@ def download_deltas(delta_path, work_dir):
 
 
 def apply_delta(base_model_path, target_model_path, delta_path):
+    if not os.path.exists(target_model_path):
+        os.makedirs(target_model_path, exist_ok=True)
+    
     downloaded_deltas = False
     deltas_work_dir = delta_path
 
