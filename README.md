@@ -213,10 +213,10 @@ python3 -m fastchat.serve.gradio_web_server_multi
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
 FastChat provides OpenAI-Compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
-See [docs/openai_api.md](docs/openai_api.md)
+See [docs/openai_api.md](docs/openai_api.md).
 
 ### Hugging Face Generation APIs
-See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
+See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 
 ## Evaluation
 
