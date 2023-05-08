@@ -11,8 +11,17 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
 IDENTITY_WORDS = [
-    "lmsys", "vicuna", "koala", "uc berkeley", "open assistant", "laion",
-    "chatglm", "chatgpt", "openai", "anthropic", "claude"
+    "lmsys",
+    "vicuna",
+    "koala",
+    "uc berkeley",
+    "open assistant",
+    "laion",
+    "chatglm",
+    "chatgpt",
+    "openai",
+    "anthropic",
+    "claude",
 ]
 
 
@@ -42,6 +51,7 @@ def detect_lang(text):
     from polyglot.detect import Detector
     from polyglot.detect.base import logger as polyglot_logger
     import pycld2
+
     polyglot_logger.setLevel("ERROR")
 
     try:
@@ -53,7 +63,7 @@ def detect_lang(text):
 
 def remove_html(raw):
     if raw.startswith("<h3>"):
-        return raw[raw.find(": ") + 2: -len('</h3>\n')]
+        return raw[raw.find(": ") + 2 : -len("</h3>\n")]
     return raw
 
 
@@ -81,14 +91,18 @@ def clean_battle_data(log_files):
         # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
-            models_hidden = [row["states"][0]["model_name"], row["states"][1]["model_name"]]
+            models_hidden = [
+                row["states"][0]["model_name"],
+                row["states"][1]["model_name"],
+            ]
             if models_hidden[0] is None:
                 models_hidden = models_public
         else:
             models_hidden = models_public
 
-        if ((models_public[0] == "" and models_public[1] != "") or
-            (models_public[1] == "" and models_public[0] != "")):
+        if (models_public[0] == "" and models_public[1] != "") or (
+            models_public[1] == "" and models_public[0] != ""
+        ):
             ct_invalid += 1
             continue
 
@@ -116,7 +130,7 @@ def clean_battle_data(log_files):
         messages = ""
         for i in range(2):
             state = row["states"][i]
-            for role, msg in state["messages"][state["offset"]:]:
+            for role, msg in state["messages"][state["offset"] :]:
                 if msg:
                     messages += msg.lower()
         for word in IDENTITY_WORDS:
@@ -129,20 +143,24 @@ def clean_battle_data(log_files):
             continue
 
         # Keep the result
-        battles.append(dict(
-            model_a=models[0],
-            model_b=models[1],
-            win=convert_type[row["type"]],
-            anony=anony,
-            rounds=rounds,
-            language=lang_code,
-            tstamp=row["tstamp"],
-        ))
+        battles.append(
+            dict(
+                model_a=models[0],
+                model_b=models[1],
+                win=convert_type[row["type"]],
+                anony=anony,
+                rounds=rounds,
+                language=lang_code,
+                tstamp=row["tstamp"],
+            )
+        )
 
         all_models.update(models_hidden)
 
-    print(f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
-          f"#leaked_identity: {ct_leaked_identity}")
+    print(
+        f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
+        f"#leaked_identity: {ct_leaked_identity}"
+    )
     print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
     print(f"#models: {len(all_models)}, {all_models}")
 
@@ -161,7 +179,7 @@ if __name__ == "__main__":
     for i in range(4):
         print(battles[i])
 
-    date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y%m%d")
+    date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime("%Y%m%d")
     output = f"clean_battle_{date}.json"
     with open(output, "w") as fout:
         json.dump(battles, fout, indent=2)

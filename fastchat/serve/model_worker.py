@@ -234,7 +234,7 @@ class ModelWorker:
             model_output = self.model(input_ids, output_hidden_states=True)
             is_chatglm = "chatglm" in str(type(self.model)).lower()
             if is_chatglm:
-                data = (model_output.hidden_states[-1].transpose(0,1))[0]
+                data = (model_output.hidden_states[-1].transpose(0, 1))[0]
             else:
                 data = model_output.hidden_states[-1][0]
             embedding = torch.mean(data, dim=0)

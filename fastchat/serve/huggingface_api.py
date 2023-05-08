@@ -41,9 +41,10 @@ def main(args):
     if model.config.is_encoder_decoder:
         output_ids = output_ids[0]
     else:
-        output_ids = output_ids[0][len(input_ids[0]):]
-    outputs = tokenizer.decode(output_ids, skip_special_tokens=True,
-                               spaces_between_special_tokens=False)
+        output_ids = output_ids[0][len(input_ids[0]) :]
+    outputs = tokenizer.decode(
+        output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
+    )
 
     print(f"{conv.roles[0]}: {msg}")
     print(f"{conv.roles[1]}: {outputs}")

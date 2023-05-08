@@ -43,7 +43,7 @@ def load_demo_side_by_side_named(models, url_params):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8, 4, 2, 1] + [1] * 32)[:len(models) - 1]
+        weights = ([8, 4, 2, 1] + [1] * 32)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
@@ -134,8 +134,7 @@ def clear_history(request: gr.Request):
     return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 6
 
 
-def share_click(state0, state1, model_selector0, model_selector1,
-                request: gr.Request):
+def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
     logger.info(f"share (named). ip: {request.client.host}")
     if state0 is not None and state1 is not None:
         vote_last_response(
@@ -167,7 +166,9 @@ def add_text(state0, state1, text, request: gr.Request):
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
-            logger.info(f"violate moderation (named). ip: {request.client.host}. text: {text}")
+            logger.info(
+                f"violate moderation (named). ip: {request.client.host}. text: {text}"
+            )
             for i in range(num_models):
                 states[i].skip_next = True
             return (
@@ -211,8 +212,12 @@ def http_bot_all(
 
     if state0.skip_next:
         # This generate call is skipped due to invalid inputs
-        yield (state0, state1, state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot()) + (no_change_btn,) * 6
+        yield (
+            state0,
+            state1,
+            state0.to_gradio_chatbot(),
+            state1.to_gradio_chatbot(),
+        ) + (no_change_btn,) * 6
         return
 
     states = [state0, state1]
@@ -220,7 +225,14 @@ def http_bot_all(
     gen = []
     for i in range(num_models):
         gen.append(
-            http_bot(states[i], model_selector[i], temperature, top_p, max_new_tokens, request)
+            http_bot(
+                states[i],
+                model_selector[i],
+                temperature,
+                top_p,
+                max_new_tokens,
+                request,
+            )
         )
 
     chatbots = [None] * num_models
@@ -281,8 +293,9 @@ By using this service, users are required to agree to the following terms: The s
     model_selectors = [None] * num_models
     chatbots = [None] * num_models
 
-    notice = gr.Markdown(notice_markdown + model_description_md,
-                         elem_id="notice_markdown")
+    notice = gr.Markdown(
+        notice_markdown + model_description_md, elem_id="notice_markdown"
+    )
 
     with gr.Box(elem_id="share-region-named"):
         with gr.Row():
@@ -299,8 +312,9 @@ By using this service, users are required to agree to the following terms: The s
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(label=label, elem_id=f"chatbot",
-                        visible=False).style(height=550)
+                    chatbots[i] = grChatbot(
+                        label=label, elem_id=f"chatbot", visible=False
+                    ).style(height=550)
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -353,8 +367,14 @@ By using this service, users are required to agree to the following terms: The s
     gr.Markdown(learn_more_md)
 
     # Register listeners
-    btn_list = [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn,
-                regenerate_btn, clear_btn]
+    btn_list = [
+        leftvote_btn,
+        rightvote_btn,
+        tie_btn,
+        bothbad_btn,
+        regenerate_btn,
+        clear_btn,
+    ]
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
@@ -384,7 +404,7 @@ By using this service, users are required to agree to the following terms: The s
     )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
 
-    share_js="""
+    share_js = """
 function (a, b, c, d) {
     const captureElement = document.querySelector('#share-region-named');
     html2canvas(captureElement)
@@ -436,4 +456,3 @@ function (a, b, c, d) {
         button_row2,
         parameter_row,
     )
-

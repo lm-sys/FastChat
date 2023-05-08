@@ -22,8 +22,10 @@ pd.options.display.float_format = "{:.2f}".format
 
 def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
- 
-    for rd, model_a, model_b, win in battles[['model_a', 'model_b', 'win']].itertuples():
+
+    for rd, model_a, model_b, win in battles[
+        ["model_a", "model_b", "win"]
+    ].itertuples():
         ra = rating[model_a]
         rb = rating[model_b]
         ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
@@ -38,7 +40,7 @@ def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
             raise Exception(f"unexpected vote {win}")
         rating[model_a] += K * (sa - ea)
         rating[model_b] += K * (1 - sa - eb)
-    
+
     return dict(rating)
 
 
@@ -51,29 +53,37 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
 
 
 def get_elo_from_bootstrap(bootstrap_df):
-    return dict(bootstrap_df.quantile(.5))
+    return dict(bootstrap_df.quantile(0.5))
 
 
 def compute_pairwise_win_fraction(battles, model_order):
     # Times each model wins as Model A
     a_win_ptbl = pd.pivot_table(
-        battles[battles['win'] == "model_a"], 
-        index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+        battles[battles["win"] == "model_a"],
+        index="model_a",
+        columns="model_b",
+        aggfunc="size",
+        fill_value=0,
+    )
 
     # Table counting times each model wins as Model B
     b_win_ptbl = pd.pivot_table(
-        battles[battles['win'] == "model_b"], 
-        index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+        battles[battles["win"] == "model_b"],
+        index="model_a",
+        columns="model_b",
+        aggfunc="size",
+        fill_value=0,
+    )
 
     # Table counting number of A-B pairs
-    num_battles_ptbl = pd.pivot_table(battles, 
-        index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+    num_battles_ptbl = pd.pivot_table(
+        battles, index="model_a", columns="model_b", aggfunc="size", fill_value=0
+    )
 
-    # Computing the proportion of wins for each model as A and as B 
+    # Computing the proportion of wins for each model as A and as B
     # against all other models
-    row_beats_col_freq = (
-        (a_win_ptbl + b_win_ptbl.T) / 
-        (num_battles_ptbl + num_battles_ptbl.T)
+    row_beats_col_freq = (a_win_ptbl + b_win_ptbl.T) / (
+        num_battles_ptbl + num_battles_ptbl.T
     )
 
     if model_order is None:
@@ -83,7 +93,7 @@ def compute_pairwise_win_fraction(battles, model_order):
     # Arrange ordering according to proprition of wins
     row_beats_col = row_beats_col_freq.loc[model_order, model_order]
     return row_beats_col
- 
+
 
 def visualize_leaderboard_table(rating):
     models = list(rating.keys())
@@ -94,7 +104,7 @@ def visualize_leaderboard_table(rating):
         2: "🥈",
         3: "🥉",
     }
-   
+
     md = ""
     md += "| Rank | Model | Elo Rating | Description |\n"
     md += "| --- | --- | --- | --- |\n"
@@ -108,55 +118,90 @@ def visualize_leaderboard_table(rating):
 
 
 def visualize_bootstrap_elo_rating(df):
-    bars = pd.DataFrame(dict(
-        lower = df.quantile(.025),
-        rating = df.quantile(.5),
-        upper = df.quantile(.975))).reset_index(names="model").sort_values("rating", ascending=False)
-    bars['error_y'] = bars['upper'] - bars["rating"]
-    bars['error_y_minus'] = bars['rating'] - bars["lower"]
-    bars['rating_rounded'] = np.round(bars['rating'], 2)
-    fig = px.scatter(bars, x="model", y="rating", error_y="error_y", 
-                     error_y_minus="error_y_minus", text="rating_rounded",
-                     width=450)
+    bars = (
+        pd.DataFrame(
+            dict(
+                lower=df.quantile(0.025),
+                rating=df.quantile(0.5),
+                upper=df.quantile(0.975),
+            )
+        )
+        .reset_index(names="model")
+        .sort_values("rating", ascending=False)
+    )
+    bars["error_y"] = bars["upper"] - bars["rating"]
+    bars["error_y_minus"] = bars["rating"] - bars["lower"]
+    bars["rating_rounded"] = np.round(bars["rating"], 2)
+    fig = px.scatter(
+        bars,
+        x="model",
+        y="rating",
+        error_y="error_y",
+        error_y_minus="error_y_minus",
+        text="rating_rounded",
+        width=450,
+    )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
- 
+
 
 def visualize_pairwise_win_fraction(battles, model_order):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
-    fig = px.imshow(row_beats_col, color_continuous_scale='RdBu',
-                    text_auto=".2f", height=500, width=500)
-    fig.update_layout(xaxis_title="Model B", 
-                  yaxis_title="Model A",
-                  xaxis_side="top",
-                  title_y=0.07, title_x=0.5)
-    fig.update_traces(hovertemplate=
-        "Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>")
+    fig = px.imshow(
+        row_beats_col,
+        color_continuous_scale="RdBu",
+        text_auto=".2f",
+        height=500,
+        width=500,
+    )
+    fig.update_layout(
+        xaxis_title="Model B",
+        yaxis_title="Model A",
+        xaxis_side="top",
+        title_y=0.07,
+        title_x=0.5,
+    )
+    fig.update_traces(
+        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>"
+    )
 
     return fig
 
 
 def visualize_battle_count(battles, model_order):
-    ptbl = pd.pivot_table(battles, index="model_a", columns="model_b", aggfunc="size", 
-                          fill_value=0)
+    ptbl = pd.pivot_table(
+        battles, index="model_a", columns="model_b", aggfunc="size", fill_value=0
+    )
     battle_counts = ptbl + ptbl.T
-    fig = px.imshow(battle_counts.loc[model_order, model_order], text_auto=True,
-                    height=500, width=500)
-    fig.update_layout(xaxis_title="Model B", 
-                      yaxis_title="Model A",
-                      xaxis_side="top",
-                      title_y=0.07, title_x=0.5)
-    fig.update_traces(hovertemplate=
-                      "Model A: %{y}<br>Model B: %{x}<br>Count: %{z}<extra></extra>")
+    fig = px.imshow(
+        battle_counts.loc[model_order, model_order],
+        text_auto=True,
+        height=500,
+        width=500,
+    )
+    fig.update_layout(
+        xaxis_title="Model B",
+        yaxis_title="Model A",
+        xaxis_side="top",
+        title_y=0.07,
+        title_x=0.5,
+    )
+    fig.update_traces(
+        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Count: %{z}<extra></extra>"
+    )
     return fig
 
 
 def visualize_average_win_rate(battles):
     row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
-    fig = px.bar(row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
-                 text_auto=".2f", width=450)
-    fig.update_layout(yaxis_title="Average Win Rate", xaxis_title="Model",
-                      showlegend=False)
+    fig = px.bar(
+        row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
+        text_auto=".2f",
+        width=450,
+    )
+    fig.update_layout(
+        yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
+    )
     return fig
 
 
@@ -181,8 +226,9 @@ def report_elo_analysis_results(battles_json):
     bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
 
     last_update_tstamp = battles["tstamp"].max()
-    last_update_datetime = datetime.datetime.fromtimestamp(last_update_tstamp,
-        tz=timezone('US/Pacific')).strftime("%Y-%m-%d %H:%M:%S %Z")
+    last_update_datetime = datetime.datetime.fromtimestamp(
+        last_update_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     return {
         "elo_rating": elo_rating,

@@ -232,7 +232,7 @@ class CacheFlowWorker:
             for seq in seq_group.seqs:
                 token_ids = seq.get_token_ids()
                 if not echo:
-                    token_ids = token_ids[len(input_ids):]
+                    token_ids = token_ids[len(input_ids) :]
                 output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
                 if stop_str is not None:
                     if output.endswith(stop_str):
