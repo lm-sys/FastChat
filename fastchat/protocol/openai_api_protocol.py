@@ -32,8 +32,9 @@ class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
     choices: List[ChatCompletionResponseChoice]
-    usage: Optional[Dict[str, int]]
+    usage: Dict[str, int]
 
 
 class DeltaMessage(BaseModel):
@@ -43,13 +44,14 @@ class DeltaMessage(BaseModel):
 class ChatCompletionResponseStreamChoice(BaseModel):
     index: int
     delta: DeltaMessage
-    finish_reason: str
+    finish_reason: Optional[str]
 
 
 class ChatCompletionStreamResponse(BaseModel):
     id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion.chunk"
     created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
     choices: List[ChatCompletionResponseStreamChoice]
 
 
@@ -62,7 +64,7 @@ class EmbeddingsResponse(BaseModel):
     object: str = "list"
     data: List[Dict[str, Any]]
     model: str
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
 
 
 class CompletionRequest(BaseModel):
@@ -84,4 +86,4 @@ class CompletionResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[Dict[str, Any]]
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]

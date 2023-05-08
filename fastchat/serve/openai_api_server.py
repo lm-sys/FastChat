@@ -5,7 +5,7 @@
 - Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
 
 Usage:
-python3 -m fastchat.serve.api_server
+python3 -m fastchat.serve.openai_api_server
 """
 import asyncio
 import argparse
@@ -22,6 +22,7 @@ import httpx
 import uvicorn
 from pydantic import BaseSettings
 
+from fastchat.constants import WORKER_API_TIMEOUT
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.protocol.openai_api_protocol import (
     ChatCompletionRequest,
@@ -75,8 +76,9 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stop=request.stop,
     )
     if request.stream:
-        response_stream = chat_completion_stream(request.model, gen_params)
-        return StreamingResponse(response_stream)
+        response_stream = chat_completion_stream(
+            request.model, gen_params, request.n)
+        return StreamingResponse(response_stream, media_type="text/event-stream")
 
     # TODO: batch the requests
     choices = []
@@ -102,7 +104,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         "completion_tokens": -1,
         "total_tokens": -1,
     }
-    return ChatCompletionResponse(choices=choices, usage=usage)
+    return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
 
 
 def get_gen_params(
@@ -175,58 +177,51 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
     return worker_addr
 
 
-async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
+async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n: int):
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
-        delimiter = "\0"
-
-        async with client.stream(
-            "POST",
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            timeout=20,
-        ) as response:
-            i = 0
-            prev_total = ""
-            async for chunk in response.aiter_text():
-                if not chunk:
-                    continue
-                lines = chunk.split(delimiter)
-                for line in lines:
-                    if not line:
-                        continue
-
-                    data = json.loads(line)
-                    if data["error_code"] == 0:
-                        output = data["text"].strip()
-                        delta = output.replace(prev_total, "")
-                        prev_total = output
-                        yield json.dumps(
-                            ChatCompletionStreamResponse(
-                                choices=[
-                                    ChatCompletionResponseStreamChoice(
-                                        index=i,
-                                        delta=DeltaMessage(content=delta),
-                                        finish_reason="",
-                                    )
-                                ]
-                            ).dict()
-                        )
-                        i += 1
-
-            # Streaming the finishing token
-            yield json.dumps(
-                ChatCompletionStreamResponse(
-                    choices=[
-                        ChatCompletionResponseStreamChoice(
-                            index=i,
-                            delta=DeltaMessage(content=""),
-                            finish_reason="stop",
-                        )
-                    ]
-                ).dict()
+        delimiter = b"\0"
+ 
+        for idx in range(n):
+            delta_position = 0
+            response = ChatCompletionStreamResponse(
+                model=model_name,
+                choices=[
+                    ChatCompletionResponseStreamChoice(
+                        index=idx,
+                        delta=DeltaMessage(content=""),
+                        finish_reason=None,
+                    )
+                ]
             )
+
+            async with client.stream(
+                "POST",
+                worker_addr + "/worker_generate_stream",
+                headers=headers,
+                json=gen_params,
+                timeout=WORKER_API_TIMEOUT,
+            ) as post_response:
+                # TODO: begins with a single delta containing the role and a null finish reason
+                async for raw_chunk in post_response.aiter_raw():
+                    for chunk in raw_chunk.split(delimiter):
+                        if not chunk:
+                            continue
+                        data = json.loads(chunk.decode())
+                        if data["error_code"] == 0:
+                            last_delta_position = delta_position
+                            output = data["text"].strip()
+                            delta_position = len(output)
+                            delta_diff = delta_position - last_delta_position
+                            if delta_diff > 0:
+                                delta = output[last_delta_position:]
+                                response.choices[0].delta.content = delta
+                                yield json.dumps(response.dict())
+
+                # Streaming the finishing token
+                response.choices[0].delta.content = ""
+                response.choices[0].finish_reason = "stop"
+                yield json.dumps(response.dict())
 
 
 async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
@@ -240,7 +235,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]):
             worker_addr + "/worker_generate_stream",
             headers=headers,
             json=gen_params,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         ) as response:
             content = await response.aread()
 
@@ -301,7 +296,7 @@ async def generate_completion(payload: Dict[str, Any]):
             worker_addr + "/worker_generate_completion",
             headers=headers,
             json=payload,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         )
         completion = response.json()
         return completion
@@ -338,7 +333,7 @@ async def get_embedding(payload: Dict[str, Any]):
             worker_addr + "/worker_get_embeddings",
             headers=headers,
             json=payload,
-            timeout=20,
+            timeout=WORKER_API_TIMEOUT,
         )
         embedding = response.json()
         return embedding

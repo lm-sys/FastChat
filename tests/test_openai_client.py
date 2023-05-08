@@ -32,7 +32,7 @@ def test_chat_completion_stream():
     for chunk in res:
         content = chunk.choices[0].delta.content
         if content is not None:
-            print(content, end="")
+            print(content, end="", flush=True)
     print()
 
 
@@ -50,7 +50,7 @@ async def test_chat_completion_stream_async():
     async for chunk in res:
         content = chunk.choices[0].delta.content
         if content is not None:
-            print(content, end="")
+            print(content, end="", flush=True)
     print()
 
 
