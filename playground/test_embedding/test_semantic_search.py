@@ -17,15 +17,12 @@ def cosine_similarity(vec1, vec2):
 
 def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
     if "ada" in model:
-        try:
-            resp = openai.Embedding.create(
-                model=model,
-                input=word,
-            )
-            embedding = np.array(resp["data"][0]["embedding"])
-            return embedding
-        except:
-            raise RuntimeError("OpenAI API call failed")
+        resp = openai.Embedding.create(
+            model=model,
+            input=word,
+        )
+        embedding = np.array(resp["data"][0]["embedding"])
+        return embedding
 
     url = "http://localhost:8000/v1/create_embeddings"
     headers = {"Content-Type": "application/json"}
