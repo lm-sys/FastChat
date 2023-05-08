@@ -179,7 +179,7 @@ This controller manages the distributed workers.
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/model/weights
 ```
-Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
+Wait until the process finishes loading the model and you see "Uvicorn running on ...". The model worker will register itself to the controller .
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
@@ -195,9 +195,10 @@ python3 -m fastchat.serve.gradio_web_server
 This is the user interface that users will interact with.
 
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
+If the models do not show up, try to reboot the gradio web server.
 
 #### (Optional): Advanced Features
-- You can register multiple model workers to a single controller. When doing so, please allocate different GPUs and ports for different model workers.
+- You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
 # worker 0
 CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
