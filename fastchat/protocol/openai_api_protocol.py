@@ -7,15 +7,15 @@ from pydantic import BaseModel, Field
 
 
 class ChatCompletionRequest(BaseModel):
-    # TODO: support streaming, stop with a list of text etc.
+    # TODO: support stop with a list of text etc.
     model: str
     messages: List[Dict[str, str]]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
     n: int = 1
     max_tokens: Optional[int] = None
-    stream: Optional[bool] = False
     stop: Optional[Union[str, List[str]]] = None
+    stream: Optional[bool] = False
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
@@ -35,23 +35,29 @@ class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
     choices: List[ChatCompletionResponseChoice]
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
+
 
 class DeltaMessage(BaseModel):
-    content: Optional[str]
+    role: Optional[str] = None
+    content: Optional[str] = None
+
 
 class ChatCompletionResponseStreamChoice(BaseModel):
     index: int
     delta: DeltaMessage
     finish_reason: Optional[Literal["stop", "length"]]
 
-class ChatCompletionResponseStreamChunk(BaseModel):
+
+class ChatCompletionStreamResponse(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
     object: str = "chat.completion.chunk"
     created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
     choices: List[ChatCompletionResponseStreamChoice]
-    # Similar to OpenAI, the stream mode does not return usage information
+
 
 class EmbeddingsRequest(BaseModel):
     model: str
@@ -59,10 +65,10 @@ class EmbeddingsRequest(BaseModel):
 
 
 class EmbeddingsResponse(BaseModel):
-    object: str = "lists"
+    object: str = "list"
     data: List[Dict[str, Any]]
     model: str
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]
 
 
 class CompletionRequest(BaseModel):
@@ -84,4 +90,4 @@ class CompletionResponse(BaseModel):
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[Dict[str, Any]]
-    usage: Optional[Dict[str, int]] = None
+    usage: Dict[str, int]

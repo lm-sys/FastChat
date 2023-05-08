@@ -9,7 +9,7 @@ import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from fastchat import load_model, get_conversation_template, add_model_args
+from fastchat.model import load_model, get_conversation_template, add_model_args
 
 
 @torch.inference_mode()

@@ -7,7 +7,7 @@ from tqdm import tqdm
 import shortuuid
 import ray
 
-from fastchat import get_conversation_template
+from fastchat.model import get_conversation_template
 
 
 def run_eval(model_path, model_id, question_file, answer_file, num_gpus):
