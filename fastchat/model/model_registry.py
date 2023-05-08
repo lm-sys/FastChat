@@ -33,3 +33,4 @@ register_model_info(["llama-13b"], "LLaMA", "https://arxiv.org/abs/2302.13971", 
 register_model_info(["dolly-v2-12b"], "Dolly", "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm", "an instruction-tuned open large language model by Databricks")
 register_model_info(["stablelm-tuned-alpha-7b"], "StableLM", "https://github.com/stability-AI/stableLM", "Stability AI language models")
 register_model_info(["fastchat-t5-3b"], "FastChat-T5", "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0", "a chat assistant fine-tuned from FLAN-T5 by LMSYS")
+register_model_info(["phoenix-inst-chat-7b"], "Phoenix-7b", "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b", "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)")
