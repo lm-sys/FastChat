@@ -418,7 +418,7 @@ By using this service, users are required to agree to the following terms: The s
             minfo = model_info[name]
             model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
         else:
-            model_description_md += f" |"
+            model_description_md += f" {name} |"
         if i % 3 == 2:
             model_description_md += "\n"
 
