@@ -233,7 +233,7 @@ async def chat_completion_stream_generator(model_name: str, n: int, gen_params: 
     yield "data: [DONE]\n\n"
 
 async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
-    controller_url = app_settings.FASTCHAT_CONTROLLER_URL
+    controller_url = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         ret = await client.post(
             controller_url + "/get_worker_address", json={"model": model_name}
