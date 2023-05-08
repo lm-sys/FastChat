@@ -7,17 +7,15 @@ python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-7b --target ~
 import argparse
 import gc
 import glob
-import json
 import os
 import shutil
-import tempfile
 
 from huggingface_hub import snapshot_download
 import torch
-from torch import nn
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
-
+import numpy as np
+import git
+from tqdm import tqdm
 
 GB = 1 << 30
 
@@ -66,82 +64,77 @@ def split_files(model_path, tmp_path, split_size):
         shutil.rmtree(tmp_path)
         raise
 
+def download_deltas(delta_path, work_dir):
+    # Clone the repository without downloading LFS files
+    with tqdm(total=3, desc="Cloning deltas") as pbar:
+        repo = git.Repo.clone_from(f"https://huggingface.co/{delta_path}", work_dir, depth=1, no_checkout=True)
+        pbar.update(1)
 
-def apply_delta_low_cpu_mem(base_model_path, target_model_path, delta_path):
-    delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
-    delta_config = AutoConfig.from_pretrained(delta_path)
+        # Initialize the LFS filter
+        repo.git.checkout('HEAD', force=True)
+        pbar.update(1)
 
-    if os.path.exists(target_model_path):
-        shutil.rmtree(target_model_path)
-    os.makedirs(target_model_path)
+        # Download the LFS files
+        repo.git.lfs('pull', '--include="*"')
+        pbar.update(1)
 
-    split_size = 4 * GB
-
-    with tempfile.TemporaryDirectory() as tmp_base_path, tempfile.TemporaryDirectory() as tmp_delta_path:
-        print(f"Split files for the base model to {tmp_base_path}")
-        split_files(base_model_path, tmp_base_path, split_size)
-        print(f"Split files for the delta weights to {tmp_delta_path}")
-        split_files(delta_path, tmp_delta_path, split_size)
-
-        base_pattern = os.path.join(tmp_base_path, "pytorch_model-*.bin")
-        base_files = glob.glob(base_pattern)
-        delta_pattern = os.path.join(tmp_delta_path, "pytorch_model-*.bin")
-        delta_files = glob.glob(delta_pattern)
-        delta_state_dict = torch.load(delta_files[0])
-
-        print("Applying the delta")
-        weight_map = {}
-        total_size = 0
-
-        for i, base_file in tqdm(enumerate(base_files)):
-            state_dict = torch.load(base_file)
-            file_name = f"pytorch_model-{i}.bin"
-            for name, param in state_dict.items():
-                if name not in delta_state_dict:
-                    for delta_file in delta_files:
-                        delta_state_dict = torch.load(delta_file)
-                        gc.collect()
-                        if name in delta_state_dict:
-                            break
-
-                state_dict[name] += delta_state_dict[name]
-                weight_map[name] = file_name
-                total_size += param.numel() * param.element_size()
-                gc.collect()
-            torch.save(state_dict, os.path.join(target_model_path, file_name))
-
-        with open(
-            os.path.join(target_model_path, "pytorch_model.bin.index.json"), "w"
-        ) as f:
-            json.dump(
-                {"weight_map": weight_map, "metadata": {"total_size": total_size}}, f
-            )
-
-    print(f"Saving the target model to {target_model_path}")
-    delta_tokenizer.save_pretrained(target_model_path)
-    delta_config.save_pretrained(target_model_path)
+    return work_dir
 
 
 def apply_delta(base_model_path, target_model_path, delta_path):
-    print(f"Loading the delta weights from {delta_path}")
-    delta_tokenizer = AutoTokenizer.from_pretrained(delta_path, use_fast=False)
-    delta = AutoModelForCausalLM.from_pretrained(
-        delta_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-    )
+    downloaded_deltas = False
+    deltas_work_dir = delta_path
 
-    print(f"Loading the base model from {base_model_path}")
-    base = AutoModelForCausalLM.from_pretrained(
-        base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-    )
+    if not os.path.exists(delta_path):
+        deltas_work_dir = os.path.join(target_model_path, "downloaded_deltas")
+        os.makedirs(deltas_work_dir, exist_ok=True)
+        downloaded_deltas = True
+        delta_path = download_deltas(delta_path, deltas_work_dir)
 
-    print("Applying the delta")
-    for name, param in tqdm(base.state_dict().items(), desc="Applying delta"):
-        assert name in delta.state_dict()
-        param.data += delta.state_dict()[name]
+        if delta_path is None:
+            print("Invalid path for deltas. Exiting.")
+            return
 
-    print(f"Saving the target model to {target_model_path}")
-    base.save_pretrained(target_model_path)
-    delta_tokenizer.save_pretrained(target_model_path)
+    for file in os.listdir(delta_path):
+        if not file.startswith("."):
+            original_file = os.path.join(base_model_path, file)
+            deltas = os.path.join(delta_path, file)
+            new_file = os.path.join(target_model_path, file)
+
+            buffer_size = 4096 * 1024
+            
+            if os.path.exists(new_file):
+                os.remove(new_file)
+
+            with open(original_file, 'rb') as orig_stream, open(deltas, 'rb') as delta_stream, open(new_file, 'wb') as new_stream:
+                while True:
+                    orig_buffer = orig_stream.read(buffer_size)
+                    delta_buffer = delta_stream.read(buffer_size)
+
+                    if not delta_buffer:
+                        break
+
+                    orig_buffer_np = np.frombuffer(orig_buffer, dtype=np.uint8)
+                    delta_buffer_np = np.frombuffer(delta_buffer, dtype=np.uint8)
+
+                    if len(orig_buffer_np) < len(delta_buffer_np):
+                        orig_buffer_np = np.pad(orig_buffer_np, (0, len(delta_buffer_np) - len(orig_buffer_np)), mode='constant')
+
+                    
+                    min_length = min(len(orig_buffer_np), len(delta_buffer_np))
+                    new_buffer_np = np.add(delta_buffer_np[:min_length], orig_buffer_np[:min_length], dtype=np.int16)
+                    
+                    new_buffer_np %= 256
+                    new_buffer_np = new_buffer_np.astype(np.uint8)
+
+                    if len(delta_buffer_np) > len(orig_buffer_np):
+                        new_buffer_np = np.concatenate((new_buffer_np, delta_buffer_np[len(orig_buffer_np):]))
+
+                    new_stream.write(new_buffer_np.tobytes())
+
+
+    if downloaded_deltas:
+        shutil.rmtree(deltas_work_dir)
 
 
 if __name__ == "__main__":
@@ -149,17 +142,5 @@ if __name__ == "__main__":
     parser.add_argument("--base-model-path", type=str, required=True)
     parser.add_argument("--target-model-path", type=str, required=True)
     parser.add_argument("--delta-path", type=str, required=True)
-    parser.add_argument(
-        "--low-cpu-mem",
-        action="store_true",
-        help="Lower the cpu memory usage. This will split large files and use "
-        "disk as swap to reduce the memory usage below 10GB.",
-    )
     args = parser.parse_args()
-
-    if args.low_cpu_mem:
-        apply_delta_low_cpu_mem(
-            args.base_model_path, args.target_model_path, args.delta_path
-        )
-    else:
-        apply_delta(args.base_model_path, args.target_model_path, args.delta_path)
+    apply_delta(args.base_model_path, args.target_model_path, args.delta_path)
