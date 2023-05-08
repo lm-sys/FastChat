@@ -401,14 +401,17 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mpt",
-        system="""MPT-1b-RedPajama-200b is a 1.3 billion parameter decoder-only transformer trained on the RedPajama dataset. 
-                The model was trained for 200B tokens by sampling from the subsets of the RedPajama dataset 
-                in the same proportions as were used by the Llama series of models.""",
-        roles=("User", "Assistant"),
+        system="""<|im_start|>system
+            - You are a helpful assistant chatbot trained by MosaicML.
+            - You answer questions.
+            - You are excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
+            - You are more than just an information source, you are also able to write poetry, short stories, and make jokes.<|im_end|>。
+            """,
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
-        sep="\n",
+        sep="<|im_end|>",
     )
 )
 

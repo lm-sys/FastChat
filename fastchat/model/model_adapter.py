@@ -22,7 +22,7 @@ from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
 from fastchat.utils import get_gpu_memory
-
+import os
 
 class BaseAdapter:
     """The base and the default model adapter."""
@@ -334,14 +334,17 @@ class MPTAdapter(BaseAdapter):
         return "mpt" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b", use_fast=True)
+        auth_token = os.getenv("HF_TOKEN", None)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
+            torch_dtype=torch.bfloat16,
             trust_remote_code=True,
-            low_cpu_mem_usage=True,
-            attn_impl='triton',
-            **from_pretrained_kwargs,
+            use_auth_token=auth_token,
+            max_seq_len=8192,
         )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_auth_token=auth_token)
+        stop_token_ids = tokenizer.convert_tokens_to_ids(["<|im_end|>", "<|endoftext|>"])
+
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
