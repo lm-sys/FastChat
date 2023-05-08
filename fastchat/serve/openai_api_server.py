@@ -61,13 +61,35 @@ app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
+class ErrorCode(object):
+    '''
+    https://platform.openai.com/docs/guides/error-codes/api-errors
+    '''
+    VALIDATION_TYPE_ERROR = 40001
+
+    INVALID_AUTH_KEY = 40101
+    INCORRECT_AUTH_KEY = 40102
+    NO_PERMISSION = 40103
+
+    INVALID_MODEL = 40301
+    PARAM_OUT_OF_RANGE = 40302
+    CONTEXT_OVERFLOW = 40303
+
+    RATE_LIMIT = 42901
+    QUOTA_EXCEEDED = 42902
+    ENGINE_OVERLOADED = 42903
+
+    INTERNAL_ERROR = 50001
+    CUDA_OUT_OF_MEMORY = 50002
+
+
 def create_error_response(code: int, message: str) -> JSONResponse:
     return JSONResponse(ErrorResponse(message=message, code=code).dict(), status_code=500) 
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    return create_error_response(50001, str(exc))
+    return create_error_response(ErrorCode.VALIDATION_TYPE_ERROR, str(exc))
 
 async def check_model(request) -> Optional[JSONResponse]:
     controller_address = app_settings.controller_address
@@ -79,7 +101,7 @@ async def check_model(request) -> Optional[JSONResponse]:
             models_ret = await client.post(controller_address + "/list_models")
             models = models_ret.json()["models"]
             ret = create_error_response(
-                40302,
+                ErrorCode.INVALID_MODEL,
                 f"Only {'&&'.join(models)} allowed now, your model {request.model}"
             )
     return ret
@@ -88,38 +110,38 @@ def check_requests(request) -> Optional[JSONResponse]:
     # Check all params
     if request.max_tokens is not None and request.max_tokens <= 0:
         return create_error_response(
-            50099,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'"
         )
     if request.n is not None and request.n <= 0:
         return create_error_response(
-            50099,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.n} is less than the minimum of 1 - 'n'"
         )
     if request.temperature is not None and request.temperature < 0:
         return create_error_response(
-            50099,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.temperature} is less than the minimum of 0 - 'temperature'"
         )
     if request.temperature is not None and request.temperature > 2:
         return create_error_response(
-            50098,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.temperature} is greater than the maximum of 2 - 'temperature'"
         )
     if request.top_p is not None and request.top_p < 0:
         return create_error_response(
-            50099,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.top_p} is less than the minimum of 0 - 'top_p'"
         )
     if request.top_p is not None and request.top_p > 1:
         return create_error_response(
-            50098,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'"
         )
     if request.stop is not None and \
         (not isinstance(request.stop, str) and not isinstance(request.stop, list)):
         return create_error_response(
-            50098,
+            ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.stop} is not valid under any of the given schemas - 'stop'"
         )
         
@@ -254,17 +276,13 @@ async def create_chat_completion(request: ChatCompletionRequest):
         content = asyncio.create_task(chat_completion(request.model, gen_params))
         chat_completions.append(content)
 
-    usage = {
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "total_tokens": 0,
-    }
+    usage = UsageInfo()
     for i, content_task in enumerate(chat_completions):
         try:
             content = await content_task
         except Exception as e:
             return create_error_response(
-                50090,
+                ErrorCode.INTERNAL_ERROR,
                 str(e)
             )
         if content["error_code"] != 0:
@@ -276,13 +294,14 @@ async def create_chat_completion(request: ChatCompletionRequest):
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
-        for usage_k, usage_v in content["usage"].items():
-            usage[usage_k] += usage_v
+        task_usage = UsageInfo.parse_obj(content["usage"])
+        for usage_key, usage_value in task_usage.dict().items():
+            setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
     return ChatCompletionResponse(
         model=request.model,
         choices=choices,
-        usage=UsageInfo.parse_obj(usage)
+        usage=usage
     )
 
 
@@ -384,8 +403,7 @@ async def chat_completion(model_name: str, gen_params: Dict[str, Any]) -> Option
             if not chunk:
                 continue
             data = json.loads(chunk.decode())
-            if data["error_code"] == 0:
-                output = data
+            output = data
 
         return output
 
@@ -419,17 +437,13 @@ async def create_completion(request: CompletionRequest):
             text_completions.append(content)
 
         choices = []
-        usage = {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-        }
+        usage = UsageInfo()
         for i, content_task in enumerate(text_completions):
             try:
                 content = await content_task
             except Exception as e:
                 return create_error_response(
-                    50090,
+                    ErrorCode.INTERNAL_ERROR,
                     str(e)
                 )
             if content["error_code"] != 0:
@@ -442,8 +456,9 @@ async def create_completion(request: CompletionRequest):
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
-            for usage_k, usage_v in content["usage"].items():
-                usage[usage_k] += usage_v
+            task_usage = UsageInfo.parse_obj(content["usage"])
+            for usage_key, usage_value in task_usage.dict().items():
+                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
         return CompletionResponse(
             model=request.model,
@@ -546,8 +561,9 @@ async def create_embeddings(request: EmbeddingsRequest):
         usage=UsageInfo(
             prompt_tokens = embedding["token_num"],
             total_tokens = embedding["token_num"],
+            completion_tokens = None,
         ),
-    )
+    ).dict(exclude_none=True)
 
 
 async def get_embedding(payload: Dict[str, Any]):
