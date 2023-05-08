@@ -34,8 +34,9 @@ import torch
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.serve.inference import load_model, generate_stream, add_model_args
-from fastchat.serve.serve_chatglm import chatglm_generate_stream
+from fastchat.model.model_adapter import load_model, add_model_args
+from fastchat.model.chatglm_model import chatglm_generate_stream
+from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, server_error_msg, pretty_print_semaphore
 
 GB = 1 << 30

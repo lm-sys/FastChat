@@ -9,12 +9,7 @@ import time
 import gradio as gr
 import numpy as np
 
-from fastchat.conversation import get_default_conv_template
-from fastchat.utils import (
-    build_logger,
-    violates_moderation,
-    moderation_msg,
-)
+from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     http_bot,
@@ -24,6 +19,11 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     model_info,
     learn_more_md,
+)
+from fastchat.utils import (
+    build_logger,
+    violates_moderation,
+    moderation_msg,
 )
 
 
