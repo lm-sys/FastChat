@@ -29,7 +29,9 @@ import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer, AddedToken
 
-from fastchat.conversation import conv_one_shot as default_conversation
+from fastchat.model.model_adapter import get_conversation_template
+
+default_conversation = get_conversation_template("t5")
 
 # TODO: import and use code from ../data/dataset.py
 

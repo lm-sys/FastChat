@@ -2,7 +2,8 @@
 Chat with a model with command line interface.
 
 Usage:
-python3 -m fastchat.serve.cli --model ~/model_weights/llama-7b
+python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
+python3 -m fastchat.serve.cli --model ~/model_weights/vicuna-7b
 """
 import argparse
 import os
@@ -16,7 +17,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.live import Live
 
-from fastchat.serve.inference import chat_loop, ChatIO, add_model_args
+from fastchat.model.model_adapter import add_model_args
+from fastchat.serve.inference import chat_loop, ChatIO
 
 
 class SimpleChatIO(ChatIO):

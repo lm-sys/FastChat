@@ -8,6 +8,10 @@ import pickle
 
 import gradio as gr
 
+from fastchat.serve.gradio_block_arena_anony import (build_side_by_side_ui_anony,
+    load_demo_side_by_side_anony, set_global_vars_anony)
+from fastchat.serve.gradio_block_arena_named import (build_side_by_side_ui_named,
+    load_demo_side_by_side_named, set_global_vars_named)
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     set_global_vars,
@@ -16,10 +20,6 @@ from fastchat.serve.gradio_web_server import (
     get_model_list,
     load_demo_single,
 )
-from fastchat.serve.gradio_block_arena_anony import (build_side_by_side_ui_anony,
-    load_demo_side_by_side_anony, set_global_vars_anony)
-from fastchat.serve.gradio_block_arena_named import (build_side_by_side_ui_named,
-    load_demo_side_by_side_named, set_global_vars_named)
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import build_logger, get_window_url_params_js
 

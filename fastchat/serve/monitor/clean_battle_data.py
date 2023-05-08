@@ -59,13 +59,11 @@ def remove_html(raw):
 
 def clean_battle_data(log_files):
     data = []
-    for filename in tqdm(log_files):
-        with open(filename) as f:
-            lines = f.readlines()
-        for l in lines:
-            dp = json.loads(l)
-            if dp["type"] in VOTES:
-                data.append(dp)
+    for filename in tqdm(log_files, desc="read files"):
+        for l in open(filename):
+            row = json.loads(l)
+            if row["type"] in VOTES:
+                data.append(row)
 
     convert_type = {
         "leftvote": "model_a",
@@ -111,6 +109,7 @@ def clean_battle_data(log_files):
             ct_invalid += 1
             continue
         lang_code = detect_lang(state["messages"][state["offset"]][1])
+        rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked
         leaked_identity = False
@@ -135,8 +134,9 @@ def clean_battle_data(log_files):
             model_b=models[1],
             win=convert_type[row["type"]],
             anony=anony,
-            tstamp=row["tstamp"],
+            rounds=rounds,
             language=lang_code,
+            tstamp=row["tstamp"],
         ))
 
         all_models.update(models_hidden)

@@ -1,5 +1,6 @@
 """
 Usage:
+python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 python3 -m fastchat.serve.huggingface_api --model ~/model_weights/vicuna-7b/
 """
 import argparse
@@ -8,8 +9,7 @@ import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from fastchat.conversation import get_default_conv_template
-from fastchat.serve.inference import load_model, add_model_args
+from fastchat import load_model, get_conversation_template, add_model_args
 
 
 @torch.inference_mode()
@@ -26,7 +26,7 @@ def main(args):
 
     msg = args.message
 
-    conv = get_default_conv_template(args.model_path)
+    conv = get_conversation_template(args.model_path)
     conv.append_message(conv.roles[0], msg)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
@@ -35,8 +35,8 @@ def main(args):
     output_ids = model.generate(
         torch.as_tensor(input_ids).cuda(),
         do_sample=True,
-        temperature=0.7,
-        max_new_tokens=1024,
+        temperature=args.temperature,
+        max_new_tokens=args.max_new_tokens,
     )
     if model.config.is_encoder_decoder:
         output_ids = output_ids[0]
@@ -52,9 +52,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     add_model_args(parser)
-    parser.add_argument(
-        "--conv-template", type=str, default=None, help="Conversation prompt template."
-    )
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
