@@ -25,14 +25,45 @@ Finally, launch the RESTful API server
 python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 ```
 
-Test the API server
+Now, let us test the API server...
 
-### List Models
+### OpenAI Official SDK
+The final goal of `openai_api_server.py` is to implement a fully OpenAI-Compatible API server, so the models can be used directly with [openai-python](https://github.com/openai/openai-python) library.
+
+First, install openai-python:
+```bash
+pip install --upgrade openai
+```
+
+Then, interact with model vicuna:
+```python
+import openai
+openai.api_key = "EMPTY" # Not support yet
+openai.api_base = "http://localhost:8000/v1"
+
+# create a completion
+completion = openai.Completion.create(model="vicuna-7b-v1.1", prompt="Hello world", max_tokens=64)
+# print the completion
+print(completion.choices[0].text)
+
+# create a chat completion
+completion = openai.ChatCompletion.create(
+  model="vicuna-7b-v1.1",
+  messages=[{"role": "user", "content": "Hello world!"}]
+)
+# print the completion
+print(completion.choices[0].message.content)
+```
+
+### cURL
+cURL is another good tool for observing the output of the api.
+
+List Models:
 ```bash
 curl http://localhost:8000/v1/models
 ```
 
-### Chat Completions
+Chat Completions:
 ```bash
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
@@ -42,7 +73,7 @@ curl http://localhost:8000/v1/chat/completions \
   }'
 ```
 
-### Text Completions
+Text Completions:
 ```bash
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
@@ -54,9 +85,9 @@ curl http://localhost:8000/v1/completions \
   }'
 ```
 
-### Embeddings
+Embeddings:
 ```bash
-curl http://localhost:8000/v1/create_embeddings \
+curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.1",
@@ -64,7 +95,8 @@ curl http://localhost:8000/v1/create_embeddings \
   }'
 ```
 
-## Client SDK
+### FastChat Client SDK
+FastChat also includes its own client SDK for the API.
 
 Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e.g., `http://localhost:8000`), you can use the following code to send a request to the API server:
 
@@ -105,7 +137,12 @@ The script will train classifiers based on `vicuna-7b`, `text-similarity-ada-001
 ## Todos
 Some features to be implemented:
 
-- [ ] Support more parameters like `top_p`, `presence_penalty`
-- [ ] Report token usage for chat completion
-- [ ] Proper error handling (e.g., model not found)
+- [ ] Support more parameters like `logprobs`, `logit_bias`, `user`, `presence_penalty` and `frequency_penalty`
 - [ ] The return value in the client SDK could be used like a dict
+- [ ] Model details (permissions, owner and create time)
+- [ ] Edits API
+- [ ] Authentication and API key
+- [ ] Rate Limitation Settings
+- [x] Parameter `top_p` support
+- [x] Report token usage for chat completion
+- [x] Proper error handling (e.g., model not found)
