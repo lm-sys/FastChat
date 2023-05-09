@@ -17,6 +17,7 @@ class SeparatorStyle(Enum):
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
+    NEW_LINE = auto()
 
 
 @dataclasses.dataclass
@@ -114,6 +115,14 @@ class Conversation:
                     ret += role + ": " + "<s>" + message + "</s>"
                 else:
                     ret += role + ": " + "<s>"
+            return ret
+        elif self.sep_style == SeparatorStyle.NEW_LINE:
+            ret = self.system
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n" + message + "<|im_end|>"
+                else:
+                    ret += role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -410,7 +419,7 @@ register_conv_template(
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep_style=SeparatorStyle.NEW_LINE,
         sep="<|im_end|>",
     )
 )
