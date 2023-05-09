@@ -43,7 +43,7 @@ def update_elo_components(max_num_files, elo_results_file):
 [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
 We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
-Last update: {elo_results["last_update_datetime"]}
+Last updated: {elo_results["last_updated_datetime"]}
 """
         leader_component_values[0] = leaderboard_md + elo_results["leaderboard_table"]
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
@@ -65,7 +65,7 @@ Last update: {elo_results["last_update_datetime"]}
     date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime(
         "%Y-%m-%d %H:%M:%S %Z"
     )
-    basic_stats_md += f"\n\nLast update: {date}"
+    basic_stats_md += f"\n\nLast updated: {date}"
     basic_component_values[0] = basic_stats_md
 
 

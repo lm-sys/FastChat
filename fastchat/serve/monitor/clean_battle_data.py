@@ -11,8 +11,8 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
 IDENTITY_WORDS = [
-    "lmsys",
     "vicuna",
+    "lmsys",
     "koala",
     "uc berkeley",
     "open assistant",
@@ -31,7 +31,7 @@ def get_log_files(max_num_files=None):
         for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     for month in [5]:
-        for day in range(1, 2):
+        for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     num_servers = 10
@@ -70,10 +70,13 @@ def remove_html(raw):
 def clean_battle_data(log_files):
     data = []
     for filename in tqdm(log_files, desc="read files"):
-        for l in open(filename):
-            row = json.loads(l)
-            if row["type"] in VOTES:
-                data.append(row)
+        try:
+            for l in open(filename):
+                row = json.loads(l)
+                if row["type"] in VOTES:
+                    data.append(row)
+        except FileNotFoundError:
+            continue
 
     convert_type = {
         "leftvote": "model_a",
@@ -156,6 +159,12 @@ def clean_battle_data(log_files):
         )
 
         all_models.update(models_hidden)
+    battles.sort(key=lambda x: x["tstamp"])
+    last_updated_tstamp = battles[-1]["tstamp"]
+
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     print(
         f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
@@ -163,6 +172,7 @@ def clean_battle_data(log_files):
     )
     print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
     print(f"#models: {len(all_models)}, {all_models}")
+    print(f"last-updated: {last_updated_datetime}")
 
     return battles
 

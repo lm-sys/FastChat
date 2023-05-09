@@ -225,9 +225,9 @@ def report_elo_analysis_results(battles_json):
     average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
     bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
 
-    last_update_tstamp = battles["tstamp"].max()
-    last_update_datetime = datetime.datetime.fromtimestamp(
-        last_update_tstamp, tz=timezone("US/Pacific")
+    last_updated_tstamp = battles["tstamp"].max()
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     return {
@@ -237,7 +237,7 @@ def report_elo_analysis_results(battles_json):
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_update_datetime": f"{last_update_datetime}",
+        "last_updated_datetime": f"{last_updated_datetime}",
     }
 
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     results = report_elo_analysis_results(battles)
 
     pretty_print_elo_rating(results["elo_rating"])
-    print(f"last update : {results['last_update_datetime']}")
+    print(f"last update : {results['last_updated_datetime']}")
 
     with open("elo_results.pkl", "wb") as fout:
         pickle.dump(results, fout)
