@@ -3,6 +3,7 @@ import datetime
 import json
 from pytz import timezone
 import os
+import time
 
 from tqdm import tqdm
 
@@ -70,13 +71,17 @@ def remove_html(raw):
 def clean_battle_data(log_files):
     data = []
     for filename in tqdm(log_files, desc="read files"):
-        try:
-            for l in open(filename):
-                row = json.loads(l)
-                if row["type"] in VOTES:
-                    data.append(row)
-        except FileNotFoundError:
-            continue
+        for retry in range(5):
+            try:
+                lines = open(filename).readlines()
+                break
+            except FileNotFoundError:
+                time.sleep(2)
+
+        for l in lines:
+            row = json.loads(l)
+            if row["type"] in VOTES:
+                data.append(row)
 
     convert_type = {
         "leftvote": "model_a",

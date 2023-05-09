@@ -31,7 +31,14 @@ def get_log_files(max_num_files=None):
 def load_log_files(log_files):
     data = []
     for filename in tqdm(log_files, desc="read files"):
-        for l in open(filename):
+        for retry in range(5):
+            try:
+                lines = open(filename).readlines()
+                break
+            except FileNotFoundError:
+                time.sleep(2)
+
+        for l in lines:
             row = json.loads(l)
 
             data.append(
