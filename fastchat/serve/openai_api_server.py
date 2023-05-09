@@ -44,6 +44,9 @@ from fastchat.protocol.openai_api_protocol import (
     EmbeddingsRequest,
     EmbeddingsResponse,
     ErrorResponse,
+    ModelCard,
+    ModelList,
+    ModelPermission,
     UsageInfo,
 )
 
@@ -132,7 +135,7 @@ def get_gen_params(
     *,
     temperature: float,
     top_p: float,
-    max_tokens: int,
+    max_tokens: Optional[int],
     echo: Optional[bool],
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
@@ -220,7 +223,17 @@ async def show_available_models():
         ret = await client.post(controller_address + "/list_models")
     models = ret.json()["models"]
     models.sort()
-    return {"data": [{"id": m, "object": "model"} for m in models], "object": "list"}
+    # TODO: return real model permission details
+    model_cards = []
+    for m in models:
+        model_cards.append(
+            ModelCard(
+                id=m,
+                root=m,
+                permission=[ModelPermission()]
+            )
+        )
+    return ModelList(data=model_cards)
 
 
 @app.post("/v1/chat/completions")
