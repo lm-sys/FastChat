@@ -20,7 +20,7 @@ from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 pd.options.display.float_format = "{:.2f}".format
 
 
-def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
+def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
 
     for rd, model_a, model_b, win in battles[
@@ -47,7 +47,9 @@ def compute_elo(battles, K=32, SCALE=400, BASE=10, INIT_RATING=1000):
 def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     rows = []
     for i in tqdm(range(num_round), desc="bootstrap"):
-        rows.append(func_compute_elo(battles.sample(frac=1.0, replace=True)))
+        tmp_battles = battles.sample(frac=1.0, replace=True)
+        # tmp_battles = tmp_battles.sort_values(ascending=True, by=["tstamp"])
+        rows.append(func_compute_elo(tmp_battles))
     df = pd.DataFrame(rows)
     return df[df.median().sort_values(ascending=False).index]
 
@@ -112,7 +114,7 @@ def visualize_leaderboard_table(rating):
         rank = i + 1
         minfo = get_model_info(model)
         emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {int(rating[model])} | {minfo.description} |\n"
 
     return md
 
@@ -212,32 +214,37 @@ def report_elo_analysis_results(battles_json):
     battles = battles[battles["anony"]].reset_index(drop=True)
     battles_no_ties = battles[~battles["win"].str.contains("tie")]
 
+    # Online update
+    elo_rating_online = compute_elo(battles)
+
+    # Bootstrap
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
-    elo_rating = get_elo_from_bootstrap(bootstrap_df)
-    elo_rating = {k: int(v) for k, v in elo_rating.items()}
+    elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
+    elo_rating_median = {k: int(v) for k, v in elo_rating_median.items()}
+    model_order = list(elo_rating_median.keys())
+    model_order.sort(key=lambda k: -elo_rating_median[k])
 
-    model_order = list(elo_rating.keys())
-    model_order.sort(key=lambda k: -elo_rating[k])
-
-    leaderboard_table = visualize_leaderboard_table(elo_rating)
+    # Plots
+    leaderboard_table = visualize_leaderboard_table(elo_rating_online)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
     average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
     bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
 
-    last_update_tstamp = battles["tstamp"].max()
-    last_update_datetime = datetime.datetime.fromtimestamp(
-        last_update_tstamp, tz=timezone("US/Pacific")
+    last_updated_tstamp = battles["tstamp"].max()
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     return {
-        "elo_rating": elo_rating,
+        "elo_rating_online": elo_rating_online,
+        "elo_rating_median": elo_rating_median,
         "leaderboard_table": leaderboard_table,
         "win_fraction_heatmap": win_fraction_heatmap,
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_update_datetime": f"{last_update_datetime}",
+        "last_updated_datetime": f"{last_updated_datetime}",
     }
 
 
@@ -264,8 +271,11 @@ if __name__ == "__main__":
 
     results = report_elo_analysis_results(battles)
 
-    pretty_print_elo_rating(results["elo_rating"])
-    print(f"last update : {results['last_update_datetime']}")
+    print("# Online")
+    pretty_print_elo_rating(results["elo_rating_online"])
+    print("# Median")
+    pretty_print_elo_rating(results["elo_rating_median"])
+    print(f"last update : {results['last_updated_datetime']}")
 
     with open("elo_results.pkl", "wb") as fout:
         pickle.dump(results, fout)

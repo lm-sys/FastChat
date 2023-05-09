@@ -31,6 +31,21 @@ table {
 """
 
 
+notebook_url = "https://colab.research.google.com/drive/1iI_IszGAwSMkdfUrIDI6NfTG7tGDDRxZ?usp=sharing"
+
+
+def make_leaderboard_md(elo_results):
+    leaderboard_md = f"""
+# Leaderboard
+[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+
+We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook]({notebook_url}). We will periodically release new leaderboards. If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
+Last updated: {elo_results["last_updated_datetime"]}
+{elo_results["leaderboard_table"]}
+"""
+    return leaderboard_md
+
+
 def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
@@ -38,14 +53,8 @@ def update_elo_components(max_num_files, elo_results_file):
     if elo_results_file is None:
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
-        leaderboard_md = f"""
-# Leaderboard
-[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
-We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
-Last update: {elo_results["last_update_datetime"]}
-"""
-        leader_component_values[0] = leaderboard_md + elo_results["leaderboard_table"]
+        leader_component_values[0] = make_leaderboard_md(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
@@ -65,7 +74,7 @@ Last update: {elo_results["last_update_datetime"]}
     date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime(
         "%Y-%m-%d %H:%M:%S %Z"
     )
-    basic_stats_md += f"\n\nLast update: {date}"
+    basic_stats_md += f"\n\nLast updated: {date}"
     basic_component_values[0] = basic_stats_md
 
 
@@ -90,7 +99,7 @@ def build_leaderboard_tab(elo_results_file):
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
 
-        md = elo_results["leaderboard_md"]
+        md = make_leaderboard_md(elo_results)
         p1 = elo_results["win_fraction_heatmap"]
         p2 = elo_results["battle_count_heatmap"]
         p3 = elo_results["average_win_rate_bar"]
@@ -103,8 +112,8 @@ def build_leaderboard_tab(elo_results_file):
 
     md_1 = gr.Markdown(md)
     gr.Markdown(
-        """## More Statistics\n
-Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
+        f"""## More Statistics\n
+Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
     )

@@ -157,7 +157,21 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-DEFAULT_WEIGHTS = [1.5] * 8 + [1] * 32
+DEFAULT_WEIGHTS = {
+    "gpt-4": 1.5,
+    "gpt-3.5-turbo": 1.5,
+    "claude-v1": 1.5,
+    "vicuna-13b": 1.5,
+    "koala-13b": 1.5,
+    "RWKV-4-Raven-14B": 1.2,
+    "oasst-pythia-12b": 1.2,
+    "fastchat-t5-3b": 1,
+    "alpaca-13b": 1,
+    "chatglm-6b": 1,
+    "stablelm-tuned-alpha-7b": 0.5,
+    "dolly-v2-12b": 0.5,
+    "llama-13b": 0.1,
+}
 
 
 def add_text(state0, state1, text, request: gr.Request):
@@ -166,7 +180,7 @@ def add_text(state0, state1, text, request: gr.Request):
 
     if states[0] is None:
         assert states[1] is None
-        weights = DEFAULT_WEIGHTS[: len(models)]
+        weights = [DEFAULT_WEIGHTS.get(m, 1.0) for m in models]
         if len(models) > 1:
             weights = weights / np.sum(weights)
             model_left, model_right = np.random.choice(
@@ -303,7 +317,7 @@ def build_side_by_side_ui_anony(models):
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
 ### Battle
-Please scroll down and start chatting. You can view a leaderboard of the participated models at the 4th tab above (Leaderboard) or click [this](?leaderboard). We also added ChatGPT and Claude.
+Please scroll down and start chatting. You can view a leaderboard of participating models in the fourth tab above labeled 'Leaderboard' or by clicking [here](?leaderboard). The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Vicuna).
 """
 
     states = [gr.State() for _ in range(num_models)]

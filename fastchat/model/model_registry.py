@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import List
 
 
 ModelInfo = namedtuple("ModelInfo", ["simple_name", "link", "description"])
@@ -7,14 +8,16 @@ ModelInfo = namedtuple("ModelInfo", ["simple_name", "link", "description"])
 model_info = {}
 
 
-def register_model_info(full_names, simple_name, link, description):
+def register_model_info(
+    full_names: List[str], simple_name: str, link: str, description: str
+):
     info = ModelInfo(simple_name, link, description)
 
     for full_name in full_names:
         model_info[full_name] = info
 
 
-def get_model_info(name):
+def get_model_info(name: str) -> ModelInfo:
     return model_info[name]
 
 
