@@ -48,7 +48,7 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     rows = []
     for i in tqdm(range(num_round), desc="bootstrap"):
         tmp_battles = battles.sample(frac=1.0, replace=True)
-        #tmp_battles = tmp_battles.sort_values(ascending=True, by=["tstamp"])
+        # tmp_battles = tmp_battles.sort_values(ascending=True, by=["tstamp"])
         rows.append(func_compute_elo(tmp_battles))
     df = pd.DataFrame(rows)
     return df[df.median().sort_values(ascending=False).index]

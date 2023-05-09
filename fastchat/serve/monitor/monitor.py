@@ -33,6 +33,7 @@ table {
 
 notebook_url = "https://colab.research.google.com/drive/1iI_IszGAwSMkdfUrIDI6NfTG7tGDDRxZ?usp=sharing"
 
+
 def make_leaderboard_md(elo_results):
     leaderboard_md = f"""
 # Leaderboard

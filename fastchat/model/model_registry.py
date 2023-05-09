@@ -8,8 +8,9 @@ ModelInfo = namedtuple("ModelInfo", ["simple_name", "link", "description"])
 model_info = {}
 
 
-def register_model_info(full_names: List[str], simple_name: str, link: str,
-                        description: str):
+def register_model_info(
+    full_names: List[str], simple_name: str, link: str, description: str
+):
     info = ModelInfo(simple_name, link, description)
 
     for full_name in full_names:

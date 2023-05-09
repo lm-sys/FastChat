@@ -161,7 +161,8 @@ DEFAULT_WEIGHTS = {
     "gpt-4": 1.5,
     "gpt-3.5-turbo": 1.5,
     "claude-v1": 1.5,
-    "vicuna-13b": 1.5, "koala-13b": 1.5,
+    "vicuna-13b": 1.5,
+    "koala-13b": 1.5,
     "RWKV-4-Raven-14B": 1.2,
     "oasst-pythia-12b": 1.2,
     "fastchat-t5-3b": 1,
@@ -171,6 +172,7 @@ DEFAULT_WEIGHTS = {
     "dolly-v2-12b": 0.5,
     "llama-13b": 0.1,
 }
+
 
 def add_text(state0, state1, text, request: gr.Request):
     logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
