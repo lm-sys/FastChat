@@ -1,5 +1,6 @@
 """Model adapter registration."""
 
+import sys
 from typing import List, Optional
 import warnings
 from functools import cache

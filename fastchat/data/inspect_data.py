@@ -1,6 +1,6 @@
 """
 Usage:
-python3 -m fastchat.data.inspect --in sharegpt_20230322_clean_lang_split.json
+python3 -m fastchat.data.inspect_data --in sharegpt_20230322_clean_lang_split.json
 """
 import argparse
 import json
