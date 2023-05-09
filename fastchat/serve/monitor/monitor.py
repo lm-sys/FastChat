@@ -31,6 +31,17 @@ table {
 """
 
 
+def make_leaderboard_md(elo_results):
+    leaderboard_md = f"""
+# Leaderboard
+[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+
+We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
+Last updated: {elo_results["last_updated_datetime"]}
+"""
+    return leaderboard_md + elo_results["leaderboard_table"]
+
+
 def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
@@ -38,14 +49,8 @@ def update_elo_components(max_num_files, elo_results_file):
     if elo_results_file is None:
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
-        leaderboard_md = f"""
-# Leaderboard
-[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
-We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook](https://colab.research.google.com/drive/1lAQ9cKVErXI1rEYq7hTKNaCQ5Q8TzrI5?usp=sharing).
-Last updated: {elo_results["last_updated_datetime"]}
-"""
-        leader_component_values[0] = leaderboard_md + elo_results["leaderboard_table"]
+        leader_component_values[0] = make_leaderboard_md(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
@@ -90,7 +95,7 @@ def build_leaderboard_tab(elo_results_file):
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
 
-        md = elo_results["leaderboard_md"]
+        md = make_leaderboard_md(elo_results)
         p1 = elo_results["win_fraction_heatmap"]
         p2 = elo_results["battle_count_heatmap"]
         p3 = elo_results["average_win_rate_bar"]
