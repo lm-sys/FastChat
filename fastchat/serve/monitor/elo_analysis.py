@@ -114,7 +114,7 @@ def visualize_leaderboard_table(rating):
         rank = i + 1
         minfo = get_model_info(model)
         emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {int(rating[model])} | {minfo.description} |\n"
 
     return md
 
