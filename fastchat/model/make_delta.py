@@ -9,13 +9,16 @@ import os
 import argparse
 import numpy as np
 
+
 def create_delta_file(original_file, new_file, delta_file):
     buffer_size = 4096 * 1024
-    
+
     if os.path.exists(delta_file):
         os.remove(delta_file)
 
-    with open(original_file, 'rb') as orig_stream, open(new_file, 'rb') as new_stream, open(delta_file, 'wb') as delta_stream:
+    with open(original_file, "rb") as orig_stream, open(
+        new_file, "rb"
+    ) as new_stream, open(delta_file, "wb") as delta_stream:
         while True:
             orig_buffer = orig_stream.read(buffer_size)
             new_buffer = new_stream.read(buffer_size)
@@ -27,26 +30,39 @@ def create_delta_file(original_file, new_file, delta_file):
             new_buffer_np = np.frombuffer(new_buffer, dtype=np.uint8)
 
             if len(orig_buffer_np) < len(new_buffer_np):
-                orig_buffer_np = np.pad(orig_buffer_np, (0, len(new_buffer_np) - len(orig_buffer_np)), mode='constant')
+                orig_buffer_np = np.pad(
+                    orig_buffer_np,
+                    (0, len(new_buffer_np) - len(orig_buffer_np)),
+                    mode="constant",
+                )
 
             min_length = min(len(orig_buffer_np), len(new_buffer_np))
-            delta_buffer_np = np.subtract(new_buffer_np[:min_length], orig_buffer_np[:min_length], dtype=np.int16)
+            delta_buffer_np = np.subtract(
+                new_buffer_np[:min_length], orig_buffer_np[:min_length], dtype=np.int16
+            )
             delta_buffer_np %= 256
             delta_buffer_np = delta_buffer_np.astype(np.uint8)
 
             if len(new_buffer_np) > len(orig_buffer_np):
-                delta_buffer_np = np.concatenate((delta_buffer_np, new_buffer_np[len(orig_buffer_np):]))
+                delta_buffer_np = np.concatenate(
+                    (delta_buffer_np, new_buffer_np[len(orig_buffer_np) :])
+                )
 
             delta_stream.write(delta_buffer_np.tobytes())
+
 
 def make_delta(base_model_path, target_model_path, delta_path):
     for file in os.listdir(target_model_path):
         if not file.startswith("."):
+            if file == "config.json" or file == "generation_config.json":
+                continue
+
             original_file = os.path.join(base_model_path, file)
             new_file = os.path.join(target_model_path, file)
             deltas = os.path.join(delta_path, file)
 
             create_delta_file(original_file, new_file, deltas)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

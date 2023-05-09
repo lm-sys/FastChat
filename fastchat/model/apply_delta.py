@@ -4,18 +4,16 @@ Apply the delta weights on top of a base model.
 Usage:
 python3 -m fastchat.model.apply_delta --base ~/model_weights/llama-7b --target ~/model_weights/vicuna-7b --delta lmsys/vicuna-7b-delta-v1.1
 """
-import argparse
 import gc
-import glob
 import os
-import shutil
-
-from huggingface_hub import snapshot_download
-import torch
-from tqdm import tqdm
-import numpy as np
 import git
+import glob
+import shutil
+import torch
+import argparse
+import numpy as np
 from tqdm import tqdm
+from huggingface_hub import snapshot_download
 
 GB = 1 << 30
 
@@ -64,18 +62,21 @@ def split_files(model_path, tmp_path, split_size):
         shutil.rmtree(tmp_path)
         raise
 
+
 def download_deltas(delta_path, work_dir):
     # Clone the repository without downloading LFS files
     with tqdm(total=3, desc="Cloning deltas") as pbar:
-        repo = git.Repo.clone_from(f"https://huggingface.co/{delta_path}", work_dir, depth=1, no_checkout=True)
+        repo = git.Repo.clone_from(
+            f"https://huggingface.co/{delta_path}", work_dir, depth=1, no_checkout=True
+        )
         pbar.update(1)
 
         # Initialize the LFS filter
-        repo.git.checkout('HEAD', force=True)
+        repo.git.checkout("HEAD", force=True)
         pbar.update(1)
 
         # Download the LFS files
-        repo.git.lfs('pull', '--include="*"')
+        repo.git.lfs("pull", '--include="*"')
         pbar.update(1)
 
     return work_dir
@@ -84,7 +85,7 @@ def download_deltas(delta_path, work_dir):
 def apply_delta(base_model_path, target_model_path, delta_path):
     if not os.path.exists(target_model_path):
         os.makedirs(target_model_path, exist_ok=True)
-    
+
     downloaded_deltas = False
     deltas_work_dir = delta_path
 
@@ -98,6 +99,15 @@ def apply_delta(base_model_path, target_model_path, delta_path):
             print("Invalid path for deltas. Exiting.")
             return
 
+    shutil.copy(
+        os.path.join(base_model_path, "config.json"),
+        os.path.join(target_model_path, "config.json"),
+    )
+    shutil.copy(
+        os.path.join(base_model_path, "generation_config.json"),
+        os.path.join(target_model_path, "generation_config.json"),
+    )
+
     for file in os.listdir(delta_path):
         if not file.startswith("."):
             original_file = os.path.join(base_model_path, file)
@@ -105,11 +115,13 @@ def apply_delta(base_model_path, target_model_path, delta_path):
             new_file = os.path.join(target_model_path, file)
 
             buffer_size = 4096 * 1024
-            
+
             if os.path.exists(new_file):
                 os.remove(new_file)
 
-            with open(original_file, 'rb') as orig_stream, open(deltas, 'rb') as delta_stream, open(new_file, 'wb') as new_stream:
+            with open(original_file, "rb") as orig_stream, open(
+                deltas, "rb"
+            ) as delta_stream, open(new_file, "wb") as new_stream:
                 while True:
                     orig_buffer = orig_stream.read(buffer_size)
                     delta_buffer = delta_stream.read(buffer_size)
@@ -121,20 +133,28 @@ def apply_delta(base_model_path, target_model_path, delta_path):
                     delta_buffer_np = np.frombuffer(delta_buffer, dtype=np.uint8)
 
                     if len(orig_buffer_np) < len(delta_buffer_np):
-                        orig_buffer_np = np.pad(orig_buffer_np, (0, len(delta_buffer_np) - len(orig_buffer_np)), mode='constant')
+                        orig_buffer_np = np.pad(
+                            orig_buffer_np,
+                            (0, len(delta_buffer_np) - len(orig_buffer_np)),
+                            mode="constant",
+                        )
 
-                    
                     min_length = min(len(orig_buffer_np), len(delta_buffer_np))
-                    new_buffer_np = np.add(delta_buffer_np[:min_length], orig_buffer_np[:min_length], dtype=np.int16)
-                    
+                    new_buffer_np = np.add(
+                        delta_buffer_np[:min_length],
+                        orig_buffer_np[:min_length],
+                        dtype=np.int16,
+                    )
+
                     new_buffer_np %= 256
                     new_buffer_np = new_buffer_np.astype(np.uint8)
 
                     if len(delta_buffer_np) > len(orig_buffer_np):
-                        new_buffer_np = np.concatenate((new_buffer_np, delta_buffer_np[len(orig_buffer_np):]))
+                        new_buffer_np = np.concatenate(
+                            (new_buffer_np, delta_buffer_np[len(orig_buffer_np) :])
+                        )
 
                     new_stream.write(new_buffer_np.tobytes())
-
 
     if downloaded_deltas:
         shutil.rmtree(deltas_work_dir)
