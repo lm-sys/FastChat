@@ -111,7 +111,7 @@ def build_leaderboard_tab(elo_results_file):
 
     md_1 = gr.Markdown(md)
     gr.Markdown(
-        """## More Statistics\n
+        f"""## More Statistics\n
 Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
