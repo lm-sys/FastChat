@@ -7,7 +7,6 @@ dist
 
 # Log
 *.log
-*.log.*
 *.json
 
 # Editor

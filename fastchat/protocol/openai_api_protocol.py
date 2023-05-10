@@ -1,61 +1,20 @@
-from typing import Literal, Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 
 import time
 
 import shortuuid
 from pydantic import BaseModel, Field
 
-class ErrorResponse(BaseModel):
-    object: str = "error"
-    message: str
-    code: int
-
-
-class ModelPermission(BaseModel):
-    id: str = Field(default_factory=lambda: f"modelperm-{shortuuid.random()}")
-    object: str = "model_permission"
-    created: int = Field(default_factory=lambda: int(time.time()))
-    allow_create_engine: bool = False
-    allow_sampling: bool = True
-    allow_logprobs: bool = True
-    allow_search_indices: bool = True
-    allow_view: bool = True
-    allow_fine_tuning: bool = False
-    organization: str = "*"
-    group: Optional[str] = None
-    is_blocking: str = False
-
-
-class ModelCard(BaseModel):
-    id: str
-    object: str = "model"
-    created: int = Field(default_factory=lambda: int(time.time()))
-    owned_by: str = "fastchat"
-    root: Optional[str] = None
-    parent: Optional[str] = None
-    permission: List[ModelPermission] = []
-
-class ModelList(BaseModel):
-    object: str = "list"
-    data: List[ModelCard] = []
-
-class UsageInfo(BaseModel):
-    prompt_tokens: int = 0
-    total_tokens: int = 0
-    completion_tokens: Optional[int] = 0
 
 class ChatCompletionRequest(BaseModel):
+    # TODO: support stop with a list of text etc.
     model: str
     messages: List[Dict[str, str]]
     temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
+    n: int = 1
     max_tokens: Optional[int] = None
-    stop: Optional[Union[str, List[str]]] = None
-    stream: Optional[bool] = False
-    presence_penalty: Optional[float] = 0.0
-    frequency_penalty: Optional[float] = 0.0
-    user: Optional[str] = None
+    stop: Optional[str] = None
+    stream: Optional[bool] = None
 
 
 class ChatMessage(BaseModel):
@@ -66,30 +25,30 @@ class ChatMessage(BaseModel):
 class ChatCompletionResponseChoice(BaseModel):
     index: int
     message: ChatMessage
-    finish_reason: Optional[Literal["stop", "length"]]
+    finish_reason: str
+
 
 class ChatCompletionResponse(BaseModel):
-    id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
+    id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[ChatCompletionResponseChoice]
-    usage: UsageInfo
+    usage: Dict[str, int]
 
 
 class DeltaMessage(BaseModel):
-    role: Optional[str] = None
-    content: Optional[str] = None
+    content: str
 
 
 class ChatCompletionResponseStreamChoice(BaseModel):
     index: int
     delta: DeltaMessage
-    finish_reason: Optional[Literal["stop", "length"]]
+    finish_reason: Optional[str]
 
 
 class ChatCompletionStreamResponse(BaseModel):
-    id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")
+    id: str = Field(default_factory=shortuuid.random)
     object: str = "chat.completion.chunk"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
@@ -99,14 +58,13 @@ class ChatCompletionStreamResponse(BaseModel):
 class EmbeddingsRequest(BaseModel):
     model: str
     input: str
-    user: Optional[str] = None
 
 
 class EmbeddingsResponse(BaseModel):
     object: str = "list"
     data: List[Dict[str, Any]]
     model: str
-    usage: UsageInfo
+    usage: Dict[str, int]
 
 
 class CompletionRequest(BaseModel):
@@ -114,44 +72,18 @@ class CompletionRequest(BaseModel):
     prompt: str
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.7
-    n: Optional[int] = 1
-    max_tokens: Optional[int] = None
-    stop: Optional[Union[str, List[str]]] = None
-    stream: Optional[bool] = False
-    top_p: Optional[float] = 1.0
+    n: int = 1
+    max_tokens: int
+    stop: Optional[str] = None
+    stream: bool = False
     logprobs: Optional[int] = None
-    echo: Optional[bool] = False
-    presence_penalty: Optional[float] = 0.0
-    frequency_penalty: Optional[float] = 0.0
-    user: Optional[str] = None
-
-
-class CompletionResponseChoice(BaseModel):
-    index: int
-    text: str
-    logprobs: Optional[int] = None
-    finish_reason: Optional[Literal["stop", "length"]]
+    echo: bool = False
 
 
 class CompletionResponse(BaseModel):
-    id: str = Field(default_factory=lambda: f"cmpl-{shortuuid.random()}")
+    id: str = Field(default_factory=shortuuid.random)
     object: str = "text_completion"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
-    choices: List[CompletionResponseChoice]
-    usage: UsageInfo
-
-
-class CompletionResponseStreamChoice(BaseModel):
-    index: int
-    text: str
-    logprobs: Optional[float] = None
-    finish_reason: Optional[Literal["stop", "length"]] = None
-
-
-class CompletionStreamResponse(BaseModel):
-    id: str = Field(default_factory=lambda: f"cmpl-{shortuuid.random()}")
-    object: str = "text_completion"
-    created: int = Field(default_factory=lambda: int(time.time()))
-    model: str
-    choices: List[CompletionResponseStreamChoice]
+    choices: List[Dict[str, Any]]
+    usage: Dict[str, int]
