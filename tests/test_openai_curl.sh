@@ -20,7 +20,7 @@ curl http://localhost:8000/v1/completions \
 
 echo
 
-curl http://localhost:8000/v1/create_embeddings \
+curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.1",

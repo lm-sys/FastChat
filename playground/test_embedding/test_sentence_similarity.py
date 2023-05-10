@@ -16,7 +16,7 @@ def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
         embedding = np.array(resp["data"][0]["embedding"])
         return embedding
 
-    url = "http://localhost:8000/v1/create_embeddings"
+    url = "http://localhost:8000/v1/embeddings"
     headers = {"Content-Type": "application/json"}
     data = json.dumps({"model": model, "input": word})
 

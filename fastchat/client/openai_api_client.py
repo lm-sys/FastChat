@@ -48,10 +48,13 @@ class ChatCompletionClient:
     ) -> AsyncGenerator:
         """
         Create chat completion as a stream
+        Parse the Event stream format: 
+        https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
         :param request: The request data
         :param timeout: The timeout of the request
         :returns: Compleation stream
         """
+        VALID_EVENT_STREAM_FIELD = ["id", "data", "event", "retry"]
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
@@ -62,10 +65,25 @@ class ChatCompletionClient:
                 async for chunk in response.aiter_text():
                     if not chunk:
                         continue
-                    for line in chunk.split("\n"):
-                        if not line:
+                    for message in chunk.split("\n\n"):
+                        if not message:
                             continue
-                        yield ChatCompletionStreamResponse.parse_obj(json.loads(line))
+                        lines = message.split("\n")
+
+                        message_dict = {}
+                        for line in lines:
+                            colon_index = line.find(":")
+                            if colon_index == 0 or colon_index == -1:
+                                continue
+                            message_key = line[:colon_index].strip()
+                            message_value = line[colon_index + 1:]
+                            if message_key in VALID_EVENT_STREAM_FIELD:
+                                message_dict[message_key] = message_value
+                        
+                        data_field = message_dict["data"]
+                        if data_field.strip() == "[DONE]":
+                            break
+                        yield ChatCompletionStreamResponse.parse_obj(json.loads(data_field))
 
 
 class ChatCompletion:
