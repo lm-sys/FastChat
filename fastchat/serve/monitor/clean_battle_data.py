@@ -3,6 +3,7 @@ import datetime
 import json
 from pytz import timezone
 import os
+import time
 
 from tqdm import tqdm
 
@@ -11,8 +12,17 @@ from fastchat.serve.monitor.basic_stats import get_log_files
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
 IDENTITY_WORDS = [
-    "lmsys", "vicuna", "koala", "laion", "open assistant"
+    "vicuna",
+    "lmsys",
+    "koala",
+    "uc berkeley",
+    "open assistant",
+    "laion",
     "chatglm",
+    "chatgpt",
+    "openai",
+    "anthropic",
+    "claude",
 ]
 
 
@@ -22,10 +32,10 @@ def get_log_files(max_num_files=None):
         for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     for month in [5]:
-        for day in range(1, 2):
+        for day in range(1, 9):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 10
+    num_servers = 12
     filenames = []
     for d in dates:
         for i in range(num_servers):
@@ -42,6 +52,7 @@ def detect_lang(text):
     from polyglot.detect import Detector
     from polyglot.detect.base import logger as polyglot_logger
     import pycld2
+
     polyglot_logger.setLevel("ERROR")
 
     try:
@@ -53,19 +64,24 @@ def detect_lang(text):
 
 def remove_html(raw):
     if raw.startswith("<h3>"):
-        return raw[raw.find(": ") + 2: -len('</h3>\n')]
+        return raw[raw.find(": ") + 2 : -len("</h3>\n")]
     return raw
 
 
 def clean_battle_data(log_files):
     data = []
-    for filename in tqdm(log_files):
-        with open(filename) as f:
-            lines = f.readlines()
+    for filename in tqdm(log_files, desc="read files"):
+        for retry in range(5):
+            try:
+                lines = open(filename).readlines()
+                break
+            except FileNotFoundError:
+                time.sleep(2)
+
         for l in lines:
-            dp = json.loads(l)
-            if dp["type"] in VOTES:
-                data.append(dp)
+            row = json.loads(l)
+            if row["type"] in VOTES:
+                data.append(row)
 
     convert_type = {
         "leftvote": "model_a",
@@ -83,14 +99,18 @@ def clean_battle_data(log_files):
         # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
-            models_hidden = [row["states"][0]["model_name"], row["states"][1]["model_name"]]
+            models_hidden = [
+                row["states"][0]["model_name"],
+                row["states"][1]["model_name"],
+            ]
             if models_hidden[0] is None:
                 models_hidden = models_public
         else:
             models_hidden = models_public
 
-        if ((models_public[0] == "" and models_public[1] != "") or
-            (models_public[1] == "" and models_public[0] != "")):
+        if (models_public[0] == "" and models_public[1] != "") or (
+            models_public[1] == "" and models_public[0] != ""
+        ):
             ct_invalid += 1
             continue
 
@@ -107,14 +127,18 @@ def clean_battle_data(log_files):
 
         # Detect langauge
         state = row["states"][0]
+        if state["offset"] >= len(state["messages"]):
+            ct_invalid += 1
+            continue
         lang_code = detect_lang(state["messages"][state["offset"]][1])
+        rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked
         leaked_identity = False
         messages = ""
         for i in range(2):
             state = row["states"][i]
-            for role, msg in state["messages"][state["offset"]:]:
+            for role, msg in state["messages"][state["offset"] :]:
                 if msg:
                     messages += msg.lower()
         for word in IDENTITY_WORDS:
@@ -127,21 +151,33 @@ def clean_battle_data(log_files):
             continue
 
         # Keep the result
-        battles.append(dict(
-            model_a=models[0],
-            model_b=models[1],
-            win=convert_type[row["type"]],
-            anony=anony,
-            tstamp=row["tstamp"],
-            language=lang_code,
-        ))
+        battles.append(
+            dict(
+                model_a=models[0],
+                model_b=models[1],
+                win=convert_type[row["type"]],
+                anony=anony,
+                rounds=rounds,
+                language=lang_code,
+                tstamp=row["tstamp"],
+            )
+        )
 
         all_models.update(models_hidden)
+    battles.sort(key=lambda x: x["tstamp"])
+    last_updated_tstamp = battles[-1]["tstamp"]
 
-    print(f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
-          f"#leaked_identity: {ct_leaked_identity}")
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    print(
+        f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
+        f"#leaked_identity: {ct_leaked_identity}"
+    )
     print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
     print(f"#models: {len(all_models)}, {all_models}")
+    print(f"last-updated: {last_updated_datetime}")
 
     return battles
 
@@ -158,7 +194,7 @@ if __name__ == "__main__":
     for i in range(4):
         print(battles[i])
 
-    date = datetime.datetime.now(tz=timezone('US/Pacific')).strftime("%Y%m%d")
+    date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime("%Y%m%d")
     output = f"clean_battle_{date}.json"
     with open(output, "w") as fout:
         json.dump(battles, fout, indent=2)

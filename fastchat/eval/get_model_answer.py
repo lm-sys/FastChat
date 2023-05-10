@@ -7,7 +7,7 @@ from tqdm import tqdm
 import shortuuid
 import ray
 
-from fastchat.conversation import get_default_conv_template
+from fastchat.model import get_conversation_template
 
 
 def run_eval(model_path, model_id, question_file, answer_file, num_gpus):
@@ -49,7 +49,7 @@ def get_model_answers(model_path, model_id, question_jsons):
         ques_json = json.loads(line)
         idx = ques_json["question_id"]
         qs = ques_json["text"]
-        conv = get_default_conv_template(model_id).copy()
+        conv = get_conversation_template(model_id)
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
@@ -60,7 +60,7 @@ def get_model_answers(model_path, model_id, question_jsons):
             temperature=0.7,
             max_new_tokens=1024,
         )
-        output_ids = output_ids[0][len(input_ids[0]):]
+        output_ids = output_ids[0][len(input_ids[0]) :]
         outputs = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
 
         ans_id = shortuuid.uuid()

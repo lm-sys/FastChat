@@ -1,15 +1,14 @@
 # FastChat
-| [Demo](https://chat.lmsys.org/) | [Arena](https://arena.lmsys.org) | [Discord](https://discord.gg/h6kCZb72G7) | [Twitter](https://twitter.com/lmsysorg) |
+| [**Demo**](https://chat.lmsys.org/) | [**Arena**](https://arena.lmsys.org) | [**Discord**](https://discord.gg/h6kCZb72G7) | [**Twitter**](https://twitter.com/lmsysorg) |
 
-An open platform for training, serving, and evaluating large language model based chatbots.
+FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
+- The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna, FastChat-T5).
+- A distributed multi-model serving system with Web UI and OpenAI-Compatible RESTful APIs.
 
-## Release
-<p align="center">
-<a href="https://vicuna.lmsys.org"><img src="assets/vicuna_logo.jpeg" width="20%"></a>
-</p>
-
-- 🔥 We released **FastChat-T5** compatible with commercial usage. Checkout [weights](#fastchat-t5).
-- 🔥 We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Checkout the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org/).
+## News
+- [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
+- [2023/04] We released **FastChat-T5** compatible with commercial usage. Check out the [weights](#fastchat-t5) and [demo](https://chat.lmsys.org).
+- [2023/03] We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Check out the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org).
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
 
@@ -54,7 +53,7 @@ pip3 install -e .
 We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
-1. Get the original LLaMA weights in the huggingface format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
+1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
 2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
 
 **NOTE**:
@@ -64,20 +63,22 @@ Please update your local packages accordingly. If you follow the above commands 
 #### Vicuna-7B
 This conversion command needs around 30 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
+Replace `/path/to/*` with the real paths.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base-model-path /path/to/llama-7b \
-    --target-model-path /output/path/to/vicuna-7b \
+    --target-model-path /path/to/output/vicuna-7b \
     --delta-path lmsys/vicuna-7b-delta-v1.1
 ```
 
 #### Vicuna-13B
 This conversion command needs around 60 GB of CPU RAM.
 See the "Low CPU Memory Conversion" section below if you do not have enough memory.
+Replace `/path/to/*` with the real paths.
 ```bash
 python3 -m fastchat.model.apply_delta \
     --base-model-path /path/to/llama-13b \
-    --target-model-path /output/path/to/vicuna-13b \
+    --target-model-path /path/to/output/vicuna-13b \
     --delta-path lmsys/vicuna-13b-delta-v1.1
 ```
 
@@ -109,6 +110,8 @@ The following models are tested:
 - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+- [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
+- [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
 - [OpenAssistant/oasst-sft-1-pythia-12b](https://huggingface.co/OpenAssistant/oasst-sft-1-pythia-12b)
 - [project-baize/baize-lora-7B](https://huggingface.co/project-baize/baize-lora-7B)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
@@ -117,6 +120,7 @@ The following models are tested:
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
 See the "No Enough Memory" section below if you do not have enough memory.
+Replace `/path/to/model/weights` with the a local folder or a Hugging repo id.
 ```
 python3 -m fastchat.serve.cli --model-path /path/to/model/weights
 ```
@@ -161,7 +165,9 @@ In addition to that, you can add `--cpu-offloading` to commands above to offload
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
 
-To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. Here are the commands to follow in your terminal:
+To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. You can learn more about the architecture [here](docs/server_arch.md).
+
+Here are the commands to follow in your terminal:
 
 #### Launch the controller
 ```bash
@@ -170,11 +176,11 @@ python3 -m fastchat.serve.controller
 
 This controller manages the distributed workers.
 
-#### Launch the model worker
+#### Launch the model worker(s)
 ```bash
 python3 -m fastchat.serve.model_worker --model-path /path/to/model/weights
 ```
-Wait until the process finishes loading the model and you see "Uvicorn running on ...". You can launch multiple model workers to serve multiple models concurrently. The model worker will connect to the controller automatically.
+Wait until the process finishes loading the model and you see "Uvicorn running on ...". The model worker will register itself to the controller .
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
@@ -190,80 +196,28 @@ python3 -m fastchat.serve.gradio_web_server
 This is the user interface that users will interact with.
 
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
+If the models do not show up, try to reboot the gradio web server.
 
+#### (Optional): Advanced Features
+- You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
+```
+# worker 0
+CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
+# worker 1
+CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path ~/model_weights/vicuna-7b/ --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
+```
+- You can also launch a multi-tab gradio server, which includes the Chatbot Arena tabs.
+```bash
+python3 -m fastchat.serve.gradio_web_server_multi
+```
 
 ## API
+### OpenAI-Compatible RESTful APIs & SDK
+FastChat provides OpenAI-Compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+See [docs/openai_api.md](docs/openai_api.md).
 
-### Huggingface Generation APIs
-See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py)
-
-### OpenAI-compatible RESTful APIs & SDK
-
-(Experimental. We will keep improving the API and SDK.)
-
-#### Chat Completion
-
-Reference: https://platform.openai.com/docs/api-reference/chat/create
-
-Some features/compatibilities to be implemented:
-
-- [ ] streaming
-- [ ] support of some parameters like `top_p`, `presence_penalty`
-- [ ] proper error handling (e.g. model not found)
-- [ ] the return value in the client SDK could be used like a dict
-
-
-**RESTful API Server**
-
-First, launch the controller
-
-```bash
-python3 -m fastchat.serve.controller
-```
-
-Then, launch the model worker(s)
-
-```bash
-python3 -m fastchat.serve.model_worker --model-name 'vicuna-7b-v1.1' --model-path /path/to/vicuna/weights
-```
-
-Finally, launch the RESTful API server
-
-```bash
-export FASTCHAT_CONTROLLER_URL=http://localhost:21001
-python3 -m fastchat.serve.api --host localhost --port 8000
-```
-
-Test the API server
-
-```bash
-curl http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "vicuna-7b-v1.1",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-```
-
-**Client SDK**
-
-Assuming environment variable `FASTCHAT_BASEURL` is set to the API server URL (e.g., `http://localhost:8000`), you can use the following code to send a request to the API server:
-
-```python
-import os
-from fastchat import client
-
-client.set_baseurl(os.getenv("FASTCHAT_BASEURL"))
-
-completion = client.ChatCompletion.create(
-  model="vicuna-7b-v1.1",
-  messages=[
-    {"role": "user", "content": "Hello!"}
-  ]
-)
-
-print(completion.choices[0].message)
-```
+### Hugging Face Generation APIs
+See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 
 ## Evaluation
 

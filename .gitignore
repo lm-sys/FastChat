@@ -3,13 +3,11 @@ __pycache__
 *.pyc
 *.egg-info
 dist
+.venv
 
 # Log
 *.log
 *.json
-
-# Data
-!**/alpaca-data-conversation.json
 
 # Editor
 .idea
@@ -25,3 +23,4 @@ fastchat/version.py
 
 # Data
 *.pkl
+*.csv

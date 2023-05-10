@@ -1,10 +1,12 @@
+from asyncio import AbstractEventLoop
+import json
 import logging
 import logging.handlers
 import os
-import sys
-import json
-import warnings
 import platform
+import sys
+from typing import AsyncGenerator, Generator
+import warnings
 
 import requests
 import torch
@@ -36,8 +38,10 @@ def build_logger(logger_name, logger_filename):
             logging.basicConfig(level=logging.INFO, encoding="utf-8")
         else:
             if platform.system() == "Windows":
-                warnings.warn("If you are running on Windows, "
-                              "we recommend you use Python >= 3.9 for UTF-8 encoding.")
+                warnings.warn(
+                    "If you are running on Windows, "
+                    "we recommend you use Python >= 3.9 for UTF-8 encoding."
+                )
             logging.basicConfig(level=logging.INFO)
     logging.getLogger().handlers[0].setFormatter(formatter)
 
@@ -61,7 +65,7 @@ def build_logger(logger_name, logger_filename):
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True
+            filename, when="D", utc=True, encoding="utf-8"
         )
         handler.setFormatter(formatter)
 
@@ -116,6 +120,26 @@ def disable_torch_init():
 
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
+
+
+def get_gpu_memory(max_gpus=None):
+    """Get available memory for each GPU."""
+    gpu_memory = []
+    num_gpus = (
+        torch.cuda.device_count()
+        if max_gpus is None
+        else min(max_gpus, torch.cuda.device_count())
+    )
+
+    for gpu_id in range(num_gpus):
+        with torch.cuda.device(gpu_id):
+            device = torch.cuda.current_device()
+            gpu_properties = torch.cuda.get_device_properties(device)
+            total_memory = gpu_properties.total_memory / (1024**3)
+            allocated_memory = torch.cuda.memory_allocated() / (1024**3)
+            available_memory = total_memory - allocated_memory
+            gpu_memory.append(available_memory)
+    return gpu_memory
 
 
 def violates_moderation(text):
@@ -175,3 +199,29 @@ function() {
     return url_params;
     }
 """
+
+
+def iter_over_async(
+    async_gen: AsyncGenerator, event_loop: AbstractEventLoop
+) -> Generator:
+    """
+    Convert async generator to sync generator
+
+    :param async_gen: the AsyncGenerator to convert
+    :param event_loop: the event loop to run on
+    :returns: Sync generator
+    """
+    ait = async_gen.__aiter__()
+
+    async def get_next():
+        try:
+            obj = await ait.__anext__()
+            return False, obj
+        except StopAsyncIteration:
+            return True, None
+
+    while True:
+        done, obj = event_loop.run_until_complete(get_next())
+        if done:
+            break
+        yield obj
