@@ -2,7 +2,7 @@
 import abc
 import gc
 import math
-from typing import Iterable, Optional
+from typing import Optional
 import sys
 import warnings
 
@@ -70,13 +70,6 @@ def generate_stream(
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
     output_ids = list(input_ids)
-    
-    if len(input_ids) + max_new_tokens > context_len:
-        raise ValueError(f"This model's maximum context length is {context_len} tokens. "
-                         f"However, you requested {max_new_tokens + len(input_ids)} tokens "
-                         f"({len(input_ids)} in the messages, "
-                         f"{max_new_tokens} in the completion). "
-                         f"Please reduce the length of the messages or completion.")
 
     if model.config.is_encoder_decoder:
         max_src_len = context_len
@@ -167,53 +160,15 @@ def generate_stream(
                 spaces_between_special_tokens=False,
             )
             if stop_str:
-                if isinstance(stop_str, str):
-                    pos = output.rfind(stop_str, rfind_start)
-                    if pos != -1:
-                        output = output[:pos]
-                        stopped = True
-                elif isinstance(stop_str, Iterable):
-                    for each_stop in stop_str:
-                        pos = output.rfind(each_stop, rfind_start)
-                        if pos != -1:
-                            output = output[:pos]
-                            stopped = True
-                            break
-                else:
-                    raise ValueError("Invalid stop field type.")
-
-            yield {
-                "text": output,
-                "usage": {
-                    "prompt_tokens": input_echo_len,
-                    "completion_tokens": i,
-                    "total_tokens": input_echo_len + i,
-                },
-                "finish_reason": None
-            }
+                pos = output.rfind(stop_str, rfind_start)
+                if pos != -1:
+                    output = output[:pos]
+                    stopped = True
+            yield output
 
         if stopped:
             break
-    
-    # finish stream event, which contains finish reason
-    if i == max_new_tokens - 1:
-        finish_reason = "length"
-    elif stopped:
-        finish_reason = "stop"
-    else:
-        finish_reason = None
-    
-    yield {
-        "text": output,
-        "usage": {
-            "prompt_tokens": input_echo_len,
-            "completion_tokens": i,
-            "total_tokens": input_echo_len + i,
-        },
-        "finish_reason": finish_reason
-    }
 
-    # clean
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()
