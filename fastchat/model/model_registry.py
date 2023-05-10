@@ -98,7 +98,13 @@ register_model_info(
 )
 register_model_info(
     ["phoenix-inst-chat-7b"],
-    "Phoenix-7b",
+    "Phoenix-7B",
     "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b",
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
+)
+register_model_info(
+    ["mpt-7b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-7b",
+    "a chatbot fine-tuned from MPT-7B by MosaicML",
 )

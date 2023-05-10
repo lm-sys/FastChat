@@ -329,6 +329,29 @@ class StableLMAdapter(BaseAdapter):
         return get_conv_template("stablelm")
 
 
+class MPTAdapter(BaseAdapter):
+    """The model adapter for mosaicml/mpt-7b-chat"""
+
+    def match(self, model_path: str):
+        return "mpt" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            max_seq_len=8192,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("mpt")
+
+
 class BaizeAdapter(BaseAdapter):
     """The model adapter for project-baize/baize-lora-7B"""
 
@@ -440,7 +463,7 @@ register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
-
+register_model_adapter(MPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
