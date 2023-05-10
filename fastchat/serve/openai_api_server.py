@@ -87,7 +87,7 @@ async def check_model(request) -> Optional[JSONResponse]:
             )
     return ret
 
-async def check_length(request, prompt):
+async def check_length(request, prompt, max_tokens):
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(request.model, client)
 
@@ -107,7 +107,7 @@ async def check_length(request, prompt):
         )
         token_num = response.json()["count"]
     
-    max_new_tokens = request.max_tokens
+    max_new_tokens = max_tokens
     context_len = 2048
 
     if token_num + max_new_tokens > context_len:
@@ -291,7 +291,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stream=request.stream,
         stop=request.stop,
     )
-    error_check_ret = await check_length(request, gen_params["prompt"])
+    error_check_ret = await check_length(request, gen_params["prompt"], gen_params["max_new_tokens"])
     if error_check_ret is not None:
         return error_check_ret
 
@@ -456,7 +456,7 @@ async def create_completion(request: CompletionRequest):
         stop=request.stop,
     )
 
-    error_check_ret = await check_length(request, payload["prompt"])
+    error_check_ret = await check_length(request, payload["prompt"], payload["max_new_tokens"])
     if error_check_ret is not None:
         return error_check_ret
 
