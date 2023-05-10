@@ -328,6 +328,7 @@ class StableLMAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("stablelm")
 
+
 class MPTAdapter(BaseAdapter):
     """The model adapter for mosaicml/mpt-7b-chat"""
 
@@ -342,12 +343,14 @@ class MPTAdapter(BaseAdapter):
             max_seq_len=8192,
             **from_pretrained_kwargs,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path,
-            trust_remote_code=True, use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("mpt")
+
 
 class BaizeAdapter(BaseAdapter):
     """The model adapter for project-baize/baize-lora-7B"""

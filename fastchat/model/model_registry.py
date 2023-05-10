@@ -105,4 +105,3 @@ register_model_info(
     "https://www.mosaicml.com/blog/mpt-7b",
     "a chatbot fine-tuned from MPT-7B by MosaicML",
 )
-
