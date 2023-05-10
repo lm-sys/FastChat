@@ -338,12 +338,12 @@ class MPTAdapter(BaseAdapter):
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
-            max_seq_len=4096,
+            trust_remote_code=True,
+            max_seq_len=8192,
             **from_pretrained_kwargs,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        stop_token_ids = tokenizer.convert_tokens_to_ids(["<|im_end|>", "<|endoftext|>"])
-
+        tokenizer = AutoTokenizer.from_pretrained(model_path,
+            trust_remote_code=True, use_fast=True)
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
