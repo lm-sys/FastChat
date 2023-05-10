@@ -87,6 +87,41 @@ async def check_model(request) -> Optional[JSONResponse]:
             )
     return ret
 
+async def check_length(request, prompt):
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(request.model, client)
+
+        response = await client.post(
+            worker_addr + "/model_details",
+            headers=headers,
+            json={},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        context_len = response.json()["context_length"]
+
+        response = await client.post(
+            worker_addr + "/count_token",
+            headers=headers,
+            json={"prompt": prompt},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        token_num = response.json()["count"]
+    
+    max_new_tokens = request.max_tokens
+    context_len = 2048
+
+    if token_num + max_new_tokens > context_len:
+        return create_error_response(
+            ErrorCode.CONTEXT_OVERFLOW,
+            f"This model's maximum context length is {context_len} tokens. "
+            f"However, you requested {max_new_tokens + token_num} tokens "
+            f"({token_num} in the messages, "
+            f"{max_new_tokens} in the completion). "
+            f"Please reduce the length of the messages or completion."
+        )
+    else:
+        return None
+
 def check_requests(request) -> Optional[JSONResponse]:
     # Check all params
     if request.max_tokens is not None and request.max_tokens <= 0:
@@ -256,6 +291,10 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stream=request.stream,
         stop=request.stop,
     )
+    error_check_ret = await check_length(request, gen_params["prompt"])
+    if error_check_ret is not None:
+        return error_check_ret
+
     if request.stream:
         generator = chat_completion_stream_generator(request.model, gen_params, request.n)
         return StreamingResponse(generator, media_type="text/event-stream")
@@ -416,6 +455,10 @@ async def create_completion(request: CompletionRequest):
         stream=request.stream,
         stop=request.stop,
     )
+
+    error_check_ret = await check_length(request, payload["prompt"])
+    if error_check_ret is not None:
+        return error_check_ret
 
     if request.stream:
         generator = generate_completion_stream_generator(payload, request.n)

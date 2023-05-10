@@ -163,6 +163,17 @@ class ModelWorker:
             "speed": 1,
             "queue_length": self.get_queue_length(),
         }
+    
+    def count_token(self, params):
+        prompt = params["prompt"]
+        input_ids = self.tokenizer(prompt).input_ids
+        input_echo_len = len(input_ids)
+
+        ret = {
+            "count": input_echo_len,
+            "error_code": 0,
+        }
+        return ret
 
     def generate_stream_gate(self, params):
         try:
@@ -324,6 +335,17 @@ async def api_get_embeddings(request: Request):
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):
     return worker.get_status()
+
+@app.post("/count_token")
+async def count_token(request: Request):
+    params = await request.json()
+    return worker.count_token(params)
+
+@app.post("/model_details")
+async def model_details(request: Request):
+    return {
+        "context_length": worker.context_len
+    }
 
 
 if __name__ == "__main__":
