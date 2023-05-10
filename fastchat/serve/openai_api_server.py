@@ -291,7 +291,11 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stream=request.stream,
         stop=request.stop,
     )
-    error_check_ret = await check_length(request, gen_params["prompt"], gen_params["max_new_tokens"])
+    error_check_ret = await check_length(
+        request,
+        gen_params["prompt"],
+        gen_params["max_new_tokens"]
+    )
     if error_check_ret is not None:
         return error_check_ret
 
@@ -456,7 +460,11 @@ async def create_completion(request: CompletionRequest):
         stop=request.stop,
     )
 
-    error_check_ret = await check_length(request, payload["prompt"], payload["max_new_tokens"])
+    error_check_ret = await check_length(
+        request,
+        payload["prompt"],
+        payload["max_new_tokens"]
+    )
     if error_check_ret is not None:
         return error_check_ret
 
