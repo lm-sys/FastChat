@@ -16,6 +16,8 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 
+from fastchat.modules.gptq import GptqConfig
+
 try:
     from transformers import (
         AutoTokenizer,
@@ -69,6 +71,7 @@ class ModelWorker:
         max_gpu_memory,
         load_8bit=False,
         cpu_offloading=False,
+        gptq_config=None,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -80,7 +83,13 @@ class ModelWorker:
 
         logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
-            model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
+            model_path,
+            device,
+            num_gpus,
+            max_gpu_memory,
+            load_8bit,
+            cpu_offloading,
+            gptq_config,
         )
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -246,7 +255,9 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_llama = "llama" in str(
+                type(self.model)
+            )  # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
             if is_llama:
@@ -277,7 +288,9 @@ class ModelWorker:
                         self.device
                     )
                     if is_t5:
-                        model_output = self.model(input_ids, decoder_input_ids=input_ids)
+                        model_output = self.model(
+                            input_ids, decoder_input_ids=input_ids
+                        )
                     else:
                         model_output = self.model(input_ids, output_hidden_states=True)
                     if is_chatglm:
@@ -411,6 +424,13 @@ if __name__ == "__main__":
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
+    gptq_config = GptqConfig(
+        ckpt=args.gptq_ckpt or args.model_path,
+        wbits=args.gptq_wbits,
+        groupsize=args.gptq_groupsize,
+        act_order=args.gptq_act_order,
+    )
+
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
@@ -423,5 +443,6 @@ if __name__ == "__main__":
         args.max_gpu_memory,
         args.load_8bit,
         args.cpu_offloading,
+        gptq_config,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
