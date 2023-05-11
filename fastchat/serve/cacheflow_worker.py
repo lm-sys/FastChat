@@ -104,6 +104,7 @@ class CacheFlowWorker:
         self.is_server_running = False
 
         if not no_register:
+            time.sleep(30)  # wait for model loading
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
                 target=heart_beat_worker, args=(self,)
