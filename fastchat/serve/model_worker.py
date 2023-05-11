@@ -184,6 +184,12 @@ class ModelWorker:
                 "error_code": 1,
             }
             yield json.dumps(ret).encode() + b"\0"
+        except RuntimeError as e:
+            ret = {
+                "text": f"{server_error_msg} ({e})",
+                "error_code": 11,
+            }
+            yield json.dumps(ret).encode() + b"\0"
 
     def generate_completion(self, params):
         try:

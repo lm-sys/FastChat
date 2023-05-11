@@ -201,6 +201,10 @@ class CacheFlowWorker:
         sampling_params.n = 1
         sampling_params.max_num_steps = max_new_tokens
         sampling_params.temperature = temperature
+        if sampling_params.temperature <= 1e-5:
+            sampling_params.top_p = 1.0
+        sampling_params.top_p = max(sampling_params.top_p, 1e-5)
+
         if stop_str is not None:
             sampling_params.stop_str = stop_str
         # we might sample multiple sequences, but in chatbot, this is one
