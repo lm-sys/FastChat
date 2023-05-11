@@ -165,6 +165,7 @@ DEFAULT_WEIGHTS = {
     "koala-13b": 1.5,
     "RWKV-4-Raven-14B": 1.2,
     "oasst-pythia-12b": 1.2,
+    "mpt-7b-chat": 1.2,
     "fastchat-t5-3b": 1,
     "alpaca-13b": 1,
     "chatglm-6b": 1,
