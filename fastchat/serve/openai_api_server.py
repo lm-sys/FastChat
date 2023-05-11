@@ -205,7 +205,7 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any], n:
                 # TODO: begins with a single delta containing the role and a null finish reason
                 async for raw_chunk in post_response.aiter_raw():
                     for chunk in raw_chunk.split(delimiter):
-                        if not chunk:
+                        if not chunk or chunk.find(b'\ufffd')>0:
                             continue
                         data = json.loads(chunk.decode())
                         if data["error_code"] == 0:
