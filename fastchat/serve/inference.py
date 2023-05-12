@@ -183,12 +183,12 @@ def generate_stream(
                     "completion_tokens": i,
                     "total_tokens": input_echo_len + i,
                 },
-                "finish_reason": None
+                "finish_reason": None,
             }
 
         if stopped:
             break
-    
+
     # finish stream event, which contains finish reason
     if i == max_new_tokens - 1:
         finish_reason = "length"
@@ -196,7 +196,7 @@ def generate_stream(
         finish_reason = "stop"
     else:
         finish_reason = None
-    
+
     yield {
         "text": output,
         "usage": {
@@ -204,7 +204,7 @@ def generate_stream(
             "completion_tokens": i,
             "total_tokens": input_echo_len + i,
         },
-        "finish_reason": finish_reason
+        "finish_reason": finish_reason,
     }
 
     # clean

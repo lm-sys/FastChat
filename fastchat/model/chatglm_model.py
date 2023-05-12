@@ -29,7 +29,7 @@ def chatglm_generate_stream(
     echo = params.get("echo", True)
 
     gen_kwargs = {
-        #"max_new_tokens": max_new_tokens,  disabled due to a warning.
+        # "max_new_tokens": max_new_tokens,  disabled due to a warning.
         "do_sample": True if temperature > 1e-5 else False,
         "top_p": top_p,
         "repetition_penalty": repetition_penalty,
@@ -45,7 +45,9 @@ def chatglm_generate_stream(
 
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 
-    for i, (response, new_hist) in enumerate(model.stream_chat(tokenizer, query, hist, **gen_kwargs)):
+    for i, (response, new_hist) in enumerate(
+        model.stream_chat(tokenizer, query, hist, **gen_kwargs)
+    ):
         if echo:
             output = query + " " + response
         else:
@@ -58,7 +60,7 @@ def chatglm_generate_stream(
                 "completion_tokens": i,
                 "total_tokens": input_echo_len + i,
             },
-            "finish_reason": None
+            "finish_reason": None,
         }
 
     # TODO: ChatGLM stop when it reach max length
@@ -70,6 +72,6 @@ def chatglm_generate_stream(
             "completion_tokens": i,
             "total_tokens": input_echo_len + i,
         },
-        "finish_reason": "stop"
+        "finish_reason": "stop",
     }
     yield ret

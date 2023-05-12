@@ -163,7 +163,7 @@ class ModelWorker:
             "speed": 1,
             "queue_length": self.get_queue_length(),
         }
-    
+
     def count_token(self, params):
         prompt = params["prompt"]
         input_ids = self.tokenizer(prompt).input_ids
@@ -211,10 +211,7 @@ class ModelWorker:
 
     def generate_gate(self, params):
         try:
-            ret = {
-                "text": "",
-                "error_code": 0
-            }
+            ret = {"text": "", "error_code": 0}
             for output in self.generate_stream_func(
                 self.model,
                 self.tokenizer,
@@ -256,8 +253,8 @@ class ModelWorker:
                 data = model_output.hidden_states[-1][0]
             embedding = torch.mean(data, dim=0)
             ret = {
-                    "embedding": embedding.tolist(),
-                    "token_num": len(self.tokenizer(params["input"]).input_ids),
+                "embedding": embedding.tolist(),
+                "token_num": len(self.tokenizer(params["input"]).input_ids),
             }
         except torch.cuda.OutOfMemoryError:
             ret = {
@@ -301,7 +298,7 @@ async def api_generate_stream(request: Request):
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
-  
+
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
@@ -310,7 +307,7 @@ async def api_generate(request: Request):
     release_model_semaphore()
     return JSONResponse(output)
 
-  
+
 @app.post("/worker_generate_completion_stream")
 async def api_generate_completion_stream(request: Request):
     params = await request.json()
@@ -342,18 +339,16 @@ async def api_get_embeddings(request: Request):
 async def api_get_status(request: Request):
     return worker.get_status()
 
-  
+
 @app.post("/count_token")
 async def count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
 
-  
+
 @app.post("/model_details")
 async def model_details(request: Request):
-    return {
-        "context_length": worker.context_len
-    }
+    return {"context_length": worker.context_len}
 
 
 if __name__ == "__main__":

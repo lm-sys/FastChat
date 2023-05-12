@@ -7,10 +7,12 @@ WORKER_API_TIMEOUT = 20
 
 LOGDIR = "."
 
+
 class ErrorCode(IntEnum):
-    '''
+    """
     https://platform.openai.com/docs/guides/error-codes/api-errors
-    '''
+    """
+
     VALIDATION_TYPE_ERROR = 40001
 
     INVALID_AUTH_KEY = 40101
