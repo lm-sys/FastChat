@@ -277,10 +277,14 @@ def bard_api_stream_iter(state):
     content = resp_json["content"]
     # The Bard Web API does not support streaming yet. Here we have to simulate
     # the streaming behavior by adding some time.sleep().
-    for char in content:
-        time.sleep(max(random.gauss(0.05, 0.01), 0))
+    pos = 1
+    while pos < len(content):
+        # This is a fancy way to simulate token generation latency combined
+        # with a Poisson process.
+        pos += random.randint(1, 5)
+        time.sleep(random.expovariate(20))
         data = {
-            "text": char,
+            "text": content[:pos],
             "error_code": 0,
         }
         yield data
