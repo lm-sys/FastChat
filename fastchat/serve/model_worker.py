@@ -209,7 +209,7 @@ class ModelWorker:
             }
             yield json.dumps(ret).encode() + b"\0"
 
-    def generate_completion(self, params):
+    def generate_gate(self, params):
         try:
             ret = {
                 "text": "",
@@ -230,9 +230,9 @@ class ModelWorker:
                 ret["finish_reason"] = output["finish_reason"]
             if "logprobs" in output:
                 ret["logprobs"] = output["logprobs"]
-        except torch.cuda.OutOfMemoryError:
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{server_error_msg} ({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
@@ -241,7 +241,7 @@ class ModelWorker:
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
-    
+
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
