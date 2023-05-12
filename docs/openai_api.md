@@ -43,15 +43,18 @@ import openai
 openai.api_key = "EMPTY" # Not support yet
 openai.api_base = "http://localhost:8000/v1"
 
+model = "vicuna-7b-v1.1"
+prompt = "Hello! What is your name?"
+
 # create a completion
-completion = openai.Completion.create(model="vicuna-7b-v1.1", prompt="Hello world", max_tokens=64)
+completion = openai.Completion.create(model=model, prompt=prompt, max_tokens=64)
 # print the completion
 print(completion.choices[0].text)
 
 # create a chat completion
 completion = openai.ChatCompletion.create(
   model="vicuna-7b-v1.1",
-  messages=[{"role": "user", "content": "Hello world!"}]
+  messages=[{"role": "user", "content": prompt}]
 )
 # print the completion
 print(completion.choices[0].message.content)
