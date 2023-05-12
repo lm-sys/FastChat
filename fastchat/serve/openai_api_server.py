@@ -657,6 +657,6 @@ if __name__ == "__main__":
     )
     app_settings.controller_address = args.controller_address
 
-    logger.debug(f"==== args ====\n{args}")
+    logger.info(f"args: {args}")
 
-    uvicorn.run("fastchat.serve.openai_api_server:app", host=args.host, port=args.port, log_level="info", reload=True)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
