@@ -109,7 +109,7 @@ class Chatbot:
             "https://bard.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate",
             params=params,
             data=data,
-            timeout=120,
+            timeout=60,
         )
 
         chat_data = json.loads(resp.content.splitlines()[3])[0][2]
