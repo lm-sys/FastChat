@@ -18,7 +18,7 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION
+from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION, ErrorCode
 from fastchat.utils import build_logger, server_error_msg
 
 
@@ -200,7 +200,7 @@ class Controller:
         logger.info(f"no worker: {params['model']}")
         ret = {
             "text": server_error_msg,
-            "error_code": 2,
+            "error_code": ErrorCode.CONTROLLER_NO_WORKER,
         }
         return json.dumps(ret).encode() + b"\0"
 
@@ -208,7 +208,7 @@ class Controller:
         logger.info(f"worker timeout: {worker_address}")
         ret = {
             "text": server_error_msg,
-            "error_code": 3,
+            "error_code": ErrorCode.CONTROLLER_WORKER_TIMEOUT,
         }
         return json.dumps(ret).encode() + b"\0"
 
