@@ -596,7 +596,6 @@ async def create_embeddings(request: EmbeddingsRequest):
     }
 
     embedding = await get_embedding(payload)
-    embedding = json.loads(embedding)
     data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
     return EmbeddingsResponse(
         data=data,

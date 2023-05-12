@@ -19,7 +19,7 @@ def test_completion():
 
 def test_embedding():
     embedding = openai.Embedding.create(model=model, input="Hello world!")
-    print(embedding["usage"])
+    print(len(embedding["data"][0]["embedding"]))
 
 
 def test_chat_completion():
