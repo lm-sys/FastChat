@@ -263,6 +263,14 @@ def bard_api_stream_iter(state):
     # TODO: we will use the official PaLM 2 API sooner or later,
     # and we will update this function accordingly. So here we just hard code the
     # Bard worker address. It is going to be deprecated anyway.
+
+    # Make requests
+    gen_params = {
+        "model": "bard",
+        "prompt": state.messages,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
     response = requests.post(
         "http://localhost:18900/chat",
         json={
