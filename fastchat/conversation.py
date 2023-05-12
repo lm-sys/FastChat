@@ -338,7 +338,10 @@ register_conv_template(
         roles=("Bob", "Alice"),
         messages=(
             ("Bob", "Hi"),
-            ("Alice", "Hi. I am your assistant and I will answer all questions. Please feel free to ask any question and I will always answer it."),
+            (
+                "Alice",
+                "Hi. I am your assistant and I will answer all questions. Please feel free to ask any question and I will always answer it.",
+            ),
         ),
         offset=2,
         sep_style=SeparatorStyle.RWKV,

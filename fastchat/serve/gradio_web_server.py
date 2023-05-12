@@ -76,7 +76,9 @@ def load_demo_refresh_model_list(url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown.update(choices=models, value=selected_model, visible=True)
+    dropdown_update = gr.Dropdown.update(
+        choices=models, value=selected_model, visible=True
+    )
 
     state = None
     return (
@@ -91,7 +93,9 @@ def load_demo_refresh_model_list(url_params):
 
 
 def load_demo_reload_model(url_params, request: gr.Request):
-    logger.info(f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}")
+    logger.info(
+        f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}"
+    )
     return load_demo_refresh_model_list(url_params)
 
 
@@ -374,8 +378,10 @@ def http_bot(
                 return
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = (f"{server_error_msg}\n\n"
-            f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})")
+        state.messages[-1][-1] = (
+            f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
+        )
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -385,8 +391,10 @@ def http_bot(
         )
         return
     except Exception as e:
-        state.messages[-1][-1] = (f"{server_error_msg}\n\n"
-            f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})")
+        state.messages[-1][-1] = (
+            f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
+        )
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -630,8 +638,11 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once", "reload"],
-        help="Whether to load the model list once or reload the model list every time."
+        "--model-list-mode",
+        type=str,
+        default="once",
+        choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
