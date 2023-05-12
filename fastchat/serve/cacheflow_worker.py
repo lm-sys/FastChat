@@ -104,6 +104,7 @@ class CacheFlowWorker:
         self.is_server_running = False
 
         if not no_register:
+            time.sleep(30)  # wait for model loading
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
                 target=heart_beat_worker, args=(self,)
@@ -185,21 +186,32 @@ class CacheFlowWorker:
         tokenizer = self.tokenizer
         context = params["prompt"]
         temperature = float(params.get("temperature", 1.0))
+        top_p = float(params.get("top_p", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
         echo = params.get("echo", True)
-        params["stop_token_ids"] = params.get("stop_token_ids", None) or []
+        stop_token_ids = params.get("stop_token_ids", None) or []
+        stop_token_ids.append(tokenizer.eos_token_id)
 
         input_ids = tokenizer(context).input_ids
         max_src_len = self.context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
 
         # make sampling params in cacheflow
-        sampling_params = SamplingParams.from_dict(params)
-        sampling_params.stop_token_ids.add(tokenizer.eos_token_id)
-        sampling_params.n = 1
-        sampling_params.max_num_steps = max_new_tokens
-        sampling_params.temperature = temperature
+        top_p = max(top_p, 1e-5)
+        if temperature <= 1e-5:
+            top_p = 1.0
+        sampling_params = SamplingParams(
+            n=1,
+            temperature=temperature,
+            top_p=top_p,
+            use_beam_search=False,
+            stop_token_ids=stop_token_ids,
+            max_num_steps=max_new_tokens,
+            num_logprobs=0,
+            context_window_size=None,
+        )
+
         if stop_str is not None:
             sampling_params.stop_str = stop_str
         # we might sample multiple sequences, but in chatbot, this is one

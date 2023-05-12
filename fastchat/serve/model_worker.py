@@ -196,19 +196,20 @@ class ModelWorker:
                 if "logprobs" in output:
                     ret["logprobs"] = output["logprobs"]
                 yield json.dumps(ret).encode() + b"\0"
-        except torch.cuda.OutOfMemoryError:
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{server_error_msg} ({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-        except ValueError as e:
+            yield json.dumps(ret).encode() + b"\0"
+        except (ValueError, RuntimeError) as e:
             ret = {
-                "text": str(e),
+                "text": f"{server_error_msg} ({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
-        yield json.dumps(ret).encode() + b"\0"
-    
-    def generate_gate(self, params):
+            yield json.dumps(ret).encode() + b"\0"
+
+    def generate_completion(self, params):
         try:
             ret = {
                 "text": "",
@@ -234,9 +235,9 @@ class ModelWorker:
                 "text": server_error_msg,
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-        except ValueError as e:
+        except (ValueError, RuntimeError) as e:
             ret = {
-                "text": str(e),
+                "text": f"{server_error_msg} ({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
@@ -254,18 +255,21 @@ class ModelWorker:
             else:
                 data = model_output.hidden_states[-1][0]
             embedding = torch.mean(data, dim=0)
-            return json.dumps(
-                {
+            ret = {
                     "embedding": embedding.tolist(),
                     "token_num": len(self.tokenizer(params["input"]).input_ids),
-                }
-            )
+            }
         except torch.cuda.OutOfMemoryError:
             ret = {
                 "text": server_error_msg,
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-            return json.dumps(ret).encode() + b"\0"
+        except (ValueError, RuntimeError) as e:
+            ret = {
+                "text": f"{server_error_msg} ({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+        return ret
 
 
 app = FastAPI()
@@ -297,6 +301,7 @@ async def api_generate_stream(request: Request):
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
+  
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
@@ -305,6 +310,7 @@ async def api_generate(request: Request):
     release_model_semaphore()
     return JSONResponse(output)
 
+  
 @app.post("/worker_generate_completion_stream")
 async def api_generate_completion_stream(request: Request):
     params = await request.json()
@@ -336,11 +342,13 @@ async def api_get_embeddings(request: Request):
 async def api_get_status(request: Request):
     return worker.get_status()
 
+  
 @app.post("/count_token")
 async def count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
 
+  
 @app.post("/model_details")
 async def model_details(request: Request):
     return {

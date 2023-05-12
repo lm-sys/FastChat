@@ -16,7 +16,7 @@ def get_log_files(max_num_files=None):
         for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 10
+    num_servers = 12
     filenames = []
     for d in dates:
         for i in range(num_servers):
@@ -31,7 +31,14 @@ def get_log_files(max_num_files=None):
 def load_log_files(log_files):
     data = []
     for filename in tqdm(log_files, desc="read files"):
-        for l in open(filename):
+        for retry in range(5):
+            try:
+                lines = open(filename).readlines()
+                break
+            except FileNotFoundError:
+                time.sleep(2)
+
+        for l in lines:
             row = json.loads(l)
 
             data.append(

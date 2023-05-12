@@ -88,6 +88,7 @@ def generate_stream(
             device=device,
         )
 
+    past_key_values = out = None
     for i in range(max_new_tokens):
         if i == 0:
             if model.config.is_encoder_decoder:
