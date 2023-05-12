@@ -7,9 +7,8 @@ import random
 import re
 import string
 
-import requests
-
 from fastapi import FastAPI
+import httpx
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 
@@ -28,7 +27,7 @@ class Message(BaseModel):
 
 class Response(BaseModel):
     content: str
-    factualityQueries: Optional[List[dict]]
+    factualityQueries: Optional[List]
     textQuery: Optional[Union[str, List]]
     choices: List[dict]
     state: ConversationState
@@ -42,16 +41,6 @@ class Chatbot:
             The __Secure-1PSID cookie.
     """
 
-    __slots__ = [
-        "headers",
-        "_reqid",
-        "SNlM0e",
-        "conversation_id",
-        "response_id",
-        "choice_id",
-        "session",
-    ]
-
     def __init__(self, session_id):
         headers = {
             "Host": "bard.google.com",
@@ -61,13 +50,13 @@ class Chatbot:
             "Origin": "https://bard.google.com",
             "Referer": "https://bard.google.com/",
         }
-        self.session = requests.Session()
+        self.session = httpx.AsyncClient()
         self.session.headers = headers
         self.session.cookies.set("__Secure-1PSID", session_id)
-        self.SNlM0e = self.__get_snlm0e()
+        self.SNlM0e = None
 
-    def __get_snlm0e(self):
-        resp = self.session.get(url="https://bard.google.com/", timeout=10)
+    async def _get_snlm0e(self):
+        resp = await self.session.get(url="https://bard.google.com/", timeout=10)
         # Find "SNlM0e":"<ID>"
         if resp.status_code != 200:
             raise Exception("Could not get Google Bard")
@@ -84,7 +73,7 @@ class Chatbot:
             message.state.req_id = int("".join(random.choices(string.digits, k=4)))
         # url params
         params = {
-            #"bl": "boq_assistant-bard-web-server_20230315.04_p2",
+            # "bl": "boq_assistant-bard-web-server_20230315.04_p2",
             # This is a newer API version
             "bl": "boq_assistant-bard-web-server_20230507.20_p2",
             "_reqid": str(message.state.req_id),
@@ -98,7 +87,7 @@ class Chatbot:
             [
                 message.state.conversation_id,
                 message.state.response_id,
-                message.state.choice_id
+                message.state.choice_id,
             ],
         ]
         data = {
@@ -107,7 +96,7 @@ class Chatbot:
         }
 
         # do the request!
-        resp = self.session.post(
+        resp = await self.session.post(
             "https://bard.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate",
             params=params,
             data=data,
@@ -147,6 +136,7 @@ chatbot = None
 async def startup_event():
     global chatbot
     chatbot = Chatbot("<__Secure-1PSID cookie of bard.google.com>")
+    chatbot.SNlM0e = await chatbot._get_snlm0e()
 
 
 @app.post("/chat", response_model=Response)
@@ -162,4 +152,6 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=18900)
     args = parser.parse_args()
-    uvicorn.run("bard_worker:app", host=args.host, port=args.port, log_level="info", reload=True)
+    uvicorn.run(
+        "bard_worker:app", host=args.host, port=args.port, log_level="info", reload=True
+    )
