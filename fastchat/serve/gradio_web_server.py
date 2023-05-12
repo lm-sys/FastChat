@@ -704,7 +704,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Add Google's Bard model",
     )
-
     args = parser.parse_args()
     logger.info(f"args: {args}")
 

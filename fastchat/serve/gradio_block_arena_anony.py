@@ -161,6 +161,7 @@ DEFAULT_WEIGHTS = {
     "gpt-4": 1.5,
     "gpt-3.5-turbo": 1.5,
     "claude-v1": 1.5,
+    "bard": 1.5,
     "vicuna-13b": 1.5,
     "koala-13b": 1.5,
     "RWKV-4-Raven-14B": 1.2,

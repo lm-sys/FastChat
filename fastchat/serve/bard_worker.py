@@ -11,6 +11,7 @@ from fastapi import FastAPI
 import httpx
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
+import uvicorn
 
 
 class ConversationState(BaseModel):
@@ -135,7 +136,8 @@ chatbot = None
 @app.on_event("startup")
 async def startup_event():
     global chatbot
-    chatbot = Chatbot("<__Secure-1PSID cookie of bard.google.com>")
+    cookie = json.load(open("bard_cookie.json"))
+    chatbot = Chatbot(cookie["__Secure-1PSID"])
     chatbot.SNlM0e = await chatbot._get_snlm0e()
 
 
@@ -146,12 +148,12 @@ async def chat(message: Message):
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     parser = argparse.ArgumentParser("Google Bard worker")
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=18900)
+    parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
     uvicorn.run(
-        "bard_worker:app", host=args.host, port=args.port, log_level="info", reload=True
+        "bard_worker:app", host=args.host, port=args.port, log_level="info",
+        reload=args.reload
     )
