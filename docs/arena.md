@@ -17,8 +17,8 @@ If you want to see a specific model in the arena, you can follow the steps below
    ```
    
    Some major files you need to modify include
-   - Impelment a conversation template for the new model at https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py. You can follow existing examples and use `register_conv_template` to add a new one.
-   - Impelment a model adapter for the new model at https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py. You can follow existing examples and use `register_model_adapter` to add a new one.
+   - Implement a conversation template for the new model at https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py. You can follow existing examples and use `register_conv_template` to add a new one.
+   - Implement a model adapter for the new model at https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py. You can follow existing examples and use `register_model_adapter` to add a new one.
 2. After the model is supported, we will try to schedule some computing resources to host the model in the arena.
    However, due to the limited resources we have, we may not be able to serve every model.
    We will select the models based on popularity, quality, diversity, and other factors.
