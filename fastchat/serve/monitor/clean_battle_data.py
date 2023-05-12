@@ -23,6 +23,7 @@ IDENTITY_WORDS = [
     "openai",
     "anthropic",
     "claude",
+    "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**",
 ]
 
 
