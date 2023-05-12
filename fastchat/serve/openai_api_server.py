@@ -21,7 +21,7 @@ from fastapi.responses import StreamingResponse
 import httpx
 import uvicorn
 from pydantic import BaseSettings
-
+from sse_starlette.sse import EventSourceResponse
 from fastchat.constants import WORKER_API_TIMEOUT
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.protocol.openai_api_protocol import (
@@ -78,7 +78,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if request.stream:
         response_stream = chat_completion_stream(
             request.model, gen_params, request.n)
-        return StreamingResponse(response_stream, media_type="text/event-stream")
+        return EventSourceResponse(response_stream)
 
     # TODO: batch the requests
     choices = []
