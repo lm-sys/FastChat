@@ -277,7 +277,7 @@ def bard_api_stream_iter(state):
     content = resp_json["content"]
     # The Bard Web API does not support streaming yet. Here we have to simulate
     # the streaming behavior by adding some time.sleep().
-    pos = 1
+    pos = 0
     while pos < len(content):
         # This is a fancy way to simulate token generation latency combined
         # with a Poisson process.
