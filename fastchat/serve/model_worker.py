@@ -239,6 +239,7 @@ class ModelWorker:
             }
         return ret
 
+    @torch.inference_mode()
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
