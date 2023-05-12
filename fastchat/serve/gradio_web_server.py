@@ -14,7 +14,7 @@ import gradio as gr
 import requests
 
 from fastchat.conversation import SeparatorStyle
-from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT
+from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT, ErrorCode
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
@@ -362,7 +362,7 @@ def http_bot(
                 state.messages[-1][-1] = output + "▌"
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
-                output = data["text"] + f" (error_code: {data['error_code']})"
+                output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 state.messages[-1][-1] = output
                 yield (state, state.to_gradio_chatbot()) + (
                     disable_btn,
@@ -374,7 +374,8 @@ def http_bot(
                 return
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+        state.messages[-1][-1] = (f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})")
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -384,7 +385,8 @@ def http_bot(
         )
         return
     except Exception as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 5, {e})"
+        state.messages[-1][-1] = (f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})")
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,

@@ -198,13 +198,13 @@ class ModelWorker:
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": f"{server_error_msg} ({e})",
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             yield json.dumps(ret).encode() + b"\0"
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg} ({e})",
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
             yield json.dumps(ret).encode() + b"\0"
@@ -229,12 +229,12 @@ class ModelWorker:
                 ret["logprobs"] = output["logprobs"]
         except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": f"{server_error_msg} ({e})",
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg} ({e})",
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
@@ -256,14 +256,14 @@ class ModelWorker:
                 "embedding": embedding.tolist(),
                 "token_num": len(self.tokenizer(params["input"]).input_ids),
             }
-        except torch.cuda.OutOfMemoryError:
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg} ({e})",
+                "text": f"{server_error_msg}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
