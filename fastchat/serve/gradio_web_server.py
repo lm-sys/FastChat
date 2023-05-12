@@ -7,6 +7,7 @@ from collections import defaultdict
 import datetime
 import json
 import os
+import random
 import time
 import uuid
 
@@ -258,6 +259,33 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
         yield data
 
 
+def bard_api_stream_iter(state):
+    # TODO: we will use the official PaLM 2 API sooner or later,
+    # and we will update this function accordingly. So here we just hard code the
+    # Bard worker address. It is going to be deprecated anyway.
+    response = requests.post(
+        "http://localhost:18900/chat",
+        json={
+            "content": state.messages[-2][-1],
+            "state": state.session_state,
+        },
+        stream=False,
+        timeout=WORKER_API_TIMEOUT,
+    )
+    resp_json = response.json()
+    state.session_state = resp_json["state"]
+    content = resp_json["content"]
+    # The Bard Web API does not support streaming yet. Here we have to simulate
+    # the streaming behavior by adding some time.sleep().
+    for char in content:
+        time.sleep(max(random.gauss(0.05, 0.01), 0))
+        data = {
+            "text": char,
+            "error_code": 0,
+        }
+        yield data
+
+
 def model_worker_stream_iter(
     conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
 ):
@@ -311,6 +339,13 @@ def http_bot(
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
+        if model_name == "bard":
+            state.session_state = {
+                "conversation_id": "",
+                "response_id": "",
+                "choice_id": "",
+                "req_id": 0,
+            }
 
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
@@ -322,6 +357,8 @@ def http_bot(
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
+    elif model_name == "bard":
+        stream_iter = bard_api_stream_iter(state)
     else:
         # Query worker address
         ret = requests.post(
@@ -658,6 +695,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Add Anthropic's Claude models (claude-v1)",
     )
+    parser.add_argument(
+        "--add-bard",
+        action="store_true",
+        help="Add Google's Bard model",
+    )
 
     args = parser.parse_args()
     logger.info(f"args: {args}")
@@ -669,6 +711,8 @@ if __name__ == "__main__":
         models = ["gpt-3.5-turbo", "gpt-4"] + models
     if args.add_claude:
         models = ["claude-v1"] + models
+    if args.add_bard:
+        models = ["bard"] + models
 
     demo = build_demo(models)
     demo.queue(

@@ -431,6 +431,21 @@ register_conv_template(
     )
 )
 
+# Bard default template
+# Reference: https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L150
+#            https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L40
+register_conv_template(
+    Conversation(
+        name="bard",
+        system="",
+        roles=("0", "1"),
+        messages=(),
+        offset=0,
+        sep_style=None,
+        sep=None,
+    )
+)
+
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
