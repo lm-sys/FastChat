@@ -31,13 +31,14 @@ class SimpleChatIO(ChatIO):
     def stream_output(self, output_stream):
         pre = 0
         for outputs in output_stream:
-            outputs = outputs.strip().split(" ")
-            now = len(outputs) - 1
+            output_text = outputs["text"]
+            output_text = output_text.strip().split(" ")
+            now = len(output_text) - 1
             if now > pre:
-                print(" ".join(outputs[pre:now]), end=" ", flush=True)
+                print(" ".join(output_text[pre:now]), end=" ", flush=True)
                 pre = now
-        print(" ".join(outputs[pre:]), flush=True)
-        return " ".join(outputs)
+        print(" ".join(output_text[pre:]), flush=True)
+        return " ".join(output_text)
 
 
 class RichChatIO(ChatIO):
@@ -74,6 +75,7 @@ class RichChatIO(ChatIO):
             for outputs in output_stream:
                 if not outputs:
                     continue
+                text = outputs["text"]
                 # Render the accumulated text as Markdown
                 # NOTE: this is a workaround for the rendering "unstandard markdown"
                 #  in rich. The chatbots output treat "\n" as a new line for
@@ -86,7 +88,7 @@ class RichChatIO(ChatIO):
                 #  especially for console output, because in general the console does not
                 #  care about trailing spaces.
                 lines = []
-                for line in outputs.splitlines():
+                for line in text.splitlines():
                     lines.append(line)
                     if line.startswith("```"):
                         # Code block marker - do not add trailing spaces, as it would
@@ -98,7 +100,7 @@ class RichChatIO(ChatIO):
                 # Update the Live console output
                 live.update(markdown)
         self._console.print()
-        return outputs
+        return text
 
 
 def main(args):

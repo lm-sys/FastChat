@@ -3,7 +3,7 @@
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
 - The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna, FastChat-T5).
-- A distributed multi-model serving system with Web UI and OpenAI-Compatible RESTful APIs.
+- A distributed multi-model serving system with Web UI and OpenAI-compatible RESTful APIs.
 
 ## News
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
@@ -213,7 +213,8 @@ python3 -m fastchat.serve.gradio_web_server_multi
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
-FastChat provides OpenAI-Compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
 See [docs/openai_api.md](docs/openai_api.md).
 
 ### Hugging Face Generation APIs
