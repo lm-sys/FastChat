@@ -11,25 +11,25 @@ import requests
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 class ConversationState(BaseModel):
     conversation_id: str = ""
     response_id: str = ""
     choice_id: str = ""
-    req_id: int = Field(default_factory=lambda: int("".join(random.choices(string.digits, k=4))))
+    req_id: int = 0
 
 
 class Message(BaseModel):
     content: str
-    state: ConversationState
+    state: ConversationState = Field(default_factory=ConversationState)
 
 
 class Response(BaseModel):
     content: str
     factualityQueries: Optional[List[dict]]
-    textQuery: Optional[str]
+    textQuery: Optional[Union[str, List]]
     choices: List[dict]
     state: ConversationState
 
@@ -74,12 +74,14 @@ class Chatbot:
         SNlM0e = re.search(r"SNlM0e\":\"(.*?)\"", resp.text).group(1)
         return SNlM0e
 
-    def ask(self, message: Message) -> Response:
+    async def ask(self, message: Message) -> Response:
         """
         Send a message to Google Bard and return the response.
         :param message: The message to send to Google Bard.
         :return: A dict containing the response from Google Bard.
         """
+        if message.state.conversation_id == "":
+            message.state.req_id = int("".join(random.choices(string.digits, k=4)))
         # url params
         params = {
             #"bl": "boq_assistant-bard-web-server_20230315.04_p2",
@@ -149,7 +151,7 @@ async def startup_event():
 
 @app.post("/chat", response_model=Response)
 async def chat(message: Message):
-    response = chatbot.ask(message)
+    response = await chatbot.ask(message)
     return response
 
 
@@ -157,7 +159,7 @@ if __name__ == "__main__":
     import uvicorn
 
     parser = argparse.ArgumentParser("Google Bard worker")
-    parser.add_argument("--host", type=str, default="0.0.0.0")
+    parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=18900)
     args = parser.parse_args()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info", reload=True)
+    uvicorn.run("bard_worker:app", host=args.host, port=args.port, log_level="info", reload=True)
