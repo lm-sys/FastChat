@@ -1,5 +1,6 @@
 """Model adapter registration."""
 
+import math
 import sys
 from typing import List, Optional
 import warnings
@@ -8,6 +9,7 @@ if sys.version_info >= (3, 9):
 else:
     from functools import lru_cache as cache
 
+import psutil
 import torch
 from transformers import (
     AutoConfig,
