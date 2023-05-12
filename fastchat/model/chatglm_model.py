@@ -1,7 +1,7 @@
 import torch
 from typing import List, Tuple
 
-@torch.no_grad()
+
 def stream_chat_token_num(tokenizer, query: str, history: List[Tuple[str, str]] = None):
     if history is None:
         history = []
@@ -12,8 +12,9 @@ def stream_chat_token_num(tokenizer, query: str, history: List[Tuple[str, str]] 
         for i, (old_query, response) in enumerate(history):
             prompt += "[Round {}]\n问：{}\n答：{}\n".format(i, old_query, response)
         prompt += "[Round {}]\n问：{}\n答：".format(len(history), query)
-    inputs = tokenizer([prompt], return_tensors="pt")
-    return torch.numel(inputs['input_ids'])
+    inputs = tokenizer([prompt])
+    return sum([len(x) for x in inputs["input_ids"]])
+
 
 @torch.inference_mode()
 def chatglm_generate_stream(

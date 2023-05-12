@@ -5,6 +5,7 @@ import time
 import shortuuid
 from pydantic import BaseModel, Field
 
+
 class ErrorResponse(BaseModel):
     object: str = "error"
     message: str
@@ -35,14 +36,17 @@ class ModelCard(BaseModel):
     parent: Optional[str] = None
     permission: List[ModelPermission] = []
 
+
 class ModelList(BaseModel):
     object: str = "list"
     data: List[ModelCard] = []
+
 
 class UsageInfo(BaseModel):
     prompt_tokens: int = 0
     total_tokens: int = 0
     completion_tokens: Optional[int] = 0
+
 
 class ChatCompletionRequest(BaseModel):
     model: str
@@ -67,6 +71,7 @@ class ChatCompletionResponseChoice(BaseModel):
     index: int
     message: ChatMessage
     finish_reason: Optional[Literal["stop", "length"]]
+
 
 class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{shortuuid.random()}")

@@ -95,7 +95,7 @@ class ModelWorker:
             self.generate_stream_func = chatglm_generate_stream
         else:
             self.generate_stream_func = generate_stream
-        
+
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(

@@ -21,9 +21,9 @@ import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
+from pydantic import BaseSettings
 import shortuuid
 import uvicorn
-from pydantic import BaseSettings
 
 from fastchat.constants import WORKER_API_TIMEOUT, ErrorCode
 from fastchat.model.model_adapter import get_conversation_template
@@ -60,7 +60,7 @@ class AppSettings(BaseSettings):
 
 app_settings = AppSettings()
 
-app = fastapi.FastAPI(debug=True)
+app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 
 
@@ -108,6 +108,7 @@ async def check_length(request, prompt, max_tokens):
         token_num = response.json()["count"]
     
     max_new_tokens = max_tokens
+    # TODO: Fix this for other models
     context_len = 2048
 
     if token_num + max_new_tokens > context_len:
@@ -175,7 +176,6 @@ def get_gen_params(
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
-    is_chatglm = "chatglm" in model_name.lower()
     conv = get_conversation_template(model_name)
 
     if isinstance(messages, str):
@@ -195,6 +195,7 @@ def get_gen_params(
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
 
+        is_chatglm = "chatglm" in model_name.lower()
         if is_chatglm:
             prompt = conv.messages[conv.offset :]
         else:

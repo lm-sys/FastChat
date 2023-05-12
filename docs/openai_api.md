@@ -116,7 +116,7 @@ completion = client.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
-### Streaming
+#### Streaming
 See [test_openai_client.py](../tests/test_openai_client.py).
 
 ## Machine Learning with Embeddings
@@ -143,6 +143,3 @@ Some features to be implemented:
 - [ ] Edits API
 - [ ] Authentication and API key
 - [ ] Rate Limitation Settings
-- [x] Parameter `top_p` support
-- [x] Report token usage for chat completion
-- [x] Proper error handling (e.g., model not found)
