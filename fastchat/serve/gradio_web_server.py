@@ -67,6 +67,7 @@ def get_model_list(controller_url):
     logger.info(f"Models: {models}")
     return models
 
+
 def load_demo_refresh_model_list(url_params):
     models = get_model_list(controller_url)
     selected_model = models[0] if len(models) > 0 else ""
@@ -88,9 +89,11 @@ def load_demo_refresh_model_list(url_params):
         gr.Accordion.update(visible=True),
     )
 
+
 def load_demo_reload_model(url_params, request: gr.Request):
     logger.info(f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}")
     return load_demo_refresh_model_list(url_params)
+
 
 def load_demo_single(models, url_params):
     dropdown_update = gr.Dropdown.update(visible=True)
@@ -625,7 +628,8 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="reload", choices=["once", "reload"]
+        "--model-list-mode", type=str, default="once", choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time."
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
