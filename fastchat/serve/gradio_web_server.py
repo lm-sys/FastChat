@@ -298,6 +298,44 @@ def bard_api_stream_iter(state):
         yield data
 
 
+def init_palm_chat(model_name):
+    import vertexai
+    from vertexai.preview.language_models import ChatModel
+
+    project_id = os.environ["GCP_PROJECT_ID"]
+    location = "us-central1"
+    vertexai.init(project=project_id, location=location)
+
+    chat_model = ChatModel.from_pretrained(model_name)
+    chat = chat_model.start_chat(
+        examples=[]
+    )
+    return chat
+
+
+def palm_api_stream_iter(chat, messages, temperature, top_p, max_new_tokens):
+    parameters = {
+        "temperature": temperature,
+        "max_output_tokens": max_new_tokens,
+        "top_p": top_p,
+        "top_k": 40,
+    }
+    response = chat.send_message(messages, **parameters)
+    content = response.text
+
+    pos = 0
+    while pos < len(content):
+        # This is a fancy way to simulate token generation latency combined
+        # with a Poisson process.
+        pos += random.randint(1, 5)
+        time.sleep(random.expovariate(20))
+        data = {
+            "text": content[:pos],
+            "error_code": 0,
+        }
+        yield data
+
+
 def model_worker_stream_iter(
     conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
 ):
@@ -358,6 +396,9 @@ def http_bot(
                 "choice_id": "",
                 "req_id": 0,
             }
+            # According to release note, "chat-bison@001" is PaLM 2 for chat.
+            # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
+            state.chat = init_palm_chat("chat-bison@001")
 
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
@@ -370,7 +411,9 @@ def http_bot(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_name == "bard":
-        stream_iter = bard_api_stream_iter(state)
+        stream_iter = palm_api_stream_iter(
+            state.chat, state.messages[-2][1], temperature, top_p, max_new_tokens
+        )
     else:
         # Query worker address
         ret = requests.post(
