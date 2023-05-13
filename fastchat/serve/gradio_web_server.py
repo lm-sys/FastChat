@@ -307,9 +307,7 @@ def init_palm_chat(model_name):
     vertexai.init(project=project_id, location=location)
 
     chat_model = ChatModel.from_pretrained(model_name)
-    chat = chat_model.start_chat(
-        examples=[]
-    )
+    chat = chat_model.start_chat(examples=[])
     return chat
 
 
