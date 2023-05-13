@@ -1,10 +1,14 @@
 set -x
 
+curl http://localhost:8000/v1/models
+
+echo
+
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.1",
-    "messages": [{"role": "user", "content": "Hello!"}]
+    "messages": [{"role": "user", "content": "Hello! What is your name?"}]
   }'
 
 echo
@@ -20,9 +24,9 @@ curl http://localhost:8000/v1/completions \
 
 echo
 
-curl http://localhost:8000/v1/create_embeddings \
+curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.1",
-    "input": "Hello, can you tell me a joke"
+    "input": "Hello world!"
   }'

@@ -7,6 +7,7 @@ from collections import defaultdict
 import datetime
 import json
 import os
+import random
 import time
 import uuid
 
@@ -14,7 +15,7 @@ import gradio as gr
 import requests
 
 from fastchat.conversation import SeparatorStyle
-from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT
+from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT, ErrorCode
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
@@ -66,6 +67,37 @@ def get_model_list(controller_url):
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
     return models
+
+
+def load_demo_refresh_model_list(url_params):
+    models = get_model_list(controller_url)
+    selected_model = models[0] if len(models) > 0 else ""
+    if "model" in url_params:
+        model = url_params["model"]
+        if model in models:
+            selected_model = model
+
+    dropdown_update = gr.Dropdown.update(
+        choices=models, value=selected_model, visible=True
+    )
+
+    state = None
+    return (
+        state,
+        dropdown_update,
+        gr.Chatbot.update(visible=True),
+        gr.Textbox.update(visible=True),
+        gr.Button.update(visible=True),
+        gr.Row.update(visible=True),
+        gr.Accordion.update(visible=True),
+    )
+
+
+def load_demo_reload_model(url_params, request: gr.Request):
+    logger.info(
+        f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}"
+    )
+    return load_demo_refresh_model_list(url_params)
 
 
 def load_demo_single(models, url_params):
@@ -227,6 +259,45 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
         yield data
 
 
+def bard_api_stream_iter(state):
+    # TODO: we will use the official PaLM 2 API sooner or later,
+    # and we will update this function accordingly. So here we just hard code the
+    # Bard worker address. It is going to be deprecated anyway.
+
+    # Make requests
+    gen_params = {
+        "model": "bard",
+        "prompt": state.messages,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    response = requests.post(
+        "http://localhost:18900/chat",
+        json={
+            "content": state.messages[-2][-1],
+            "state": state.session_state,
+        },
+        stream=False,
+        timeout=WORKER_API_TIMEOUT,
+    )
+    resp_json = response.json()
+    state.session_state = resp_json["state"]
+    content = resp_json["content"]
+    # The Bard Web API does not support streaming yet. Here we have to simulate
+    # the streaming behavior by adding some time.sleep().
+    pos = 0
+    while pos < len(content):
+        # This is a fancy way to simulate token generation latency combined
+        # with a Poisson process.
+        pos += random.randint(1, 5)
+        time.sleep(random.expovariate(20))
+        data = {
+            "text": content[:pos],
+            "error_code": 0,
+        }
+        yield data
+
+
 def model_worker_stream_iter(
     conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
 ):
@@ -280,6 +351,13 @@ def http_bot(
         new_state.append_message(new_state.roles[0], state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
+        if model_name == "bard":
+            state.session_state = {
+                "conversation_id": "",
+                "response_id": "",
+                "choice_id": "",
+                "req_id": 0,
+            }
 
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
         prompt = state.to_openai_api_messages()
@@ -291,6 +369,8 @@ def http_bot(
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
+    elif model_name == "bard":
+        stream_iter = bard_api_stream_iter(state)
     else:
         # Query worker address
         ret = requests.post(
@@ -335,7 +415,7 @@ def http_bot(
                 state.messages[-1][-1] = output + "▌"
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
-                output = data["text"] + f" (error_code: {data['error_code']})"
+                output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 state.messages[-1][-1] = output
                 yield (state, state.to_gradio_chatbot()) + (
                     disable_btn,
@@ -347,7 +427,10 @@ def http_bot(
                 return
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+        state.messages[-1][-1] = (
+            f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
+        )
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -357,7 +440,10 @@ def http_bot(
         )
         return
     except Exception as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 5, {e})"
+        state.messages[-1][-1] = (
+            f"{server_error_msg}\n\n"
+            f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
+        )
         yield (state, state.to_gradio_chatbot()) + (
             disable_btn,
             disable_btn,
@@ -573,6 +659,21 @@ def build_demo(models):
                 ],
                 _js=get_window_url_params_js,
             )
+        elif args.model_list_mode == "reload":
+            demo.load(
+                load_demo_reload_model,
+                [url_params],
+                [
+                    state,
+                    model_selector,
+                    chatbot,
+                    textbox,
+                    send_btn,
+                    button_row,
+                    parameter_row,
+                ],
+                _js=get_window_url_params_js,
+            )
         else:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
@@ -586,7 +687,11 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once", "reload"]
+        "--model-list-mode",
+        type=str,
+        default="once",
+        choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
@@ -602,7 +707,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Add Anthropic's Claude models (claude-v1)",
     )
-
+    parser.add_argument(
+        "--add-bard",
+        action="store_true",
+        help="Add Google's Bard model",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -613,6 +722,8 @@ if __name__ == "__main__":
         models = ["gpt-3.5-turbo", "gpt-4"] + models
     if args.add_claude:
         models = ["claude-v1"] + models
+    if args.add_bard:
+        models = ["bard"] + models
 
     demo = build_demo(models)
     demo.queue(

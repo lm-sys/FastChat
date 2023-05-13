@@ -1,10 +1,15 @@
 """Model adapter registration."""
 
+import math
 import sys
 from typing import List, Optional
 import warnings
-from functools import cache
+if sys.version_info >= (3, 9):
+    from functools import cache
+else:
+    from functools import lru_cache as cache
 
+import psutil
 import torch
 from transformers import (
     AutoConfig,
@@ -448,6 +453,19 @@ class ClaudeAdapter(BaseAdapter):
         return get_conv_template("claude")
 
 
+class BardAdapter(BaseAdapter):
+    """The model adapter for Bard."""
+
+    def match(self, model_path: str):
+        return model_path == "bard"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("bard")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
@@ -461,6 +479,7 @@ register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
+register_model_adapter(BardAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
