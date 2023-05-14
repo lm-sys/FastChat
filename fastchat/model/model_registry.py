@@ -37,6 +37,12 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
+    ["claude-instant-v1.1"],
+    "Claude Instant",
+    "https://www.anthropic.com/index/introducing-claude",
+    "Claude Instant by Anthropic",
+)
+register_model_info(
     ["bard"],
     "Bard",
     "https://bard.google.com/",
