@@ -316,7 +316,6 @@ def palm_api_stream_iter(chat, messages, temperature, top_p, max_new_tokens):
         "temperature": temperature,
         "max_output_tokens": max_new_tokens,
         "top_p": top_p,
-        "top_k": 40,
     }
     response = chat.send_message(messages, **parameters)
     content = response.text
