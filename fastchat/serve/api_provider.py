@@ -1,6 +1,9 @@
 """Call API providers."""
 
 import os
+import random
+import time
+
 from fastchat.utils import build_logger
 
 
@@ -94,7 +97,7 @@ def bard_api_stream_iter(state):
         # This is a fancy way to simulate token generation latency combined
         # with a Poisson process.
         pos += random.randint(1, 5)
-        time.sleep(random.expovariate(30))
+        time.sleep(random.expovariate(50))
         data = {
             "text": content[:pos],
             "error_code": 0,
@@ -124,7 +127,8 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
     gen_params = {
         "model": "bard",
         "prompt": message,
-    }.update(parameters)
+    }
+    gen_params.update(parameters)
     logger.info(f"==== request ====\n{gen_params}")
 
     response = chat.send_message(message, **parameters)
@@ -135,7 +139,7 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
         # This is a fancy way to simulate token generation latency combined
         # with a Poisson process.
         pos += random.randint(1, 5)
-        time.sleep(random.expovariate(30))
+        time.sleep(random.expovariate(50))
         data = {
             "text": content[:pos],
             "error_code": 0,

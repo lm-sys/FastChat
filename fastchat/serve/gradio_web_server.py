@@ -23,6 +23,7 @@ from fastchat.serve.api_provider import (
     bard_api_stream_iter,
     openai_api_stream_iter,
     palm_api_stream_iter,
+    init_palm_chat,
 )
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
