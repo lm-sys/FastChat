@@ -285,7 +285,7 @@ def http_bot(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_name == "bard":
-        #stream_iter = bard_api_stream_iter(state)
+        # stream_iter = bard_api_stream_iter(state)
         stream_iter = palm_api_stream_iter(
             state.chat, state.messages[-2][1], temperature, top_p, max_new_tokens
         )
