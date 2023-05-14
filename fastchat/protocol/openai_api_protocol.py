@@ -102,8 +102,9 @@ class ChatCompletionStreamResponse(BaseModel):
 
 
 class EmbeddingsRequest(BaseModel):
-    model: str
-    input: str
+    model: Optional[str] = None
+    engine: Optional[str] = None
+    input: Union[str,List[Any]]
     user: Optional[str] = None
 
 

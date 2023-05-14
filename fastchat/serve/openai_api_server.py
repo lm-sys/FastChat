@@ -15,6 +15,7 @@ import json
 import logging
 
 import os
+import tiktoken
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import fastapi
@@ -586,6 +587,46 @@ async def create_embeddings(request: EmbeddingsRequest):
         ),
     ).dict(exclude_none=True)
 
+@app.post("/v1/engines/{model_name}/embeddings")
+async def create_embeddings(model_name: str, request: EmbeddingsRequest):
+    """Creates embeddings for the text"""
+    if request.model is None:
+        request.model = model_name
+    print(request.model)
+    error_check_ret = await check_model(request)
+    if error_check_ret is not None:
+        return error_check_ret
+    
+    decoding = tiktoken.model.encoding_for_model(model_name)
+
+    print(request.input)
+
+    if isinstance(request.input, str):
+        request.input = [request.input]
+    elif isinstance(request.input, list):
+        if isinstance(request.input[0], int):
+            request.input = [decoding.decode(request.input)]
+        elif isinstance(request.input[0], list):
+            request.input = [decoding.decode(text) for text in request.input]
+
+    data = []
+    for i, text in enumerate(request.input):
+        payload = {
+            "model": request.model,
+            "input": text,
+        }
+
+        embedding = await get_embedding(payload)
+        data.append({"object": "embedding", "embedding": embedding["embedding"], "index": i})
+    return EmbeddingsResponse(
+        data=data,
+        model=request.model,
+        usage=UsageInfo(
+            prompt_tokens=embedding["token_num"],
+            total_tokens=embedding["token_num"],
+            completion_tokens=None,
+        ),
+    ).dict(exclude_none=True)
 
 async def get_embedding(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
