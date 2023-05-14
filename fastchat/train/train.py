@@ -13,6 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import warnings
 import copy
 from dataclasses import dataclass, field
 import json
@@ -25,6 +26,8 @@ from torch.utils.data import Dataset
 import transformers
 from transformers import Trainer
 from transformers.trainer_pt_utils import LabelSmoother
+from torch.distributed.fsdp.api import FullOptimStateDictConfig, FullStateDictConfig, StateDictType
+import torch.distributed.fsdp.fully_sharded_data_parallel as FSDP
 
 from fastchat.conversation import SeparatorStyle
 from fastchat.model.model_adapter import get_conversation_template
@@ -55,6 +58,7 @@ class TrainingArguments(transformers.TrainingArguments):
             "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
         },
     )
+    _no_sync_in_gradient_accumulation: bool = field(default=False)
 
 
 local_rank = None
@@ -67,6 +71,22 @@ def rank0_print(*args):
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
+    # Hao: fix the FSDP save error
+    if int(torch.__version__[0]) < 2:
+        warnings.warn("You might run out of GPU memory when you call `safe_save_model_for_hf_trainer()` "
+                      "at the end of your training if you are running on a GPU with less than 40GB memory. "
+                      "Please refer to https://github.com/tatsu-lab/stanford_alpaca/issues/81 about how to "
+                      "work around it.")
+        FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+                                                          StateDictType.FULL_STATE_DICT,
+                                                          FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+                                                          FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+    else:
+        FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+                                                          StateDictType.FULL_STATE_DICT,
+                                                          FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+                                                          FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+
     state_dict = trainer.model.state_dict()
     if trainer.args.should_save:
         cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
@@ -257,6 +277,8 @@ def train():
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
 
+    # rank0_print(trainer.model.state_dict())
+    # rank0_print(vars(trainer.model))
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
