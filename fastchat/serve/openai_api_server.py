@@ -78,7 +78,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if request.stream:
         response_stream = chat_completion_stream(
             request.model, gen_params, request.n)
-        return EventSourceResponse(response_stream)
+        return EventSourceResponse(response_stream, ping=600)
 
     # TODO: batch the requests
     choices = []
