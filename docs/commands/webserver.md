@@ -12,19 +12,23 @@ conda activate fastchat
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
 pip3 install -e .
-
-# Install the latest main branch of huggingface/transformers
-pip3 install git+https://github.com/huggingface/transformers
 ```
 
 ### Launch servers
 ```
+cd fastchat_logs/controller
 python3 -m fastchat.serve.controller --host 0.0.0.0 --port 21001
 python3 -m fastchat.serve.register_worker --controller http://localhost:21001 --worker-name https://
 python3 -m fastchat.serve.test_message --model vicuna-13b --controller http://localhost:21001
 
+cd fastchat_logs/server0
+
 export OPENAI_API_KEY=
-python3 -m fastchat.serve.gradio_web_server --controller http://localhost:21001 --moderate --concurrency 20
+export ANTHROPIC_API_KEY=
+
+python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --moderate --concurrency 10 --add-chatgpt --add-claude --add-bard --elo ~/elo_results_20230508.pkl
+
+python3 backup_logs.py
 ```
 
 ### Increase the limit of max open files
@@ -39,4 +43,10 @@ System (need reboot): Add the lines below to `/etc/security/limits.conf`
 ```
 * hard nofile 65535
 * soft nofile 65535
+```
+
+
+### Check the launch time
+```
+for i in $(seq 0 11); do cat fastchat_logs/server$i/gradio_web_server.log | grep "Running on local URL" | tail -n 1; done
 ```

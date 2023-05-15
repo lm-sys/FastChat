@@ -334,10 +334,16 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="rwkv",
-        system="",
+        system="The following is a coherent verbose detailed conversation between Bob and Alice.\n\n",
         roles=("Bob", "Alice"),
-        messages=(),
-        offset=0,
+        messages=(
+            ("Bob", "Hi"),
+            (
+                "Alice",
+                "Hi. I am your assistant and I will answer all questions. Please feel free to ask any question and I will always answer it.",
+            ),
+        ),
+        offset=2,
         sep_style=SeparatorStyle.RWKV,
         sep="",
         stop_str="\n\n",
@@ -422,6 +428,21 @@ register_conv_template(
         sep_style=SeparatorStyle.NEW_LINE,
         sep="<|im_end|>",
         stop_token_ids=[50278, 0],
+    )
+)
+
+# Bard default template
+# Reference: https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L150
+#            https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L40
+register_conv_template(
+    Conversation(
+        name="bard",
+        system="",
+        roles=("0", "1"),
+        messages=(),
+        offset=0,
+        sep_style=None,
+        sep=None,
     )
 )
 

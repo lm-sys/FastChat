@@ -37,6 +37,18 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
+    ["claude-instant-v1.1"],
+    "Claude Instant",
+    "https://www.anthropic.com/index/introducing-claude",
+    "Claude Instant by Anthropic",
+)
+register_model_info(
+    ["bard"],
+    "Bard",
+    "https://bard.google.com/",
+    "Bard by Google",
+)
+register_model_info(
     ["vicuna-13b"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
