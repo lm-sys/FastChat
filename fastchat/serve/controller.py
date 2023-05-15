@@ -18,8 +18,9 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import CONTROLLER_HEART_BEAT_EXPIRATION, ErrorCode
-from fastchat.utils import build_logger, server_error_msg
+from fastchat.constants import (CONTROLLER_HEART_BEAT_EXPIRATION, ErrorCode,
+    SERVER_ERROR_MSG)
+from fastchat.utils import build_logger
 
 
 logger = build_logger("controller", "controller.log")
@@ -196,18 +197,18 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
-    def handle_no_worker(params, server_error_msg):
+    def handle_no_worker(params):
         logger.info(f"no worker: {params['model']}")
         ret = {
-            "text": server_error_msg,
+            "text": SERVER_ERROR_MSG,
             "error_code": ErrorCode.CONTROLLER_NO_WORKER,
         }
         return json.dumps(ret).encode() + b"\0"
 
-    def handle_worker_timeout(worker_address, server_error_msg):
+    def handle_worker_timeout(worker_address):
         logger.info(f"worker timeout: {worker_address}")
         ret = {
-            "text": server_error_msg,
+            "text": SERVER_ERROR_MSG,
             "error_code": ErrorCode.CONTROLLER_WORKER_TIMEOUT,
         }
         return json.dumps(ret).encode() + b"\0"
@@ -215,7 +216,7 @@ class Controller:
     def worker_api_generate_stream(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
-            yield self.handle_no_worker(params, server_error_msg)
+            yield self.handle_no_worker(params)
 
         try:
             response = requests.post(
@@ -228,12 +229,12 @@ class Controller:
                 if chunk:
                     yield chunk + b"\0"
         except requests.exceptions.RequestException as e:
-            yield self.handle_worker_timeout(worker_addr, server_error_msg)
+            yield self.handle_worker_timeout(worker_addr)
 
     def worker_api_generate_completion(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
-            return self.handle_no_worker(params, server_error_msg)
+            return self.handle_no_worker(params)
 
         try:
             response = requests.post(
@@ -243,12 +244,12 @@ class Controller:
             )
             return response.json()
         except requests.exceptions.RequestException as e:
-            return self.handle_worker_timeout(worker_addr, server_error_msg)
+            return self.handle_worker_timeout(worker_addr)
 
     def worker_api_embeddings(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
-            return self.handle_no_worker(params, server_error_msg)
+            return self.handle_no_worker(params)
 
         try:
             response = requests.post(
@@ -258,7 +259,7 @@ class Controller:
             )
             return response.json()
         except requests.exceptions.RequestException as e:
-            return self.handle_worker_timeout(worker_addr, server_error_msg)
+            return self.handle_worker_timeout(worker_addr)
 
     # Let the controller act as a worker to achieve hierarchical
     # management. This can be used to connect isolated sub networks.

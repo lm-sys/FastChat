@@ -9,6 +9,12 @@ import time
 import gradio as gr
 import numpy as np
 
+from fastchat.constants import (
+    MODERATION_MSG,
+    CONVERSATION_LIMIT_MSG,
+    INPUT_CHAR_LEN_LIMIT,
+    CONVERSATION_LEN_LIMIT,
+)
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
@@ -23,7 +29,6 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.utils import (
     build_logger,
     violates_moderation,
-    moderation_msg,
 )
 
 
@@ -174,14 +179,30 @@ def add_text(state0, state1, text, request: gr.Request):
             return (
                 states
                 + [x.to_gradio_chatbot() for x in states]
-                + [moderation_msg]
+                + [MODERATION_MSG]
                 + [
                     no_change_btn,
                 ]
                 * 6
             )
 
-    text = text[:1536]  # Hard cut-off
+    if (len(states[0].messages) - states[0].offset) // 2 >= CONVERSATION_LEN_LIMIT:
+        logger.info(
+            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
+        )
+        for i in range(num_models):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [CONVERSATION_LIMIT_MSG]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_models):
         states[i].append_message(states[i].roles[0], text)
         states[i].append_message(states[i].roles[1], None)
@@ -356,7 +377,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Top P",
         )
         max_output_tokens = gr.Slider(
-            minimum=0,
+            minimum=16,
             maximum=1024,
             value=512,
             step=64,

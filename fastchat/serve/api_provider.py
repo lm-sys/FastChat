@@ -138,7 +138,7 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
     while pos < len(content):
         # This is a fancy way to simulate token generation latency combined
         # with a Poisson process.
-        pos += random.randint(1, 5)
+        pos += random.randint(10, 20)
         time.sleep(random.expovariate(50))
         data = {
             "text": content[:pos],

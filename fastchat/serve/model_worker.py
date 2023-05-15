@@ -33,11 +33,11 @@ except ImportError:
 import torch
 import uvicorn
 
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode
+from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import load_model, add_model_args
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.serve.inference import generate_stream
-from fastchat.utils import build_logger, server_error_msg, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore
 
 GB = 1 << 30
 
@@ -198,13 +198,13 @@ class ModelWorker:
                 yield json.dumps(ret).encode() + b"\0"
         except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             yield json.dumps(ret).encode() + b"\0"
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
             yield json.dumps(ret).encode() + b"\0"
@@ -229,12 +229,12 @@ class ModelWorker:
                 ret["logprobs"] = output["logprobs"]
         except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
@@ -259,12 +259,12 @@ class ModelWorker:
             }
         except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
         except (ValueError, RuntimeError) as e:
             ret = {
-                "text": f"{server_error_msg}\n\n({e})",
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
