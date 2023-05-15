@@ -1,12 +1,10 @@
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import torch
-from torch import nn
-
 import transformers
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
-
 from xformers import ops as xops
+
 
 def forward(
     self,
@@ -79,7 +77,8 @@ def _get_polynomial_decay_schedule_with_warmup_lr_lambda(
           pct_remaining = 1 - (current_step - num_warmup_steps) / decay_steps
           decay = lr_range * pct_remaining**power + lr_end
           return decay / lr_init  # as LambdaLR multiplies by lr_init
- 
+
+
 def replace_llama_attn_with_xformer():
     transformers.models.llama.modeling_llama.LlamaAttention.forward = forward
     transformers.optimization._get_polynomial_decay_schedule_with_warmup_lr_lambda = _get_polynomial_decay_schedule_with_warmup_lr_lambda
