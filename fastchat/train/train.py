@@ -58,7 +58,6 @@ class TrainingArguments(transformers.TrainingArguments):
             "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
         },
     )
-    _no_sync_in_gradient_accumulation: bool = field(default=False)
 
 
 local_rank = None
@@ -288,4 +287,6 @@ def train():
 
 
 if __name__ == "__main__":
+    from fastchat.train.hf_save_model_monkey_patch import replace_hf_save_model
+    replace_hf_save_model()
     train()
