@@ -19,6 +19,9 @@ dist
 wandb
 output
 
+# setupttools_scm
+fastchat/version.py
+
 # Data
 *.pkl
 *.csv
