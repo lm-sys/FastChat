@@ -399,7 +399,7 @@ async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
                     if not chunk:
                         continue
                     data = json.loads(chunk.decode())
-                    yield data
+                    yield data + "\n\n"
 
 
 async def chat_completion(
