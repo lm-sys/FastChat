@@ -478,7 +478,7 @@ class BiLLaAdapter(BaseAdapter):
 
 
 class H2OGPTAdapter(BaseAdapter):
-    """The model adapter for BiLLa."""
+    """The model adapter for h2oGPT."""
 
     def match(self, model_path: str):
         return "h2ogpt" in model_path.lower()
