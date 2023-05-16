@@ -18,6 +18,7 @@ class SeparatorStyle(Enum):
     RWKV = auto()
     PHOENIX = auto()
     NEW_LINE = auto()
+    BILLA = auto()
 
 
 @dataclasses.dataclass
@@ -123,6 +124,14 @@ class Conversation:
                     ret += role + "\n" + message + self.sep
                 else:
                     ret += role + "\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.BILLA:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": " # must be end with a space
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -443,6 +452,20 @@ register_conv_template(
         offset=0,
         sep_style=None,
         sep=None,
+    )
+)
+
+# BiLLa default template
+register_conv_template(
+    Conversation(
+        name="billa",
+        system="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.BILLA,
+        sep="\n",
+        stop_str="Human:",
     )
 )
 

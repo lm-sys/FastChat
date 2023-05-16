@@ -120,3 +120,9 @@ register_model_info(
     "https://www.mosaicml.com/blog/mpt-7b",
     "a chatbot fine-tuned from MPT-7B by MosaicML",
 )
+register_model_info(
+    ["billa-7b-sft"],
+    "BiLLa-7B-SFT",
+    "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
+    "an instruction-tuned bilingual llama with enhanced reasoning ability by an independent researcher",
+)
