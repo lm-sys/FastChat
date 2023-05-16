@@ -45,6 +45,8 @@ def chatglm_generate_stream(
 
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 
+    output = ""
+    i = 0
     for i, (response, new_hist) in enumerate(
         model.stream_chat(tokenizer, query, hist, **gen_kwargs)
     ):

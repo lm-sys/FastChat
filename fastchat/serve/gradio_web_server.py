@@ -15,7 +15,16 @@ import gradio as gr
 import requests
 
 from fastchat.conversation import SeparatorStyle
-from fastchat.constants import LOGDIR, WORKER_API_TIMEOUT, ErrorCode
+from fastchat.constants import (
+    LOGDIR,
+    WORKER_API_TIMEOUT,
+    ErrorCode,
+    MODERATION_MSG,
+    CONVERSATION_LIMIT_MSG,
+    SERVER_ERROR_MSG,
+    INPUT_CHAR_LEN_LIMIT,
+    CONVERSATION_LEN_LIMIT,
+)
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.api_provider import (
@@ -29,9 +38,7 @@ from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 from fastchat.utils import (
     build_logger,
-    server_error_msg,
     violates_moderation,
-    moderation_msg,
     get_window_url_params_js,
 )
 
@@ -188,11 +195,20 @@ def add_text(state, text, request: gr.Request):
         if flagged:
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             state.skip_next = True
-            return (state, state.to_gradio_chatbot(), moderation_msg) + (
+            return (state, state.to_gradio_chatbot(), MODERATION_MSG) + (
                 no_change_btn,
             ) * 5
 
-    text = text[:1536]  # Hard cut-off
+    if (len(state.messages) - state.offset) // 2 >= CONVERSATION_LEN_LIMIT:
+        logger.info(
+            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
+        )
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
+            no_change_btn,
+        ) * 5
+
+    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
     state.skip_next = False
@@ -299,7 +315,7 @@ def http_bot(
 
         # No available worker
         if worker_addr == "":
-            state.messages[-1][-1] = server_error_msg
+            state.messages[-1][-1] = SERVER_ERROR_MSG
             yield (
                 state,
                 state.to_gradio_chatbot(),
@@ -346,7 +362,7 @@ def http_bot(
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = (
-            f"{server_error_msg}\n\n"
+            f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
         )
         yield (state, state.to_gradio_chatbot()) + (
@@ -359,7 +375,7 @@ def http_bot(
         return
     except Exception as e:
         state.messages[-1][-1] = (
-            f"{server_error_msg}\n\n"
+            f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
         )
         yield (state, state.to_gradio_chatbot()) + (
@@ -490,7 +506,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Top P",
         )
         max_output_tokens = gr.Slider(
-            minimum=0,
+            minimum=16,
             maximum=1024,
             value=512,
             step=64,

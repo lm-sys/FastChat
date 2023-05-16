@@ -45,7 +45,7 @@ class Conversation:
     stop_token_ids: List[int] = None
 
     # Used for the state in the gradio servers.
-    # TODO(lmzheng): refactor this
+    # TODO(lmzheng): move this out of this class.
     conv_id: Any = None
     skip_next: bool = False
     model_name: str = None

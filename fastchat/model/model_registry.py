@@ -46,7 +46,7 @@ register_model_info(
     ["bard"],
     "Bard",
     "https://bard.google.com/",
-    "Bard by Google",
+    "Bard based on the PaLM 2 Chat API by Google",
 )
 register_model_info(
     ["vicuna-13b"],

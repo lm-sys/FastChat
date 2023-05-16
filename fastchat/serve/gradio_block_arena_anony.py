@@ -9,6 +9,12 @@ import time
 import gradio as gr
 import numpy as np
 
+from fastchat.constants import (
+    MODERATION_MSG,
+    CONVERSATION_LIMIT_MSG,
+    INPUT_CHAR_LEN_LIMIT,
+    CONVERSATION_LEN_LIMIT,
+)
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
@@ -22,7 +28,6 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.utils import (
     build_logger,
     violates_moderation,
-    moderation_msg,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -223,14 +228,30 @@ def add_text(state0, state1, text, request: gr.Request):
             return (
                 states
                 + [x.to_gradio_chatbot() for x in states]
-                + [moderation_msg]
+                + [MODERATION_MSG]
                 + [
                     no_change_btn,
                 ]
                 * 6
             )
 
-    text = text[:1536]  # Hard cut-off
+    if (len(states[0].messages) - states[0].offset) // 2 >= CONVERSATION_LEN_LIMIT:
+        logger.info(
+            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
+        )
+        for i in range(num_models):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [CONVERSATION_LIMIT_MSG]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_models):
         states[i].append_message(states[i].roles[0], text)
         states[i].append_message(states[i].roles[1], None)
@@ -312,7 +333,7 @@ def build_side_by_side_ui_anony(models):
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
 - You can do multiple rounds of conversations before voting.
-- The names of the models will be revealed after your vote.
+- The names of the models will be revealed after your vote. Do not ask for chatbot names as conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) will not count towards the leaderboard.
 - Click "Clear history" to start a new round.
 - [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 
@@ -383,7 +404,7 @@ Please scroll down and start chatting. You can view a leaderboard of participati
             label="Top P",
         )
         max_output_tokens = gr.Slider(
-            minimum=0,
+            minimum=16,
             maximum=1024,
             value=512,
             step=64,
