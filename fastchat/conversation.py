@@ -469,7 +469,7 @@ register_conv_template(
     )
 )
 
-# BiLLa default template
+# h2oGPT default template
 register_conv_template(
     Conversation(
         name="h2ogpt",
