@@ -19,7 +19,6 @@ class SeparatorStyle(Enum):
     PHOENIX = auto()
     NEW_LINE = auto()
     BILLA = auto()
-    H2OGPT = auto()
 
 
 @dataclasses.dataclass
