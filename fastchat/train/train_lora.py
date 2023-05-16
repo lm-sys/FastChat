@@ -19,12 +19,14 @@ from dataclasses import dataclass, field
 import logging
 import pathlib
 import typing
+import os
 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 from peft import LoraConfig, get_peft_model
 import transformers
-from transformers import Trainer
+from transformers import Trainer, TrainerState, TrainerControl, TrainerCallback
+from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 
 from fastchat.train.train import (
     DataArguments,
@@ -50,6 +52,24 @@ class LoraArguments:
     )
     lora_weight_path: str = ""
     bias: str = "none"
+
+
+class SavePeftModelCallback(TrainerCallback):
+    def on_save(
+        self,
+        args: TrainingArguments,
+        state: TrainerState,
+        control: TrainerControl,
+        **kwargs,
+    ):
+        checkpoint_folder = os.path.join(
+            args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}"
+        )
+
+        peft_model_path = os.path.join(checkpoint_folder, "adapter_model")
+        kwargs["model"].save_pretrained(peft_model_path)
+
+        return control
 
 
 def maybe_zero_3(param):
@@ -129,8 +149,14 @@ def train():
     tokenizer.pad_token = tokenizer.unk_token
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+
+    callbacks = [SavePeftModelCallback]
     trainer = Trainer(
-        model=model, tokenizer=tokenizer, args=training_args, **data_module
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        callbacks=callbacks,
+        **data_module,
     )
 
     model.config.use_cache = False
