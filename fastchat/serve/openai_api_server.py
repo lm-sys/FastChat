@@ -173,13 +173,14 @@ def check_requests(request) -> Optional[JSONResponse]:
 
 def process_input(model_name, input):
 
-    decoding = tiktoken.model.encoding_for_model(model_name)
     if isinstance(input, str):
         input = [input]
     elif isinstance(input, list):
         if isinstance(input[0], int):
+            decoding = tiktoken.model.encoding_for_model(model_name)
             input = [decoding.decode(input)]
         elif isinstance(input[0], list):
+            decoding = tiktoken.model.encoding_for_model(model_name)
             input = [decoding.decode(text) for text in input]
 
     return input
