@@ -134,14 +134,6 @@ class Conversation:
                 else:
                     ret += role + ": "  # must be end with a space
             return ret
-        elif self.sep_style == SeparatorStyle.H2OGPT:
-            ret = self.system + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + message + self.sep
-                else:
-                    ret += role
-            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -486,7 +478,7 @@ register_conv_template(
         roles=("<|prompt|>", "<|answer|>"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.BILLA,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="</s>",
         stop_str="</s>",
     )
