@@ -19,6 +19,7 @@ class SeparatorStyle(Enum):
     PHOENIX = auto()
     NEW_LINE = auto()
     BILLA = auto()
+    H2OGPT = auto()
 
 
 @dataclasses.dataclass
@@ -131,7 +132,15 @@ class Conversation:
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    ret += role + ": " # must be end with a space
+                    ret += role + ": "  # must be end with a space
+            return ret
+        elif self.sep_style == SeparatorStyle.H2OGPT:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + message + self.sep
+                else:
+                    ret += role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -466,6 +475,20 @@ register_conv_template(
         sep_style=SeparatorStyle.BILLA,
         sep="\n",
         stop_str="Human:",
+    )
+)
+
+# BiLLa default template
+register_conv_template(
+    Conversation(
+        name="h2ogpt",
+        system="",
+        roles=("<|prompt|>", "<|answer|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.BILLA,
+        sep="</s>",
+        stop_str="</s>",
     )
 )
 
