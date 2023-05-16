@@ -4,7 +4,7 @@ Conversation prompt templates.
 
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple, Any, Dict
+from typing import List, Any, Dict
 
 
 class SeparatorStyle(Enum):
