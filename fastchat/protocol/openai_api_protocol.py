@@ -103,7 +103,7 @@ class ChatCompletionStreamResponse(BaseModel):
 
 class EmbeddingsRequest(BaseModel):
     model: str
-    input: str
+    input: Union[str, List[str]]
     user: Optional[str] = None
 
 
