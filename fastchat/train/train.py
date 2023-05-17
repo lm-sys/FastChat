@@ -35,7 +35,7 @@ IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 
 
 logging.basicConfig(level=logging.INFO)
-np.random.seed(100)
+# np.random.seed(100)
 
 @dataclass
 class ModelArguments:
@@ -263,7 +263,7 @@ def train():
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         low_cpu_mem_usage=True,
-        # torch_dtype=torch.float16
+        torch_dtype=torch.float16
     )
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -284,8 +284,8 @@ def train():
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
-    # trainer.save_state()
-    # trainer.save_model(output_dir=training_args.output_dir)
+    trainer.save_state()
+    trainer.save_model(output_dir=training_args.output_dir)
 
 
 if __name__ == "__main__":
