@@ -80,8 +80,11 @@ def update_elo_components(max_num_files, elo_results_file):
 
 def update_worker(max_num_files, interval, elo_results_file):
     while True:
+        tic = time.time()
         update_elo_components(max_num_files, elo_results_file)
-        time.sleep(interval)
+        durtaion = time.time() - tic
+        print(f"update duration: {durtaion:.2f} s")
+        time.sleep(max(interval - durtaion, 0))
 
 
 def load_demo(url_params, request: gr.Request):
