@@ -243,19 +243,25 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
-                self.device
-            )
-            model_output = self.model(input_ids, output_hidden_states=True)
+            max_len = self.model.config.max_position_embeddings
+            encoding = tokenizer.batch_encode_plus(params["input"], padding="max_length", max_length=max_len, return_tensors="pt")
+            input_ids = encoding['input_ids']
+            attention_mask = encoding['attention_mask']
+            model_output = self.model(input_ids, attention_mask, output_hidden_states=True)
             is_chatglm = "chatglm" in str(type(self.model)).lower()
             if is_chatglm:
-                data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+                data = (model_output.hidden_states[-1].transpose(0, 1))
             else:
-                data = model_output.hidden_states[-1][0]
-            embedding = torch.mean(data, dim=0)
+                data = model_output.hidden_states[-1]
+
+            mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
+            masked_embeddings = data * mask
+            sum_embeddings = torch.sum(masked_embeddings, dim=1)
+            seq_length = torch.sum(mask, dim=1)
+            embedding = sum_embeddings / seq_length
             ret = {
                 "embedding": embedding.tolist(),
-                "token_num": len(self.tokenizer(params["input"]).input_ids),
+                "token_num": torch.sum(attention_mask).item(),
             }
         except torch.cuda.OutOfMemoryError as e:
             ret = {

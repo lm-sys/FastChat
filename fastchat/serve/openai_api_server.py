@@ -604,16 +604,13 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str=None):
     
     request.input = process_input(request.model,request.input)
 
-    data = []
-    token_num = 0
-    for i, text in enumerate(request.input):
-        payload = {
-            "model": request.model,
-            "input": text,
-        }
-        embedding = await get_embedding(payload)
-        data.append({"object": "embedding", "embedding": embedding["embedding"], "index": i})
-        token_num += embedding["token_num"]
+    payload = {
+        "model": request.model,
+        "input": request.input,
+    }
+    embedding = await get_embedding(payload)
+    data = [{"object": "embedding", "embedding": emb, "index": i} for i, emb in enumerate(embedding["embedding"])]
+    token_num = embedding["token_num"]
     return EmbeddingsResponse(
         data=data,
         model=request.model,
