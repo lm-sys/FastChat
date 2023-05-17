@@ -110,7 +110,7 @@ def report_basic_stats(log_files):
         xaxis_title="Dates",
         yaxis_title="Count",
         height=300,
-        width=1000,
+        width=1200,
     )
 
     # Model call counts
