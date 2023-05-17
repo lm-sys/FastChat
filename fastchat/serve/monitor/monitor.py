@@ -100,6 +100,8 @@ def load_demo(url_params, request: gr.Request):
 
 def build_basic_stats_tab():
     empty = "Loading ..."
+    basic_component_values[:] = [empty, None, empty, empty, empty, empty]
+
     md0 = gr.Markdown(empty)
     gr.Markdown(
         "#### Figure 1: Number of model calls and votes"
