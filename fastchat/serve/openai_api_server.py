@@ -604,13 +604,19 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str=None):
     
     request.input = process_input(request.model,request.input)
 
-    payload = {
-        "model": request.model,
-        "input": request.input,
-    }
-    embedding = await get_embedding(payload)
-    data = [{"object": "embedding", "embedding": emb, "index": i} for i, emb in enumerate(embedding["embedding"])]
-    token_num = embedding["token_num"]
+    data = []
+    token_num = 0
+    batch_size = 5
+    batches = [request.input[i:min(i+batch_size, len(request.input))] for i in range(0, len(request.input), batch_size)]
+    for num_batch, batch in enumerate(batches):
+        payload = {
+            "model": request.model,
+            "input": batch,
+        }
+        embedding = await get_embedding(payload)
+        print(embedding)
+        data += [{"object": "embedding", "embedding": emb, "index": num_batch * batch_size + i} for i, emb in enumerate(embedding["embedding"])]
+        token_num += embedding["token_num"]
     return EmbeddingsResponse(
         data=data,
         model=request.model,
