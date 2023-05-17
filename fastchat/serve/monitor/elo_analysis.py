@@ -223,8 +223,8 @@ def report_elo_analysis_results(battles_json):
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
     elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
     elo_rating_median = {k: int(v) for k, v in elo_rating_median.items()}
-    model_order = list(elo_rating_median.keys())
-    model_order.sort(key=lambda k: -elo_rating_median[k])
+    model_order = list(elo_rating_online.keys())
+    model_order.sort(key=lambda k: -elo_rating_online[k])
 
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_online)
