@@ -119,35 +119,6 @@ def visualize_leaderboard_table(rating):
     return md
 
 
-def visualize_bootstrap_elo_rating(df):
-    bars = (
-        pd.DataFrame(
-            dict(
-                lower=df.quantile(0.025),
-                rating=df.quantile(0.5),
-                upper=df.quantile(0.975),
-            )
-        )
-        .reset_index(names="model")
-        .sort_values("rating", ascending=False)
-    )
-    bars["error_y"] = bars["upper"] - bars["rating"]
-    bars["error_y_minus"] = bars["rating"] - bars["lower"]
-    bars["rating_rounded"] = np.round(bars["rating"], 2)
-    fig = px.scatter(
-        bars,
-        x="model",
-        y="rating",
-        error_y="error_y",
-        error_y_minus="error_y_minus",
-        text="rating_rounded",
-        height=600,
-        width=600,
-    )
-    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
-
-
 def visualize_pairwise_win_fraction(battles, model_order):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
     fig = px.imshow(
@@ -200,12 +171,41 @@ def visualize_average_win_rate(battles):
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        height=600,
+        height=400,
         width=600,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
     )
+    return fig
+
+
+def visualize_bootstrap_elo_rating(df):
+    bars = (
+        pd.DataFrame(
+            dict(
+                lower=df.quantile(0.025),
+                rating=df.quantile(0.5),
+                upper=df.quantile(0.975),
+            )
+        )
+        .reset_index(names="model")
+        .sort_values("rating", ascending=False)
+    )
+    bars["error_y"] = bars["upper"] - bars["rating"]
+    bars["error_y_minus"] = bars["rating"] - bars["lower"]
+    bars["rating_rounded"] = np.round(bars["rating"], 2)
+    fig = px.scatter(
+        bars,
+        x="model",
+        y="rating",
+        error_y="error_y",
+        error_y_minus="error_y_minus",
+        text="rating_rounded",
+        height=400,
+        width=600,
+    )
+    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
 
 
