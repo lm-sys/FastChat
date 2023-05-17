@@ -65,13 +65,9 @@ def maybe_zero_3(param):
 # Borrowed from peft.utils.get_peft_model_state_dict
 def get_peft_state_maybe_zero_3(named_params, bias):
     if bias == "none":
-        to_return = {
-            k: t for k, t in named_params if "lora_" in k
-        }
+        to_return = {k: t for k, t in named_params if "lora_" in k}
     elif bias == "all":
-        to_return = {
-            k: t for k, t in named_params if "lora_" in k or "bias" in k
-        }
+        to_return = {k: t for k, t in named_params if "lora_" in k or "bias" in k}
     elif bias == "lora_only":
         to_return = {}
         maybe_lora_bias = {}
@@ -150,8 +146,9 @@ def train():
     trainer.save_state()
 
     # Save states. Weights might be a placeholder in zero3 and need a gather
-    state_dict = get_peft_state_maybe_zero_3(model.named_parameters(),
-                                             lora_args.lora_bias)
+    state_dict = get_peft_state_maybe_zero_3(
+        model.named_parameters(), lora_args.lora_bias
+    )
     if training_args.local_rank == 0:
         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 
