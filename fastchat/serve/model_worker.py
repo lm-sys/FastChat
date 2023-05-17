@@ -243,8 +243,7 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            max_len = self.model.config.max_position_embeddings
-            encoding = tokenizer.batch_encode_plus(params["input"], padding="max_length", max_length=max_len, return_tensors="pt")
+            encoding = tokenizer.batch_encode_plus(params["input"], padding=True, return_tensors="pt")
             input_ids = encoding['input_ids']
             attention_mask = encoding['attention_mask']
             model_output = self.model(input_ids, attention_mask, output_hidden_states=True)
