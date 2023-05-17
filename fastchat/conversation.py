@@ -469,6 +469,19 @@ register_conv_template(
     )
 )
 
+# Snoozy default template
+register_conv_template(
+    Conversation(
+        name="snoozy",
+        system="The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.\n",
+        roles=("user", "assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NEW_LINE,
+        sep="\n",
+    )
+)
+
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")

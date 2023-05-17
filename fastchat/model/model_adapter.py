@@ -475,6 +475,14 @@ class BiLLaAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("billa")
 
+class SnoozyAdapter(BaseAdapter):
+    """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
+
+    def match(self, model_path: str):
+        return "snoozy" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("snoozy")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -494,6 +502,7 @@ register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
+register_model_adapter(SnoozyAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
