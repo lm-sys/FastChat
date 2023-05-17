@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import get_log_files
+from fastchat.utils import detect_language
 
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
@@ -50,21 +51,6 @@ def get_log_files(max_num_files=None):
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
     return filenames
-
-
-def detect_lang(text):
-    import polyglot
-    from polyglot.detect import Detector
-    from polyglot.detect.base import logger as polyglot_logger
-    import pycld2
-
-    polyglot_logger.setLevel("ERROR")
-
-    try:
-        lang_code = Detector(text).language.name
-    except (pycld2.error, polyglot.detect.base.UnknownLanguage):
-        lang_code = "unknown"
-    return lang_code
 
 
 def remove_html(raw):
@@ -135,7 +121,7 @@ def clean_battle_data(log_files):
         if state["offset"] >= len(state["messages"]):
             ct_invalid += 1
             continue
-        lang_code = detect_lang(state["messages"][state["offset"]][1])
+        lang_code = detect_language(state["messages"][state["offset"]][1])
         rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked

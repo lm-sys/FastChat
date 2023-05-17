@@ -119,42 +119,14 @@ def visualize_leaderboard_table(rating):
     return md
 
 
-def visualize_bootstrap_elo_rating(df):
-    bars = (
-        pd.DataFrame(
-            dict(
-                lower=df.quantile(0.025),
-                rating=df.quantile(0.5),
-                upper=df.quantile(0.975),
-            )
-        )
-        .reset_index(names="model")
-        .sort_values("rating", ascending=False)
-    )
-    bars["error_y"] = bars["upper"] - bars["rating"]
-    bars["error_y_minus"] = bars["rating"] - bars["lower"]
-    bars["rating_rounded"] = np.round(bars["rating"], 2)
-    fig = px.scatter(
-        bars,
-        x="model",
-        y="rating",
-        error_y="error_y",
-        error_y_minus="error_y_minus",
-        text="rating_rounded",
-        width=450,
-    )
-    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
-
-
 def visualize_pairwise_win_fraction(battles, model_order):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
     fig = px.imshow(
         row_beats_col,
         color_continuous_scale="RdBu",
         text_auto=".2f",
-        height=500,
-        width=500,
+        height=600,
+        width=600,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -178,8 +150,8 @@ def visualize_battle_count(battles, model_order):
     fig = px.imshow(
         battle_counts.loc[model_order, model_order],
         text_auto=True,
-        height=500,
-        width=500,
+        height=600,
+        width=600,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -199,11 +171,41 @@ def visualize_average_win_rate(battles):
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        width=450,
+        height=400,
+        width=600,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
     )
+    return fig
+
+
+def visualize_bootstrap_elo_rating(df):
+    bars = (
+        pd.DataFrame(
+            dict(
+                lower=df.quantile(0.025),
+                rating=df.quantile(0.5),
+                upper=df.quantile(0.975),
+            )
+        )
+        .reset_index(names="model")
+        .sort_values("rating", ascending=False)
+    )
+    bars["error_y"] = bars["upper"] - bars["rating"]
+    bars["error_y_minus"] = bars["rating"] - bars["lower"]
+    bars["rating_rounded"] = np.round(bars["rating"], 2)
+    fig = px.scatter(
+        bars,
+        x="model",
+        y="rating",
+        error_y="error_y",
+        error_y_minus="error_y_minus",
+        text="rating_rounded",
+        height=400,
+        width=600,
+    )
+    fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
 
 
@@ -221,8 +223,8 @@ def report_elo_analysis_results(battles_json):
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
     elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
     elo_rating_median = {k: int(v) for k, v in elo_rating_median.items()}
-    model_order = list(elo_rating_median.keys())
-    model_order.sort(key=lambda k: -elo_rating_median[k])
+    model_order = list(elo_rating_online.keys())
+    model_order.sort(key=lambda k: -elo_rating_online[k])
 
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_online)
@@ -244,7 +246,7 @@ def report_elo_analysis_results(battles_json):
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_updated_datetime": f"{last_updated_datetime}",
+        "last_updated_datetime": last_updated_datetime,
     }
 
 
