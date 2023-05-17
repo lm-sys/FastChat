@@ -126,7 +126,6 @@ register_model_info(
     "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
     "an instruction-tuned bilingual llama with enhanced reasoning ability by an independent researcher",
 )
-
 register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-13B-Snoozy",

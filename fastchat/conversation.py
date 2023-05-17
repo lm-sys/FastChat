@@ -131,7 +131,7 @@ class Conversation:
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    ret += role + ": " # must be end with a space
+                    ret += role + ": "  # must be end with a space
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
