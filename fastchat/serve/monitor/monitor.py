@@ -20,7 +20,7 @@ from fastchat.utils import build_logger, get_window_url_params_js
 logger = build_logger("monitor", "monitor.log")
 
 
-basic_component_values = ["Loading ..."]
+basic_component_values = [None, None]
 leader_component_values = [None, None, None, None, None]
 
 
@@ -74,8 +74,9 @@ def update_elo_components(max_num_files, elo_results_file):
     date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime(
         "%Y-%m-%d %H:%M:%S %Z"
     )
-    basic_stats_md += f"\n\nLast updated: {date}"
-    basic_component_values[0] = basic_stats_md
+    basic_stats_md += f"\n\nLast updated: {basic_stats['last_updated_datetime']}"
+    basic_component_values[0] = basic_stats["chat_dates_bar"]
+    basic_component_values[1] = basic_stats_md
 
 
 def update_worker(max_num_files, interval, elo_results_file):
@@ -93,8 +94,12 @@ def load_demo(url_params, request: gr.Request):
 
 
 def build_basic_stats_tab():
-    md = gr.Markdown()
-    return [md]
+    gr.Markdown(
+        "#### Figure 1: Number of model calls"
+    )
+    plot_1 = gr.Plot(show_label=False)
+    md = gr.Markdown("Loading ...")
+    return [plot_1, md]
 
 
 def build_leaderboard_tab(elo_results_file):

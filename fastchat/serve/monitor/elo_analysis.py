@@ -246,7 +246,7 @@ def report_elo_analysis_results(battles_json):
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_updated_datetime": f"{last_updated_datetime}",
+        "last_updated_datetime": last_updated_datetime,
     }
 
 

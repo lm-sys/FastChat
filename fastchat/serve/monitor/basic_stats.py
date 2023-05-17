@@ -7,6 +7,7 @@ from pytz import timezone
 import time
 
 import pandas as pd
+import plotly.express as px
 from tqdm import tqdm
 
 
@@ -68,9 +69,28 @@ def report_basic_stats(log_files):
     df_all = load_log_files(log_files)
     df_all = pd.DataFrame(df_all)
     now_t = df_all["tstamp"].max()
-
     df_1_hour = df_all[df_all["tstamp"] > (now_t - 3600)]
     df_1_day = df_all[df_all["tstamp"] > (now_t - 3600 * 24)]
+
+    # Chat trends
+    chat_dates = [
+        datetime.datetime.fromtimestamp(
+            x, tz=timezone("US/Pacific")
+        ).strftime("%Y-%m-%d")
+        for x in df_all[df_all["type"] == "chat"]["tstamp"]
+    ]
+    chat_dates_counts = pd.value_counts(chat_dates)
+    chat_dates_bar = px.bar(
+        chat_dates_counts,
+        text_auto=".0f",
+        height=200,
+        width=1000,
+    )
+    chat_dates_bar.update_layout(
+        xaxis_title="Dates",
+        yaxis_title="Count",
+        legend=None,
+    )
 
     # Model call counts
     model_hist_all = df_all[df_all["type"] == "chat"]["model"].value_counts()
@@ -144,13 +164,21 @@ def report_basic_stats(log_files):
     last_24_hours_df = pd.DataFrame({"time": times, "value": num_chats_last_24_hours})
     last_24_hours_md = last_24_hours_df.to_markdown(index=False, tablefmt="github")
 
+    # Last update datetime
+    last_updated_tstamp = now_t
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
+
     # code.interact(local=locals())
 
     return {
+        "chat_dates_bar": chat_dates_bar,
         "model_hist_md": model_hist_md,
         "action_hist_md": action_hist_md,
         "anony_vote_hist_md": anony_vote_hist_md,
         "num_chats_last_24_hours": last_24_hours_md,
+        "last_updated_datetime": last_updated_datetime,
     }
 
 
@@ -162,7 +190,7 @@ if __name__ == "__main__":
     log_files = get_log_files(args.max_num_files)
     basic_stats = report_basic_stats(log_files)
 
-    print(basic_stats["model_hist_md"] + "\n")
     print(basic_stats["action_hist_md"] + "\n")
+    print(basic_stats["model_hist_md"] + "\n")
     print(basic_stats["anony_vote_hist_md"] + "\n")
     print(basic_stats["num_chats_last_24_hours"] + "\n")
