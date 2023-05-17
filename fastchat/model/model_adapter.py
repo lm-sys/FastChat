@@ -220,6 +220,8 @@ class VicunaAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         self.raise_warning_for_old_weights(model)
+        tokenizer.eos_token = "</s>"
+        tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
