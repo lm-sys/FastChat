@@ -15,6 +15,7 @@
 
 import warnings
 import copy
+import logging
 from dataclasses import dataclass, field
 import json
 import pathlib
@@ -26,14 +27,15 @@ from torch.utils.data import Dataset
 import transformers
 from transformers import Trainer
 from transformers.trainer_pt_utils import LabelSmoother
-from torch.distributed.fsdp.api import FullOptimStateDictConfig, FullStateDictConfig, StateDictType
-import torch.distributed.fsdp.fully_sharded_data_parallel as FSDP
 
 from fastchat.conversation import SeparatorStyle
 from fastchat.model.model_adapter import get_conversation_template
 
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 
+
+logging.basicConfig(level=logging.INFO)
+np.random.seed(100)
 
 @dataclass
 class ModelArguments:
@@ -68,29 +70,29 @@ def rank0_print(*args):
         print(*args)
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-    """Collects the state dict and dump to disk."""
-    # Hao: fix the FSDP save error
-    if int(torch.__version__[0]) < 2:
-        warnings.warn("You might run out of GPU memory when you call `safe_save_model_for_hf_trainer()` "
-                      "at the end of your training if you are running on a GPU with less than 40GB memory. "
-                      "Please refer to https://github.com/tatsu-lab/stanford_alpaca/issues/81 about how to "
-                      "work around it.")
-        FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
-                                                          StateDictType.FULL_STATE_DICT,
-                                                          FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
-                                                          FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
-    else:
-        FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
-                                                          StateDictType.FULL_STATE_DICT,
-                                                          FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
-                                                          FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
-
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
+# def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
+#     """Collects the state dict and dump to disk."""
+#     # Hao: fix the FSDP save error
+#     if int(torch.__version__[0]) < 2:
+#         warnings.warn("You might run out of GPU memory when you call `safe_save_model_for_hf_trainer()` "
+#                       "at the end of your training if you are running on a GPU with less than 40GB memory. "
+#                       "Please refer to https://github.com/tatsu-lab/stanford_alpaca/issues/81 about how to "
+#                       "work around it.")
+#         FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+#                                                           StateDictType.FULL_STATE_DICT,
+#                                                           FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+#                                                           FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+#     else:
+#         FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+#                                                           StateDictType.FULL_STATE_DICT,
+#                                                           FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+#                                                           FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+#
+#     state_dict = trainer.model.state_dict()
+#     if trainer.args.should_save:
+#         cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
+#         del state_dict
+#         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
 def preprocess(
@@ -260,6 +262,8 @@ def train():
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
+        low_cpu_mem_usage=True,
+        # torch_dtype=torch.float16
     )
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -276,14 +280,12 @@ def train():
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
 
-    # rank0_print(trainer.model.state_dict())
-    # rank0_print(vars(trainer.model))
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
-    trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+    # trainer.save_state()
+    # trainer.save_model(output_dir=training_args.output_dir)
 
 
 if __name__ == "__main__":
