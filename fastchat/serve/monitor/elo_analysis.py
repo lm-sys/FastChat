@@ -141,7 +141,8 @@ def visualize_bootstrap_elo_rating(df):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        width=450,
+        height=500,
+        width=500,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
@@ -199,7 +200,8 @@ def visualize_average_win_rate(battles):
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        width=450,
+        height=500,
+        width=500,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
