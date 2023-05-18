@@ -121,7 +121,7 @@ class CompletionRequest(BaseModel):
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.7
     n: Optional[int] = 1
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = 16
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0

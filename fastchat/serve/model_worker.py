@@ -243,25 +243,40 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            encoding = tokenizer.batch_encode_plus(params["input"], padding=True, return_tensors="pt")
-            input_ids = encoding['input_ids']
-            attention_mask = encoding['attention_mask']
-            model_output = self.model(input_ids, attention_mask, output_hidden_states=True)
+            is_vicuna = "vicuna" in str(type(self.model)).lower() # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model)).lower()
-            if is_chatglm:
-                data = (model_output.hidden_states[-1].transpose(0, 1))
-            else:
+            if is_vicuna:
+                encoding = tokenizer.batch_encode_plus(params["input"], padding=True, return_tensors="pt")
+                input_ids = encoding['input_ids'].to(self.device)
+                attention_mask = encoding['attention_mask'].to(self.device)
+                model_output = self.model(input_ids, attention_mask, output_hidden_states=True)
                 data = model_output.hidden_states[-1]
-
-            mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
-            masked_embeddings = data * mask
-            sum_embeddings = torch.sum(masked_embeddings, dim=1)
-            seq_length = torch.sum(mask, dim=1)
-            embedding = sum_embeddings / seq_length
-            ret = {
-                "embedding": embedding.tolist(),
-                "token_num": torch.sum(attention_mask).item(),
-            }
+                mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
+                masked_embeddings = data * mask
+                sum_embeddings = torch.sum(masked_embeddings, dim=1)
+                seq_length = torch.sum(mask, dim=1)
+                embedding = sum_embeddings / seq_length
+                ret = {
+                    "embedding": embedding.tolist(),
+                    "token_num": torch.sum(attention_mask).item(),
+                }
+            else:
+                embedding = []
+                token_num = 0
+                for text in params["input"]:
+                    input_ids = tokenizer.encode(text, return_tensors="pt").to(self.device)
+                    model_output = self.model(input_ids, output_hidden_states=True)
+                    if is_chatglm:
+                        data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+                    else:
+                        data = model_output.hidden_states[-1][0]
+                    data = torch.mean(data, dim=0)
+                    embedding.append(data.tolist())
+                    token_num += len(input_ids[0])
+                ret = {
+                    "embedding": embedding,
+                    "token_num": token_num,
+                }
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{server_error_msg}\n\n({e})",
