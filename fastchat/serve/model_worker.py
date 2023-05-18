@@ -243,13 +243,19 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_vicuna = "vicuna" in str(type(self.model)).lower() # vicuna support batch inference
+            is_vicuna = (
+                "vicuna" in str(type(self.model)).lower()
+            )  # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model)).lower()
             if is_vicuna:
-                encoding = tokenizer.batch_encode_plus(params["input"], padding=True, return_tensors="pt")
-                input_ids = encoding['input_ids'].to(self.device)
-                attention_mask = encoding['attention_mask'].to(self.device)
-                model_output = self.model(input_ids, attention_mask, output_hidden_states=True)
+                encoding = tokenizer.batch_encode_plus(
+                    params["input"], padding=True, return_tensors="pt"
+                )
+                input_ids = encoding["input_ids"].to(self.device)
+                attention_mask = encoding["attention_mask"].to(self.device)
+                model_output = self.model(
+                    input_ids, attention_mask, output_hidden_states=True
+                )
                 data = model_output.hidden_states[-1]
                 mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
                 masked_embeddings = data * mask
@@ -264,7 +270,9 @@ class ModelWorker:
                 embedding = []
                 token_num = 0
                 for text in params["input"]:
-                    input_ids = tokenizer.encode(text, return_tensors="pt").to(self.device)
+                    input_ids = tokenizer.encode(text, return_tensors="pt").to(
+                        self.device
+                    )
                     model_output = self.model(input_ids, output_hidden_states=True)
                     if is_chatglm:
                         data = (model_output.hidden_states[-1].transpose(0, 1))[0]

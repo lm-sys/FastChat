@@ -104,7 +104,7 @@ class ChatCompletionStreamResponse(BaseModel):
 class EmbeddingsRequest(BaseModel):
     model: Optional[str] = None
     engine: Optional[str] = None
-    input: Union[str,List[Any]]
+    input: Union[str, List[Any]]
     user: Optional[str] = None
 
 
@@ -117,7 +117,7 @@ class EmbeddingsResponse(BaseModel):
 
 class CompletionRequest(BaseModel):
     model: str
-    prompt: Union[str,List[Any]]
+    prompt: Union[str, List[Any]]
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.7
     n: Optional[int] = 1

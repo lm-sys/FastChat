@@ -171,8 +171,8 @@ def check_requests(request) -> Optional[JSONResponse]:
 
     return None
 
-def process_input(model_name, input):
 
+def process_input(model_name, input):
     if isinstance(input, str):
         input = [input]
     elif isinstance(input, list):
@@ -452,13 +452,11 @@ async def create_completion(request: CompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
-    
+
     request.prompt = process_input(request.model, request.prompt)
 
     for text in request.prompt:
-        error_check_ret = await check_length(
-            request, text, request.max_tokens
-        )
+        error_check_ret = await check_length(request, text, request.max_tokens)
         if error_check_ret is not None:
             return error_check_ret
 
@@ -534,7 +532,7 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
                 decoded_unicode = content["text"].replace("\ufffd", "")
                 delta_text = decoded_unicode[len(previous_text) :]
                 previous_text = decoded_unicode
-                #todo: index is not apparent
+                # todo: index is not apparent
                 choice_data = CompletionResponseStreamChoice(
                     index=i,
                     text=delta_text,
@@ -542,7 +540,10 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
                     finish_reason=content.get("finish_reason", None),
                 )
                 chunk = CompletionStreamResponse(
-                    id=id, object="text_completion", choices=[choice_data], model=model_name
+                    id=id,
+                    object="text_completion",
+                    choices=[choice_data],
+                    model=model_name,
                 )
                 if len(delta_text) == 0:
                     if content.get("finish_reason", None) is not None:
@@ -594,27 +595,37 @@ async def generate_completion(payload: Dict[str, Any]):
 
 @app.post("/v1/embeddings")
 @app.post("/v1/engines/{model_name}/embeddings")
-async def create_embeddings(request: EmbeddingsRequest, model_name: str=None):
+async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
     """Creates embeddings for the text"""
     if request.model is None:
         request.model = model_name
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
         return error_check_ret
-    
-    request.input = process_input(request.model,request.input)
+
+    request.input = process_input(request.model, request.input)
 
     data = []
     token_num = 0
     batch_size = 5
-    batches = [request.input[i:min(i+batch_size, len(request.input))] for i in range(0, len(request.input), batch_size)]
+    batches = [
+        request.input[i : min(i + batch_size, len(request.input))]
+        for i in range(0, len(request.input), batch_size)
+    ]
     for num_batch, batch in enumerate(batches):
         payload = {
             "model": request.model,
             "input": batch,
         }
         embedding = await get_embedding(payload)
-        data += [{"object": "embedding", "embedding": emb, "index": num_batch * batch_size + i} for i, emb in enumerate(embedding["embedding"])]
+        data += [
+            {
+                "object": "embedding",
+                "embedding": emb,
+                "index": num_batch * batch_size + i,
+            }
+            for i, emb in enumerate(embedding["embedding"])
+        ]
         token_num += embedding["token_num"]
     return EmbeddingsResponse(
         data=data,
