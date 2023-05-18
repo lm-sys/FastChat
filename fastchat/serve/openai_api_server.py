@@ -171,10 +171,11 @@ def check_requests(request) -> Optional[JSONResponse]:
     return None
 
 
-def get_gen_params(
+def get_gen_params( 
     model_name: str,
-    messages: Union[str, List[Dict[str, str]]],
     *,
+    prompt: Optional[Union[str, List[str]]] = None,
+    messages: Optional[List[Dict[str, str]]] = None,
     temperature: float,
     top_p: float,
     max_tokens: Optional[int],
@@ -182,11 +183,23 @@ def get_gen_params(
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
-    conv = get_conversation_template(model_name)
+    conv = get_conversation_template(model_name)    
+    prompt_str = ""
 
-    if isinstance(messages, str):
-        prompt = messages
-    else:
+    ## depending if get_gen_params is called from completions or chat/completions, it
+    ## will have prompt or messages set.
+    if prompt is not None:
+        ## when called by v1/completions endpoint, prompt may be a string or an array of strings as defined in
+        ## OpenAI specifications (https://platform.openai.com/docs/api-reference/completions)
+        if isinstance(prompt, str):
+            ## take the prompt string as-is
+            prompt_str = prompt
+        else:
+            ## dummy concatanation of prompt array since we are not aware
+            ## how OpenAI implements it.
+            prompt_str = '\n'.join(prompt)
+    elif messages is not None:
+        ## called by v1/chat/completions endpoint
         for message in messages:
             msg_role = message["role"]
             if msg_role == "system":
@@ -203,16 +216,20 @@ def get_gen_params(
 
         is_chatglm = "chatglm" in model_name.lower()
         if is_chatglm:
-            prompt = conv.messages[conv.offset :]
+            prompt_str = conv.messages[conv.offset :]
         else:
-            prompt = conv.get_prompt()
+            prompt_str = conv.get_prompt()
+    else:
+        ## should never append. either prompt or messages should be set.
+        prompt_str = ""
+        pass
 
     if max_tokens is None:
         max_tokens = 512
 
     gen_params = {
         "model": model_name,
-        "prompt": prompt,
+        "prompt": prompt_str,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_tokens,
@@ -281,7 +298,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     gen_params = get_gen_params(
         request.model,
-        request.messages,
+        messages=request.messages,
         temperature=request.temperature,
         top_p=request.top_p,
         max_tokens=request.max_tokens,
@@ -440,7 +457,7 @@ async def create_completion(request: CompletionRequest):
 
     payload = get_gen_params(
         request.model,
-        request.prompt,
+        prompt=request.prompt,
         temperature=request.temperature,
         top_p=request.top_p,
         max_tokens=request.max_tokens,
