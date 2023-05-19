@@ -83,10 +83,12 @@ class State:
 
     def dict(self):
         base = self.conv.dict()
-        base.update({
-            "conv_id": self.conv_id,
-            "model_name": self.model_name,
-        })
+        base.update(
+            {
+                "conv_id": self.conv_id,
+                "model_name": self.model_name,
+            }
+        )
         return base
 
 
@@ -286,9 +288,7 @@ def model_worker_stream_iter(
             yield data
 
 
-def http_bot(
-    state, temperature, top_p, max_new_tokens, request: gr.Request
-):
+def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
     temperature = float(temperature)

@@ -495,7 +495,7 @@ class RedPajamaINCITEAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("redpajama-incite")
 
-      
+
 class H2OGPTAdapter(BaseAdapter):
     """The model adapter for h2oGPT."""
 

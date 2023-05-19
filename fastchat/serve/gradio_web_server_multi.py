@@ -164,7 +164,10 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once"],
+        "--model-list-mode",
+        type=str,
+        default="once",
+        choices=["once"],
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(

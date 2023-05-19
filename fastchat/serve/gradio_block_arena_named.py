@@ -147,7 +147,9 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-def add_text(state0, state1, model_selector0, model_selector1, text, request: gr.Request):
+def add_text(
+    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+):
     logger.info(f"add_text (named). ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
@@ -451,14 +453,18 @@ function (a, b, c, d) {
         )
 
     textbox.submit(
-        add_text, states + model_selectors + [textbox], states + chatbots + [textbox] + btn_list
+        add_text,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         http_bot_all,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
     send_btn.click(
-        add_text, states + model_selectors + [textbox], states + chatbots + [textbox] + btn_list
+        add_text,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         http_bot_all,
         states + [temperature, top_p, max_output_tokens],
