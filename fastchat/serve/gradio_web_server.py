@@ -456,17 +456,25 @@ By using this service, users are required to agree to the following terms: The s
 | | | |
 | ---- | ---- | ---- |
 """
+    ct = 0
+    visited = set()
     for i, name in enumerate(models):
-        if i % 3 == 0:
+        if ct % 3 == 0:
             model_description_md += "|"
 
         if name in model_info:
             minfo = model_info[name]
+            if minfo.simple_name in visited:
+                continue
+            visited.add(minfo.simple_name)
             model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
         else:
+            visited.add(name)
             model_description_md += f" [{name}](): Add the description at fastchat/model/model_registry.py |"
-        if i % 3 == 2:
+
+        if ct % 3 == 2:
             model_description_md += "\n"
+        ct += 1
 
     state = gr.State()
     gr.Markdown(notice_markdown + model_description_md, elem_id="notice_markdown")
