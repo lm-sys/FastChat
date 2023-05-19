@@ -125,11 +125,11 @@ register_model_info(
     ["billa-7b-sft"],
     "BiLLa-7B-SFT",
     "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
-    "an instruction-tuned bilingual llama with enhanced reasoning ability by an independent researcher",
+    "an instruction-tuned bilingual LLaMA with enhanced reasoning ability by an independent researcher",
 )
 register_model_info(
     ["h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2"],
     "h2oGPT-GM-7b",
     "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
-    "an instruction-tuned Apache 2.0 licensed llama with enhanced conversational ability by H2O.ai",
+    "an instruction-tuned OpenLLaMA with enhanced conversational ability by H2O.ai",
 )
