@@ -63,7 +63,7 @@ register_model_info(
 )
 register_model_info(
     ["oasst-pythia-12b"],
-    "OpenAssistant",
+    "OpenAssistant (oasst)",
     "https://open-assistant.io",
     "an Open Assistant for everyone by LAION",
 )
