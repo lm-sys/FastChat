@@ -1,3 +1,4 @@
+"""Additional information of the models."""
 from collections import namedtuple
 from typing import List
 
@@ -49,7 +50,7 @@ register_model_info(
     "Bard based on the PaLM 2 Chat API by Google",
 )
 register_model_info(
-    ["vicuna-13b"],
+    ["vicuna-13b", "vicuna-7b"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
@@ -58,7 +59,7 @@ register_model_info(
     ["koala-13b"],
     "Koala",
     "https://bair.berkeley.edu/blog/2023/04/03/koala",
-    "a dialogue model for academic research by BAIR",
+    "a dialogue model fine-tuned from LLaMA for academic research by BAIR",
 )
 register_model_info(
     ["oasst-pythia-12b"],

@@ -27,7 +27,7 @@ class Conversation:
 
     # The name of this template
     name: str
-    # System prompts
+    # The System prompt
     system: str
     # Two roles
     roles: List[str]
@@ -479,7 +479,6 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
-        stop_str="<human>:",
      )
 )
 
@@ -493,9 +492,9 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="</s>",
-        stop_str="</s>",
     )
 )
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
