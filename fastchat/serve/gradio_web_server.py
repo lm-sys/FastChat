@@ -307,7 +307,7 @@ def http_bot(
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name in ["claude-v1", "claude-instant-v1.1"]:
+    elif model_name in ["claude-v1", "claude-instant-v1"]:
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
@@ -666,7 +666,7 @@ if __name__ == "__main__":
     if args.add_chatgpt:
         models = ["gpt-3.5-turbo", "gpt-4"] + models
     if args.add_claude:
-        models = ["claude-v1", "claude-instant-v1.1"] + models
+        models = ["claude-v1", "claude-instant-v1"] + models
     if args.add_bard:
         models = ["bard"] + models
 

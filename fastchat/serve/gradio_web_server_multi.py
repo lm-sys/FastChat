@@ -49,7 +49,7 @@ def load_demo(url_params, request: gr.Request):
     if args.add_chatgpt:
         models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
     if args.add_claude:
-        models_anony = ["claude-v1"] + models_anony
+        models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
     if args.add_bard:
         models_anony = ["bard"] + models_anony
 

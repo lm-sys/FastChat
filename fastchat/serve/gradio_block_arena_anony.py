@@ -18,6 +18,7 @@ from fastchat.constants import (
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
+    State,
     http_bot,
     get_conv_log_filename,
     no_change_btn,
@@ -138,8 +139,7 @@ def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (anony). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_models):
-        states[i].messages[-1][-1] = None
-        states[i].skip_next = False
+        states[i].conv.messages[-1][-1] = None
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
@@ -166,7 +166,7 @@ DEFAULT_WEIGHTS = {
     "gpt-4": 1.5,
     "gpt-3.5-turbo": 1.5,
     "claude-v1": 1.5,
-    "claude-instant-v1.1": 1.5,
+    "claude-instant-v1": 1.5,
     "bard": 1.5,
     "vicuna-13b": 1.5,
     "koala-13b": 1.5,
@@ -183,9 +183,10 @@ DEFAULT_WEIGHTS = {
 }
 
 
-def add_text(state0, state1, text, request: gr.Request):
+def add_text(state0, state1, model_selector0, model_selector1, text, request: gr.Request):
     logger.info(f"add_text (anony). ip: {request.client.host}. len: {len(text)}")
     states = [state0, state1]
+    model_selectors = [model_selector0, model_selector1]
 
     if states[0] is None:
         assert states[1] is None
@@ -199,11 +200,9 @@ def add_text(state0, state1, text, request: gr.Request):
             model_left = model_right = models[0]
 
         states = [
-            get_conversation_template("vicuna"),
-            get_conversation_template("vicuna"),
+            State(model_left),
+            State(model_right),
         ]
-        states[0].model_name = model_left
-        states[1].model_name = model_right
 
     if len(text) <= 0:
         for i in range(num_models):
@@ -236,7 +235,8 @@ def add_text(state0, state1, text, request: gr.Request):
                 * 6
             )
 
-    if (len(states[0].messages) - states[0].offset) // 2 >= CONVERSATION_LEN_LIMIT:
+    conv = states[0].conv
+    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_LEN_LIMIT:
         logger.info(
             f"hit conversation length limit. ip: {request.client.host}. text: {text}"
         )
@@ -254,8 +254,8 @@ def add_text(state0, state1, text, request: gr.Request):
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_models):
-        states[i].append_message(states[i].roles[0], text)
-        states[i].append_message(states[i].roles[1], None)
+        states[i].conv.append_message(states[i].conv.roles[0], text)
+        states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
     return (
@@ -272,8 +272,6 @@ def add_text(state0, state1, text, request: gr.Request):
 def http_bot_all(
     state0,
     state1,
-    model_selector0,
-    model_selector1,
     temperature,
     top_p,
     max_new_tokens,
@@ -292,13 +290,11 @@ def http_bot_all(
         return
 
     states = [state0, state1]
-    model_selector = [state0.model_name, state1.model_name]
     gen = []
     for i in range(num_models):
         gen.append(
             http_bot(
                 states[i],
-                model_selector[i],
                 temperature,
                 top_p,
                 max_new_tokens,
@@ -448,7 +444,7 @@ Please scroll down and start chatting. You can view a leaderboard of participati
         regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
     clear_btn.click(
@@ -478,17 +474,17 @@ function (a, b, c, d) {
     share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
     textbox.submit(
-        add_text, states + [textbox], states + chatbots + [textbox] + btn_list
+        add_text, states + model_selectors + [textbox], states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
     send_btn.click(
-        add_text, states + [textbox], states + chatbots + [textbox] + btn_list
+        add_text, states + model_selectors + [textbox], states + chatbots + [textbox] + btn_list
     ).then(
         http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     )
 
