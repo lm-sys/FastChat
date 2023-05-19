@@ -4,7 +4,7 @@ Conversation prompt templates.
 
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple, Any, Dict
+from typing import List, Any, Dict
 
 
 class SeparatorStyle(Enum):
@@ -131,7 +131,7 @@ class Conversation:
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    ret += role + ": " # must be end with a space
+                    ret += role + ": "  # must be end with a space
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -466,6 +466,20 @@ register_conv_template(
         sep_style=SeparatorStyle.BILLA,
         sep="\n",
         stop_str="Human:",
+    )
+)
+
+# h2oGPT default template
+register_conv_template(
+    Conversation(
+        name="h2ogpt",
+        system="",
+        roles=("<|prompt|>", "<|answer|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+        stop_str="</s>",
     )
 )
 

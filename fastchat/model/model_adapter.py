@@ -4,6 +4,7 @@ import math
 import sys
 from typing import List, Optional
 import warnings
+
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -476,6 +477,16 @@ class BiLLaAdapter(BaseAdapter):
         return get_conv_template("billa")
 
 
+class H2OGPTAdapter(BaseAdapter):
+    """The model adapter for h2oGPT."""
+
+    def match(self, model_path: str):
+        return "h2ogpt" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("h2ogpt")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
@@ -494,6 +505,7 @@ register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
+register_model_adapter(H2OGPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
