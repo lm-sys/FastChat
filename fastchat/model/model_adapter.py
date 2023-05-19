@@ -445,7 +445,7 @@ class ClaudeAdapter(BaseAdapter):
     """The model adapter for Claude."""
 
     def match(self, model_path: str):
-        return model_path in ["claude-v1", "claude-instant-v1.1"]
+        return model_path in ["claude-v1", "claude-instant-v1"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -495,7 +495,7 @@ class RedPajamaINCITEAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("redpajama-incite")
 
-      
+
 class H2OGPTAdapter(BaseAdapter):
     """The model adapter for h2oGPT."""
 

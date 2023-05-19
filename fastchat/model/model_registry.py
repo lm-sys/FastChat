@@ -1,3 +1,4 @@
+"""Additional information of the models."""
 from collections import namedtuple
 from typing import List
 
@@ -37,7 +38,7 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
-    ["claude-instant-v1.1"],
+    ["claude-instant-v1"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
@@ -49,7 +50,7 @@ register_model_info(
     "Bard based on the PaLM 2 Chat API by Google",
 )
 register_model_info(
-    ["vicuna-13b"],
+    ["vicuna-13b", "vicuna-7b"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
@@ -62,7 +63,7 @@ register_model_info(
 )
 register_model_info(
     ["oasst-pythia-12b"],
-    "OpenAssistant",
+    "OpenAssistant (oasst)",
     "https://open-assistant.io",
     "an Open Assistant for everyone by LAION",
 )
@@ -124,11 +125,11 @@ register_model_info(
     ["billa-7b-sft"],
     "BiLLa-7B-SFT",
     "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
-    "an instruction-tuned bilingual llama with enhanced reasoning ability by an independent researcher",
+    "an instruction-tuned bilingual LLaMA with enhanced reasoning ability by an independent researcher",
 )
 register_model_info(
     ["h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2"],
     "h2oGPT-GM-7b",
     "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
-    "an instruction-tuned Apache 2.0 licensed llama with enhanced conversational ability by H2O.ai",
+    "an instruction-tuned OpenLLaMA with enhanced conversational ability by H2O.ai",
 )

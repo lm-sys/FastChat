@@ -60,6 +60,38 @@ The service is a research preview intended for non-commercial use only, subject 
 """
 
 
+class State:
+    def __init__(self, model_name):
+        self.conv = get_conversation_template(model_name)
+        self.conv_id = uuid.uuid4().hex
+        self.skip_next = False
+        self.model_name = model_name
+
+        if model_name == "bard":
+            self.bard_session_state = {
+                "conversation_id": "",
+                "response_id": "",
+                "choice_id": "",
+                "req_id": 0,
+            }
+            # According to release note, "chat-bison@001" is PaLM 2 for chat.
+            # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
+            self.palm_chat = init_palm_chat("chat-bison@001")
+
+    def to_gradio_chatbot(self):
+        return self.conv.to_gradio_chatbot()
+
+    def dict(self):
+        base = self.conv.dict()
+        base.update(
+            {
+                "conv_id": self.conv_id,
+                "model_name": self.model_name,
+            }
+        )
+        return base
+
+
 def set_global_vars(controller_url_, enable_moderation_):
     global controller_url, enable_moderation
     controller_url = controller_url_
@@ -170,8 +202,7 @@ def flag_last_response(state, model_selector, request: gr.Request):
 
 def regenerate(state, request: gr.Request):
     logger.info(f"regenerate. ip: {request.client.host}")
-    state.messages[-1][-1] = None
-    state.skip_next = False
+    state.conv.messages[-1][-1] = None
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -181,15 +212,16 @@ def clear_history(request: gr.Request):
     return (state, [], "") + (disable_btn,) * 5
 
 
-def add_text(state, text, request: gr.Request):
+def add_text(state, model_selector, text, request: gr.Request):
     logger.info(f"add_text. ip: {request.client.host}. len: {len(text)}")
 
     if state is None:
-        state = get_conversation_template("vicuna")
+        state = State(model_selector)
 
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
+
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
@@ -199,7 +231,8 @@ def add_text(state, text, request: gr.Request):
                 no_change_btn,
             ) * 5
 
-    if (len(state.messages) - state.offset) // 2 >= CONVERSATION_LEN_LIMIT:
+    conv = state.conv
+    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_LEN_LIMIT:
         logger.info(
             f"hit conversation length limit. ip: {request.client.host}. text: {text}"
         )
@@ -209,9 +242,8 @@ def add_text(state, text, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    state.append_message(state.roles[0], text)
-    state.append_message(state.roles[1], None)
-    state.skip_next = False
+    conv.append_message(conv.roles[0], text)
+    conv.append_message(conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -256,54 +288,34 @@ def model_worker_stream_iter(
             yield data
 
 
-def http_bot(
-    state, model_selector, temperature, top_p, max_new_tokens, request: gr.Request
-):
+def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
     logger.info(f"http_bot. ip: {request.client.host}")
     start_tstamp = time.time()
-    model_name = model_selector
     temperature = float(temperature)
     top_p = float(top_p)
     max_new_tokens = int(max_new_tokens)
 
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
+        state.skip_next = False
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
-    if len(state.messages) == state.offset + 2:
-        # First round of conversation
-        new_state = get_conversation_template(model_name)
-        new_state.conv_id = uuid.uuid4().hex
-        new_state.model_name = state.model_name or model_selector
-        new_state.append_message(new_state.roles[0], state.messages[-2][1])
-        new_state.append_message(new_state.roles[1], None)
-        state = new_state
-        if model_name == "bard":
-            state.session_state = {
-                "conversation_id": "",
-                "response_id": "",
-                "choice_id": "",
-                "req_id": 0,
-            }
-            # According to release note, "chat-bison@001" is PaLM 2 for chat.
-            # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
-            state.chat = init_palm_chat("chat-bison@001")
-
+    conv, model_name = state.conv, state.model_name
     if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
-        prompt = state.to_openai_api_messages()
+        prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name in ["claude-v1", "claude-instant-v1.1"]:
-        prompt = state.get_prompt()
+    elif model_name in ["claude-v1", "claude-instant-v1"]:
+        prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_name == "bard":
         # stream_iter = bard_api_stream_iter(state)
         stream_iter = palm_api_stream_iter(
-            state.chat, state.messages[-2][1], temperature, top_p, max_new_tokens
+            state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
         )
     else:
         # Query worker address
@@ -315,7 +327,7 @@ def http_bot(
 
         # No available worker
         if worker_addr == "":
-            state.messages[-1][-1] = SERVER_ERROR_MSG
+            conv.messages[-1][-1] = SERVER_ERROR_MSG
             yield (
                 state,
                 state.to_gradio_chatbot(),
@@ -328,7 +340,6 @@ def http_bot(
             return
 
         # Construct prompt
-        conv = state
         if "chatglm" in model_name:
             prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
@@ -337,7 +348,7 @@ def http_bot(
             conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
         )
 
-    state.messages[-1][-1] = "▌"
+    conv.messages[-1][-1] = "▌"
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
@@ -346,11 +357,11 @@ def http_bot(
                 output = data["text"].strip()
                 if "vicuna" in model_name:
                     output = post_process_code(output)
-                state.messages[-1][-1] = output + "▌"
+                conv.messages[-1][-1] = output + "▌"
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
-                state.messages[-1][-1] = output
+                conv.messages[-1][-1] = output
                 yield (state, state.to_gradio_chatbot()) + (
                     disable_btn,
                     disable_btn,
@@ -361,7 +372,7 @@ def http_bot(
                 return
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = (
+        conv.messages[-1][-1] = (
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
         )
@@ -374,7 +385,7 @@ def http_bot(
         )
         return
     except Exception as e:
-        state.messages[-1][-1] = (
+        conv.messages[-1][-1] = (
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
         )
@@ -387,7 +398,7 @@ def http_bot(
         )
         return
 
-    state.messages[-1][-1] = state.messages[-1][-1][:-1]
+    conv.messages[-1][-1] = conv.messages[-1][-1][:-1]
     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     finish_tstamp = time.time()
@@ -445,17 +456,27 @@ By using this service, users are required to agree to the following terms: The s
 | | | |
 | ---- | ---- | ---- |
 """
+    ct = 0
+    visited = set()
     for i, name in enumerate(models):
-        if i % 3 == 0:
+        if ct % 3 == 0:
             model_description_md += "|"
 
         if name in model_info:
             minfo = model_info[name]
-            model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
+            if minfo.simple_name in visited:
+                continue
+            visited.add(minfo.simple_name)
+            model_description_md += (
+                f" [{minfo.simple_name}]({minfo.link}): {minfo.description} |"
+            )
         else:
-            model_description_md += f" {name} |"
-        if i % 3 == 2:
+            visited.add(name)
+            model_description_md += f" [{name}](): Add the description at fastchat/model/model_registry.py |"
+
+        if ct % 3 == 2:
             model_description_md += "\n"
+        ct += 1
 
     state = gr.State()
     gr.Markdown(notice_markdown + model_description_md, elem_id="notice_markdown")
@@ -535,7 +556,7 @@ By using this service, users are required to agree to the following terms: The s
     )
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, model_selector, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -543,17 +564,17 @@ By using this service, users are required to agree to the following terms: The s
     model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
 
     textbox.submit(
-        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, model_selector, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     send_btn.click(
-        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, model_selector, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
@@ -655,7 +676,7 @@ if __name__ == "__main__":
     if args.add_chatgpt:
         models = ["gpt-3.5-turbo", "gpt-4"] + models
     if args.add_claude:
-        models = ["claude-v1", "claude-instant-v1.1"] + models
+        models = ["claude-v1", "claude-instant-v1"] + models
     if args.add_bard:
         models = ["bard"] + models
 

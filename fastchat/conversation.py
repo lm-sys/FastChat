@@ -27,7 +27,7 @@ class Conversation:
 
     # The name of this template
     name: str
-    # System prompts
+    # The System prompt
     system: str
     # Two roles
     roles: List[str]
@@ -43,12 +43,6 @@ class Conversation:
     stop_str: str = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
-
-    # Used for the state in the gradio servers.
-    # TODO(lmzheng): move this out of this class.
-    conv_id: Any = None
-    skip_next: bool = False
-    model_name: str = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -174,8 +168,6 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
-            conv_id=self.conv_id,
-            model_name=self.model_name,
         )
 
     def dict(self):
@@ -185,8 +177,6 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
-            "conv_id": self.conv_id,
-            "model_name": self.model_name,
         }
 
 
@@ -479,8 +469,8 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
-        stop_str="<human>:",
-     )
+        stop_str="<human>",
+    )
 )
 
 # h2oGPT default template
@@ -493,9 +483,9 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="</s>",
-        stop_str="</s>",
     )
 )
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
