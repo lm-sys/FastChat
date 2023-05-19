@@ -469,6 +469,20 @@ register_conv_template(
     )
 )
 
+# RedPajama INCITE default template
+register_conv_template(
+    Conversation(
+        name="redpajama-incite",
+        system="",
+        roles=("<human>", "<bot>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="<human>:",
+     )
+)
+
 # h2oGPT default template
 register_conv_template(
     Conversation(
