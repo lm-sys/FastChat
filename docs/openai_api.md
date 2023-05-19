@@ -102,6 +102,9 @@ curl http://localhost:8000/v1/embeddings \
   }'
 ```
 
+## Tunning
+Runner should answer within 20 seconds. If your model/hardware is slower, you wil get Timeout errors. You can change this timeout through ENV variables : "export WORKER_API_TIMEOUT=<larger timeout in seconds>"
+
 ## Todos
 Some features to be implemented:
 

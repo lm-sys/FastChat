@@ -404,7 +404,7 @@ def http_bot(
                 "max_new_tokens": max_new_tokens,
             },
             "start": round(start_tstamp, 4),
-            "finish": round(start_tstamp, 4),
+            "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": request.client.host,
         }
