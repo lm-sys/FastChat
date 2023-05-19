@@ -103,7 +103,7 @@ curl http://localhost:8000/v1/embeddings \
 ```
 
 ## Adjusting Timeout
-By default, a timeout error will occur if a model worker does not response within 20 seconds. If your model/hardware is slower, you can change this timeout through a environment variable: `export WORKER_API_TIMEOUT=<larger timeout in seconds>`
+By default, a timeout error will occur if a model worker does not response within 20 seconds. If your model/hardware is slower, you can change this timeout through an environment variable: `export WORKER_API_TIMEOUT=<larger timeout in seconds>`
 
 ## Todos
 Some features to be implemented:
