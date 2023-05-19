@@ -68,7 +68,7 @@ def inspect_convs(log_files):
                 print("=" * 20)
                 input()
 
-            #if row["type"] == "bothbad_vote" and "gpt-4" in model_names:
+            # if row["type"] == "bothbad_vote" and "gpt-4" in model_names:
             #    print("=" * 20)
             #    print(f"Model A: {model_names[0]}")
             #    pretty_print_conversation(row["states"][0]["messages"])

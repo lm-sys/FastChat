@@ -59,7 +59,7 @@ register_model_info(
     ["koala-13b"],
     "Koala",
     "https://bair.berkeley.edu/blog/2023/04/03/koala",
-    "a dialogue model fine-tuned from LLaMA for academic research by BAIR",
+    "a dialogue model for academic research by BAIR",
 )
 register_model_info(
     ["oasst-pythia-12b"],
