@@ -467,7 +467,9 @@ By using this service, users are required to agree to the following terms: The s
             if minfo.simple_name in visited:
                 continue
             visited.add(minfo.simple_name)
-            model_description_md += f" [{name}]({minfo.link}): {minfo.description} |"
+            model_description_md += (
+                f" [{minfo.simple_name}]({minfo.link}): {minfo.description} |"
+            )
         else:
             visited.add(name)
             model_description_md += f" [{name}](): Add the description at fastchat/model/model_registry.py |"
