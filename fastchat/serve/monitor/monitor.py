@@ -2,15 +2,12 @@
 # pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
-import datetime
 import pickle
-from pytz import timezone
 import os
 import threading
 import time
 
 import gradio as gr
-import pandas as pd
 
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
@@ -139,7 +136,7 @@ def build_leaderboard_tab(elo_results_file):
     md_1 = gr.Markdown(md)
     gr.Markdown(
         f"""## More Statistics\n
-Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
+We added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
     )
