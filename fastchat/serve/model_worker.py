@@ -246,10 +246,21 @@ class ModelWorker:
             input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
                 self.device
             )
-            model_output = self.model(input_ids, output_hidden_states=True)
-            is_chatglm = "chatglm" in str(type(self.model)).lower()
+            model_name = str(type(self.model)).lower()
+            is_chatglm = "chatglm" in model_name
+            is_t5 = "t5" in model_name
+            if is_t5:
+                model_output = self.model(
+                    input_ids, decoder_input_ids=input_ids, output_hidden_states=True
+                )
+            else:
+                model_output = self.model(input_ids, output_hidden_states=True)
             if is_chatglm:
                 data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+            elif is_t5:
+                # model uses Seq2SeqLMOutput from transformers to encode/decode
+                data = model_output.decoder_hidden_states[-1][0]
+                # data = (model_output.decoder_hidden_states[-1].transpose(0, 1))[0]
             else:
                 data = model_output.hidden_states[-1][0]
             embedding = torch.mean(data, dim=0)

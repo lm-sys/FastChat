@@ -590,6 +590,7 @@ async def create_embeddings(request: EmbeddingsRequest):
 async def get_embedding(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
     model_name = payload["model"]
+    timeout = httpx.Timeout(WORKER_API_TIMEOUT, read=None)
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
 
@@ -597,7 +598,7 @@ async def get_embedding(payload: Dict[str, Any]):
             worker_addr + "/worker_get_embeddings",
             headers=headers,
             json=payload,
-            timeout=WORKER_API_TIMEOUT,
+            timeout=timeout,
         )
         embedding = response.json()
         return embedding
