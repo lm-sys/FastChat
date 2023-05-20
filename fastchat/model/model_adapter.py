@@ -221,8 +221,8 @@ class VicunaAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         self.raise_warning_for_old_weights(model)
-        tokenizer.eos_token = "</s>"
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -251,7 +251,8 @@ class T5Adapter(BaseAdapter):
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
 
@@ -276,7 +277,8 @@ class ChatGLMAdapter(BaseAdapter):
         model = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
 
@@ -295,7 +297,8 @@ class DollyV2Adapter(BaseAdapter):
         )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -315,7 +318,8 @@ class OasstPythiaAdapter(BaseAdapter):
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -335,7 +339,8 @@ class StableLMAdapter(BaseAdapter):
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -359,7 +364,8 @@ class MPTAdapter(BaseAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, use_fast=True
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -389,7 +395,8 @@ class RwkvAdapter(BaseAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             "EleutherAI/pythia-160m", use_fast=True
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -412,7 +419,8 @@ class OpenBuddyAdapter(BaseAdapter):
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -432,7 +440,8 @@ class PhoenixAdapter(BaseAdapter):
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
         )
-        tokenizer.pad_token = tokenizer.eos_token
+        if tokenizer.pad_token == None:
+            tokenizer.pad_token = tokenizer.eos_token
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
