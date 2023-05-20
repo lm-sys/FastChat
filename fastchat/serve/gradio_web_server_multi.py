@@ -49,7 +49,7 @@ def load_demo(url_params, request: gr.Request):
     if args.add_chatgpt:
         models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
     if args.add_claude:
-        models_anony = ["claude-v1"] + models_anony
+        models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
     if args.add_bard:
         models_anony = ["bard"] + models_anony
 
@@ -164,7 +164,10 @@ if __name__ == "__main__":
     parser.add_argument("--controller-url", type=str, default="http://localhost:21001")
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once"],
+        "--model-list-mode",
+        type=str,
+        default="once",
+        choices=["once"],
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(

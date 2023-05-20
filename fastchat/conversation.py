@@ -4,7 +4,7 @@ Conversation prompt templates.
 
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple, Any, Dict
+from typing import List, Any, Dict
 
 
 class SeparatorStyle(Enum):
@@ -18,6 +18,7 @@ class SeparatorStyle(Enum):
     RWKV = auto()
     PHOENIX = auto()
     NEW_LINE = auto()
+    BILLA = auto()
 
 
 @dataclasses.dataclass
@@ -26,7 +27,7 @@ class Conversation:
 
     # The name of this template
     name: str
-    # System prompts
+    # The System prompt
     system: str
     # Two roles
     roles: List[str]
@@ -42,12 +43,6 @@ class Conversation:
     stop_str: str = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
-
-    # Used for the state in the gradio servers.
-    # TODO(lmzheng): refactor this
-    conv_id: Any = None
-    skip_next: bool = False
-    model_name: str = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -124,6 +119,14 @@ class Conversation:
                 else:
                     ret += role + "\n"
             return ret
+        elif self.sep_style == SeparatorStyle.BILLA:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": "  # must be end with a space
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -165,8 +168,6 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
-            conv_id=self.conv_id,
-            model_name=self.model_name,
         )
 
     def dict(self):
@@ -176,8 +177,6 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
-            "conv_id": self.conv_id,
-            "model_name": self.model_name,
         }
 
 
@@ -445,6 +444,48 @@ register_conv_template(
         sep=None,
     )
 )
+
+# BiLLa default template
+register_conv_template(
+    Conversation(
+        name="billa",
+        system="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.BILLA,
+        sep="\n",
+        stop_str="Human:",
+    )
+)
+
+# RedPajama INCITE default template
+register_conv_template(
+    Conversation(
+        name="redpajama-incite",
+        system="",
+        roles=("<human>", "<bot>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="<human>",
+    )
+)
+
+# h2oGPT default template
+register_conv_template(
+    Conversation(
+        name="h2ogpt",
+        system="",
+        roles=("<|prompt|>", "<|answer|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

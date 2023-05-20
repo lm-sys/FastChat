@@ -6,7 +6,7 @@ python3 -m fastchat.data.optional_clean --in input.json --out output.json --keep
 python3 -m fastchat.data.optional_clean --in input.json --out output.json --skip-lang en
 
 Requirement:
-pip3 install polyglot icu pyicu pycld2 morfessor
+pip3 install polyglot pyicu pycld2
 """
 import argparse
 import json
