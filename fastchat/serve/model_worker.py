@@ -248,6 +248,7 @@ class ModelWorker:
             tokenizer = self.tokenizer
             is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model))
+            is_t5 = "t5" in str(type(self.model))
             if is_llama:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"
@@ -275,9 +276,14 @@ class ModelWorker:
                     input_ids = tokenizer.encode(text, return_tensors="pt").to(
                         self.device
                     )
-                    model_output = self.model(input_ids, output_hidden_states=True)
+                    if is_t5:
+                        model_output = self.model(input_ids, decoder_input_ids=input_ids)
+                    else:
+                        model_output = self.model(input_ids, output_hidden_states=True)
                     if is_chatglm:
                         data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+                    elif is_t5:
+                        data = model_output.encoder_last_hidden_state[0]
                     else:
                         data = model_output.hidden_states[-1][0]
                     data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
