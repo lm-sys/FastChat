@@ -82,6 +82,8 @@ class ModelWorker:
         self.model, self.tokenizer = load_model(
             model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
+        if self.tokenizer.pad_token == None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -244,9 +246,9 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_vicuna = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model))
-            if is_vicuna:
+            if is_llama:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"
                 )
