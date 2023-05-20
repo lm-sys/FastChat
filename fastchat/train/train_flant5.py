@@ -284,10 +284,9 @@ class SupervisedDataset(Dataset):
         if not os.path.exists("preprocessed_data"):
             os.mkdir("preprocessed_data")
         if os.path.exists(self.preprocessed_path):
-            print(f"loading from preprocessed data at {self.preprocessed_path}")
+            logging.warning(f"loading from preprocessed data at {self.preprocessed_path}")
             with open(self.preprocessed_path, "r") as f:
                 data_dict = json.load(f)
-            print(len(data_dict["input_ids"]))
             if dist.get_rank() == 0:
                 dist.barrier()
         else:
@@ -373,7 +372,6 @@ class DataCollatorForSupervisedDataset(object):
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
-        torch.set_printoptions(profile="full")
         return ret
 
 
@@ -416,7 +414,7 @@ def train():
 
     smart_tokenizer_and_embedding_resize(
         special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-        other_tokens= ["<", "{", "\n", "}", "`", " ", "\\", "^", "\t"],
+        other_tokens = ["<", "{", "\n", "}", "`", " ", "\\", "^", "\t"],
         tokenizer=tokenizer,
         model=model,
     )
