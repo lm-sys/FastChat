@@ -2,15 +2,12 @@
 # pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
-import datetime
 import pickle
-from pytz import timezone
 import os
 import threading
 import time
 
 import gradio as gr
-import pandas as pd
 
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
