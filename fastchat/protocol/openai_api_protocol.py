@@ -100,6 +100,15 @@ class ChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[ChatCompletionResponseStreamChoice]
 
+class TokenCheckRequest(BaseModel):
+    model: str
+    prompt: str
+    max_tokens: int
+
+class TokenCheckResponse(BaseModel):
+    fits: bool
+    tokenCount: int
+    contextLength: int
 
 class EmbeddingsRequest(BaseModel):
     model: str

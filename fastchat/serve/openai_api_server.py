@@ -47,6 +47,8 @@ from fastchat.protocol.openai_api_protocol import (
     ModelCard,
     ModelList,
     ModelPermission,
+    TokenCheckRequest,
+    TokenCheckResponse,
     UsageInfo,
 )
 
@@ -66,7 +68,7 @@ headers = {"User-Agent": "FastChat API Server"}
 
 def create_error_response(code: int, message: str) -> JSONResponse:
     return JSONResponse(
-        ErrorResponse(message=message, code=code).dict(), status_code=500
+        ErrorResponse(message=message, code=code).dict(), status_code=400
     )
 
 
@@ -267,6 +269,39 @@ async def show_available_models():
     for m in models:
         model_cards.append(ModelCard(id=m, root=m, permission=[ModelPermission()]))
     return ModelList(data=model_cards)
+
+
+# TODO: Have check_length and count_tokens share code.
+@app.post("/v1/token_check")
+async def count_tokens(request: TokenCheckRequest):
+    """Checks the token count against your message"""
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(request.model, client)
+
+        response = await client.post(
+            worker_addr + "/model_details",
+            headers=headers,
+            json={},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        context_len = response.json()["context_length"]
+
+        response = await client.post(
+            worker_addr + "/count_token",
+            headers=headers,
+            json={"prompt": request.prompt},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        token_num = response.json()["count"]
+
+    # TODO: Fix this for other models
+    context_len = 2048
+
+    can_fit = True
+    if token_num + request.max_tokens > context_len:
+        can_fit = False
+
+    return TokenCheckResponse(fits=can_fit, contextLength=context_len, tokenCount=token_num)
 
 
 @app.post("/v1/chat/completions")
