@@ -12,13 +12,12 @@ class SeparatorStyle(Enum):
 
     ADD_COLON_SINGLE = auto()
     ADD_COLON_TWO = auto()
+    ADD_COLON_SPACE_SINGLE = auto()
     NO_COLON_SINGLE = auto()
-    BAIZE = auto()
+    ADD_NEW_LINE_SINGLE = auto()
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
-    NEW_LINE = auto()
-    BILLA = auto()
 
 
 @dataclasses.dataclass
@@ -63,6 +62,14 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": "  # must be end with a space
+            return ret
         elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = self.system
             for role, message in self.messages:
@@ -71,13 +78,13 @@ class Conversation:
                 else:
                     ret += role
             return ret
-        elif self.sep_style == SeparatorStyle.BAIZE:
-            ret = self.system + "\n"
+        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
+            ret = self.system + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += role + message + "\n"
+                    ret += role + "\n" + message + self.sep
                 else:
-                    ret += role
+                    ret += role + "\n"
             return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
@@ -110,22 +117,6 @@ class Conversation:
                     ret += role + ": " + "<s>" + message + "</s>"
                 else:
                     ret += role + ": " + "<s>"
-            return ret
-        elif self.sep_style == SeparatorStyle.NEW_LINE:
-            ret = self.system + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep
-                else:
-                    ret += role + "\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.BILLA:
-            ret = self.system + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + ": " + message + self.sep
-                else:
-                    ret += role + ": "  # must be end with a space
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -316,15 +307,15 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="baize",
-        system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
+        system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.\n",
         roles=("[|Human|]", "[|AI|]"),
         messages=(
             ("[|Human|]", "Hello!"),
             ("[|AI|]", "Hi!"),
         ),
         offset=2,
-        sep_style=SeparatorStyle.BAIZE,
-        sep="[|Human|]",
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
         stop_str="[|Human|]",
     )
 )
@@ -424,7 +415,7 @@ register_conv_template(
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.NEW_LINE,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="<|im_end|>",
         stop_token_ids=[50278, 0],
     )
@@ -453,7 +444,7 @@ register_conv_template(
         roles=("Human", "Assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.BILLA,
+        sep_style=SeparatorStyle.ADD_COLON_SPACE_SINGLE,
         sep="\n",
         stop_str="Human:",
     )
