@@ -31,6 +31,7 @@ except ImportError:
         AutoModel,
     )
 import torch
+import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
@@ -260,8 +261,9 @@ class ModelWorker:
                 sum_embeddings = torch.sum(masked_embeddings, dim=1)
                 seq_length = torch.sum(mask, dim=1)
                 embedding = sum_embeddings / seq_length
+                normalized_embeddings = F.normalize(embedding, p=2, dim=1)
                 ret = {
-                    "embedding": embedding.tolist(),
+                    "embedding": normalized_embeddings.tolist(),
                     "token_num": torch.sum(attention_mask).item(),
                 }
             else:
@@ -276,7 +278,7 @@ class ModelWorker:
                         data = (model_output.hidden_states[-1].transpose(0, 1))[0]
                     else:
                         data = model_output.hidden_states[-1][0]
-                    data = torch.mean(data, dim=0)
+                    data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
                     embedding.append(data.tolist())
                     token_num += len(input_ids[0])
                 ret = {
