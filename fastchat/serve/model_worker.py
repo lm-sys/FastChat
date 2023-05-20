@@ -243,10 +243,8 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_vicuna = (
-                "vicuna" in str(type(self.model)).lower()
-            )  # vicuna support batch inference
-            is_chatglm = "chatglm" in str(type(self.model)).lower()
+            is_vicuna = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_chatglm = "chatglm" in str(type(self.model))
             if is_vicuna:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"

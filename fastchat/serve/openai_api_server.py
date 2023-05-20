@@ -15,7 +15,6 @@ import json
 import logging
 
 import os
-import tiktoken
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import fastapi
@@ -24,9 +23,10 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
 from pydantic import BaseSettings
 import shortuuid
+import tiktoken
 import uvicorn
 
-from fastchat.constants import WORKER_API_TIMEOUT, ErrorCode
+from fastchat.constants import WORKER_API_TIMEOUT, WORKER_API_EMBEDDING_BATCH_SIZE, ErrorCode
 from fastchat.model.model_adapter import get_conversation_template
 from fastapi.exceptions import RequestValidationError
 from fastchat.protocol.openai_api_protocol import (
@@ -607,7 +607,7 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
 
     data = []
     token_num = 0
-    batch_size = 5
+    batch_size = WORKER_API_EMBEDDING_BATCH_SIZE
     batches = [
         request.input[i : min(i + batch_size, len(request.input))]
         for i in range(0, len(request.input), batch_size)
