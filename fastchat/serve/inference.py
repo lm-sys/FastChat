@@ -160,12 +160,23 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
+
+            def maybeStop(output, stop_str):
+                for i in range(0, len(output)):
+                    if i > len(stop_str):
+                        return False
+                    if stop_str.startswith(output[-i:]):
+                        return True
+                return False
+
             if stop_str:
                 if isinstance(stop_str, str):
                     pos = output.rfind(stop_str, rfind_start)
                     if pos != -1:
                         output = output[:pos]
                         stopped = True
+                    else:
+                        maybeStop = maybeStop(output, stop_str)
                 elif isinstance(stop_str, Iterable):
                     for each_stop in stop_str:
                         pos = output.rfind(each_stop, rfind_start)
@@ -173,18 +184,23 @@ def generate_stream(
                             output = output[:pos]
                             stopped = True
                             break
+                        else:
+                            maybeStop = maybeStop(output, each_stop)
+                            if maybeStop:
+                                break
                 else:
                     raise ValueError("Invalid stop field type.")
 
-            yield {
-                "text": output,
-                "usage": {
-                    "prompt_tokens": input_echo_len,
-                    "completion_tokens": i,
-                    "total_tokens": input_echo_len + i,
-                },
-                "finish_reason": None,
-            }
+            if not maybeStop:
+                yield {
+                    "text": output,
+                    "usage": {
+                        "prompt_tokens": input_echo_len,
+                        "completion_tokens": i,
+                        "total_tokens": input_echo_len + i,
+                    },
+                    "finish_reason": None,
+                }
 
         if stopped:
             break
