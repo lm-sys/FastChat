@@ -162,9 +162,7 @@ def generate_stream(
             )
 
             def partial_stop(output, stop_str):
-                for i in range(0, len(output)):
-                    if i > len(stop_str):
-                        return False
+                for i in range(0, min(len(output), len(stop_str))):
                     if stop_str.startswith(output[-i:]):
                         return True
                 return False
