@@ -168,6 +168,7 @@ def generate_stream(
                 spaces_between_special_tokens=False,
             )
 
+            partially_stopped = False
             if stop_str:
                 if isinstance(stop_str, str):
                     pos = output.rfind(stop_str, rfind_start)
@@ -189,8 +190,6 @@ def generate_stream(
                                 break
                 else:
                     raise ValueError("Invalid stop field type.")
-            else:
-                partially_stopped = False
             
             # prevent yielding partial stop sequence
             if not partially_stopped:
