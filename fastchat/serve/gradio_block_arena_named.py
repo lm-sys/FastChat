@@ -21,10 +21,10 @@ from fastchat.serve.gradio_web_server import (
     State,
     http_bot,
     get_conv_log_filename,
+    get_model_description_md,
     no_change_btn,
     enable_btn,
     disable_btn,
-    model_info,
     learn_more_md,
 )
 from fastchat.utils import (
@@ -294,26 +294,11 @@ By using this service, users are required to agree to the following terms: The s
 ### Choose two models to chat with (view [leaderboard](?leaderboard))
 """
 
-    model_description_md = """
-| | | |
-| ---- | ---- | ---- |
-"""
-    for i, name in enumerate(models):
-        if i % 3 == 0:
-            model_description_md += "|"
-
-        if name in model_info:
-            name, link, desc = model_info[name]
-            model_description_md += f" [{name}]({link}): {desc} |"
-        else:
-            model_description_md += f" |"
-        if i % 3 == 2:
-            model_description_md += "\n"
-
     states = [gr.State() for _ in range(num_models)]
     model_selectors = [None] * num_models
     chatbots = [None] * num_models
 
+    model_description_md = get_model_description_md(models)
     notice = gr.Markdown(
         notice_markdown + model_description_md, elem_id="notice_markdown"
     )

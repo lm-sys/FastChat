@@ -332,7 +332,7 @@ def build_side_by_side_ui_anony(models):
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
 - You can do multiple rounds of conversations before voting.
-- The names of the models will be revealed after your vote. Do not ask for chatbot names as conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) will not count towards the leaderboard.
+- The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
 - Click "Clear history" to start a new round.
 - [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
 

@@ -45,13 +45,14 @@ def load_demo(url_params, request: gr.Request):
     single_updates = load_demo_single(models, url_params)
 
     models_anony = models
-    # Only enable these models in anony battles.
-    if args.add_chatgpt:
-        models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
-    if args.add_claude:
-        models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
-    if args.add_bard:
-        models_anony = ["bard"] + models_anony
+    if args.anony_only_for_proprietary_model:
+        # Only enable these models in anony battles.
+        if args.add_chatgpt:
+            models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
+        if args.add_claude:
+            models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
+        if args.add_bard:
+            models_anony = ["bard"] + models_anony
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -181,12 +182,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--add-claude",
         action="store_true",
-        help="Add Anthropic's Claude models (claude-v1)",
+        help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
         "--add-bard",
         action="store_true",
-        help="Add Google's Bard model",
+        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
+    )
+    parser.add_argument(
+        "--anony-only-for-proprietary-model",
+        action="store_true",
+        help="Only add ChatGPT, Claude, Bard under anony battle tab",
     )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
@@ -196,6 +202,14 @@ if __name__ == "__main__":
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
     models = get_model_list(args.controller_url)
+
+    if not args.anony_only_for_proprietary_model:
+        if args.add_chatgpt:
+            models = ["gpt-3.5-turbo", "gpt-4"] + models
+        if args.add_claude:
+            models = ["claude-v1", "claude-instant-v1"] + models
+        if args.add_bard:
+            models = ["bard"] + models
 
     demo = build_demo(models, args.elo_results_file)
     demo.queue(
