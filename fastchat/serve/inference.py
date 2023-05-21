@@ -174,7 +174,7 @@ def generate_stream(
                         output = output[:pos]
                         stopped = True
                     else:
-                        partial_stop = partial_stop(output, stop_str)
+                        partially_stopped = partial_stop(output, stop_str)
                 elif isinstance(stop_str, Iterable):
                     for each_stop in stop_str:
                         pos = output.rfind(each_stop, rfind_start)
@@ -183,14 +183,14 @@ def generate_stream(
                             stopped = True
                             break
                         else:
-                            partial_stop = partial_stop(output, each_stop)
-                            if partial_stop:
+                            partially_stopped = partial_stop(output, each_stop)
+                            if partially_stopped:
                                 break
                 else:
                     raise ValueError("Invalid stop field type.")
             
             # prevent yielding partial stop sequence
-            if not partial_stop:
+            if not partially_stopped:
                 yield {
                     "text": output,
                     "usage": {
