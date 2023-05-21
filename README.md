@@ -297,7 +297,7 @@ You can use the following command to train FastChat-T5 with 4 x A100 (40GB).
 ```bash
 torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
     --model_name_or_path google/flan-t5-xl \
-    --data_path data_path \
+    --data_path playground/data/dummy.json \
     --bf16 True \
     --output_dir ./checkpoints_flant5_3b \
     --num_train_epochs 3 \
