@@ -274,7 +274,10 @@ async def show_available_models():
 # TODO: Have check_length and count_tokens share code.
 @app.post("/v1/token_check")
 async def count_tokens(request: TokenCheckRequest):
-    """Checks the token count against your message"""
+    """
+    Checks the token count against your message
+    This is not part of the OpenAI API spec.
+    """
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(request.model, client)
 
@@ -293,9 +296,6 @@ async def count_tokens(request: TokenCheckRequest):
             timeout=WORKER_API_TIMEOUT,
         )
         token_num = response.json()["count"]
-
-    # TODO: Fix this for other models
-    context_len = 2048
 
     can_fit = True
     if token_num + request.max_tokens > context_len:
