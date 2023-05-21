@@ -189,6 +189,8 @@ def generate_stream(
                                 break
                 else:
                     raise ValueError("Invalid stop field type.")
+            else:
+                partially_stopped = False
             
             # prevent yielding partial stop sequence
             if not partially_stopped:
