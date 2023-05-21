@@ -404,6 +404,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    assert not (args.model_name and args.model_path is None), \
+           "The argument --model-path is required if you provided --model-name"
+    if args.model_path is None:
+        args.model_path = "lmsys/fastchat-t5-3b-v1.0"
+
     if args.gpus:
         if len(args.gpus.split(",")) < args.num_gpus:
             raise ValueError(
