@@ -150,6 +150,10 @@ if __name__ == "__main__":
         choices=["simple", "rich"],
         help="Display style.",
     )
-    parser.add_argument("--debug", action="store_true", help="Print debug information")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print useful debug information (e.g., prompts)",
+    )
     args = parser.parse_args()
     main(args)

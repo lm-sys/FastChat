@@ -7,6 +7,8 @@ from pytz import timezone
 import time
 
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from tqdm import tqdm
 
 
@@ -53,6 +55,16 @@ def load_log_files(log_files):
     return data
 
 
+def get_anony_vote_df(df):
+    anony_vote_df = df[
+        df["type"].isin(["leftvote", "rightvote", "tievote", "bothbad_vote"])
+    ]
+    anony_vote_df = anony_vote_df[
+        anony_vote_df["models"].apply(lambda x: x[0] == "")
+    ]
+    return anony_vote_df
+
+
 def merge_counts(series, on, names):
     ret = pd.merge(series[0], series[1], on=on)
     for i in range(2, len(series)):
@@ -68,9 +80,38 @@ def report_basic_stats(log_files):
     df_all = load_log_files(log_files)
     df_all = pd.DataFrame(df_all)
     now_t = df_all["tstamp"].max()
-
     df_1_hour = df_all[df_all["tstamp"] > (now_t - 3600)]
     df_1_day = df_all[df_all["tstamp"] > (now_t - 3600 * 24)]
+    anony_vote_df_all = get_anony_vote_df(df_all)
+
+    # Chat trends
+    chat_dates = [
+        datetime.datetime.fromtimestamp(
+            x, tz=timezone("US/Pacific")
+        ).strftime("%Y-%m-%d")
+        for x in df_all[df_all["type"] == "chat"]["tstamp"]
+    ]
+    chat_dates_counts = pd.value_counts(chat_dates)
+    vote_dates = [
+        datetime.datetime.fromtimestamp(
+            x, tz=timezone("US/Pacific")
+        ).strftime("%Y-%m-%d")
+        for x in anony_vote_df_all["tstamp"]
+    ]
+    vote_dates_counts = pd.value_counts(vote_dates)
+    chat_dates_bar = go.Figure(data=[
+        go.Bar(name="Anony. Vote", x=vote_dates_counts.index, y=vote_dates_counts,
+               text=[f"{val:.0f}" for val in vote_dates_counts], textposition="auto"),
+        go.Bar(name="Chat", x=chat_dates_counts.index, y=chat_dates_counts,
+               text=[f"{val:.0f}" for val in chat_dates_counts], textposition="auto"),
+    ])
+    chat_dates_bar.update_layout(
+        barmode="stack",
+        xaxis_title="Dates",
+        yaxis_title="Count",
+        height=300,
+        width=1200,
+    )
 
     # Model call counts
     model_hist_all = df_all[df_all["type"] == "chat"]["model"].value_counts()
@@ -95,30 +136,11 @@ def report_basic_stats(log_files):
     action_hist_md = action_hist.to_markdown(index=False, tablefmt="github")
 
     # Anony vote counts
-    anony_vote_df_all = df_all[
-        df_all["type"].isin(["leftvote", "rightvote", "tievote", "bothbad_vote"])
-    ]
-    anony_vote_df_all = anony_vote_df_all[
-        anony_vote_df_all["models"].apply(lambda x: x[0] == "")
-    ]
     anony_vote_hist_all = anony_vote_df_all["type"].value_counts()
-
-    anony_vote_df_1_day = df_1_day[
-        df_1_day["type"].isin(["leftvote", "rightvote", "tievote", "bothbad_vote"])
-    ]
-    anony_vote_df_1_day = anony_vote_df_1_day[
-        anony_vote_df_1_day["models"].apply(lambda x: x[0] == "")
-    ]
+    anony_vote_df_1_day = get_anony_vote_df(df_1_day)
     anony_vote_hist_1_day = anony_vote_df_1_day["type"].value_counts()
-
-    anony_vote_df_1_hour = df_1_hour[
-        df_1_hour["type"].isin(["leftvote", "rightvote", "tievote", "bothbad_vote"])
-    ]
-    anony_vote_df_1_hour = anony_vote_df_1_hour[
-        anony_vote_df_1_hour["models"].apply(lambda x: x[0] == "")
-    ]
+    anony_vote_df_1_hour = get_anony_vote_df(df_1_hour)
     anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
-
     anony_vote_hist = merge_counts(
         [anony_vote_hist_all, anony_vote_hist_1_day, anony_vote_hist_1_hour],
         on="type",
@@ -144,13 +166,21 @@ def report_basic_stats(log_files):
     last_24_hours_df = pd.DataFrame({"time": times, "value": num_chats_last_24_hours})
     last_24_hours_md = last_24_hours_df.to_markdown(index=False, tablefmt="github")
 
+    # Last update datetime
+    last_updated_tstamp = now_t
+    last_updated_datetime = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y-%m-%d %H:%M:%S %Z")
+
     # code.interact(local=locals())
 
     return {
+        "chat_dates_bar": chat_dates_bar,
         "model_hist_md": model_hist_md,
         "action_hist_md": action_hist_md,
         "anony_vote_hist_md": anony_vote_hist_md,
         "num_chats_last_24_hours": last_24_hours_md,
+        "last_updated_datetime": last_updated_datetime,
     }
 
 
@@ -162,7 +192,7 @@ if __name__ == "__main__":
     log_files = get_log_files(args.max_num_files)
     basic_stats = report_basic_stats(log_files)
 
-    print(basic_stats["model_hist_md"] + "\n")
     print(basic_stats["action_hist_md"] + "\n")
+    print(basic_stats["model_hist_md"] + "\n")
     print(basic_stats["anony_vote_hist_md"] + "\n")
     print(basic_stats["num_chats_last_24_hours"] + "\n")

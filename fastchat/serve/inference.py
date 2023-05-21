@@ -284,7 +284,6 @@ def chat_loop(
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
         outputs = chatio.stream_output(output_stream)
-        # NOTE: strip is important to align with the training data.
         conv.messages[-1][-1] = outputs.strip()
 
         if debug:

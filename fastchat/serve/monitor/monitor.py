@@ -2,15 +2,12 @@
 # pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
-import datetime
 import pickle
-from pytz import timezone
 import os
 import threading
 import time
 
 import gradio as gr
-import pandas as pd
 
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
@@ -20,8 +17,8 @@ from fastchat.utils import build_logger, get_window_url_params_js
 logger = build_logger("monitor", "monitor.log")
 
 
-basic_component_values = ["Loading ..."]
-leader_component_values = [None, None, None, None, None]
+basic_component_values = [None] * 6
+leader_component_values = [None] * 5
 
 
 table_css = """
@@ -37,7 +34,7 @@ notebook_url = "https://colab.research.google.com/drive/1iI_IszGAwSMkdfUrIDI6NfT
 def make_leaderboard_md(elo_results):
     leaderboard_md = f"""
 # Leaderboard
-[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/KjdtsE9V)
 
 We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook]({notebook_url}). We will periodically release new leaderboards. If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 Last updated: {elo_results["last_updated_datetime"]}
@@ -62,26 +59,35 @@ def update_elo_components(max_num_files, elo_results_file):
 
     # Basic stats
     basic_stats = report_basic_stats(log_files)
-    basic_stats_md = ""
-    basic_stats_md += "### Action Histogram\n"
-    basic_stats_md += basic_stats["action_hist_md"] + "\n"
-    basic_stats_md += "### Anony. Vote Histogram\n"
-    basic_stats_md += basic_stats["anony_vote_hist_md"] + "\n"
-    basic_stats_md += "### Model Call Histogram\n"
-    basic_stats_md += basic_stats["model_hist_md"] + "\n"
-    basic_stats_md += "### Model Call (Last 24 Hours)\n"
-    basic_stats_md += basic_stats["num_chats_last_24_hours"] + "\n"
-    date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime(
-        "%Y-%m-%d %H:%M:%S %Z"
-    )
-    basic_stats_md += f"\n\nLast updated: {date}"
-    basic_component_values[0] = basic_stats_md
+    md0 = f"Last updated: {basic_stats['last_updated_datetime']}"
+
+    md1 = "### Action Histogram\n"
+    md1 += basic_stats["action_hist_md"] + "\n"
+
+    md2 = "### Anony. Vote Histogram\n"
+    md2 += basic_stats["anony_vote_hist_md"] + "\n"
+
+    md3 = "### Model Call Histogram\n"
+    md3 += basic_stats["model_hist_md"] + "\n"
+
+    md4 = "### Model Call (Last 24 Hours)\n"
+    md4 += basic_stats["num_chats_last_24_hours"] + "\n"
+
+    basic_component_values[0] = md0
+    basic_component_values[1] = basic_stats["chat_dates_bar"]
+    basic_component_values[2] = md1
+    basic_component_values[3] = md2
+    basic_component_values[4] = md3
+    basic_component_values[5] = md4
 
 
 def update_worker(max_num_files, interval, elo_results_file):
     while True:
+        tic = time.time()
         update_elo_components(max_num_files, elo_results_file)
-        time.sleep(interval)
+        durtaion = time.time() - tic
+        print(f"update duration: {durtaion:.2f} s")
+        time.sleep(max(interval - durtaion, 0))
 
 
 def load_demo(url_params, request: gr.Request):
@@ -90,8 +96,25 @@ def load_demo(url_params, request: gr.Request):
 
 
 def build_basic_stats_tab():
-    md = gr.Markdown()
-    return [md]
+    empty = "Loading ..."
+    basic_component_values[:] = [empty, None, empty, empty, empty, empty]
+
+    md0 = gr.Markdown(empty)
+    gr.Markdown(
+        "#### Figure 1: Number of model calls and votes"
+    )
+    plot_1 = gr.Plot(show_label=False)
+    with gr.Row():
+        with gr.Column():
+            md1 = gr.Markdown(empty)
+        with gr.Column():
+            md2 = gr.Markdown(empty)
+    with gr.Row():
+        with gr.Column():
+            md3 = gr.Markdown(empty)
+        with gr.Column():
+            md4 = gr.Markdown(empty)
+    return [md0, plot_1, md1, md2, md3, md4]
 
 
 def build_leaderboard_tab(elo_results_file):
@@ -113,7 +136,7 @@ def build_leaderboard_tab(elo_results_file):
     md_1 = gr.Markdown(md)
     gr.Markdown(
         f"""## More Statistics\n
-Here, we have added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
+We added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
     )

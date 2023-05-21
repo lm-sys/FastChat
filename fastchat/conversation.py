@@ -4,7 +4,7 @@ Conversation prompt templates.
 
 import dataclasses
 from enum import auto, Enum
-from typing import List, Tuple, Any, Dict
+from typing import List, Any, Dict
 
 
 class SeparatorStyle(Enum):
@@ -12,12 +12,12 @@ class SeparatorStyle(Enum):
 
     ADD_COLON_SINGLE = auto()
     ADD_COLON_TWO = auto()
+    ADD_COLON_SPACE_SINGLE = auto()
     NO_COLON_SINGLE = auto()
-    BAIZE = auto()
+    ADD_NEW_LINE_SINGLE = auto()
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
-    NEW_LINE = auto()
 
 
 @dataclasses.dataclass
@@ -26,7 +26,7 @@ class Conversation:
 
     # The name of this template
     name: str
-    # System prompts
+    # The System prompt
     system: str
     # Two roles
     roles: List[str]
@@ -42,12 +42,6 @@ class Conversation:
     stop_str: str = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
-
-    # Used for the state in the gradio servers.
-    # TODO(lmzheng): refactor this
-    conv_id: Any = None
-    skip_next: bool = False
-    model_name: str = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -68,6 +62,14 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": "  # must be end with a space
+            return ret
         elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = self.system
             for role, message in self.messages:
@@ -76,13 +78,13 @@ class Conversation:
                 else:
                     ret += role
             return ret
-        elif self.sep_style == SeparatorStyle.BAIZE:
-            ret = self.system + "\n"
+        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
+            ret = self.system + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += role + message + "\n"
+                    ret += role + "\n" + message + self.sep
                 else:
-                    ret += role
+                    ret += role + "\n"
             return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
@@ -115,14 +117,6 @@ class Conversation:
                     ret += role + ": " + "<s>" + message + "</s>"
                 else:
                     ret += role + ": " + "<s>"
-            return ret
-        elif self.sep_style == SeparatorStyle.NEW_LINE:
-            ret = self.system + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep
-                else:
-                    ret += role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -165,8 +159,6 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
-            conv_id=self.conv_id,
-            model_name=self.model_name,
         )
 
     def dict(self):
@@ -176,8 +168,6 @@ class Conversation:
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
-            "conv_id": self.conv_id,
-            "model_name": self.model_name,
         }
 
 
@@ -317,15 +307,15 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="baize",
-        system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.",
+        system="The following is a conversation between a human and an AI assistant named Baize (named after a mythical creature in Chinese folklore). Baize is an open-source AI assistant developed by UCSD and Sun Yat-Sen University. The human and the AI assistant take turns chatting. Human statements start with [|Human|] and AI assistant statements start with [|AI|]. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues. Complete the transcript in exactly that format.\n",
         roles=("[|Human|]", "[|AI|]"),
         messages=(
             ("[|Human|]", "Hello!"),
             ("[|AI|]", "Hi!"),
         ),
         offset=2,
-        sep_style=SeparatorStyle.BAIZE,
-        sep="[|Human|]",
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
         stop_str="[|Human|]",
     )
 )
@@ -334,13 +324,13 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="rwkv",
-        system="The following is a coherent verbose detailed conversation between Bob and Alice.\n\n",
+        system="",
         roles=("Bob", "Alice"),
         messages=(
-            ("Bob", "Hi"),
+            ("Bob", "hi"),
             (
                 "Alice",
-                "Hi. I am your assistant and I will answer all questions. Please feel free to ask any question and I will always answer it.",
+                "Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.",
             ),
         ),
         offset=2,
@@ -425,7 +415,7 @@ register_conv_template(
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.NEW_LINE,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="<|im_end|>",
         stop_token_ids=[50278, 0],
     )
@@ -445,6 +435,48 @@ register_conv_template(
         sep=None,
     )
 )
+
+# BiLLa default template
+register_conv_template(
+    Conversation(
+        name="billa",
+        system="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SPACE_SINGLE,
+        sep="\n",
+        stop_str="Human:",
+    )
+)
+
+# RedPajama INCITE default template
+register_conv_template(
+    Conversation(
+        name="redpajama-incite",
+        system="",
+        roles=("<human>", "<bot>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="<human>",
+    )
+)
+
+# h2oGPT default template
+register_conv_template(
+    Conversation(
+        name="h2ogpt",
+        system="",
+        roles=("<|prompt|>", "<|answer|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

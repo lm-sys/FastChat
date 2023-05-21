@@ -13,12 +13,6 @@ import torch
 
 from fastchat.constants import LOGDIR
 
-server_error_msg = (
-    "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
-)
-moderation_msg = (
-    "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE TRY AGAIN."
-)
 
 handler = None
 
@@ -186,11 +180,13 @@ def clean_flant5_ckpt(ckpt_path):
 
 
 def pretty_print_semaphore(semaphore):
+    """Print a semaphore in better format."""
     if semaphore is None:
         return "None"
     return f"Semaphore(value={semaphore._value}, locked={semaphore.locked()})"
 
 
+"""A javascript function to get url parameters for the gradio web server."""
 get_window_url_params_js = """
 function() {
     const params = new URLSearchParams(window.location.search);
@@ -225,3 +221,19 @@ def iter_over_async(
         if done:
             break
         yield obj
+
+
+def detect_language(text: str) -> str:
+    """Detect the langauge of a string."""
+    import polyglot  # pip3 install polyglot pyicu pycld2
+    from polyglot.detect import Detector
+    from polyglot.detect.base import logger as polyglot_logger
+    import pycld2
+
+    polyglot_logger.setLevel("ERROR")
+
+    try:
+        lang_code = Detector(text).language.name
+    except (pycld2.error, polyglot.detect.base.UnknownLanguage):
+        lang_code = "unknown"
+    return lang_code

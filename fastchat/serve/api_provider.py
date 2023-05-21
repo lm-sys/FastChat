@@ -70,6 +70,7 @@ def bard_api_stream_iter(state):
     # TODO: we will use the official PaLM 2 API sooner or later,
     # and we will update this function accordingly. So here we just hard code the
     # Bard worker address. It is going to be deprecated anyway.
+    conv = state.conv
 
     # Make requests
     gen_params = {
@@ -81,14 +82,14 @@ def bard_api_stream_iter(state):
     response = requests.post(
         "http://localhost:18900/chat",
         json={
-            "content": state.messages[-2][-1],
-            "state": state.session_state,
+            "content": conv.messages[-2][-1],
+            "state": state.bard_session_state,
         },
         stream=False,
         timeout=WORKER_API_TIMEOUT,
     )
     resp_json = response.json()
-    state.session_state = resp_json["state"]
+    state.bard_session_state = resp_json["state"]
     content = resp_json["content"]
     # The Bard Web API does not support streaming yet. Here we have to simulate
     # the streaming behavior by adding some time.sleep().
@@ -138,7 +139,7 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
     while pos < len(content):
         # This is a fancy way to simulate token generation latency combined
         # with a Poisson process.
-        pos += random.randint(1, 5)
+        pos += random.randint(10, 20)
         time.sleep(random.expovariate(50))
         data = {
             "text": content[:pos],
