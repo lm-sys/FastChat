@@ -24,7 +24,6 @@ import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
-import torch.distributed as dist
 
 import transformers
 from torch.utils.data import Dataset
@@ -276,22 +275,15 @@ class SupervisedDataset(Dataset):
     ):
         super(SupervisedDataset, self).__init__()
 
-        # Make sure only the first process is processing the dataset
-        if dist.get_rank() != 0:
-            dist.barrier()
-
+        # save to file
         self.preprocessed_path = preprocessed_path
-        if not os.path.exists("preprocessed_data"):
-            os.mkdir("preprocessed_data")
         if os.path.exists(self.preprocessed_path):
-            logging.warning(f"loading from preprocessed data at {self.preprocessed_path}")
-            with open(self.preprocessed_path, "r") as f:
-                data_dict = json.load(f)
-            if dist.get_rank() == 0:
-                dist.barrier()
+            print("loading from preprocessed data")
+            data_dict = json.load(open(self.preprocessed_path, "r"))
         else:
-            assert dist.get_rank() == 0, "Only the first process should process"
-            logging.warning("Loading raw data...")
+            if not os.path.exists("./preprocessed_data/"):
+                os.mkdir("preprocessed_data/")
+            logging.warning("Loading data...")
             list_data_dict = json.load(open(data_path, "r"))
 
             logging.warning("Formatting inputs...")
@@ -302,12 +294,11 @@ class SupervisedDataset(Dataset):
             data_dict = preprocess(sources, tokenizer)
             json_data_dict = json.dumps(data_dict)
 
-            # open file for writing, "w" 
-            with open(self.preprocessed_path,"w") as f:
-                f.write(json_data_dict)
-            
-            # Release barrier
-            dist.barrier()
+            # open file for writing, "w"
+            f = open(self.preprocessed_path, "w")
+
+            # write json object to file
+            f.write(json_data_dict)
 
         if num_data != -1:
             data_dict["input_ids"] = data_dict["input_ids"][:num_data]
@@ -372,6 +363,7 @@ class DataCollatorForSupervisedDataset(object):
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
+        torch.set_printoptions(profile="full")
         return ret
 
 
@@ -414,7 +406,7 @@ def train():
 
     smart_tokenizer_and_embedding_resize(
         special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-        other_tokens = ["<", "{", "\n", "}", "`", " ", "\\", "^", "\t"],
+        other_tokens=["<", "{", "\n", "}", "`", " ", "\\", "^", "\t"],
         tokenizer=tokenizer,
         model=model,
     )
