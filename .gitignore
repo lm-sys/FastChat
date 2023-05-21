@@ -22,3 +22,6 @@ output
 # Data
 *.pkl
 *.csv
+
+# Build
+build
