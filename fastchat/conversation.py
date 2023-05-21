@@ -324,13 +324,13 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="rwkv",
-        system="The following is a coherent verbose detailed conversation between Bob and Alice.\n\n",
+        system="",
         roles=("Bob", "Alice"),
         messages=(
-            ("Bob", "Hi"),
+            ("Bob", "hi"),
             (
                 "Alice",
-                "Hi. I am your assistant and I will answer all questions. Please feel free to ask any question and I will always answer it.",
+                "Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.",
             ),
         ),
         offset=2,
