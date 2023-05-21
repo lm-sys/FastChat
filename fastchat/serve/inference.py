@@ -47,6 +47,13 @@ def prepare_logits_processor(
     return processor_list
 
 
+def partial_stop(output, stop_str):
+    for i in range(0, min(len(output), len(stop_str))):
+        if stop_str.startswith(output[-i:]):
+            return True
+    return False
+
+
 @torch.inference_mode()
 def generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
@@ -160,12 +167,6 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
-
-            def partial_stop(output, stop_str):
-                for i in range(0, min(len(output), len(stop_str))):
-                    if stop_str.startswith(output[-i:]):
-                        return True
-                return False
 
             if stop_str:
                 if isinstance(stop_str, str):
