@@ -112,17 +112,13 @@ async def check_length(request, prompt, max_tokens):
         )
         token_num = response.json()["count"]
 
-    max_new_tokens = max_tokens
-    # TODO: Fix this for other models
-    context_len = 2048
-
-    if token_num + max_new_tokens > context_len:
+    if token_num + max_tokens > context_len:
         return create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
             f"This model's maximum context length is {context_len} tokens. "
-            f"However, you requested {max_new_tokens + token_num} tokens "
+            f"However, you requested {max_tokens + token_num} tokens "
             f"({token_num} in the messages, "
-            f"{max_new_tokens} in the completion). "
+            f"{max_tokens} in the completion). "
             f"Please reduce the length of the messages or completion.",
         )
     else:
