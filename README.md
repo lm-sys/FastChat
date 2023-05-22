@@ -292,6 +292,36 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
 
 If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
+### Fine-tuning FastChat-T5 with Local GPUs
+You can use the following command to train FastChat-T5 with 4 x A100 (40GB).
+```bash
+torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
+    --model_name_or_path google/flan-t5-xl \
+    --data_path playground/data/dummy.json \
+    --bf16 True \
+    --output_dir ./checkpoints_flant5_3b \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 1 \
+    --per_device_eval_batch_size 1 \
+    --gradient_accumulation_steps 4 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 300 \
+    --save_total_limit 1 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap T5Block \
+    --tf32 True \
+    --model_max_length 2048 \
+    --preprocessed_path ./preprocessed_data/processed.json \
+    --gradient_checkpointing True 
+```
+After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/main/fastchat/utils.py#L164) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
+
 ### Fine-tuning on Any Cloud with SkyPilot
 [SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
 To use SkyPilot, install it with the following command and setup the cloud credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html).
