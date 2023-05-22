@@ -99,13 +99,8 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(model_path, device, torch_dtype):
+def load_compress_model(model_path, device, torch_dtype, use_fast=False):
     # partially load model
-    use_fast_list = ['dolly-v2', 'oasst', 'stablelm', 'mpt', 'RWKV-4', 'phoenix']
-    if any([x in model_path for x in use_fast_list]):
-        use_fast = True
-    else:
-        use_fast = False
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=use_fast)
     base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     files = glob.glob(base_pattern)

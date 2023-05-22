@@ -43,6 +43,9 @@ class BaseAdapter:
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=use_fast)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
@@ -103,6 +106,9 @@ def load_model(
 ):
     """Load a model from Hugging Face."""
 
+    # get model adapter
+    adapter = get_model_adapter(model_path)
+
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
         device, load_8bit, cpu_offloading
@@ -149,12 +155,11 @@ def load_model(
                 "8-bit quantization is not supported for multi-gpu inference."
             )
         else:
-            return load_compress_model(
+            return adapter.load_compress_model(
                 model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"]
             )
 
     # Load model
-    adapter = get_model_adapter(model_path)
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
@@ -222,6 +227,9 @@ class VicunaAdapter(BaseAdapter):
         )
         self.raise_warning_for_old_weights(model)
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=False)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("vicuna_v1.1")
@@ -250,6 +258,9 @@ class T5Adapter(BaseAdapter):
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=False)
 
 
 class KoalaAdapter(BaseAdapter):
@@ -274,6 +285,9 @@ class ChatGLMAdapter(BaseAdapter):
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
 
 class DollyV2Adapter(BaseAdapter):
@@ -292,6 +306,9 @@ class DollyV2Adapter(BaseAdapter):
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("dolly_v2")
@@ -311,6 +328,9 @@ class OasstPythiaAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
@@ -330,6 +350,9 @@ class StableLMAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("stablelm")
@@ -353,6 +376,9 @@ class MPTAdapter(BaseAdapter):
             model_path, trust_remote_code=True, use_fast=True
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("mpt")
@@ -382,6 +408,9 @@ class RwkvAdapter(BaseAdapter):
             "EleutherAI/pythia-160m", use_fast=True
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("rwkv")
@@ -404,6 +433,9 @@ class OpenBuddyAdapter(BaseAdapter):
         )
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=False)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("openbuddy")
@@ -423,6 +455,9 @@ class PhoenixAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=True)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phoenix")
@@ -491,6 +526,9 @@ class RedPajamaINCITEAdapter(BaseAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
+    
+    def load_compress_model(self, model_path, device, torch_dtype, use_fast=False):
+        return load_compress_model(model_path, device, torch_dtype, use_fast=False)
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("redpajama-incite")
