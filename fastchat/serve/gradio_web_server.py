@@ -106,7 +106,6 @@ def get_conv_log_filename():
 
 def get_model_list(controller_url):
     ret = requests.post(controller_url + "/refresh_all_workers")
-    print(ret.content)
     assert ret.status_code == 200
     ret = requests.post(controller_url + "/list_models")
     models = ret.json()["models"]

@@ -73,6 +73,7 @@ def generate_stream(
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
     )
+    
     input_ids = tokenizer(prompt).input_ids
     input_echo_len = len(input_ids)
     output_ids = list(input_ids)
