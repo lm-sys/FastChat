@@ -118,7 +118,6 @@ class ModelWorker:
         r = requests.post(url, json=data)
         assert r.status_code == 200
 
-
     def send_heart_beat(self):
         logger.info(
             f"Send heart beat. Models: {[self.model_name]}. "
