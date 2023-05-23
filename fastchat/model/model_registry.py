@@ -137,5 +137,5 @@ register_model_info(
     ["baize-v2-7b", "baize-v2-13b"],
     "Baize v2",
     "https://github.com/project-baize/baize-chatbot",
-    "A chatbot fine-tuned from LLaMA with ChatGPT self-data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
+    "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
