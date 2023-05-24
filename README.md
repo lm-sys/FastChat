@@ -224,6 +224,9 @@ See [docs/openai_api.md](docs/openai_api.md).
 ### Hugging Face Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 
+### LangChain Integration
+See [docs/langchain_integration](docs/langchain_integration.md).
+
 ## Evaluation
 
 Our AI-enhanced evaluation pipeline is based on GPT-4. This section provides a high-level summary of the pipeline. For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
