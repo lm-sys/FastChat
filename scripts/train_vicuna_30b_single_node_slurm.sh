@@ -7,21 +7,21 @@ python -m torch.distributed.run --nproc_per_node=16 --nnodes $SLURM_NNODES --nod
     --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
     fastchat/train/train_xformer.py \
     --model_name_or_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/llama-30b \
-    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230422_clean_lang_split_identity.json \
+    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230515_clean_lang_split_identity_gpt4.json \
     --fp16 True \
-    --output_dir vicuna_30b_sharegpt_20230422_32GPUs \
-    --max_steps 6400 \
-    --per_device_train_batch_size 1 \
+    --output_dir vicuna_30b_sharegpt_20230515_48GPU_gpt4 \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 1 \
     --evaluation_strategy "steps" \
-    --eval_steps 3000 \
+    --eval_steps 4000 \
     --save_strategy "steps" \
-    --save_steps 1000 \
-    --save_total_limit 4 \
+    --save_steps 200 \
+    --save_total_limit 8 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
-    --warmup_steps 20 \
+    --warmup_steps 5 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --fsdp "full_shard auto_wrap" \

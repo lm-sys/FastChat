@@ -1,8 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=hao_30b  # create a short name for your job
-#SBATCH --nodes=2
+#SBATCH --nodes=3
 #SBATCH --gres=gpu:16      # number of gpus per node
 #SBATCH --exclusive
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=96
 #SBATCH --time=30-00:00:00     # total run time limit (HH:MM:SS)
 #SBATCH --reservation=high-profile
 #SBATCH --partition=high-profile
@@ -20,6 +22,7 @@ source ~/.bashrc
 conda activate hao-env
 cd hao/FastChat
 free -g 2>&1
+lscpu 2>&1
 # ******************* These are read internally it seems ***********************************
 # ******** Master port, address and world size MUST be passed as variables for DDP to work
 export MASTER_PORT=20001
