@@ -113,11 +113,10 @@ class ProgrammaticChatIO(ChatIO):
         #  that signals the end of a message. It is unlikely to occur in
         #  message content.
         end_sequence = "9745805894023423"
-        while not prompt_done:
+        while true:
             if len(contents) >= 16:
                 last_chars = contents[-16:]
                 if last_chars == end_sequence:
-                    prompt_done = True
                     break
             try:
                 char = sys.stdin.read(1)
@@ -171,7 +170,6 @@ def main(args):
             args.max_new_tokens,
             chatio,
             args.debug,
-            args.style,
         )
     except KeyboardInterrupt:
         print("exit...")

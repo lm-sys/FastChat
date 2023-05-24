@@ -256,7 +256,6 @@ def chat_loop(
     max_new_tokens: int,
     chatio: ChatIO,
     debug: bool,
-    style: str,
 ):
     # Model
     model, tokenizer = load_model(
