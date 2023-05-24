@@ -108,7 +108,6 @@ class ProgrammaticChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
         print(f"[!OP:{role}]: ", end="", flush=True)
         contents = ""
-        prompt_done = False
         # `end_sequence` is a randomly-generated, 16-digit number
         #  that signals the end of a message. It is unlikely to occur in
         #  message content.
