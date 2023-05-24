@@ -114,7 +114,7 @@ def visualize_leaderboard_table(rating):
         rank = i + 1
         minfo = get_model_info(model)
         emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {int(rating[model])} | {minfo.description} |\n"
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
 
     return md
 
@@ -222,7 +222,7 @@ def report_elo_analysis_results(battles_json):
     # Bootstrap
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
     elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
-    elo_rating_median = {k: int(v) for k, v in elo_rating_median.items()}
+    elo_rating_median = {k: int(v + 0.5) for k, v in elo_rating_median.items()}
     model_order = list(elo_rating_online.keys())
     model_order.sort(key=lambda k: -elo_rating_online[k])
 
