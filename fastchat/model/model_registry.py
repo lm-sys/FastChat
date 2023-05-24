@@ -133,3 +133,9 @@ register_model_info(
     "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
     "an instruction-tuned OpenLLaMA with enhanced conversational ability by H2O.ai",
 )
+register_model_info(
+    ["baize-v2-7b", "baize-v2-13b"],
+    "Baize v2",
+    "https://github.com/project-baize/baize-chatbot#v2",
+    "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
+)

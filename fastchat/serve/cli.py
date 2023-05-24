@@ -166,6 +166,7 @@ def main(args):
             args.cpu_offloading,
             args.conv_template,
             args.temperature,
+            args.repetition_penalty,
             args.max_new_tokens,
             chatio,
             args.debug,
@@ -181,6 +182,7 @@ if __name__ == "__main__":
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
     parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--repetition_penalty", type=float, default=1.0)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument(
         "--style",
