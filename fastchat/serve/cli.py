@@ -113,7 +113,7 @@ class ProgrammaticChatIO(ChatIO):
         #  that signals the end of a message. It is unlikely to occur in
         #  message content.
         end_sequence = "9745805894023423"
-        while true:
+        while True:
             if len(contents) >= 16:
                 last_chars = contents[-16:]
                 if last_chars == end_sequence:
