@@ -52,7 +52,8 @@ from langchain.llms import OpenAI
 import openai
 
 embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
-loader = TextLoader('./state_of_the_union.txt')
+# wget https://raw.githubusercontent.com/hwchase17/langchain/master/docs/modules/state_of_the_union.txt
+loader = TextLoader('state_of_the_union.txt')
 index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
 
 llm = OpenAI(model="text-embedding-ada-002") # select your faux openai model name
