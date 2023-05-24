@@ -102,6 +102,9 @@ curl http://localhost:8000/v1/embeddings \
   }'
 ```
 
+### LangChain Support
+OpenAI-Compatible RESTful APIs support LangChain now. See [LangChain Instruction](langchain_instruction.md) for details.
+
 ## Adjusting Timeout
 By default, a timeout error will occur if a model worker does not response within 20 seconds. If your model/hardware is slower, you can change this timeout through an environment variable: `export FASTCHAT_WORKER_API_TIMEOUT=<larger timeout in seconds>`
 
