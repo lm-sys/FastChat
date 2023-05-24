@@ -38,7 +38,7 @@ def get_log_files(max_num_files=None):
         for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     for month in [5]:
-        for day in range(1, 9):
+        for day in range(1, 24):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     num_servers = 12

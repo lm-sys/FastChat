@@ -14,21 +14,15 @@ from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
+
+notebook_url = "https://colab.research.google.com/drive/17L9uCiAivzWfzOxo2Tb9RMauT7vS6nVU?usp=sharing"
+
+
 logger = build_logger("monitor", "monitor.log")
 
 
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
-
-
-table_css = """
-table {
-    line-height: 0em
-}
-"""
-
-
-notebook_url = "https://colab.research.google.com/drive/1iI_IszGAwSMkdfUrIDI6NfTG7tGDDRxZ?usp=sharing"
 
 
 def make_leaderboard_md(elo_results):
