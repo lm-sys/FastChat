@@ -14,7 +14,7 @@ python3 -m fastchat.serve.controller
 ```
 
 Due to the fact that langchain checks whether the model's name belongs to OpenAI, we need to assign a faux OpenAI name to the Vicuna model. In essence, we're providing an OpenAI model name when loading the model.
-Replace `/path/to/weights` with the a real path to a local model such as Vicuna. It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
+Replace `/path/to/weights` below with the a real path to a local model such as Vicuna. It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
 
 ```bash
 python3 -m fastchat.serve.model_worker --model-name 'text-embedding-ada-002' --model-path /path/to/weights
