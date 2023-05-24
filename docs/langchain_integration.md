@@ -1,10 +1,11 @@
 # Local LangChain with FastChat
 
-LangChain is a framework for developing applications powered by language models. It provides a set of tools, components and interfaces that simplify the process of creating applications that are supported by large language models (LLMs) and chat models.FastChat's OpenAI-compatible API server enables to use LangChain with open models seamlessly.
+[LangChain](https://python.langchain.com/en/latest/index.html) is a library that facilitates the development of applications by leveraging large language models (LLMs) and enabling their composition with other sources of computation or knowledge.
+FastChat's OpenAI-compatible [API server](openai_api.md) enables using LangChain with open models seamlessly.
 
 ## Launch RESTful API Server
 
-There are some differences while launching API server for LangChain.
+Here are the steps to launch a local OpenAI API server for LangChain.
 
 First, launch the controller
 
@@ -13,6 +14,7 @@ python3 -m fastchat.serve.controller
 ```
 
 Due to the fact that langchain checks whether the model's name belongs to OpenAI, we need to assign a faux OpenAI name to the Vicuna model. In essence, we're providing an OpenAI model name when loading the model.
+Replace `/path/to/weights` below with the a real path to a local model such as Vicuna. It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
 
 ```bash
 python3 -m fastchat.serve.model_worker --model-name 'text-embedding-ada-002' --model-path /path/to/weights
@@ -42,7 +44,7 @@ export OPENAI_API_KEY=EMPTY
 
 ## Try local LangChain
 
-There are some examples you can try [here](../examples/langchain/qa.ipynb). You can also run your own code
+Here is a question answerting example.
 
 ~~~py
 from langchain.document_loaders import TextLoader
@@ -58,7 +60,6 @@ index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
 
 llm = OpenAI(model="text-embedding-ada-002") # select your faux openai model name
 # llm = OpenAI(model="gpt-3.5-turbo")
-
 
 questions = [
              "who is the speaker", 
