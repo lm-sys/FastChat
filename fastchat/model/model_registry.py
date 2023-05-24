@@ -45,9 +45,9 @@ register_model_info(
 )
 register_model_info(
     ["bard"],
-    "Bard",
-    "https://bard.google.com/",
-    "Bard based on the PaLM 2 Chat API by Google",
+    "PaLM 2 Chat",
+    "https://cloud.google.com/vertex-ai/docs/generative-ai/learn/overview#palm-api",
+    "PaLM 2 for Chat by Google",
 )
 register_model_info(
     ["vicuna-13b", "vicuna-7b"],
