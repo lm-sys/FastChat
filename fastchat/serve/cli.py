@@ -8,6 +8,7 @@ python3 -m fastchat.serve.cli --model ~/model_weights/vicuna-7b
 import argparse
 import os
 import re
+import sys
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -103,6 +104,42 @@ class RichChatIO(ChatIO):
         return text
 
 
+class ProgrammaticChatIO(ChatIO):
+    def prompt_for_input(self, role) -> str:
+        print(f"[!OP:{role}]: ", end="", flush=True)
+        contents = ""
+        # `end_sequence` is a randomly-generated, 16-digit number
+        #  that signals the end of a message. It is unlikely to occur in
+        #  message content.
+        end_sequence = "9745805894023423"
+        while True:
+            if len(contents) >= 16:
+                last_chars = contents[-16:]
+                if last_chars == end_sequence:
+                    break
+            try:
+                char = sys.stdin.read(1)
+                contents = contents + char
+            except EOFError:
+                continue
+        return contents[:-16]
+
+    def prompt_for_output(self, role: str):
+        print(f"[!OP:{role}]: ", end="", flush=True)
+
+    def stream_output(self, output_stream):
+        pre = 0
+        for outputs in output_stream:
+            output_text = outputs["text"]
+            output_text = output_text.strip().split(" ")
+            now = len(output_text) - 1
+            if now > pre:
+                print(" ".join(output_text[pre:now]), end=" ", flush=True)
+                pre = now
+        print(" ".join(output_text[pre:]), flush=True)
+        return " ".join(output_text)
+
+
 def main(args):
     if args.gpus:
         if len(args.gpus.split(",")) < args.num_gpus:
@@ -115,6 +152,8 @@ def main(args):
         chatio = SimpleChatIO()
     elif args.style == "rich":
         chatio = RichChatIO()
+    elif args.style == "programmatic":
+        chatio = ProgrammaticChatIO()
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
@@ -149,7 +188,7 @@ if __name__ == "__main__":
         "--style",
         type=str,
         default="simple",
-        choices=["simple", "rich"],
+        choices=["simple", "rich", "programmatic"],
         help="Display style.",
     )
     parser.add_argument(
