@@ -259,13 +259,14 @@ def post_process_code(code):
 
 
 def model_worker_stream_iter(
-    conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
+    conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
 ):
     # Make requests
     gen_params = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "repetition_penalty": repetition_penalty,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
         "stop": conv.stop_str,
@@ -344,8 +345,14 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
             prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
             prompt = conv.get_prompt()
+        
+        # Construct repetition_penalty
+        if "t5" in model_name:
+            repetition_penalty = 1.2
+        else:
+            repetition_penalty = 1.0
         stream_iter = model_worker_stream_iter(
-            conv, model_name, worker_addr, prompt, temperature, top_p, max_new_tokens
+            conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
         )
 
     conv.messages[-1][-1] = "▌"
