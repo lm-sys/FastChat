@@ -445,7 +445,7 @@ class ClaudeAdapter(BaseAdapter):
     """The model adapter for Claude."""
 
     def match(self, model_path: str):
-        return model_path in ["claude-v1", "claude-instant-v1.1"]
+        return model_path in ["claude-v1", "claude-instant-v1"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -477,6 +477,34 @@ class BiLLaAdapter(BaseAdapter):
         return get_conv_template("billa")
 
 
+class RedPajamaINCITEAdapter(BaseAdapter):
+    """The model adapter for RedPajama INCITE."""
+
+    def match(self, model_path: str):
+        return "redpajama-incite" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path)  # no use_fast=False
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("redpajama-incite")
+
+
+class H2OGPTAdapter(BaseAdapter):
+    """The model adapter for h2oGPT."""
+
+    def match(self, model_path: str):
+        return "h2ogpt" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("h2ogpt")
+
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
@@ -485,7 +513,6 @@ class SnoozyAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("snoozy")
-
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -505,7 +532,10 @@ register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
+register_model_adapter(RedPajamaINCITEAdapter)
+register_model_adapter(H2OGPTAdapter)
 register_model_adapter(SnoozyAdapter)
+
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

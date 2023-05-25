@@ -50,7 +50,7 @@ class UsageInfo(BaseModel):
 
 class ChatCompletionRequest(BaseModel):
     model: str
-    messages: List[Dict[str, str]]
+    messages: Union[str, List[Dict[str, str]]]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
     n: Optional[int] = 1
@@ -100,10 +100,20 @@ class ChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[ChatCompletionResponseStreamChoice]
 
+class TokenCheckRequest(BaseModel):
+    model: str
+    prompt: str
+    max_tokens: int
+
+class TokenCheckResponse(BaseModel):
+    fits: bool
+    tokenCount: int
+    contextLength: int
 
 class EmbeddingsRequest(BaseModel):
-    model: str
-    input: str
+    model: Optional[str] = None
+    engine: Optional[str] = None
+    input: Union[str, List[Any]]
     user: Optional[str] = None
 
 
@@ -116,11 +126,11 @@ class EmbeddingsResponse(BaseModel):
 
 class CompletionRequest(BaseModel):
     model: str
-    prompt: str
+    prompt: Union[str, List[Any]]
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.7
     n: Optional[int] = 1
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = 16
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0

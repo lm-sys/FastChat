@@ -47,6 +47,13 @@ def prepare_logits_processor(
     return processor_list
 
 
+def partial_stop(output, stop_str):
+    for i in range(0, min(len(output), len(stop_str))):
+        if stop_str.startswith(output[-i:]):
+            return True
+    return False
+
+
 @torch.inference_mode()
 def generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
@@ -160,12 +167,16 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
+
+            partially_stopped = False
             if stop_str:
                 if isinstance(stop_str, str):
                     pos = output.rfind(stop_str, rfind_start)
                     if pos != -1:
                         output = output[:pos]
                         stopped = True
+                    else:
+                        partially_stopped = partial_stop(output, stop_str)
                 elif isinstance(stop_str, Iterable):
                     for each_stop in stop_str:
                         pos = output.rfind(each_stop, rfind_start)
@@ -173,18 +184,24 @@ def generate_stream(
                             output = output[:pos]
                             stopped = True
                             break
+                        else:
+                            partially_stopped = partial_stop(output, each_stop)
+                            if partially_stopped:
+                                break
                 else:
                     raise ValueError("Invalid stop field type.")
-
-            yield {
-                "text": output,
-                "usage": {
-                    "prompt_tokens": input_echo_len,
-                    "completion_tokens": i,
-                    "total_tokens": input_echo_len + i,
-                },
-                "finish_reason": None,
-            }
+            
+            # prevent yielding partial stop sequence
+            if not partially_stopped:
+                yield {
+                    "text": output,
+                    "usage": {
+                        "prompt_tokens": input_echo_len,
+                        "completion_tokens": i,
+                        "total_tokens": input_echo_len + i,
+                    },
+                    "finish_reason": None,
+                }
 
         if stopped:
             break
@@ -236,6 +253,7 @@ def chat_loop(
     cpu_offloading: bool,
     conv_template: Optional[str],
     temperature: float,
+    repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
     debug: bool,
@@ -245,6 +263,11 @@ def chat_loop(
         model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
+    is_fastchat_t5 = "t5" in str(type(model)).lower()
+
+    # Hardcode T5 repetition penalty to be 1.2
+    if is_fastchat_t5 and repetition_penalty == 1.0:
+        repetition_penalty = 1.2
 
     # Chat
     if conv_template:
@@ -275,6 +298,7 @@ def chat_loop(
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
+            "repetition_penalty": repetition_penalty,
             "max_new_tokens": max_new_tokens,
             "stop": conv.stop_str,
             "stop_token_ids": conv.stop_token_ids,
@@ -284,7 +308,6 @@ def chat_loop(
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
         outputs = chatio.stream_output(output_stream)
-        # NOTE: strip is important to align with the training data.
         conv.messages[-1][-1] = outputs.strip()
 
         if debug:

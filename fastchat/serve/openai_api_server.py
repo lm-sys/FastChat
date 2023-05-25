@@ -23,9 +23,10 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
 from pydantic import BaseSettings
 import shortuuid
+import tiktoken
 import uvicorn
 
-from fastchat.constants import WORKER_API_TIMEOUT, ErrorCode
+from fastchat.constants import WORKER_API_TIMEOUT, WORKER_API_EMBEDDING_BATCH_SIZE, ErrorCode
 from fastchat.model.model_adapter import get_conversation_template
 from fastapi.exceptions import RequestValidationError
 from fastchat.protocol.openai_api_protocol import (
@@ -47,6 +48,8 @@ from fastchat.protocol.openai_api_protocol import (
     ModelCard,
     ModelList,
     ModelPermission,
+    TokenCheckRequest,
+    TokenCheckResponse,
     UsageInfo,
 )
 
@@ -66,7 +69,7 @@ headers = {"User-Agent": "FastChat API Server"}
 
 def create_error_response(code: int, message: str) -> JSONResponse:
     return JSONResponse(
-        ErrorResponse(message=message, code=code).dict(), status_code=500
+        ErrorResponse(message=message, code=code).dict(), status_code=400
     )
 
 
@@ -111,17 +114,13 @@ async def check_length(request, prompt, max_tokens):
         )
         token_num = response.json()["count"]
 
-    max_new_tokens = max_tokens
-    # TODO: Fix this for other models
-    context_len = 2048
-
-    if token_num + max_new_tokens > context_len:
+    if token_num + max_tokens > context_len:
         return create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
             f"This model's maximum context length is {context_len} tokens. "
-            f"However, you requested {max_new_tokens + token_num} tokens "
+            f"However, you requested {max_tokens + token_num} tokens "
             f"({token_num} in the messages, "
-            f"{max_new_tokens} in the completion). "
+            f"{max_tokens} in the completion). "
             f"Please reduce the length of the messages or completion.",
         )
     else:
@@ -169,6 +168,20 @@ def check_requests(request) -> Optional[JSONResponse]:
         )
 
     return None
+
+
+def process_input(model_name, input):
+    if isinstance(input, str):
+        input = [input]
+    elif isinstance(input, list):
+        if isinstance(input[0], int):
+            decoding = tiktoken.model.encoding_for_model(model_name)
+            input = [decoding.decode(input)]
+        elif isinstance(input[0], list):
+            decoding = tiktoken.model.encoding_for_model(model_name)
+            input = [decoding.decode(text) for text in input]
+
+    return input
 
 
 def get_gen_params(
@@ -267,6 +280,39 @@ async def show_available_models():
     for m in models:
         model_cards.append(ModelCard(id=m, root=m, permission=[ModelPermission()]))
     return ModelList(data=model_cards)
+
+
+# TODO: Have check_length and count_tokens share code.
+@app.post("/v1/token_check")
+async def count_tokens(request: TokenCheckRequest):
+    """
+    Checks the token count against your message
+    This is not part of the OpenAI API spec.
+    """
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(request.model, client)
+
+        response = await client.post(
+            worker_addr + "/model_details",
+            headers=headers,
+            json={},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        context_len = response.json()["context_length"]
+
+        response = await client.post(
+            worker_addr + "/count_token",
+            headers=headers,
+            json={"prompt": request.prompt},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        token_num = response.json()["count"]
+
+    can_fit = True
+    if token_num + request.max_tokens > context_len:
+        can_fit = False
+
+    return TokenCheckResponse(fits=can_fit, contextLength=context_len, tokenCount=token_num)
 
 
 @app.post("/v1/chat/completions")
@@ -438,31 +484,32 @@ async def create_completion(request: CompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    payload = get_gen_params(
-        request.model,
-        request.prompt,
-        temperature=request.temperature,
-        top_p=request.top_p,
-        max_tokens=request.max_tokens,
-        echo=request.echo,
-        stream=request.stream,
-        stop=request.stop,
-    )
+    request.prompt = process_input(request.model, request.prompt)
 
-    error_check_ret = await check_length(
-        request, payload["prompt"], payload["max_new_tokens"]
-    )
-    if error_check_ret is not None:
-        return error_check_ret
+    for text in request.prompt:
+        error_check_ret = await check_length(request, text, request.max_tokens)
+        if error_check_ret is not None:
+            return error_check_ret
 
     if request.stream:
-        generator = generate_completion_stream_generator(payload, request.n)
+        generator = generate_completion_stream_generator(request, request.n)
         return StreamingResponse(generator, media_type="text/event-stream")
     else:
         text_completions = []
-        for i in range(request.n):
-            content = asyncio.create_task(generate_completion(payload))
-            text_completions.append(content)
+        for text in request.prompt:
+            payload = get_gen_params(
+                request.model,
+                text,
+                temperature=request.temperature,
+                top_p=request.top_p,
+                max_tokens=request.max_tokens,
+                echo=request.echo,
+                stream=request.stream,
+                stop=request.stop,
+            )
+            for i in range(request.n):
+                content = asyncio.create_task(generate_completion(payload))
+                text_completions.append(content)
 
         try:
             all_tasks = await asyncio.gather(*text_completions)
@@ -491,35 +538,49 @@ async def create_completion(request: CompletionRequest):
         )
 
 
-async def generate_completion_stream_generator(payload: Dict[str, Any], n: int):
-    model_name = payload["model"]
+async def generate_completion_stream_generator(request: CompletionRequest, n: int):
+    model_name = request.model
     id = f"cmpl-{shortuuid.random()}"
     finish_stream_events = []
-    for i in range(n):
-        previous_text = ""
-        async for content in generate_completion_stream(payload):
-            if content["error_code"] != 0:
-                yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
-                yield "data: [DONE]\n\n"
-                return
-            decoded_unicode = content["text"].replace("\ufffd", "")
-            delta_text = decoded_unicode[len(previous_text) :]
-            previous_text = decoded_unicode
-
-            choice_data = CompletionResponseStreamChoice(
-                index=i,
-                text=delta_text,
-                logprobs=content.get("logprobs", None),
-                finish_reason=content.get("finish_reason", None),
+    for text in request.prompt:
+        for i in range(n):
+            previous_text = ""
+            payload = get_gen_params(
+                request.model,
+                text,
+                temperature=request.temperature,
+                top_p=request.top_p,
+                max_tokens=request.max_tokens,
+                echo=request.echo,
+                stream=request.stream,
+                stop=request.stop,
             )
-            chunk = CompletionStreamResponse(
-                id=id, object="text_completion", choices=[choice_data], model=model_name
-            )
-            if len(delta_text) == 0:
-                if content.get("finish_reason", None) is not None:
-                    finish_stream_events.append(chunk)
-                continue
-            yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+            async for content in generate_completion_stream(payload):
+                if content["error_code"] != 0:
+                    yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                decoded_unicode = content["text"].replace("\ufffd", "")
+                delta_text = decoded_unicode[len(previous_text) :]
+                previous_text = decoded_unicode
+                # todo: index is not apparent
+                choice_data = CompletionResponseStreamChoice(
+                    index=i,
+                    text=delta_text,
+                    logprobs=content.get("logprobs", None),
+                    finish_reason=content.get("finish_reason", None),
+                )
+                chunk = CompletionStreamResponse(
+                    id=id,
+                    object="text_completion",
+                    choices=[choice_data],
+                    model=model_name,
+                )
+                if len(delta_text) == 0:
+                    if content.get("finish_reason", None) is not None:
+                        finish_stream_events.append(chunk)
+                    continue
+                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
     # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
     for finish_chunk in finish_stream_events:
         yield f"data: {finish_chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
@@ -564,24 +625,45 @@ async def generate_completion(payload: Dict[str, Any]):
 
 
 @app.post("/v1/embeddings")
-async def create_embeddings(request: EmbeddingsRequest):
+@app.post("/v1/engines/{model_name}/embeddings")
+async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
     """Creates embeddings for the text"""
+    if request.model is None:
+        request.model = model_name
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
         return error_check_ret
-    payload = {
-        "model": request.model,
-        "input": request.input,
-    }
 
-    embedding = await get_embedding(payload)
-    data = [{"object": "embedding", "embedding": embedding["embedding"], "index": 0}]
+    request.input = process_input(request.model, request.input)
+
+    data = []
+    token_num = 0
+    batch_size = WORKER_API_EMBEDDING_BATCH_SIZE
+    batches = [
+        request.input[i : min(i + batch_size, len(request.input))]
+        for i in range(0, len(request.input), batch_size)
+    ]
+    for num_batch, batch in enumerate(batches):
+        payload = {
+            "model": request.model,
+            "input": batch,
+        }
+        embedding = await get_embedding(payload)
+        data += [
+            {
+                "object": "embedding",
+                "embedding": emb,
+                "index": num_batch * batch_size + i,
+            }
+            for i, emb in enumerate(embedding["embedding"])
+        ]
+        token_num += embedding["token_num"]
     return EmbeddingsResponse(
         data=data,
         model=request.model,
         usage=UsageInfo(
-            prompt_tokens=embedding["token_num"],
-            total_tokens=embedding["token_num"],
+            prompt_tokens=token_num,
+            total_tokens=token_num,
             completion_tokens=None,
         ),
     ).dict(exclude_none=True)

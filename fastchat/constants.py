@@ -1,5 +1,5 @@
 from enum import IntEnum
-
+import os
 
 # For the gradio web server
 SERVER_ERROR_MSG = (
@@ -11,10 +11,13 @@ INPUT_CHAR_LEN_LIMIT = 2560
 CONVERSATION_LEN_LIMIT = 50
 LOGDIR = "."
 
-# For the controller and workers
-CONTROLLER_HEART_BEAT_EXPIRATION = 90
-WORKER_HEART_BEAT_INTERVAL = 30
-WORKER_API_TIMEOUT = 20
+# For the controller and workers(could be overwritten through ENV variables.)
+CONTROLLER_HEART_BEAT_EXPIRATION = int(
+    os.getenv("FASTCHAT_CONTROLLER_HEART_BEAT_EXPIRATION", 90)
+)
+WORKER_HEART_BEAT_INTERVAL = int(os.getenv("FASTCHAT_WORKER_HEART_BEAT_INTERVAL", 30))
+WORKER_API_TIMEOUT = int(os.getenv("FASTCHAT_WORKER_API_TIMEOUT", 100))
+WORKER_API_EMBEDDING_BATCH_SIZE = int(os.getenv("WORKER_API_EMBEDDING_BATCH_SIZE", 4))
 
 
 class ErrorCode(IntEnum):
