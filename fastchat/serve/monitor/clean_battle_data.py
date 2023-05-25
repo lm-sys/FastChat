@@ -142,6 +142,9 @@ def clean_battle_data(log_files):
             ct_leaked_identity += 1
             continue
 
+        # Replace bard with palm
+        models = [m.replace("bard", "palm-2") for m in models]
+
         # Keep the result
         battles.append(
             dict(
@@ -180,7 +183,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_files, cutoff_date = get_log_files(args.max_num_files)
-    battles = clean_battle_data(log_files)[:-1300]
+    battles = clean_battle_data(log_files)
 
     print("Samples:")
     for i in range(4):

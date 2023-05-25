@@ -44,10 +44,10 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
-    ["bard"],
+    ["palm-2"],
     "PaLM 2 Chat",
-    "https://cloud.google.com/vertex-ai/docs/generative-ai/learn/overview#palm-api",
-    "PaLM 2 for Chat by Google",
+    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
+    "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
     ["vicuna-13b", "vicuna-7b"],
