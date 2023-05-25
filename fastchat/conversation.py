@@ -474,12 +474,13 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="snoozy",
-        system="The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.\n",
-        roles=("user", "assistant"),
+        system="### Instruction: The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.",
+        roles=("### Prompt", "### Response"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.NEW_LINE,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
+        stop_str="###"
     )
 )
 
