@@ -46,7 +46,7 @@ def get_log_files(max_num_files=None):
     filenames = []
     for d in dates:
         for i in range(num_servers):
-            name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
+            name = os.path.expanduser(f"~/projects/logs/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
@@ -125,6 +125,38 @@ def clean_battle_data(log_files):
         lang_code = detect_language(state["messages"][state["offset"]][1])
         rounds = (len(state["messages"]) - state["offset"]) // 2
 
+        # Detect if Bard has a refusal answer
+        model_a_is_bard_refusal = False
+        model_b_is_bard_refusal = False
+        if "bard" == models[0]:
+            bard_messages = row["states"][0]
+        elif "bard" == models[1]:
+            bard_messages = row["states"][1]
+        else:
+            bard_messages = None
+
+        if bard_messages is not None:
+            assert bard_messages["model_name"] == "bard"
+            for message_idx, message in enumerate(bard_messages["messages"]):
+                if message_idx % 2 == 1:
+                    # assert message[0] == "1"
+                    if message[1] != None:
+                        if any(word in message[1] for word in
+                               ["unable to assist", "cannot assist", "can't assist", "not able to assist",
+                                "unable to help", "cannot help", "not able to help", "not programmed to assist",
+                                "solely to process and generate text",
+                                "outside of my capabilities", "don't have the ability",
+                                "don't have the capacity to help", "don't have the capacity to understand",
+                                "do not have the capacity to understand",
+                                "do not have enough information about", "don't have the necessary information",
+                                "do not have the necessary information",
+                                ]):
+                            if models[0] == "bard":
+                                model_a_is_bard_refusal = True
+                            else:
+                                model_b_is_bard_refusal = True
+                            break
+
         # Drop conversations if the model names are leaked
         leaked_identity = False
         messages = ""
@@ -152,6 +184,8 @@ def clean_battle_data(log_files):
                 rounds=rounds,
                 language=lang_code,
                 tstamp=row["tstamp"],
+                model_a_is_bard_refusal=model_a_is_bard_refusal,
+                model_b_is_bard_refusal=model_b_is_bard_refusal
             )
         )
 
@@ -180,7 +214,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_files, cutoff_date = get_log_files(args.max_num_files)
-    battles = clean_battle_data(log_files)[:-1300]
+    battles = clean_battle_data(log_files)[:-1500]
 
     print("Samples:")
     for i in range(4):
