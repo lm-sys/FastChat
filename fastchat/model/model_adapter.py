@@ -23,6 +23,10 @@ from transformers import (
     T5Tokenizer,
 )
 
+from peft import PeftModel
+import os
+import json
+
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.monkey_patch_non_inplace import (
@@ -504,10 +508,42 @@ class H2OGPTAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("h2ogpt")
+    
+class LoraAdapter(BaseAdapter):
+    def match(self, model_path: str):
+        # check if has adapter config in model_path
+        res = os.path.exists(os.path.join(model_path, "adapter_config.json"))
+        if res and 'lora' not in model_path.lower():
+            print("Warning: there is an adapter_config.josn at model_path, but model_path.lower() does not contain 'lora' in its name. This may not be a LoRA model.")
+        return res
+
+    def load_model(self, lora_path: str, from_pretrained_kwargs: dict):
+        lora_conf = json.load(open(os.path.join(lora_path, "adapter_config.json")))
+
+        base_model_path = lora_conf['base_model_name_or_path']
+
+        print(f"Loading the base model from {base_model_path}")
+        # base = AutoModelForCausalLM.from_pretrained(
+        #     base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+        # )
+        # base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
+
+        base, tokenizer = super().load_model(base_model_path, from_pretrained_kwargs)
+
+        print(f"Loading the LoRA adapter from {lora_path}")
+
+        lora_model = PeftModel.from_pretrained(
+            base,
+            lora_path,
+            torch_dtype=torch.float16,
+        )
+
+        return lora_model, tokenizer
 
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(LoraAdapter) # on top since a fine tuned adapter might have vicuna, etc. in name and would be matched by vicuna adapter
 register_model_adapter(VicunaAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
