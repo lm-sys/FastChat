@@ -488,7 +488,7 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
-        stop_str="###"
+        stop_str="###",
     )
 )
 

@@ -505,6 +505,7 @@ class H2OGPTAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("h2ogpt")
 
+
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
@@ -513,6 +514,7 @@ class SnoozyAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("snoozy")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
