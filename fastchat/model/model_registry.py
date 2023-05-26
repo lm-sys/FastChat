@@ -151,3 +151,9 @@ register_model_info(
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
+register_model_info(
+    ["manticore-13b-chat"],
+    "Manticore 13B Chat",
+    "https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg",
+    "A chatbot fine-tuned from LlaMa across several CoT and chat datasets.",
+)
