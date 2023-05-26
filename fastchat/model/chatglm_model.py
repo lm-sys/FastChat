@@ -21,7 +21,7 @@ def chatglm_generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     """Generate text using model's chat api"""
-    messages = params["prompt"]
+    query = params["prompt"]
     max_new_tokens = int(params.get("max_new_tokens", 256))
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
@@ -39,10 +39,6 @@ def chatglm_generate_stream(
         gen_kwargs["temperature"] = temperature
 
     hist = []
-    for i in range(0, len(messages) - 2, 2):
-        hist.append((messages[i][1], messages[i + 1][1]))
-    query = messages[-2][1]
-
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 
     output = ""
