@@ -56,8 +56,8 @@ def load_demo_side_by_side_named(models, url_params):
         model_right = model_left
 
     selector_updates = (
-        gr.Dropdown.update(model_left, visible=True),
-        gr.Dropdown.update(model_right, visible=True),
+        gr.Dropdown.update(choices=models, value=model_left, visible=True),
+        gr.Dropdown.update(choices=models, value=model_right, visible=True),
     )
 
     return (
