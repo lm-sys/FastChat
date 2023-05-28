@@ -1,13 +1,11 @@
-# Fastest GPTQ 4bit Support
+# GPTQ 4bit Inference
 
-Support GPTQ 4bit with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa).
+Support GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa).
 
 1. Window user: use the `old-cuda` branch.
 2. Linux user: recommend the `fastest-inference-4bit` branch.
 
 ## Install
-
-Follow the [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa) doc to build compressed model.
 
 Setup environment:
 ```bash
@@ -16,18 +14,37 @@ git clone https://github.com/qwopqwop200/GPTQ-for-LLaMa.git repositories/GPTQ-fo
 cd repositories/GPTQ-for-LLaMa
 # Window's user should use the `old-cuda` branch
 git switch fastest-inference-4bit
-
-# install `quant-cuda` package in FastChat's virtualenv
-python setup_cuda.py install
+# Install `quant-cuda` package in FastChat's virtualenv
+python3 setup_cuda.py install
 ```
 
 Start model worker:
 ```bash
-python -m fastchat.serve.model_worker \
-    --model-path ${your_model_path} \
-    --load-gptq ${your_gptq_checkpoint} \
-    --wbits 4 \
-    --groupsize 128
+# Download quantized model from huggingface
+# Make sure you have git-lfs installed (https://git-lfs.com)
+git lfs install
+git clone https://huggingface.co/TheBloke/vicuna-7B-1.1-GPTQ-4bit-128g models/vicuna-7B-1.1-GPTQ-4bit-128g
+
+python3 -m fastchat.serve.model_worker \
+    --model-path models/vicuna-7B-1.1-GPTQ-4bit-128g \
+    --gptq-wbits 4 \
+    --gptq-groupsize 128
+
+# You can specify which quantized model to use
+python3 -m fastchat.serve.model_worker \
+    --model-path models/vicuna-7B-1.1-GPTQ-4bit-128g \
+    --gptq-ckpt models/vicuna-7B-1.1-GPTQ-4bit-128g/vicuna-7B-1.1-GPTQ-4bit-128g.safetensors \
+    --gptq-wbits 4 \
+    --gptq-groupsize 128 \
+    --gptq-act-order
+```
+
+Chat with the CLI:
+```bash
+python3 -m fastchat.serve.cli \
+    --model-path models/vicuna-7B-1.1-GPTQ-4bit-128g \
+    --gptq-wbits 4 \
+    --gptq-groupsize 128
 ```
 
 ## Benchmark
