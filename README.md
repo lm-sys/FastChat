@@ -165,6 +165,9 @@ In addition to that, you can add `--cpu-offloading` to commands above to offload
 
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
+#### GPTQ 4bit Support
+FastChat provides fastest GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa) . See [docs/gptq.md](/docs/gptq.md)
+
 ## Serving with Web GUI
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
