@@ -35,7 +35,11 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
-from fastchat.model.model_adapter import load_model, add_model_args, get_conversation_template
+from fastchat.model.model_adapter import (
+    load_model,
+    add_model_args,
+    get_conversation_template,
+)
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
@@ -178,7 +182,7 @@ class ModelWorker:
             "error_code": 0,
         }
         return ret
-    
+
     def get_conv(self):
         return {"conv": self.conv}
 
@@ -250,7 +254,9 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_llama = "llama" in str(
+                type(self.model)
+            )  # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
             if is_llama:
@@ -281,7 +287,9 @@ class ModelWorker:
                         self.device
                     )
                     if is_t5:
-                        model_output = self.model(input_ids, decoder_input_ids=input_ids)
+                        model_output = self.model(
+                            input_ids, decoder_input_ids=input_ids
+                        )
                     else:
                         model_output = self.model(input_ids, output_hidden_states=True)
                     if is_chatglm:

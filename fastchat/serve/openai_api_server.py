@@ -26,7 +26,11 @@ import shortuuid
 import tiktoken
 import uvicorn
 
-from fastchat.constants import WORKER_API_TIMEOUT, WORKER_API_EMBEDDING_BATCH_SIZE, ErrorCode
+from fastchat.constants import (
+    WORKER_API_TIMEOUT,
+    WORKER_API_EMBEDDING_BATCH_SIZE,
+    ErrorCode,
+)
 from fastchat.conversation import Conversation, SeparatorStyle
 from fastchat.model.model_adapter import get_conversation_template
 from fastapi.exceptions import RequestValidationError
@@ -197,7 +201,16 @@ async def get_gen_params(
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name)
-    conv = Conversation(name=conv['name'], system=conv['system'],  roles=conv['roles'], messages=conv['messages'], offset=conv['offset'], sep_style=SeparatorStyle(conv['sep_style']), sep=conv['sep'], sep2=conv['sep2'])
+    conv = Conversation(
+        name=conv["name"],
+        system=conv["system"],
+        roles=conv["roles"],
+        messages=conv["messages"],
+        offset=conv["offset"],
+        sep_style=SeparatorStyle(conv["sep_style"]),
+        sep=conv["sep"],
+        sep2=conv["sep2"],
+    )
 
     if isinstance(messages, str):
         prompt = messages
@@ -329,7 +342,9 @@ async def count_tokens(request: TokenCheckRequest):
     if token_num + request.max_tokens > context_len:
         can_fit = False
 
-    return TokenCheckResponse(fits=can_fit, contextLength=context_len, tokenCount=token_num)
+    return TokenCheckResponse(
+        fits=can_fit, contextLength=context_len, tokenCount=token_num
+    )
 
 
 @app.post("/v1/chat/completions")
