@@ -397,7 +397,6 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     add_model_args(parser)
-    parser.add_argument("--model-name", type=str, help="Optional display name (Deprecated, use --model-names)")
     parser.add_argument("--model-names", type=lambda s: s.split(','), help="Optional display comma separated names")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
@@ -411,10 +410,6 @@ if __name__ == "__main__":
                 f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-
-    # backwards compatible
-    if not args.model_names and args.model_name:
-        args.model_names = [args.model_name]
         
     worker = ModelWorker(
         args.controller_address,
