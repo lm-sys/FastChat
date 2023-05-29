@@ -114,9 +114,70 @@ def visualize_leaderboard_table(rating):
         rank = i + 1
         minfo = get_model_info(model)
         emoji = emoji_dict.get(rank, "")
-        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {int(rating[model])} | {minfo.description} |\n"
+        md += f"| {rank} | {emoji} [{model}]({minfo.link}) | {rating[model]:.0f} | {minfo.description} |\n"
 
     return md
+
+
+def visualize_pairwise_win_fraction(battles, model_order):
+    row_beats_col = compute_pairwise_win_fraction(battles, model_order)
+    fig = px.imshow(
+        row_beats_col,
+        color_continuous_scale="RdBu",
+        text_auto=".2f",
+        height=600,
+        width=600,
+    )
+    fig.update_layout(
+        xaxis_title="Model B",
+        yaxis_title="Model A",
+        xaxis_side="top",
+        title_y=0.07,
+        title_x=0.5,
+    )
+    fig.update_traces(
+        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>"
+    )
+
+    return fig
+
+
+def visualize_battle_count(battles, model_order):
+    ptbl = pd.pivot_table(
+        battles, index="model_a", columns="model_b", aggfunc="size", fill_value=0
+    )
+    battle_counts = ptbl + ptbl.T
+    fig = px.imshow(
+        battle_counts.loc[model_order, model_order],
+        text_auto=True,
+        height=600,
+        width=600,
+    )
+    fig.update_layout(
+        xaxis_title="Model B",
+        yaxis_title="Model A",
+        xaxis_side="top",
+        title_y=0.07,
+        title_x=0.5,
+    )
+    fig.update_traces(
+        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Count: %{z}<extra></extra>"
+    )
+    return fig
+
+
+def visualize_average_win_rate(battles):
+    row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
+    fig = px.bar(
+        row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
+        text_auto=".2f",
+        height=400,
+        width=600,
+    )
+    fig.update_layout(
+        yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
+    )
+    return fig
 
 
 def visualize_bootstrap_elo_rating(df):
@@ -141,69 +202,10 @@ def visualize_bootstrap_elo_rating(df):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        width=450,
+        height=400,
+        width=600,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
-
-
-def visualize_pairwise_win_fraction(battles, model_order):
-    row_beats_col = compute_pairwise_win_fraction(battles, model_order)
-    fig = px.imshow(
-        row_beats_col,
-        color_continuous_scale="RdBu",
-        text_auto=".2f",
-        height=500,
-        width=500,
-    )
-    fig.update_layout(
-        xaxis_title="Model B",
-        yaxis_title="Model A",
-        xaxis_side="top",
-        title_y=0.07,
-        title_x=0.5,
-    )
-    fig.update_traces(
-        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Fraction of A Wins: %{z}<extra></extra>"
-    )
-
-    return fig
-
-
-def visualize_battle_count(battles, model_order):
-    ptbl = pd.pivot_table(
-        battles, index="model_a", columns="model_b", aggfunc="size", fill_value=0
-    )
-    battle_counts = ptbl + ptbl.T
-    fig = px.imshow(
-        battle_counts.loc[model_order, model_order],
-        text_auto=True,
-        height=500,
-        width=500,
-    )
-    fig.update_layout(
-        xaxis_title="Model B",
-        yaxis_title="Model A",
-        xaxis_side="top",
-        title_y=0.07,
-        title_x=0.5,
-    )
-    fig.update_traces(
-        hovertemplate="Model A: %{y}<br>Model B: %{x}<br>Count: %{z}<extra></extra>"
-    )
-    return fig
-
-
-def visualize_average_win_rate(battles):
-    row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
-    fig = px.bar(
-        row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
-        text_auto=".2f",
-        width=450,
-    )
-    fig.update_layout(
-        yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
-    )
     return fig
 
 
@@ -220,9 +222,9 @@ def report_elo_analysis_results(battles_json):
     # Bootstrap
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
     elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
-    elo_rating_median = {k: int(v) for k, v in elo_rating_median.items()}
-    model_order = list(elo_rating_median.keys())
-    model_order.sort(key=lambda k: -elo_rating_median[k])
+    elo_rating_median = {k: int(v + 0.5) for k, v in elo_rating_median.items()}
+    model_order = list(elo_rating_online.keys())
+    model_order.sort(key=lambda k: -elo_rating_online[k])
 
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_online)
@@ -244,7 +246,7 @@ def report_elo_analysis_results(battles_json):
         "battle_count_heatmap": battle_count_heatmap,
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_updated_datetime": f"{last_updated_datetime}",
+        "last_updated_datetime": last_updated_datetime,
     }
 
 

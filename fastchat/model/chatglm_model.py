@@ -1,7 +1,7 @@
 import torch
 from typing import List, Tuple
 
-@torch.no_grad()
+
 def stream_chat_token_num(tokenizer, query: str, history: List[Tuple[str, str]] = None):
     if history is None:
         history = []
@@ -12,8 +12,9 @@ def stream_chat_token_num(tokenizer, query: str, history: List[Tuple[str, str]] 
         for i, (old_query, response) in enumerate(history):
             prompt += "[Round {}]\n问：{}\n答：{}\n".format(i, old_query, response)
         prompt += "[Round {}]\n问：{}\n答：".format(len(history), query)
-    inputs = tokenizer([prompt], return_tensors="pt")
-    return torch.numel(inputs['input_ids'])
+    inputs = tokenizer([prompt])
+    return sum([len(x) for x in inputs["input_ids"]])
+
 
 @torch.inference_mode()
 def chatglm_generate_stream(
@@ -28,7 +29,7 @@ def chatglm_generate_stream(
     echo = params.get("echo", True)
 
     gen_kwargs = {
-        #"max_new_tokens": max_new_tokens,  disabled due to a warning.
+        # "max_new_tokens": max_new_tokens,  disabled due to a warning.
         "do_sample": True if temperature > 1e-5 else False,
         "top_p": top_p,
         "repetition_penalty": repetition_penalty,
@@ -44,7 +45,11 @@ def chatglm_generate_stream(
 
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 
-    for i, (response, new_hist) in enumerate(model.stream_chat(tokenizer, query, hist, **gen_kwargs)):
+    output = ""
+    i = 0
+    for i, (response, new_hist) in enumerate(
+        model.stream_chat(tokenizer, query, hist, **gen_kwargs)
+    ):
         if echo:
             output = query + " " + response
         else:
@@ -57,7 +62,7 @@ def chatglm_generate_stream(
                 "completion_tokens": i,
                 "total_tokens": input_echo_len + i,
             },
-            "finish_reason": None
+            "finish_reason": None,
         }
 
     # TODO: ChatGLM stop when it reach max length
@@ -69,6 +74,6 @@ def chatglm_generate_stream(
             "completion_tokens": i,
             "total_tokens": input_echo_len + i,
         },
-        "finish_reason": "stop"
+        "finish_reason": "stop",
     }
     yield ret

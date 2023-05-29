@@ -69,3 +69,9 @@ code_highlight_css = """
 #chatbot .il { color: #666666 }
 """
 # .highlight  { background: #f8f8f8; }
+
+table_css = """
+table {
+    line-height: 0em
+}
+"""

@@ -1,3 +1,4 @@
+"""Additional information of the models."""
 from collections import namedtuple
 from typing import List
 
@@ -22,12 +23,12 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    ["gpt-4"], "ChatGPT-4", "https://chat.openai.com/", "ChatGPT-4 by OpenAI"
+    ["gpt-4"], "ChatGPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
 )
 register_model_info(
     ["gpt-3.5-turbo"],
     "ChatGPT-3.5",
-    "https://chat.openai.com/",
+    "https://openai.com/blog/chatgpt",
     "ChatGPT-3.5 by OpenAI",
 )
 register_model_info(
@@ -37,7 +38,19 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
-    ["vicuna-13b"],
+    ["claude-instant-v1"],
+    "Claude Instant",
+    "https://www.anthropic.com/index/introducing-claude",
+    "Claude Instant by Anthropic",
+)
+register_model_info(
+    ["palm-2"],
+    "PaLM 2 Chat",
+    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
+    "PaLM 2 for Chat (chat-bison@001) by Google",
+)
+register_model_info(
+    ["vicuna-13b", "vicuna-7b"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
@@ -50,13 +63,13 @@ register_model_info(
 )
 register_model_info(
     ["oasst-pythia-12b"],
-    "OpenAssistant",
+    "OpenAssistant (oasst)",
     "https://open-assistant.io",
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
     ["RWKV-4-Raven-14B"],
-    "RMKV-4-Raven",
+    "RWKV-4-Raven",
     "https://huggingface.co/BlinkDL/rwkv-4-raven",
     "an RNN with transformer-level LLM performance",
 )
@@ -98,7 +111,31 @@ register_model_info(
 )
 register_model_info(
     ["phoenix-inst-chat-7b"],
-    "Phoenix-7b",
+    "Phoenix-7B",
     "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b",
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
+)
+register_model_info(
+    ["mpt-7b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-7b",
+    "a chatbot fine-tuned from MPT-7B by MosaicML",
+)
+register_model_info(
+    ["billa-7b-sft"],
+    "BiLLa-7B-SFT",
+    "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
+    "an instruction-tuned bilingual LLaMA with enhanced reasoning ability by an independent researcher",
+)
+register_model_info(
+    ["h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2"],
+    "h2oGPT-GM-7b",
+    "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
+    "an instruction-tuned OpenLLaMA with enhanced conversational ability by H2O.ai",
+)
+register_model_info(
+    ["baize-v2-7b", "baize-v2-13b"],
+    "Baize v2",
+    "https://github.com/project-baize/baize-chatbot#v2",
+    "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )

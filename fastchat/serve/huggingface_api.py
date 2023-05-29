@@ -1,4 +1,6 @@
 """
+Use FastChat with Hugging Face generation APIs.
+
 Usage:
 python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 python3 -m fastchat.serve.huggingface_api --model ~/model_weights/vicuna-7b/
@@ -32,10 +34,14 @@ def main(args):
     prompt = conv.get_prompt()
 
     input_ids = tokenizer([prompt]).input_ids
+    
+    if "t5" in args.model_path and args.repetition_penalty == 1.0:
+        args.repetition_penalty = 1.2
     output_ids = model.generate(
         torch.as_tensor(input_ids).cuda(),
         do_sample=True,
         temperature=args.temperature,
+        repetition_penalty=args.repetition_penalty,
         max_new_tokens=args.max_new_tokens,
     )
     if model.config.is_encoder_decoder:
@@ -54,6 +60,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     add_model_args(parser)
     parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--repetition_penalty", type=float, default=1.0)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--message", type=str, default="Hello! Who are you?")

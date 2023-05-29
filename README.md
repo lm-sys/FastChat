@@ -1,9 +1,9 @@
 # FastChat
-| [**Demo**](https://chat.lmsys.org/) | [**Arena**](https://arena.lmsys.org) | [**Discord**](https://discord.gg/h6kCZb72G7) | [**Twitter**](https://twitter.com/lmsysorg) |
+| [**Demo**](https://chat.lmsys.org/) | [**Arena**](https://arena.lmsys.org) | [**Discord**](https://discord.gg/KjdtsE9V) | [**Twitter**](https://twitter.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
 - The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna, FastChat-T5).
-- A distributed multi-model serving system with Web UI and OpenAI-Compatible RESTful APIs.
+- A distributed multi-model serving system with Web UI and OpenAI-compatible RESTful APIs.
 
 ## News
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
@@ -110,11 +110,16 @@ The following models are tested:
 - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+- [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
+- [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2)
+- [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
 - [OpenAssistant/oasst-sft-1-pythia-12b](https://huggingface.co/OpenAssistant/oasst-sft-1-pythia-12b)
 - [project-baize/baize-lora-7B](https://huggingface.co/project-baize/baize-lora-7B)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-- [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
+- [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
+
+Help us [add more](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 
 #### Single GPU
 The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
@@ -212,11 +217,15 @@ python3 -m fastchat.serve.gradio_web_server_multi
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
-FastChat provides OpenAI-Compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
 See [docs/openai_api.md](docs/openai_api.md).
 
 ### Hugging Face Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
+
+### LangChain Integration
+See [docs/langchain_integration](docs/langchain_integration.md).
 
 ## Evaluation
 
@@ -262,7 +271,7 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --model_name_or_path ~/model_weights/llama-7b  \
     --data_path playground/data/dummy.json \
     --bf16 True \
-    --output_dir output \
+    --output_dir output_vicuna \
     --num_train_epochs 3 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
@@ -285,6 +294,36 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
 ```
 
 If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
+
+### Fine-tuning FastChat-T5 with Local GPUs
+You can use the following command to train FastChat-T5 with 4 x A100 (40GB).
+```bash
+torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
+    --model_name_or_path google/flan-t5-xl \
+    --data_path playground/data/dummy.json \
+    --bf16 True \
+    --output_dir ./checkpoints_flant5_3b \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 1 \
+    --per_device_eval_batch_size 1 \
+    --gradient_accumulation_steps 4 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 300 \
+    --save_total_limit 1 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap T5Block \
+    --tf32 True \
+    --model_max_length 2048 \
+    --preprocessed_path ./preprocessed_data/processed.json \
+    --gradient_checkpointing True 
+```
+After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/75d8ab26ee308f9cf0990976508232f06dd421e4/fastchat/utils.py#L164) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
 
 ### Fine-tuning on Any Cloud with SkyPilot
 [SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 

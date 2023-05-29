@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import get_log_files
+from fastchat.utils import detect_language
 
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]
@@ -23,6 +24,11 @@ IDENTITY_WORDS = [
     "openai",
     "anthropic",
     "claude",
+    "bard",
+    "palm",
+    "Lamda",
+    "google",
+    "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**",
 ]
 
 
@@ -32,8 +38,9 @@ def get_log_files(max_num_files=None):
         for day in range(24, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
     for month in [5]:
-        for day in range(1, 9):
+        for day in range(1, 24):
             dates.append(f"2023-{month:02d}-{day:02d}")
+    cutoff_date = dates[-1].replace("-", "")
 
     num_servers = 12
     filenames = []
@@ -44,22 +51,7 @@ def get_log_files(max_num_files=None):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
-    return filenames
-
-
-def detect_lang(text):
-    import polyglot
-    from polyglot.detect import Detector
-    from polyglot.detect.base import logger as polyglot_logger
-    import pycld2
-
-    polyglot_logger.setLevel("ERROR")
-
-    try:
-        lang_code = Detector(text).language.name
-    except (pycld2.error, polyglot.detect.base.UnknownLanguage):
-        lang_code = "unknown"
-    return lang_code
+    return filenames, cutoff_date
 
 
 def remove_html(raw):
@@ -130,7 +122,7 @@ def clean_battle_data(log_files):
         if state["offset"] >= len(state["messages"]):
             ct_invalid += 1
             continue
-        lang_code = detect_lang(state["messages"][state["offset"]][1])
+        lang_code = detect_language(state["messages"][state["offset"]][1])
         rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked
@@ -149,6 +141,9 @@ def clean_battle_data(log_files):
         if leaked_identity:
             ct_leaked_identity += 1
             continue
+
+        # Replace bard with palm
+        models = [m.replace("bard", "palm-2") for m in models]
 
         # Keep the result
         battles.append(
@@ -187,15 +182,14 @@ if __name__ == "__main__":
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
 
-    log_files = get_log_files(args.max_num_files)
+    log_files, cutoff_date = get_log_files(args.max_num_files)
     battles = clean_battle_data(log_files)
 
     print("Samples:")
     for i in range(4):
         print(battles[i])
 
-    date = datetime.datetime.now(tz=timezone("US/Pacific")).strftime("%Y%m%d")
-    output = f"clean_battle_{date}.json"
+    output = f"clean_battle_{cutoff_date}.json"
     with open(output, "w") as fout:
         json.dump(battles, fout, indent=2)
     print(f"Write cleaned data to {output}")

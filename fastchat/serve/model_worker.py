@@ -31,13 +31,14 @@ except ImportError:
         AutoModel,
     )
 import torch
+import torch.nn.functional as F
 import uvicorn
 
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode
+from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import load_model, add_model_args
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.serve.inference import generate_stream
-from fastchat.utils import build_logger, server_error_msg, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore
 
 GB = 1 << 30
 
@@ -81,6 +82,8 @@ class ModelWorker:
         self.model, self.tokenizer = load_model(
             model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
+        if self.tokenizer.pad_token == None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -95,7 +98,7 @@ class ModelWorker:
             self.generate_stream_func = chatglm_generate_stream
         else:
             self.generate_stream_func = generate_stream
-        
+
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -164,6 +167,17 @@ class ModelWorker:
             "queue_length": self.get_queue_length(),
         }
 
+    def count_token(self, params):
+        prompt = params["prompt"]
+        input_ids = self.tokenizer(prompt).input_ids
+        input_echo_len = len(input_ids)
+
+        ret = {
+            "count": input_echo_len,
+            "error_code": 0,
+        }
+        return ret
+
     def generate_stream_gate(self, params):
         try:
             for output in self.generate_stream_func(
@@ -185,24 +199,22 @@ class ModelWorker:
                 if "logprobs" in output:
                     ret["logprobs"] = output["logprobs"]
                 yield json.dumps(ret).encode() + b"\0"
-        except torch.cuda.OutOfMemoryError:
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-        except ValueError as e:
+            yield json.dumps(ret).encode() + b"\0"
+        except (ValueError, RuntimeError) as e:
             ret = {
-                "text": str(e),
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
-        yield json.dumps(ret).encode() + b"\0"
-    
+            yield json.dumps(ret).encode() + b"\0"
+
     def generate_gate(self, params):
         try:
-            ret = {
-                "text": "",
-                "error_code": 0
-            }
+            ret = {"text": "", "error_code": 0}
             for output in self.generate_stream_func(
                 self.model,
                 self.tokenizer,
@@ -218,43 +230,80 @@ class ModelWorker:
                 ret["finish_reason"] = output["finish_reason"]
             if "logprobs" in output:
                 ret["logprobs"] = output["logprobs"]
-        except torch.cuda.OutOfMemoryError:
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-        except ValueError as e:
+        except (ValueError, RuntimeError) as e:
             ret = {
-                "text": str(e),
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
-    
+
+    @torch.inference_mode()
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            input_ids = tokenizer.encode(params["input"], return_tensors="pt").to(
-                self.device
-            )
-            model_output = self.model(input_ids, output_hidden_states=True)
-            is_chatglm = "chatglm" in str(type(self.model)).lower()
-            if is_chatglm:
-                data = (model_output.hidden_states[-1].transpose(0, 1))[0]
-            else:
-                data = model_output.hidden_states[-1][0]
-            embedding = torch.mean(data, dim=0)
-            return json.dumps(
-                {
-                    "embedding": embedding.tolist(),
-                    "token_num": len(self.tokenizer(params["input"]).input_ids),
+            is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_chatglm = "chatglm" in str(type(self.model))
+            is_t5 = "t5" in str(type(self.model))
+            if is_llama:
+                encoding = tokenizer.batch_encode_plus(
+                    params["input"], padding=True, return_tensors="pt"
+                )
+                input_ids = encoding["input_ids"].to(self.device)
+                attention_mask = encoding["attention_mask"].to(self.device)
+                model_output = self.model(
+                    input_ids, attention_mask, output_hidden_states=True
+                )
+                data = model_output.hidden_states[-1]
+                mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
+                masked_embeddings = data * mask
+                sum_embeddings = torch.sum(masked_embeddings, dim=1)
+                seq_length = torch.sum(mask, dim=1)
+                embedding = sum_embeddings / seq_length
+                normalized_embeddings = F.normalize(embedding, p=2, dim=1)
+                ret = {
+                    "embedding": normalized_embeddings.tolist(),
+                    "token_num": torch.sum(attention_mask).item(),
                 }
-            )
-        except torch.cuda.OutOfMemoryError:
+            else:
+                embedding = []
+                token_num = 0
+                for text in params["input"]:
+                    input_ids = tokenizer.encode(text, return_tensors="pt").to(
+                        self.device
+                    )
+                    if is_t5:
+                        model_output = self.model(input_ids, decoder_input_ids=input_ids)
+                    else:
+                        model_output = self.model(input_ids, output_hidden_states=True)
+                    if is_chatglm:
+                        data = (model_output.hidden_states[-1].transpose(0, 1))[0]
+                    elif is_t5:
+                        data = model_output.encoder_last_hidden_state[0]
+                    else:
+                        data = model_output.hidden_states[-1][0]
+                    data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
+                    embedding.append(data.tolist())
+                    token_num += len(input_ids[0])
+                ret = {
+                    "embedding": embedding,
+                    "token_num": token_num,
+                }
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": server_error_msg,
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
-            return json.dumps(ret).encode() + b"\0"
+        except (ValueError, RuntimeError) as e:
+            ret = {
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+        return ret
 
 
 app = FastAPI()
@@ -286,6 +335,7 @@ async def api_generate_stream(request: Request):
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
+
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
@@ -293,6 +343,7 @@ async def api_generate(request: Request):
     output = worker.generate_gate(params)
     release_model_semaphore()
     return JSONResponse(output)
+
 
 @app.post("/worker_generate_completion_stream")
 async def api_generate_completion_stream(request: Request):
@@ -324,6 +375,17 @@ async def api_get_embeddings(request: Request):
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):
     return worker.get_status()
+
+
+@app.post("/count_token")
+async def count_token(request: Request):
+    params = await request.json()
+    return worker.count_token(params)
+
+
+@app.post("/model_details")
+async def model_details(request: Request):
+    return {"context_length": worker.context_len}
 
 
 if __name__ == "__main__":

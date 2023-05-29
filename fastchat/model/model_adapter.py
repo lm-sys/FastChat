@@ -1,10 +1,16 @@
 """Model adapter registration."""
 
+import math
 import sys
 from typing import List, Optional
 import warnings
-# from functools import cache
 
+if sys.version_info >= (3, 9):
+    from functools import cache
+else:
+    from functools import lru_cache as cache
+
+import psutil
 import torch
 from transformers import (
     AutoConfig,
@@ -51,6 +57,7 @@ def register_model_adapter(cls):
     model_adapters.append(cls())
 
 
+@cache
 def get_model_adapter(model_path: str) -> BaseAdapter:
     """Get a model adapter for a model_path."""
     for adapter in model_adapters:
@@ -200,6 +207,13 @@ def add_model_args(parser):
     )
 
 
+def remove_parent_directory_name(model_path):
+    """Remove parent directory name."""
+    if model_path[-1] == "/":
+        model_path = model_path[:-1]
+    return model_path.split("/")[-1]
+
+
 class VicunaAdapter(BaseAdapter):
     "Model adapater for vicuna-v1.1"
 
@@ -217,6 +231,8 @@ class VicunaAdapter(BaseAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "v0" in remove_parent_directory_name(model_path):
+            return get_conv_template("one_shot")
         return get_conv_template("vicuna_v1.1")
 
     def raise_warning_for_old_weights(self, model):
@@ -253,6 +269,16 @@ class KoalaAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("koala_v1")
+
+
+class AlpacaAdapter(BaseAdapter):
+    """The model adapter for alpaca."""
+
+    def match(self, model_path: str):
+        return "alpaca" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("alpaca")
 
 
 class ChatGLMAdapter(BaseAdapter):
@@ -326,6 +352,29 @@ class StableLMAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("stablelm")
+
+
+class MPTAdapter(BaseAdapter):
+    """The model adapter for mosaicml/mpt-7b-chat"""
+
+    def match(self, model_path: str):
+        return "mpt" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            max_seq_len=8192,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("mpt")
 
 
 class BaizeAdapter(BaseAdapter):
@@ -415,7 +464,7 @@ class ClaudeAdapter(BaseAdapter):
     """The model adapter for Claude."""
 
     def match(self, model_path: str):
-        return model_path == "claude-v1"
+        return model_path in ["claude-v1", "claude-instant-v1"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -424,11 +473,64 @@ class ClaudeAdapter(BaseAdapter):
         return get_conv_template("claude")
 
 
+class BardAdapter(BaseAdapter):
+    """The model adapter for Bard."""
+
+    def match(self, model_path: str):
+        return model_path == "bard"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("bard")
+
+
+class BiLLaAdapter(BaseAdapter):
+    """The model adapter for BiLLa."""
+
+    def match(self, model_path: str):
+        return "billa" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("billa")
+
+
+class RedPajamaINCITEAdapter(BaseAdapter):
+    """The model adapter for RedPajama INCITE."""
+
+    def match(self, model_path: str):
+        return "redpajama-incite" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path)  # no use_fast=False
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("redpajama-incite")
+
+
+class H2OGPTAdapter(BaseAdapter):
+    """The model adapter for h2oGPT."""
+
+    def match(self, model_path: str):
+        return "h2ogpt" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("h2ogpt")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
+register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
@@ -437,9 +539,13 @@ register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
+register_model_adapter(BardAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
-
+register_model_adapter(MPTAdapter)
+register_model_adapter(BiLLaAdapter)
+register_model_adapter(RedPajamaINCITEAdapter)
+register_model_adapter(H2OGPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
