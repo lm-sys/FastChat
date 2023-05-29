@@ -14,8 +14,7 @@ python -m torch.distributed.run --nproc_per_node=16 --nnodes $SLURM_NNODES --nod
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 1 \
-    --evaluation_strategy "steps" \
-    --eval_steps 4000 \
+    --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 200 \
     --save_total_limit 8 \
