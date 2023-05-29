@@ -281,7 +281,6 @@ async def get_conv(model_name: str):
             timeout=WORKER_API_TIMEOUT,
         )
         conv = response.json()["conv"]
-        print("conv: ",conv)
         return conv
 
 
