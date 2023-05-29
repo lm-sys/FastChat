@@ -225,6 +225,7 @@ class VicunaAdapter(BaseAdapter):
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
+            offload_folder="offload",
             **from_pretrained_kwargs,
         )
         self.raise_warning_for_old_weights(model)
