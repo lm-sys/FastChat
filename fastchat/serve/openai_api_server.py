@@ -50,6 +50,7 @@ from fastchat.protocol.openai_api_protocol import (
     ModelPermission,
     TokenCheckRequest,
     TokenCheckResponse,
+    TokenCheckResponseItem,
     UsageInfo,
 )
 
@@ -286,33 +287,43 @@ async def show_available_models():
 @app.post("/v1/token_check")
 async def count_tokens(request: TokenCheckRequest):
     """
-    Checks the token count against your message
+    Checks the token count for each message in your list
     This is not part of the OpenAI API spec.
     """
+    checkedList = []
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(request.model, client)
+        for i in range(request.prompts):
+            worker_addr = await _get_worker_address(request.model, client)
 
-        response = await client.post(
-            worker_addr + "/model_details",
-            headers=headers,
-            json={},
-            timeout=WORKER_API_TIMEOUT,
-        )
-        context_len = response.json()["context_length"]
+            response = await client.post(
+                worker_addr + "/model_details",
+                headers=headers,
+                json={},
+                timeout=WORKER_API_TIMEOUT,
+            )
+            context_len = response.json()["context_length"]
 
-        response = await client.post(
-            worker_addr + "/count_token",
-            headers=headers,
-            json={"prompt": request.prompt},
-            timeout=WORKER_API_TIMEOUT,
-        )
-        token_num = response.json()["count"]
+            response = await client.post(
+                worker_addr + "/count_token",
+                headers=headers,
+                json={"prompt": request.prompt},
+                timeout=WORKER_API_TIMEOUT,
+            )
+            token_num = response.json()["count"]
 
-    can_fit = True
-    if token_num + request.max_tokens > context_len:
-        can_fit = False
+            can_fit = True
+            if token_num + request.max_tokens > context_len:
+                can_fit = False
 
-    return TokenCheckResponse(fits=can_fit, contextLength=context_len, tokenCount=token_num)
+            checkedList.append(
+                TokenCheckResponseItem(
+                    fits=can_fit,
+                    contextLength=context_len,
+                    tokenCount=token_num
+                )
+            )
+
+    return TokenCheckResponse(prompts=checkedList)
 
 
 @app.post("/v1/chat/completions")
