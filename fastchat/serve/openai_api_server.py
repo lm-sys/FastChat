@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 class AppSettings(BaseSettings):
     # The address of the model controller.
     controller_address: str = "http://localhost:21001"
-    api_key: str = None
+    api_keys: List[str] = None
 
 
 app_settings = AppSettings()
@@ -74,8 +74,8 @@ get_bearer_token = HTTPBearer(auto_error=False)
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
 ) -> str:
-    if app_settings.api_key:
-        if auth is None or (token := auth.credentials) != app_settings.api_key:
+    if app_settings.api_keys:
+        if auth is None or (token := auth.credentials) not in app_settings.api_keys:
             raise HTTPException(
                 status_code = 401,
                 detail = {
@@ -89,7 +89,7 @@ async def check_api_key(
             )
         return token
     else:
-        # api_key not set; allow all
+        # api_keys not set; allow all
         return None
 
 
@@ -733,7 +733,7 @@ if __name__ == "__main__":
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
     parser.add_argument(
-        "--api-key", type=str,
+        "--api-keys", type=lambda s: s.split(','), help="Optional list of comma separated keys"
     )
     args = parser.parse_args()
 
@@ -745,7 +745,7 @@ if __name__ == "__main__":
         allow_headers=args.allowed_headers,
     )
     app_settings.controller_address = args.controller_address
-    app_settings.api_key = args.api_key
+    app_settings.api_keys = args.api_keys
 
     logger.info(f"args: {args}")
 
