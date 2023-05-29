@@ -249,7 +249,7 @@ def make_supervised_data_module(
     # train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
     # eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
     
-    rank0_print(f"#train {len(raw_data)}")
+    rank0_print(f"######## train {len(raw_data)}")
     train_dataset = dataset_cls(raw_data, tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None)
 
