@@ -40,13 +40,23 @@ class GptqConfig:
 def load_gptq_quantized(model_name, gptq_config: GptqConfig, device):
     print("Loading GPTQ quantized model...")
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    model = load_quant(
-        model_name,
-        find_gptq_ckpt(gptq_config),
-        gptq_config.wbits,
-        gptq_config.groupsize,
-        act_order=gptq_config.act_order,
-    )
+    # only `fastest-inference-4bit` branch cares about `act_order`
+    if gptq_config.act_order:
+        model = load_quant(
+            model_name,
+            find_gptq_ckpt(gptq_config),
+            gptq_config.wbits,
+            gptq_config.groupsize,
+            act_order=gptq_config.act_order,
+        )
+    else:
+        # other branches
+        model = load_quant(
+            model_name,
+            find_gptq_ckpt(gptq_config),
+            gptq_config.wbits,
+            gptq_config.groupsize,
+        )
     model.to(device)
 
     return model, tokenizer
