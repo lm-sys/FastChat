@@ -207,6 +207,13 @@ def add_model_args(parser):
     )
 
 
+def remove_parent_directory_name(model_path):
+    """Remove parent directory name."""
+    if model_path[-1] == "/":
+        model_path = model_path[:-1]
+    return model_path.split("/")[-1]
+
+
 class VicunaAdapter(BaseAdapter):
     "Model adapater for vicuna-v1.1"
 
@@ -224,6 +231,8 @@ class VicunaAdapter(BaseAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "v0" in remove_parent_directory_name(model_path):
+            return get_conv_template("one_shot")
         return get_conv_template("vicuna_v1.1")
 
     def raise_warning_for_old_weights(self, model):
@@ -260,6 +269,16 @@ class KoalaAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("koala_v1")
+
+
+class AlpacaAdapter(BaseAdapter):
+    """The model adapter for alpaca."""
+
+    def match(self, model_path: str):
+        return "alpaca" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("alpaca")
 
 
 class ChatGLMAdapter(BaseAdapter):
@@ -511,6 +530,7 @@ class H2OGPTAdapter(BaseAdapter):
 register_model_adapter(VicunaAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
+register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
