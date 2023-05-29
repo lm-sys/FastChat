@@ -190,7 +190,7 @@ def generate_stream(
                                 break
                 else:
                     raise ValueError("Invalid stop field type.")
-            
+
             # prevent yielding partial stop sequence
             if not partially_stopped:
                 yield {
@@ -308,7 +308,7 @@ def chat_loop(
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
         outputs = chatio.stream_output(output_stream)
-        conv.messages[-1][-1] = outputs.strip()
+        conv.update_last_message(outputs.strip())
 
         if debug:
             print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
