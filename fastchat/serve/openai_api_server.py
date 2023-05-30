@@ -284,7 +284,7 @@ async def show_available_models():
 
 
 # TODO: Have check_length and count_tokens share code.
-@app.post("/v1/token_check")
+@app.post("/v1/token_check_2")
 async def count_tokens(request: TokenCheckRequest):
     """
     Checks the token count for each message in your list
@@ -292,8 +292,8 @@ async def count_tokens(request: TokenCheckRequest):
     """
     checkedList = []
     async with httpx.AsyncClient() as client:
-        for i in range(request.prompts):
-            worker_addr = await _get_worker_address(request.model, client)
+        for item in request.prompts:
+            worker_addr = await _get_worker_address(item.model, client)
 
             response = await client.post(
                 worker_addr + "/model_details",
@@ -306,13 +306,13 @@ async def count_tokens(request: TokenCheckRequest):
             response = await client.post(
                 worker_addr + "/count_token",
                 headers=headers,
-                json={"prompt": request.prompt},
+                json={"prompt": item.prompt},
                 timeout=WORKER_API_TIMEOUT,
             )
             token_num = response.json()["count"]
 
             can_fit = True
-            if token_num + request.max_tokens > context_len:
+            if token_num + item.max_tokens > context_len:
                 can_fit = False
 
             checkedList.append(

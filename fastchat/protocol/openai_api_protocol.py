@@ -114,7 +114,7 @@ class TokenCheckResponseItem(BaseModel):
     contextLength: int
 
 class TokenCheckResponse(BaseModel):
-    prompts: List[TokenCheckRequestItem]
+    prompts: List[TokenCheckResponseItem]
 
 class EmbeddingsRequest(BaseModel):
     model: Optional[str] = None
