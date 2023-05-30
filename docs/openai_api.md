@@ -1,6 +1,6 @@
 # OpenAI-Compatible RESTful APIs & SDK
 
-FastChat provides OpenAI-Compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
+FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
 The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
 
 The following OpenAI APIs are supported:
@@ -101,6 +101,9 @@ curl http://localhost:8000/v1/embeddings \
     "input": "Hello world!"
   }'
 ```
+
+## LangChain Support
+This OpenAI-compatible API server supports LangChain. See [LangChain Integration](langchain_integration.md) for details.
 
 ## Adjusting Timeout
 By default, a timeout error will occur if a model worker does not response within 20 seconds. If your model/hardware is slower, you can change this timeout through an environment variable: `export FASTCHAT_WORKER_API_TIMEOUT=<larger timeout in seconds>`

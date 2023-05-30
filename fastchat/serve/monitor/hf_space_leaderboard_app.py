@@ -5,7 +5,7 @@ import pickle
 import gradio as gr
 
 
-notebook_url = "https://colab.research.google.com/drive/1iI_IszGAwSMkdfUrIDI6NfTG7tGDDRxZ?usp=sharing"
+notebook_url = "https://colab.research.google.com/drive/17L9uCiAivzWfzOxo2Tb9RMauT7vS6nVU?usp=sharing"
 
 
 def make_leaderboard_md(elo_results):

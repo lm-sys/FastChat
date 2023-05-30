@@ -44,10 +44,10 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
-    ["bard"],
-    "Bard",
-    "https://bard.google.com/",
-    "Bard based on the PaLM 2 Chat API by Google",
+    ["palm-2"],
+    "PaLM 2 Chat",
+    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
+    "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
     ["vicuna-13b", "vicuna-7b"],
@@ -69,7 +69,7 @@ register_model_info(
 )
 register_model_info(
     ["RWKV-4-Raven-14B"],
-    "RMKV-4-Raven",
+    "RWKV-4-Raven",
     "https://huggingface.co/BlinkDL/rwkv-4-raven",
     "an RNN with transformer-level LLM performance",
 )
@@ -132,4 +132,10 @@ register_model_info(
     "h2oGPT-GM-7b",
     "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
     "an instruction-tuned OpenLLaMA with enhanced conversational ability by H2O.ai",
+)
+register_model_info(
+    ["baize-v2-7b", "baize-v2-13b"],
+    "Baize v2",
+    "https://github.com/project-baize/baize-chatbot#v2",
+    "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )

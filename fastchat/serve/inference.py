@@ -190,7 +190,7 @@ def generate_stream(
                                 break
                 else:
                     raise ValueError("Invalid stop field type.")
-            
+
             # prevent yielding partial stop sequence
             if not partially_stopped:
                 yield {
@@ -253,6 +253,7 @@ def chat_loop(
     cpu_offloading: bool,
     conv_template: Optional[str],
     temperature: float,
+    repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
     debug: bool,
@@ -262,6 +263,11 @@ def chat_loop(
         model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
+    is_fastchat_t5 = "t5" in str(type(model)).lower()
+
+    # Hardcode T5 repetition penalty to be 1.2
+    if is_fastchat_t5 and repetition_penalty == 1.0:
+        repetition_penalty = 1.2
 
     # Chat
     if conv_template:
@@ -292,6 +298,7 @@ def chat_loop(
             "model": model_path,
             "prompt": prompt,
             "temperature": temperature,
+            "repetition_penalty": repetition_penalty,
             "max_new_tokens": max_new_tokens,
             "stop": conv.stop_str,
             "stop_token_ids": conv.stop_token_ids,
@@ -301,7 +308,7 @@ def chat_loop(
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
         outputs = chatio.stream_output(output_stream)
-        conv.messages[-1][-1] = outputs.strip()
+        conv.update_last_message(outputs.strip())
 
         if debug:
             print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
