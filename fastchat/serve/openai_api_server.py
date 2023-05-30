@@ -284,7 +284,7 @@ async def show_available_models():
 
 
 # TODO: Have check_length and count_tokens share code.
-@app.post("/v1/token_check_2")
+@app.post("/v1/token_check")
 async def count_tokens(request: TokenCheckRequest):
     """
     Checks the token count for each message in your list
