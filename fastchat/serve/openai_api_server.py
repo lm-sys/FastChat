@@ -733,7 +733,7 @@ if __name__ == "__main__":
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
     parser.add_argument(
-        "--api-keys", type=lambda s: s.split(','), help="Optional list of comma separated keys"
+        "--api-keys", type=lambda s: s.split(','), help="Optional list of comma separated API keys"
     )
     args = parser.parse_args()
 
