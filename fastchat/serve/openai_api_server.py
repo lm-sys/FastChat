@@ -62,7 +62,7 @@ from fastchat.protocol.api_protocol import (
     APIChatCompletionRequest,
     APITokenCheckRequest,
     APITokenCheckResponse,
-    APITokenCheckResponseItem
+    APITokenCheckResponseItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -89,13 +89,13 @@ async def check_api_key(
     if app_settings.api_keys:
         if auth is None or (token := auth.credentials) not in app_settings.api_keys:
             raise HTTPException(
-                status_code = 401,
-                detail = {
+                status_code=401,
+                detail={
                     "error": {
                         "message": "",
                         "type": "invalid_request_error",
                         "param": None,
-                        "code": "invalid_api_key"
+                        "code": "invalid_api_key",
                     }
                 },
             )
@@ -319,7 +319,7 @@ async def get_conv(model_name: str):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
-        conv_template = conv_template_map.get((worker_addr,model_name))
+        conv_template = conv_template_map.get((worker_addr, model_name))
         if conv_template is None:
             response = await client.post(
                 worker_addr + "/worker_get_conv_template",
@@ -328,7 +328,7 @@ async def get_conv(model_name: str):
                 timeout=WORKER_API_TIMEOUT,
             )
             conv_template = response.json()["conv"]
-            conv_template_map[(worker_addr,model_name)] = conv_template
+            conv_template_map[(worker_addr, model_name)] = conv_template
         return conv_template
 
 
@@ -719,6 +719,7 @@ async def get_embedding(payload: Dict[str, Any]):
 
 ### GENERAL API - NOT OPENAI COMPATIBLE ###
 
+
 @app.post("/api/v1/token_check")
 async def count_tokens(request: APITokenCheckRequest):
     """
@@ -752,13 +753,12 @@ async def count_tokens(request: APITokenCheckRequest):
 
             checkedList.append(
                 APITokenCheckResponseItem(
-                    fits=can_fit,
-                    contextLength=context_len,
-                    tokenCount=token_num
+                    fits=can_fit, contextLength=context_len, tokenCount=token_num
                 )
             )
 
     return APITokenCheckResponse(prompts=checkedList)
+
 
 @app.post("/api/v1/chat/completions")
 async def create_chat_completion(request: APIChatCompletionRequest):
@@ -849,7 +849,9 @@ if __name__ == "__main__":
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
     parser.add_argument(
-        "--api-keys", type=lambda s: s.split(','), help="Optional list of comma separated API keys"
+        "--api-keys",
+        type=lambda s: s.split(","),
+        help="Optional list of comma separated API keys",
     )
     args = parser.parse_args()
 

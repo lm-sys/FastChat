@@ -94,9 +94,7 @@ def build_basic_stats_tab():
     basic_component_values[:] = [empty, None, empty, empty, empty, empty]
 
     md0 = gr.Markdown(empty)
-    gr.Markdown(
-        "#### Figure 1: Number of model calls and votes"
-    )
+    gr.Markdown("#### Figure 1: Number of model calls and votes")
     plot_1 = gr.Plot(show_label=False)
     with gr.Row():
         with gr.Column():
