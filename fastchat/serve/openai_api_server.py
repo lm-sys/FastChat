@@ -196,7 +196,7 @@ def get_gen_params(
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
     conv = get_conversation_template(model_name)
-
+    conv.messages = [] #Clear the default messages
     if isinstance(messages, str):
         prompt = messages
     else:
