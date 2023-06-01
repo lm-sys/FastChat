@@ -5,6 +5,7 @@ import math
 from typing import Iterable, Optional
 import sys
 import warnings
+import time
 
 import psutil
 import torch
@@ -307,8 +308,12 @@ def chat_loop(
 
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        t = time.time()
         outputs = chatio.stream_output(output_stream)
+        t = time.time() - t
         conv.update_last_message(outputs.strip())
 
         if debug:
             print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
+            num_tokens = len(tokenizer.encode(outputs))
+            print(f"Tokens per second: {num_tokens / t:.2f}\n")
