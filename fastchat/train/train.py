@@ -217,6 +217,7 @@ def make_supervised_data_module(
     raw_data = json.load(open(data_args.data_path, "r"))
 
     # Split train/test
+    np.random.seed(0)
     perm = np.random.permutation(len(raw_data))
     split = int(len(perm) * 0.98)
     train_indices = perm[:split]

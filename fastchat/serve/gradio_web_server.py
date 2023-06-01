@@ -202,7 +202,7 @@ def flag_last_response(state, model_selector, request: gr.Request):
 
 def regenerate(state, request: gr.Request):
     logger.info(f"regenerate. ip: {request.client.host}")
-    state.conv.messages[-1][-1] = None
+    state.conv.update_last_message(None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -259,7 +259,14 @@ def post_process_code(code):
 
 
 def model_worker_stream_iter(
-    conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
+    conv,
+    model_name,
+    worker_addr,
+    prompt,
+    temperature,
+    repetition_penalty,
+    top_p,
+    max_new_tokens,
 ):
     # Make requests
     gen_params = {
@@ -328,7 +335,7 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
 
         # No available worker
         if worker_addr == "":
-            conv.messages[-1][-1] = SERVER_ERROR_MSG
+            conv.update_last_message(SERVER_ERROR_MSG)
             yield (
                 state,
                 state.to_gradio_chatbot(),
@@ -345,17 +352,24 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
             prompt = list(list(x) for x in conv.messages[conv.offset :])
         else:
             prompt = conv.get_prompt()
-        
+
         # Construct repetition_penalty
         if "t5" in model_name:
             repetition_penalty = 1.2
         else:
             repetition_penalty = 1.0
         stream_iter = model_worker_stream_iter(
-            conv, model_name, worker_addr, prompt, temperature, repetition_penalty, top_p, max_new_tokens
+            conv,
+            model_name,
+            worker_addr,
+            prompt,
+            temperature,
+            repetition_penalty,
+            top_p,
+            max_new_tokens,
         )
 
-    conv.messages[-1][-1] = "▌"
+    conv.update_last_message("▌")
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
@@ -364,11 +378,11 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
                 output = data["text"].strip()
                 if "vicuna" in model_name:
                     output = post_process_code(output)
-                conv.messages[-1][-1] = output + "▌"
+                conv.update_last_message(output + "▌")
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
-                conv.messages[-1][-1] = output
+                conv.update_last_message(output)
                 yield (state, state.to_gradio_chatbot()) + (
                     disable_btn,
                     disable_btn,
@@ -379,7 +393,7 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
                 return
             time.sleep(0.02)
     except requests.exceptions.RequestException as e:
-        conv.messages[-1][-1] = (
+        conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
         )
@@ -392,7 +406,7 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
         )
         return
     except Exception as e:
-        conv.messages[-1][-1] = (
+        conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
         )
@@ -405,7 +419,8 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
         )
         return
 
-    conv.messages[-1][-1] = conv.messages[-1][-1][:-1]
+    # Delete "▌"
+    conv.update_last_message(conv.messages[-1][-1][:-1])
     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     finish_tstamp = time.time()
@@ -459,12 +474,12 @@ def get_model_description_md(models):
             if minfo.simple_name in visited:
                 continue
             visited.add(minfo.simple_name)
-            one_model_md = (
-                f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
-            )
+            one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
         else:
             visited.add(name)
-            one_model_md = f"[{name}](): Add the description at fastchat/model/model_registry.py"
+            one_model_md = (
+                f"[{name}](): Add the description at fastchat/model/model_registry.py"
+            )
 
         if ct % 3 == 0:
             model_description_md += "|"
@@ -487,7 +502,6 @@ By using this service, users are required to agree to the following terms: The s
 
 ### Choose a model to chat with
 """
-
 
     state = gr.State()
     model_description_md = get_model_description_md(models)

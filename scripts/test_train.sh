@@ -2,7 +2,7 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train.py \
     --model_name_or_path ~/model_weights/llama-7b  \
     --data_path ~/datasets/sampled.json \
     --fp16 True \
-    --output_dir output \
+    --output_dir output_vicuna \
     --num_train_epochs 3 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \

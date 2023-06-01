@@ -69,7 +69,7 @@ register_model_info(
 )
 register_model_info(
     ["RWKV-4-Raven-14B"],
-    "RMKV-4-Raven",
+    "RWKV-4-Raven",
     "https://huggingface.co/BlinkDL/rwkv-4-raven",
     "an RNN with transformer-level LLM performance",
 )
