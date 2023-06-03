@@ -16,6 +16,7 @@
 import copy
 from dataclasses import dataclass, field
 import json
+import os
 import pathlib
 from typing import Dict, Optional, Sequence
 
@@ -243,6 +244,8 @@ def train():
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
+    if os.getenv("MAX_SEQ_LEN"):
+        config.update({"max_seq_len": int(os.environ["MAX_SEQ_LEN"])})
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
