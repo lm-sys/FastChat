@@ -293,6 +293,16 @@ class VicunaAdapter(BaseAdapter):
             )
 
 
+class CamelAdapter(BaseAdapter):
+    """The model adapter for camel"""
+
+    def match(self, model_path: str):
+        return "camel" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("vicuna_v1.1")
+
+
 class T5Adapter(BaseAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
 
