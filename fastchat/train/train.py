@@ -240,12 +240,20 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
-    model = transformers.AutoModelForCausalLM.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
+    config = transformers.AutoConfig.from_pretrained(
+        model_args.model_name_or_path
     )
     if os.getenv("MAX_SEQ_LEN"):
-        config.update({"max_seq_len": int(os.environ["MAX_SEQ_LEN"])})
+        config.update({
+            "max_seq_len": int(os.environ["MAX_SEQ_LEN"]),
+            "max_position_embeddings": int(os.environ["MAX_SEQ_LEN"]),
+            "max_sequence_length": int(os.environ["MAX_SEQ_LEN"]),
+        })
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+        model_args.model_name_or_path,
+        config=config,
+        cache_dir=training_args.cache_dir,
+    )
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
