@@ -56,7 +56,7 @@ def partial_stop(output, stop_str):
 
 @torch.inference_mode()
 def generate_stream(
-    model, tokenizer, params, device, context_len=2048, stream_interval=2
+    model, tokenizer, params, device, stream_interval=2
 ):
     prompt = params["prompt"]
     len_prompt = len(prompt)
@@ -69,6 +69,7 @@ def generate_stream(
     echo = bool(params.get("echo", True))
     stop_token_ids = params.get("stop_token_ids", None) or []
     stop_token_ids.append(tokenizer.eos_token_id)
+    context_len = int(params.get("context_len", 2048))
 
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
@@ -257,6 +258,8 @@ def chat_loop(
     max_new_tokens: int,
     chatio: ChatIO,
     debug: bool,
+    history: bool = True,
+    context_len: int = 2048,
 ):
     # Model
     model, tokenizer = load_model(
@@ -270,12 +273,13 @@ def chat_loop(
         repetition_penalty = 1.2
 
     # Chat
-    if conv_template:
-        conv = get_conv_template(conv_template)
-    else:
-        conv = get_conversation_template(model_path)
-
+    conv = None
     while True:
+        if not keep_history or not conv:
+            if conv_template:
+                conv = get_conv_template(conv_template)
+            else:
+                conv = get_conversation_template(model_path)
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
         except EOFError:
@@ -303,6 +307,7 @@ def chat_loop(
             "stop": conv.stop_str,
             "stop_token_ids": conv.stop_token_ids,
             "echo": False,
+            "context_len": context_len,
         }
 
         chatio.prompt_for_output(conv.roles[1])
