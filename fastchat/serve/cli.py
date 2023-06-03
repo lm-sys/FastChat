@@ -23,8 +23,13 @@ from fastchat.serve.inference import chat_loop, ChatIO
 
 
 class SimpleChatIO(ChatIO):
-    def prompt_for_input(self, role) -> str:
-        return input(f"{role}: ")
+    @staticmethod
+    def prompt_for_input(role) -> str:
+        prompt_data = []
+        line = input(f"{role}: ")
+        while True:
+            prompt_data.append(line.strip())
+        return "\n".join(prompt_data)
 
     def prompt_for_output(self, role: str):
         print(f"{role}: ", end="", flush=True)
@@ -51,16 +56,8 @@ class RichChatIO(ChatIO):
         self._console = Console()
 
     def prompt_for_input(self, role) -> str:
-        self._console.print(f"[bold]{role}:")
-        # TODO(suquark): multiline input has some issues. fix it later.
-        prompt_input = self._prompt_session.prompt(
-            completer=self._completer,
-            multiline=False,
-            auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=None,
-        )
-        self._console.print()
-        return prompt_input
+        # Hacky, but let's just use the standard input for now.
+        return SimpleChatIO.prompt_for_input(role)
 
     def prompt_for_output(self, role: str):
         self._console.print(f"[bold]{role}:")
@@ -170,6 +167,8 @@ def main(args):
             args.max_new_tokens,
             chatio,
             args.debug,
+            history=not args.no_history,
+            context_len=args.context_length,
         )
     except KeyboardInterrupt:
         print("exit...")
@@ -183,7 +182,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--max-new-tokens", type=int, default=2048)
+    parser.add_argument("--context-length", type=int, default=2048)
+    parser.add_argument("--no-history", action="store_true")
     parser.add_argument(
         "--style",
         type=str,
