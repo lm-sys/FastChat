@@ -29,6 +29,10 @@ class SimpleChatIO(ChatIO):
         line = input(f"{role}: ")
         while True:
             prompt_data.append(line.strip())
+            try:
+                line = input()
+            except EOFError as e:
+                break
         return "\n".join(prompt_data)
 
     def prompt_for_output(self, role: str):
