@@ -275,7 +275,7 @@ def chat_loop(
     # Chat
     conv = None
     while True:
-        if not keep_history or not conv:
+        if not history or not conv:
             if conv_template:
                 conv = get_conv_template(conv_template)
             else:
