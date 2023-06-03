@@ -26,7 +26,7 @@ class SimpleChatIO(ChatIO):
     @staticmethod
     def prompt_for_input(role) -> str:
         prompt_data = []
-        line = input(f"{role}: ")
+        line = input(f"{role} [ctrl-d on empty line to end]: ")
         while True:
             prompt_data.append(line.strip())
             try:
