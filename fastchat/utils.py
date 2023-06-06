@@ -11,6 +11,11 @@ import warnings
 import requests
 import torch
 
+try:
+    import intel_extension_for_pytorch as ipex
+except ImportError:
+    pass
+
 from fastchat.constants import LOGDIR
 
 

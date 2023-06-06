@@ -144,6 +144,8 @@ def load_model(
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
+    elif device == "xpu":
+        kwargs = {"torch_dtype": torch.float16}
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -182,6 +184,11 @@ def load_model(
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
 
+    elif device == "xpu":
+        model.eval()
+        model = model.to("xpu")
+        model = torch.xpu.optimize(model, dtype=torch.float16, inplace=True)
+
     if debug:
         print(model)
 
@@ -203,7 +210,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--device",
         type=str,
-        choices=["cpu", "cuda", "mps"],
+        choices=["cpu", "cuda", "mps", "xpu"],
         default="cuda",
         help="The device type",
     )

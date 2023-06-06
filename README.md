@@ -153,6 +153,16 @@ python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps -
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
+#### Intel XPU (Intel Data Center and Arc A-Series GPUs)
+Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html).
+
+**NOTE**: The 1.13.120 release of Intel Extension for PyTorch is [currently broken](https://github.com/intel/intel-extension-for-pytorch/issues/302), please compile from source or use a newer build.
+
+Use `--device xpu` to enable XPU/GPU acceleration.
+```
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device xpu
+```
+Vicuna-7B can run on an Intel Arc A770 16GB.
 
 #### No Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
