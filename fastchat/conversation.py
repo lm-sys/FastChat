@@ -18,7 +18,7 @@ class SeparatorStyle(Enum):
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
-
+    ROBIN = auto()
 
 @dataclasses.dataclass
 class Conversation:
@@ -117,6 +117,14 @@ class Conversation:
                     ret += role + ": " + "<s>" + message + "</s>"
                 else:
                     ret += role + ": " + "<s>"
+            return ret
+        elif self.sep_style == SeparatorStyle.ROBIN:
+            ret = self.system
+            for role,message in self.messages:
+                if message:
+                    ret += role + message + self.sep
+                else:
+                    ret += role + self.sep
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -490,7 +498,18 @@ register_conv_template(
     )
 )
 
-
+#Robin default template
+register_conv_template(
+    Conversation(
+        name="Robin",
+        System="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("###Human:","###Assistant:"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ROBIN,
+        sep="#"
+    )
+)
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")

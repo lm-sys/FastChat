@@ -524,6 +524,19 @@ class H2OGPTAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("h2ogpt")
 
+class Robin7bAdapter(BaseAdapter):
+    """The model adapter for LMFlow/Full-Robin-7b-v2"""
+
+    def match(self,model_path:str):
+        return "Robin" in model_path
+
+    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
+        return model, tokenizer
+
+    def get_default_conv_template(self,model_path:str) -> Conversation:
+        return get_conv_template("Robin")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -546,6 +559,6 @@ register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
-
+register_model_adapter(Robin7bAdapter)
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

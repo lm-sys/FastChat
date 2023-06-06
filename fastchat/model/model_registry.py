@@ -139,3 +139,9 @@ register_model_info(
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
+register_model_info(
+    ["Full-Robin-7b-v2"],
+    "Robin-7b-v2",
+    "https://huggingface.co/LMFlow/Full-Robin-7b-v2",
+    "A chatbot fine-tuned from LLaMA-7b, achieving competitive performance on chitchat, commonsense reasoning and instruction-following tasks, by OptimalScale, HKUST."
+)
