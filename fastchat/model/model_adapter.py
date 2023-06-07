@@ -531,7 +531,7 @@ class Robin7bAdapter(BaseAdapter):
         return "Robin" in model_path
 
     def load_model(self,model_path: str,from_pretrained_kwargs:dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
         model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
         return model, tokenizer
 
