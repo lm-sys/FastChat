@@ -502,7 +502,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="Robin",
-        System="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("###Human:","###Assistant:"),
         messages=(),
         offset=0,
