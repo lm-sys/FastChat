@@ -520,6 +520,19 @@ class BardAdapter(BaseAdapter):
         return get_conv_template("bard")
 
 
+class PaLM2Adapter(BaseAdapter):
+    """The model adapter for PaLM2."""
+
+    def match(self, model_path: str):
+        return model_path == "palm-2"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("bard")
+
+
 class BiLLaAdapter(BaseAdapter):
     """The model adapter for BiLLa."""
 
@@ -600,6 +613,7 @@ register_model_adapter(RwkvAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
+register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
