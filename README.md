@@ -214,6 +214,10 @@ CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path ~/mod
 ```bash
 python3 -m fastchat.serve.gradio_web_server_multi
 ```
+- You can protect your webserver with Gradio's Authentication with a password file. The password file should contain one or more "user:password" pairs in this format: `u1:p1,u2:p2,u3:p3`
+```bash
+python3 -m fastchat.serve.gradio_web_server --gradio-auth-path login.txt
+```
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
@@ -271,7 +275,7 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --model_name_or_path ~/model_weights/llama-7b  \
     --data_path playground/data/dummy.json \
     --bf16 True \
-    --output_dir output \
+    --output_dir output_vicuna \
     --num_train_epochs 3 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \

@@ -39,9 +39,13 @@ def chatglm_generate_stream(
         gen_kwargs["temperature"] = temperature
 
     hist = []
-    for i in range(0, len(messages) - 2, 2):
-        hist.append((messages[i][1], messages[i + 1][1]))
-    query = messages[-2][1]
+    query = ""
+    if type(messages) is list:
+        for i in range(0, len(messages) - 2, 2):
+            hist.append((messages[i][1], messages[i + 1][1]))
+        query = messages[-2][1]
+    elif type(messages) is str:
+        query = messages
 
     input_echo_len = stream_chat_token_num(tokenizer, query, hist)
 

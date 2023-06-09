@@ -63,7 +63,7 @@ class ModelWorker:
         worker_id,
         no_register,
         model_path,
-        model_name,
+        model_names,
         device,
         num_gpus,
         max_gpu_memory,
@@ -75,10 +75,10 @@ class ModelWorker:
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
-        self.model_name = model_name or model_path.split("/")[-1]
+        self.model_names = model_names or [model_path.split("/")[-1]]
         self.device = device
 
-        logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
+        logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
             model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
@@ -120,7 +120,7 @@ class ModelWorker:
 
     def send_heart_beat(self):
         logger.info(
-            f"Send heart beat. Models: {[self.model_name]}. "
+            f"Send heart beat. Models: {[self.model_names]}. "
             f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
             f"global_counter: {global_counter}"
         )
@@ -162,7 +162,7 @@ class ModelWorker:
 
     def get_status(self):
         return {
-            "model_names": [self.model_name],
+            "model_names": self.model_names,
             "speed": 1,
             "queue_length": self.get_queue_length(),
         }
@@ -397,7 +397,7 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     add_model_args(parser)
-    parser.add_argument("--model-name", type=str, help="Optional display name")
+    parser.add_argument("--model-names", type=lambda s: s.split(','), help="Optional display comma separated names")
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -410,14 +410,14 @@ if __name__ == "__main__":
                 f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-
+        
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.no_register,
         args.model_path,
-        args.model_name,
+        args.model_names,
         args.device,
         args.num_gpus,
         args.max_gpu_memory,

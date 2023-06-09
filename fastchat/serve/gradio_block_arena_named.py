@@ -130,7 +130,7 @@ def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (named). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_models):
-        states[i].conv.messages[-1][-1] = None
+        states[i].conv.update_last_message(None)
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
