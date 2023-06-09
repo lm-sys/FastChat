@@ -127,7 +127,8 @@ class CacheFlowWorker:
         logger.info(
             f"Send heart beat. Models: {[self.model_name]}. "
             f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
-            f"global_counter: {global_counter}"
+            f"global_counter: {global_counter}. "
+            f"worker_id: {worker_id}. "
         )
 
         url = self.controller_addr + "/receive_heart_beat"
