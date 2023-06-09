@@ -18,8 +18,11 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import (CONTROLLER_HEART_BEAT_EXPIRATION, ErrorCode,
-    SERVER_ERROR_MSG)
+from fastchat.constants import (
+    CONTROLLER_HEART_BEAT_EXPIRATION,
+    ErrorCode,
+    SERVER_ERROR_MSG,
+)
 from fastchat.utils import build_logger
 
 

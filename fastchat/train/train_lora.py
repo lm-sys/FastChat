@@ -140,7 +140,7 @@ def train():
         trainer.train()
     trainer.save_state()
 
-     # check if zero3 mode enabled
+    # check if zero3 mode enabled
     if trainer.hf_deepspeed_config_orig.is_zero3():
         # use deepspeed engine internal function to gather state dict
         # state_dict_zero3 contains whole parameters of base and lora adapters
@@ -153,9 +153,9 @@ def train():
     else:
         # in other mode we use original code from fastchat team, to make sure our change is minimum
         state_dict = get_peft_state_maybe_zero_3(
-        model.named_parameters(), lora_args.lora_bias
-        )   
-        
+            model.named_parameters(), lora_args.lora_bias
+        )
+
     if training_args.local_rank == 0:
         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 

@@ -59,9 +59,7 @@ def get_anony_vote_df(df):
     anony_vote_df = df[
         df["type"].isin(["leftvote", "rightvote", "tievote", "bothbad_vote"])
     ]
-    anony_vote_df = anony_vote_df[
-        anony_vote_df["models"].apply(lambda x: x[0] == "")
-    ]
+    anony_vote_df = anony_vote_df[anony_vote_df["models"].apply(lambda x: x[0] == "")]
     return anony_vote_df
 
 
@@ -86,25 +84,37 @@ def report_basic_stats(log_files):
 
     # Chat trends
     chat_dates = [
-        datetime.datetime.fromtimestamp(
-            x, tz=timezone("US/Pacific")
-        ).strftime("%Y-%m-%d")
+        datetime.datetime.fromtimestamp(x, tz=timezone("US/Pacific")).strftime(
+            "%Y-%m-%d"
+        )
         for x in df_all[df_all["type"] == "chat"]["tstamp"]
     ]
     chat_dates_counts = pd.value_counts(chat_dates)
     vote_dates = [
-        datetime.datetime.fromtimestamp(
-            x, tz=timezone("US/Pacific")
-        ).strftime("%Y-%m-%d")
+        datetime.datetime.fromtimestamp(x, tz=timezone("US/Pacific")).strftime(
+            "%Y-%m-%d"
+        )
         for x in anony_vote_df_all["tstamp"]
     ]
     vote_dates_counts = pd.value_counts(vote_dates)
-    chat_dates_bar = go.Figure(data=[
-        go.Bar(name="Anony. Vote", x=vote_dates_counts.index, y=vote_dates_counts,
-               text=[f"{val:.0f}" for val in vote_dates_counts], textposition="auto"),
-        go.Bar(name="Chat", x=chat_dates_counts.index, y=chat_dates_counts,
-               text=[f"{val:.0f}" for val in chat_dates_counts], textposition="auto"),
-    ])
+    chat_dates_bar = go.Figure(
+        data=[
+            go.Bar(
+                name="Anony. Vote",
+                x=vote_dates_counts.index,
+                y=vote_dates_counts,
+                text=[f"{val:.0f}" for val in vote_dates_counts],
+                textposition="auto",
+            ),
+            go.Bar(
+                name="Chat",
+                x=chat_dates_counts.index,
+                y=chat_dates_counts,
+                text=[f"{val:.0f}" for val in chat_dates_counts],
+                textposition="auto",
+            ),
+        ]
+    )
     chat_dates_bar.update_layout(
         barmode="stack",
         xaxis_title="Dates",

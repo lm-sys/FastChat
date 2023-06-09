@@ -10,6 +10,7 @@ template = """{history}
 Human: {human_input}
 Assistant:"""
 
+
 def test_embedding():
     embeddings = OpenAIEmbeddings()
     texts = ["Why does the chicken cross the road", "To be honest", "Long time ago"]
@@ -17,22 +18,21 @@ def test_embedding():
     doc_result = embeddings.embed_documents(texts)
     assert np.allclose(query_result, doc_result[0], atol=1e-3)
 
-def test_chain():
 
+def test_chain():
     prompt = PromptTemplate(
-        input_variables=["history", "human_input"],
-        template=template
+        input_variables=["history", "human_input"], template=template
     )
     chain = LLMChain(
-        llm=OpenAI(model="text-embedding-ada-002", temperature=1), 
-        prompt=prompt, 
-        verbose=True, 
+        llm=OpenAI(model="text-embedding-ada-002", temperature=1),
+        prompt=prompt,
+        verbose=True,
         memory=ConversationBufferWindowMemory(k=2),
     )
     output = chain.predict(human_input="ls ~")
     print(output)
 
+
 if __name__ == "__main__":
     test_embedding()
     test_chain()
-
