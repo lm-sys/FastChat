@@ -51,6 +51,7 @@ class BaseAdapter:
 
 
 # A global registry for all model adapters
+# TODO (lmzheng): make it a priority queue.
 model_adapters: List[BaseAdapter] = []
 
 
@@ -562,10 +563,26 @@ class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
     def match(self, model_path: str):
-        return "snoozy" in model_path
+        return "gpt4all" in model_path and "snoozy" in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("snoozy")
+
+
+class WizardLMAdapter(BaseAdapter):
+    """The model adapter for WizardLM/WizardLM-13B-V1.0"""
+
+    def match(self, model_path: str):
+        return "wizardlm" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "13b" in model_path or "30b" in model_path:
+            return get_conv_template("vicuna_v1.1")
+        else:
+            # TODO: use the recommended template for 7B
+            # (https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+            return get_conv_template("one_shot")
 
 
 # Note: the registration order matters.
@@ -590,6 +607,7 @@ register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
 register_model_adapter(SnoozyAdapter)
+register_model_adapter(WizardLMAdapter)
 
 
 # After all adapters, try the default base adapter.

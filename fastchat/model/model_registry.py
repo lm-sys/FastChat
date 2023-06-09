@@ -56,16 +56,22 @@ register_model_info(
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
 )
 register_model_info(
+    ["wizardlm-13b"],
+    "WizardLM",
+    "https://github.com/nlpxucan/WizardLM",
+    "An instruction-following LLM using evol-instruct",
+)
+register_model_info(
+    ["gpt4all-13b-snoozy"],
+    "GPT4All-Snoozy",
+    "https://huggingface.co/nomic-ai/gpt4all-13b-snoozy",
+    "A finetuned LLaMA model on assistant style data by Nomic AI",
+)
+register_model_info(
     ["koala-13b"],
     "Koala",
     "https://bair.berkeley.edu/blog/2023/04/03/koala",
     "a dialogue model for academic research by BAIR",
-)
-register_model_info(
-    ["oasst-pythia-12b"],
-    "OpenAssistant (oasst)",
-    "https://open-assistant.io",
-    "an Open Assistant for everyone by LAION",
 )
 register_model_info(
     ["RWKV-4-Raven-14B"],
@@ -86,6 +92,12 @@ register_model_info(
     "an open bilingual dialogue language model by Tsinghua University",
 )
 register_model_info(
+    ["oasst-pythia-12b"],
+    "OpenAssistant (oasst)",
+    "https://open-assistant.io",
+    "an Open Assistant for everyone by LAION",
+)
+register_model_info(
     ["llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
@@ -104,6 +116,12 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
+    ["mpt-7b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-7b",
+    "a chatbot fine-tuned from MPT-7B by MosaicML",
+)
+register_model_info(
     ["fastchat-t5-3b"],
     "FastChat-T5",
     "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0",
@@ -114,12 +132,6 @@ register_model_info(
     "Phoenix-7B",
     "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b",
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
-)
-register_model_info(
-    ["mpt-7b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
 )
 register_model_info(
     ["billa-7b-sft"],
@@ -138,10 +150,4 @@ register_model_info(
     "Baize v2",
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
-)
-register_model_info(
-    ["gpt4all-13b-snoozy"],
-    "GPT4All-13B-Snoozy",
-    "https://huggingface.co/nomic-ai/gpt4all-13b-snoozy",
-    "A finetuned LLama 13B model on assistant style data by Nomic AI",
 )
