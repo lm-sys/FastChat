@@ -23,7 +23,6 @@ from transformers import (
     T5Tokenizer,
 )
 
-from peft import PeftModel
 import os
 import json
 
@@ -518,6 +517,7 @@ class LoraAdapter(BaseAdapter):
         return res
 
     def load_model(self, lora_path: str, from_pretrained_kwargs: dict):
+        from peft import PeftModel
         lora_conf = json.load(open(os.path.join(lora_path, "adapter_config.json")))
 
         base_model_path = lora_conf['base_model_name_or_path']
