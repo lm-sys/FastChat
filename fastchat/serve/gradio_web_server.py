@@ -693,6 +693,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
     )
+    parser.add_argument(
+        "--gradio-auth-path",
+        type=str,
+        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -706,9 +712,22 @@ if __name__ == "__main__":
     if args.add_bard:
         models = ["bard"] + models
 
+    auth = None
+    gradio_auth_creds = []
+    if args.gradio_auth_path is not None:
+        with open(args.gradio_auth_path, "r", encoding="utf8") as file:
+            for line in file.readlines():
+                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
+    if gradio_auth_creds:
+        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
+
     demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+        auth=auth,
     )
