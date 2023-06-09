@@ -490,6 +490,20 @@ register_conv_template(
     )
 )
 
+# Snoozy default template
+# Reference: https://github.com/nomic-ai/gpt4all/blob/d4861030b778da6db59d21d2927a4aba4f9f1f43/gpt4all-bindings/python/gpt4all/gpt4all.py#L232
+register_conv_template(
+    Conversation(
+        name="snoozy",
+        system="### Instruction: The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.",
+        roles=("### Prompt", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="###",
+    )
+)
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
