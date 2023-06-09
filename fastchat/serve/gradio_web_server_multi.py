@@ -34,6 +34,8 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
+    global models
+
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
     selected = 0
     if "arena" in url_params:
@@ -42,6 +44,9 @@ def load_demo(url_params, request: gr.Request):
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
+
+    if args.model_list_mode == "reload":
+        models = get_model_list(args.controller_url)
     single_updates = load_demo_single(models, url_params)
 
     models_anony = models
@@ -145,15 +150,14 @@ def build_demo(models, elo_results_file):
 
         url_params = gr.JSON(visible=False)
 
-        if args.model_list_mode == "once":
-            demo.load(
-                load_demo,
-                [url_params],
-                [tabs] + a_list + b_list + c_list,
-                _js=get_window_url_params_js,
-            )
-        else:
+        if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
+        demo.load(
+            load_demo,
+            [url_params],
+            [tabs] + a_list + b_list + c_list,
+            _js=get_window_url_params_js,
+        )
 
     return demo
 
@@ -168,7 +172,8 @@ if __name__ == "__main__":
         "--model-list-mode",
         type=str,
         default="once",
-        choices=["once"],
+        choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
