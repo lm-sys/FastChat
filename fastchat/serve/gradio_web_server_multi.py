@@ -27,8 +27,11 @@ from fastchat.serve.gradio_web_server import (
     load_demo_single,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
-from fastchat.utils import build_logger, get_window_url_params_js
-
+from fastchat.utils import (
+    build_logger,
+    get_window_url_params_js,
+    parse_gradio_auth_creds,
+)
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -56,8 +59,8 @@ def load_demo(url_params, request: gr.Request):
             models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
         if args.add_claude:
             models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
-        if args.add_bard:
-            models_anony = ["bard"] + models_anony
+        if args.add_palm:
+            models_anony = ["palm-2"] + models_anony
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -190,9 +193,9 @@ if __name__ == "__main__":
         help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
-        "--add-bard",
+        "--add-palm",
         action="store_true",
-        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
+        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
     )
     parser.add_argument(
         "--anony-only-for-proprietary-model",
@@ -219,17 +222,12 @@ if __name__ == "__main__":
             models = ["gpt-3.5-turbo", "gpt-4"] + models
         if args.add_claude:
             models = ["claude-v1", "claude-instant-v1"] + models
-        if args.add_bard:
-            models = ["bard"] + models
+        if args.add_palm:
+            models = ["palm-2"] + models
 
     auth = None
-    gradio_auth_creds = []
     if args.gradio_auth_path is not None:
-        with open(args.gradio_auth_path, "r", encoding="utf8") as file:
-            for line in file.readlines():
-                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
-    if gradio_auth_creds:
-        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
+        auth = parse_gradio_auth_creds(args.gradio_auth_path)
 
     demo = build_demo(models, args.elo_results_file)
     demo.queue(

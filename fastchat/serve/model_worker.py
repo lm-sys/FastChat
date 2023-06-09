@@ -120,7 +120,7 @@ class ModelWorker:
 
     def send_heart_beat(self):
         logger.info(
-            f"Send heart beat. Models: {[self.model_names]}. "
+            f"Send heart beat. Models: {self.model_names}. "
             f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
             f"global_counter: {global_counter}"
         )

@@ -139,7 +139,6 @@ register_model_info(
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
-
 register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-13B-Snoozy",
