@@ -115,8 +115,7 @@ def get_model_list(controller_url):
     return models
 
 
-def load_demo_refresh_model_list(url_params):
-    models = get_model_list(controller_url)
+def load_demo_single(models, url_params):
     selected_model = models[0] if len(models) > 0 else ""
     if "model" in url_params:
         model = url_params["model"]
@@ -143,26 +142,8 @@ def load_demo_reload_model(url_params, request: gr.Request):
     logger.info(
         f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}"
     )
-    return load_demo_refresh_model_list(url_params)
-
-
-def load_demo_single(models, url_params):
-    dropdown_update = gr.Dropdown.update(visible=True)
-    if "model" in url_params:
-        model = url_params["model"]
-        if model in models:
-            dropdown_update = gr.Dropdown.update(value=model, visible=True)
-
-    state = None
-    return (
-        state,
-        dropdown_update,
-        gr.Chatbot.update(visible=True),
-        gr.Textbox.update(visible=True),
-        gr.Button.update(visible=True),
-        gr.Row.update(visible=True),
-        gr.Accordion.update(visible=True),
-    )
+    models = get_model_list(controller_url)
+    return load_demo_single(models, url_params)
 
 
 def load_demo(url_params, request: gr.Request):
@@ -693,6 +674,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
     )
+    parser.add_argument(
+        "--gradio-auth-path",
+        type=str,
+        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -706,9 +693,22 @@ if __name__ == "__main__":
     if args.add_bard:
         models = ["bard"] + models
 
+    auth = None
+    gradio_auth_creds = []
+    if args.gradio_auth_path is not None:
+        with open(args.gradio_auth_path, "r", encoding="utf8") as file:
+            for line in file.readlines():
+                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
+    if gradio_auth_creds:
+        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
+
     demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+        auth=auth,
     )

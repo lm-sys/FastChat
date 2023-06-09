@@ -118,6 +118,7 @@ The following models are tested:
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
+- [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
 
 Help us [add more](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 
@@ -213,6 +214,10 @@ CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path ~/mod
 - You can also launch a multi-tab gradio server, which includes the Chatbot Arena tabs.
 ```bash
 python3 -m fastchat.serve.gradio_web_server_multi
+```
+- You can protect your webserver with Gradio's Authentication with a password file. The password file should contain one or more "user:password" pairs in this format: `u1:p1,u2:p2,u3:p3`
+```bash
+python3 -m fastchat.serve.gradio_web_server --gradio-auth-path login.txt
 ```
 
 ## API

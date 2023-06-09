@@ -48,7 +48,7 @@ class UsageInfo(BaseModel):
     completion_tokens: Optional[int] = 0
 
 
-class ChatCompletionRequest(BaseModel):
+class APIChatCompletionRequest(BaseModel):
     model: str
     messages: Union[str, List[Dict[str, str]]]
     temperature: Optional[float] = 0.7
@@ -57,9 +57,8 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
-    presence_penalty: Optional[float] = 0.0
-    frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
+    repetition_penalty: Optional[float] = 1.0
 
 
 class ChatMessage(BaseModel):
@@ -100,35 +99,21 @@ class ChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[ChatCompletionResponseStreamChoice]
 
-class TokenCheckRequestItem(BaseModel):
+class APITokenCheckRequestItem(BaseModel):
     model: str
     prompt: str
     max_tokens: int
 
-class TokenCheckRequest(BaseModel):
-    prompts: List[TokenCheckRequestItem]
+class APITokenCheckRequest(BaseModel):
+    prompts: List[APITokenCheckRequestItem]
 
-class TokenCheckResponseItem(BaseModel):
+class APITokenCheckResponseItem(BaseModel):
     fits: bool
     tokenCount: int
     contextLength: int
 
-class TokenCheckResponse(BaseModel):
-    prompts: List[TokenCheckResponseItem]
-
-class EmbeddingsRequest(BaseModel):
-    model: Optional[str] = None
-    engine: Optional[str] = None
-    input: Union[str, List[Any]]
-    user: Optional[str] = None
-
-
-class EmbeddingsResponse(BaseModel):
-    object: str = "list"
-    data: List[Dict[str, Any]]
-    model: str
-    usage: UsageInfo
-
+class APITokenCheckResponse(BaseModel):
+    prompts: List[APITokenCheckResponseItem]
 
 class CompletionRequest(BaseModel):
     model: str

@@ -116,12 +116,7 @@ def train():
         model.print_trainable_parameters()
 
     if training_args.gradient_checkpointing:
-        logging.warning(
-            "gradient checkpointing with lora makes requires_grad "
-            "incorrect and needs a monkey patch in Trainer or the "
-            "wrapped model's forward. ref: "
-            "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198"
-        )
+        model.enable_input_require_grads()
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -145,10 +140,22 @@ def train():
         trainer.train()
     trainer.save_state()
 
-    # Save states. Weights might be a placeholder in zero3 and need a gather
-    state_dict = get_peft_state_maybe_zero_3(
+     # check if zero3 mode enabled
+    if trainer.hf_deepspeed_config_orig.is_zero3():
+        # use deepspeed engine internal function to gather state dict
+        # state_dict_zero3 contains whole parameters of base and lora adapters
+        # we will not extract lora parameters since peft save_pretrained will do that
+        # https://github.com/huggingface/peft/blob/3714aa2fff158fdfa637b2b65952580801d890b2/src/peft/peft_model.py#L125
+        # https://github.com/huggingface/peft/blob/3714aa2fff158fdfa637b2b65952580801d890b2/src/peft/utils/save_and_load.py#L19
+        state_dict_zero3 = trainer.model_wrapped._zero3_consolidated_16bit_state_dict()
+        if training_args.local_rank == 0:
+            state_dict = state_dict_zero3
+    else:
+        # in other mode we use original code from fastchat team, to make sure our change is minimum
+        state_dict = get_peft_state_maybe_zero_3(
         model.named_parameters(), lora_args.lora_bias
-    )
+        )   
+        
     if training_args.local_rank == 0:
         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 

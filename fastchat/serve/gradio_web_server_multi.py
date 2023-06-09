@@ -34,6 +34,8 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
+    global models
+
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
     selected = 0
     if "arena" in url_params:
@@ -42,6 +44,9 @@ def load_demo(url_params, request: gr.Request):
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
+
+    if args.model_list_mode == "reload":
+        models = get_model_list(args.controller_url)
     single_updates = load_demo_single(models, url_params)
 
     models_anony = models
@@ -145,15 +150,14 @@ def build_demo(models, elo_results_file):
 
         url_params = gr.JSON(visible=False)
 
-        if args.model_list_mode == "once":
-            demo.load(
-                load_demo,
-                [url_params],
-                [tabs] + a_list + b_list + c_list,
-                _js=get_window_url_params_js,
-            )
-        else:
+        if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
+        demo.load(
+            load_demo,
+            [url_params],
+            [tabs] + a_list + b_list + c_list,
+            _js=get_window_url_params_js,
+        )
 
     return demo
 
@@ -168,7 +172,8 @@ if __name__ == "__main__":
         "--model-list-mode",
         type=str,
         default="once",
-        choices=["once"],
+        choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
@@ -194,6 +199,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Only add ChatGPT, Claude, Bard under anony battle tab",
     )
+    parser.add_argument(
+        "--gradio-auth-path",
+        type=str,
+        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
+    )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
@@ -211,9 +222,22 @@ if __name__ == "__main__":
         if args.add_bard:
             models = ["bard"] + models
 
+    auth = None
+    gradio_auth_creds = []
+    if args.gradio_auth_path is not None:
+        with open(args.gradio_auth_path, "r", encoding="utf8") as file:
+            for line in file.readlines():
+                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
+    if gradio_auth_creds:
+        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
+
     demo = build_demo(models, args.elo_results_file)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+        auth=auth,
     )
