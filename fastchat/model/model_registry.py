@@ -148,6 +148,6 @@ register_model_info(
 register_model_info(
     ["wizardlm-13b"],
     "WizardLM-13B",
-    "https://huggingface.co/WizardLM/WizardLM-13B-V1.0",
+    "https://github.com/nlpxucan/WizardLM",
     "An instruction-following LLM using evol-instruct",
 )
