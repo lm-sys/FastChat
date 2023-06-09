@@ -145,3 +145,9 @@ register_model_info(
     "https://huggingface.co/nomic-ai/gpt4all-13b-snoozy",
     "A finetuned LLama 13B model on assistant style data by Nomic AI",
 )
+register_model_info(
+    ["wizardlm-13b"],
+    "WizardLM-13B",
+    "https://huggingface.co/WizardLM/WizardLM-13B-V1.0",
+    "An instruction-following LLM using evol-instruct",
+)
