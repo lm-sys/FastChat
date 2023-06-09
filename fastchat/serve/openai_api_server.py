@@ -18,8 +18,10 @@ import os
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import fastapi
+from fastapi import Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
 from pydantic import BaseSettings
 import shortuuid
@@ -64,12 +66,36 @@ logger = logging.getLogger(__name__)
 class AppSettings(BaseSettings):
     # The address of the model controller.
     controller_address: str = "http://localhost:21001"
+    api_keys: List[str] = None
 
 
 app_settings = AppSettings()
 
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
+get_bearer_token = HTTPBearer(auto_error=False)
+
+
+async def check_api_key(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+) -> str:
+    if app_settings.api_keys:
+        if auth is None or (token := auth.credentials) not in app_settings.api_keys:
+            raise HTTPException(
+                status_code = 401,
+                detail = {
+                    "error": {
+                        "message": "",
+                        "type": "invalid_request_error",
+                        "param": None,
+                        "code": "invalid_api_key"
+                    }
+                },
+            )
+        return token
+    else:
+        # api_keys not set; allow all
+        return None
 
 
 def create_error_response(code: int, message: str) -> JSONResponse:
@@ -272,7 +298,7 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
     return worker_addr
 
 
-@app.get("/v1/models")
+@app.get("/v1/models", dependencies=[Depends(check_api_key)])
 async def show_available_models():
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
@@ -287,7 +313,7 @@ async def show_available_models():
     return ModelList(data=model_cards)
 
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
@@ -447,7 +473,7 @@ async def chat_completion(
         return output
 
 
-@app.post("/v1/completions")
+@app.post("/v1/completions", dependencies=[Depends(check_api_key)])
 async def create_completion(request: CompletionRequest):
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
@@ -596,8 +622,8 @@ async def generate_completion(payload: Dict[str, Any]):
         return completion
 
 
-@app.post("/v1/embeddings")
-@app.post("/v1/engines/{model_name}/embeddings")
+@app.post("/v1/embeddings", dependencies=[Depends(check_api_key)])
+@app.post("/v1/engines/{model_name}/embeddings", dependencies=[Depends(check_api_key)])
 async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
     """Creates embeddings for the text"""
     if request.model is None:
@@ -788,6 +814,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--allowed-headers", type=json.loads, default=["*"], help="allowed headers"
     )
+    parser.add_argument(
+        "--api-keys", type=lambda s: s.split(','), help="Optional list of comma separated API keys"
+    )
     args = parser.parse_args()
 
     app.add_middleware(
@@ -798,6 +827,7 @@ if __name__ == "__main__":
         allow_headers=args.allowed_headers,
     )
     app_settings.controller_address = args.controller_address
+    app_settings.api_keys = args.api_keys
 
     logger.info(f"args: {args}")
 
