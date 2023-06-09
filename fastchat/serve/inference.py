@@ -30,6 +30,7 @@ from transformers.generation.logits_process import (
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
+from fastchat.modules.gptq import GptqConfig
 
 
 def prepare_logits_processor(
@@ -257,11 +258,19 @@ def chat_loop(
     repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
+    gptq_config: GptqConfig,
     debug: bool,
 ):
     # Model
     model, tokenizer = load_model(
-        model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading, debug
+        model_path,
+        device,
+        num_gpus,
+        max_gpu_memory,
+        load_8bit,
+        cpu_offloading,
+        gptq_config,
+        debug,
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
     is_fastchat_t5 = "t5" in str(type(model)).lower()
