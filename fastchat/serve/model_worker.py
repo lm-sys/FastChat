@@ -35,7 +35,11 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
-from fastchat.model.model_adapter import load_model, add_model_args
+from fastchat.model.model_adapter import (
+    load_model,
+    add_model_args,
+    get_conversation_template,
+)
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
@@ -82,6 +86,7 @@ class ModelWorker:
         self.model, self.tokenizer = load_model(
             model_path, device, num_gpus, max_gpu_memory, load_8bit, cpu_offloading
         )
+        self.conv = get_conversation_template(model_path)
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -177,6 +182,9 @@ class ModelWorker:
             "error_code": 0,
         }
         return ret
+
+    def get_conv_template(self):
+        return {"conv": self.conv}
 
     def generate_stream_gate(self, params):
         try:
@@ -385,6 +393,11 @@ async def api_get_status(request: Request):
 async def count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
+
+
+@app.post("/worker_get_conv_template")
+async def api_get_conv(request: Request):
+    return worker.get_conv_template()
 
 
 @app.post("/model_details")

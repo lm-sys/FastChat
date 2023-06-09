@@ -28,7 +28,12 @@ import shortuuid
 import tiktoken
 import uvicorn
 
-from fastchat.constants import WORKER_API_TIMEOUT, WORKER_API_EMBEDDING_BATCH_SIZE, ErrorCode
+from fastchat.constants import (
+    WORKER_API_TIMEOUT,
+    WORKER_API_EMBEDDING_BATCH_SIZE,
+    ErrorCode,
+)
+from fastchat.conversation import Conversation, SeparatorStyle
 from fastchat.model.model_adapter import get_conversation_template
 from fastapi.exceptions import RequestValidationError
 from fastchat.protocol.openai_api_protocol import (
@@ -61,6 +66,8 @@ from fastchat.protocol.api_protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+conv_template_map = {}
 
 
 class AppSettings(BaseSettings):
@@ -215,7 +222,7 @@ def process_input(model_name, input):
     return input
 
 
-def get_gen_params(
+async def get_gen_params(
     model_name: str,
     messages: Union[str, List[Dict[str, str]]],
     *,
@@ -226,7 +233,17 @@ def get_gen_params(
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
-    conv = get_conversation_template(model_name)
+    conv = await get_conv(model_name)
+    conv = Conversation(
+        name=conv["name"],
+        system=conv["system"],
+        roles=conv["roles"],
+        messages=conv["messages"],
+        offset=conv["offset"],
+        sep_style=SeparatorStyle(conv["sep_style"]),
+        sep=conv["sep"],
+        sep2=conv["sep2"],
+    )
 
     if isinstance(messages, str):
         prompt = messages
@@ -298,6 +315,23 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
     return worker_addr
 
 
+async def get_conv(model_name: str):
+    controller_address = app_settings.controller_address
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(model_name, client)
+        conv_template = conv_template_map.get((worker_addr,model_name))
+        if conv_template is None:
+            response = await client.post(
+                worker_addr + "/worker_get_conv_template",
+                headers=headers,
+                json={},
+                timeout=WORKER_API_TIMEOUT,
+            )
+            conv_template = response.json()["conv"]
+            conv_template_map[(worker_addr,model_name)] = conv_template
+        return conv_template
+
+
 @app.get("/v1/models", dependencies=[Depends(check_api_key)])
 async def show_available_models():
     controller_address = app_settings.controller_address
@@ -323,7 +357,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    gen_params = get_gen_params(
+    gen_params = await get_gen_params(
         request.model,
         request.messages,
         temperature=request.temperature,
@@ -495,7 +529,7 @@ async def create_completion(request: CompletionRequest):
     else:
         text_completions = []
         for text in request.prompt:
-            payload = get_gen_params(
+            payload = await get_gen_params(
                 request.model,
                 text,
                 temperature=request.temperature,
@@ -543,7 +577,7 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
     for text in request.prompt:
         for i in range(n):
             previous_text = ""
-            payload = get_gen_params(
+            payload = await get_gen_params(
                 request.model,
                 text,
                 temperature=request.temperature,
