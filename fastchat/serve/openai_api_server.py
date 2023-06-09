@@ -67,7 +67,7 @@ from fastchat.protocol.api_protocol import (
 
 logger = logging.getLogger(__name__)
 
-conv_map = {}
+conv_template_map = {}
 
 
 class AppSettings(BaseSettings):
@@ -319,17 +319,17 @@ async def get_conv(model_name: str):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
         worker_addr = await _get_worker_address(model_name, client)
-        conv = conv_map.get((worker_addr,model_name))
-        if conv is None:
+        conv_template = conv_template_map.get((worker_addr,model_name))
+        if conv_template is None:
             response = await client.post(
                 worker_addr + "/worker_get_conv",
                 headers=headers,
                 json={},
                 timeout=WORKER_API_TIMEOUT,
             )
-            conv = response.json()["conv"]
-            conv_map[(worker_addr,model_name)] = conv
-        return conv
+            conv_template = response.json()["conv"]
+            conv_template_map[(worker_addr,model_name)] = conv_template
+        return conv_template
 
 
 @app.get("/v1/models", dependencies=[Depends(check_api_key)])
