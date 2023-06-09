@@ -183,7 +183,7 @@ class ModelWorker:
         }
         return ret
 
-    def get_conv(self):
+    def get_conv_template(self):
         return {"conv": self.conv}
 
     def generate_stream_gate(self, params):
@@ -395,9 +395,9 @@ async def count_token(request: Request):
     return worker.count_token(params)
 
 
-@app.post("/worker_get_conv")
+@app.post("/worker_get_conv_template")
 async def api_get_conv(request: Request):
-    return worker.get_conv()
+    return worker.get_conv_template()
 
 
 @app.post("/model_details")

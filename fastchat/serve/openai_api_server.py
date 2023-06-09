@@ -322,7 +322,7 @@ async def get_conv(model_name: str):
         conv_template = conv_template_map.get((worker_addr,model_name))
         if conv_template is None:
             response = await client.post(
-                worker_addr + "/worker_get_conv",
+                worker_addr + "/worker_get_conv_template",
                 headers=headers,
                 json={},
                 timeout=WORKER_API_TIMEOUT,
