@@ -171,7 +171,7 @@ class Conversation:
 
     def dict(self):
         return {
-            "name": self.name,
+            "template_name": self.name,
             "system": self.system,
             "roles": self.roles,
             "messages": self.messages,

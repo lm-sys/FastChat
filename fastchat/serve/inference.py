@@ -316,6 +316,7 @@ def chat_loop(
         if debug:
             num_tokens = len(tokenizer.encode(outputs))
             msg = {
+                "conv_template": conv.name,
                 "prompt": prompt,
                 "outputs": outputs,
                 "speed (token/s)": round(num_tokens / duration, 2),
