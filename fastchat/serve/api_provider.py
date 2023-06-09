@@ -126,7 +126,7 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
         "max_output_tokens": max_new_tokens,
     }
     gen_params = {
-        "model": "bard",
+        "model": "palm-2",
         "prompt": message,
     }
     gen_params.update(parameters)
