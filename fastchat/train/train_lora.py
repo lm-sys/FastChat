@@ -116,12 +116,7 @@ def train():
         model.print_trainable_parameters()
 
     if training_args.gradient_checkpointing:
-        logging.warning(
-            "gradient checkpointing with lora makes requires_grad "
-            "incorrect and needs a monkey patch in Trainer or the "
-            "wrapped model's forward. ref: "
-            "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198"
-        )
+        model.enable_input_require_grads()
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
