@@ -167,18 +167,25 @@ DEFAULT_WEIGHTS = {
     "gpt-3.5-turbo": 1.5,
     "claude-v1": 1.5,
     "claude-instant-v1": 1.5,
-    "bard": 1.5,
+    "palm-2": 1.5,
+
     "vicuna-13b": 1.5,
-    "koala-13b": 1.5,
+    "wizardlm-13b": 1.5,
+    "gpt4all-13b-snoozy": 1.5,
+
+    "koala-13b": 1.2,
     "vicuna-7b": 1.2,
     "mpt-7b-chat": 1.2,
     "oasst-pythia-12b": 1.2,
     "RWKV-4-Raven-14B": 1.2,
-    "fastchat-t5-3b": 1,
-    "alpaca-13b": 1,
-    "chatglm-6b": 1,
-    "stablelm-tuned-alpha-7b": 0.5,
-    "dolly-v2-12b": 0.5,
+
+    "fastchat-t5-3b": 0.9,
+    "alpaca-13b": 0.9,
+    "chatglm-6b": 0.9,
+
+    "stablelm-tuned-alpha-7b": 0.3,
+    "dolly-v2-12b": 0.3,
+
     "llama-13b": 0.1,
 }
 
