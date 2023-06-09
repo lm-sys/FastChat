@@ -120,7 +120,7 @@ class ModelWorker:
 
     def send_heart_beat(self):
         logger.info(
-            f"Send heart beat. Models: {[self.model_names]}. "
+            f"Send heart beat. Models: {self.model_names}. "
             f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
             f"global_counter: {global_counter}"
         )
@@ -246,7 +246,9 @@ class ModelWorker:
     def get_embeddings(self, params):
         try:
             tokenizer = self.tokenizer
-            is_llama = "llama" in str(type(self.model)) # vicuna support batch inference
+            is_llama = "llama" in str(
+                type(self.model)
+            )  # vicuna support batch inference
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
             if is_llama:
@@ -277,7 +279,9 @@ class ModelWorker:
                         self.device
                     )
                     if is_t5:
-                        model_output = self.model(input_ids, decoder_input_ids=input_ids)
+                        model_output = self.model(
+                            input_ids, decoder_input_ids=input_ids
+                        )
                     else:
                         model_output = self.model(input_ids, output_hidden_states=True)
                     if is_chatglm:
@@ -397,7 +401,11 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     add_model_args(parser)
-    parser.add_argument("--model-names", type=lambda s: s.split(','), help="Optional display comma separated names")
+    parser.add_argument(
+        "--model-names",
+        type=lambda s: s.split(","),
+        help="Optional display comma separated names",
+    )
     parser.add_argument("--limit-model-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -410,7 +418,7 @@ if __name__ == "__main__":
                 f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-        
+
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,

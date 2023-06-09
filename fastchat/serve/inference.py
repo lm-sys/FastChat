@@ -310,10 +310,15 @@ def chat_loop(
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
         t = time.time()
         outputs = chatio.stream_output(output_stream)
-        t = time.time() - t
+        duration = time.time() - t
         conv.update_last_message(outputs.strip())
 
         if debug:
-            print("\n", {"prompt": prompt, "outputs": outputs}, "\n")
             num_tokens = len(tokenizer.encode(outputs))
-            print(f"Tokens per second: {num_tokens / t:.2f}\n")
+            msg = {
+                "conv_template": conv.name,
+                "prompt": prompt,
+                "outputs": outputs,
+                "speed (token/s)": round(num_tokens / duration, 2),
+            }
+            print(f"\n{msg}\n")

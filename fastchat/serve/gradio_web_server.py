@@ -29,7 +29,6 @@ from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
-    bard_api_stream_iter,
     openai_api_stream_iter,
     palm_api_stream_iter,
     init_palm_chat,
@@ -40,6 +39,7 @@ from fastchat.utils import (
     build_logger,
     violates_moderation,
     get_window_url_params_js,
+    parse_gradio_auth_creds,
 )
 
 
@@ -67,13 +67,7 @@ class State:
         self.skip_next = False
         self.model_name = model_name
 
-        if model_name == "bard":
-            self.bard_session_state = {
-                "conversation_id": "",
-                "response_id": "",
-                "choice_id": "",
-                "req_id": 0,
-            }
+        if model_name == "palm-2":
             # According to release note, "chat-bison@001" is PaLM 2 for chat.
             # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
             self.palm_chat = init_palm_chat("chat-bison@001")
@@ -296,13 +290,12 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name in ["claude-v1", "claude-instant-v1"]:
+    elif model_name == "claude-v1" or model_name == "claude-instant-v1":
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "bard":
-        # stream_iter = bard_api_stream_iter(state)
+    elif model_name == "palm-2":
         stream_iter = palm_api_stream_iter(
             state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
         )
@@ -670,9 +663,9 @@ if __name__ == "__main__":
         help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
-        "--add-bard",
+        "--add-palm",
         action="store_true",
-        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
+        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -686,21 +679,16 @@ if __name__ == "__main__":
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
 
-    if args.add_chatgpt:
-        models = ["gpt-3.5-turbo", "gpt-4"] + models
+    if args.add_palm:
+        models = ["palm-2"] + models
     if args.add_claude:
         models = ["claude-v1", "claude-instant-v1"] + models
-    if args.add_bard:
-        models = ["bard"] + models
+    if args.add_chatgpt:
+        models = ["gpt-3.5-turbo", "gpt-4"] + models
 
     auth = None
-    gradio_auth_creds = []
     if args.gradio_auth_path is not None:
-        with open(args.gradio_auth_path, "r", encoding="utf8") as file:
-            for line in file.readlines():
-                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
-    if gradio_auth_creds:
-        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
+        auth = parse_gradio_auth_creds(args.gradio_auth_path)
 
     demo = build_demo(models)
     demo.queue(
