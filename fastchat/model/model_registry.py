@@ -143,5 +143,5 @@ register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-13B-Snoozy",
     "https://huggingface.co/nomic-ai/gpt4all-13b-snoozy",
-    "A finetuned LLama 13B model on assistant style interaction data trained by Nomic AI",
+    "A finetuned LLama 13B model on assistant style data by Nomic AI",
 )
