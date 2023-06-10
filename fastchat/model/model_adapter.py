@@ -608,6 +608,16 @@ class ManticoreAdapter(BaseAdapter):
         return get_conv_template("manticore")
 
 
+class GuanacoAdapter(BaseAdapter):
+    """The model adapter for timdettmers/guanaco-33b-merged"""
+
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zero_shot")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)

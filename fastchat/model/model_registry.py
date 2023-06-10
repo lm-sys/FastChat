@@ -59,13 +59,19 @@ register_model_info(
     ["wizardlm-13b"],
     "WizardLM",
     "https://github.com/nlpxucan/WizardLM",
-    "An instruction-following LLM using evol-instruct",
+    "an instruction-following LLM using evol-instruct by Microsoft",
 )
 register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-Snoozy",
     "https://github.com/nomic-ai/gpt4all",
     "A finetuned LLaMA model on assistant style data by Nomic AI",
+)
+register_model_info(
+    ["guanaco-33b"],
+    "Guanaco",
+    "https://github.com/artidoro/qlora",
+    "a model fine-tuned with QLoRA by UW",
 )
 register_model_info(
     ["koala-13b"],
