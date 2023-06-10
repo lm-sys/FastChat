@@ -64,7 +64,7 @@ register_model_info(
 register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-Snoozy",
-    "https://huggingface.co/nomic-ai/gpt4all-13b-snoozy",
+    "https://github.com/nomic-ai/gpt4all",
     "A finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
@@ -150,4 +150,10 @@ register_model_info(
     "Baize v2",
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
+)
+register_model_info(
+    ["manticore-13b-chat"],
+    "Manticore 13B Chat",
+    "https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg",
+    "A chatbot fine-tuned from LlaMa across several CoT and chat datasets.",
 )

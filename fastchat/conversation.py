@@ -505,6 +505,20 @@ register_conv_template(
     )
 )
 
+# manticore default template
+register_conv_template(
+    Conversation(
+        name="manticore",
+        system="",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
