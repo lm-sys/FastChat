@@ -572,7 +572,6 @@ class H2OGPTAdapter(BaseAdapter):
         return get_conv_template("h2ogpt")
 
 
-<<<<<<< HEAD
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
@@ -631,13 +630,9 @@ register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
-<<<<<<< HEAD
 register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
-
-=======
 register_model_adapter(ManticoreAdapter)
->>>>>>> add manticore 13b chat model to the arena
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
