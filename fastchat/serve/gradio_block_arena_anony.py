@@ -168,25 +168,20 @@ SAMPLING_WEIGHTS = {
     "claude-v1": 1.5,
     "claude-instant-v1": 1.5,
     "palm-2": 1.5,
-
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "gpt4all-13b-snoozy": 1.5,
     "guanaco-33b": 1.5,
-
     "koala-13b": 1.2,
     "vicuna-7b": 1.2,
     "mpt-7b-chat": 1.2,
     "oasst-pythia-12b": 1.2,
     "RWKV-4-Raven-14B": 1.2,
-
     "fastchat-t5-3b": 0.9,
     "alpaca-13b": 0.9,
     "chatglm-6b": 0.9,
-
     "stablelm-tuned-alpha-7b": 0.3,
     "dolly-v2-12b": 0.3,
-
     "llama-13b": 0.1,
 }
 
@@ -221,7 +216,7 @@ def add_text(
                     model_pairs_weights.append(w)
 
             model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
-            #for p, w in zip(model_pairs, model_pairs_weights):
+            # for p, w in zip(model_pairs, model_pairs_weights):
             #    print(p, w)
 
         if len(model_pairs) >= 1:

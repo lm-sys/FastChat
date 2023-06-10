@@ -643,6 +643,7 @@ register_model_adapter(H2OGPTAdapter)
 register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
 register_model_adapter(ManticoreAdapter)
+register_model_adapter(GuanacoAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
