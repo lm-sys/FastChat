@@ -1,3 +1,4 @@
+from argparse import Namespace
 from asyncio import AbstractEventLoop
 import json
 import logging
@@ -5,7 +6,7 @@ import logging.handlers
 import os
 import platform
 import sys
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator, Optional
 import warnings
 
 import requests
@@ -239,14 +240,35 @@ def detect_language(text: str) -> str:
     return lang_code
 
 
-def parse_gradio_auth_creds(filename):
+def parse_gradio_auth_creds_file(filename: str) -> list[tuple[str, str]]:
     """Parse a username:password file for gradio authorization."""
-    gradio_auth_creds = []
+    auth: list[tuple[str, str]] = []
     with open(filename, "r", encoding="utf8") as file:
         for line in file.readlines():
-            gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
-    if gradio_auth_creds:
-        auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
-    else:
-        auth = None
+            auth += parse_gradio_auth_creds(line)
     return auth
+
+
+def parse_gradio_auth_creds(creds: str) -> list[tuple[str, str]]:
+    """Parse a username:password string for gradio authorization."""
+    gradio_auth_creds = [x.strip() for x in creds.split(",") if x.strip()]
+    return [tuple(cred.split(":")) for cred in gradio_auth_creds]
+
+
+def parse_gradio_auth_args(args: Namespace) -> Optional[list[tuple[str, str]]]:
+    gradio_auth_accounts: list[tuple[str, str]] = []
+
+    if args.gradio_auth is not None:
+        gradio_auth_accounts += parse_gradio_auth_creds(args.gradio_auth)
+    if args.gradio_auth_path is not None:
+        gradio_auth_accounts += parse_gradio_auth_creds_file(args.gradio_auth_path)
+
+    return gradio_auth_accounts if len(gradio_auth_accounts) > 0 else None
+
+
+def parse_config_file(args: Namespace):
+    if args.config_file:
+        args_dict = vars(args)
+        with open(args.config_file, "r") as jsonfile:
+            config = json.load(jsonfile)
+        args_dict.update(config)

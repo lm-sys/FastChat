@@ -208,6 +208,33 @@ This is the user interface that users will interact with.
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 If the models do not show up, try to reboot the gradio web server.
 
+#### JSON Config File
+
+Instead of always including options via command line, you can add your configuration to a JSON config file
+```bash
+python3 -m fastchat.serve.gradio_web_server --config-file config.json
+```
+
+All JSON keys are based on the available options. For example to configure `--gradio-auth-path login.txt` in the config file, the config file would look like:
+```json
+{
+    "gradio_auth_path": "login.txt"
+}
+```
+Note in json config keys should converted to Snake-case rather than Kebab-case from the command line options
+
+#### Webserver Authentication
+
+You can protect your webserver with Gradio's Authentication logins. The login input should contain one or more "user:password" pairs in this format: `u1:p1,u2:p2,u3:p3`
+```bash
+python3 -m fastchat.serve.gradio_web_server --gradio-auth u1:p1,u2:p2,u3:p3
+```
+
+Or specify logins in a file instead. The password file should contain one or more "user:password" pairs in this format: `u1:p1,u2:p2,u3:p3`
+```bash
+python3 -m fastchat.serve.gradio_web_server --gradio-auth-path login.txt
+```
+
 #### (Optional): Advanced Features
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
@@ -219,10 +246,6 @@ CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path ~/mod
 - You can also launch a multi-tab gradio server, which includes the Chatbot Arena tabs.
 ```bash
 python3 -m fastchat.serve.gradio_web_server_multi
-```
-- You can protect your webserver with Gradio's Authentication with a password file. The password file should contain one or more "user:password" pairs in this format: `u1:p1,u2:p2,u3:p3`
-```bash
-python3 -m fastchat.serve.gradio_web_server --gradio-auth-path login.txt
 ```
 
 ## API

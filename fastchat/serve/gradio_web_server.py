@@ -37,9 +37,10 @@ from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 from fastchat.utils import (
     build_logger,
+    parse_config_file,
+    parse_gradio_auth_args,
     violates_moderation,
     get_window_url_params_js,
-    parse_gradio_auth_creds,
 )
 
 
@@ -667,13 +668,27 @@ if __name__ == "__main__":
         help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
     )
     parser.add_argument(
+        "--gradio-auth",
+        type=str,
+        help='Set the gradio authentication accounts. This should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
+    parser.add_argument(
+        "--config-file",
+        type=str,
+        help="Set the config file to read from. Will always overwrite given options",
+        default=None,
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
+
+    parse_config_file(args)
 
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
@@ -685,9 +700,7 @@ if __name__ == "__main__":
     if args.add_chatgpt:
         models = ["gpt-3.5-turbo", "gpt-4"] + models
 
-    auth = None
-    if args.gradio_auth_path is not None:
-        auth = parse_gradio_auth_creds(args.gradio_auth_path)
+    auth = parse_gradio_auth_args(args)
 
     demo = build_demo(models)
     demo.queue(

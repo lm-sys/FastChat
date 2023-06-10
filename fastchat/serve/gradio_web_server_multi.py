@@ -30,7 +30,8 @@ from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
-    parse_gradio_auth_creds,
+    parse_config_file,
+    parse_gradio_auth_args,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -203,14 +204,28 @@ if __name__ == "__main__":
         help="Only add ChatGPT, Claude, Bard under anony battle tab",
     )
     parser.add_argument(
+        "--gradio-auth",
+        type=str,
+        help='Set the gradio authentication accounts. This should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
+    parser.add_argument(
+        "--config-file",
+        type=str,
+        help="Set the config file to read from. Will always overwrite given options",
+        default=None,
+    )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
+
+    parse_config_file(args)
 
     set_global_vars(args.controller_url, args.moderate)
     set_global_vars_named(args.moderate)
@@ -225,9 +240,7 @@ if __name__ == "__main__":
         if args.add_palm:
             models = ["palm-2"] + models
 
-    auth = None
-    if args.gradio_auth_path is not None:
-        auth = parse_gradio_auth_creds(args.gradio_auth_path)
+    auth = parse_gradio_auth_args(args)
 
     demo = build_demo(models, args.elo_results_file)
     demo.queue(
