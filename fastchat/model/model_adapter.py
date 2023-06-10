@@ -614,6 +614,15 @@ class GuanacoAdapter(BaseAdapter):
     def match(self, model_path: str):
         return "guanaco" in model_path
 
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        # Fix a bug in tokenizer config
+        tokenizer.eos_token_id = model.config.eos_token_id
+        return model, tokenizer
+
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zero_shot")
 
