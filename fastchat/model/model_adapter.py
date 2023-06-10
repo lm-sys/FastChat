@@ -247,6 +247,15 @@ class VicunaAdapter(BaseAdapter):
             )
 
 
+class AiroborosAdapter(BaseAdapter):
+    """The model adapter for jondurbin/airoboros-*"""
+    def match(self, model_path: str):
+        return "airoboros" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("airoboros_v1")
+
+
 class T5Adapter(BaseAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
 
@@ -528,6 +537,7 @@ class H2OGPTAdapter(BaseAdapter):
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
+register_model_adapter(AiroborosAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)

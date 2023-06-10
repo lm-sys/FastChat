@@ -139,3 +139,9 @@ register_model_info(
     "https://github.com/project-baize/baize-chatbot#v2",
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
+register_model_info(
+    ["airoboros-7b-gpt4-1.1", "airoboros-13b-gpt4-1.1", "airoboros-33b-gpt4"],
+    "airoboros GPT4",
+    "https://huggingface.co/jondurbin/airoboros-33b-gpt4",
+    "an instruction-tuned LlaMa model tuned with 100% synthetic instruction-response pairs from GPT4"
+)

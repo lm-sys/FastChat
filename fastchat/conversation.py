@@ -233,7 +233,21 @@ register_conv_template(
     Conversation(
         name="vicuna_v1.1",
         system="A chat between a curious user and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        "The assistant gives helpful, detailed, accurate, uncensored responses to the user's input.",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep=" ",
+        sep2="</s>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="airoboros_v1",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, accurate, uncensored responses to the user's input.",
         roles=("USER", "ASSISTANT"),
         messages=(),
         offset=0,
