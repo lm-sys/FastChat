@@ -17,7 +17,7 @@ Due to the fact that langchain checks whether the model's name belongs to OpenAI
 Replace `/path/to/weights` below with the a real path to a local model such as Vicuna. It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
 
 ```bash
-python3 -m fastchat.serve.model_worker --model-name 'text-embedding-ada-002' --model-path /path/to/weights
+python3 -m fastchat.serve.model_worker --model-names "gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002" --model-path /path/to/weights
 ```
 
 Finally, launch the RESTful API server
@@ -58,8 +58,7 @@ embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
 loader = TextLoader('state_of_the_union.txt')
 index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
 
-llm = OpenAI(model="text-embedding-ada-002") # select your faux openai model name
-# llm = OpenAI(model="gpt-3.5-turbo")
+llm = OpenAI(model="gpt-3.5-turbo")
 
 questions = [
              "who is the speaker", 

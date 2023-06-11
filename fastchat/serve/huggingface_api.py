@@ -34,7 +34,7 @@ def main(args):
     prompt = conv.get_prompt()
 
     input_ids = tokenizer([prompt]).input_ids
-    
+
     if "t5" in args.model_path and args.repetition_penalty == 1.0:
         args.repetition_penalty = 1.2
     output_ids = model.generate(

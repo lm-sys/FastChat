@@ -70,14 +70,6 @@ class Conversation:
                 else:
                     ret += role + ": "  # must be end with a space
             return ret
-        elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
-            ret = self.system
-            for role, message in self.messages:
-                if message:
-                    ret += role + message + self.sep
-                else:
-                    ret += role
-            return ret
         elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
             ret = self.system + self.sep
             for role, message in self.messages:
@@ -86,16 +78,13 @@ class Conversation:
                 else:
                     ret += role + "\n"
             return ret
-        elif self.sep_style == SeparatorStyle.DOLLY:
-            seps = [self.sep, self.sep2]
+        elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = self.system
-            for i, (role, message) in enumerate(self.messages):
+            for role, message in self.messages:
                 if message:
-                    ret += role + ":\n" + message + seps[i % 2]
-                    if i % 2 == 1:
-                        ret += "\n\n"
+                    ret += role + message + self.sep
                 else:
-                    ret += role + ":\n"
+                    ret += role
             return ret
         elif self.sep_style == SeparatorStyle.RWKV:
             ret = self.system
@@ -109,6 +98,17 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.DOLLY:
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ":\n" + message + seps[i % 2]
+                    if i % 2 == 1:
+                        ret += "\n\n"
+                else:
+                    ret += role + ":\n"
             return ret
         elif self.sep_style == SeparatorStyle.PHOENIX:
             ret = self.system
@@ -134,7 +134,7 @@ class Conversation:
         self.messages[-1][1] = message
 
     def to_gradio_chatbot(self):
-        """Convert the conversation to gradio chatbot format"""
+        """Convert the conversation to gradio chatbot format."""
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -171,7 +171,7 @@ class Conversation:
 
     def dict(self):
         return {
-            "name": self.name,
+            "template_name": self.name,
             "system": self.system,
             "roles": self.roles,
             "messages": self.messages,
@@ -195,7 +195,7 @@ def get_conv_template(name: str) -> Conversation:
     return conv_templates[name].copy()
 
 
-# A template with one conversation example
+# A template with a one-shot conversation example
 register_conv_template(
     Conversation(
         name="one_shot",
@@ -227,6 +227,23 @@ Remember to tailor the activities to the birthday child's interests and preferen
         stop_str="###",
     )
 )
+
+
+# A template similar to the "one_shot" template above but remove the example.
+register_conv_template(
+    Conversation(
+        name="zero_shot",
+        system="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
+    )
+)
+
 
 # Vicuna v1.1 template
 register_conv_template(
@@ -262,10 +279,10 @@ register_conv_template(
     Conversation(
         name="alpaca",
         system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
-        roles=("### Instruction:", "### Response:"),
+        roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
     )
 )
@@ -487,6 +504,35 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="</s>",
+    )
+)
+
+# Snoozy default template
+# Reference: https://github.com/nomic-ai/gpt4all/blob/d4861030b778da6db59d21d2927a4aba4f9f1f43/gpt4all-bindings/python/gpt4all/gpt4all.py#L232
+register_conv_template(
+    Conversation(
+        name="snoozy",
+        system="### Instruction:\nThe prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.",
+        roles=("### Prompt", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="###",
+    )
+)
+
+# manticore default template
+register_conv_template(
+    Conversation(
+        name="manticore",
+        system="",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
     )
 )
 

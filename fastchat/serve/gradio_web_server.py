@@ -29,7 +29,6 @@ from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
-    bard_api_stream_iter,
     openai_api_stream_iter,
     palm_api_stream_iter,
     init_palm_chat,
@@ -40,6 +39,7 @@ from fastchat.utils import (
     build_logger,
     violates_moderation,
     get_window_url_params_js,
+    parse_gradio_auth_creds,
 )
 
 
@@ -67,13 +67,7 @@ class State:
         self.skip_next = False
         self.model_name = model_name
 
-        if model_name == "bard":
-            self.bard_session_state = {
-                "conversation_id": "",
-                "response_id": "",
-                "choice_id": "",
-                "req_id": 0,
-            }
+        if model_name == "palm-2":
             # According to release note, "chat-bison@001" is PaLM 2 for chat.
             # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
             self.palm_chat = init_palm_chat("chat-bison@001")
@@ -115,8 +109,7 @@ def get_model_list(controller_url):
     return models
 
 
-def load_demo_refresh_model_list(url_params):
-    models = get_model_list(controller_url)
+def load_demo_single(models, url_params):
     selected_model = models[0] if len(models) > 0 else ""
     if "model" in url_params:
         model = url_params["model"]
@@ -143,26 +136,8 @@ def load_demo_reload_model(url_params, request: gr.Request):
     logger.info(
         f"load_demo_reload_model. ip: {request.client.host}. params: {url_params}"
     )
-    return load_demo_refresh_model_list(url_params)
-
-
-def load_demo_single(models, url_params):
-    dropdown_update = gr.Dropdown.update(visible=True)
-    if "model" in url_params:
-        model = url_params["model"]
-        if model in models:
-            dropdown_update = gr.Dropdown.update(value=model, visible=True)
-
-    state = None
-    return (
-        state,
-        dropdown_update,
-        gr.Chatbot.update(visible=True),
-        gr.Textbox.update(visible=True),
-        gr.Button.update(visible=True),
-        gr.Row.update(visible=True),
-        gr.Accordion.update(visible=True),
-    )
+    models = get_model_list(controller_url)
+    return load_demo_single(models, url_params)
 
 
 def load_demo(url_params, request: gr.Request):
@@ -315,13 +290,12 @@ def http_bot(state, temperature, top_p, max_new_tokens, request: gr.Request):
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name in ["claude-v1", "claude-instant-v1"]:
+    elif model_name == "claude-v1" or model_name == "claude-instant-v1":
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "bard":
-        # stream_iter = bard_api_stream_iter(state)
+    elif model_name == "palm-2":
         stream_iter = palm_api_stream_iter(
             state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
         )
@@ -494,8 +468,7 @@ def build_single_model_ui(models):
     notice_markdown = """
 # 🏔️ Chat with Open Large Language Models
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
-- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
-- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/KjdtsE9V)
+- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/HSWAKCrnFx)
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.**
@@ -689,9 +662,15 @@ if __name__ == "__main__":
         help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
-        "--add-bard",
+        "--add-palm",
         action="store_true",
-        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
+        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
+    )
+    parser.add_argument(
+        "--gradio-auth-path",
+        type=str,
+        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
@@ -699,16 +678,24 @@ if __name__ == "__main__":
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(args.controller_url)
 
-    if args.add_chatgpt:
-        models = ["gpt-3.5-turbo", "gpt-4"] + models
+    if args.add_palm:
+        models = ["palm-2"] + models
     if args.add_claude:
         models = ["claude-v1", "claude-instant-v1"] + models
-    if args.add_bard:
-        models = ["bard"] + models
+    if args.add_chatgpt:
+        models = ["gpt-3.5-turbo", "gpt-4"] + models
+
+    auth = None
+    if args.gradio_auth_path is not None:
+        auth = parse_gradio_auth_creds(args.gradio_auth_path)
 
     demo = build_demo(models)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+        auth=auth,
     )

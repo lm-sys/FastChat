@@ -302,9 +302,9 @@ class SupervisedDataset(Dataset):
             json_data_dict = json.dumps(data_dict)
 
             # Remember to close file to avoid concurrent r/w
-            with open(self.preprocessed_path,"w") as f:
+            with open(self.preprocessed_path, "w") as f:
                 f.write(json_data_dict)
-            
+
             # Release barrier
             dist.barrier()
 

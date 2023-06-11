@@ -27,13 +27,18 @@ from fastchat.serve.gradio_web_server import (
     load_demo_single,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
-from fastchat.utils import build_logger, get_window_url_params_js
-
+from fastchat.utils import (
+    build_logger,
+    get_window_url_params_js,
+    parse_gradio_auth_creds,
+)
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
+    global models
+
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
     selected = 0
     if "arena" in url_params:
@@ -42,6 +47,9 @@ def load_demo(url_params, request: gr.Request):
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
+
+    if args.model_list_mode == "reload":
+        models = get_model_list(args.controller_url)
     single_updates = load_demo_single(models, url_params)
 
     models_anony = models
@@ -51,8 +59,8 @@ def load_demo(url_params, request: gr.Request):
             models_anony = ["gpt-4", "gpt-3.5-turbo"] + models_anony
         if args.add_claude:
             models_anony = ["claude-v1", "claude-instant-v1"] + models_anony
-        if args.add_bard:
-            models_anony = ["bard"] + models_anony
+        if args.add_palm:
+            models_anony = ["palm-2"] + models_anony
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -145,15 +153,14 @@ def build_demo(models, elo_results_file):
 
         url_params = gr.JSON(visible=False)
 
-        if args.model_list_mode == "once":
-            demo.load(
-                load_demo,
-                [url_params],
-                [tabs] + a_list + b_list + c_list,
-                _js=get_window_url_params_js,
-            )
-        else:
+        if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
+        demo.load(
+            load_demo,
+            [url_params],
+            [tabs] + a_list + b_list + c_list,
+            _js=get_window_url_params_js,
+        )
 
     return demo
 
@@ -168,7 +175,8 @@ if __name__ == "__main__":
         "--model-list-mode",
         type=str,
         default="once",
-        choices=["once"],
+        choices=["once", "reload"],
+        help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument("--share", action="store_true")
     parser.add_argument(
@@ -185,14 +193,20 @@ if __name__ == "__main__":
         help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
-        "--add-bard",
+        "--add-palm",
         action="store_true",
-        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
+        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
     )
     parser.add_argument(
         "--anony-only-for-proprietary-model",
         action="store_true",
         help="Only add ChatGPT, Claude, Bard under anony battle tab",
+    )
+    parser.add_argument(
+        "--gradio-auth-path",
+        type=str,
+        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        default=None,
     )
     parser.add_argument("--elo-results-file", type=str)
     args = parser.parse_args()
@@ -208,12 +222,20 @@ if __name__ == "__main__":
             models = ["gpt-3.5-turbo", "gpt-4"] + models
         if args.add_claude:
             models = ["claude-v1", "claude-instant-v1"] + models
-        if args.add_bard:
-            models = ["bard"] + models
+        if args.add_palm:
+            models = ["palm-2"] + models
+
+    auth = None
+    if args.gradio_auth_path is not None:
+        auth = parse_gradio_auth_creds(args.gradio_auth_path)
 
     demo = build_demo(models, args.elo_results_file)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+        auth=auth,
     )
