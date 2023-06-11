@@ -121,6 +121,7 @@ The following models are tested:
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+- [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
 
 Help us [add more](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 

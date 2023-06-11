@@ -626,6 +626,24 @@ class GuanacoAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zero_shot")
 
+class ChangGPTAdapter(BaseAdapter):
+    """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""
+
+    def match(self, model_path: str):
+        print(model_path)
+        return "polyglot" in model_path and "chang" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("polyglot_changgpt")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -653,6 +671,7 @@ register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
 register_model_adapter(ManticoreAdapter)
 register_model_adapter(GuanacoAdapter)
+register_model_adapter(ChangGPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)
