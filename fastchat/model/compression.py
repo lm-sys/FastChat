@@ -44,7 +44,9 @@ class CLinear(nn.Module):
 
     def forward(self, input: Tensor) -> Tensor:
         weight = decompress(self.weight, default_compression_config)
-        return F.linear(input.to(weight.dtype), weight, self.bias)
+        if self.bias is None:
+            return F.linear(input.to(weight.dtype), weight)
+        return F.linear(input.to(weight.dtype), weight, self.bias.to(weight.dtype))
 
 
 def compress_module(module, target_device):
@@ -97,10 +99,10 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(model_path, device, torch_dtype):
+def load_compress_model(model_path, device, torch_dtype, use_fast=False):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=use_fast)
+    base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     files = glob.glob(base_pattern)
 
     with init_empty_weights():
