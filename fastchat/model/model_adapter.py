@@ -35,6 +35,7 @@ from fastchat.utils import get_gpu_memory
 
 class BaseAdapter:
     """The base and the default model adapter."""
+
     use_fast_flag = False
 
     def match(self, model_path: str):
@@ -46,9 +47,11 @@ class BaseAdapter:
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
-    
+
     def load_compress_model(self, model_path, device, torch_dtype):
-        return load_compress_model(model_path, device, torch_dtype, use_fast=self.use_fast_flag)
+        return load_compress_model(
+            model_path, device, torch_dtype, use_fast=self.use_fast_flag
+        )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
@@ -291,6 +294,7 @@ class VicunaAdapter(BaseAdapter):
 
 class T5Adapter(BaseAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
+
     use_fast_flag = False
 
     def match(self, model_path: str):
@@ -306,6 +310,7 @@ class T5Adapter(BaseAdapter):
 
 class KoalaAdapter(BaseAdapter):
     """The model adapter for koala"""
+
     use_fast_flag = False
 
     def match(self, model_path: str):
@@ -327,6 +332,7 @@ class AlpacaAdapter(BaseAdapter):
 
 class ChatGLMAdapter(BaseAdapter):
     """The model adapter for THUDM/chatglm-6b"""
+
     use_fast_flag = False
 
     def match(self, model_path: str):
@@ -342,6 +348,7 @@ class ChatGLMAdapter(BaseAdapter):
 
 class DollyV2Adapter(BaseAdapter):
     """The model adapter for databricks/dolly-v2-12b"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -364,6 +371,7 @@ class DollyV2Adapter(BaseAdapter):
 
 class OasstPythiaAdapter(BaseAdapter):
     """The model adapter for OpenAssistant/oasst-sft-1-pythia-12b"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -384,6 +392,7 @@ class OasstPythiaAdapter(BaseAdapter):
 
 class StableLMAdapter(BaseAdapter):
     """The model adapter for StabilityAI/stablelm-tuned-alpha-7b"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -404,6 +413,7 @@ class StableLMAdapter(BaseAdapter):
 
 class MPTAdapter(BaseAdapter):
     """The model adapter for mosaicml/mpt-7b-chat"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -438,6 +448,7 @@ class BaizeAdapter(BaseAdapter):
 
 class RwkvAdapter(BaseAdapter):
     """The model adapter for BlinkDL/RWKV-4-Raven"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -480,6 +491,7 @@ class OpenBuddyAdapter(BaseAdapter):
 
 class PhoenixAdapter(BaseAdapter):
     """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
+
     use_fast_flag = True
 
     def match(self, model_path: str):
@@ -627,6 +639,7 @@ class ManticoreAdapter(BaseAdapter):
 
 class GuanacoAdapter(BaseAdapter):
     """The model adapter for timdettmers/guanaco-33b-merged"""
+
     use_fast_flag = False
 
     def match(self, model_path: str):
