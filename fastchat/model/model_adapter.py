@@ -577,11 +577,6 @@ class Robin7bAdapter(BaseAdapter):
     def match(self,model_path:str):
         return "Robin" in model_path
 
-    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
-        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
-        return model, tokenizer
-
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
     
@@ -591,11 +586,6 @@ class Robin13bAdapter(BaseAdapter):
     def match(self,model_path:str):
         return "Robin" in model_path
 
-    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
-        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
-        return model, tokenizer
-
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
     
@@ -604,11 +594,6 @@ class Robin33bAdapter(BaseAdapter):
 
     def match(self,model_path:str):
         return "Robin" in model_path
-
-    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
-        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
-        return model, tokenizer
 
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
