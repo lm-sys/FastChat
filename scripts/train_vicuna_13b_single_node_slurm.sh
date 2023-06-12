@@ -7,12 +7,11 @@ python -m torch.distributed.run --nproc_per_node=16 --nnodes $SLURM_NNODES --nod
     --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
     fastchat/train/train_xformer.py \
     --model_name_or_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/llama-13b \
-    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230515_clean_lang_split_identity_v2.json \
+    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230515_clean_lang_split_identity_gpt4_v2.json \
     --fp16 True \
-    --output_dir vicuna_13b_full_sharegpt_20230515_v2_32GPU \
+    --output_dir vicuna_13b_full_sharegpt_20230515_v2_16GPU_gpt4 \
     --num_train_epochs 3 \
-    --max_steps 10 \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
