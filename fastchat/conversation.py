@@ -195,7 +195,7 @@ def get_conv_template(name: str) -> Conversation:
     return conv_templates[name].copy()
 
 
-# A template with one conversation example
+# A template with a one-shot conversation example
 register_conv_template(
     Conversation(
         name="one_shot",
@@ -227,6 +227,23 @@ Remember to tailor the activities to the birthday child's interests and preferen
         stop_str="###",
     )
 )
+
+
+# A template similar to the "one_shot" template above but remove the example.
+register_conv_template(
+    Conversation(
+        name="zero_shot",
+        system="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
+    )
+)
+
 
 # Vicuna v1.1 template
 register_conv_template(

@@ -162,32 +162,33 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-DEFAULT_WEIGHTS = {
+SAMPLING_WEIGHTS = {
     "gpt-4": 1.5,
     "gpt-3.5-turbo": 1.5,
     "claude-v1": 1.5,
     "claude-instant-v1": 1.5,
     "palm-2": 1.5,
-
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "gpt4all-13b-snoozy": 1.5,
-
+    "guanaco-33b": 1.5,
     "koala-13b": 1.2,
     "vicuna-7b": 1.2,
     "mpt-7b-chat": 1.2,
     "oasst-pythia-12b": 1.2,
     "RWKV-4-Raven-14B": 1.2,
-
     "fastchat-t5-3b": 0.9,
     "alpaca-13b": 0.9,
     "chatglm-6b": 0.9,
-
     "stablelm-tuned-alpha-7b": 0.3,
     "dolly-v2-12b": 0.3,
-
     "llama-13b": 0.1,
 }
+
+SAMPLING_BOOST_MODELS = []
+
+model_pairs = []
+model_pairs_weights = []
 
 
 def add_text(
@@ -199,12 +200,28 @@ def add_text(
 
     if states[0] is None:
         assert states[1] is None
-        weights = [DEFAULT_WEIGHTS.get(m, 1.0) for m in models]
-        if len(models) > 1:
-            weights = weights / np.sum(weights)
-            model_left, model_right = np.random.choice(
-                models, size=(2,), p=weights, replace=False
-            )
+        global model_pairs, model_pairs_weights
+
+        if len(model_pairs) == 0:
+            for i in range(len(models)):
+                for j in range(len(models)):
+                    if i == j:
+                        continue
+                    a = models[i]
+                    b = models[j]
+                    w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
+                    if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
+                        w *= 5
+                    model_pairs.append((a, b))
+                    model_pairs_weights.append(w)
+
+            model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
+            # for p, w in zip(model_pairs, model_pairs_weights):
+            #    print(p, w)
+
+        if len(model_pairs) >= 1:
+            idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
+            model_left, model_right = model_pairs[idx]
         else:
             model_left = model_right = models[0]
 
