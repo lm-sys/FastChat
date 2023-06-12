@@ -51,7 +51,7 @@ def load_demo_side_by_side_named(models, url_params):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8, 4, 2, 1] + [1] * 32)[: len(models) - 1]
+        weights = ([4, 8, 4, 8, 2] + [1] * 32)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
