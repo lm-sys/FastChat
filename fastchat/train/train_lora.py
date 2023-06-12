@@ -116,12 +116,7 @@ def train():
         model.print_trainable_parameters()
 
     if training_args.gradient_checkpointing:
-        logging.warning(
-            "gradient checkpointing with lora makes requires_grad "
-            "incorrect and needs a monkey patch in Trainer or the "
-            "wrapped model's forward. ref: "
-            "https://github.com/lm-sys/FastChat/pull/138#issuecomment-1509172198"
-        )
+        model.enable_input_require_grads()
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -145,7 +140,7 @@ def train():
         trainer.train()
     trainer.save_state()
 
-     # check if zero3 mode enabled
+    # check if zero3 mode enabled
     if trainer.hf_deepspeed_config_orig.is_zero3():
         # use deepspeed engine internal function to gather state dict
         # state_dict_zero3 contains whole parameters of base and lora adapters
@@ -158,9 +153,9 @@ def train():
     else:
         # in other mode we use original code from fastchat team, to make sure our change is minimum
         state_dict = get_peft_state_maybe_zero_3(
-        model.named_parameters(), lora_args.lora_bias
-        )   
-        
+            model.named_parameters(), lora_args.lora_bias
+        )
+
     if training_args.local_rank == 0:
         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 

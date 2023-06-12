@@ -35,6 +35,6 @@ services:
     image: fastchat:latest
     ports:
       - "8000:8000"
-    entrypoint: ["python3", "-m", "fastchat.serve.openai_api_server", "--host", "0.0.0.0", "--port", "8000"]
+    entrypoint: ["python3", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
 volumes:
   huggingface:

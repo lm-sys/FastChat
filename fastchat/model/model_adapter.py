@@ -5,6 +5,8 @@ import sys
 from typing import List, Optional
 import warnings
 
+from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
+
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -49,6 +51,7 @@ class BaseAdapter:
 
 
 # A global registry for all model adapters
+# TODO (lmzheng): make it a priority queue.
 model_adapters: List[BaseAdapter] = []
 
 
@@ -99,6 +102,7 @@ def load_model(
     max_gpu_memory: Optional[str] = None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
+    gptq_config: Optional[GptqConfig] = None,
     debug: bool = False,
 ):
     """Load a model from Hugging Face."""
@@ -152,6 +156,12 @@ def load_model(
             return load_compress_model(
                 model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"]
             )
+    elif gptq_config and gptq_config.wbits < 16:
+        return load_gptq_quantized(
+            model_path,
+            gptq_config,
+            device=device,
+        )
 
     # Load model
     adapter = get_model_adapter(model_path)
@@ -204,6 +214,30 @@ def add_model_args(parser):
         "--cpu-offloading",
         action="store_true",
         help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU",
+    )
+    parser.add_argument(
+        "--gptq-ckpt",
+        type=str,
+        default=None,
+        help="Load quantized model. The path to the local GPTQ checkpoint.",
+    )
+    parser.add_argument(
+        "--gptq-wbits",
+        type=int,
+        default=16,
+        choices=[2, 3, 4, 8, 16],
+        help="#bits to use for quantization",
+    )
+    parser.add_argument(
+        "--gptq-groupsize",
+        type=int,
+        default=-1,
+        help="Groupsize to use for quantization; default uses full row.",
+    )
+    parser.add_argument(
+        "--gptq-act-order",
+        action="store_true",
+        help="Whether to apply the activation order GPTQ heuristic",
     )
 
 
@@ -486,6 +520,19 @@ class BardAdapter(BaseAdapter):
         return get_conv_template("bard")
 
 
+class PaLM2Adapter(BaseAdapter):
+    """The model adapter for PaLM2."""
+
+    def match(self, model_path: str):
+        return model_path == "palm-2"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("bard")
+
+
 class BiLLaAdapter(BaseAdapter):
     """The model adapter for BiLLa."""
 
@@ -538,6 +585,61 @@ class Robin7bAdapter(BaseAdapter):
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
 
+class SnoozyAdapter(BaseAdapter):
+    """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
+
+    def match(self, model_path: str):
+        return "gpt4all" in model_path and "snoozy" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("snoozy")
+
+
+class WizardLMAdapter(BaseAdapter):
+    """The model adapter for WizardLM/WizardLM-13B-V1.0"""
+
+    def match(self, model_path: str):
+        return "wizardlm" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "13b" in model_path or "30b" in model_path:
+            return get_conv_template("vicuna_v1.1")
+        else:
+            # TODO: use the recommended template for 7B
+            # (https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+            return get_conv_template("one_shot")
+
+
+class ManticoreAdapter(BaseAdapter):
+    """The model adapter for Manticore."""
+
+    def match(self, model_path: str):
+        return "manticore" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("manticore")
+
+
+class GuanacoAdapter(BaseAdapter):
+    """The model adapter for timdettmers/guanaco-33b-merged"""
+
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        # Fix a bug in tokenizer config
+        tokenizer.eos_token_id = model.config.eos_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zero_shot")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
@@ -553,6 +655,7 @@ register_model_adapter(RwkvAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
+register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
@@ -560,5 +663,10 @@ register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
 register_model_adapter(Robin7bAdapter)
+register_model_adapter(SnoozyAdapter)
+register_model_adapter(WizardLMAdapter)
+register_model_adapter(ManticoreAdapter)
+register_model_adapter(GuanacoAdapter)
+
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

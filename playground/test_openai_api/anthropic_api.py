@@ -5,6 +5,7 @@ from fastchat.model import get_conversation_template
 
 def claude():
     import anthropic
+
     c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
 
     model = "claude-v1"
