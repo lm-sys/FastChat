@@ -36,15 +36,24 @@ from fastchat.utils import get_gpu_memory
 class BaseAdapter:
     """The base and the default model adapter."""
 
+    use_fast_tokenizer = False
+
     def match(self, model_path: str):
         return True
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=self.use_fast_tokenizer
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
+
+    def load_compress_model(self, model_path, device, torch_dtype):
+        return load_compress_model(
+            model_path, device, torch_dtype, use_fast=self.use_fast_tokenizer
+        )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
@@ -107,6 +116,9 @@ def load_model(
 ):
     """Load a model from Hugging Face."""
 
+    # get model adapter
+    adapter = get_model_adapter(model_path)
+
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
         device, load_8bit, cpu_offloading
@@ -153,7 +165,7 @@ def load_model(
                 "8-bit quantization is not supported for multi-gpu inference."
             )
         else:
-            return load_compress_model(
+            return adapter.load_compress_model(
                 model_path=model_path, device=device, torch_dtype=kwargs["torch_dtype"]
             )
     elif gptq_config and gptq_config.wbits < 16:
@@ -332,6 +344,8 @@ class ChatGLMAdapter(BaseAdapter):
 class DollyV2Adapter(BaseAdapter):
     """The model adapter for databricks/dolly-v2-12b"""
 
+    use_fast_tokenizer = True
+
     def match(self, model_path: str):
         return "dolly-v2" in model_path
 
@@ -353,17 +367,10 @@ class DollyV2Adapter(BaseAdapter):
 class OasstPythiaAdapter(BaseAdapter):
     """The model adapter for OpenAssistant/oasst-sft-1-pythia-12b"""
 
+    use_fast_tokenizer = True
+
     def match(self, model_path: str):
         return "oasst" in model_path and "pythia" in model_path
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        )
-        return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
@@ -372,17 +379,10 @@ class OasstPythiaAdapter(BaseAdapter):
 class StableLMAdapter(BaseAdapter):
     """The model adapter for StabilityAI/stablelm-tuned-alpha-7b"""
 
+    use_fast_tokenizer = True
+
     def match(self, model_path: str):
         return "stablelm" in model_path
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        )
-        return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("stablelm")
@@ -390,6 +390,8 @@ class StableLMAdapter(BaseAdapter):
 
 class MPTAdapter(BaseAdapter):
     """The model adapter for mosaicml/mpt-7b-chat"""
+
+    use_fast_tokenizer = True
 
     def match(self, model_path: str):
         return "mpt" in model_path
@@ -423,6 +425,8 @@ class BaizeAdapter(BaseAdapter):
 
 class RwkvAdapter(BaseAdapter):
     """The model adapter for BlinkDL/RWKV-4-Raven"""
+
+    use_fast_tokenizer = True
 
     def match(self, model_path: str):
         return "RWKV-4" in model_path
@@ -465,17 +469,10 @@ class OpenBuddyAdapter(BaseAdapter):
 class PhoenixAdapter(BaseAdapter):
     """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
 
+    use_fast_tokenizer = True
+
     def match(self, model_path: str):
         return "phoenix" in model_path
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        )
-        return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phoenix")
