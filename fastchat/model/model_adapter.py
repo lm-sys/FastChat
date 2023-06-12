@@ -584,6 +584,34 @@ class Robin7bAdapter(BaseAdapter):
 
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
+    
+class Robin13bAdapter(BaseAdapter):
+    """The model adapter for LMFlow/Full-Robin-13b-v2"""
+
+    def match(self,model_path:str):
+        return "Robin" in model_path
+
+    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
+        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
+        return model, tokenizer
+
+    def get_default_conv_template(self,model_path:str) -> Conversation:
+        return get_conv_template("Robin")
+    
+class Robin33bAdapter(BaseAdapter):
+    """The model adapter for LMFlow/Full-Robin-33b-v2"""
+
+    def match(self,model_path:str):
+        return "Robin" in model_path
+
+    def load_model(self,model_path: str,from_pretrained_kwargs:dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True,unk_token="<unk>",bos_token="<s>",eos_token="</s>")
+        model = AutoModelForCausalLM.from_pretrained(model_path,**from_pretrained_kwargs)
+        return model, tokenizer
+
+    def get_default_conv_template(self,model_path:str) -> Conversation:
+        return get_conv_template("Robin")
 
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
@@ -663,6 +691,8 @@ register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
 register_model_adapter(Robin7bAdapter)
+register_model_adapter(Robin13bAdapter)
+register_model_adapter(Robin33bAdapter)
 register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
 register_model_adapter(ManticoreAdapter)
