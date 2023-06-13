@@ -431,6 +431,14 @@ pre {
 #notice_markdown th {
     display: none;
 }
+#notice_markdown td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+#leaderboard_markdown td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
 """
 )
 
