@@ -145,7 +145,7 @@ def load_model(
         # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
     elif device == "xpu":
-        kwargs = {"torch_dtype": torch.float16}
+        kwargs = {"torch_dtype": torch.bfloat16}
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -187,7 +187,7 @@ def load_model(
     elif device == "xpu":
         model.eval()
         model = model.to("xpu")
-        model = torch.xpu.optimize(model, dtype=torch.float16, inplace=True)
+        model = torch.xpu.optimize(model, dtype=torch.bfloat16, inplace=True)
 
     if debug:
         print(model)
