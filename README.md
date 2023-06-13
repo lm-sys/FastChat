@@ -156,7 +156,10 @@ Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 #### Intel XPU (Intel Data Center and Arc A-Series GPUs)
 Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html).
 
-**NOTE**: The 1.13.120 release of Intel Extension for PyTorch is [currently broken](https://github.com/intel/intel-extension-for-pytorch/issues/302), please compile from source or use a newer build.
+Set the OneAPI environment variables:
+```
+source /opt/intel/oneapi/setvars.sh
+```
 
 Use `--device xpu` to enable XPU/GPU acceleration.
 ```
