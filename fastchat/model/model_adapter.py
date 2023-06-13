@@ -5,8 +5,6 @@ import sys
 from typing import List, Optional
 import warnings
 
-from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
-
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -14,6 +12,13 @@ else:
 
 import psutil
 import torch
+
+# Try to import intel_extension_for_pytorch, only required for "xpu" device
+try:
+    import intel_extension_for_pytorch as ipex
+except ImportError:
+    pass
+
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -25,6 +30,7 @@ from transformers import (
     T5Tokenizer,
 )
 
+from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.monkey_patch_non_inplace import (
