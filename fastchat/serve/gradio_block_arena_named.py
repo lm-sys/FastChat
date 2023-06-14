@@ -209,9 +209,7 @@ def add_text(
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(
-            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
-        )
+        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
         for i in range(num_models):
             states[i].skip_next = True
         return (
@@ -297,7 +295,6 @@ def flash_buttons():
     for i in range(10):
         yield btn_updates[i % 2]
         time.sleep(0.2)
-
 
 
 def build_side_by_side_ui_named(models):
@@ -429,7 +426,9 @@ By using this service, users are required to agree to the following terms: The s
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
 
     share_js = """
@@ -467,7 +466,9 @@ function (a, b, c, d) {
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
     send_btn.click(
         add_text,
         states + model_selectors + [textbox],
@@ -476,7 +477,9 @@ function (a, b, c, d) {
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
 
     return (
         states,

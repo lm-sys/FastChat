@@ -58,11 +58,11 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         if args.anony_only_for_proprietary_model:
-            models = get_model_list(args.controller_url,
-                False, False, False)
+            models = get_model_list(args.controller_url, False, False, False)
         else:
-            models = get_model_list(args.controller_url,
-                args.add_chatgpt, args.add_claude, args.add_palm)
+            models = get_model_list(
+                args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+            )
 
     single_updates = load_demo_single(models, url_params)
 
@@ -183,12 +183,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
-    parser.add_argument("--share", action="store_true",
-        help="Whether to generate a public, shareable link.")
-    parser.add_argument("--controller-url", type=str, default="http://localhost:21001",
-        help="The address of the controller.")
-    parser.add_argument("--concurrency-count", type=int, default=10,
-        help="The concurrency count of the gradio queue.")
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="Whether to generate a public, shareable link.",
+    )
+    parser.add_argument(
+        "--controller-url",
+        type=str,
+        default="http://localhost:21001",
+        help="The address of the controller.",
+    )
+    parser.add_argument(
+        "--concurrency-count",
+        type=int,
+        default=10,
+        help="The concurrency count of the gradio queue.",
+    )
     parser.add_argument(
         "--model-list-mode",
         type=str,
@@ -234,11 +245,11 @@ if __name__ == "__main__":
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
     if args.anony_only_for_proprietary_model:
-        models = get_model_list(args.controller_url,
-            False, False, False)
+        models = get_model_list(args.controller_url, False, False, False)
     else:
-        models = get_model_list(args.controller_url,
-            args.add_chatgpt, args.add_claude, args.add_palm)
+        models = get_model_list(
+            args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+        )
 
     # Set authorization credentials
     auth = None

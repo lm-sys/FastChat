@@ -283,9 +283,7 @@ def add_text(
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(
-            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
-        )
+        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
         for i in range(num_models):
             states[i].skip_next = True
         return (
@@ -485,7 +483,9 @@ Please scroll down and start chatting. You can view a leaderboard of participati
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
     clear_btn.click(
         clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list
     )
@@ -520,7 +520,9 @@ function (a, b, c, d) {
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
 
     send_btn.click(
         add_text,
@@ -530,7 +532,9 @@ function (a, b, c, d) {
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
-    ).then(flash_buttons, [], btn_list)
+    ).then(
+        flash_buttons, [], btn_list
+    )
 
     return (
         states,

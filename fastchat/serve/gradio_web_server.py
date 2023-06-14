@@ -153,8 +153,9 @@ def load_demo(url_params, request: gr.Request):
     ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     if args.model_list_mode == "reload":
-        models = get_model_list(controller_url, args.add_chatgpt,
-            args.add_claude, args.add_palm)
+        models = get_model_list(
+            controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+        )
 
     return load_demo_single(models, url_params)
 
@@ -228,9 +229,7 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     conv = state.conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(
-            f"conversation turn limit. ip: {request.client.host}. text: {text}"
-        )
+        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
             no_change_btn,
@@ -651,12 +650,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
-    parser.add_argument("--share", action="store_true",
-        help="Whether to generate a public, shareable link.")
-    parser.add_argument("--controller-url", type=str, default="http://localhost:21001",
-        help="The address of the controller.")
-    parser.add_argument("--concurrency-count", type=int, default=10,
-        help="The concurrency count of the gradio queue.")
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="Whether to generate a public, shareable link.",
+    )
+    parser.add_argument(
+        "--controller-url",
+        type=str,
+        default="http://localhost:21001",
+        help="The address of the controller.",
+    )
+    parser.add_argument(
+        "--concurrency-count",
+        type=int,
+        default=10,
+        help="The concurrency count of the gradio queue.",
+    )
     parser.add_argument(
         "--model-list-mode",
         type=str,
@@ -693,8 +703,9 @@ if __name__ == "__main__":
 
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
-    models = get_model_list(args.controller_url,
-        args.add_chatgpt, args.add_claude, args.add_palm)
+    models = get_model_list(
+        args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+    )
 
     # Set authorization credentials
     auth = None
