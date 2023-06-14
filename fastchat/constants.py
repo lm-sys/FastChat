@@ -1,17 +1,25 @@
 from enum import IntEnum
 import os
 
-# For the gradio web server
+
+##### For the gradio web server
 SERVER_ERROR_MSG = (
     "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
 )
 MODERATION_MSG = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE FIX YOUR INPUT AND TRY AGAIN."
 CONVERSATION_LIMIT_MSG = "YOU HAVE REACHED THE CONVERSATION LENGTH LIMIT. PLEASE CLEAR HISTORY AND START A NEW CONVERSATION."
+INACTIVE_MSG = "THIS SESSION HAS BEEN INACTIVE FOR TOO LONG. PLEASE REFRESH THIS PAGE."
+# Maximum input length
 INPUT_CHAR_LEN_LIMIT = 2560
-CONVERSATION_LEN_LIMIT = 50
+# Maximum conversation turns
+CONVERSATION_TURN_LIMIT = 50
+# Session expiration time
+SESSION_EXPIRATION_TIME = 120
+# The output dir of log files
 LOGDIR = "."
 
-# For the controller and workers (could be overwritten through ENV variables.)
+
+##### For the controller and workers (could be overwritten through ENV variables.)
 CONTROLLER_HEART_BEAT_EXPIRATION = int(
     os.getenv("FASTCHAT_CONTROLLER_HEART_BEAT_EXPIRATION", 90)
 )
