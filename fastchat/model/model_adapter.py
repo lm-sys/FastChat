@@ -5,8 +5,6 @@ import sys
 from typing import List, Optional
 import warnings
 
-from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
-
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -14,6 +12,7 @@ else:
 
 import psutil
 import torch
+
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -25,6 +24,7 @@ from transformers import (
     T5Tokenizer,
 )
 
+from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.monkey_patch_non_inplace import (
@@ -144,6 +144,8 @@ def load_model(
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
         replace_llama_attn_with_non_inplace_operations()
+    elif device == "xpu":
+        kwargs = {"torch_dtype": torch.bfloat16}
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -182,6 +184,17 @@ def load_model(
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
         model.to(device)
 
+    elif device == "xpu":
+        try:
+            import intel_extension_for_pytorch as ipex
+        except ImportError:
+            warnings.warn(
+                "Intel Extension for PyTorch is not installed, but is required for xpu inference."
+            )
+        model.eval()
+        model = model.to("xpu")
+        model = torch.xpu.optimize(model, dtype=torch.bfloat16, inplace=True)
+
     if debug:
         print(model)
 
@@ -203,7 +216,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--device",
         type=str,
-        choices=["cpu", "cuda", "mps"],
+        choices=["cpu", "cuda", "mps", "xpu"],
         default="cuda",
         help="The device type",
     )
