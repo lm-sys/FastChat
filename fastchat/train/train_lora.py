@@ -39,7 +39,7 @@ from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
 
-replace_llama_attn_with_flash_attn()
+# replace_llama_attn_with_flash_attn()
 
 
 @dataclass
@@ -110,7 +110,7 @@ def train():
         )
         if deepspeed.is_deepspeed_zero3_enabled():
             logging.warn(
-                "Deepspeed-Zero3 mode is enabled, so we cannot pass in a device map."
+                "ZeRO3 is currently incompatible with QLoRA."
                 "Ref: https://github.com/huggingface/transformers/blob/8f093fb799246f7dd9104ff44728da0c53a9f67a/src/transformers/modeling_utils.py#L2226-L2229"
             )
 
