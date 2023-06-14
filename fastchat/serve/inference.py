@@ -294,11 +294,12 @@ def chat_loop(
             inp = chatio.prompt_for_input(conv.roles[0])
         except EOFError:
             inp = ""
-        if inp == "!exit" or not inp:
+
+        if inp == "!!exit" or not inp:
             print("exit...")
             break
 
-        if inp == "!reset":
+        if inp == "!!reset":
             print("resetting...")
             conv = new_chat()
             continue
