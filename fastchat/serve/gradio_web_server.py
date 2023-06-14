@@ -386,7 +386,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
                     enable_btn,
                 )
                 return
-            time.sleep(0.01)
+            time.sleep(0.015)
     except requests.exceptions.RequestException as e:
         conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
