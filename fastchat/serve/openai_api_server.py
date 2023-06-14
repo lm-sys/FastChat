@@ -238,7 +238,7 @@ async def get_gen_params(
         name=conv["name"],
         system=conv["system"],
         roles=conv["roles"],
-        messages=conv["messages"],
+        messages=list(conv["messages"]),  # prevent in-place modification
         offset=conv["offset"],
         sep_style=SeparatorStyle(conv["sep_style"]),
         sep=conv["sep"],

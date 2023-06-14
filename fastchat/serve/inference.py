@@ -280,19 +280,29 @@ def chat_loop(
         repetition_penalty = 1.2
 
     # Chat
-    if conv_template:
-        conv = get_conv_template(conv_template)
-    else:
-        conv = get_conversation_template(model_path)
+    def new_chat():
+        if conv_template:
+            conv = get_conv_template(conv_template)
+        else:
+            conv = get_conversation_template(model_path)
+        return conv
+
+    conv = new_chat()
 
     while True:
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
         except EOFError:
             inp = ""
-        if not inp:
+
+        if inp == "!!exit" or not inp:
             print("exit...")
             break
+
+        if inp == "!!reset":
+            print("resetting...")
+            conv = new_chat()
+            continue
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)

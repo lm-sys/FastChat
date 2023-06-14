@@ -125,7 +125,7 @@ def build_leaderboard_tab(elo_results_file):
 
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
-    md_1 = gr.Markdown(md)
+    md_1 = gr.Markdown(md, elem_id="leaderboard_markdown")
     gr.Markdown(
         f"""## More Statistics\n
 We added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
