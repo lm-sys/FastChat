@@ -228,7 +228,6 @@ Remember to tailor the activities to the birthday child's interests and preferen
     )
 )
 
-
 # A template similar to the "one_shot" template above but remove the example.
 register_conv_template(
     Conversation(
@@ -243,7 +242,6 @@ register_conv_template(
         stop_str="###",
     )
 )
-
 
 # Vicuna v1.1 template
 register_conv_template(
