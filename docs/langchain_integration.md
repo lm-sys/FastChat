@@ -42,6 +42,18 @@ Set OpenAI API key
 export OPENAI_API_KEY=EMPTY
 ```
 
+Set a smaller batch size if you meet the following error while creating embeddings
+
+~~~bash
+openai.error.APIError: Invalid response object from API: '{"object":"error","message":"**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**\\n\\n(CUDA out of memory. ...
+~~~
+
+You can try
+
+~~~bash
+export FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE=1
+~~~
+
 ## Try local LangChain
 
 Here is a question answerting example.
