@@ -14,7 +14,7 @@ INPUT_CHAR_LEN_LIMIT = 2560
 # Maximum conversation turns
 CONVERSATION_TURN_LIMIT = 50
 # Session expiration time
-SESSION_EXPIRATION_TIME = 120
+SESSION_EXPIRATION_TIME = 3600
 # The output dir of log files
 LOGDIR = "."
 
