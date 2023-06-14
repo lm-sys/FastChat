@@ -106,7 +106,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 
 #### Supported Models
 The following models are tested:
-- Vicuna, Alpaca, LLaMA, Koala, CAMEL
+- Vicuna, Alpaca, LLaMA, Koala
 - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
