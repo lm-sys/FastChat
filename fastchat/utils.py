@@ -1,3 +1,6 @@
+"""
+Common utilities.
+"""
 from asyncio import AbstractEventLoop
 import json
 import logging
@@ -15,6 +18,7 @@ from fastchat.constants import LOGDIR
 
 
 handler = None
+visited_loggers = set()
 
 
 def build_logger(logger_name, logger_filename):
@@ -54,18 +58,18 @@ def build_logger(logger_name, logger_filename):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
-    # Add a file handler for all loggers
-    if handler is None:
-        os.makedirs(LOGDIR, exist_ok=True)
-        filename = os.path.join(LOGDIR, logger_filename)
-        handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True, encoding="utf-8"
-        )
-        handler.setFormatter(formatter)
+    os.makedirs(LOGDIR, exist_ok=True)
+    filename = os.path.join(LOGDIR, logger_filename)
+    handler = logging.handlers.TimedRotatingFileHandler(
+        filename, when="D", utc=True, encoding="utf-8"
+    )
+    handler.setFormatter(formatter)
 
-        for name, item in logging.root.manager.loggerDict.items():
-            if isinstance(item, logging.Logger):
-                item.addHandler(handler)
+    for logger in [stdout_logger, stderr_logger, logger]:
+        if logger in visited_loggers:
+            continue
+        visited_loggers.add(logger)
+        logger.addHandler(handler)
 
     return logger
 
@@ -159,9 +163,11 @@ def violates_moderation(text):
     return flagged
 
 
-# Flan-t5 trained with HF+FSDP saves corrupted  weights for shared embeddings,
-# Use this function to make sure it can be correctly loaded.
 def clean_flant5_ckpt(ckpt_path):
+    """
+    Flan-t5 trained with HF+FSDP saves corrupted  weights for shared embeddings,
+    Use this function to make sure it can be correctly loaded.
+    """
     index_file = os.path.join(ckpt_path, "pytorch_model.bin.index.json")
     index_json = json.load(open(index_file, "r"))
 
