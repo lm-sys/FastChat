@@ -13,8 +13,11 @@ First, launch the controller
 python3 -m fastchat.serve.controller
 ```
 
-Due to the fact that langchain checks whether the model's name belongs to OpenAI, we need to assign a faux OpenAI name to the Vicuna model. In essence, we're providing an OpenAI model name when loading the model.
-Replace `/path/to/weights` below with the a real path to a local model such as Vicuna. It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
+LangChain uses OpenAI model names by default, so we need to assign some faux OpenAI model names to our local model.
+Here, we use Vicuna as an example and use it for three endpoints: chat completion, completion, and embedding.
+Replace `/path/to/weights` below with the a real path to a local model such as Vicuna.
+It can also be a Hugging Face repo id such as `lmsys/fastchat-t5-3b-v1.0`.
+See a full list of supported models [here](../README.md#supported-models).
 
 ```bash
 python3 -m fastchat.serve.model_worker --model-names "gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002" --model-path /path/to/weights
@@ -42,7 +45,7 @@ Set OpenAI API key
 export OPENAI_API_KEY=EMPTY
 ```
 
-Set a smaller batch size if you meet the following error while creating embeddings
+If you meet the following OOM error while creating embeddings, please set a smaller batch size by using environment variables.
 
 ~~~bash
 openai.error.APIError: Invalid response object from API: '{"object":"error","message":"**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**\\n\\n(CUDA out of memory. Tried to allocate xxx MiB (GPU 0; xxx GiB total capacity; xxx GiB already allocated; xxx MiB free; xxx GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF)","code":50002}' (HTTP response code was 400)
@@ -73,15 +76,15 @@ index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
 llm = OpenAI(model="gpt-3.5-turbo")
 
 questions = [
-             "who is the speaker", 
-             "What did the president say about Ketanji Brown Jackson", 
-             "What are the threats to America", 
-             "Who are mentioned in the speech",
-             "Who is the vice president",
-             "How many projects were announced",
-            ]
+    "Who is the speaker", 
+    "What did the president say about Ketanji Brown Jackson", 
+    "What are the threats to America", 
+    "Who are mentioned in the speech",
+    "Who is the vice president",
+    "How many projects were announced",
+]
 
 for query in questions:
-    print("Query: ", query)
-    print("Ans: ",index.query(query,llm=llm))
+    print("Query:", query)
+    print("Ans:",index.query(query,llm=llm))
 ~~~
