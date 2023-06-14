@@ -108,14 +108,18 @@ This OpenAI-compatible API server supports LangChain. See [LangChain Integration
 ## Adjusting Environment Variables
 
 ### Timeout
-By default, a timeout error will occur if a model worker does not response within 100 seconds. If your model/hardware is slower, you can change this timeout through an environment variable: `export FASTCHAT_WORKER_API_TIMEOUT=<larger timeout in seconds>`
+By default, a timeout error will occur if a model worker does not response within 100 seconds. If your model/hardware is slower, you can change this timeout through an environment variable: 
+
+```bash
+export FASTCHAT_WORKER_API_TIMEOUT=<larger timeout in seconds>
+```
 
 ### Batch size
 If you meet the following OOM error while creating embeddings. You can use a smaller batch size by setting
 
-~~~bash
+```bash
 export FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE=1
-~~~
+```
 
 ## Todos
 Some features to be implemented:
