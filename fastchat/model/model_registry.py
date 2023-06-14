@@ -163,3 +163,9 @@ register_model_info(
     "https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg",
     "A chatbot fine-tuned from LlaMa across several CoT and chat datasets.",
 )
+register_model_info(
+    ["redpajama-incite-7b-chat"],
+    "RedPajama-INCITE-7B-Chat",
+    "https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat",
+    "A chatbot fine-tuned from RedPajama-INCITE-7B-Base by Together",
+)
