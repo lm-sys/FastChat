@@ -13,12 +13,6 @@ else:
 import psutil
 import torch
 
-# Try to import intel_extension_for_pytorch, only required for "xpu" device
-try:
-    import intel_extension_for_pytorch as ipex
-except ImportError:
-    pass
-
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -191,6 +185,12 @@ def load_model(
         model.to(device)
 
     elif device == "xpu":
+        try:
+            import intel_extension_for_pytorch as ipex
+        except ImportError:
+            warnings.warn(
+                "Intel Extension for PyTorch is not installed, but is required for xpu inference."
+            )
         model.eval()
         model = model.to("xpu")
         model = torch.xpu.optimize(model, dtype=torch.bfloat16, inplace=True)
