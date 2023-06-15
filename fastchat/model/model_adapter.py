@@ -146,6 +146,13 @@ def load_model(
         replace_llama_attn_with_non_inplace_operations()
     elif device == "xpu":
         kwargs = {"torch_dtype": torch.bfloat16}
+        # Try to load ipex, while it looks unused, it links into torch for xpu support
+        try:
+            import intel_extension_for_pytorch as ipex
+        except ImportError:
+            warnings.warn(
+                "Intel Extension for PyTorch is not installed, but is required for xpu inference."
+            )
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -185,12 +192,6 @@ def load_model(
         model.to(device)
 
     elif device == "xpu":
-        try:
-            import intel_extension_for_pytorch as ipex
-        except ImportError:
-            warnings.warn(
-                "Intel Extension for PyTorch is not installed, but is required for xpu inference."
-            )
         model.eval()
         model = model.to("xpu")
         model = torch.xpu.optimize(model, dtype=torch.bfloat16, inplace=True)
