@@ -107,11 +107,12 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 #### Supported Models
 The following models are tested:
 - Vicuna, Alpaca, LLaMA, Koala
-- [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
+- [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
 - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
 - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2)
+- [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
 - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
@@ -121,6 +122,7 @@ The following models are tested:
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
+- [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
 
 Help us [add more](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
@@ -153,6 +155,19 @@ python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps -
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
+#### Intel XPU (Intel Data Center and Arc A-Series GPUs)
+Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html).
+
+Set the OneAPI environment variables:
+```
+source /opt/intel/oneapi/setvars.sh
+```
+
+Use `--device xpu` to enable XPU/GPU acceleration.
+```
+python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device xpu
+```
+Vicuna-7B can run on an Intel Arc A770 16GB.
 
 #### No Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.

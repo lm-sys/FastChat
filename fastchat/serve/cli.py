@@ -4,6 +4,10 @@ Chat with a model with command line interface.
 Usage:
 python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
 python3 -m fastchat.serve.cli --model ~/model_weights/vicuna-7b
+
+Other commands:
+- Type "!!exit" or an empty line to exit.
+- Type "!!reset" to start a new conversation.
 """
 import argparse
 import os
@@ -47,7 +51,7 @@ class RichChatIO(ChatIO):
     def __init__(self):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
-            words=["!exit", "!reset"], pattern=re.compile("$")
+            words=["!!exit", "!!reset"], pattern=re.compile("$")
         )
         self._console = Console()
 

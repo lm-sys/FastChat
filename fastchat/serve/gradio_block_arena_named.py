@@ -12,20 +12,22 @@ import numpy as np
 from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
+    INACTIVE_MSG,
     INPUT_CHAR_LEN_LIMIT,
-    CONVERSATION_LEN_LIMIT,
+    CONVERSATION_TURN_LIMIT,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     State,
-    http_bot,
+    bot_response,
     get_conv_log_filename,
-    get_model_description_md,
     no_change_btn,
     enable_btn,
     disable_btn,
     learn_more_md,
+    get_model_description_md,
+    ip_expiration_dict,
 )
 from fastchat.utils import (
     build_logger,
@@ -150,10 +152,12 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    logger.info(f"add_text (named). ip: {request.client.host}. len: {len(text)}")
+    ip = request.client.host
+    logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
 
+    # Init states if necessary
     for i in range(num_models):
         if states[i] is None:
             states[i] = State(model_selectors[i])
@@ -165,6 +169,20 @@ def add_text(
             states
             + [x.to_gradio_chatbot() for x in states]
             + [""]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    if ip_expiration_dict[ip] < time.time():
+        logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
+        for i in range(num_models):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [INACTIVE_MSG]
             + [
                 no_change_btn,
             ]
@@ -190,10 +208,8 @@ def add_text(
             )
 
     conv = states[0].conv
-    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_LEN_LIMIT:
-        logger.info(
-            f"hit conversation length limit. ip: {request.client.host}. text: {text}"
-        )
+    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
+        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
         for i in range(num_models):
             states[i].skip_next = True
         return (
@@ -223,7 +239,7 @@ def add_text(
     )
 
 
-def http_bot_all(
+def bot_response_multi(
     state0,
     state1,
     temperature,
@@ -231,7 +247,7 @@ def http_bot_all(
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"http_bot_all (named). ip: {request.client.host}")
+    logger.info(f"bot_response_multi (named). ip: {request.client.host}")
 
     if state0.skip_next:
         # This generate call is skipped due to invalid inputs
@@ -247,7 +263,7 @@ def http_bot_all(
     gen = []
     for i in range(num_models):
         gen.append(
-            http_bot(
+            bot_response(
                 states[i],
                 temperature,
                 top_p,
@@ -270,11 +286,14 @@ def http_bot_all(
         if stop:
             break
 
+
+def flash_buttons():
+    btn_updates = [
+        [disable_btn] * 4 + [enable_btn] * 2,
+        [enable_btn] * 6,
+    ]
     for i in range(10):
-        if i % 2 == 0:
-            yield states + chatbots + [disable_btn] * 4 + [enable_btn] * 2
-        else:
-            yield states + chatbots + [enable_btn] * 6
+        yield btn_updates[i % 2]
         time.sleep(0.2)
 
 
@@ -404,9 +423,11 @@ By using this service, users are required to agree to the following terms: The s
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
-        http_bot_all,
+        bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
 
@@ -442,18 +463,22 @@ function (a, b, c, d) {
         states + model_selectors + [textbox],
         states + chatbots + [textbox] + btn_list,
     ).then(
-        http_bot_all,
+        bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
     send_btn.click(
         add_text,
         states + model_selectors + [textbox],
         states + chatbots + [textbox] + btn_list,
     ).then(
-        http_bot_all,
+        bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
 
     return (

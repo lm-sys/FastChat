@@ -681,6 +681,8 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
             "input": batch,
         }
         embedding = await get_embedding(payload)
+        if "error_code" in embedding and embedding["error_code"] != 0:
+            return create_error_response(embedding["error_code"], embedding["text"])
         data += [
             {
                 "object": "embedding",

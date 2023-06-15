@@ -19,12 +19,14 @@ from dataclasses import dataclass, field
 import logging
 import pathlib
 import typing
+import os
 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import transformers
-from transformers import Trainer
+from transformers import Trainer, BitsAndBytesConfig, deepspeed
+import torch
 
 from fastchat.train.train import (
     DataArguments,
@@ -50,6 +52,7 @@ class LoraArguments:
     )
     lora_weight_path: str = ""
     lora_bias: str = "none"
+    q_lora: bool = False
 
 
 def maybe_zero_3(param):
@@ -99,9 +102,33 @@ def train():
         lora_args,
     ) = parser.parse_args_into_dataclasses()
 
+    device_map = None
+    if lora_args.q_lora:
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
+        device_map = (
+            {"": int(os.environ.get("LOCAL_RANK") or 0)} if world_size != 1 else None
+        )
+        if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
+            logging.warn("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
+
+    compute_dtype = (
+        torch.float16
+        if training_args.fp16
+        else (torch.bfloat16 if training_args.bf16 else torch.float32)
+    )
+
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
+        device_map=device_map,
+        quantization_config=BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=compute_dtype,
+        )
+        if lora_args.q_lora
+        else None,
     )
     lora_config = LoraConfig(
         r=lora_args.lora_r,
@@ -111,6 +138,16 @@ def train():
         bias=lora_args.lora_bias,
         task_type="CAUSAL_LM",
     )
+
+    if lora_args.q_lora:
+        model = prepare_model_for_kbit_training(
+            model, use_gradient_checkpointing=training_args.gradient_checkpointing
+        )
+        if torch.cuda.device_count() > 1:
+            # keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
+            model.is_parallelizable = True
+            model.model_parallel = True
+
     model = get_peft_model(model, lora_config)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
