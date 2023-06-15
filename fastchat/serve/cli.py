@@ -180,6 +180,7 @@ def main(args):
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
             ),
+            args.revision,
             args.debug,
         )
     except KeyboardInterrupt:

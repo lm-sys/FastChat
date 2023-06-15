@@ -23,6 +23,7 @@ def main(args):
         args.max_gpu_memory,
         args.load_8bit,
         args.cpu_offloading,
+        revision=args.revision,
         debug=args.debug,
     )
 
