@@ -155,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-path", type=str, required=True,
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.")
     parser.add_argument("--model-id", type=str, required=True)
-    parser.add_argument("--bench-name", type=str, default="mt_bench_80",
+    parser.add_argument("--bench-name", type=str, default="mt_bench",
         help="The name of the benchmark question set.")
     parser.add_argument("--question-begin", type=int,
         help="A debug option. The begin index of questions.")

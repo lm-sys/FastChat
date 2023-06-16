@@ -166,7 +166,7 @@ def make_judge_single(judge_model, judge_prompts):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bench-name", type=str, default="mt_bench_80",
+    parser.add_argument("--bench-name", type=str, default="mt_bench",
         help="The name of the benchmark question set.")
     parser.add_argument(
         "--judge-file",

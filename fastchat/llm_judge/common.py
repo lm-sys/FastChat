@@ -31,7 +31,7 @@ DEFAULT_MODEL_LIST = {
         "gpt-4",
         "claude-v1",
     ],
-    "mt_bench_80": [
+    "mt_bench": [
         "vicuna-13b-v1.2",
         "llama-13b",
         "alpaca-13b",

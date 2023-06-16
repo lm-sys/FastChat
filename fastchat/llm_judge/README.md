@@ -48,7 +48,7 @@ e.g.,
 ```
 python gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 ```
-The answers will be saved to `data/mt_bench_80/model_answer/[MODEL-ID].jsonl`.
+The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
@@ -62,7 +62,7 @@ e.g.,
 > python gen_judgment.py --model-list vicuna-13b-v1.2 alpaca-13b gpt-3.5-turbo --parallel 2
 Stats:
 {
-    "bench": "mt_bench_80",
+    "bench": "mt_bench",
     "mode": "pairwise-baseline",
     "judge": "gpt-4",
     "baseline": "gpt-3.5-turbo",
@@ -73,17 +73,17 @@ Stats:
     ],
     "total_num_questions": 80,
     "total_num_matches": 320,
-    "output_path": "data/mt_bench_80/model_judgment/gpt-4_pair.jsonl"
+    "output_path": "data/mt_bench/model_judgment/gpt-4_pair.jsonl"
 }
 Press Enter to confirm...
 ```
 
-The judgments will be saved to `data/mt_bench_80/model_judgment/gpt-4_pair.jsonl`
+The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_pair.jsonl`
 
 #### Setp 3. Show win-rate
 ```
 > python show_result.py
-Input file: data/mt_bench_80/model_judgment/gpt-4_pair.jsonl
+Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
                  win  loss  tie  win_rate  loss_rate
 model
 gpt-4            107     9   44   0.66875    0.05625
@@ -107,7 +107,7 @@ Another scalable option is to let GPT-4 grade and give a score to a single answe
 python gen_judgment.py --mode single --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 Stats:
 {
-    "bench": "mt_bench_80",
+    "bench": "mt_bench",
     "mode": "single",
     "judge": "gpt-4",
     "baseline": null,
@@ -121,10 +121,10 @@ Stats:
     ],
     "total_num_questions": 80,
     "total_num_matches": 960,
-    "output_path": "data/mt_bench_80/model_judgment/gpt-4_single.jsonl"
+    "output_path": "data/mt_bench/model_judgment/gpt-4_single.jsonl"
 }
 ```
-The judgments will be saved to `data/mt_bench_80/model_judgment/gpt-4_single.jsonl`
+The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 - Show the MT-bench score
 ```
 > python show_result.py --mode single
@@ -149,7 +149,7 @@ This could be more expensive when #models increases, but it gives you a more com
 
 ```
 > python show_result.py --mode pairwise-all
-Input file: data/mt_bench_80/model_judgment/gpt-4_pair.jsonl
+Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
                  win  loss  tie  win_rate  loss_rate
 model
 gpt-4            617    45  138   0.77125    0.05625
@@ -165,7 +165,7 @@ llama-13b         20   617  163   0.02500    0.77125
 
 ## Release Plan
 Our first release contains:
-- The MT-bench questions in [data/mt_bench_80/question.jsonl](data/mt_bench_80/question.jsonl).
+- The MT-bench questions in [data/mt_bench/question.jsonl](data/mt_bench/question.jsonl).
 - The model answers and GPT-4 judgments available on Google Drive.
 - The judge prompts in [data/judge_prompts.jsonl](data/judge_prompts.jsonl).
 

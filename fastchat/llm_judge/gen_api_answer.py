@@ -70,7 +70,7 @@ def get_answer(question: dict, model: str, num_choices: int, max_tokens: int,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bench-name", type=str, default="mt_bench_80",
+    parser.add_argument("--bench-name", type=str, default="mt_bench",
         help="The name of the benchmark question set.")
     parser.add_argument("--answer-file", type=str,
         help="The output answer file.")
