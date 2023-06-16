@@ -1,5 +1,5 @@
 # LLM Judge
-| [Paper](https://arxiv.org/abs/2306.05685) |
+| [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | 
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
 
@@ -26,7 +26,7 @@ pip3 install gdown
 gdown --fuzzy https://drive.google.com/file/d/1LNOc7NAc7BXM1LMhRlorsrMu38G9yoHT/view?usp=sharing
 tar xzf llm_judge_repo_data.tar.gz
 ```
-- Open a gradio demo website for browsing the questions, answers, and judgments.
+- Open a gradio [demo](https://huggingface.co/spaces/lmsys/mt-bench) for browsing the questions, answers, and judgments.
 ```
 python qa_browser.py --share
 ```
