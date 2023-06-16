@@ -172,7 +172,7 @@ def build_pairwise_browser_tab():
             chat_mds + [model_explanation],
         )
 
-    return category_selector,
+    return (category_selector,)
 
 
 block_css = old_block_css + (
@@ -194,19 +194,17 @@ block_css = old_block_css + (
 
 
 def load_demo():
-    dropdown_update = gr.Dropdown.update(
-        value=list(category_selector_map.keys())[0]
-    )
+    dropdown_update = gr.Dropdown.update(value=list(category_selector_map.keys())[0])
     return dropdown_update
 
- 
+
 def build_demo():
     with gr.Blocks(
         title="QA Browser",
         theme=gr.themes.Base(text_size=gr.themes.sizes.text_lg),
         css=block_css,
     ) as demo:
-        category_selector,  = build_pairwise_browser_tab()
+        (category_selector,) = build_pairwise_browser_tab()
 
         demo.load(load_demo, [], [category_selector])
 
@@ -238,8 +236,6 @@ if __name__ == "__main__":
     )
 
     demo = build_demo()
-    demo.queue(
-        concurrency_count=10, status_update_rate=10, api_open=False
-    ).launch(
+    demo.queue(concurrency_count=10, status_update_rate=10, api_open=False).launch(
         server_name=args.host, server_port=args.port, share=args.share, max_threads=200
     )

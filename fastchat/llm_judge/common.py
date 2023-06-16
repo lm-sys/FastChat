@@ -47,7 +47,7 @@ two_score_pattern_backup = re.compile("\[(\d+\.?\d*),\s?(\d+\.?\d*)\]")
 one_score_pattern = re.compile("\[\[(\d+\.?\d*)\]\]")
 one_score_pattern_backup = re.compile("\[(\d+\.?\d*)\]")
 
-# Sampling temperature configs for 
+# Sampling temperature configs for
 temperature_config = {
     "writing": 0.7,
     "roleplay": 0.7,

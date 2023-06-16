@@ -64,8 +64,14 @@ def run_eval(
 
 @torch.inference_mode()
 def get_model_answers(
-    model_path, model_id, questions, answer_file, max_new_token, num_choices,
-    num_gpus_per_model, max_gpu_memory,
+    model_path,
+    model_id,
+    questions,
+    answer_file,
+    max_new_token,
+    num_choices,
+    num_gpus_per_model,
+    max_gpu_memory,
 ):
     model, tokenizer = load_model(
         model_path,
@@ -152,31 +158,59 @@ def reorg_answer_file(answer_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, required=True,
-        help="The path to the weights. This can be a local folder or a Hugging Face repo ID.")
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        required=True,
+        help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
+    )
     parser.add_argument("--model-id", type=str, required=True)
-    parser.add_argument("--bench-name", type=str, default="mt_bench",
-        help="The name of the benchmark question set.")
-    parser.add_argument("--question-begin", type=int,
-        help="A debug option. The begin index of questions.")
-    parser.add_argument("--question-end", type=int,
-        help="A debug option. The end index of questions.")
-    parser.add_argument("--answer-file", type=str,
-        help="The output answer file.")
-    parser.add_argument("--max-new-token", type=int, default=1024,
-        help="The maximum number of new generated tokens.")
-    parser.add_argument("--num-choices", type=int, default=1,
-        help="How many completion choices to generate.")
-    parser.add_argument("--num-gpus-per-model", type=int, default=1,
-        help="The number of GPUs per model.")
-    parser.add_argument("--num-gpus-total", type=int, default=1,
-        help="The total number of GPUs.")
-    parser.add_argument("--max-gpu-memory", type=str,
-        help="Maxmum GPU memory used for model weights per GPU.")
+    parser.add_argument(
+        "--bench-name",
+        type=str,
+        default="mt_bench",
+        help="The name of the benchmark question set.",
+    )
+    parser.add_argument(
+        "--question-begin",
+        type=int,
+        help="A debug option. The begin index of questions.",
+    )
+    parser.add_argument(
+        "--question-end", type=int, help="A debug option. The end index of questions."
+    )
+    parser.add_argument("--answer-file", type=str, help="The output answer file.")
+    parser.add_argument(
+        "--max-new-token",
+        type=int,
+        default=1024,
+        help="The maximum number of new generated tokens.",
+    )
+    parser.add_argument(
+        "--num-choices",
+        type=int,
+        default=1,
+        help="How many completion choices to generate.",
+    )
+    parser.add_argument(
+        "--num-gpus-per-model",
+        type=int,
+        default=1,
+        help="The number of GPUs per model.",
+    )
+    parser.add_argument(
+        "--num-gpus-total", type=int, default=1, help="The total number of GPUs."
+    )
+    parser.add_argument(
+        "--max-gpu-memory",
+        type=str,
+        help="Maxmum GPU memory used for model weights per GPU.",
+    )
     args = parser.parse_args()
 
     if args.num_gpus_total > 1:
         import ray
+
         ray.init()
 
     question_file = f"data/{args.bench_name}/question.jsonl"

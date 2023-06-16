@@ -22,8 +22,9 @@ from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template
 
 
-def get_answer(question: dict, model: str, num_choices: int, max_tokens: int,
-               answer_file: str):
+def get_answer(
+    question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
+):
     if args.force_temperature:
         temperature = args.force_temperature
     elif question["category"] in temperature_config:
@@ -70,27 +71,40 @@ def get_answer(question: dict, model: str, num_choices: int, max_tokens: int,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bench-name", type=str, default="mt_bench",
-        help="The name of the benchmark question set.")
-    parser.add_argument("--answer-file", type=str,
-        help="The output answer file.")
+    parser.add_argument(
+        "--bench-name",
+        type=str,
+        default="mt_bench",
+        help="The name of the benchmark question set.",
+    )
+    parser.add_argument("--answer-file", type=str, help="The output answer file.")
     parser.add_argument("--model", type=str, default="gpt-3.5-turbo")
-    parser.add_argument("--num-choices", type=int, default=1,
-        help="How many completion choices to generate.")
-    parser.add_argument("--force-temperature", type=float,
-        help="Forcibly set a sampling temperature.")
+    parser.add_argument(
+        "--num-choices",
+        type=int,
+        default=1,
+        help="How many completion choices to generate.",
+    )
+    parser.add_argument(
+        "--force-temperature", type=float, help="Forcibly set a sampling temperature."
+    )
     parser.add_argument(
         "--max-tokens",
         type=int,
         default=1024,
-        help="The maximum number of new generated tokens."
+        help="The maximum number of new generated tokens.",
     )
-    parser.add_argument("--question-begin", type=int,
-        help="A debug option. The begin index of questions.")
-    parser.add_argument("--question-end", type=int,
-        help="A debug option. The end index of questions.")
-    parser.add_argument("--parallel", type=int, default=1,
-        help="The number of concurrent API calls.")
+    parser.add_argument(
+        "--question-begin",
+        type=int,
+        help="A debug option. The begin index of questions.",
+    )
+    parser.add_argument(
+        "--question-end", type=int, help="A debug option. The end index of questions."
+    )
+    parser.add_argument(
+        "--parallel", type=int, default=1, help="The number of concurrent API calls."
+    )
     args = parser.parse_args()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
@@ -106,7 +120,11 @@ if __name__ == "__main__":
         futures = []
         for question in questions:
             future = executor.submit(
-                get_answer, question, args.model, args.num_choices, args.max_tokens,
+                get_answer,
+                question,
+                args.model,
+                args.num_choices,
+                args.max_tokens,
                 answer_file,
             )
             futures.append(future)

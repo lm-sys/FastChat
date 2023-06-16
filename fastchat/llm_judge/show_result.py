@@ -8,7 +8,9 @@ import pandas as pd
 
 def display_result_single(args):
     if args.input_file is None:
-        input_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+        input_file = (
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+        )
     else:
         input_file = args.input_file
 
@@ -29,7 +31,9 @@ def display_result_single(args):
 
 def display_result_pairwise(args):
     if args.input_file is None:
-        input_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+        input_file = (
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+        )
     else:
         input_file = args.input_file
 
@@ -82,10 +86,12 @@ if __name__ == "__main__":
         type=str,
         default="pairwise-baseline",
         choices=["pairwise-baseline", "pairwise-all", "single"],
-        help=("Evaluation mode. "
-              "`pairwise-baseline` runs pairwise comparision against a baseline. "
-              "`pairwise-all` runs pairwise comparision between all pairs. "
-              "`single` runs single answer grading.")
+        help=(
+            "Evaluation mode. "
+            "`pairwise-baseline` runs pairwise comparision against a baseline. "
+            "`pairwise-all` runs pairwise comparision between all pairs. "
+            "`single` runs single answer grading."
+        ),
     )
     args = parser.parse_args()
 

@@ -58,7 +58,9 @@ def make_match(
                     multi_turn=multi_turn,
                 )
             else:
-                match = MatchPair(dict(q), m_1, m_2, a_1, a_2, judge, multi_turn=multi_turn)
+                match = MatchPair(
+                    dict(q), m_1, m_2, a_1, a_2, judge, multi_turn=multi_turn
+                )
             matches.append(match)
     return matches
 
@@ -166,13 +168,17 @@ def make_judge_single(judge_model, judge_prompts):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bench-name", type=str, default="mt_bench",
-        help="The name of the benchmark question set.")
+    parser.add_argument(
+        "--bench-name",
+        type=str,
+        default="mt_bench",
+        help="The name of the benchmark question set.",
+    )
     parser.add_argument(
         "--judge-file",
         type=str,
         default="data/judge_prompts.jsonl",
-        help="The file of judge prompts."
+        help="The file of judge prompts.",
     )
     parser.add_argument("--judge-model", type=str, default="gpt-4")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
@@ -181,17 +187,26 @@ if __name__ == "__main__":
         type=str,
         default="pairwise-baseline",
         choices=["pairwise-baseline", "pairwise-all", "single"],
-        help=("Evaluation mode. "
-              "`pairwise-baseline` runs pairwise comparision against a baseline. "
-              "`pairwise-all` runs pairwise comparision between all pairs. "
-              "`single` runs single answer grading.")
+        help=(
+            "Evaluation mode. "
+            "`pairwise-baseline` runs pairwise comparision against a baseline. "
+            "`pairwise-all` runs pairwise comparision between all pairs. "
+            "`single` runs single answer grading."
+        ),
     )
-    parser.add_argument("--model-list", type=str, nargs="+", default=None,
-        help="A list of models to be evaluated")
-    parser.add_argument("--parallel", type=int, default=1,
-        help="The number of concurrent API calls.")
-    parser.add_argument("--first-n", type=int,
-        help="A debug option. Only run the first `n` judgments.")
+    parser.add_argument(
+        "--model-list",
+        type=str,
+        nargs="+",
+        default=None,
+        help="A list of models to be evaluated",
+    )
+    parser.add_argument(
+        "--parallel", type=int, default=1, help="The number of concurrent API calls."
+    )
+    parser.add_argument(
+        "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
+    )
     args = parser.parse_args()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
@@ -227,7 +242,9 @@ if __name__ == "__main__":
     else:
         judges = make_judge_pairwise(args.judge_model, judge_prompts)
         play_a_match_func = play_a_match_pair
-        output_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+        output_file = (
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+        )
         if args.mode == "pairwise-all":
             make_match_func = make_match_all_pairs
             baseline_model = None
