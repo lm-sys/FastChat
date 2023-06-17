@@ -50,20 +50,20 @@ pip3 install -e .
 
 ## Model Weights
 ### Vicuna Weights
-We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) v1.3 as merged weights directly.
+We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights v1.3 as merged weights directly. You do not need to apply delta.
 It is based on LLaMA and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
-You can use the commands below and start chatting. It will automatically download the weights from Hugging Face repos.
+You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
 
 | Size | Command | Hugging Face Repo |
 | ---  | --- | --- |
 | 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
 | 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
 
-**Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights (v1.1, v0) and their differences.
+**Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### FastChat-T5
-Simply run the line below to start chatting.
+Simply run the command below to start chatting.
 It will automatically download the weights from a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). 
 
 ```bash

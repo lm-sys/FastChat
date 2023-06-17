@@ -19,7 +19,7 @@
 
 ## Prompt Template
 
-### Example prompt (weight v1.1 and v1.3)
+### Example prompt (weights v1.1 and v1.3)
 ```
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 
@@ -31,7 +31,7 @@ ASSISTANT: I am good.</s>
 
 See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L246-L259).
 
-### Example prompt (weight v0)
+### Example prompt (weights v0)
 ```
 A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
 
@@ -43,7 +43,7 @@ A chat between a curious human and an artificial intelligence assistant. The ass
 
 See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L198-L229).
 
-## How to apply delta weights (for weight v1.1 and v0)
+## How to Apply Delta Weights (for weights v1.1 and v0)
 
 We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights (v1.1 and v0) as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
@@ -81,7 +81,6 @@ python3 -m fastchat.model.apply_delta \
 You can try these methods to reduce the CPU RAM requirement of weight conversion.
 1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
 2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
-
 
 ## FAQ
 
