@@ -1,19 +1,27 @@
-## Vicuna-7B/13B
+## Vicuna Weights
 
-| Weights version | v1.1 | v0 |
-| ---- | ---- | ---- |
-| Link      | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v1.1), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v1.1) | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v0), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v0) |
-| Separator | `</s>` | `###` |
-| FastChat PyPI package compatibility   | >= v0.2.1 |<= v0.1.10 |
-| FastChat source code compatibility | after [tag v0.2.1](https://github.com/lm-sys/FastChat/tree/v0.2.1) | [tag v0.1.10](https://github.com/lm-sys/FastChat/tree/v0.1.10) |
+| Weights version | v1.3 | v1.1 | v0 |
+| ---- | ---- | ---- | ---- |
+| Link | [7B](https://huggingface.co/lmsys/vicuna-7b-v1.3), [13B](https://huggingface.co/lmsys/vicuna-13b-v1.3) | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v1.1), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v1.1) | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v0), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v0) |
+| Separator | `</s>` | `</s>` | `###` |
+| Is delta weights | No | Yes | Yes |
+| FastChat PyPI package compatibility | >= v0.2.1 | >= v0.2.1 |<= v0.1.10 |
+| FastChat source code compatibility | after [tag v0.2.1](https://github.com/lm-sys/FastChat/tree/v0.2.1) | after [tag v0.2.1](https://github.com/lm-sys/FastChat/tree/v0.2.1) | [tag v0.1.10](https://github.com/lm-sys/FastChat/tree/v0.1.10) |
 
-Major updates of weights v1.1
-- Refactor the tokenization and separator. In Vicuna v1.1, the separator has been changed from `###` to the EOS token `</s>`. This change makes it easier to determine the generation stop criteria and enables better compatibility with other libraries.
-- Fix the supervised fine-tuning loss computation for better model quality.
+### Updates
+- Major updates of weights v1.3
+  - Train with twice the amount of ShareGPT data compared to previous versions.
+  - Provide merged weights directly instead of delta weights.
 
-### Example prompt (Weight v1.1)
+- Major updates of weights v1.1
+  - Refactor the tokenization and separator. In Vicuna v1.1, the separator has been changed from `###` to the EOS token `</s>`. This change makes it easier to determine the generation stop criteria and enables better compatibility with other libraries.
+  - Fix the supervised fine-tuning loss computation for better model quality.
+
+## Prompt Template
+
+### Example prompt (Weight v1.1 and v1.3)
 ```
-A chat between a user and an assistant.
+A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 
 USER: Hello!
 ASSISTANT: Hello!</s>
@@ -21,17 +29,11 @@ USER: How are you?
 ASSISTANT: I am good.</s>
 ```
 
-In the above example chat, the line breaks have been added for readability. The underlying prompt template uses spaces to separate the prompts. Accordingly, the following text would be fed to the model:
-
-```
-<s>A chat between a user and an assistant. USER: Hello! ASSISTANT: Hello!</s> USER: How are you? ASSISTANT: I am good.</s>
-```
-
-See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/00d9e6675bdff60be6603ffff9313b1d797d2e3e/fastchat/conversation.py#L115-L124).
+See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L246-L259).
 
 ### Example prompt (Weight v0)
 ```
-A chat between a human and an assistant.
+A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
 
 ### Human: Hello!
 ### Assistant: Hello!
@@ -39,7 +41,9 @@ A chat between a human and an assistant.
 ### Assistant: I am good.
 ```
 
-See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/00d9e6675bdff60be6603ffff9313b1d797d2e3e/fastchat/conversation.py#L83-L112).
+See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L198-L229).
+
+## FAQ
 
 ### Tokenizer issues
 There are some frequently asked tokenizer issues (https://github.com/lm-sys/FastChat/issues/408).
