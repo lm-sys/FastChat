@@ -19,7 +19,7 @@
 
 ## Prompt Template
 
-### Example prompt (Weight v1.1 and v1.3)
+### Example prompt (weight v1.1 and v1.3)
 ```
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 
@@ -31,7 +31,7 @@ ASSISTANT: I am good.</s>
 
 See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L246-L259).
 
-### Example prompt (Weight v0)
+### Example prompt (weight v0)
 ```
 A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.
 
@@ -43,9 +43,9 @@ A chat between a curious human and an artificial intelligence assistant. The ass
 
 See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L198-L229).
 
-## Apply delta weights (
+## How to apply delta weights (for weight v1.1 and v0)
 
-We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
+We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights (v1.1 and v0) as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
 1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
@@ -76,7 +76,6 @@ python3 -m fastchat.model.apply_delta \
     --target-model-path /path/to/output/vicuna-13b \
     --delta-path lmsys/vicuna-13b-delta-v1.1
 ```
-
 
 #### Low CPU Memory Conversion
 You can try these methods to reduce the CPU RAM requirement of weight conversion.

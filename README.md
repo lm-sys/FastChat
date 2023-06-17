@@ -50,7 +50,7 @@ pip3 install -e .
 
 ## Model Weights
 ### Vicuna Weights
-We release Vicuna v1.3 as merged weights directly.
+We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) v1.3 as merged weights directly.
 It is based on [LLaMA](https://arxiv.org/abs/2302.13971) and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
 You can use the commands below and start chatting. It will automatically download the weights from Hugging Face repos.
