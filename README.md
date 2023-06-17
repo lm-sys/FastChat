@@ -3,7 +3,7 @@
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
 - The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna, FastChat-T5).
-- A distributed multi-model serving system with Web UI and OpenAI-compatible RESTful APIs.
+- A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
@@ -72,9 +72,9 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 
 ## Inference with Command Line Interface
 
-(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
-
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
+
+(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
 #### Supported Models
 The following models are tested:
@@ -129,9 +129,7 @@ python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps -
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 #### Intel XPU (Intel Data Center and Arc A-Series GPUs)
-Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html).
-
-Set the OneAPI environment variables:
+Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html). Set the OneAPI environment variables:
 ```
 source /opt/intel/oneapi/setvars.sh
 ```
@@ -154,11 +152,8 @@ python3 -m fastchat.serve.cli --model-path /path/to/model/weights --load-8bit
 In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
 
 #### More Platforms
-
+- FastChat supports GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
-
-#### GPTQ 4bit Support
-FastChat provides fastest GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 
 ## Serving with Web GUI
 
