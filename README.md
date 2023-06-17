@@ -53,13 +53,12 @@ pip3 install -e .
 We release Vicuna v1.3 as merged weights directly.
 It is based on [LLaMA](https://arxiv.org/abs/2302.13971) and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
-| Size | Huggingface Repo | Command |
-| --- | --- | --- |
-| 7B   | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   | `` |
-| 13B  | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) | `` |
+| Size | Command | Huggingface Repo |
+| ---  | --- | --- |
+| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
+| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
 
-#### Old weights
-See [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
+**Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights (v1.1, v0) and their differences.
 
 ### FastChat-T5
 Simply run the line below to start chatting.
