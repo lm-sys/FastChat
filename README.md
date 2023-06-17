@@ -53,7 +53,9 @@ pip3 install -e .
 We release Vicuna v1.3 as merged weights directly.
 It is based on [LLaMA](https://arxiv.org/abs/2302.13971) and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
-| Size | Command | Huggingface Repo |
+You can use the commands below and start chatting. It will automatically download the weights from Hugging Face repos.
+
+| Size | Command | Hugging Face Repo |
 | ---  | --- | --- |
 | 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
 | 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
