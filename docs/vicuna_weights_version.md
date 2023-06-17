@@ -43,6 +43,47 @@ A chat between a curious human and an artificial intelligence assistant. The ass
 
 See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L198-L229).
 
+## Apply delta weights (
+
+We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
+You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
+
+1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
+2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
+
+**NOTE**:
+Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
+Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
+
+#### Vicuna-7B
+This conversion command needs around 30 GB of CPU RAM.
+See the "Low CPU Memory Conversion" section below if you do not have enough memory.
+Replace `/path/to/*` with the real paths.
+```bash
+python3 -m fastchat.model.apply_delta \
+    --base-model-path /path/to/llama-7b \
+    --target-model-path /path/to/output/vicuna-7b \
+    --delta-path lmsys/vicuna-7b-delta-v1.1
+```
+
+#### Vicuna-13B
+This conversion command needs around 60 GB of CPU RAM.
+See the "Low CPU Memory Conversion" section below if you do not have enough memory.
+Replace `/path/to/*` with the real paths.
+```bash
+python3 -m fastchat.model.apply_delta \
+    --base-model-path /path/to/llama-13b \
+    --target-model-path /path/to/output/vicuna-13b \
+    --delta-path lmsys/vicuna-13b-delta-v1.1
+```
+
+
+#### Low CPU Memory Conversion
+You can try these methods to reduce the CPU RAM requirement of weight conversion.
+1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
+2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+
+
 ## FAQ
 
 ### Tokenizer issues

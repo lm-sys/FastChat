@@ -50,45 +50,16 @@ pip3 install -e .
 
 ## Model Weights
 ### Vicuna Weights
-We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
-You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
+We release Vicuna v1.3 as merged weights directly.
+It is based on [LLaMA](https://arxiv.org/abs/2302.13971) and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
-1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
-2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
-
-**NOTE**:
-Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
-Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
-
-#### Vicuna-7B
-This conversion command needs around 30 GB of CPU RAM.
-See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/*` with the real paths.
-```bash
-python3 -m fastchat.model.apply_delta \
-    --base-model-path /path/to/llama-7b \
-    --target-model-path /path/to/output/vicuna-7b \
-    --delta-path lmsys/vicuna-7b-delta-v1.1
-```
-
-#### Vicuna-13B
-This conversion command needs around 60 GB of CPU RAM.
-See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/*` with the real paths.
-```bash
-python3 -m fastchat.model.apply_delta \
-    --base-model-path /path/to/llama-13b \
-    --target-model-path /path/to/output/vicuna-13b \
-    --delta-path lmsys/vicuna-13b-delta-v1.1
-```
+| Size | Huggingface Repo | Command |
+| --- | --- | --- |
+| 7B   | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   | `` |
+| 13B  | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) | `` |
 
 #### Old weights
 See [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
-
-#### Low CPU Memory Conversion
-You can try these methods to reduce the CPU RAM requirement of weight conversion.
-1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
-2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
 
 ### FastChat-T5
 Simply run the line below to start chatting.
