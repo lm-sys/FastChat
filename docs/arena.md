@@ -13,7 +13,7 @@ If you want to see a specific model in the arena, you can follow the steps below
 
    You can run this example command to learn the code logic.
    ```
-   python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
+   python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
    ```
    
    Some major files you need to modify include

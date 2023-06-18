@@ -260,6 +260,7 @@ def chat_loop(
     max_new_tokens: int,
     chatio: ChatIO,
     gptq_config: GptqConfig,
+    revision: str,
     debug: bool,
 ):
     # Model
@@ -271,6 +272,7 @@ def chat_loop(
         load_8bit,
         cpu_offloading,
         gptq_config,
+        revision,
         debug,
     )
     is_chatglm = "chatglm" in str(type(model)).lower()

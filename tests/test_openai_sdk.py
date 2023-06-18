@@ -3,7 +3,7 @@ import openai
 openai.api_key = "EMPTY"  # Not support yet
 openai.api_base = "http://localhost:8000/v1"
 
-model = "vicuna-7b-v1.1"
+model = "vicuna-7b-v1.3"
 
 
 def test_list_models():
