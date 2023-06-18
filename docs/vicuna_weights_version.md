@@ -21,6 +21,12 @@ USER: How are you?
 ASSISTANT: I am good.</s>
 ```
 
+In the above example chat, the line breaks have been added for readability. The underlying prompt template uses spaces to separate the prompts. Accordingly, the following text would be fed to the model:
+
+```
+<s>A chat between a user and an assistant. USER: Hello! ASSISTANT: Hello!</s> USER: How are you? ASSISTANT: I am good.</s>
+```
+
 See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/00d9e6675bdff60be6603ffff9313b1d797d2e3e/fastchat/conversation.py#L115-L124).
 
 ### Example prompt (Weight v0)
