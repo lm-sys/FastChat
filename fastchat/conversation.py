@@ -558,6 +558,19 @@ register_conv_template(
     )
 )
 
+# ChagGPT default template
+register_conv_template(
+    Conversation(
+        name="polyglot_changgpt",
+        system="",
+        roles=("B", "A"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

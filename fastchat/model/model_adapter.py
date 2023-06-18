@@ -647,6 +647,16 @@ class GuanacoAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zero_shot")
 
+class ChangGPTAdapter(BaseAdapter):
+    """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""
+
+    def match(self, model_path: str):
+        print(model_path)
+        return "polyglot" in model_path and "chang" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("polyglot_changgpt")
+
 
 class CamelAdapter(BaseAdapter):
     """The model adapter for camel"""
@@ -686,7 +696,7 @@ register_model_adapter(WizardLMAdapter)
 register_model_adapter(ManticoreAdapter)
 register_model_adapter(GuanacoAdapter)
 register_model_adapter(CamelAdapter)
-
+register_model_adapter(ChangGPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

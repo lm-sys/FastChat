@@ -112,6 +112,7 @@ The following models are tested:
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
 - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
 - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2)
+- [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
 - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
