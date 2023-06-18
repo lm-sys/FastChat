@@ -70,29 +70,26 @@ wget https://raw.githubusercontent.com/hwchase17/langchain/v0.0.200/docs/modules
 Run LangChain.
 
 ~~~py
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.indexes import VectorstoreIndexCreator
-from langchain.llms import OpenAI
 
+embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
+loader = TextLoader("state_of_the_union.txt")
+index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
+llm = ChatOpenAI(model="gpt-3.5-turbo")
 
-def test_chain():
-    embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
-    loader = TextLoader('state_of_the_union.txt')
-    index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
+questions = [
+    "Who is the speaker",
+    "What did the president say about Ketanji Brown Jackson",
+    "What are the threats to America",
+    "Who are mentioned in the speech",
+    "Who is the vice president",
+    "How many projects were announced",
+]
 
-    llm = OpenAI(model="gpt-3.5-turbo")
-
-    questions = [
-        "Who is the speaker", 
-        "What did the president say about Ketanji Brown Jackson", 
-        "What are the threats to America", 
-        "Who are mentioned in the speech",
-        "Who is the vice president",
-        "How many projects were announced",
-    ]
-
-    for query in questions:
-        print("Query:", query)
-        print("Ans:" ,index.query(query, llm=llm))
+for query in questions:
+    print("Query:", query)
+    print("Answer:", index.query(query, llm=llm))
 ~~~
