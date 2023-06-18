@@ -622,10 +622,10 @@ class H2OGPTAdapter(BaseAdapter):
 class RobinAdapter(BaseAdapter):
     """The model adapter for LMFlow/Full-Robin-7b-v2"""
 
-    def match(self,model_path:str):
+    def match(self, model_path: str):
         return "Robin" in model_path
 
-    def get_default_conv_template(self,model_path:str) -> Conversation:
+    def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("Robin")
 
 
@@ -685,6 +685,7 @@ class GuanacoAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zero_shot")
+
 
 class ChangGPTAdapter(BaseAdapter):
     """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""

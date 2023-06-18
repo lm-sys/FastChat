@@ -36,9 +36,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-path", type=str, required=True)
     parser.add_argument("--hub-repo-id", type=str, required=True)
-    parser.add_argument("--component", type=str, choices=["all", "model", "tokenizer"],
-                        default="all")
+    parser.add_argument(
+        "--component", type=str, choices=["all", "model", "tokenizer"], default="all"
+    )
     args = parser.parse_args()
 
     upload_hub(args.model_path, args.hub_repo_id, args.component)
-
