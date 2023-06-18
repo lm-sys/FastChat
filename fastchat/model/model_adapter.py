@@ -633,15 +633,6 @@ class ChangGPTAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("polyglot_changgpt")
 
-class CamelAdapter(BaseAdapter):
-    """The model adapter for camel"""
-
-    def match(self, model_path: str):
-        return "camel" in model_path
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vicuna_v1.1")
-
 
 class CamelAdapter(BaseAdapter):
     """The model adapter for camel"""
