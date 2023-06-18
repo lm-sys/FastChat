@@ -515,7 +515,6 @@ register_conv_template(
     )
 )
 
-
 #Robin default template
 register_conv_template(
     Conversation(
