@@ -51,11 +51,12 @@ pip3 install -e .
 ## Model Weights
 ### Vicuna Weights
 We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights v1.3 as merged weights directly. You do not need to apply delta.
-It is based on LLaMA and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
+Vicuna is based on LLaMA and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
 You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
+See more command options and how to handle out-of-memory in the "Inference with Command Line Interface" section below.
 
-| Size | Command | Hugging Face Repo |
+| Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
 | 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
 | 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
