@@ -530,6 +530,7 @@ register_conv_template(
         stop_str="###"
     )
 )
+
 # Snoozy default template
 # Reference: https://github.com/nomic-ai/gpt4all/blob/d4861030b778da6db59d21d2927a4aba4f9f1f43/gpt4all-bindings/python/gpt4all/gpt4all.py#L232
 register_conv_template(
