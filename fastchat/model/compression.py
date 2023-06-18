@@ -5,7 +5,7 @@ import os
 
 from accelerate import init_empty_weights
 from accelerate.utils import set_module_tensor_to_device
-from huggingface_hub import hf_hub_download, snapshot_download
+from huggingface_hub import snapshot_download
 import torch
 from torch import Tensor
 from torch.nn import functional as F
