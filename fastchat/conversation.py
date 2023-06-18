@@ -546,8 +546,7 @@ register_conv_template(
         sep='\n',
         sep2="<|endoftext|>",
         stop_str='\nUser', # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
-        stop_token_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], # it better only put special tokens here, because tokenizer only remove special tokens
-        # stop_token_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 5584, 7932, 32250],
+        stop_token_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], # it is better only put special tokens here, because the tokenizer only removes special tokens
     )
 )
 
