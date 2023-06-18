@@ -99,15 +99,22 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(model_path, device, torch_dtype, use_fast=False):
+def load_compress_model(
+    model_path, device, torch_dtype, use_fast=False, revision="main"
+):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=use_fast)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=use_fast, revision=revision
+    )
     base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     files = glob.glob(base_pattern)
 
     with init_empty_weights():
         config = AutoConfig.from_pretrained(
-            model_path, low_cpu_mem_usage=True, torch_dtype=torch_dtype
+            model_path,
+            low_cpu_mem_usage=True,
+            torch_dtype=torch_dtype,
+            revision=revision,
         )
         model = AutoModelForCausalLM.from_config(config)
         linear_weights = get_compressed_list(model)
