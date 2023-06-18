@@ -323,7 +323,6 @@ deepspeed train_lora.py \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
-    --model_name_or_path <path-to-llama-model-weight> \
     --data_path <path-to-data> \
     --bf16 True \
     --output_dir ./checkpoints \
