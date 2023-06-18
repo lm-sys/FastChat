@@ -9,6 +9,8 @@ dist
 *.log
 *.log.*
 *.json
+!playground/deepspeed_config_s2.json
+!playground/deepspeed_config_s3.json
 
 # Editor
 .idea
