@@ -20,6 +20,7 @@ class SeparatorStyle(Enum):
     PHOENIX = auto()
     ROBIN = auto()
 
+
 @dataclasses.dataclass
 class Conversation:
     """A class that keeps all conversation history."""
