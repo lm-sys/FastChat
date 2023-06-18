@@ -571,6 +571,7 @@ class H2OGPTAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("h2ogpt")
 
+
 class RobinAdapter(BaseAdapter):
     """The model adapter for LMFlow/Full-Robin-7b-v2"""
 
