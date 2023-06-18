@@ -581,6 +581,7 @@ class RobinAdapter(BaseAdapter):
     def get_default_conv_template(self,model_path:str) -> Conversation:
         return get_conv_template("Robin")
 
+
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
