@@ -655,18 +655,18 @@ class FalconAdapter(BaseAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(model_path,
                                             trust_remote_code=True,)
-        
-        # from_pretrained_kwargs['torch_dtype'] = torch.bfloat16
+
+        # Strongly suggest using bf16, which is recommended by the author of Falcon
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            torch_dtype=torch.bfloat16,
+            **from_pretrained_kwargs
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        # in falcon tokenizer config and speical config there is not any pad token
-        # setting `pad_token_id` to 9, which corresponde to speical token '>>SUFFIX<<' 
+        # In Falcon tokenizer config and special config there is not any pad token
+        # Setting `pad_token_id` to 9, which corresponds to special token '>>SUFFIX<<' 
         tokenizer.pad_token_id = 9
         return model, tokenizer
     def get_default_conv_template(self, model_path: str) -> Conversation:
