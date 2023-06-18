@@ -3,7 +3,7 @@
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
 - The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna, FastChat-T5).
-- A distributed multi-model serving system with Web UI and OpenAI-compatible RESTful APIs.
+- A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
 - [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
@@ -50,48 +50,21 @@ pip3 install -e .
 
 ## Model Weights
 ### Vicuna Weights
-We release [Vicuna](https://vicuna.lmsys.org/) weights as delta weights to comply with the LLaMA model license.
-You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
+We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights v1.3 as merged weights directly. You do not need to apply delta.
+Vicuna is based on LLaMA and should be used under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 
-1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
-2. Use the following scripts to get Vicuna weights by applying our delta. They will automatically download delta weights from our Hugging Face [account](https://huggingface.co/lmsys).
+You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
+See more command options and how to handle out-of-memory in the "Inference with Command Line Interface" section below.
 
-**NOTE**:
-Weights v1.1 are only compatible with ```transformers>=4.28.0``` and ``fschat >= 0.2.0``.
-Please update your local packages accordingly. If you follow the above commands to do a fresh install, then you should get all the correct versions.
+| Size | Chat Command | Hugging Face Repo |
+| ---  | --- | --- |
+| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
+| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
 
-#### Vicuna-7B
-This conversion command needs around 30 GB of CPU RAM.
-See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/*` with the real paths.
-```bash
-python3 -m fastchat.model.apply_delta \
-    --base-model-path /path/to/llama-7b \
-    --target-model-path /path/to/output/vicuna-7b \
-    --delta-path lmsys/vicuna-7b-delta-v1.1
-```
-
-#### Vicuna-13B
-This conversion command needs around 60 GB of CPU RAM.
-See the "Low CPU Memory Conversion" section below if you do not have enough memory.
-Replace `/path/to/*` with the real paths.
-```bash
-python3 -m fastchat.model.apply_delta \
-    --base-model-path /path/to/llama-13b \
-    --target-model-path /path/to/output/vicuna-13b \
-    --delta-path lmsys/vicuna-13b-delta-v1.1
-```
-
-#### Old weights
-See [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
-
-#### Low CPU Memory Conversion
-You can try these methods to reduce the CPU RAM requirement of weight conversion.
-1. Append `--low-cpu-mem` to the commands above, which will split large weight files into smaller ones and use the disk as temporary storage. This can keep the peak memory at less than 16GB.
-2. Create a large swap file and rely on the operating system to automatically utilize the disk as virtual memory.
+**Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### FastChat-T5
-Simply run the line below to start chatting.
+Simply run the command below to start chatting.
 It will automatically download the weights from a Hugging Face [repo](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0). 
 
 ```bash
@@ -100,15 +73,15 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 
 ## Inference with Command Line Interface
 
-(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
-
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
+
+(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
 #### Supported Models
 The following models are tested:
 - Vicuna, Alpaca, LLaMA, Koala
-- [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
+- [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
 - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
 - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2)
@@ -119,7 +92,7 @@ The following models are tested:
 - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
 - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
 - [OpenAssistant/oasst-sft-1-pythia-12b](https://huggingface.co/OpenAssistant/oasst-sft-1-pythia-12b)
-- [project-baize/baize-lora-7B](https://huggingface.co/project-baize/baize-lora-7B)
+- [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
@@ -129,44 +102,42 @@ The following models are tested:
 Help us [add more](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 
 #### Single GPU
-The command below requires around 28GB of GPU memory for Vicuna-13B and 14GB of GPU memory for Vicuna-7B.
+The command below requires around 14GB of GPU memory for Vicuna-7B and 28GB of GPU memory for Vicuna-13B.
 See the "No Enough Memory" section below if you do not have enough memory.
-Replace `/path/to/model/weights` with the a local folder or a Hugging repo id.
+`--model-path` can be a local folder or a Hugging Face repo name.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
 ```
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights --num-gpus 2
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
 ```
 
 #### CPU Only
-This runs on the CPU only and does not require GPU. It requires around 60GB of CPU memory for Vicuna-13B and around 30GB of CPU memory for Vicuna-7B.
+This runs on the CPU only and does not require GPU. It requires around 30GB of CPU memory for Vicuna-7B and around 60GB of CPU memory for Vicuna-13B.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device cpu
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 #### Intel XPU (Intel Data Center and Arc A-Series GPUs)
-Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html).
-
-Set the OneAPI environment variables:
+Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html). Set the OneAPI environment variables:
 ```
 source /opt/intel/oneapi/setvars.sh
 ```
 
 Use `--device xpu` to enable XPU/GPU acceleration.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights --device xpu
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
@@ -176,17 +147,14 @@ This can reduce memory usage by around half with slightly degraded model quality
 It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
 ```
-python3 -m fastchat.serve.cli --model-path /path/to/model/weights --load-8bit
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --load-8bit
 ```
 
 In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
 
 #### More Platforms
-
+- FastChat supports GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
-
-#### GPTQ 4bit Support
-FastChat provides fastest GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 
 ## Serving with Web GUI
 
@@ -205,13 +173,13 @@ This controller manages the distributed workers.
 
 #### Launch the model worker(s)
 ```bash
-python3 -m fastchat.serve.model_worker --model-path /path/to/model/weights
+python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...". The model worker will register itself to the controller .
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
-python3 -m fastchat.serve.test_message --model-name vicuna-7b
+python3 -m fastchat.serve.test_message --model-name vicuna-7b-v1.3
 ```
 You will see a short output.
 
@@ -229,9 +197,9 @@ If the models do not show up, try to reboot the gradio web server.
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
 # worker 0
-CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
+CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
 # worker 1
-CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path ~/model_weights/vicuna-7b/ --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
+CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
 ```
 - You can also launch a multi-tab gradio server, which includes the Chatbot Arena tabs.
 ```bash
@@ -350,27 +318,8 @@ torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
     --preprocessed_path ./preprocessed_data/processed.json \
     --gradient_checkpointing True 
 ```
-After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/75d8ab26ee308f9cf0990976508232f06dd421e4/fastchat/utils.py#L164) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
+After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/55051ad0f23fef5eeecbda14a2e3e128ffcb2a98/fastchat/utils.py#L166-L185) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
 
 ### Fine-tuning on Any Cloud with SkyPilot
-[SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
-To use SkyPilot, install it with the following command and setup the cloud credentials locally following the instructions [here](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html).
-```bash
-# Install skypilot from the master branch
-pip install git+https://github.com/skypilot-org/skypilot.git
-```
-
-#### Vicuna
-Vicuna can be trained on 8 A100 GPUs with 80GB memory. The following command will automatically launch a node satisfying the requirement, setup and run the training job on it.
-```bash
-sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY
-```
-Other options are also valid:
-```bash
-# Launch it on managed spot to save 3x cost (train Vicuna-13B with around $300)
-sky spot launch -n vicuna scripts/train-vicuna.yaml --env WANDB_API_KEY
-
-# Train a 7B model
-sky launch -c vicuna -s scripts/train-vicuna.yaml --env WANDB_API_KEY --env MODEL_SIZE=7
-```
-Note: Please make sure the `WANDB_API_KEY` has been setup on your local machine. You can find the API key on your [wandb profile page](https://wandb.ai/authorize). If you would like to train the model without using wandb, you can replace the `--env WANDB_API_KEY` flag with `--env WANDB_MODE=offline`.
+[SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.).
+Find SkyPilot documentation [here](https://github.com/skypilot-org/skypilot/tree/master/llm/vicuna) on using managed spot instances to train Vicuna and save on your cloud costs.

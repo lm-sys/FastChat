@@ -50,7 +50,7 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["vicuna-13b", "vicuna-7b"],
+    ["vicuna-13b", "vicuna-13b-v1.3", "vicuna-7b", "vicuna-7b-v1.3"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
@@ -128,7 +128,7 @@ register_model_info(
     "a chatbot fine-tuned from MPT-7B by MosaicML",
 )
 register_model_info(
-    ["fastchat-t5-3b"],
+    ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],
     "FastChat-T5",
     "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0",
     "a chat assistant fine-tuned from FLAN-T5 by LMSYS",
@@ -161,7 +161,7 @@ register_model_info(
     ["Robin-7b-v2", "Robin-13b-v2", "Robin-33b-v2"],
     "Robin-v2",
     "https://huggingface.co/OptimalScale/robin-7b-v2-delta",
-    "A chatbot fine-tuned from LLaMA-7b, achieving competitive performance on chitchat, commonsense reasoning and instruction-following tasks, by OptimalScale, HKUST."
+    "A chatbot fine-tuned from LLaMA-7b, achieving competitive performance on chitchat, commonsense reasoning and instruction-following tasks, by OptimalScale, HKUST.",
 )
 register_model_info(
     ["manticore-13b-chat"],

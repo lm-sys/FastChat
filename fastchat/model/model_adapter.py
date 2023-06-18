@@ -223,7 +223,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--model-path",
         type=str,
-        default="lmsys/fastchat-t5-3b-v1.0",
+        default="lmsys/vicuna-7b-v1.3",
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
@@ -322,7 +322,7 @@ class VicunaAdapter(BaseAdapter):
                 "\nYou are probably using the old Vicuna-v0 model, "
                 "which will generate unexpected results with the "
                 "current fastchat.\nYou can try one of the following methods:\n"
-                "1. Upgrade your weights to the new Vicuna-v1.1: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
+                "1. Upgrade your weights to the new Vicuna-v1.3: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
                 "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
@@ -622,10 +622,10 @@ class H2OGPTAdapter(BaseAdapter):
 class RobinAdapter(BaseAdapter):
     """The model adapter for LMFlow/Full-Robin-7b-v2"""
 
-    def match(self,model_path:str):
+    def match(self, model_path: str):
         return "Robin" in model_path
 
-    def get_default_conv_template(self,model_path:str) -> Conversation:
+    def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("Robin")
 
 
@@ -685,6 +685,7 @@ class GuanacoAdapter(BaseAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zero_shot")
+
 
 class ChangGPTAdapter(BaseAdapter):
     """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""

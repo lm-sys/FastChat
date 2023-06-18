@@ -121,7 +121,7 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.ROBIN:
             ret = self.system
-            for role,message in self.messages:
+            for role, message in self.messages:
                 if message:
                     ret += role + ":" + message + self.sep
                 else:
@@ -514,18 +514,18 @@ register_conv_template(
     )
 )
 
-#Robin default template
+# Robin default template
 register_conv_template(
     Conversation(
         name="Robin",
         system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
-        roles=("###Human","###Assistant"),
+        roles=("###Human", "###Assistant"),
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.ROBIN,
         sep="#",
         stop_token_ids=[396],
-        stop_str="###"
+        stop_str="###",
     )
 )
 

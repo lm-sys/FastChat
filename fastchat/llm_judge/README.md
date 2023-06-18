@@ -21,7 +21,7 @@ You can download them and open a gradio demo to review them.
 
 - Download the data:
 ```
-cd FastChat/fastchat/llm_judge
+cd fastchat/llm_judge
 pip3 install gdown
 gdown --fuzzy https://drive.google.com/file/d/1LNOc7NAc7BXM1LMhRlorsrMu38G9yoHT/view?usp=sharing
 tar xzf llm_judge_repo_data.tar.gz
@@ -42,8 +42,8 @@ A screenshot:
 ```
 python gen_model_answer.py --model-path [MODEL-PATH] --model-id [MODEL-ID]
 ```
+Note: `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.
 
-Note: `[MODEL-PATH]` can be any huggingface model path.
 e.g.,
 ```
 python gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
@@ -100,7 +100,7 @@ Besides pairwise comparison against a fixed baseline model, we also support two 
 
 #### Option 2: Single-answer grading
 
-Another scalable option is to let GPT-4 grade and give a score to a single answer without comparison.
+This option asks GPT-4 to grade and give a score to a single answer without comparison, so it is also a scalable option.
 
 - Generate GPT-4 judgments
 ```
@@ -140,7 +140,7 @@ llama-13b        3.190625
 
 #### Option 3: Run GPT-4 judge with all pair comparisons
 
-Another option is to run all pairs comparison.
+Another option is to run all pairwise comparison on all possible pairs.
 This could be more expensive when #models increases, but it gives you a more comprehensive information.
 
 ```
