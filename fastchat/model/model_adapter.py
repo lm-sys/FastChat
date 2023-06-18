@@ -583,6 +583,16 @@ class H2OGPTAdapter(BaseAdapter):
         return get_conv_template("h2ogpt")
 
 
+class RobinAdapter(BaseAdapter):
+    """The model adapter for LMFlow/Full-Robin-7b-v2"""
+
+    def match(self,model_path:str):
+        return "Robin" in model_path
+
+    def get_default_conv_template(self,model_path:str) -> Conversation:
+        return get_conv_template("Robin")
+
+
 class SnoozyAdapter(BaseAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
@@ -670,6 +680,7 @@ register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
+register_model_adapter(RobinAdapter)
 register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
 register_model_adapter(ManticoreAdapter)

@@ -158,6 +158,12 @@ register_model_info(
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
 register_model_info(
+    ["Robin-7b-v2", "Robin-13b-v2", "Robin-33b-v2"],
+    "Robin-v2",
+    "https://huggingface.co/OptimalScale/robin-7b-v2-delta",
+    "A chatbot fine-tuned from LLaMA-7b, achieving competitive performance on chitchat, commonsense reasoning and instruction-following tasks, by OptimalScale, HKUST."
+)
+register_model_info(
     ["manticore-13b-chat"],
     "Manticore 13B Chat",
     "https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg",
