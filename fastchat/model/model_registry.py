@@ -176,9 +176,10 @@ register_model_info(
     "A chatbot fine-tuned from RedPajama-INCITE-7B-Base by Together",
 )
 register_model_info(
-    ["falcon-7b", "falcon-7b-instruct"],
+    ["falcon-7b", "falcon-7b-instruct", "falcon-40b", "falcon-40b-instruct"],
     "Falcon",
     "https://huggingface.co/tiiuae",
-    "Falcon LLM is TII's flagship series of large language models, built from scratch using a custom data pipeline and distributed training library.",
+    "Falcon LLM is TII's flagship series of large language models," 
+    "built from scratch using a custom data pipeline and distributed training library.",
 )
 
