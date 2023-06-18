@@ -5,6 +5,7 @@ import os
 
 from accelerate import init_empty_weights
 from accelerate.utils import set_module_tensor_to_device
+from huggingface_hub import snapshot_download
 import torch
 from torch import Tensor
 from torch.nn import functional as F
@@ -99,18 +100,33 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(model_path, device, torch_dtype, use_fast=False):
+def load_compress_model(
+    model_path, device, torch_dtype, use_fast=False, revision="main"
+):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=use_fast)
-    base_pattern = os.path.join(model_path, "pytorch_model*.bin")
-    files = glob.glob(base_pattern)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=use_fast, revision=revision
+    )
 
     with init_empty_weights():
         config = AutoConfig.from_pretrained(
-            model_path, low_cpu_mem_usage=True, torch_dtype=torch_dtype
+            model_path,
+            low_cpu_mem_usage=True,
+            torch_dtype=torch_dtype,
+            revision=revision,
         )
         model = AutoModelForCausalLM.from_config(config)
         linear_weights = get_compressed_list(model)
+
+    if os.path.exists(model_path):
+        # `model_path` is a local folder
+        base_pattern = os.path.join(model_path, "pytorch_model*.bin")
+    else:
+        # `model_path` is a cached Hugging Face repo
+        model_path = snapshot_download(model_path, revision=revision)
+        base_pattern = os.path.join(model_path, "pytorch_model*.bin")
+
+    files = glob.glob(base_pattern)
 
     compressed_state_dict = {}
 
