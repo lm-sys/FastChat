@@ -5,13 +5,16 @@ from threading import Thread
 from transformers import TextIteratorStreamer, GenerationConfig
 
 import transformers
+
 transformers.logging.set_verbosity_error()
+
 
 def partial_stop(output, stop_str):
     for i in range(0, min(len(output), len(stop_str))):
         if stop_str.startswith(output[-i:]):
             return True
     return False
+
 
 @torch.inference_mode()
 def falcon_generate_stream(
@@ -29,36 +32,38 @@ def falcon_generate_stream(
     stop_token_ids = params.get("stop_token_ids", None) or []
     stop_token_ids.append(tokenizer.eos_token_id)
 
-    inputs = tokenizer(prompt,return_tensors='pt').to(model.device)
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     input_ids = inputs["input_ids"]
     attention_mask = inputs["attention_mask"]
 
     max_src_len = context_len - max_new_tokens - 8
 
-    input_ids = input_ids[-max_src_len:] # truncate from the left
-    attention_mask = attention_mask[-max_src_len:] # truncate from the left
+    input_ids = input_ids[-max_src_len:]  # truncate from the left
+    attention_mask = attention_mask[-max_src_len:]  # truncate from the left
 
-    
     input_echo_len = len(input_ids)
 
-    decode_config = dict(skip_special_tokens=True,clean_up_tokenization_spaces=True)
-    streamer = TextIteratorStreamer(tokenizer,skip_prompt=True,**decode_config)
+    decode_config = dict(skip_special_tokens=True, clean_up_tokenization_spaces=True)
+    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, **decode_config)
 
-    generation_config = GenerationConfig(max_new_tokens=max_new_tokens,
-                             do_sample=True,
-                             temperature=temperature,
-                             repetition_penalty=repetition_penalty,
-                             no_repeat_ngram_size=10,
-                             top_p=top_p,
-                             top_k=top_k,
-                             eos_token_id=stop_token_ids)
+    generation_config = GenerationConfig(
+        max_new_tokens=max_new_tokens,
+        do_sample=True,
+        temperature=temperature,
+        repetition_penalty=repetition_penalty,
+        no_repeat_ngram_size=10,
+        top_p=top_p,
+        top_k=top_k,
+        eos_token_id=stop_token_ids,
+    )
 
-    generation_kwargs = dict(inputs=input_ids,
-                             attention_mask=attention_mask, 
-                             streamer=streamer,
-                             generation_config=generation_config
-                             )
-    
+    generation_kwargs = dict(
+        inputs=input_ids,
+        attention_mask=attention_mask,
+        streamer=streamer,
+        generation_config=generation_config,
+    )
+
     thread = Thread(target=model.generate, kwargs=generation_kwargs)
     thread.start()
 
