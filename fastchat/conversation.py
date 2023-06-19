@@ -558,6 +558,34 @@ register_conv_template(
     )
 )
 
+# Falcon default template
+register_conv_template(
+    Conversation(
+        name="falcon",
+        system="",
+        roles=("User", "Assistant"),
+        messages=[],
+        offset=0,
+        sep_style=SeparatorStyle.RWKV,
+        sep="\n",
+        sep2="<|endoftext|>",
+        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_token_ids=[
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+        ],  # it better only put special tokens here, because tokenizer only remove special tokens
+    )
+)
 # ChagGPT default template
 register_conv_template(
     Conversation(

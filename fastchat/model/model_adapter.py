@@ -708,6 +708,36 @@ class CamelAdapter(BaseAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
+class FalconAdapter(BaseAdapter):
+    """The model adapter for falcon."""
+
+    def match(self, model_path: str):
+        return "falcon" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+        )
+
+        # Strongly suggest using bf16, which is recommended by the author of Falcon
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        # In Falcon tokenizer config and special config there is not any pad token
+        # Setting `pad_token_id` to 9, which corresponds to special token '>>SUFFIX<<'
+        tokenizer.pad_token_id = 9
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("falcon")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
@@ -737,6 +767,7 @@ register_model_adapter(ManticoreAdapter)
 register_model_adapter(GuanacoAdapter)
 register_model_adapter(CamelAdapter)
 register_model_adapter(ChangGPTAdapter)
+register_model_adapter(FalconAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseAdapter)

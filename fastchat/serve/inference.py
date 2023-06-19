@@ -30,6 +30,7 @@ from transformers.generation.logits_process import (
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
+from fastchat.model.falcon_model import falcon_generate_stream
 from fastchat.modules.gptq import GptqConfig
 
 
@@ -276,6 +277,8 @@ def chat_loop(
     )
     is_chatglm = "chatglm" in str(type(model)).lower()
     is_fastchat_t5 = "t5" in str(type(model)).lower()
+    # falcon model name do not contains falcon inside, thus we use model_path
+    is_falcon = "falcon" in model_path.lower()
 
     # Hardcode T5 repetition penalty to be 1.2
     if is_fastchat_t5 and repetition_penalty == 1.0:
@@ -312,6 +315,9 @@ def chat_loop(
         if is_chatglm:
             generate_stream_func = chatglm_generate_stream
             prompt = conv.messages[conv.offset :]
+        elif is_falcon:
+            generate_stream_func = falcon_generate_stream
+            prompt = conv.get_prompt()
         else:
             generate_stream_func = generate_stream
             prompt = conv.get_prompt()
