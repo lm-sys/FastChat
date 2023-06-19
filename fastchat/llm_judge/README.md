@@ -163,6 +163,7 @@ llama-13b         20   617  163   0.02500    0.77125
 ### How to get GPT-3.5/GPT-4/Claude's answer?
 - `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
 
+
 ## Release Plan
 Our first release contains:
 - The MT-bench questions in [data/mt_bench/question.jsonl](data/mt_bench/question.jsonl).
@@ -176,3 +177,18 @@ The next release will include:
 - All code
     - computing agreement between judges
     - others
+
+
+## Citation
+
+If the repo is useful for your study, please cite the [paper](https://arxiv.org/abs/2306.05685), "Judging LLM-as-a-judge with MT-Bench and Chatbot Arena":
+```
+@misc{zheng2023judging,
+      title={Judging LLM-as-a-judge with MT-Bench and Chatbot Arena}, 
+      author={Lianmin Zheng and Wei-Lin Chiang and Ying Sheng and Siyuan Zhuang and Zhanghao Wu and Yonghao Zhuang and Zi Lin and Zhuohan Li and Dacheng Li and Eric. P Xing and Hao Zhang and Joseph E. Gonzalez and Ion Stoica},
+      year={2023},
+      eprint={2306.05685},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
+```
