@@ -163,7 +163,6 @@ llama-13b         20   617  163   0.02500    0.77125
 ### How to get GPT-3.5/GPT-4/Claude's answer?
 - `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
 
-
 ## Release Plan
 Our first release contains:
 - The MT-bench questions in [data/mt_bench/question.jsonl](data/mt_bench/question.jsonl).
@@ -177,7 +176,6 @@ The next release will include:
 - All code
     - computing agreement between judges
     - others
-
 
 ## Citation
 
