@@ -179,7 +179,7 @@ The next release will include:
 
 ## Citation
 
-If the repo is useful for your study, please cite the [paper](https://arxiv.org/abs/2306.05685), "Judging LLM-as-a-judge with MT-Bench and Chatbot Arena":
+If you find the repository helpful for your study, please consider citing the following [paper](https://arxiv.org/abs/2306.05685): "Judging LLM-as-a-judge with MT-Bench and Chatbot Arena":
 ```
 @misc{zheng2023judging,
       title={Judging LLM-as-a-judge with MT-Bench and Chatbot Arena}, 
