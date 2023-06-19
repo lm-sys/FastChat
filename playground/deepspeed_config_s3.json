@@ -1,0 +1,34 @@
+{
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {
+            "device": "cpu",
+            "pin_memory": true
+        },
+        "offload_param": {
+            "device": "cpu",
+            "pin_memory": true
+        },
+        "overlap_comm": true,
+        "contiguous_gradients": true,
+        "sub_group_size": "auto",
+        "reduce_bucket_size": "auto",
+        "stage3_prefetch_bucket_size": "auto",
+        "stage3_param_persistence_threshold": "auto",
+        "stage3_max_live_parameters": "auto",
+        "stage3_max_reuse_distance": "auto",
+        "stage3_gather_16bit_weights_on_model_save": true
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "params": {
+            "lr": "auto",
+            "betas": "auto",
+            "eps": "auto",
+            "weight_decay": "auto"
+        }
+    },
+    "train_batch_size": "auto",
+    "micro_batch_size_per_gpu": "auto",
+    "gradient_accumulation_steps": "auto"
+}
