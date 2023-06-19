@@ -1,10 +1,10 @@
-import torch
-from typing import Iterable
 import gc
 from threading import Thread
-from transformers import TextIteratorStreamer, GenerationConfig
+from typing import Iterable
 
+import torch
 import transformers
+from transformers import TextIteratorStreamer, GenerationConfig
 
 transformers.logging.set_verbosity_error()
 
