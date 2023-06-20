@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=hao_30b_v1.1_gpt4_only  # create a short name for your job
+#SBATCH --job-name=hao_30b_v1.05 # create a short name for your job
 #SBATCH --nodes=3
 #SBATCH --gres=gpu:16      # number of gpus per node
 #SBATCH --exclusive
