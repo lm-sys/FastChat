@@ -28,7 +28,7 @@
 ## How to support a new model
 
 To support a new model in FastChat, you need to correctly handle its prompt template and model loading.
-The goal is to make the following command work with correct prompts.
+The goal is to make the following command run with the correct prompts.
 ```
 python3 -m fastchat.serve.cli --model [YOUR_MODEL_PATH]
 ```
@@ -41,10 +41,10 @@ python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
 You can add `--debug` to see the actual prompt sent to the model.
 
 ### Steps
-FastChat uses the `Conversation` class to handle prompt template and `BaseModelAdapter` class to handle model loading.
+FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
 
 1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one.
 2. Implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can follow existing examples and use `register_model_adapter` to add a new one.
 3. (Optional) add the model name to the "Supported models" [section](#supported-models) above and add more inforamtion in [fastchat/model/model_registry.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_registry.py).
 
-After these steps, the new model should be compatible with most FastChat features, such as CLI, web UI, model worker, and OpenAI-compatible API server. Please do some testing with these features.
+After these steps, the new model should be compatible with most FastChat features, such as CLI, web UI, model worker, and OpenAI-compatible API server. Please do some testing with these features as well.
