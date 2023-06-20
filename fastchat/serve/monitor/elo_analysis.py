@@ -247,6 +247,7 @@ def report_elo_analysis_results(battles_json):
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
         "last_updated_datetime": last_updated_datetime,
+        "last_updated_tstamp": last_updated_tstamp,
     }
 
 
@@ -281,5 +282,10 @@ if __name__ == "__main__":
     pretty_print_elo_rating(results["elo_rating_median"])
     print(f"last update : {results['last_updated_datetime']}")
 
-    with open("elo_results.pkl", "wb") as fout:
+    last_updated_tstamp = results["last_updated_tstamp"]
+    cutoff_date = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y%m%d")
+
+    with open(f"elo_results_{cutoff_date}.pkl", "wb") as fout:
         pickle.dump(results, fout)
