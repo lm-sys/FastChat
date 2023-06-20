@@ -81,7 +81,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 FastChat supports a wide range of models, including
 Vicuna, Alpaca, Baize, ChatGLM, Dolly, Falcon, FastChat-T5, GPT4ALL, Guanaco, MTP, OpenAssistant, RedPajama, StableLM, WizardLM, and more.
 
-See a complete list of supported models and instructions to add a new model [here](docs/model_support.md#supported-models).
+See a complete list of supported models and instructions to add a new model [here](docs/model_support.md).
 
 #### Single GPU
 The command below requires around 14GB of GPU memory for Vicuna-7B and 28GB of GPU memory for Vicuna-13B.
