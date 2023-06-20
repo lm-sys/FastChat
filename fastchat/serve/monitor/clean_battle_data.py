@@ -1,8 +1,11 @@
+"""
+Clean chatbot arena battle log.
+"""
 import argparse
 import datetime
 import json
-from pytz import timezone
 import os
+from pytz import timezone
 import time
 
 from tqdm import tqdm
@@ -34,13 +37,13 @@ IDENTITY_WORDS = [
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4]:
-        for day in range(24, 32):
+    for month in [4, 5]:
+        for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
-    for month in [5]:
-        for day in range(1, 24):
+
+    for month in [6]:
+        for day in range(1, 20):
             dates.append(f"2023-{month:02d}-{day:02d}")
-    cutoff_date = dates[-1].replace("-", "")
 
     num_servers = 12
     filenames = []
@@ -51,7 +54,7 @@ def get_log_files(max_num_files=None):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
-    return filenames, cutoff_date
+    return filenames
 
 
 def remove_html(raw):
@@ -145,12 +148,12 @@ def clean_battle_data(log_files):
         # Replace bard with palm
         models = [m.replace("bard", "palm-2") for m in models]
 
-        # Keep the result
+        # Save the result
         battles.append(
             dict(
                 model_a=models[0],
                 model_b=models[1],
-                win=convert_type[row["type"]],
+                winner=convert_type[row["type"]],
                 anony=anony,
                 rounds=rounds,
                 language=lang_code,
@@ -182,8 +185,12 @@ if __name__ == "__main__":
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
 
-    log_files, cutoff_date = get_log_files(args.max_num_files)
+    log_files = get_log_files(args.max_num_files)
     battles = clean_battle_data(log_files)
+    last_updated_tstamp = battles[-1]["tstamp"]
+    cutoff_date = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y%m%d")
 
     print("Samples:")
     for i in range(4):
