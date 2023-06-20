@@ -75,7 +75,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
 
-(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals. Adding `--multiline` in rich text mode will also enable multiline input, use `ESC+Enter` to submit.)
+(Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals. Adding `--multiline` in rich text mode will also enable multiline input and mouse support, use `ESC+Enter` to submit.)
 
 #### Supported Models
 FastChat supports a wide range of models, including

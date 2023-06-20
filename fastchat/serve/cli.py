@@ -62,6 +62,7 @@ class RichChatIO(ChatIO):
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
             multiline=self._multiline,
+            mouse_support=self._multiline,  # Enable mouse support when using multiline
             auto_suggest=AutoSuggestFromHistory(),
             key_bindings=None,
         )
