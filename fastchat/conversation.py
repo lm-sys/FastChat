@@ -125,7 +125,7 @@ class Conversation:
                 if message:
                     ret += role + ":" + message + self.sep
                 else:
-                    ret += role + ":" + self.sep
+                    ret += role + ":"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -523,8 +523,8 @@ register_conv_template(
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.ROBIN,
-        sep="#",
-        stop_token_ids=[396],
+        sep="</s>",
+        stop_token_ids=[2, 396],
         stop_str="###",
     )
 )
