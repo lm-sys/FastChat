@@ -109,8 +109,7 @@ class ModelWorker:
 
         # generate_stream
         is_chatglm = "chatglm" in str(type(self.model)).lower()
-        # same reason as we described in inference.py
-        is_falcon = "falcon" in model_path.lower()
+        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = chatglm_generate_stream
         elif is_falcon:
