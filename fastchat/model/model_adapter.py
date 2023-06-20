@@ -356,7 +356,7 @@ class KoalaAdapter(BaseModelAdapter):
 
 
 class AlpacaAdapter(BaseModelAdapter):
-    """The model adapter for alpaca."""
+    """The model adapter for alpaca"""
 
     def match(self, model_path: str):
         return "alpaca" in model_path.lower()
@@ -409,7 +409,7 @@ class DollyV2Adapter(BaseModelAdapter):
 
 
 class OasstPythiaAdapter(BaseModelAdapter):
-    """The model adapter for OpenAssistant/oasst-sft-1-pythia-12b"""
+    """The model adapter for OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5"""
 
     use_fast_tokenizer = True
 
@@ -526,7 +526,7 @@ class PhoenixAdapter(BaseModelAdapter):
 
 
 class ChatGPTAdapter(BaseModelAdapter):
-    """The model adapter for ChatGPT."""
+    """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
         return model_path == "gpt-3.5-turbo" or model_path == "gpt-4"
@@ -539,7 +539,7 @@ class ChatGPTAdapter(BaseModelAdapter):
 
 
 class ClaudeAdapter(BaseModelAdapter):
-    """The model adapter for Claude."""
+    """The model adapter for Claude"""
 
     def match(self, model_path: str):
         return model_path in ["claude-v1", "claude-instant-v1"]
@@ -552,7 +552,7 @@ class ClaudeAdapter(BaseModelAdapter):
 
 
 class BardAdapter(BaseModelAdapter):
-    """The model adapter for Bard."""
+    """The model adapter for Bard"""
 
     def match(self, model_path: str):
         return model_path == "bard"
@@ -565,7 +565,7 @@ class BardAdapter(BaseModelAdapter):
 
 
 class PaLM2Adapter(BaseModelAdapter):
-    """The model adapter for PaLM2."""
+    """The model adapter for PaLM2"""
 
     def match(self, model_path: str):
         return model_path == "palm-2"
@@ -578,7 +578,7 @@ class PaLM2Adapter(BaseModelAdapter):
 
 
 class BiLLaAdapter(BaseModelAdapter):
-    """The model adapter for BiLLa."""
+    """The model adapter for Neutralzz/BiLLa-7B-SFT"""
 
     def match(self, model_path: str):
         return "billa" in model_path.lower()
@@ -588,7 +588,7 @@ class BiLLaAdapter(BaseModelAdapter):
 
 
 class RedPajamaINCITEAdapter(BaseModelAdapter):
-    """The model adapter for RedPajama INCITE."""
+    """The model adapter for togethercomputer/RedPajama-INCITE-7B-Chat"""
 
     def match(self, model_path: str):
         return "redpajama-incite" in model_path.lower()
@@ -610,7 +610,7 @@ class RedPajamaINCITEAdapter(BaseModelAdapter):
 
 
 class H2OGPTAdapter(BaseModelAdapter):
-    """The model adapter for h2oGPT."""
+    """The model adapter for h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b"""
 
     def match(self, model_path: str):
         return "h2ogpt" in model_path.lower()
@@ -656,7 +656,7 @@ class WizardLMAdapter(BaseModelAdapter):
 
 
 class ManticoreAdapter(BaseModelAdapter):
-    """The model adapter for Manticore."""
+    """The model adapter for openaccess-ai-collective/manticore-13b-chat-pyg"""
 
     def match(self, model_path: str):
         return "manticore" in model_path.lower()
@@ -699,7 +699,7 @@ class ChangGPTAdapter(BaseModelAdapter):
 
 
 class CamelAdapter(BaseModelAdapter):
-    """The model adapter for camel"""
+    """The model adapter for camel-ai/CAMEL-13B-Combined-Data"""
 
     def match(self, model_path: str):
         return "camel" in model_path
@@ -709,7 +709,7 @@ class CamelAdapter(BaseModelAdapter):
 
 
 class FalconAdapter(BaseModelAdapter):
-    """The model adapter for falcon."""
+    """The model adapter for tiiuae/falcon-40b."""
 
     def match(self, model_path: str):
         return "falcon" in model_path.lower()
