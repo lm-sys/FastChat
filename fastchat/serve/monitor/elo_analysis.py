@@ -23,21 +23,21 @@ pd.options.display.float_format = "{:.2f}".format
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
 
-    for rd, model_a, model_b, win in battles[
-        ["model_a", "model_b", "win"]
+    for rd, model_a, model_b, winner in battles[
+        ["model_a", "model_b", "winner"]
     ].itertuples():
         ra = rating[model_a]
         rb = rating[model_b]
         ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
         eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
-        if win == "model_a":
+        if winner == "model_a":
             sa = 1
-        elif win == "model_b":
+        elif winner == "model_b":
             sa = 0
-        elif win == "tie" or win == "tie (bothbad)":
+        elif winner == "tie" or winner == "tie (bothbad)":
             sa = 0.5
         else:
-            raise Exception(f"unexpected vote {win}")
+            raise Exception(f"unexpected vote {winner}")
         rating[model_a] += K * (sa - ea)
         rating[model_b] += K * (1 - sa - eb)
 
@@ -48,20 +48,21 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     rows = []
     for i in tqdm(range(num_round), desc="bootstrap"):
         tmp_battles = battles.sample(frac=1.0, replace=True)
-        # tmp_battles = tmp_battles.sort_values(ascending=True, by=["tstamp"])
         rows.append(func_compute_elo(tmp_battles))
     df = pd.DataFrame(rows)
     return df[df.median().sort_values(ascending=False).index]
 
 
-def get_elo_from_bootstrap(bootstrap_df):
-    return dict(bootstrap_df.quantile(0.5))
+def get_median_elo_from_bootstrap(bootstrap_df):
+    median = dict(bootstrap_df.quantile(0.5))
+    median = {k: int(v + 0.5) for k, v in median.items()}
+    return median
 
 
 def compute_pairwise_win_fraction(battles, model_order):
     # Times each model wins as Model A
     a_win_ptbl = pd.pivot_table(
-        battles[battles["win"] == "model_a"],
+        battles[battles["winner"] == "model_a"],
         index="model_a",
         columns="model_b",
         aggfunc="size",
@@ -70,7 +71,7 @@ def compute_pairwise_win_fraction(battles, model_order):
 
     # Table counting times each model wins as Model B
     b_win_ptbl = pd.pivot_table(
-        battles[battles["win"] == "model_b"],
+        battles[battles["winner"] == "model_b"],
         index="model_a",
         columns="model_b",
         aggfunc="size",
@@ -214,17 +215,16 @@ def report_elo_analysis_results(battles_json):
     battles = battles.sort_values(ascending=True, by=["tstamp"])
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)
-    battles_no_ties = battles[~battles["win"].str.contains("tie")]
+    battles_no_ties = battles[~battles["winner"].str.contains("tie")]
 
     # Online update
     elo_rating_online = compute_elo(battles)
 
     # Bootstrap
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
-    elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
-    elo_rating_median = {k: int(v + 0.5) for k, v in elo_rating_median.items()}
-    model_order = list(elo_rating_online.keys())
-    model_order.sort(key=lambda k: -elo_rating_online[k])
+    elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
+    model_order = list(elo_rating_median.keys())
+    model_order.sort(key=lambda k: -elo_rating_median[k])
 
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_online)
@@ -262,6 +262,8 @@ if __name__ == "__main__":
     parser.add_argument("--clean-battle-file", type=str)
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
+
+    np.random.seed(42)
 
     if args.clean_battle_file:
         # Read data from a cleaned battle files
