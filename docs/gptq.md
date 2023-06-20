@@ -16,6 +16,15 @@ cd repositories/GPTQ-for-LLaMa
 git switch fastest-inference-4bit
 # Install `quant-cuda` package in FastChat's virtualenv
 python3 setup_cuda.py install
+pip3 install texttable
+```
+
+Chat with the CLI:
+```bash
+python3 -m fastchat.serve.cli \
+    --model-path models/vicuna-7B-1.1-GPTQ-4bit-128g \
+    --gptq-wbits 4 \
+    --gptq-groupsize 128
 ```
 
 Start model worker:
@@ -37,14 +46,6 @@ python3 -m fastchat.serve.model_worker \
     --gptq-wbits 4 \
     --gptq-groupsize 128 \
     --gptq-act-order
-```
-
-Chat with the CLI:
-```bash
-python3 -m fastchat.serve.cli \
-    --model-path models/vicuna-7B-1.1-GPTQ-4bit-128g \
-    --gptq-wbits 4 \
-    --gptq-groupsize 128
 ```
 
 ## Benchmark

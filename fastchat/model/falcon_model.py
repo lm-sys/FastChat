@@ -6,14 +6,9 @@ import torch
 import transformers
 from transformers import TextIteratorStreamer, GenerationConfig
 
+from fastchat.utils import is_partial_stop
+
 transformers.logging.set_verbosity_error()
-
-
-def partial_stop(output, stop_str):
-    for i in range(0, min(len(output), len(stop_str))):
-        if stop_str.startswith(output[-i:]):
-            return True
-    return False
 
 
 @torch.inference_mode()
@@ -40,7 +35,6 @@ def falcon_generate_stream(
 
     input_ids = input_ids[-max_src_len:]  # truncate from the left
     attention_mask = attention_mask[-max_src_len:]  # truncate from the left
-
     input_echo_len = len(input_ids)
 
     decode_config = dict(skip_special_tokens=True, clean_up_tokenization_spaces=True)
@@ -48,7 +42,7 @@ def falcon_generate_stream(
 
     generation_config = GenerationConfig(
         max_new_tokens=max_new_tokens,
-        do_sample=True,
+        do_sample=temperature >= 1e-5,
         temperature=temperature,
         repetition_penalty=repetition_penalty,
         no_repeat_ngram_size=10,
@@ -88,7 +82,7 @@ def falcon_generate_stream(
                     if pos != -1:
                         output = output[:pos]
                     else:
-                        partially_stopped = partial_stop(output, stop_str)
+                        partially_stopped = is_partial_stop(output, stop_str)
                 elif isinstance(stop_str, Iterable):
                     for each_stop in stop_str:
                         pos = output.rfind(each_stop, rfind_start)
@@ -96,7 +90,7 @@ def falcon_generate_stream(
                             output = output[:pos]
                             break
                         else:
-                            partially_stopped = partial_stop(output, each_stop)
+                            partially_stopped = is_partial_stop(output, each_stop)
                             if partially_stopped:
                                 break
                 else:

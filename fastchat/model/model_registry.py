@@ -178,7 +178,6 @@ register_model_info(
 register_model_info(
     ["falcon-7b", "falcon-7b-instruct", "falcon-40b", "falcon-40b-instruct"],
     "Falcon",
-    "https://huggingface.co/tiiuae",
-    "Falcon LLM is TII's flagship series of large language models,"
-    "built from scratch using a custom data pipeline and distributed training library.",
+    "https://huggingface.co/tiiuae/falcon-40b",
+    "TII's flagship series of large language models",
 )

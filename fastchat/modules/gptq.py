@@ -35,8 +35,8 @@ def load_gptq_quantized(model_name, gptq_config: GptqConfig, device):
 
         sys.path.insert(0, module_path)
         from llama import load_quant
-    except ImportError:
-        print("Error: Failed to load GPTQ-for-LLaMa")
+    except ImportError as e:
+        print(f"Error: Failed to load GPTQ-for-LLaMa. {e}")
         print("See https://github.com/lm-sys/FastChat/blob/main/docs/gptq.md")
         sys.exit(-1)
 

@@ -23,7 +23,7 @@ class SeparatorStyle(Enum):
 
 @dataclasses.dataclass
 class Conversation:
-    """A class that keeps all conversation history."""
+    """A class that manages prompt templates and keeps all conversation history."""
 
     # The name of this template
     name: str

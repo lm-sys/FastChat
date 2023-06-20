@@ -33,7 +33,7 @@ from fastchat.model.monkey_patch_non_inplace import (
 from fastchat.utils import get_gpu_memory
 
 
-class BaseAdapter:
+class BaseModelAdapter:
     """The base and the default model adapter."""
 
     use_fast_tokenizer = False
@@ -68,7 +68,7 @@ class BaseAdapter:
 
 # A global registry for all model adapters
 # TODO (lmzheng): make it a priority queue.
-model_adapters: List[BaseAdapter] = []
+model_adapters: List[BaseModelAdapter] = []
 
 
 def register_model_adapter(cls):
@@ -77,7 +77,7 @@ def register_model_adapter(cls):
 
 
 @cache
-def get_model_adapter(model_path: str) -> BaseAdapter:
+def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
     for adapter in model_adapters:
         if adapter.match(model_path):
@@ -292,7 +292,7 @@ def remove_parent_directory_name(model_path):
     return model_path.split("/")[-1]
 
 
-class VicunaAdapter(BaseAdapter):
+class VicunaAdapter(BaseModelAdapter):
     "Model adapater for vicuna-v1.1"
 
     def match(self, model_path: str):
@@ -328,7 +328,7 @@ class VicunaAdapter(BaseAdapter):
             )
 
 
-class T5Adapter(BaseAdapter):
+class T5Adapter(BaseModelAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
 
     def match(self, model_path: str):
@@ -345,7 +345,7 @@ class T5Adapter(BaseAdapter):
         return model, tokenizer
 
 
-class KoalaAdapter(BaseAdapter):
+class KoalaAdapter(BaseModelAdapter):
     """The model adapter for koala"""
 
     def match(self, model_path: str):
@@ -355,8 +355,8 @@ class KoalaAdapter(BaseAdapter):
         return get_conv_template("koala_v1")
 
 
-class AlpacaAdapter(BaseAdapter):
-    """The model adapter for alpaca."""
+class AlpacaAdapter(BaseModelAdapter):
+    """The model adapter for alpaca"""
 
     def match(self, model_path: str):
         return "alpaca" in model_path.lower()
@@ -365,7 +365,7 @@ class AlpacaAdapter(BaseAdapter):
         return get_conv_template("alpaca")
 
 
-class ChatGLMAdapter(BaseAdapter):
+class ChatGLMAdapter(BaseModelAdapter):
     """The model adapter for THUDM/chatglm-6b"""
 
     def match(self, model_path: str):
@@ -382,7 +382,7 @@ class ChatGLMAdapter(BaseAdapter):
         return model, tokenizer
 
 
-class DollyV2Adapter(BaseAdapter):
+class DollyV2Adapter(BaseModelAdapter):
     """The model adapter for databricks/dolly-v2-12b"""
 
     use_fast_tokenizer = True
@@ -408,8 +408,8 @@ class DollyV2Adapter(BaseAdapter):
         return get_conv_template("dolly_v2")
 
 
-class OasstPythiaAdapter(BaseAdapter):
-    """The model adapter for OpenAssistant/oasst-sft-1-pythia-12b"""
+class OasstPythiaAdapter(BaseModelAdapter):
+    """The model adapter for OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5"""
 
     use_fast_tokenizer = True
 
@@ -420,7 +420,7 @@ class OasstPythiaAdapter(BaseAdapter):
         return get_conv_template("oasst_pythia")
 
 
-class StableLMAdapter(BaseAdapter):
+class StableLMAdapter(BaseModelAdapter):
     """The model adapter for StabilityAI/stablelm-tuned-alpha-7b"""
 
     use_fast_tokenizer = True
@@ -432,7 +432,7 @@ class StableLMAdapter(BaseAdapter):
         return get_conv_template("stablelm")
 
 
-class MPTAdapter(BaseAdapter):
+class MPTAdapter(BaseModelAdapter):
     """The model adapter for mosaicml/mpt-7b-chat"""
 
     use_fast_tokenizer = True
@@ -458,7 +458,7 @@ class MPTAdapter(BaseAdapter):
         return get_conv_template("mpt")
 
 
-class BaizeAdapter(BaseAdapter):
+class BaizeAdapter(BaseModelAdapter):
     """The model adapter for project-baize/baize-lora-7B"""
 
     def match(self, model_path: str):
@@ -468,7 +468,7 @@ class BaizeAdapter(BaseAdapter):
         return get_conv_template("baize")
 
 
-class RwkvAdapter(BaseAdapter):
+class RwkvAdapter(BaseModelAdapter):
     """The model adapter for BlinkDL/RWKV-4-Raven"""
 
     use_fast_tokenizer = True
@@ -490,7 +490,7 @@ class RwkvAdapter(BaseAdapter):
         return get_conv_template("rwkv")
 
 
-class OpenBuddyAdapter(BaseAdapter):
+class OpenBuddyAdapter(BaseModelAdapter):
     """The model adapter for OpenBuddy/openbuddy-7b-v1.1-bf16-enc"""
 
     def match(self, model_path: str):
@@ -513,7 +513,7 @@ class OpenBuddyAdapter(BaseAdapter):
         return get_conv_template("openbuddy")
 
 
-class PhoenixAdapter(BaseAdapter):
+class PhoenixAdapter(BaseModelAdapter):
     """The model adapter for FreedomIntelligence/phoenix-inst-chat-7b"""
 
     use_fast_tokenizer = True
@@ -525,8 +525,8 @@ class PhoenixAdapter(BaseAdapter):
         return get_conv_template("phoenix")
 
 
-class ChatGPTAdapter(BaseAdapter):
-    """The model adapter for ChatGPT."""
+class ChatGPTAdapter(BaseModelAdapter):
+    """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
         return model_path == "gpt-3.5-turbo" or model_path == "gpt-4"
@@ -538,8 +538,8 @@ class ChatGPTAdapter(BaseAdapter):
         return get_conv_template("chatgpt")
 
 
-class ClaudeAdapter(BaseAdapter):
-    """The model adapter for Claude."""
+class ClaudeAdapter(BaseModelAdapter):
+    """The model adapter for Claude"""
 
     def match(self, model_path: str):
         return model_path in ["claude-v1", "claude-instant-v1"]
@@ -551,8 +551,8 @@ class ClaudeAdapter(BaseAdapter):
         return get_conv_template("claude")
 
 
-class BardAdapter(BaseAdapter):
-    """The model adapter for Bard."""
+class BardAdapter(BaseModelAdapter):
+    """The model adapter for Bard"""
 
     def match(self, model_path: str):
         return model_path == "bard"
@@ -564,8 +564,8 @@ class BardAdapter(BaseAdapter):
         return get_conv_template("bard")
 
 
-class PaLM2Adapter(BaseAdapter):
-    """The model adapter for PaLM2."""
+class PaLM2Adapter(BaseModelAdapter):
+    """The model adapter for PaLM2"""
 
     def match(self, model_path: str):
         return model_path == "palm-2"
@@ -577,8 +577,8 @@ class PaLM2Adapter(BaseAdapter):
         return get_conv_template("bard")
 
 
-class BiLLaAdapter(BaseAdapter):
-    """The model adapter for BiLLa."""
+class BiLLaAdapter(BaseModelAdapter):
+    """The model adapter for Neutralzz/BiLLa-7B-SFT"""
 
     def match(self, model_path: str):
         return "billa" in model_path.lower()
@@ -587,8 +587,8 @@ class BiLLaAdapter(BaseAdapter):
         return get_conv_template("billa")
 
 
-class RedPajamaINCITEAdapter(BaseAdapter):
-    """The model adapter for RedPajama INCITE."""
+class RedPajamaINCITEAdapter(BaseModelAdapter):
+    """The model adapter for togethercomputer/RedPajama-INCITE-7B-Chat"""
 
     def match(self, model_path: str):
         return "redpajama-incite" in model_path.lower()
@@ -609,8 +609,8 @@ class RedPajamaINCITEAdapter(BaseAdapter):
         return get_conv_template("redpajama-incite")
 
 
-class H2OGPTAdapter(BaseAdapter):
-    """The model adapter for h2oGPT."""
+class H2OGPTAdapter(BaseModelAdapter):
+    """The model adapter for h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b"""
 
     def match(self, model_path: str):
         return "h2ogpt" in model_path.lower()
@@ -619,7 +619,7 @@ class H2OGPTAdapter(BaseAdapter):
         return get_conv_template("h2ogpt")
 
 
-class RobinAdapter(BaseAdapter):
+class RobinAdapter(BaseModelAdapter):
     """The model adapter for LMFlow/Full-Robin-7b-v2"""
 
     def match(self, model_path: str):
@@ -629,7 +629,7 @@ class RobinAdapter(BaseAdapter):
         return get_conv_template("Robin")
 
 
-class SnoozyAdapter(BaseAdapter):
+class SnoozyAdapter(BaseModelAdapter):
     """The model adapter for nomic-ai/gpt4all-13b-snoozy"""
 
     def match(self, model_path: str):
@@ -639,7 +639,7 @@ class SnoozyAdapter(BaseAdapter):
         return get_conv_template("snoozy")
 
 
-class WizardLMAdapter(BaseAdapter):
+class WizardLMAdapter(BaseModelAdapter):
     """The model adapter for WizardLM/WizardLM-13B-V1.0"""
 
     def match(self, model_path: str):
@@ -655,8 +655,8 @@ class WizardLMAdapter(BaseAdapter):
             return get_conv_template("one_shot")
 
 
-class ManticoreAdapter(BaseAdapter):
-    """The model adapter for Manticore."""
+class ManticoreAdapter(BaseModelAdapter):
+    """The model adapter for openaccess-ai-collective/manticore-13b-chat-pyg"""
 
     def match(self, model_path: str):
         return "manticore" in model_path.lower()
@@ -665,7 +665,7 @@ class ManticoreAdapter(BaseAdapter):
         return get_conv_template("manticore")
 
 
-class GuanacoAdapter(BaseAdapter):
+class GuanacoAdapter(BaseModelAdapter):
     """The model adapter for timdettmers/guanaco-33b-merged"""
 
     def match(self, model_path: str):
@@ -687,7 +687,7 @@ class GuanacoAdapter(BaseAdapter):
         return get_conv_template("zero_shot")
 
 
-class ChangGPTAdapter(BaseAdapter):
+class ChangGPTAdapter(BaseModelAdapter):
     """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""
 
     def match(self, model_path: str):
@@ -698,8 +698,8 @@ class ChangGPTAdapter(BaseAdapter):
         return get_conv_template("polyglot_changgpt")
 
 
-class CamelAdapter(BaseAdapter):
-    """The model adapter for camel"""
+class CamelAdapter(BaseModelAdapter):
+    """The model adapter for camel-ai/CAMEL-13B-Combined-Data"""
 
     def match(self, model_path: str):
         return "camel" in model_path
@@ -708,8 +708,8 @@ class CamelAdapter(BaseAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
-class FalconAdapter(BaseAdapter):
-    """The model adapter for falcon."""
+class FalconAdapter(BaseModelAdapter):
+    """The model adapter for tiiuae/falcon-40b."""
 
     def match(self, model_path: str):
         return "falcon" in model_path.lower()
@@ -770,4 +770,4 @@ register_model_adapter(ChangGPTAdapter)
 register_model_adapter(FalconAdapter)
 
 # After all adapters, try the default base adapter.
-register_model_adapter(BaseAdapter)
+register_model_adapter(BaseModelAdapter)
