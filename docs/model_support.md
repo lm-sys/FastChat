@@ -2,9 +2,9 @@
 
 ## Supported models
 - Vicuna, Alpaca, LLaMA, Koala
-   - e.g., `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
+   - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-   - e.g., `python3 -m fastchat.serve.cli --model-path ~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth`
+   - example: `python3 -m fastchat.serve.cli --model-path ~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth`
 - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
 - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
@@ -12,7 +12,7 @@
 - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
 - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
-  - e.g., `python3 -m fastchat.serve.cli --model-path mosaicml/mpt-7b-chat`
+  - example: `python3 -m fastchat.serve.cli --model-path mosaicml/mpt-7b-chat`
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
 - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
 - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
