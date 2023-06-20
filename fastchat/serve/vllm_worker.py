@@ -1,7 +1,9 @@
 """
-A model worker executes the model based on Cacheflow.
+A model worker executes the model based on vLLM.
 
-Install Cacheflow first. Then, assuming controller is live:
+This is an experimental feature and will be documented soon. Please stay tuned!
+
+Install Cacheflow (the old code name for vLLM) first. Then, assuming the controller is live:
 1. ray start --head
 2. python3 -m fastchat.serve.cacheflow_worker --model-path path_to_vicuna
 
