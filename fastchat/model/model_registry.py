@@ -181,3 +181,9 @@ register_model_info(
     "https://huggingface.co/tiiuae/falcon-40b",
     "TII's flagship series of large language models",
 )
+register_model_info(
+    ["tigerbot-7b-sft"],
+    "Tigerbot",
+    "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
+    "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
+)
