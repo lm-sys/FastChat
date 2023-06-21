@@ -243,6 +243,8 @@ async def get_gen_params(
         sep_style=SeparatorStyle(conv["sep_style"]),
         sep=conv["sep"],
         sep2=conv["sep2"],
+        stop_str=conv["stop_str"],
+        stop_token_ids=conv["stop_token_ids"],
     )
 
     if isinstance(messages, str):
