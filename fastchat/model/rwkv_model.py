@@ -38,7 +38,7 @@ class RwkvModel:
     def generate(self, input_ids, do_sample, temperature, max_new_tokens,
                  repetition_penalty=1.0):
         # This function is used by fastchat.llm_judge.
-        # As RWKV does not support huggingface generation API,
+        # Because RWKV does not support huggingface generation API,
         # we reuse fastchat.serve.inference.generate_stream as a workaround.
         from transformers import AutoTokenizer
 
