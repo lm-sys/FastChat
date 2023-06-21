@@ -24,6 +24,7 @@
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
 - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+- [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
 
 ## How to support a new model
 
