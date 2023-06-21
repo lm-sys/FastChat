@@ -738,6 +738,29 @@ class FalconAdapter(BaseModelAdapter):
         return get_conv_template("falcon")
 
 
+class TigerBotAdapter(BaseModelAdapter):
+  """The model adapter for TigerResearch/tigerbot-7b-sft"""
+
+  def match(self, model_path: str):
+    return "tigerbot" in model_path.lower()
+
+  def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    revision = from_pretrained_kwargs.get("revision", "main")
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, revision=revision)
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        config=config,
+        trust_remote_code=True,
+        low_cpu_mem_usage=True,
+        **from_pretrained_kwargs
+    )
+    return model, tokenizer
+
+  def get_default_conv_template(self, model_path: str) -> Conversation:
+    return get_conv_template("tigerbot")
+
+  
 class BaichuanAdapter(BaseModelAdapter):
     """The model adapter for baichuan-inc/baichuan-7B"""
 
@@ -788,6 +811,7 @@ register_model_adapter(GuanacoAdapter)
 register_model_adapter(CamelAdapter)
 register_model_adapter(ChangGPTAdapter)
 register_model_adapter(FalconAdapter)
+register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
 
 # After all adapters, try the default base adapter.
