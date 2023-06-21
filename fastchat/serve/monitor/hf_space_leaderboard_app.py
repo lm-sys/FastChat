@@ -11,7 +11,7 @@ notebook_url = "https://colab.research.google.com/drive/17L9uCiAivzWfzOxo2Tb9RMa
 def make_leaderboard_md(elo_results):
     leaderboard_md = f"""
 # Leaderboard
-[[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[Vote](https://arena.lmsys.org/)] [[Github]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/HSWAKCrnFx)
+| [Vote](https://arena.lmsys.org/) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook]({notebook_url}). We will periodically release new leaderboards. If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
 Last updated: {elo_results["last_updated_datetime"]}
@@ -82,5 +82,5 @@ if __name__ == "__main__":
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
-    demo = build_demo("elo_results_20230508.pkl")
+    demo = build_demo("elo_results_20230619.pkl")
     demo.launch(share=args.share)
