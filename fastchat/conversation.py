@@ -586,6 +586,7 @@ register_conv_template(
         ],  # it better only put special tokens here, because tokenizer only remove special tokens
     )
 )
+
 # ChagGPT default template
 register_conv_template(
     Conversation(
@@ -596,6 +597,21 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
+    )
+)
+
+# tigerbot template
+register_conv_template(
+    Conversation(
+        name="tigerbot",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ROBIN,
+        sep="\n\n",
+        stop_str="###",
     )
 )
 
