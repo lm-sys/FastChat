@@ -739,28 +739,30 @@ class FalconAdapter(BaseModelAdapter):
 
 
 class TigerBotAdapter(BaseModelAdapter):
-  """The model adapter for TigerResearch/tigerbot-7b-sft"""
+    """The model adapter for TigerResearch/tigerbot-7b-sft"""
 
-  def match(self, model_path: str):
-    return "tigerbot" in model_path.lower()
+    def match(self, model_path: str):
+        return "tigerbot" in model_path.lower()
 
-  def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-    revision = from_pretrained_kwargs.get("revision", "main")
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, revision=revision)
-    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path,
-        config=config,
-        trust_remote_code=True,
-        low_cpu_mem_usage=True,
-        **from_pretrained_kwargs
-    )
-    return model, tokenizer
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
 
-  def get_default_conv_template(self, model_path: str) -> Conversation:
-    return get_conv_template("tigerbot")
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("tigerbot")
 
-  
+
 class BaichuanAdapter(BaseModelAdapter):
     """The model adapter for baichuan-inc/baichuan-7B"""
 
@@ -771,14 +773,17 @@ class BaichuanAdapter(BaseModelAdapter):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype=torch.float16,
-            trust_remote_code=True, device_map="auto", low_cpu_mem_usage=True
+            model_path,
+            config=config,
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+            device_map="auto",
+            low_cpu_mem_usage=True,
         )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
-
 
 
 # Note: the registration order matters.

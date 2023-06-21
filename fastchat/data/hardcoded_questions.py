@@ -27,6 +27,7 @@ def identity_questions():
         "Who are you?",
         "What is your name?",
         "Can you introduce yourself?",
+        "Can you tell me a little bit about yourself?",
         "What's your name?",
         "What are you called?",
         "What are you?",
@@ -34,6 +35,7 @@ def identity_questions():
         "Tell me about yourself.",
         "Tell me about you.",
         "Tell me who you are.",
+        "Please introduce yourself.",
     ]
     answers = [
         f"I am {name}, a language model trained by researchers from {org}.",
@@ -41,6 +43,7 @@ def identity_questions():
         f"You can call me {name}, and I was trained by {org} researchers as a language model.",
         f"As a language model, I go by the name {name} and was trained by researchers from {org}.",
         f"I'm a language model called {name}, and I was trained by {org} researchers.",
+        f"You may refer to me as {name}, a language model meticulously developed by the researchers at {org}.",
     ]
     generate_conversations(questions, answers)
 

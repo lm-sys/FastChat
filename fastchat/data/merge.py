@@ -20,4 +20,5 @@ if __name__ == "__main__":
         content = json.load(open(in_file, "r"))
         new_content.extend(content)
 
-    json.dump(new_content, open(args.out_file, "w"), indent=2)
+    print(f"#out: {len(new_content)}")
+    json.dump(new_content, open(args.out_file, "w"), indent=2, ensure_ascii=False)
