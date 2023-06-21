@@ -25,7 +25,7 @@ def compute_avg_response_length(content, tokenizer):
 
     for c in content:
         for i in range(len(c["conversations"]) // 2):
-            v = c["conversations"][i*2 + 1]["value"]
+            v = c["conversations"][i * 2 + 1]["value"]
             res_lens.append(len(tokenizer.tokenize(v)))
 
     return np.mean(res_lens)
@@ -46,4 +46,3 @@ if __name__ == "__main__":
     print(f"#sequence: {len(content)}")
     print(f"avg. turns: {avg_turns:.2f}")
     print(f"avg. response length: {avg_res_len:.2f}")
-

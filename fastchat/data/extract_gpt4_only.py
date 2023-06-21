@@ -16,7 +16,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     content = json.load(open(args.in_file, "r"))
-    content = content[args.begin:args.end]
+    content = content[args.begin : args.end]
     new_content = []
     for c in content:
         model = c.get("model", None)

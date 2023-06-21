@@ -107,12 +107,14 @@ def clean_html_one_sample(sample):
             break
 
         char_count += len(new_val)
-        new_conversations.append({
-            "from": c["from"],
-            "value": new_val,
-        })
+        new_conversations.append(
+            {
+                "from": c["from"],
+                "value": new_val,
+            }
+        )
 
-    new_conversations = new_conversations[:len(new_conversations) // 2 * 2]
+    new_conversations = new_conversations[: len(new_conversations) // 2 * 2]
     sample["conversations"] = new_conversations
 
     if char_count < 16 or len(sample["conversations"]) <= 0:
@@ -171,8 +173,10 @@ def clean_html_all(content, begin, end):
             print(f"id {cid} contains plugin")
             cnt_plugin += 1
         else:
-            key = (sample["conversations"][0]["value"],
-                   sample["conversations"][1]["value"])
+            key = (
+                sample["conversations"][0]["value"],
+                sample["conversations"][1]["value"],
+            )
             if key in visited:
                 print(f"id {cid} is a value duplication of {visited[key]}")
                 cnt_value_duplication += 1

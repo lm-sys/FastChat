@@ -43,7 +43,7 @@ def identity_questions():
         f"You can call me {name}, and I was trained by {org} researchers as a language model.",
         f"As a language model, I go by the name {name} and was trained by researchers from {org}.",
         f"I'm a language model called {name}, and I was trained by {org} researchers.",
-        f"You may refer to me as {name}, a language model meticulously developed by the researchers at {org}."
+        f"You may refer to me as {name}, a language model meticulously developed by the researchers at {org}.",
     ]
     generate_conversations(questions, answers)
 
