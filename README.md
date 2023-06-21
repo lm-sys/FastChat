@@ -349,4 +349,4 @@ Please cite it if you find the repository helpful.
 }
 ```
 
-We are planning to add more of our research to this repository.
+We are also planning to add more of our research to this repository.
