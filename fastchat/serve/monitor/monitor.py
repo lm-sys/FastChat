@@ -271,7 +271,7 @@ if __name__ == "__main__":
         target=update_worker,
         args=(args.max_num_files, args.update_interval, args.elo_results_file),
     )
-    # update_thread.start()
+    update_thread.start()
 
     demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
