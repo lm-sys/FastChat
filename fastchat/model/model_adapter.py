@@ -845,7 +845,6 @@ class BaichuanAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
 
->>>>>>> main
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
