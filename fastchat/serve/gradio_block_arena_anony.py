@@ -171,6 +171,7 @@ SAMPLING_WEIGHTS = {
     "claude-v1": 1.5,
     "claude-instant-v1": 1.5,
     "palm-2": 1.5,
+    "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "gpt4all-13b-snoozy": 1.5,
@@ -369,7 +370,7 @@ def build_side_by_side_ui_anony(models):
 - You can do multiple rounds of conversations before voting.
 - The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
 - Click "Clear history" to start a new round.
-- [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/HSWAKCrnFx)
+- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.

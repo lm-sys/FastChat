@@ -50,7 +50,8 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["vicuna-13b", "vicuna-13b-v1.3", "vicuna-7b", "vicuna-7b-v1.3"],
+    ["vicuna-13b", "vicuna-13b-v1.3", "vicuna-7b", "vicuna-7b-v1.3",
+     "vicuna-33b", "vicuna-33b-v1.3"],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
@@ -68,7 +69,7 @@ register_model_info(
     "A finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
-    ["guanaco-33b"],
+    ["guanaco-33b", "guanaco-65b"],
     "Guanaco",
     "https://github.com/artidoro/qlora",
     "a model fine-tuned with QLoRA by UW",
@@ -128,10 +129,10 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
-    ["mpt-7b-chat"],
+    ["mpt-7b-chat", "mpt-30b-chat"],
     "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT by MosaicML",
 )
 register_model_info(
     ["mpt-30b-chat"],
@@ -186,4 +187,16 @@ register_model_info(
     "RedPajama-INCITE-7B-Chat",
     "https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat",
     "A chatbot fine-tuned from RedPajama-INCITE-7B-Base by Together",
+)
+register_model_info(
+    ["falcon-7b", "falcon-7b-instruct", "falcon-40b", "falcon-40b-instruct"],
+    "Falcon",
+    "https://huggingface.co/tiiuae/falcon-40b",
+    "TII's flagship series of large language models",
+)
+register_model_info(
+    ["tigerbot-7b-sft"],
+    "Tigerbot",
+    "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
+    "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
 )

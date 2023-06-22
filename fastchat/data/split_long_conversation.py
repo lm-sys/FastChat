@@ -19,6 +19,7 @@ def make_sample(sample, start_idx, end_idx):
     assert (end_idx - start_idx) % 2 == 0
     return {
         "id": sample["id"] + "_" + str(start_idx),
+        "model": sample.get("model", ""),
         "conversations": sample["conversations"][start_idx:end_idx],
     }
 
@@ -103,8 +104,8 @@ def main(args):
     new_content = split_all(content, args.begin, args.end, tokenizer, args.max_length)
     new_content = filter_invalid_roles(new_content)
 
-    print(f"total: {len(content)}, new: {len(new_content)}")
-    json.dump(new_content, open(args.out_file, "w"), indent=2)
+    print(f"#in: {len(content)}, #out: {len(new_content)}")
+    json.dump(new_content, open(args.out_file, "w"), indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":

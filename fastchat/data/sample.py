@@ -5,7 +5,8 @@ Usage: python3 -m fastchat.data.sample --in sharegpt.json --out sampled.json
 """
 import argparse
 import json
-from typing import Dict, Sequence, Optional
+
+import numpy as np
 
 
 if __name__ == "__main__":
@@ -14,12 +15,17 @@ if __name__ == "__main__":
     parser.add_argument("--out-file", type=str, default="sampled.json")
     parser.add_argument("--begin", type=int, default=0)
     parser.add_argument("--end", type=int, default=100)
-    parser.add_argument("--max-length", type=int, default=128)
+    parser.add_argument("--max-length", type=int, default=1024)
+    parser.add_argument("--keep-order", action="store_true")
     args = parser.parse_args()
 
     content = json.load(open(args.in_file, "r"))
+    if not args.keep_order:
+        np.random.seed(42)
+        np.random.shuffle(content)
+
     new_content = []
-    for i in range(args.begin, args.end):
+    for i in range(args.begin, min(args.end, len(content))):
         sample = content[i]
         concat = ""
         for s in sample["conversations"]:
@@ -30,4 +36,5 @@ if __name__ == "__main__":
 
         new_content.append(sample)
 
-    json.dump(new_content, open(args.out_file, "w"), indent=2)
+    print(f"#in: {len(content)}, #out: {len(new_content)}")
+    json.dump(new_content, open(args.out_file, "w"), indent=2, ensure_ascii=False)

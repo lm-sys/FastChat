@@ -18,6 +18,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.key_binding import KeyBindings
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -48,12 +49,20 @@ class SimpleChatIO(ChatIO):
 
 
 class RichChatIO(ChatIO):
-    def __init__(self):
+    bindings = KeyBindings()
+
+    @bindings.add("escape", "enter")
+    def _(event):
+        event.app.current_buffer.newline()
+
+    def __init__(self, multiline: bool = False, mouse: bool = False):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
             words=["!!exit", "!!reset"], pattern=re.compile("$")
         )
         self._console = Console()
+        self._multiline = multiline
+        self._mouse = mouse
 
     def prompt_for_input(self, role) -> str:
         self._console.print(f"[bold]{role}:")
@@ -61,8 +70,9 @@ class RichChatIO(ChatIO):
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
             multiline=False,
+            mouse_support=self._mouse,
             auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=None,
+            key_bindings=self.bindings if self._multiline else None,
         )
         self._console.print()
         return prompt_input
@@ -156,7 +166,7 @@ def main(args):
     if args.style == "simple":
         chatio = SimpleChatIO()
     elif args.style == "rich":
-        chatio = RichChatIO()
+        chatio = RichChatIO(args.multiline, args.mouse)
     elif args.style == "programmatic":
         chatio = ProgrammaticChatIO()
     else:
@@ -202,6 +212,16 @@ if __name__ == "__main__":
         default="simple",
         choices=["simple", "rich", "programmatic"],
         help="Display style.",
+    )
+    parser.add_argument(
+        "--multiline",
+        action="store_true",
+        help="[Rich Style]: Enable multiline input. Use ESC+Enter for newline.",
+    )
+    parser.add_argument(
+        "--mouse",
+        action="store_true",
+        help="[Rich Style]: Enable mouse support for cursor positioning.",
     )
     parser.add_argument(
         "--debug",
