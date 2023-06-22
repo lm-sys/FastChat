@@ -6,10 +6,10 @@ echo "WORLD_SIZE="$WORLD_SIZE
 python -m torch.distributed.run --nproc_per_node=16 --nnodes $SLURM_NNODES --node_rank=$SLURM_PROCID \
     --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
     fastchat/train/train_xformer.py \
-    --model_name_or_path /nfs/projects/mbzuai/ext_hao.zhang/hao/FastChat/vicuna_30b_sharegpt_20230515_48GPU/checkpoint-2800 \
-    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230515_clean_lang_split_identity.json \
+    --model_name_or_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/llama-30b \
+    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230520_clean_lang_split_identity.json \
     --fp16 True \
-    --output_dir /nfs/projects/mbzuai/ext_hao.zhang/hao/FastChat/vicuna_30b_sharegpt_20230515_48GPU \
+    --output_dir /nfs/projects/mbzuai/ext_hao.zhang/hao/FastChat/vicuna_30b_sharegpt_20230520_48GPU \
     --num_train_epochs 3 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \

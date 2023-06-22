@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=hao_30b_v1.05 # create a short name for your job
+#SBATCH --job-name=hao_30b_0520_v1.2 # create a short name for your job
 #SBATCH --nodes=3
 #SBATCH --gres=gpu:16      # number of gpus per node
-#SBATCH --exclusive
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=96
 #SBATCH --time=30-00:00:00     # total run time limit (HH:MM:SS)
-#SBATCH --reservation=high-profile
 #SBATCH --partition=high-profile
+#SBATCH --exclusive
+#SBATCH --reservation=high-profile
 #SBATCH --error=/nfs/projects/mbzuai/ext_hao.zhang/hao/slurm_logs/job%J.%N.30b.err
 #SBATCH --output=/nfs/projects/mbzuai/ext_hao.zhang/hao/slurm_logs/job%J.%N.30b.out
 ##### Number of total processes
