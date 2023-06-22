@@ -728,7 +728,7 @@ class FalconAdapter(BaseModelAdapter):
             trust_remote_code=True,
             **from_pretrained_kwargs,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, config=config)
         # In Falcon tokenizer config and special config there is not any pad token
         # Setting `pad_token_id` to 9, which corresponds to special token '>>SUFFIX<<'
         tokenizer.pad_token_id = 9
@@ -746,10 +746,10 @@ class TigerBotAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, config=config, trust_remote_code=True, revision=revision
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
@@ -770,8 +770,8 @@ class BaichuanAdapter(BaseModelAdapter):
         return "baichuan" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, config=config, trust_remote_code=True)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
