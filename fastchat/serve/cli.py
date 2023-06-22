@@ -55,13 +55,14 @@ class RichChatIO(ChatIO):
     def _(event):
         event.app.current_buffer.newline()
 
-    def __init__(self, multiline: bool = False):
+    def __init__(self, multiline: bool = False, mouse: bool = False):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
             words=["!!exit", "!!reset"], pattern=re.compile("$")
         )
         self._console = Console()
         self._multiline = multiline
+        self._mouse = mouse
 
     def prompt_for_input(self, role) -> str:
         self._console.print(f"[bold]{role}:")
@@ -69,7 +70,7 @@ class RichChatIO(ChatIO):
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
             multiline=False,
-            mouse_support=self._multiline,  # Enable mouse support when using multiline
+            mouse_support=self._mouse,
             auto_suggest=AutoSuggestFromHistory(),
             key_bindings=self.bindings if self._multiline else None,
         )
@@ -165,7 +166,7 @@ def main(args):
     if args.style == "simple":
         chatio = SimpleChatIO()
     elif args.style == "rich":
-        chatio = RichChatIO(args.multiline)
+        chatio = RichChatIO(args.multiline, args.mouse)
     elif args.style == "programmatic":
         chatio = ProgrammaticChatIO()
     else:
@@ -215,7 +216,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--multiline",
         action="store_true",
-        help="Enable multiline input. Only works for rich style. Use ESC+Enter for newline.",
+        help="[Rich Style]: Enable multiline input. Use ESC+Enter for newline.",
+    )
+    parser.add_argument(
+        "--mouse",
+        action="store_true",
+        help="[Rich Style]: Enable mouse support for cursor positioning.",
     )
     parser.add_argument(
         "--debug",
