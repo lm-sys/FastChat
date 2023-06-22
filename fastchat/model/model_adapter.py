@@ -147,7 +147,8 @@ def load_model(
                     for i in range(num_gpus)
                 }
             else:
-                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+                kwargs["max_memory"] = {
+                    i: max_gpu_memory for i in range(num_gpus)}
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
@@ -506,7 +507,8 @@ class OpenBuddyAdapter(BaseModelAdapter):
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = LlamaTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = LlamaTokenizer.from_pretrained(
+            model_path, revision=revision)
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -529,7 +531,7 @@ class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
-        return model_path == "gpt-3.5-turbo" or model_path == "gpt-4"
+        return model_path in ("gpt-3.5-turbo", "gpt-4")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -748,7 +750,10 @@ class TigerBotAdapter(BaseModelAdapter):
         revision = from_pretrained_kwargs.get("revision", "main")
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, config=config, trust_remote_code=True, revision=revision
+            model_path,
+            config=config,
+            trust_remote_code=True,
+            revision=revision,
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
@@ -771,14 +776,17 @@ class BaichuanAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
-        tokenizer = AutoTokenizer.from_pretrained(model_path, config=config, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            config=config,
+            trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
-            torch_dtype=torch.float16,
             trust_remote_code=True,
-            device_map="auto",
             low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
