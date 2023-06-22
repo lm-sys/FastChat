@@ -173,7 +173,13 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
     md_1 = gr.Markdown(md, elem_id="leaderboard_markdown")
 
     data = load_leaderboard_table_csv(leaderboard_table_file)
-    headers = ["Model", "Arena Elo rating", "MT-bench (score)", "MT-bench (win rate %)", "MMLU"]
+    headers = [
+        "Model",
+        "Arena Elo rating",
+        "MT-bench (score)",
+        "MT-bench (win rate %)",
+        "MMLU",
+    ]
     values = []
     for item in data:
         row = []
@@ -231,8 +237,8 @@ def build_demo(elo_results_file, leaderboard_table_file):
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
                 leader_components = build_leaderboard_tab(
-                    elo_results_file,
-                    leaderboard_table_file)
+                    elo_results_file, leaderboard_table_file
+                )
 
             with gr.Tab("Basic Stats", id=1):
                 basic_components = build_basic_stats_tab()
@@ -265,7 +271,7 @@ if __name__ == "__main__":
         target=update_worker,
         args=(args.max_num_files, args.update_interval, args.elo_results_file),
     )
-    #update_thread.start()
+    # update_thread.start()
 
     demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
