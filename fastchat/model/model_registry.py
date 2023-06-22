@@ -69,7 +69,7 @@ register_model_info(
     "A finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
-    ["guanaco-33b"],
+    ["guanaco-33b", "guanaco-65b"],
     "Guanaco",
     "https://github.com/artidoro/qlora",
     "a model fine-tuned with QLoRA by UW",
@@ -123,10 +123,10 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
-    ["mpt-7b-chat"],
+    ["mpt-7b-chat", "mpt-30b-chat"],
     "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT by MosaicML",
 )
 register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],

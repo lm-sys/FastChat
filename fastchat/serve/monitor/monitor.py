@@ -42,6 +42,15 @@ def make_leaderboard_md(elo_results):
     return leaderboard_md
 
 
+def make_leaderboard_md_live(elo_results):
+    leaderboard_md = f"""
+# Leaderboard
+Last updated: {elo_results["last_updated_datetime"]}
+{elo_results["leaderboard_table"]}
+"""
+    return leaderboard_md
+
+
 def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
@@ -50,7 +59,7 @@ def update_elo_components(max_num_files, elo_results_file):
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
 
-        leader_component_values[0] = make_leaderboard_md(elo_results)
+        leader_component_values[0] = make_leaderboard_md_live(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
         leader_component_values[3] = elo_results["average_win_rate_bar"]
@@ -168,36 +177,38 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
         md = "Loading ..."
         p1 = p2 = p3 = p4 = None
 
-    leader_component_values[:] = [md, p1, p2, p3, p4]
-
     md_1 = gr.Markdown(md, elem_id="leaderboard_markdown")
 
-    data = load_leaderboard_table_csv(leaderboard_table_file)
-    headers = [
-        "Model",
-        "Arena Elo rating",
-        "MT-bench (score)",
-        "MT-bench (win rate %)",
-        "MMLU",
-    ]
-    values = []
-    for item in data:
-        row = []
-        for key in headers:
-            value = item[key]
-            row.append(value)
-        values.append(row)
-    values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
+    if leaderboard_table_file:
+        data = load_leaderboard_table_csv(leaderboard_table_file)
+        headers = [
+            "Model",
+            "Arena Elo rating",
+            "MT-bench (score)",
+            "MT-bench (win rate %)",
+            "MMLU",
+        ]
+        values = []
+        for item in data:
+            row = []
+            for key in headers:
+                value = item[key]
+                row.append(value)
+            values.append(row)
+        values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
 
-    headers[1] = "⭐ " + headers[1]
-    headers[2] = "📈 " + headers[2]
+        headers[1] = "⭐ " + headers[1]
+        headers[2] = "📈 " + headers[2]
 
-    gr.Dataframe(
-        headers=headers,
-        datatype=["markdown", "number", "number", "number", "number"],
-        value=values,
-        elem_id="leaderboard_dataframe",
-    )
+        gr.Dataframe(
+            headers=headers,
+            datatype=["markdown", "number", "number", "number", "number"],
+            value=values,
+            elem_id="leaderboard_dataframe",
+        )
+        gr.Markdown("If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).")
+    else:
+        pass
 
     gr.Markdown(
         f"""## More Statistics for Chatbot Arena\n
@@ -205,6 +216,8 @@ We added some additional figures to show more statistics. The code for generatin
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
     )
+
+    leader_component_values[:] = [md, p1, p2, p3, p4]
 
     with gr.Row():
         with gr.Column():
