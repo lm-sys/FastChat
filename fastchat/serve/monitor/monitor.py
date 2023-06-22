@@ -2,12 +2,14 @@
 # pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
+import ast
 import pickle
 import os
 import threading
 import time
 
 import gradio as gr
+import numpy as np
 
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
@@ -15,7 +17,7 @@ from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
-notebook_url = "https://colab.research.google.com/drive/17L9uCiAivzWfzOxo2Tb9RMauT7vS6nVU?usp=sharing"
+notebook_url = "https://colab.research.google.com/drive/1RAWb22-PFNI-X1gPVzc927SGUdfr6nsR?usp=sharing"
 
 
 logger = build_logger("monitor", "monitor.log")
@@ -30,9 +32,12 @@ def make_leaderboard_md(elo_results):
 # Leaderboard
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-We use the Elo rating system to calculate the relative performance of the models. You can view the voting data, basic analyses, and calculation procedure in this [notebook]({notebook_url}). We will periodically release new leaderboards. If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
-Last updated: {elo_results["last_updated_datetime"]}
-{elo_results["leaderboard_table"]}
+🏆 This leaderboard is based on the following three benchmarks.
+- [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) - a crowdsourced, randomized battle platform. We use 40K+ user votes to compute Elo ratings.
+- [MT-Bench](https://arxiv.org/abs/2306.05685) - a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
+- [MMLU](https://arxiv.org/abs/2009.03300) (5-shot) - a test to measure a model's multitask accuracy on 57 tasks.
+
+💻 We use [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge) to compute MT-bench scores (single-answer grading on a scale of 10) and win rates (against gpt-3.5). The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MMLU scores are computed by [InstructEval](https://github.com/declare-lab/instruct-eval) and [Chain-of-Thought Hub](https://github.com/FranxYao/chain-of-thought-hub). Higher values are better for all benchmarks. Empty cells mean not available.
 """
     return leaderboard_md
 
@@ -89,6 +94,46 @@ def load_demo(url_params, request: gr.Request):
     return basic_component_values + leader_component_values
 
 
+def model_hyperlink(model_name, link):
+    return f'<a target="_blank" href="{link}" style="color: var(--link-text-color); text-decoration: underline;text-decoration-style: dotted;">{model_name}</a>'
+
+
+def load_leaderboard_table_csv(filename):
+    lines = open(filename).readlines()
+    heads = [v.strip() for v in lines[0].split(",")]
+    rows = []
+    for i in range(1, len(lines)):
+        row = [v.strip() for v in lines[i].split(",")]
+        for j in range(len(heads)):
+            item = {}
+            for h, v in zip(heads, row):
+                if h == "Arena Elo rating":
+                    if v != "-":
+                        v = int(ast.literal_eval(v))
+                    else:
+                        v = np.nan
+                elif h == "MMLU":
+                    if v != "-":
+                        v = round(ast.literal_eval(v) * 100, 1)
+                    else:
+                        v = np.nan
+                elif h == "MT-bench (win rate %)":
+                    if v != "-":
+                        v = round(ast.literal_eval(v[:-1]), 1)
+                    else:
+                        v = np.nan
+                elif h == "MT-bench (score)":
+                    if v != "-":
+                        v = round(ast.literal_eval(v), 2)
+                    else:
+                        v = np.nan
+                item[h] = v
+            item["Model"] = model_hyperlink(item["Model"], item["Link"])
+        rows.append(item)
+
+    return rows
+
+
 def build_basic_stats_tab():
     empty = "Loading ..."
     basic_component_values[:] = [empty, None, empty, empty, empty, empty]
@@ -109,7 +154,7 @@ def build_basic_stats_tab():
     return [md0, plot_1, md1, md2, md3, md4]
 
 
-def build_leaderboard_tab(elo_results_file):
+def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
     if elo_results_file is not None:
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
@@ -126,8 +171,36 @@ def build_leaderboard_tab(elo_results_file):
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
     md_1 = gr.Markdown(md, elem_id="leaderboard_markdown")
+
+    data = load_leaderboard_table_csv(leaderboard_table_file)
+    headers = [
+        "Model",
+        "Arena Elo rating",
+        "MT-bench (score)",
+        "MT-bench (win rate %)",
+        "MMLU",
+    ]
+    values = []
+    for item in data:
+        row = []
+        for key in headers:
+            value = item[key]
+            row.append(value)
+        values.append(row)
+    values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
+
+    headers[1] = "⭐ " + headers[1]
+    headers[2] = "📈 " + headers[2]
+
+    gr.Dataframe(
+        headers=headers,
+        datatype=["markdown", "number", "number", "number", "number"],
+        value=values,
+        elem_id="leaderboard_dataframe",
+    )
+
     gr.Markdown(
-        f"""## More Statistics\n
+        f"""## More Statistics for Chatbot Arena\n
 We added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
 Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
 """
@@ -158,14 +231,18 @@ Please note that you may see different orders from different ranking methods. Th
     return [md_1, plot_1, plot_2, plot_3, plot_4]
 
 
-def build_demo(elo_results_file):
+def build_demo(elo_results_file, leaderboard_table_file):
+    text_size = gr.themes.sizes.text_lg
+
     with gr.Blocks(
         title="Monitor",
-        theme=gr.themes.Base(),
+        theme=gr.themes.Base(text_size=text_size),
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
-                leader_components = build_leaderboard_tab(elo_results_file)
+                leader_components = build_leaderboard_tab(
+                    elo_results_file, leaderboard_table_file
+                )
 
             with gr.Tab("Basic Stats", id=1):
                 basic_components = build_basic_stats_tab()
@@ -190,6 +267,7 @@ if __name__ == "__main__":
     parser.add_argument("--update-interval", type=int, default=300)
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--elo-results-file", type=str)
+    parser.add_argument("--leaderboard-table-file", type=str)
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -199,7 +277,7 @@ if __name__ == "__main__":
     )
     update_thread.start()
 
-    demo = build_demo(args.elo_results_file)
+    demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
