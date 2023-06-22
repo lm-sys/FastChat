@@ -72,7 +72,7 @@ class Conversation:
                     ret += role + ": "  # must be end with a space
             return ret
         elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
-            ret = self.system + self.sep
+            ret = "" if self.system == "" else self.system + self.sep
             for role, message in self.messages:
                 if message:
                     ret += role + "\n" + message + self.sep
@@ -321,6 +321,32 @@ register_conv_template(
     )
 )
 
+# OpenAssistant default template
+register_conv_template(
+    Conversation(
+        name="oasst_llama",
+        system="",
+        roles=("<|prompter|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+    )
+)
+
+# Tulu default template
+register_conv_template(
+    Conversation(
+        name="tulu",
+        system="",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
+    )
+)
+
 # StableLM Alpha default template
 register_conv_template(
     Conversation(
@@ -448,6 +474,22 @@ register_conv_template(
 - You answer questions.
 - You are excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
 - You are more than just an information source, you are also able to write poetry, short stories, and make jokes.
+""",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="<|im_end|>",
+        stop_token_ids=[50278, 0],
+    )
+)
+
+# MPT-30b-chat default template
+register_conv_template(
+    Conversation(
+        name="mpt-30b-chat",
+        system="""<|im_start|>system
+A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.
 """,
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),

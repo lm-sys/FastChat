@@ -105,6 +105,12 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
+    ["oasst-sft-7-llama-30b"],
+    "OpenAssistant (oasst)",
+    "https://open-assistant.io",
+    "an Open Assistant for everyone by LAION",
+)
+register_model_info(
     ["llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
@@ -127,6 +133,12 @@ register_model_info(
     "MPT-Chat",
     "https://www.mosaicml.com/blog/mpt-30b",
     "a chatbot fine-tuned from MPT by MosaicML",
+)
+register_model_info(
+    ["mpt-30b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT-30B by MosaicML",
 )
 register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],

@@ -402,6 +402,8 @@ class DollyV2Adapter(BaseModelAdapter):
         )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -418,6 +420,24 @@ class OasstPythiaAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+
+class OasstLLaMAAdapter(BaseModelAdapter):
+    """The model adapter for OpenAssistant/oasst-sft-7-llama-30b"""
+
+    def match(self, model_path: str):
+        if "OpenAssistant-SFT-7-Llama-30B-HF" in model_path:
+            return True
+        return "oasst" in model_path and "pythia" not in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("oasst_llama")
 
 
 class StableLMAdapter(BaseModelAdapter):
@@ -438,7 +458,7 @@ class MPTAdapter(BaseModelAdapter):
     use_fast_tokenizer = True
 
     def match(self, model_path: str):
-        return "mpt" in model_path
+        return "mpt" in model_path and "mpt-30b-chat" not in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -452,10 +472,40 @@ class MPTAdapter(BaseModelAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, use_fast=True, revision=revision
         )
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("mpt")
+
+
+class MPTChat30BAdapter(BaseModelAdapter):
+    """The model adapter for mosaicml/mpt-30b-chat"""
+
+    use_fast_tokenizer = True
+
+    def match(self, model_path: str):
+        return "mpt-30b-chat" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            max_seq_len=8192,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True, revision=revision
+        )
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("mpt-30b-chat")
 
 
 class BaizeAdapter(BaseModelAdapter):
@@ -708,6 +758,16 @@ class CamelAdapter(BaseModelAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
+class TuluAdapter(BaseModelAdapter):
+    """The model adapter for camel"""
+
+    def match(self, model_path: str):
+        return "tulu" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("tulu")
+
+
 class FalconAdapter(BaseModelAdapter):
     """The model adapter for tiiuae/falcon-40b."""
 
@@ -795,6 +855,7 @@ register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
+register_model_adapter(OasstLLaMAAdapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
@@ -805,6 +866,7 @@ register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
+register_model_adapter(MPTChat30BAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
@@ -815,6 +877,7 @@ register_model_adapter(ManticoreAdapter)
 register_model_adapter(GuanacoAdapter)
 register_model_adapter(CamelAdapter)
 register_model_adapter(ChangGPTAdapter)
+register_model_adapter(TuluAdapter)
 register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
