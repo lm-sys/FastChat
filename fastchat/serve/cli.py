@@ -18,6 +18,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.key_binding import KeyBindings
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -48,6 +49,12 @@ class SimpleChatIO(ChatIO):
 
 
 class RichChatIO(ChatIO):
+    bindings = KeyBindings()
+
+    @bindings.add("escape", "enter")
+    def _(event):
+        event.app.current_buffer.newline()
+
     def __init__(self, multiline: bool = False):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
@@ -61,10 +68,10 @@ class RichChatIO(ChatIO):
         # TODO(suquark): multiline input has some issues. fix it later.
         prompt_input = self._prompt_session.prompt(
             completer=self._completer,
-            multiline=self._multiline,
+            multiline=False,
             mouse_support=self._multiline,  # Enable mouse support when using multiline
             auto_suggest=AutoSuggestFromHistory(),
-            key_bindings=None,
+            key_bindings=self.bindings if self._multiline else None,
         )
         self._console.print()
         return prompt_input
@@ -208,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--multiline",
         action="store_true",
-        help="Enable multiline input. Only works for rich style. Use ESC+Enter to submit.",
+        help="Enable multiline input. Only works for rich style. Use ESC+Enter for newline.",
     )
     parser.add_argument(
         "--debug",
