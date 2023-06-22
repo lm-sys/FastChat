@@ -448,16 +448,25 @@ pre {
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+#notice_markdown {
+    font-size: 104%
+}
 #notice_markdown th {
     display: none;
 }
 #notice_markdown td {
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+#leaderboard_markdown {
+    font-size: 104%
 }
 #leaderboard_markdown td {
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+#leaderboard_dataframe td {
+    line-height: 0.1em;
 }
 """
 )

@@ -171,6 +171,7 @@ SAMPLING_WEIGHTS = {
     "claude-v1": 1.5,
     "claude-instant-v1": 1.5,
     "palm-2": 1.5,
+    "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "gpt4all-13b-snoozy": 1.5,
