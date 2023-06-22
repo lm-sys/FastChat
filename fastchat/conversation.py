@@ -484,10 +484,10 @@ register_conv_template(
     )
 )
 
-# MPT-chat-30b default template
+# MPT-30b-chat default template
 register_conv_template(
     Conversation(
-        name="mpt-chat-30b",
+        name="mpt-30b-chat",
         system="""<|im_start|>system
 A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.
 """,
