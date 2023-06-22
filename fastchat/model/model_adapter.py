@@ -428,7 +428,7 @@ class OasstPythiaAdapter(BaseModelAdapter):
         return model, tokenizer
 
 
-class OasstLLaMAAdapter(BaseAdapter):
+class OasstLLaMAAdapter(BaseModelAdapter):
     """The model adapter for OpenAssistant/oasst-sft-7-llama-30b"""
 
     def match(self, model_path: str):
