@@ -72,7 +72,7 @@ class Conversation:
                     ret += role + ": "  # must be end with a space
             return ret
         elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
-            ret = self.system + self.sep
+            ret = "" if self.system == "" else self.system + self.sep
             for role, message in self.messages:
                 if message:
                     ret += role + "\n" + message + self.sep
@@ -321,6 +321,32 @@ register_conv_template(
     )
 )
 
+# OpenAssistant default template
+register_conv_template(
+    Conversation(
+        name="oasst_llama",
+        system="",
+        roles=("<|prompter|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+    )
+)
+
+# Tulu default template
+register_conv_template(
+    Conversation(
+        name="tulu",
+        system="",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
+    )
+)
+
 # StableLM Alpha default template
 register_conv_template(
     Conversation(
@@ -488,7 +514,6 @@ register_conv_template(
         stop_token_ids=[50278, 0],
     )
 )
-
 
 # Bard default template
 # Reference: https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L150

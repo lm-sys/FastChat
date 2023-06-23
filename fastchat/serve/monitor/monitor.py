@@ -206,7 +206,9 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
             value=values,
             elem_id="leaderboard_dataframe",
         )
-        gr.Markdown("If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).")
+        gr.Markdown(
+            "If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model)."
+        )
     else:
         pass
 
