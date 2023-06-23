@@ -501,6 +501,7 @@ A conversation between a user and an LLM-based AI assistant. The assistant gives
 )
 
 # MPT-30b-instruct default template
+# reference: https://huggingface.co/mosaicml/mpt-30b-instruct#formatting
 register_conv_template(
     Conversation(
         name="mpt-30b-instruct",
