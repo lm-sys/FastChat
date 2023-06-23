@@ -55,15 +55,15 @@ def update_elo_components(max_num_files, elo_results_file):
     log_files = get_log_files(max_num_files)
 
     # Leaderboard
-    if elo_results_file is None:
+    if elo_results_file is None:  # Do live update
         battles = clean_battle_data(log_files)
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
         leader_component_values[2] = elo_results["battle_count_heatmap"]
-        leader_component_values[3] = elo_results["average_win_rate_bar"]
-        leader_component_values[4] = elo_results["bootstrap_elo_rating"]
+        leader_component_values[3] = elo_results["bootstrap_elo_rating"]
+        leader_component_values[4] = elo_results["average_win_rate_bar"]
 
     # Basic stats
     basic_stats = report_basic_stats(log_files)
@@ -164,18 +164,18 @@ def build_basic_stats_tab():
 
 
 def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
-    if elo_results_file is not None:
+    if elo_results_file is None:  # Do live update
+        md = "Loading ..."
+        p1 = p2 = p3 = p4 = None
+    else:
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
 
         md = make_leaderboard_md(elo_results)
         p1 = elo_results["win_fraction_heatmap"]
         p2 = elo_results["battle_count_heatmap"]
-        p3 = elo_results["average_win_rate_bar"]
-        p4 = elo_results["bootstrap_elo_rating"]
-    else:
-        md = "Loading ..."
-        p1 = p2 = p3 = p4 = None
+        p3 = elo_results["bootstrap_elo_rating"]
+        p4 = elo_results["average_win_rate_bar"]
 
     md_1 = gr.Markdown(md, elem_id="leaderboard_markdown")
 
@@ -187,6 +187,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
             "MT-bench (score)",
             "MT-bench (win rate %)",
             "MMLU",
+            "License",
         ]
         values = []
         for item in data:
@@ -202,7 +203,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
 
         gr.Dataframe(
             headers=headers,
-            datatype=["markdown", "number", "number", "number", "number"],
+            datatype=["markdown", "number", "number", "number", "number", "str"],
             value=values,
             elem_id="leaderboard_dataframe",
         )
@@ -235,12 +236,12 @@ Please note that you may see different orders from different ranking methods. Th
     with gr.Row():
         with gr.Column():
             gr.Markdown(
-                "#### Figure 3: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
+                "#### Figure 3: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
             )
             plot_3 = gr.Plot(p3, show_label=False)
         with gr.Column():
             gr.Markdown(
-                "#### Figure 4: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
+                "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
             )
             plot_4 = gr.Plot(p4, show_label=False)
     return [md_1, plot_1, plot_2, plot_3, plot_4]
@@ -286,11 +287,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    update_thread = threading.Thread(
-        target=update_worker,
-        args=(args.max_num_files, args.update_interval, args.elo_results_file),
-    )
-    update_thread.start()
+    if args.elo_results_file is None:  # Do live update
+        update_thread = threading.Thread(
+            target=update_worker,
+            args=(args.max_num_files, args.update_interval, args.elo_results_file),
+        )
+        update_thread.start()
 
     demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
