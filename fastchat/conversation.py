@@ -500,6 +500,21 @@ A conversation between a user and an LLM-based AI assistant. The assistant gives
     )
 )
 
+# MPT-30b-instruct default template
+# reference: https://huggingface.co/mosaicml/mpt-30b-instruct#formatting
+register_conv_template(
+    Conversation(
+        name="mpt-30b-instruct",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n\n",
+        stop_token_ids=[50278, 0],
+    )
+)
+
 # Bard default template
 # Reference: https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L150
 #            https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L40

@@ -458,7 +458,7 @@ class MPTAdapter(BaseModelAdapter):
     use_fast_tokenizer = True
 
     def match(self, model_path: str):
-        return "mpt" in model_path and "mpt-30b-chat" not in model_path
+        return "mpt" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -477,35 +477,14 @@ class MPTAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("mpt")
-
-
-class MPTChat30BAdapter(BaseModelAdapter):
-    """The model adapter for mosaicml/mpt-30b-chat"""
-
-    use_fast_tokenizer = True
-
-    def match(self, model_path: str):
-        return "mpt-30b-chat" in model_path
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True,
-            max_seq_len=8192,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, use_fast=True, revision=revision
-        )
-        model.config.eos_token_id = tokenizer.eos_token_id
-        model.config.pad_token_id = tokenizer.pad_token_id
-        return model, tokenizer
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("mpt-30b-chat")
+        if "mpt-7b-chat" in model_path:
+            return get_conv_template("mpt")
+        elif "mpt-30b-chat" in model_path:
+            return get_conv_template("mpt-30b-chat")
+        elif "mpt-30b-instruct" in model_path:
+            return get_conv_template("mpt-30b-instruct")
+        else:
+            raise ValueError(f"Unknown MPT model: {model_path}")
 
 
 class BaizeAdapter(BaseModelAdapter):
@@ -870,7 +849,6 @@ register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
-register_model_adapter(MPTChat30BAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
 register_model_adapter(H2OGPTAdapter)
