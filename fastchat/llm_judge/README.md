@@ -13,6 +13,7 @@ In this package, you can use MT-bench questions and prompts to evaluate your mod
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
 pip install -e .
+pip install openai anthropic ray
 ```
 
 ## Review Pre-Generated Model Answers and Judgments
