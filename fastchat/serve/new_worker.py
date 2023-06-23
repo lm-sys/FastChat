@@ -12,27 +12,21 @@ launch Gradio:
 import argparse
 import asyncio
 import json
-import threading
 import time
 import uuid
-from typing import List, Dict
 
 import requests
 import torch
 import uvicorn
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from transformers import AutoTokenizer
 
-from cacheflow.master.server import Server, initialize_ray_cluster
-from cacheflow.sampling_params import SamplingParams
-from cacheflow.sequence import Sequence, SequenceGroup
-from cacheflow.utils import Counter, get_gpu_memory, get_cpu_memory
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.utils import build_logger, pretty_print_semaphore
-
+from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
-
+from vllm.sampling_params import SamplingParams
+from vllm.utils import random_uuid
 
 
 GB = 1 << 30
@@ -50,71 +44,22 @@ def heart_beat_worker(controller):
         controller.send_heart_beat()
 
 
-class CacheFlowWorker:
+class VLLMWorker:
     def __init__(
-        self,
-        controller_addr,
-        worker_addr,
-        worker_id,
-        no_register,
-        model_path,
-        model_name,
-        block_size,
-        seed,
-        swap_space,
-        max_num_batched_tokens,
-        distributed_init_method,
-        all_stage_devices,
-    ):
+            self,
+            controller_addr,
+            worker_addr,
+            worker_id,
+            no_register,
+            model_path,
+            model_name):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
-
-        logger.info(f"Loading the model {self.model_name} on worker {worker_id} ...")
-        self.block_size = block_size
-
-        # FIXME(Hao): we need to pass the tokenizer into cacheflow because we need
-        # to detect the stopping criteria "###".
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        self.seq_group_counter = Counter()
-        self.seq_counter = Counter()
-        # FIXME(Hao): hard code context len
-        self.context_len = 2048
-        # pipeline_parallel_size = 1,
-        # tensor_parallel_size = 1,
-        # dtype = torch.float16
-        remote_server_class = Server
-        self.server = remote_server_class(
-            model=self.model_name,
-            model_path=model_path,
-            pipeline_parallel_size=1,
-            tensor_parallel_size=1,
-            block_size=block_size,
-            dtype=torch.float16,
-            seed=seed,
-            swap_space=swap_space,
-            max_num_batched_tokens=max_num_batched_tokens,
-            num_nodes=1,
-            num_devices_per_node=4,
-            distributed_init_method=distributed_init_method,
-            all_stage_devices=all_stage_devices,
-            gpu_memory=get_gpu_memory(),
-            cpu_memory=get_cpu_memory(),
-        )
-        self.running_seq_groups: Dict[int, SequenceGroup] = {}
-        self.sequence_group_events: Dict[int, asyncio.Event] = {}
-        self.is_server_running = False
-
-        if not no_register:
-            time.sleep(30)  # wait for model loading
-            self.register_to_controller()
-            self.heart_beat_thread = threading.Thread(
-                target=heart_beat_worker, args=(self,)
-            )
-            self.heart_beat_thread.start()
+        logger.info(f"Loading the model {self.model_name} on worker {worker_id}, worker type: vLLM worker...")
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -178,32 +123,21 @@ class CacheFlowWorker:
             "queue_length": self.get_queue_length(),
         }
 
-    async def server_step(self):
-        self.is_server_running = True
-        updated_seq_groups = self.server.step()
-        self.is_server_running = False
-        # Notify the waiting coroutines that there new outputs ready.
-        for seq_group in updated_seq_groups:
-            group_id = seq_group.group_id
-            self.running_seq_groups[group_id] = seq_group
-            self.sequence_group_events[group_id].set()
-
     async def generate_stream(self, params):
-        tokenizer = self.tokenizer
-        context = params["prompt"]
+        context = params.pop("prompt")
+        request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
         max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
         stop_str = params.get("stop", None)
         echo = params.get("echo", True)
-        stop_token_ids = params.get("stop_token_ids", None) or []
-        stop_token_ids.append(tokenizer.eos_token_id)
 
-        input_ids = tokenizer(context).input_ids
-        max_src_len = self.context_len - max_new_tokens - 8
-        input_ids = input_ids[-max_src_len:]
 
-        # make sampling params in cacheflow
+        # stop_token_ids = params.get("stop_token_ids", None) or []
+        # max_src_len = self.context_len - max_new_tokens - 8
+        # input_ids = input_ids[-max_src_len:]
+
+        # make sampling params in vllm
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
@@ -212,60 +146,22 @@ class CacheFlowWorker:
             temperature=temperature,
             top_p=top_p,
             use_beam_search=False,
-            stop_token_ids=stop_token_ids,
-            max_num_steps=max_new_tokens,
-            num_logprobs=0,
-            context_window_size=None,
+            stop=stop_str,
+            max_tokens=max_new_tokens
         )
+        results_generator = engine.generate(context, sampling_params, request_id)
 
-        if stop_str is not None:
-            sampling_params.stop_str = stop_str
-        # we might sample multiple sequences, but in chatbot, this is one
-        seqs: List[Sequence] = []
-        for _ in range(sampling_params.n):
-            seq_id = next(self.seq_counter)
-            seq = Sequence(seq_id, input_ids, block_size=self.block_size)
-            seqs.append(seq)
-
-        arrival_time = time.time()
-        group_id = next(self.seq_group_counter)
-        # logger.info(f"Group {group_id} arrives at {time.time()}")
-        seq_group = SequenceGroup(group_id, seqs, arrival_time)
-        group_event = asyncio.Event()
-        self.running_seq_groups[group_id] = seq_group
-        self.sequence_group_events[group_id] = group_event
-        self.server.add_sequence_groups([(seq_group, sampling_params)])
-        while True:
-            if not self.is_server_running:
-                await self.server_step()
-            try:
-                await asyncio.wait_for(
-                    group_event.wait(), timeout=TIMEOUT_TO_PREVENT_DEADLOCK
-                )
-            except:
-                pass
-            group_event.clear()
-            seq_group = self.running_seq_groups[group_id]
-            all_outputs = []
-            for seq in seq_group.seqs:
-                token_ids = seq.get_token_ids()
-                if not echo:
-                    token_ids = token_ids[len(input_ids) :]
-                output = self.tokenizer.decode(token_ids, skip_special_tokens=True)
-                if stop_str is not None:
-                    if output.endswith(stop_str):
-                        output = output[: -len(stop_str)]
-                all_outputs.append(output)
-            assert len(seq_group.seqs) == 1
-            ret = {
-                "text": all_outputs[0],
-                "error_code": 0,
-            }
+        async for request_output in results_generator:
+            prompt = request_output.prompt
+            if echo:
+                text_outputs = [
+                    prompt + output.text
+                    for output in request_output.outputs
+                ]
+            else:
+                text_outputs = [output.text for output in request_output.outputs]
+            ret = {"text": text_outputs, "error_code": 0}
             yield (json.dumps(ret) + "\0").encode("utf-8")
-            if seq_group.is_finished():
-                del self.running_seq_groups[group_id]
-                del self.sequence_group_events[group_id]
-                break
 
 
 app = FastAPI()
@@ -280,13 +176,19 @@ def release_model_semaphore():
 async def generate_stream(request: Request):
     global model_semaphore, global_counter
     global_counter += 1
+    request_id = random_uuid()
     params = await request.json()
+    params["request_id"] = request_id
+
+    async def abort_request() -> None:
+        await engine.abort(request_id)
 
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
     await model_semaphore.acquire()
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
+    background_tasks.add_task(abort_request)
     # return StreamingResponse(generator, background=background_tasks)
     return StreamingResponse(
         worker.generate_stream(params), background=background_tasks
@@ -338,7 +240,14 @@ if __name__ == "__main__":
     #     distributed_init_method,
     #     all_stage_devices,
     # )
+    worker = VLLMWorker(
+        args.controller_address,
+        args.worker_address,
+        worker_id,
+        args.no_register,
+        args.model_path,
+        args.model_name
+    )
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
-
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
