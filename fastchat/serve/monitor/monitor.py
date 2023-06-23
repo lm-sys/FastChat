@@ -20,9 +20,6 @@ from fastchat.utils import build_logger, get_window_url_params_js
 notebook_url = "https://colab.research.google.com/drive/1RAWb22-PFNI-X1gPVzc927SGUdfr6nsR?usp=sharing"
 
 
-logger = build_logger("monitor", "monitor.log")
-
-
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
@@ -107,7 +104,7 @@ def model_hyperlink(model_name, link):
     return f'<a target="_blank" href="{link}" style="color: var(--link-text-color); text-decoration: underline;text-decoration-style: dotted;">{model_name}</a>'
 
 
-def load_leaderboard_table_csv(filename):
+def load_leaderboard_table_csv(filename, add_hyperlink=True):
     lines = open(filename).readlines()
     heads = [v.strip() for v in lines[0].split(",")]
     rows = []
@@ -137,7 +134,8 @@ def load_leaderboard_table_csv(filename):
                     else:
                         v = np.nan
                 item[h] = v
-            item["Model"] = model_hyperlink(item["Model"], item["Link"])
+            if add_hyperlink:
+                item["Model"] = model_hyperlink(item["Model"], item["Link"])
         rows.append(item)
 
     return rows
@@ -285,6 +283,8 @@ if __name__ == "__main__":
     parser.add_argument("--elo-results-file", type=str)
     parser.add_argument("--leaderboard-table-file", type=str)
     args = parser.parse_args()
+
+    logger = build_logger("monitor", "monitor.log")
     logger.info(f"args: {args}")
 
     if args.elo_results_file is None:  # Do live update
