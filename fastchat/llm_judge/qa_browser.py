@@ -204,10 +204,12 @@ def build_demo():
         theme=gr.themes.Base(text_size=gr.themes.sizes.text_lg),
         css=block_css,
     ) as demo:
-        gr.Markdown("""
+        gr.Markdown(
+            """
 # MT-Bench Browser
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
-""")
+"""
+        )
         (category_selector,) = build_pairwise_browser_tab()
 
         demo.load(load_demo, [], [category_selector])
