@@ -504,13 +504,12 @@ A conversation between a user and an LLM-based AI assistant. The assistant gives
 register_conv_template(
     Conversation(
         name="mpt-30b-instruct",
-        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
         roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.DOLLY,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="\n\n",
-        sep2="\n\n",
         stop_token_ids=[50278, 0],
     )
 )
