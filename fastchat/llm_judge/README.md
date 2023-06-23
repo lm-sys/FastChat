@@ -1,5 +1,5 @@
 # LLM Judge
-| [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | 
+| [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | [Leaderboard](https://chat.lmsys.org/?leaderboard) |
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
 
