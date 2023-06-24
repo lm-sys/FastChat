@@ -11,7 +11,7 @@ import re
 
 from tqdm import tqdm
 
-wrong_indices_pattern = re.compile("\n\n1\. [^2]*\n\n1\.")
+wrong_indices_pattern = re.compile("\n1\. [^2]*\n1\. ")
 
 
 def should_skip(conv):
