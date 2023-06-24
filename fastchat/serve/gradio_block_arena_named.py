@@ -17,7 +17,6 @@ from fastchat.constants import (
     CONVERSATION_TURN_LIMIT,
 )
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -37,7 +36,7 @@ from fastchat.utils import (
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
-num_models = 2
+num_sides = 2
 enable_moderation = False
 
 
@@ -47,7 +46,7 @@ def set_global_vars_named(enable_moderation_):
 
 
 def load_demo_side_by_side_named(models, url_params):
-    states = (None,) * num_models
+    states = (None,) * num_sides
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
@@ -65,7 +64,7 @@ def load_demo_side_by_side_named(models, url_params):
     return (
         states
         + selector_updates
-        + (gr.Chatbot.update(visible=True),) * num_models
+        + (gr.Chatbot.update(visible=True),) * num_sides
         + (
             gr.Textbox.update(visible=True),
             gr.Box.update(visible=True),
@@ -131,14 +130,14 @@ def bothbad_vote_last_response(
 def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (named). ip: {request.client.host}")
     states = [state0, state1]
-    for i in range(num_models):
+    for i in range(num_sides):
         states[i].conv.update_last_message(None)
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history (named). ip: {request.client.host}")
-    return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 6
+    return [None] * num_sides + [None] * num_sides + [""] + [disable_btn] * 6
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
@@ -158,12 +157,12 @@ def add_text(
     model_selectors = [model_selector0, model_selector1]
 
     # Init states if necessary
-    for i in range(num_models):
+    for i in range(num_sides):
         if states[i] is None:
             states[i] = State(model_selectors[i])
 
     if len(text) <= 0:
-        for i in range(num_models):
+        for i in range(num_sides):
             states[i].skip_next = True
         return (
             states
@@ -177,7 +176,7 @@ def add_text(
 
     if ip_expiration_dict[ip] < time.time():
         logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
-        for i in range(num_models):
+        for i in range(num_sides):
             states[i].skip_next = True
         return (
             states
@@ -195,7 +194,7 @@ def add_text(
             logger.info(
                 f"violate moderation (named). ip: {request.client.host}. text: {text}"
             )
-            for i in range(num_models):
+            for i in range(num_sides):
                 states[i].skip_next = True
             return (
                 states
@@ -210,7 +209,7 @@ def add_text(
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
-        for i in range(num_models):
+        for i in range(num_sides):
             states[i].skip_next = True
         return (
             states
@@ -223,7 +222,7 @@ def add_text(
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    for i in range(num_models):
+    for i in range(num_sides):
         states[i].conv.append_message(states[i].conv.roles[0], text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -261,7 +260,7 @@ def bot_response_multi(
 
     states = [state0, state1]
     gen = []
-    for i in range(num_models):
+    for i in range(num_sides):
         gen.append(
             bot_response(
                 states[i],
@@ -272,10 +271,10 @@ def bot_response_multi(
             )
         )
 
-    chatbots = [None] * num_models
+    chatbots = [None] * num_sides
     while True:
         stop = True
-        for i in range(num_models):
+        for i in range(num_sides):
             try:
                 ret = next(gen[i])
                 states[i], chatbots[i] = ret[0], ret[1]
@@ -313,9 +312,9 @@ By using this service, users are required to agree to the following terms: The s
 ### Choose two models to chat with (view [leaderboard](?leaderboard))
 """
 
-    states = [gr.State() for _ in range(num_models)]
-    model_selectors = [None] * num_models
-    chatbots = [None] * num_models
+    states = [gr.State() for _ in range(num_sides)]
+    model_selectors = [None] * num_sides
+    chatbots = [None] * num_sides
 
     model_description_md = get_model_description_md(models)
     notice = gr.Markdown(
@@ -324,22 +323,23 @@ By using this service, users are required to agree to the following terms: The s
 
     with gr.Box(elem_id="share-region-named"):
         with gr.Row():
-            for i in range(num_models):
+            for i in range(num_sides):
                 with gr.Column():
                     model_selectors[i] = gr.Dropdown(
                         choices=models,
                         value=models[i] if len(models) > i else "",
                         interactive=True,
                         show_label=False,
-                    ).style(container=False)
+                        container=False,
+                    )
 
         with gr.Row():
-            for i in range(num_models):
+            for i in range(num_sides):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(
-                        label=label, elem_id=f"chatbot", visible=False
-                    ).style(height=550)
+                    chatbots[i] = gr.Chatbot(
+                        label=label, elem_id=f"chatbot", visible=False, height=550
+                    )
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -354,7 +354,8 @@ By using this service, users are required to agree to the following terms: The s
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-            ).style(container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
@@ -453,7 +454,7 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
-    for i in range(num_models):
+    for i in range(num_sides):
         model_selectors[i].change(
             clear_history, None, states + chatbots + [textbox] + btn_list
         )

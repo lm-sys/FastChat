@@ -35,8 +35,6 @@ from fastchat.serve.api_provider import (
     palm_api_stream_iter,
     init_palm_chat,
 )
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
-from fastchat.serve.gradio_css import code_highlight_css
 from fastchat.utils import (
     build_logger,
     violates_moderation,
@@ -438,16 +436,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         fout.write(json.dumps(data) + "\n")
 
 
-block_css = (
-    code_highlight_css
-    + """
-pre {
-    white-space: pre-wrap;       /* Since CSS 2.1 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 */
-    white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-}
+block_css = """
 #notice_markdown {
     font-size: 104%
 }
@@ -469,7 +458,6 @@ pre {
     line-height: 0.1em;
 }
 """
-)
 
 
 def get_model_description_md(models):
@@ -523,18 +511,23 @@ By using this service, users are required to agree to the following terms: The s
             value=models[0] if len(models) > 0 else "",
             interactive=True,
             show_label=False,
-        ).style(container=False)
+            container=False,
+        )
 
-    chatbot = grChatbot(
-        elem_id="chatbot", label="Scroll down and start chatting", visible=False
-    ).style(height=550)
+    chatbot = gr.Chatbot(
+        elem_id="chatbot",
+        label="Scroll down and start chatting",
+        visible=False,
+        height=550,
+    )
     with gr.Row():
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-            ).style(container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
