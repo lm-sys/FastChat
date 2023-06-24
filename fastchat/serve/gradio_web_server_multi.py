@@ -22,7 +22,6 @@ from fastchat.serve.gradio_block_arena_named import (
     load_demo_side_by_side_named,
     set_global_vars_named,
 )
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
