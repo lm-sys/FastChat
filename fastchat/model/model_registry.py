@@ -69,16 +69,28 @@ register_model_info(
     "an instruction-following LLM using evol-instruct by Microsoft",
 )
 register_model_info(
-    ["gpt4all-13b-snoozy"],
-    "GPT4All-Snoozy",
-    "https://github.com/nomic-ai/gpt4all",
-    "A finetuned LLaMA model on assistant style data by Nomic AI",
-)
-register_model_info(
     ["guanaco-33b", "guanaco-65b"],
     "Guanaco",
     "https://github.com/artidoro/qlora",
     "a model fine-tuned with QLoRA by UW",
+)
+register_model_info(
+    ["mpt-7b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-7b",
+    "a chatbot fine-tuned from MPT-7B by MosaicML",
+)
+register_model_info(
+    ["mpt-30b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT-30B by MosaicML",
+)
+register_model_info(
+    ["gpt4all-13b-snoozy"],
+    "GPT4All-Snoozy",
+    "https://github.com/nomic-ai/gpt4all",
+    "A finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
     ["koala-13b"],
@@ -133,18 +145,6 @@ register_model_info(
     "StableLM",
     "https://github.com/stability-AI/stableLM",
     "Stability AI language models",
-)
-register_model_info(
-    ["mpt-7b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
-)
-register_model_info(
-    ["mpt-30b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-30b",
-    "a chatbot fine-tuned from MPT-30B by MosaicML",
 )
 register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],

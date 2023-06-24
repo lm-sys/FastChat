@@ -8,7 +8,7 @@ def run_cmd(cmd):
     return os.system(cmd)
 
 
-prefix = "~/datasets/sharegpt_20230520"
+prefix = "~/datasets/sharegpt_20230521"
 llama_weights = "~/model_weights/llama-7b/"
 
 cmd_list = [
