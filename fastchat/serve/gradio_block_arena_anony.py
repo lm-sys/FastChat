@@ -395,7 +395,8 @@ Please scroll down and start chatting. You can view a leaderboard of participati
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", visible=False, height=550)
+                        label=label, elem_id=f"chatbot", visible=False, height=550
+                    )
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -410,7 +411,8 @@ Please scroll down and start chatting. You can view a leaderboard of participati
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-                container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 

@@ -330,14 +330,16 @@ By using this service, users are required to agree to the following terms: The s
                         value=models[i] if len(models) > i else "",
                         interactive=True,
                         show_label=False,
-                        container=False)
+                        container=False,
+                    )
 
         with gr.Row():
             for i in range(num_models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", visible=False, height=550)
+                        label=label, elem_id=f"chatbot", visible=False, height=550
+                    )
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -352,7 +354,8 @@ By using this service, users are required to agree to the following terms: The s
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-                container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 

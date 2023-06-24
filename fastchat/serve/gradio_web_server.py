@@ -436,7 +436,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         fout.write(json.dumps(data) + "\n")
 
 
-block_css = ("""
+block_css = """
 #notice_markdown {
     font-size: 104%
 }
@@ -458,7 +458,6 @@ block_css = ("""
     line-height: 0.1em;
 }
 """
-)
 
 
 def get_model_description_md(models):
@@ -512,18 +511,23 @@ By using this service, users are required to agree to the following terms: The s
             value=models[0] if len(models) > 0 else "",
             interactive=True,
             show_label=False,
-            container=False)
+            container=False,
+        )
 
     chatbot = gr.Chatbot(
-        elem_id="chatbot", label="Scroll down and start chatting", visible=False,
-        height=550)
+        elem_id="chatbot",
+        label="Scroll down and start chatting",
+        visible=False,
+        height=550,
+    )
     with gr.Row():
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-                container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
