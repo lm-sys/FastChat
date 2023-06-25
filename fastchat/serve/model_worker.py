@@ -44,6 +44,7 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
 
@@ -117,10 +118,16 @@ class ModelWorker:
         if is_longchat:
             self.context_len = 16384
 
+        # generate_stream
+        is_chatglm = "chatglm" in str(type(self.model)).lower()
+        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
+        is_codet5p = "codet5p" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = generate_stream_chatglm
         elif is_falcon:
             self.generate_stream_func = generate_stream_falcon
+        elif is_codet5p:
+            self.generate_stream_func = generate_stream_codet5p
         else:
             self.generate_stream_func = generate_stream
 
