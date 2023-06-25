@@ -9,6 +9,8 @@ Install vLLM (``pip install vllm'') first. Then, assuming the controller is live
 launch Gradio:
 2. python3 -m fastchat.serve.vllm_worker --concurrency-count 10000
 """
+import threading
+
 import argparse
 import asyncio
 import json
@@ -60,6 +62,14 @@ class VLLMWorker:
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
         logger.info(f"Loading the model {self.model_name} on worker {worker_id}, worker type: vLLM worker...")
+
+        if not no_register:
+            self.register_to_controller()
+            self.heart_beat_thread = threading.Thread(
+                target=heart_beat_worker, args=(self,)
+            )
+            self.heart_beat_thread.start()
+
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -132,7 +142,11 @@ class VLLMWorker:
         stop_str = params.get("stop", None)
         echo = params.get("echo", True)
 
+        # Handle stop_str
+        if stop_str is None:
+            stop_str = []
 
+        # TODO(Hao): handle stop token IDs
         # stop_token_ids = params.get("stop_token_ids", None) or []
         # max_src_len = self.context_len - max_new_tokens - 8
         # input_ids = input_ids[-max_src_len:]
@@ -160,6 +174,7 @@ class VLLMWorker:
                 ]
             else:
                 text_outputs = [output.text for output in request_output.outputs]
+            text_outputs = " ".join(text_outputs)
             ret = {"text": text_outputs, "error_code": 0}
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
@@ -189,7 +204,6 @@ async def generate_stream(request: Request):
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     background_tasks.add_task(abort_request)
-    # return StreamingResponse(generator, background=background_tasks)
     return StreamingResponse(
         worker.generate_stream(params), background=background_tasks
     )
@@ -209,44 +223,29 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument(
-        "--model-path", type=str, default="/home/haozhang/weights/hf-llama-7b"
+        "--model-path", type=str, default=""
     )
-    parser.add_argument("--model-name", type=str)
+    parser.add_argument(
+        "--model-names",
+        type=lambda s: s.split(","),
+        help="Optional display comma separated names",
+    )
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
-    parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
-    #
-    # (
-    #     num_nodes,
-    #     num_devices_per_node,
-    #     distributed_init_method,
-    #     all_stage_devices,
-    # ) = initialize_ray_cluster(pipeline_parallel_size=1, tensor_parallel_size=1)
-    #
-    # worker = CacheFlowWorker(
-    #     args.controller_address,
-    #     args.worker_address,
-    #     worker_id,
-    #     args.no_register,
-    #     args.model_path,
-    #     args.model_name,
-    #     args.block_size,
-    #     seed,
-    #     args.swap_space,
-    #     args.max_num_batched_tokens,
-    #     distributed_init_method,
-    #     all_stage_devices,
-    # )
+    args.download_dir = args.model_path
+    if args.model_names:
+        args.model = args.model_names
+
     worker = VLLMWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.no_register,
         args.model_path,
-        args.model_name
+        args.model
     )
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
