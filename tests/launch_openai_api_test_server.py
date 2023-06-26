@@ -3,8 +3,10 @@ Launch OpenAI API server with multiple model workers.
 """
 import os
 
+
 def launch_process(cmd):
     os.popen(cmd)
+
 
 if __name__ == "__main__":
     launch_process("python3 -m fastchat.serve.controller")
@@ -18,5 +20,7 @@ if __name__ == "__main__":
     ]
 
     for i, model_path in enumerate(models):
-        launch_process(f"CUDA_VISIBLE_DEVICES={i} python3 -m fastchat.serve.model_worker "
-                       f"--model-path {model_path} --port {30000+i} --worker http://localhost:{30000+i}")
+        launch_process(
+            f"CUDA_VISIBLE_DEVICES={i} python3 -m fastchat.serve.model_worker "
+            f"--model-path {model_path} --port {30000+i} --worker http://localhost:{30000+i}"
+        )

@@ -136,7 +136,7 @@ class ProgrammaticChatIO(ChatIO):
                 contents = contents + char
             except EOFError:
                 continue
-        contents =  contents[:-len_end]
+        contents = contents[:-len_end]
         print(f"[!OP:{role}]: {contents}", flush=True)
         return contents
 

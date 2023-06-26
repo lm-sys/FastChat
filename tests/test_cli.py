@@ -16,10 +16,14 @@ def test_single_gpu():
     ]
 
     for model_path in models:
-        if "model_weights" in model_path and not os.path.exists(os.path.expanduser(model_path)):
+        if "model_weights" in model_path and not os.path.exists(
+            os.path.expanduser(model_path)
+        ):
             continue
-        cmd = (f"python3 -m fastchat.serve.cli --model-path {model_path} "
-               f"--style programmatic < test_cli_inputs.txt")
+        cmd = (
+            f"python3 -m fastchat.serve.cli --model-path {model_path} "
+            f"--style programmatic < test_cli_inputs.txt"
+        )
         run_cmd(cmd)
         print("")
 
@@ -30,8 +34,10 @@ def test_multi_gpu():
     ]
 
     for model_path in models:
-        cmd = (f"python3 -m fastchat.serve.cli --model-path {model_path} "
-               f"--style programmatic --num-gpus 2 < test_cli_inputs.txt")
+        cmd = (
+            f"python3 -m fastchat.serve.cli --model-path {model_path} "
+            f"--style programmatic --num-gpus 2 < test_cli_inputs.txt"
+        )
         run_cmd(cmd)
         print("")
 
@@ -42,8 +48,10 @@ def test_8bit():
     ]
 
     for model_path in models:
-        cmd = (f"python3 -m fastchat.serve.cli --model-path {model_path} "
-               f"--style programmatic --load-8bit < test_cli_inputs.txt")
+        cmd = (
+            f"python3 -m fastchat.serve.cli --model-path {model_path} "
+            f"--style programmatic --load-8bit < test_cli_inputs.txt"
+        )
         run_cmd(cmd)
         print("")
 
