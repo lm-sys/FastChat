@@ -381,6 +381,9 @@ class ChatGLMAdapter(BaseModelAdapter):
         )
         return model, tokenizer
 
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("chatglm")
+
 
 class DollyV2Adapter(BaseModelAdapter):
     """The model adapter for databricks/dolly-v2-12b"""
@@ -453,7 +456,7 @@ class StableLMAdapter(BaseModelAdapter):
 
 
 class MPTAdapter(BaseModelAdapter):
-    """The model adapter for mosaicml/mpt-7b-chat"""
+    """The model adapter for MPT series (mosaicml/mpt-7b-chat, mosaicml/mpt-30b-chat)"""
 
     use_fast_tokenizer = True
 
@@ -478,7 +481,7 @@ class MPTAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         if "mpt-7b-chat" in model_path:
-            return get_conv_template("mpt")
+            return get_conv_template("mpt-7b-chat")
         elif "mpt-30b-chat" in model_path:
             return get_conv_template("mpt-30b-chat")
         elif "mpt-30b-instruct" in model_path:
