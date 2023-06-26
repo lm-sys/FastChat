@@ -255,6 +255,21 @@ class AiroborosAdapter(BaseAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("airoboros_v1")
 
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        if "mpt" not in model_path:
+            return super().load_model(model_path, from_pretrained_kwargs)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            max_seq_len=8192,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True
+        )
+        return model, tokenizer
+
 
 class T5Adapter(BaseAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
