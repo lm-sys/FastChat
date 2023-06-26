@@ -121,15 +121,14 @@ class RichChatIO(ChatIO):
 
 class ProgrammaticChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
-        print(f"[!OP:{role}]: ", end="", flush=True)
         contents = ""
-        # `end_sequence` is a randomly-generated, 16-digit number
-        #  that signals the end of a message. It is unlikely to occur in
+        # `end_sequence` signals the end of a message. It is unlikely to occur in
         #  message content.
-        end_sequence = "9745805894023423"
+        end_sequence = " __END_OF_A_MESSAGE_47582648__\n"
+        len_end = len(end_sequence)
         while True:
-            if len(contents) >= 16:
-                last_chars = contents[-16:]
+            if len(contents) >= len_end:
+                last_chars = contents[-len_end:]
                 if last_chars == end_sequence:
                     break
             try:
@@ -137,7 +136,9 @@ class ProgrammaticChatIO(ChatIO):
                 contents = contents + char
             except EOFError:
                 continue
-        return contents[:-16]
+        contents = contents[:-len_end]
+        print(f"[!OP:{role}]: {contents}", flush=True)
+        return contents
 
     def prompt_for_output(self, role: str):
         print(f"[!OP:{role}]: ", end="", flush=True)
