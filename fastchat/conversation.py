@@ -19,6 +19,7 @@ class SeparatorStyle(Enum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
+    CHATML = auto()
 
 
 @dataclasses.dataclass
@@ -126,6 +127,14 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATML:
+            ret = "" if self.system == "" else self.system + self.sep + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n" + message + self.sep + "\n"
+                else:
+                    ret += role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -474,12 +483,11 @@ register_conv_template(
 - You are a helpful assistant chatbot trained by MosaicML.
 - You answer questions.
 - You are excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
-- You are more than just an information source, you are also able to write poetry, short stories, and make jokes.
-""",
+- You are more than just an information source, you are also able to write poetry, short stories, and make jokes.""",
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
         stop_token_ids=[50278, 0],
     )
@@ -490,12 +498,11 @@ register_conv_template(
     Conversation(
         name="mpt-30b-chat",
         system="""<|im_start|>system
-A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.
-""",
+A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.""",
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
         stop_token_ids=[50278, 0],
     )
