@@ -16,11 +16,11 @@ class SeparatorStyle(Enum):
     NO_COLON_SINGLE = auto()
     ADD_NEW_LINE_SINGLE = auto()
     CHATGLM = auto()
+    CHATML = auto()
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
-    CHATML = auto()
 
 
 @dataclasses.dataclass
@@ -120,6 +120,14 @@ class Conversation:
                 else:
                     ret += f"{role}："
             return ret
+        elif self.sep_style == SeparatorStyle.CHATML:
+            ret = "" if self.system == "" else self.system + self.sep + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n" + message + self.sep + "\n"
+                else:
+                    ret += role + "\n"
+            return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
             ret = self.system
@@ -146,14 +154,6 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.CHATML:
-            ret = "" if self.system == "" else self.system + self.sep + "\n"
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep + "\n"
-                else:
-                    ret += role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -510,7 +510,7 @@ register_conv_template(
 # MPT default template
 register_conv_template(
     Conversation(
-        name="mpt",
+        name="mpt-7b-chat",
         system="""<|im_start|>system
 - You are a helpful assistant chatbot trained by MosaicML.
 - You answer questions.
