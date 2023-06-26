@@ -7,14 +7,11 @@ python3 tests/test_cli.py
 ### Test OpenAI API Server
 
 ```
-python3 -m fastchat.serve.controller
-python3 -m fastchat.serve.openai_api_server
-python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+python3 tests/launch_openai_api_test_server.py
 ```
 
 ```
 python3 test_openai_sdk.py
-bash test_openai_curl.sh
 ```
 
 ### Test GUI Serving
