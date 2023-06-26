@@ -1,17 +1,17 @@
 ### Test CLI Inference
 
 ```
-python3 tests/test_cli.py
+python3 test_cli.py
 ```
 
 ### Test OpenAI API Server
 
 ```
-python3 tests/launch_openai_api_test_server.py
+python3 launch_openai_api_test_server.py
 ```
 
 ```
-python3 test_openai_sdk.py
+python3 test_openai_api.py
 ```
 
 ### Test GUI Serving

@@ -24,3 +24,6 @@ if __name__ == "__main__":
             f"CUDA_VISIBLE_DEVICES={i} python3 -m fastchat.serve.model_worker "
             f"--model-path {model_path} --port {30000+i} --worker http://localhost:{30000+i}"
         )
+
+    while True:
+        pass

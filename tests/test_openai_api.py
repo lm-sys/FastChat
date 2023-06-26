@@ -50,9 +50,9 @@ def test_openai_curl(model):
     run_cmd("curl http://localhost:8000/v1/models")
 
     run_cmd(
-        """
-curl http://localhost:8000/v1/chat/completions
-  -H "Content-Type: application/json"
+"""
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.3",
     "messages": [{"role": "user", "content": "Hello! What is your name?"}]
@@ -61,9 +61,9 @@ curl http://localhost:8000/v1/chat/completions
     )
 
     run_cmd(
-        """
-curl http://localhost:8000/v1/completions
-  -H "Content-Type: application/json"
+"""
+curl http://localhost:8000/v1/completions \
+  -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.3",
     "prompt": "Once upon a time",
@@ -74,27 +74,27 @@ curl http://localhost:8000/v1/completions
     )
 
     run_cmd(
-        """
-curl http://localhost:8000/v1/embeddings
-  -H "Content-Type: application/json"
+"""
+curl http://localhost:8000/v1/embeddings \
+  -H "Content-Type: application/json" \
   -d '{
     "model": "vicuna-7b-v1.3",
     "input": "Hello world!"
-  }
+  }'
 """
     )
 
 
 if __name__ == "__main__":
-    # models = test_list_models()
-    # print(f"models: {models}")
+    models = test_list_models()
+    print(f"models: {models}")
 
-    # for model in models:
-    #    print(f"===== Test {model} ======")
-    #    test_completion(model)
-    #    test_embedding(model)
-    #    test_chat_completion(model)
-    #    test_chat_completion_stream(model)
+    for model in models:
+       print(f"===== Test {model} ======")
+       test_completion(model)
+       test_embedding(model)
+       test_chat_completion(model)
+       test_chat_completion_stream(model)
 
     print("===== Test curl =====")
     test_openai_curl("vicuna-7b-v1.3")
