@@ -245,7 +245,7 @@ def detect_language(text: str) -> str:
     return lang_code
 
 
-def parse_gradio_auth_creds(filename):
+def parse_gradio_auth_creds(filename: str):
     """Parse a username:password file for gradio authorization."""
     gradio_auth_creds = []
     with open(filename, "r", encoding="utf8") as file:
@@ -258,9 +258,15 @@ def parse_gradio_auth_creds(filename):
     return auth
 
 
-def is_partial_stop(output, stop_str):
+def is_partial_stop(output: str, stop_str: str):
     """Check whether the output contains a partial stop str."""
     for i in range(0, min(len(output), len(stop_str))):
         if stop_str.startswith(output[-i:]):
             return True
     return False
+
+
+def run_cmd(cmd: str):
+    """Run a bash command."""
+    print(cmd)
+    os.system(cmd)

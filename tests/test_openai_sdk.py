@@ -1,3 +1,12 @@
+"""
+Test the OpenAI compatible server
+
+Launch:
+python3 -m fastchat.serve.controller
+python3 -m fastchat.serve.openai_api_server
+python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+"""
+
 import openai
 
 openai.api_key = "EMPTY"  # Not support yet
