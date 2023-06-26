@@ -50,7 +50,7 @@ def test_openai_curl(model):
     run_cmd("curl http://localhost:8000/v1/models")
 
     run_cmd(
-"""
+        """
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -61,7 +61,7 @@ curl http://localhost:8000/v1/chat/completions \
     )
 
     run_cmd(
-"""
+        """
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -74,7 +74,7 @@ curl http://localhost:8000/v1/completions \
     )
 
     run_cmd(
-"""
+        """
 curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
@@ -90,11 +90,11 @@ if __name__ == "__main__":
     print(f"models: {models}")
 
     for model in models:
-       print(f"===== Test {model} ======")
-       test_completion(model)
-       test_embedding(model)
-       test_chat_completion(model)
-       test_chat_completion_stream(model)
+        print(f"===== Test {model} ======")
+        test_completion(model)
+        test_embedding(model)
+        test_chat_completion(model)
+        test_chat_completion_stream(model)
 
     print("===== Test curl =====")
     test_openai_curl("vicuna-7b-v1.3")
