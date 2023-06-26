@@ -338,11 +338,9 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             )
             return
 
-        # Construct prompt
-        if "chatglm" in model_name:
-            prompt = list(list(x) for x in conv.messages[conv.offset :])
-        else:
-            prompt = conv.get_prompt()
+        # Construct prompt.
+        # We need to call it here, so it will not be affected by "▌".
+        prompt = conv.get_prompt()
 
         # Set repetition_penalty
         if "t5" in model_name:
