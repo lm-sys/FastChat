@@ -289,8 +289,9 @@ register_conv_template(
         roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n\n",
+        sep2="</s>",
     )
 )
 
