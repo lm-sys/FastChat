@@ -15,6 +15,7 @@ class SeparatorStyle(Enum):
     ADD_COLON_SPACE_SINGLE = auto()
     NO_COLON_SINGLE = auto()
     ADD_NEW_LINE_SINGLE = auto()
+    CHATGLM = auto()
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
@@ -100,6 +101,24 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATGLM:
+            # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
+            if self.system:
+                ret = self.system + "\n"
+            else:
+                ret = ""
+
+            if len(self.messages) <= 2:
+                return ret + self.messages[0][1]
+
+            for i, (role, message) in enumerate(self.messages):
+                if i % 2 == 0:
+                    ret += f"[Round {i//2}]\n"
+                if message:
+                    ret += f"{role}：{message}\n"
+                else:
+                    ret += f"{role}："
             return ret
         elif self.sep_style == SeparatorStyle.DOLLY:
             seps = [self.sep, self.sep2]
@@ -301,6 +320,19 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n\n",
         sep2="</s>",
+    )
+)
+
+# ChatGLM default template
+register_conv_template(
+    Conversation(
+        name="chatglm",
+        system="",
+        roles=("问", "答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATGLM,
+        sep="\n",
     )
 )
 
