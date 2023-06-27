@@ -7,10 +7,10 @@ python -m torch.distributed.run --nproc_per_node=16 --nnodes $SLURM_NNODES --nod
     --master_addr $MASTER_ADDR --master_port $MASTER_PORT \
     fastchat/train/train_xformer.py \
     --model_name_or_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/llama-30b \
-    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230520_clean_lang_split_identity.json \
+    --data_path /nfs/projects/mbzuai/ext_hao.zhang/hao/dataset/sharegpt_20230521_clean_lang_split_identity_gpt4.json \
     --fp16 True \
-    --output_dir /nfs/projects/mbzuai/ext_hao.zhang/hao/FastChat/vicuna_30b_sharegpt_20230520_48GPU \
-    --num_train_epochs 3 \
+    --output_dir /nfs/projects/mbzuai/ext_hao.zhang/hao/FastChat/vicuna_30b_sharegpt_20230521_48GPU_gpt4 \
+    --num_train_epochs 4 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 1 \
