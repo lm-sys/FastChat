@@ -102,6 +102,8 @@ class ModelWorker:
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
+        elif hasattr(self.model.config, "seq_length"):
+            self.context_len = self.model.config.seq_length
         elif hasattr(self.model.config, "max_position_embeddings"):
             self.context_len = self.model.config.max_position_embeddings
         else:
@@ -112,7 +114,6 @@ class ModelWorker:
         is_falcon = "rwforcausallm" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = chatglm_generate_stream
-            self.context_len = 32768
         elif is_falcon:
             self.generate_stream_func = falcon_generate_stream
         else:
