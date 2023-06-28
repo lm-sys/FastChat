@@ -48,20 +48,23 @@ def heart_beat_worker(controller):
 
 class VLLMWorker:
     def __init__(
-            self,
-            controller_addr,
-            worker_addr,
-            worker_id,
-            no_register,
-            model_path,
-            model_name):
+        self,
+        controller_addr,
+        worker_addr,
+        worker_id,
+        no_register,
+        model_path,
+        model_name,
+    ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
-        logger.info(f"Loading the model {self.model_name} on worker {worker_id}, worker type: vLLM worker...")
+        logger.info(
+            f"Loading the model {self.model_name} on worker {worker_id}, worker type: vLLM worker..."
+        )
 
         if not no_register:
             self.register_to_controller()
@@ -69,7 +72,6 @@ class VLLMWorker:
                 target=heart_beat_worker, args=(self,)
             )
             self.heart_beat_thread.start()
-
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -161,7 +163,7 @@ class VLLMWorker:
             top_p=top_p,
             use_beam_search=False,
             stop=stop_str,
-            max_tokens=max_new_tokens
+            max_tokens=max_new_tokens,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
@@ -169,8 +171,7 @@ class VLLMWorker:
             prompt = request_output.prompt
             if echo:
                 text_outputs = [
-                    prompt + output.text
-                    for output in request_output.outputs
+                    prompt + output.text for output in request_output.outputs
                 ]
             else:
                 text_outputs = [output.text for output in request_output.outputs]
@@ -222,9 +223,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
-    parser.add_argument(
-        "--model-path", type=str, default="lmsys/vicuna-7b-v1.3"
-    )
+    parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.3")
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--num-gpus", type=int, default=1)
@@ -239,14 +238,13 @@ if __name__ == "__main__":
     if "/" in args.model_path:
         model_name = args.model_path.split("/")[-1]
 
-
     worker = VLLMWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.no_register,
         args.model_path,
-        model_name
+        model_name,
     )
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
