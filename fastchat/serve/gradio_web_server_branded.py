@@ -59,6 +59,8 @@ learn_more_md = """
 This is made by Helmholtz AI Jülich.
 """
 
+blablador= '<img src="https://helmholtzai-fzj.github.io/FastChat/blablador.png" width="160">'
+
 ip_expiration_dict = defaultdict(lambda: 0)
 
 
@@ -492,7 +494,7 @@ def build_single_model_ui(models):
 ![](https://www.helmholtz.ai/fileadmin/_processed_/b/f/csm_logo_helmholtz_ai_cf39d4dbfc.png)
 
 # This is _*BLABLADOR*_, our experimental large language model server! 🐕‍🦺
-### Different models might be available at Alex's whims. These are the models currently running:
+### Different models might be available at Alex's whim. These are the models currently running:
 """
 
     state = gr.State()
@@ -512,7 +514,7 @@ def build_single_model_ui(models):
 
     chatbot = gr.Chatbot(
         elem_id="chatbot",
-        label="Talk to me!",
+        label="This is what I have to say....",
         visible=True,
         height=550,
     )
@@ -561,6 +563,7 @@ def build_single_model_ui(models):
         )
 
     gr.Markdown(learn_more_md)
+    gr.HTML(blablador)
 
     # Register listeners
     # btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -609,7 +612,7 @@ def build_single_model_ui(models):
 
 def build_demo(models):
     with gr.Blocks(
-        title="Chat with Open Large Language Models",
+        title="BLABLADOR - A funny Helmholtz AI Chat Model",
         theme=gr.themes.Base(),
         # css=block_css,
         css="footer {visibility: hidden}",
