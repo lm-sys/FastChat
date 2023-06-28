@@ -4,10 +4,10 @@ A model worker executes the model based on vLLM.
 This is an experimental feature and will be documented soon. Please stay tuned!
 
 Install vLLM (``pip install vllm'') first. Then, assuming the controller is live:
-1. python3 -m fastchat.serve.vllm_worker --model-path path_to_vicuna
+1. python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3
 
 launch Gradio:
-2. python3 -m fastchat.serve.vllm_worker --concurrency-count 10000
+2. python3 -m fastchat.serve.gradio_web_server --concurrency-count 10000
 """
 import threading
 
@@ -223,16 +223,22 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument(
-        "--model-path", type=str, default=""
+        "--model-path", type=str, default="lmsys/vicuna-7b-v1.3"
     )
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument("--num-gpus", type=int, default=1)
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
-    args.download_dir = args.model_path
-    if args.model_names:
-        args.model = args.model_names
+    if args.model_path:
+        args.model = args.model_path
+    if args.num_gpus > 1:
+        args.tensor_parallel_size = args.num_gpus
+    model_name = args.model_path
+    if "/" in args.model_path:
+        model_name = args.model_path.split("/")[-1]
+
 
     worker = VLLMWorker(
         args.controller_address,
@@ -240,7 +246,7 @@ if __name__ == "__main__":
         worker_id,
         args.no_register,
         args.model_path,
-        args.model
+        model_name
     )
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
