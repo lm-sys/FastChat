@@ -20,6 +20,7 @@
 - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
+- [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
 - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
 - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
