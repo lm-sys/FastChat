@@ -106,6 +106,8 @@ class ModelWorker:
             self.context_len = self.model.config.seq_length
         elif hasattr(self.model.config, "max_position_embeddings"):
             self.context_len = self.model.config.max_position_embeddings
+        elif hasattr(self.model.config, "seq_length"):
+            self.context_len = self.model.config.seq_length
         else:
             self.context_len = 2048
 
@@ -248,12 +250,12 @@ class ModelWorker:
                 args.stream_interval,
             ):
                 ret["text"] = output["text"]
-            if "usage" in output:
-                ret["usage"] = output["usage"]
-            if "finish_reason" in output:
-                ret["finish_reason"] = output["finish_reason"]
-            if "logprobs" in output:
-                ret["logprobs"] = output["logprobs"]
+                if "usage" in output:
+                    ret["usage"] = output["usage"]
+                if "finish_reason" in output:
+                    ret["finish_reason"] = output["finish_reason"]
+                if "logprobs" in output:
+                    ret["logprobs"] = output["logprobs"]
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",

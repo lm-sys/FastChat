@@ -2,6 +2,8 @@
 | [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | [Leaderboard](https://chat.lmsys.org/?leaderboard) |
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
+MT-bench is a set of challenging multi-turn open-ended questions for evaluating chat assistants.
+To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as judges and assess the quality of the models' responses.
 
 ## Contents
 - [Review Pre-Generated Model Answers and Judgments](#review-pre-generated-model-answers-and-judgments)
@@ -102,6 +104,7 @@ Besides pairwise comparison against a fixed baseline model, we also support two 
 #### Option 2: Single-answer grading
 
 This option asks GPT-4 to grade and give a score to a single answer without comparison, so it is also a scalable option.
+For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 - Generate GPT-4 judgments
 ```
