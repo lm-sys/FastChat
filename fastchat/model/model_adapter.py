@@ -410,16 +410,10 @@ class ChatGLMAdapter(BaseModelAdapter):
         revision = from_pretrained_kwargs.get("revision", "main")
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, 
-            config=config,
-            trust_remote_code=True, 
-            revision=revision
+            model_path, config=config, trust_remote_code=True, revision=revision
         )
         model = AutoModel.from_pretrained(
-            model_path, 
-            config=config,
-            trust_remote_code=True, 
-            **from_pretrained_kwargs
+            model_path, config=config, trust_remote_code=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 

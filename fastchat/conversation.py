@@ -105,16 +105,16 @@ class Conversation:
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
             # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
-            round_add_n = 1 if self.name == 'chatglm2' else 0
+            round_add_n = 1 if self.name == "chatglm2" else 0
             if self.system:
                 ret = self.system + self.sep
             else:
                 ret = ""
-        
+
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
                     ret += f"[Round {i//2 + round_add_n}]{self.sep}"
-            
+
                 if message:
                     ret += f"{role}：{message}{self.sep}"
                 else:
