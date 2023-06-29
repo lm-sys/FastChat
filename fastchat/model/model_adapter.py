@@ -331,7 +331,7 @@ class PeftModelAdapter:
 
 
 class VicunaAdapter(BaseModelAdapter):
-    "Model adapater for vicuna-v1.1"
+    "Model adapater for Vicuna models (e.g., lmsys/vicuna-7b-v1.3)" ""
 
     def match(self, model_path: str):
         return "vicuna" in model_path
@@ -365,24 +365,25 @@ class VicunaAdapter(BaseModelAdapter):
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
 
+
 class LongChatAdapter(BaseModelAdapter):
-    "Model adapater for LongChat models"
+    "Model adapater for LongChat models (e.g., lmsys/longchat-7b-16k)."
 
     def match(self, model_path: str):
         return "longchat" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(model_path)
-        
+
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
-        from fastchat.model.llama_condense_monkey_patch import replace_llama_with_condense
+        from fastchat.model.llama_condense_monkey_patch import (
+            replace_llama_with_condense,
+        )
+
         replace_llama_with_condense(config.rope_condense_ratio)
 
-        import transformers
-        tokenizer = transformers.AutoTokenizer.from_pretrained(
-            model_path, use_fast=False
-        )
-        model = transformers.AutoModelForCausalLM.from_pretrained(
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
@@ -391,6 +392,7 @@ class LongChatAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("vicuna_v1.1")
+
 
 class T5Adapter(BaseModelAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
