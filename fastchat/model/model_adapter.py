@@ -13,6 +13,7 @@ else:
 import psutil
 import torch
 
+from peft import PeftConfig, PeftModel
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -290,6 +291,40 @@ def remove_parent_directory_name(model_path):
     if model_path[-1] == "/":
         model_path = model_path[:-1]
     return model_path.split("/")[-1]
+
+
+class PeftModelAdapter:
+    """Loads any "peft" model and it's base model."""
+
+    def match(self, model_path: str):
+        """Accepts any model path with "peft" in the name"""
+        return "peft" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        """Loads the base model then the (peft) adapter weights"""
+        config = PeftConfig.from_pretrained(model_path)
+        base_model_path = config.base_model_name_or_path
+        if "peft" in base_model_path:
+            raise ValueError(
+                f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
+            )
+
+        base_adapter = get_model_adapter(base_model_path)
+        base_model, tokenizer = base_adapter.load_model(
+            base_model_path, from_pretrained_kwargs
+        )
+        model = PeftModel.from_pretrained(model, model_path)
+
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        """Uses the conv template of the base model"""
+        config = PeftConfig.from_pretrained(model_path)
+        if "peft" in config.base_model_name_or_path:
+            raise ValueError(
+                f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
+            )
+        return get_conv_template(config.base_model_name_or_path)
 
 
 class VicunaAdapter(BaseModelAdapter):
@@ -834,6 +869,7 @@ class BaichuanAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)

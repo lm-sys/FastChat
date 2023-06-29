@@ -102,6 +102,8 @@ class ModelWorker:
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
+        elif hasattr(self.model.config, "seq_length"):
+            self.context_len = self.model.config.seq_length
         elif hasattr(self.model.config, "max_position_embeddings"):
             self.context_len = self.model.config.max_position_embeddings
         else:
