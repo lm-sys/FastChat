@@ -111,7 +111,7 @@ register_model_info(
     "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
-    ["chatglm-6b"],
+    ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
