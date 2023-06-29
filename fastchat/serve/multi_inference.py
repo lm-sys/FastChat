@@ -16,15 +16,18 @@ from fastchat.model import load_model, get_conversation_template, add_model_args
 
 
 @torch.inference_mode()
-def generate(model, tokenizer, prompt, temperature, repetition_penalty, max_new_tokens):
+def generate(model, tokenizer, prompt, temperature, repetition_penalty, max_new_tokens, top_p, max_prompt_tokens):
 
     input_ids = tokenizer([prompt]).input_ids
+    assert len(input_ids) < max_prompt_tokens, f"prompt {prompt} resulted in more tokens than --max-prompt-tokens value"
+
     output_ids = model.generate(
         torch.as_tensor(input_ids).cuda(),
         do_sample=True,
         temperature=temperature,
         repetition_penalty=repetition_penalty,
         max_new_tokens=max_new_tokens,
+        top_p=top_p
     )
 
     if model.config.is_encoder_decoder:
@@ -56,6 +59,7 @@ def main(args):
 
 
     model, tokenizer = None, None
+    seq_len = args.max_prompt_tokens + args.max_new_tokens
 
     
     for dialog in tqdm(dialogs_list):
@@ -71,11 +75,18 @@ def main(args):
                     args.cpu_offloading,
                     revision=args.revision,
                     debug=args.debug,
+                    max_seq_len=seq_len,
                 )
-        dialog["generation"] = generate(model, tokenizer, prompt,
+
+        try: 
+            dialog["generation"] = generate(model, tokenizer, prompt,
                                     temperature=args.temperature,
                                     repetition_penalty=args.repetition_penalty,
-                                    max_new_tokens=args.max_new_tokens,)
+                                    max_new_tokens=args.max_new_tokens,
+                                    top_p=args.top_p,
+                                    max_prompt_tokens=args.max_prompt_tokens)
+        except Exception as e:
+            print(f"Error: {e} while processing the prompt: {prompt} ")
 
     with open(args.output_path, 'w') as output_file:
         json.dump(dialogs_list, output_file)
@@ -90,6 +101,8 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--input_path", type=str)
     parser.add_argument("--output_path", type=str)
+    parser.add_argument("--max-prompt-tokens", type=int, default=1024)
+    parser.add_argument("--top_p", type=float, default=0.9)
     args = parser.parse_args()
 
     # Reset default repetition penalty for T5 models.
