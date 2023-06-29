@@ -249,7 +249,7 @@ class ModelWorker:
                 self.context_len,
                 args.stream_interval,
             ):
-                ret["text"] += output["text"]
+                ret["text"] = output["text"]
                 if "usage" in output:
                     ret["usage"] = output["usage"]
                 if "finish_reason" in output:
