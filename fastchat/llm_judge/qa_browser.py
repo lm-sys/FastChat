@@ -59,8 +59,9 @@ def display_answer(
         q, model_judgments_normal, model_judgments_math, multi_turn=True
     )
 
-    explanation_turn_2 = "##### Model Judgment (second turn)\n" + get_model_judge_explanation(
-        gamekey, judgment_dict_turn_2
+    explanation_turn_2 = (
+        "##### Model Judgment (second turn)\n"
+        + get_model_judge_explanation(gamekey, judgment_dict_turn_2)
     )
 
     return chat_mds + [explanation] + [explanation_turn_2]
@@ -181,7 +182,7 @@ def build_pairwise_browser_tab():
             [question_selector] + model_selectors,
             chat_mds + [model_explanation] + [model_explanation_2],
         )
-    
+
     return (category_selector,)
 
 
