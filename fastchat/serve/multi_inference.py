@@ -16,13 +16,13 @@ from fastchat.model import load_model, get_conversation_template, add_model_args
 
 
 @torch.inference_mode()
-def generate(model, tokenizer, prompt, temperatrue, repetition_penalty, max_new_tokens):
+def generate(model, tokenizer, prompt, temperature, repetition_penalty, max_new_tokens):
 
     input_ids = tokenizer([prompt]).input_ids
     output_ids = model.generate(
         torch.as_tensor(input_ids).cuda(),
         do_sample=True,
-        temperature=temperatrue,
+        temperature=temperature,
         repetition_penalty=repetition_penalty,
         max_new_tokens=max_new_tokens,
     )
