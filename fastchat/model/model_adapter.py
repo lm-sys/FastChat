@@ -365,6 +365,32 @@ class VicunaAdapter(BaseModelAdapter):
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
 
+class LongChatAdapter(BaseModelAdapter):
+    "Model adapater for LongChat models"
+
+    def match(self, model_path: str):
+        return "longchat" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        config = AutoConfig.from_pretrained(model_path)
+        
+        # Apply monkey patch, TODO(Dacheng): Add flash attention support
+        from fastchat.model.llama_condense_monkey_patch import replace_llama_with_condense
+        replace_llama_with_condense(config.rope_condense_ratio)
+
+        import transformers
+        tokenizer = transformers.AutoTokenizer.from_pretrained(
+            model_path, use_fast=False
+        )
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("vicuna_v1.1")
 
 class T5Adapter(BaseModelAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
@@ -878,6 +904,7 @@ class BaichuanAdapter(BaseModelAdapter):
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
+register_model_adapter(LongChatAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
