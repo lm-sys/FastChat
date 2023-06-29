@@ -30,3 +30,4 @@ tests/state_of_the_union.txt
 build
 
 sc_venv_template
+logs/*

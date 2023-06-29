@@ -20,4 +20,5 @@ srun python3 -m fastchat.serve.model_worker \
      --port 31002 --worker http://$(hostname):31002 \
      --num-gpus 7 \
      --host 0.0.0.0 \
-     --model-path /p/haicluster/llama/FastChat/models/guanaco-65b-merged 
+     --model-path /p/haicluster/llama/FastChat/models/guanaco-65b-merged \
+     # --load-8bit # Doesn't seem to be making any difference as of 28.06.2023
