@@ -33,7 +33,7 @@ def run_eval(
 
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
-    use_ray = num_gpus_total > 1
+    use_ray = num_gpus_total // num_gpus_per_model > 1
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.num_gpus_total > 1:
+    if args.num_gpus_total // args.num_gpus_per_model > 1:
         import ray
 
         ray.init()
