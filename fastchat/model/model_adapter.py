@@ -13,7 +13,6 @@ else:
 import psutil
 import torch
 
-from peft import PeftConfig, PeftModel
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -302,6 +301,8 @@ class PeftModelAdapter:
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
+        from peft import PeftConfig, PeftModel
+
         config = PeftConfig.from_pretrained(model_path)
         base_model_path = config.base_model_name_or_path
         if "peft" in base_model_path:
@@ -319,6 +320,8 @@ class PeftModelAdapter:
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         """Uses the conv template of the base model"""
+        from peft import PeftConfig, PeftModel
+
         config = PeftConfig.from_pretrained(model_path)
         if "peft" in config.base_model_name_or_path:
             raise ValueError(
