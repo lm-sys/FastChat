@@ -13,7 +13,7 @@ import anthropic
 from fastchat.model.model_adapter import get_conversation_template
 
 # API setting constants
-API_MAX_RETRY = 8
+API_MAX_RETRY = 16
 API_RETRY_SLEEP = 10
 API_ERROR_OUTPUT = "$ERROR$"
 
@@ -39,6 +39,28 @@ DEFAULT_MODEL_LIST = {
         "gpt-4",
         "claude-v1",
     ],
+    # "mt_bench": [
+    #     "llama-13b",
+    #     "alpaca-13b",
+    #     "gpt-3.5-turbo",
+    #     "gpt-4",
+    #     "claude-v1",
+    #     "claude-instant-v1",
+    #     "guanaco-65b",
+    #     "guanaco-33b",
+    #     "wizardlm-30b",
+    #     "wizardlm-13b",
+    #     "vicuna-7b-v1.3",
+    #     "vicuna-13b-v1.3",
+    #     "vicuna-33b-v1.3",
+    #     "falcon-40b-instruct",
+    #     "palm-2-chat-bison-001",
+    #     "mpt-7b-chat",
+    #     "fastchat-t5-3b",
+    #     "nous-hermes-13b",
+    #     "gpt4all-13b-snoozy",
+    #     "chatglm-6b",
+    # ],
 }
 
 # Extract scores from judgments
@@ -173,7 +195,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[1], None)
 
     if model in ["gpt-3.5-turbo", "gpt-4"]:
-        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=1024)
+        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ["claude-v1", "claude-instant-v1"]:
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
@@ -452,6 +474,32 @@ def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
     return output.strip()
+
+
+def chat_compeletion_palm(chat_state, model, conv, temperature, max_tokens):
+    from fastchat.serve.api_provider import init_palm_chat
+
+    assert model == "palm-2-chat-bison-001"
+
+    if chat_state is None:
+        chat_state = init_palm_chat("chat-bison@001")
+
+    parameters = {
+        "temperature": temperature,
+        "top_p": 0.8,
+        "top_k": 40,
+        "max_output_tokens": max_tokens,
+    }
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            response = chat_state.send_message(conv.messages[-2][1], **parameters)
+            output = response.text
+            break
+        except Exception as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return chat_state, output
 
 
 def normalize_game_key_single(gamekey, result):
