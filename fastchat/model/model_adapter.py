@@ -13,7 +13,6 @@ else:
 import psutil
 import torch
 
-from peft import PeftConfig, PeftModel
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -302,6 +301,8 @@ class PeftModelAdapter:
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
+        from peft import PeftConfig, PeftModel
+
         config = PeftConfig.from_pretrained(model_path)
         base_model_path = config.base_model_name_or_path
         if "peft" in base_model_path:
@@ -319,6 +320,8 @@ class PeftModelAdapter:
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         """Uses the conv template of the base model"""
+        from peft import PeftConfig, PeftModel
+
         config = PeftConfig.from_pretrained(model_path)
         if "peft" in config.base_model_name_or_path:
             raise ValueError(
@@ -401,22 +404,26 @@ class AlpacaAdapter(BaseModelAdapter):
 
 
 class ChatGLMAdapter(BaseModelAdapter):
-    """The model adapter for THUDM/chatglm-6b"""
+    """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
 
     def match(self, model_path: str):
-        return "chatglm" in model_path
+        return "chatglm" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
+        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
+            model_path, config=config, trust_remote_code=True, revision=revision
         )
         model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, **from_pretrained_kwargs
+            model_path, config=config, trust_remote_code=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "chatglm2" in model_path:
+            return get_conv_template("chatglm2")
         return get_conv_template("chatglm")
 
 
