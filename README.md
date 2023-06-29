@@ -203,26 +203,11 @@ See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 See [docs/langchain_integration](docs/langchain_integration.md).
 
 ## Evaluation
+We use MT-bench, a set of challenging multi-turn open-ended questions to evaluate models. 
+To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as judges and assess the quality of the models' responses.
+See instructions for running MT-bench at [fastchat/llm_judge](fastchat/llm_judge).
 
-Our AI-enhanced evaluation pipeline is based on GPT-4. This section provides a high-level summary of the pipeline. For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
-
-### Pipeline Steps
-
-1. Generate answers from different models: Use `qa_baseline_gpt35.py` for ChatGPT, or specify the model checkpoint and run `get_model_answer.py` for Vicuna and other models.
-
-2. Generate reviews with GPT-4: Use GPT-4 to generate reviews automatically. This step can also be performed manually if the GPT-4 API is not available to you.
-
-3. Generate visualization data: Run `generate_webpage_data_from_table.py` to generate data for a static website, which allows you to visualize the evaluation data.
-
-4. Visualize the data: Serve a static website under the `webpage` directory. You can use `python3 -m http.server` to serve the website locally.
-
-### Data Format and Contribution
-
-We use a data format encoded with JSON Lines for evaluation. The format includes information on models, prompts, reviewers, questions, answers, and reviews.
-
-You can customize the evaluation process or contribute to our project by accessing the relevant [data](fastchat/eval/table/).
-
-For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
+MT-bench is the new recommended way to benchmark your models. If you are still looking for the old 80 questions used in the vicuna blog post, please go to [vicuna-blog-eval](https://github.com/lm-sys/vicuna-blog-eval).
 
 ## Fine-tuning
 ### Data
