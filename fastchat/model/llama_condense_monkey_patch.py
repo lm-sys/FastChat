@@ -1,3 +1,4 @@
+# code adapted from https://huggingface.co/kaiokendev/superhot-13b-8k-no-rlhf-test/blob/main/llama_rope_scaled_monkey_patch.py
 import torch
 import transformers
 import transformers.models.llama.modeling_llama
