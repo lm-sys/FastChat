@@ -60,7 +60,7 @@ completion = openai.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
-Streaming is also supported. See [test_openai_sdk.py](../tests/test_openai_sdk.py).
+Streaming is also supported. See [test_openai_api.py](../tests/test_openai_api.py).
 
 ### cURL
 cURL is another good tool for observing the output of the api.
