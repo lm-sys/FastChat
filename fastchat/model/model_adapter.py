@@ -314,7 +314,7 @@ class PeftModelAdapter:
         base_model, tokenizer = base_adapter.load_model(
             base_model_path, from_pretrained_kwargs
         )
-        model = PeftModel.from_pretrained(model, model_path)
+        model = PeftModel.from_pretrained(base_model, model_path)
 
         return model, tokenizer
 
