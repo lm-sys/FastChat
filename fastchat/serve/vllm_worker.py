@@ -48,6 +48,7 @@ class VLLMWorker:
         no_register,
         model_path,
         model_names,
+        llm_engine,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -58,8 +59,9 @@ class VLLMWorker:
         logger.info(
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
-
+        self.tokenizer = llm_engine.engine.tokenizer
         self.conv = get_conversation_template(model_path)
+
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -128,6 +130,17 @@ class VLLMWorker:
             "speed": 1,
             "queue_length": self.get_queue_length(),
         }
+
+    def count_token(self, params):
+        prompt = params["prompt"]
+        input_ids = self.tokenizer(prompt).input_ids
+        input_echo_len = len(input_ids)
+
+        ret = {
+            "count": input_echo_len,
+            "error_code": 0,
+        }
+        return ret
 
     async def generate_stream(self, params):
         context = params.pop("prompt")
@@ -206,6 +219,19 @@ async def generate_stream(request: Request):
 async def get_status(request: Request):
     return worker.get_status()
 
+@app.post("/count_token")
+async def count_token(request: Request):
+    params = await request.json()
+    return worker.count_token(params)
+
+@app.post("/worker_get_conv_template")
+async def api_get_conv(request: Request):
+    conv = get_conversation_template(args.model_path)
+    return {"conv": conv}
+
+@app.post("/model_details")
+async def model_details(request: Request):
+    return {"context_length": 2048}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -241,5 +267,6 @@ if __name__ == "__main__":
         args.no_register,
         args.model_path,
         args.model_names,
+        engine,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
