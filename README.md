@@ -66,7 +66,7 @@ See more command options and how to handle out-of-memory in the "Inference with 
 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
-# LongChat
+### LongChat
 We release LongChat models directly, under LlaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
