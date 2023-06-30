@@ -323,7 +323,6 @@ class PeftModelAdapter:
         from peft import PeftConfig, PeftModel
 
         config = PeftConfig.from_pretrained(model_path)
-        base_model_path = config.base_model_name_or_path
         if "peft" in config.base_model_name_or_path:
             raise ValueError(
                 f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
