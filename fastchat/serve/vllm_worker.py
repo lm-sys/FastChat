@@ -182,7 +182,8 @@ class VLLMWorker:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
             text_outputs = text_outputs.replace("</s>", "")
-            ret = {"text": text_outputs, "error_code": 0}
+            # Note: usage is not supported yet
+            ret = {"text": text_outputs, "error_code": 0, "usage": {}}
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
 
