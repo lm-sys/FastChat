@@ -272,10 +272,17 @@ def chat_loop(
     is_chatglm = "chatglm" in str(type(model)).lower()
     is_t5 = "t5" in str(type(model)).lower()
     is_falcon = "rwforcausallm" in str(type(model)).lower()
+    is_longchat = "longchat" in model_path
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:
         repetition_penalty = 1.2
+
+    # Set context length
+    # TODO: detect this automatically
+    context_len = 2048
+    if is_longchat:
+        context_len = 16384
 
     # Chat
     def new_chat():
@@ -325,7 +332,9 @@ def chat_loop(
         }
 
         chatio.prompt_for_output(conv.roles[1])
-        output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        output_stream = generate_stream_func(
+            model, tokenizer, gen_params, device, context_len=context_len
+        )
         t = time.time()
         outputs = chatio.stream_output(output_stream)
         duration = time.time() - t
