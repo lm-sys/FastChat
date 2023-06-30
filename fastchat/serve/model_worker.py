@@ -100,20 +100,24 @@ class ModelWorker:
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
+        # generate_stream
+        is_chatglm = "chatglm" in str(type(self.model)).lower()
+        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
+        # is_falcon = "rwforcausallm" in str(type(self.model)).lower()
+        is_longchat = "longchat" in model_path.lower()
+
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
         elif hasattr(self.model.config, "seq_length"):
             self.context_len = self.model.config.seq_length
         elif hasattr(self.model.config, "max_position_embeddings"):
             self.context_len = self.model.config.max_position_embeddings
-        elif hasattr(self.model.config, "seq_length"):
-            self.context_len = self.model.config.seq_length
         else:
             self.context_len = 2048
+        # TODO: Can we establish a standard that can be uniformly written in the Config?
+        if is_longchat:
+            self.context_len = 16384
 
-        # generate_stream
-        is_chatglm = "chatglm" in str(type(self.model)).lower()
-        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = chatglm_generate_stream
         elif is_falcon:

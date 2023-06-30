@@ -279,8 +279,14 @@ def chat_loop(
         repetition_penalty = 1.2
 
     # Set context length
-    # TODO: detect this automatically
-    context_len = 2048
+    if hasattr(model.config, "max_sequence_length"):
+        context_len = model.config.max_sequence_length
+    elif hasattr(model.config, "seq_length"):
+        context_len = model.config.seq_length
+    elif hasattr(model.config, "max_position_embeddings"):
+        context_len = model.config.max_position_embeddings
+    else:
+        context_len = 2048
     if is_longchat:
         context_len = 16384
 
