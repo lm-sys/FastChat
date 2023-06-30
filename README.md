@@ -6,7 +6,8 @@ FastChat is an open platform for training, serving, and evaluating large languag
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
-- [2023/05] 🔥 We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
+- [2023/06] 🔥 We introduced **LongChat** and **LongEval**, our series of long-context chatbots and evaluation tools. Check out the blog [post](https://lmsys.org/blog/2023-06-29-longchat/) and [code](https://github.com/DachengLi1/LongChat/).
+- [2023/05] We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena) and [demo](https://arena.lmsys.org).
 - [2023/04] We released **FastChat-T5** compatible with commercial usage. Check out the [weights](#fastchat-t5) and [demo](https://chat.lmsys.org).
 - [2023/03] We released **Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality**. Check out the blog [post](https://vicuna.lmsys.org) and [demo](https://chat.lmsys.org).
 
@@ -64,6 +65,13 @@ See more command options and how to handle out-of-memory in the "Inference with 
 | 33B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-33b-v1.3` | [lmsys/vicuna-33b-v1.3](https://huggingface.co/lmsys/vicuna-33b-v1.3) |
 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
+
+### LongChat
+We release LongChat models directly, under LlaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
+| Size | Chat Command | Hugging Face Repo |
+| ---  | --- | --- |
+| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-7b-16k`  | [lmsys/longchat-7b-16k](https://huggingface.co/lmsys/longchat-7b-16k)   |
+| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-13b-16k` | [lmsys/longchat-13b-16k](https://huggingface.co/lmsys/longchat-13b-16k) |
 
 ### FastChat-T5
 Simply run the command below to start chatting.
