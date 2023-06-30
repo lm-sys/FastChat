@@ -54,19 +54,8 @@ def main(args):
     with open(args.input_path, 'r') as input_file:
         dialogs_list = json.load(input_file)
 
-    with open(args.output_path, 'w') as output_file:
-        json.dump(dialogs_list, output_file)
 
-
-    model, tokenizer = None, None
-    seq_len = args.max_prompt_tokens + args.max_new_tokens
-
-    
-    for dialog in tqdm(dialogs_list):
-        conv_template = get_conversation_template(args.model_path)
-        prompt = dialog_to_prompt(conv_template, dialog["messages"])
-        if model is None:
-            model, tokenizer = load_model(
+    model, tokenizer = load_model(
                     args.model_path,
                     args.device,
                     args.num_gpus,
@@ -75,18 +64,25 @@ def main(args):
                     args.cpu_offloading,
                     revision=args.revision,
                     debug=args.debug,
-                    max_seq_len=seq_len,
                 )
 
-        try: 
-            dialog["generation"] = generate(model, tokenizer, prompt,
+    
+    for dialog in tqdm(dialogs_list):
+        conv_template = get_conversation_template(args.model_path)
+        prompt = dialog_to_prompt(conv_template, dialog["messages"])
+
+        if not "generation" in dialog.keys():
+            try: 
+                dialog["generation"] = generate(model, tokenizer, prompt,
                                     temperature=args.temperature,
                                     repetition_penalty=args.repetition_penalty,
                                     max_new_tokens=args.max_new_tokens,
                                     top_p=args.top_p,
                                     max_prompt_tokens=args.max_prompt_tokens)
-        except Exception as e:
-            print(f"Error: {e} while processing the prompt: {prompt} ")
+                with open(args.output_path, 'w') as output_file:
+                    json.dump(dialogs_list, output_file)
+            except Exception as e:
+                print(f"Error: {e} while processing the prompt: {prompt} ")
 
     with open(args.output_path, 'w') as output_file:
         json.dump(dialogs_list, output_file)
