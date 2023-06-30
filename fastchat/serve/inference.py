@@ -32,7 +32,7 @@ from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.model.falcon_model import falcon_generate_stream
 from fastchat.modules.gptq import GptqConfig
-from fastchat.utils import is_partial_stop
+from fastchat.utils import is_partial_stop, is_sentence_complete
 
 
 def prepare_logits_processor(
@@ -164,6 +164,9 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
+            # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
+            if not is_sentence_complete(output):
+                stopped = False
 
             partially_stopped = False
             if stop_str:
