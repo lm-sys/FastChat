@@ -38,7 +38,7 @@ def process_response(response):
 
 
 @torch.inference_mode()
-def chatglm_generate_stream(
+def generate_stream_chatglm(
     model,
     tokenizer,
     params,
