@@ -112,7 +112,8 @@ class ModelWorker:
             self.context_len = self.model.config.max_position_embeddings
         else:
             self.context_len = 2048
-        # TODO: Can we establish a standard that can be uniformly written in the Config?
+
+        # TODO: Establish a standard that can be uniformly written in the config.
         if is_longchat:
             self.context_len = 16384
 

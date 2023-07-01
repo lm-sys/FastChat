@@ -313,6 +313,7 @@ def chat_loop(
         context_len = model.config.max_position_embeddings
     else:
         context_len = 2048
+    # TODO: Establish a standard that can be uniformly written in the config.
     if is_longchat:
         context_len = 16384
 
