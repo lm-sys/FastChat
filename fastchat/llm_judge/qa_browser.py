@@ -58,7 +58,6 @@ def display_answer(
     judgment_dict_turn_2 = resolve_default_judgment_dict(
         q, model_judgments_normal, model_judgments_math, multi_turn=True
     )
-
     explanation_turn_2 = (
         "##### Model Judgment (second turn)\n"
         + get_model_judge_explanation(gamekey, judgment_dict_turn_2)
