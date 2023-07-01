@@ -99,6 +99,7 @@ def generate_stream(
         )
 
     past_key_values = out = None
+    sent_interrupt = False
     for i in range(max_new_tokens):
         if i == 0:
             if model.config.is_encoder_decoder:
@@ -115,19 +116,25 @@ def generate_stream(
         else:
             if model.config.is_encoder_decoder:
                 out = model.decoder(
-                    input_ids=torch.as_tensor([[token]], device=device),
+                    input_ids=torch.as_tensor(
+                        [[token] if not sent_interrupt else output_ids], device=device
+                    ),
                     encoder_hidden_states=encoder_output,
                     use_cache=True,
-                    past_key_values=past_key_values,
+                    past_key_values=past_key_values if not sent_interrupt else None,
                 )
+                sent_interrupt = False
 
                 logits = model.lm_head(out[0])
             else:
                 out = model(
-                    input_ids=torch.as_tensor([[token]], device=device),
+                    input_ids=torch.as_tensor(
+                        [[token] if not sent_interrupt else output_ids], device=device
+                    ),
                     use_cache=True,
-                    past_key_values=past_key_values,
+                    past_key_values=past_key_values if not sent_interrupt else None,
                 )
+                sent_interrupt = False
                 logits = out.logits
             past_key_values = out.past_key_values
 
@@ -145,11 +152,13 @@ def generate_stream(
             last_token_logits = last_token_logits.float().to("cpu")
 
         if temperature < 1e-5 or top_p < 1e-8:  # greedy
-            token = int(torch.argmax(last_token_logits))
+            _, indices = torch.topk(last_token_logits, 2)
+            tokens = [int(index) for index in indices.tolist()]
         else:
             probs = torch.softmax(last_token_logits, dim=-1)
-            token = int(torch.multinomial(probs, num_samples=1))
-
+            indices = torch.multinomial(probs, num_samples=2)
+            tokens = [int(token) for token in indices.tolist()]
+        token = tokens[0]
         output_ids.append(token)
 
         if token in stop_token_ids:
@@ -169,10 +178,17 @@ def generate_stream(
                 tmp_output_ids,
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
+                clean_up_tokenization_spaces=True,
             )
             # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
-            if judge_sent_end and not is_sentence_complete(output):
+            if judge_sent_end and stopped and not is_sentence_complete(output):
+                if len(tokens) > 1:
+                    token = tokens[1]
+                    output_ids[-1] = token
+                else:
+                    output_ids.pop()
                 stopped = False
+                sent_interrupt = True
 
             partially_stopped = False
             if stop_str:
@@ -264,6 +280,7 @@ def chat_loop(
     chatio: ChatIO,
     gptq_config: GptqConfig,
     revision: str,
+    judge_sent_end: bool,
     debug: bool,
 ):
     # Model
@@ -348,7 +365,12 @@ def chat_loop(
 
         chatio.prompt_for_output(conv.roles[1])
         output_stream = generate_stream_func(
-            model, tokenizer, gen_params, device, context_len=context_len
+            model,
+            tokenizer,
+            gen_params,
+            device,
+            context_len=context_len,
+            judge_sent_end=judge_sent_end,
         )
         t = time.time()
         outputs = chatio.stream_output(output_stream)
