@@ -53,7 +53,13 @@ def prepare_logits_processor(
 
 @torch.inference_mode()
 def generate_stream(
-    model, tokenizer, params, device, context_len=2048, stream_interval=2
+    model,
+    tokenizer,
+    params,
+    device,
+    context_len=2048,
+    stream_interval=2,
+    judge_sent_end=False,
 ):
     prompt = params["prompt"]
     len_prompt = len(prompt)
@@ -165,7 +171,7 @@ def generate_stream(
                 spaces_between_special_tokens=False,
             )
             # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
-            if not is_sentence_complete(output):
+            if judge_sent_end and not is_sentence_complete(output):
                 stopped = False
 
             partially_stopped = False
