@@ -28,7 +28,6 @@ from fastchat.serve.gradio_web_server import (
     build_single_model_ui,
     get_model_list,
     load_demo_single,
-    ip_expiration_dict,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import (
@@ -45,7 +44,6 @@ def load_demo(url_params, request: gr.Request):
 
     ip = request.client.host
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     selected = 0
     if "arena" in url_params:
