@@ -298,7 +298,7 @@ def chat_loop(
         context_len = 2048
     # TODO: Establish a standard that can be uniformly written in the config.
     if is_longchat:
-        self.context_len = 16384
+        context_len = 16384
 
     # Chat
     def new_chat():
