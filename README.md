@@ -234,6 +234,8 @@ We use similar hyperparameters as the Stanford Alpaca.
 
 ### Fine-tuning Vicuna-7B with Local GPUs
 You can use the following command to train Vicuna-7B with 4 x A100 (40GB).
+Update `--model_name_or_path` with the actual path to LLaMA weights and `--data_path` with the actual path to data.
+
 ```bash
 torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --model_name_or_path ~/model_weights/llama-7b  \
