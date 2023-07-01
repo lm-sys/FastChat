@@ -327,7 +327,9 @@ class PeftModelAdapter:
             raise ValueError(
                 f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
             )
-        return get_conv_template(config.base_model_name_or_path)
+        base_model_path = config.base_model_name_or_path
+        base_adapter = get_model_adapter(base_model_path)
+        return base_adapter.get_default_conv_template(config.base_model_name_or_path)
 
 
 class VicunaAdapter(BaseModelAdapter):
