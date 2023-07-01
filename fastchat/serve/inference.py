@@ -346,9 +346,9 @@ def chat_loop(
         prompt = conv.get_prompt()
 
         if is_chatglm:
-            generate_stream_func = chatglm_generate_stream
+            generate_stream_func = generate_stream_chatglm
         elif is_falcon:
-            generate_stream_func = falcon_generate_stream
+            generate_stream_func = generate_stream_falcon
         else:
             generate_stream_func = generate_stream
 
