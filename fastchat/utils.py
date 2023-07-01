@@ -270,3 +270,9 @@ def run_cmd(cmd: str):
     """Run a bash command."""
     print(cmd)
     os.system(cmd)
+
+
+def is_sentence_complete(output):
+    """Check whether the output is a complete sentence."""
+    end_symbols = (".", "?", "!", "...", "。", "？", "！", "…", '"', "'", "”")
+    return output.endswith(end_symbols)

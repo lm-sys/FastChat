@@ -32,7 +32,7 @@ from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.chatglm_model import chatglm_generate_stream
 from fastchat.model.falcon_model import falcon_generate_stream
 from fastchat.modules.gptq import GptqConfig
-from fastchat.utils import is_partial_stop
+from fastchat.utils import is_partial_stop, is_sentence_complete
 
 
 def prepare_logits_processor(
@@ -53,7 +53,13 @@ def prepare_logits_processor(
 
 @torch.inference_mode()
 def generate_stream(
-    model, tokenizer, params, device, context_len=2048, stream_interval=2
+    model,
+    tokenizer,
+    params,
+    device,
+    context_len=2048,
+    stream_interval=2,
+    judge_sent_end=False,
 ):
     prompt = params["prompt"]
     len_prompt = len(prompt)
@@ -164,6 +170,9 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
+            # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
+            if judge_sent_end and not is_sentence_complete(output):
+                stopped = False
 
             partially_stopped = False
             if stop_str:
@@ -279,8 +288,14 @@ def chat_loop(
         repetition_penalty = 1.2
 
     # Set context length
-    # TODO: detect this automatically
-    context_len = 2048
+    if hasattr(model.config, "max_sequence_length"):
+        context_len = model.config.max_sequence_length
+    elif hasattr(model.config, "seq_length"):
+        context_len = model.config.seq_length
+    elif hasattr(model.config, "max_position_embeddings"):
+        context_len = model.config.max_position_embeddings
+    else:
+        context_len = 2048
     if is_longchat:
         context_len = 16384
 
