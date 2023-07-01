@@ -488,10 +488,14 @@ def get_model_description_md(models):
 
 
 def build_single_model_ui(models, add_promotion_links=False):
-    promotion = ("""
+    promotion = (
+        """
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
 - | [GitHub](https://github.com/lm-sys/FastChat) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
-""" if add_promotion_links else "")
+"""
+        if add_promotion_links
+        else ""
+    )
 
     notice_markdown = f"""
 # 🏔️ Chat with Open Large Language Models
