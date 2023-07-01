@@ -9,7 +9,7 @@ See the supported models [here](https://vllm.readthedocs.io/en/latest/models/sup
     pip install vllm
     ```
 
-2. When you launch a model worker, replace the normal worker with the vLLM worker. All other commands such as controller, gradio web server, and OpenAI API server are kept the same.
+2. When you launch a model worker, replace the normal worker (`fastchat.serve.model_worker`) with the vLLM worker (`fastchat.serve.vllm_worker`). All other commands such as controller, gradio web server, and OpenAI API server are kept the same.
    ```
    python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3
    ```
