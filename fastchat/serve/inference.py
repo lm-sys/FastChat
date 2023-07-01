@@ -29,8 +29,8 @@ from transformers.generation.logits_process import (
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
-from fastchat.model.chatglm_model import chatglm_generate_stream
-from fastchat.model.falcon_model import falcon_generate_stream
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete
 
@@ -329,9 +329,9 @@ def chat_loop(
         prompt = conv.get_prompt()
 
         if is_chatglm:
-            generate_stream_func = chatglm_generate_stream
+            generate_stream_func = generate_stream_chatglm
         elif is_falcon:
-            generate_stream_func = falcon_generate_stream
+            generate_stream_func = generate_stream_falcon
         else:
             generate_stream_func = generate_stream
 

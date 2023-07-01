@@ -42,8 +42,8 @@ from fastchat.model.model_adapter import (
     add_model_args,
     get_conversation_template,
 )
-from fastchat.model.chatglm_model import chatglm_generate_stream
-from fastchat.model.falcon_model import falcon_generate_stream
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
 
@@ -119,9 +119,9 @@ class ModelWorker:
             self.context_len = 16384
 
         if is_chatglm:
-            self.generate_stream_func = chatglm_generate_stream
+            self.generate_stream_func = generate_stream_chatglm
         elif is_falcon:
-            self.generate_stream_func = falcon_generate_stream
+            self.generate_stream_func = generate_stream_falcon
         else:
             self.generate_stream_func = generate_stream
 

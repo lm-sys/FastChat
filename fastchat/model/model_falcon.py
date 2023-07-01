@@ -12,7 +12,7 @@ transformers.logging.set_verbosity_error()
 
 
 @torch.inference_mode()
-def falcon_generate_stream(
+def generate_stream_falcon(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     prompt = params["prompt"]
