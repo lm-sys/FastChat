@@ -38,7 +38,7 @@ def process_response(response):
 
 
 @torch.inference_mode()
-def chatglm_generate_stream(
+def generate_stream_chatglm(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     prompt = params["prompt"]

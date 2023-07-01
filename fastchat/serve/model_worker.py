@@ -1,5 +1,5 @@
 """
-A model worker executes the model.
+A model worker that executes the model.
 """
 import argparse
 import asyncio
@@ -42,17 +42,16 @@ from fastchat.model.model_adapter import (
     add_model_args,
     get_conversation_template,
 )
-from fastchat.model.chatglm_model import chatglm_generate_stream
-from fastchat.model.falcon_model import falcon_generate_stream
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
 
-GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
-global_counter = 0
 
+global_counter = 0
 model_semaphore = None
 
 
@@ -103,7 +102,6 @@ class ModelWorker:
         # generate_stream
         is_chatglm = "chatglm" in str(type(self.model)).lower()
         is_falcon = "rwforcausallm" in str(type(self.model)).lower()
-        # is_falcon = "rwforcausallm" in str(type(self.model)).lower()
         is_longchat = "longchat" in model_path.lower()
 
         if hasattr(self.model.config, "max_sequence_length"):
@@ -119,9 +117,9 @@ class ModelWorker:
             self.context_len = 16384
 
         if is_chatglm:
-            self.generate_stream_func = chatglm_generate_stream
+            self.generate_stream_func = generate_stream_chatglm
         elif is_falcon:
-            self.generate_stream_func = falcon_generate_stream
+            self.generate_stream_func = generate_stream_falcon
         else:
             self.generate_stream_func = generate_stream
 

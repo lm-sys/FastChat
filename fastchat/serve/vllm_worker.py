@@ -1,43 +1,36 @@
 """
-A model worker executes the model based on vLLM.
+A model worker that executes the model based on vLLM.
 
-This is an experimental feature and will be documented soon. Please stay tuned!
-
-Install vLLM (``pip install vllm'') first. Then, assuming the controller is live:
-1. python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3
-
-launch Gradio:
-2. python3 -m fastchat.serve.gradio_web_server --concurrency-count 10000
+See documentations at docs/vllm_integration.md
 """
-import threading
 
 import argparse
 import asyncio
 import json
+import threading
 import time
 import uuid
 
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.responses import StreamingResponse
 import requests
 import torch
 import uvicorn
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
-
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.utils import build_logger, pretty_print_semaphore
 from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
+from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
+from fastchat.model.model_adapter import get_conversation_template
+from fastchat.utils import build_logger, pretty_print_semaphore
 
-GB = 1 << 30
-TIMEOUT_TO_PREVENT_DEADLOCK = 1  # seconds
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+
 global_counter = 0
-seed = torch.cuda.current_device()
+model_semaphore = None
 
 
 def heart_beat_worker(controller):
@@ -54,18 +47,19 @@ class VLLMWorker:
         worker_id,
         no_register,
         model_path,
-        model_name,
+        model_names,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
         if model_path.endswith("/"):
             model_path = model_path[:-1]
-        self.model_name = model_name or model_path.split("/")[-1]
+        self.model_names = model_names or [model_path.split("/")[-1]]
         logger.info(
-            f"Loading the model {self.model_name} on worker {worker_id}, worker type: vLLM worker..."
+            f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
 
+        self.conv = get_conversation_template(model_path)
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -87,7 +81,7 @@ class VLLMWorker:
 
     def send_heart_beat(self):
         logger.info(
-            f"Send heart beat. Models: {[self.model_name]}. "
+            f"Send heart beat. Models: {self.model_names}. "
             f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
             f"global_counter: {global_counter}. "
             f"worker_id: {worker_id}. "
@@ -130,7 +124,7 @@ class VLLMWorker:
 
     def get_status(self):
         return {
-            "model_names": [self.model_name],
+            "model_names": self.model_names,
             "speed": 1,
             "queue_length": self.get_queue_length(),
         }
@@ -140,7 +134,7 @@ class VLLMWorker:
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
-        max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
+        max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         echo = params.get("echo", True)
 
@@ -150,8 +144,6 @@ class VLLMWorker:
 
         # TODO(Hao): handle stop token IDs
         # stop_token_ids = params.get("stop_token_ids", None) or []
-        # max_src_len = self.context_len - max_new_tokens - 8
-        # input_ids = input_ids[-max_src_len:]
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -176,12 +168,12 @@ class VLLMWorker:
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
+            text_outputs = text_outputs.replace("</s>", "")
             ret = {"text": text_outputs, "error_code": 0}
             yield (json.dumps(ret) + "\0").encode("utf-8")
 
 
 app = FastAPI()
-model_semaphore = None
 
 
 def release_model_semaphore():
@@ -224,6 +216,11 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.3")
+    parser.add_argument(
+        "--model-names",
+        type=lambda s: s.split(","),
+        help="Optional display comma separated names",
+    )
     parser.add_argument("--limit-model-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--num-gpus", type=int, default=1)
@@ -234,18 +231,15 @@ if __name__ == "__main__":
         args.model = args.model_path
     if args.num_gpus > 1:
         args.tensor_parallel_size = args.num_gpus
-    model_name = args.model_path
-    if "/" in args.model_path:
-        model_name = args.model_path.split("/")[-1]
 
+    engine_args = AsyncEngineArgs.from_cli_args(args)
+    engine = AsyncLLMEngine.from_engine_args(engine_args)
     worker = VLLMWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.no_register,
         args.model_path,
-        model_name,
+        args.model_names,
     )
-    engine_args = AsyncEngineArgs.from_cli_args(args)
-    engine = AsyncLLMEngine.from_engine_args(engine_args)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
