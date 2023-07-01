@@ -515,6 +515,21 @@ class OasstLLaMAAdapter(BaseModelAdapter):
         return get_conv_template("oasst_llama")
 
 
+class PythiaAdapter(BaseModelAdapter):
+    """The model adapter for any EleutherAI/pythia model"""
+
+    use_fast_tokenizer = True
+
+    def match(self, model_path: str):
+        return "pythia" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+
 class StableLMAdapter(BaseModelAdapter):
     """The model adapter for StabilityAI/stablelm-tuned-alpha-7b"""
 
@@ -940,6 +955,7 @@ register_model_adapter(TuluAdapter)
 register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
+register_model_adapter(PythiaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
