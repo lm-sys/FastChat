@@ -213,6 +213,7 @@ def acquire_model_semaphore():
 def create_background_tasks(request_id):
     async def abort_request() -> None:
         await engine.abort(request_id)
+
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     background_tasks.add_task(abort_request)

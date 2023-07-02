@@ -27,7 +27,9 @@ def test_completion(model):
 
 def test_completion_stream(model):
     prompt = "Once upon a time"
-    res = openai.Completion.create(model=model, prompt=prompt, max_tokens=64, stream=True)
+    res = openai.Completion.create(
+        model=model, prompt=prompt, max_tokens=64, stream=True
+    )
     print(prompt, end="")
     for chunk in res:
         content = chunk["choices"][0]["text"]
