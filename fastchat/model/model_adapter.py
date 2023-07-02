@@ -597,7 +597,7 @@ class MPTAdapter(BaseModelAdapter):
 
 
 class BaizeAdapter(BaseModelAdapter):
-    """The model adapter for project-baize/baize-lora-7B"""
+    """The model adapter for project-baize/baize-v2-7b"""
 
     use_fast_tokenizer = False
 

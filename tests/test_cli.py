@@ -11,9 +11,12 @@ def test_single_gpu():
         "lmsys/longchat-7b-16k",
         "lmsys/fastchat-t5-3b-v1.0",
         "THUDM/chatglm-6b",
+        "THUDM/chatglm2-6b",
         "mosaicml/mpt-7b-chat",
-        "tiiuae/falcon-7b-instruct",
+        "project-baize/baize-v2-7b",
         "h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b",
+        "tiiuae/falcon-7b-instruct",
+
         "~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth",
     ]
 
