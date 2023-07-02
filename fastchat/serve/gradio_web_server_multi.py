@@ -101,7 +101,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     a_send_btn,
                     a_button_row,
                     a_parameter_row,
-                ) = build_single_model_ui(models)
+                ) = build_single_model_ui(models, add_promotion_links=True)
                 a_list = [
                     a_state,
                     a_model_selector,

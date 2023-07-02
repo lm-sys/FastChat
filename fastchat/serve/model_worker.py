@@ -1,5 +1,5 @@
 """
-A model worker executes the model.
+A model worker that executes the model.
 """
 import argparse
 import asyncio
@@ -42,17 +42,17 @@ from fastchat.model.model_adapter import (
     add_model_args,
     get_conversation_template,
 )
-from fastchat.model.chatglm_model import chatglm_generate_stream
-from fastchat.model.falcon_model import falcon_generate_stream
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.serve.inference import generate_stream
-from fastchat.utils import build_logger, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
-GB = 1 << 30
 
 worker_id = str(uuid.uuid4())[:6]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
-global_counter = 0
 
+global_counter = 0
 model_semaphore = None
 
 
@@ -99,25 +99,19 @@ class ModelWorker:
         self.conv = get_conversation_template(model_path)
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "seq_length"):
-            self.context_len = self.model.config.seq_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
-        elif hasattr(self.model.config, "seq_length"):
-            self.context_len = self.model.config.seq_length
-        else:
-            self.context_len = 2048
+        self.context_len = get_context_length(self.model.config)
 
         # generate_stream
         is_chatglm = "chatglm" in str(type(self.model)).lower()
         is_falcon = "rwforcausallm" in str(type(self.model)).lower()
+        is_codet5p = "codet5p" in str(type(self.model)).lower()
+
         if is_chatglm:
-            self.generate_stream_func = chatglm_generate_stream
+            self.generate_stream_func = generate_stream_chatglm
         elif is_falcon:
-            self.generate_stream_func = falcon_generate_stream
+            self.generate_stream_func = generate_stream_falcon
+        elif is_codet5p:
+            self.generate_stream_func = generate_stream_codet5p
         else:
             self.generate_stream_func = generate_stream
 
@@ -239,34 +233,9 @@ class ModelWorker:
             yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
-        try:
-            ret = {"text": "", "error_code": 0}
-            for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                args.stream_interval,
-            ):
-                ret["text"] = output["text"]
-                if "usage" in output:
-                    ret["usage"] = output["usage"]
-                if "finish_reason" in output:
-                    ret["finish_reason"] = output["finish_reason"]
-                if "logprobs" in output:
-                    ret["logprobs"] = output["logprobs"]
-        except torch.cuda.OutOfMemoryError as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
-            }
-        except (ValueError, RuntimeError) as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.INTERNAL_ERROR,
-            }
-        return ret
+        for x in self.generate_stream_gate(params):
+            pass
+        return json.loads(x[:-1].decode())
 
     @torch.inference_mode()
     def get_embeddings(self, params):
@@ -375,24 +344,6 @@ async def api_generate(request: Request):
     return JSONResponse(output)
 
 
-@app.post("/worker_generate_completion_stream")
-async def api_generate_completion_stream(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
-    return StreamingResponse(generator, background=background_tasks)
-
-
-@app.post("/worker_generate_completion")
-async def api_generate_completion(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    completion = worker.generate_gate(params)
-    background_tasks = create_background_tasks()
-    return JSONResponse(content=completion, background=background_tasks)
-
-
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
@@ -408,7 +359,7 @@ async def api_get_status(request: Request):
 
 
 @app.post("/count_token")
-async def count_token(request: Request):
+async def api_count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
 
@@ -419,7 +370,7 @@ async def api_get_conv(request: Request):
 
 
 @app.post("/model_details")
-async def model_details(request: Request):
+async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
