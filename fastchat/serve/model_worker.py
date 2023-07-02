@@ -46,7 +46,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.serve.inference import generate_stream
-from fastchat.utils import build_logger, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:6]

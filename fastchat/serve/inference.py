@@ -33,7 +33,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
-from fastchat.utils import is_partial_stop, is_sentence_complete
+from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
 def prepare_logits_processor(
