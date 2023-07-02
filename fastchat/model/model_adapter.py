@@ -12,6 +12,7 @@ else:
 
 import psutil
 import torch
+import accelerate
 
 from transformers import (
     AutoConfig,
@@ -194,9 +195,9 @@ def load_model(
             gptq_config,
             device=device,
         )
-        import accelerate 
-        device_map = accelerate.infer_auto_device_map(model, max_memory=kwargs["max_memory"], no_split_module_classes=["LlamaDecoderLayer"]) 
-        model = accelerate.dispatch_model(model, device_map=device_map, offload_buffers=True)
+        if num_gpus != 1:
+            device_map = accelerate.infer_auto_device_map(model, max_memory=kwargs["max_memory"], no_split_module_classes=["LlamaDecoderLayer"]) 
+            model = accelerate.dispatch_model(model, device_map=device_map, offload_buffers=True)
         return model, tokenizer
     kwargs["revision"] = revision
 
