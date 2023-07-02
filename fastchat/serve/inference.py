@@ -33,7 +33,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
-from fastchat.utils import is_partial_stop, is_sentence_complete
+from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
 def prepare_logits_processor(
@@ -299,7 +299,6 @@ def chat_loop(
     is_chatglm = "chatglm" in str(type(model)).lower()
     is_t5 = "t5" in str(type(model)).lower()
     is_falcon = "rwforcausallm" in str(type(model)).lower()
-    is_longchat = "longchat" in model_path
     is_codet5p = "codet5p" in str(type(model)).lower()
 
     # Hardcode T5's default repetition penalty to be 1.2
@@ -307,17 +306,7 @@ def chat_loop(
         repetition_penalty = 1.2
 
     # Set context length
-    if hasattr(model.config, "max_sequence_length"):
-        context_len = model.config.max_sequence_length
-    elif hasattr(model.config, "seq_length"):
-        context_len = model.config.seq_length
-    elif hasattr(model.config, "max_position_embeddings"):
-        context_len = model.config.max_position_embeddings
-    else:
-        context_len = 2048
-    # TODO: Establish a standard that can be uniformly written in the config.
-    if is_longchat:
-        context_len = 16384
+    context_len = get_context_length(model.config)
 
     # Chat
     def new_chat():

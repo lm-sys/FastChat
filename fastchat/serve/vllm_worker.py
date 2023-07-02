@@ -23,7 +23,7 @@ from vllm.utils import random_uuid
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.utils import build_logger, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:6]
@@ -61,6 +61,7 @@ class VLLMWorker:
         )
         self.tokenizer = llm_engine.engine.tokenizer
         self.conv = get_conversation_template(model_path)
+        self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:
             self.register_to_controller()
@@ -261,7 +262,7 @@ async def api_get_conv(request: Request):
 
 @app.post("/model_details")
 async def api_model_details(request: Request):
-    return {"context_length": 2048}
+    return {"context_length": worker.context_len}
 
 
 if __name__ == "__main__":

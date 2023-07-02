@@ -46,7 +46,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.serve.inference import generate_stream
-from fastchat.utils import build_logger, pretty_print_semaphore
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:6]
@@ -99,25 +99,12 @@ class ModelWorker:
         self.conv = get_conversation_template(model_path)
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.context_len = get_context_length(self.model.config)
 
         # generate_stream
         is_chatglm = "chatglm" in str(type(self.model)).lower()
         is_falcon = "rwforcausallm" in str(type(self.model)).lower()
-        is_longchat = "longchat" in model_path.lower()
         is_codet5p = "codet5p" in str(type(self.model)).lower()
-
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "seq_length"):
-            self.context_len = self.model.config.seq_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
-        else:
-            self.context_len = 2048
-
-        # TODO: Establish a standard that can be uniformly written in the config.
-        if is_longchat:
-            self.context_len = 16384
 
         if is_chatglm:
             self.generate_stream_func = generate_stream_chatglm
