@@ -242,34 +242,9 @@ class ModelWorker:
             yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
-        try:
-            ret = {"text": "", "error_code": 0}
-            for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                args.stream_interval,
-            ):
-                ret["text"] = output["text"]
-                if "usage" in output:
-                    ret["usage"] = output["usage"]
-                if "finish_reason" in output:
-                    ret["finish_reason"] = output["finish_reason"]
-                if "logprobs" in output:
-                    ret["logprobs"] = output["logprobs"]
-        except torch.cuda.OutOfMemoryError as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
-            }
-        except (ValueError, RuntimeError) as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.INTERNAL_ERROR,
-            }
-        return ret
+        for x in self.generate_stream_gate(params):
+            pass
+        return json.loads(x[:-1].decode())
 
     @torch.inference_mode()
     def get_embeddings(self, params):
@@ -378,24 +353,6 @@ async def api_generate(request: Request):
     return JSONResponse(output)
 
 
-@app.post("/worker_generate_completion_stream")
-async def api_generate_completion_stream(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
-    return StreamingResponse(generator, background=background_tasks)
-
-
-@app.post("/worker_generate_completion")
-async def api_generate_completion(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    completion = worker.generate_gate(params)
-    background_tasks = create_background_tasks()
-    return JSONResponse(content=completion, background=background_tasks)
-
-
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
@@ -411,7 +368,7 @@ async def api_get_status(request: Request):
 
 
 @app.post("/count_token")
-async def count_token(request: Request):
+async def api_count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
 
@@ -422,7 +379,7 @@ async def api_get_conv(request: Request):
 
 
 @app.post("/model_details")
-async def model_details(request: Request):
+async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 

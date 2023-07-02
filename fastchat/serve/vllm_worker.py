@@ -12,7 +12,7 @@ import time
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 import torch
 import uvicorn
@@ -48,6 +48,7 @@ class VLLMWorker:
         no_register,
         model_path,
         model_names,
+        llm_engine,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -58,8 +59,9 @@ class VLLMWorker:
         logger.info(
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
-
+        self.tokenizer = llm_engine.engine.tokenizer
         self.conv = get_conversation_template(model_path)
+
         if not no_register:
             self.register_to_controller()
             self.heart_beat_thread = threading.Thread(
@@ -129,6 +131,20 @@ class VLLMWorker:
             "queue_length": self.get_queue_length(),
         }
 
+    def count_token(self, params):
+        prompt = params["prompt"]
+        input_ids = self.tokenizer(prompt).input_ids
+        input_echo_len = len(input_ids)
+
+        ret = {
+            "count": input_echo_len,
+            "error_code": 0,
+        }
+        return ret
+
+    def get_conv_template(self):
+        return {"conv": self.conv}
+
     async def generate_stream(self, params):
         context = params.pop("prompt")
         request_id = params.pop("request_id")
@@ -169,8 +185,14 @@ class VLLMWorker:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
             text_outputs = text_outputs.replace("</s>", "")
-            ret = {"text": text_outputs, "error_code": 0}
-            yield (json.dumps(ret) + "\0").encode("utf-8")
+            # Note: usage is not supported yet
+            ret = {"text": text_outputs, "error_code": 0, "usage": {}}
+            yield (json.dumps(ret) + "\0").encode()
+
+    async def generate(self, params):
+        async for x in self.generate_stream(params):
+            pass
+        return json.loads(x[:-1].decode())
 
 
 app = FastAPI()
@@ -180,31 +202,66 @@ def release_model_semaphore():
     model_semaphore.release()
 
 
-@app.post("/worker_generate_stream")
-async def generate_stream(request: Request):
+def acquire_model_semaphore():
     global model_semaphore, global_counter
     global_counter += 1
-    request_id = random_uuid()
-    params = await request.json()
-    params["request_id"] = request_id
+    if model_semaphore is None:
+        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
+    return model_semaphore.acquire()
 
+
+def create_background_tasks(request_id):
     async def abort_request() -> None:
         await engine.abort(request_id)
 
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    await model_semaphore.acquire()
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_model_semaphore)
     background_tasks.add_task(abort_request)
-    return StreamingResponse(
-        worker.generate_stream(params), background=background_tasks
-    )
+    return background_tasks
+
+
+@app.post("/worker_generate_stream")
+async def api_generate_stream(request: Request):
+    params = await request.json()
+    await acquire_model_semaphore()
+    request_id = random_uuid()
+    params["request_id"] = request_id
+    generator = worker.generate_stream(params)
+    background_tasks = create_background_tasks(request_id)
+    return StreamingResponse(generator, background=background_tasks)
+
+
+@app.post("/worker_generate")
+async def api_generate(request: Request):
+    params = await request.json()
+    await acquire_model_semaphore()
+    request_id = random_uuid()
+    params["request_id"] = request_id
+    output = await worker.generate(params)
+    release_model_semaphore()
+    engine.abort(request_id)
+    return JSONResponse(output)
 
 
 @app.post("/worker_get_status")
-async def get_status(request: Request):
+async def api_get_status(request: Request):
     return worker.get_status()
+
+
+@app.post("/count_token")
+async def api_count_token(request: Request):
+    params = await request.json()
+    return worker.count_token(params)
+
+
+@app.post("/worker_get_conv_template")
+async def api_get_conv(request: Request):
+    return worker.get_conv_template()
+
+
+@app.post("/model_details")
+async def api_model_details(request: Request):
+    return {"context_length": 2048}
 
 
 if __name__ == "__main__":
@@ -241,5 +298,6 @@ if __name__ == "__main__":
         args.no_register,
         args.model_path,
         args.model_names,
+        engine,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
