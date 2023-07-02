@@ -396,6 +396,28 @@ class LongChatAdapter(BaseModelAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
+class CodeT5pAdapter(BaseModelAdapter):
+    """The model adapter for Salesforce/codet5p-6b"""
+
+    def match(self, model_path: str):
+        return "codet5p" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_path,
+            config=config,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+        )
+        return model, tokenizer
+
+
 class T5Adapter(BaseModelAdapter):
     """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
 
@@ -924,6 +946,7 @@ class BaichuanAdapter(BaseModelAdapter):
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(LongChatAdapter)
+register_model_adapter(CodeT5pAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)

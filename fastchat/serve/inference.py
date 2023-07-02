@@ -31,6 +31,7 @@ from fastchat.conversation import get_conv_template, SeparatorStyle
 from fastchat.model.model_adapter import load_model, get_conversation_template
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete
 
@@ -299,6 +300,7 @@ def chat_loop(
     is_t5 = "t5" in str(type(model)).lower()
     is_falcon = "rwforcausallm" in str(type(model)).lower()
     is_longchat = "longchat" in model_path
+    is_codet5p = "codet5p" in str(type(model)).lower()
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:
@@ -350,6 +352,11 @@ def chat_loop(
             generate_stream_func = generate_stream_chatglm
         elif is_falcon:
             generate_stream_func = generate_stream_falcon
+            prompt = conv.get_prompt()
+        elif is_codet5p:
+            generate_stream_func = generate_stream_codet5p
+            # Codet5p is a code completion model.
+            prompt = inp
         else:
             generate_stream_func = generate_stream
 
