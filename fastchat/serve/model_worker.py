@@ -378,24 +378,6 @@ async def api_generate(request: Request):
     return JSONResponse(output)
 
 
-@app.post("/worker_generate_completion_stream")
-async def api_generate_completion_stream(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
-    return StreamingResponse(generator, background=background_tasks)
-
-
-@app.post("/worker_generate_completion")
-async def api_generate_completion(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    completion = worker.generate_gate(params)
-    background_tasks = create_background_tasks()
-    return JSONResponse(content=completion, background=background_tasks)
-
-
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
