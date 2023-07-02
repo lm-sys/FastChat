@@ -104,6 +104,7 @@ class ModelWorker:
         is_chatglm = "chatglm" in str(type(self.model)).lower()
         is_falcon = "rwforcausallm" in str(type(self.model)).lower()
         is_longchat = "longchat" in model_path.lower()
+        is_codet5p = "codet5p" in str(type(self.model)).lower()
 
         if hasattr(self.model.config, "max_sequence_length"):
             self.context_len = self.model.config.max_sequence_length
@@ -118,10 +119,6 @@ class ModelWorker:
         if is_longchat:
             self.context_len = 16384
 
-        # generate_stream
-        is_chatglm = "chatglm" in str(type(self.model)).lower()
-        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
-        is_codet5p = "codet5p" in str(type(self.model)).lower()
         if is_chatglm:
             self.generate_stream_func = generate_stream_chatglm
         elif is_falcon:
