@@ -390,7 +390,8 @@ class LongChatAdapter(BaseModelAdapter):
         replace_llama_with_condense(config.rope_condense_ratio)
 
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision)
+            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -415,7 +416,7 @@ class CodeT5pAdapter(BaseModelAdapter):
             model_path,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
@@ -428,9 +429,7 @@ class T5Adapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = T5Tokenizer.from_pretrained(
-            model_path, revision=revision
-        )
+        tokenizer = T5Tokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
@@ -492,9 +491,7 @@ class DollyV2Adapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, revision=revision
-        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -720,9 +717,7 @@ class RedPajamaINCITEAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, revision=revision
-        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,

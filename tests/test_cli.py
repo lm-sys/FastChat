@@ -16,7 +16,6 @@ def test_single_gpu():
         "project-baize/baize-v2-7b",
         "h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b",
         "tiiuae/falcon-7b-instruct",
-
         "~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth",
     ]
 
@@ -32,7 +31,7 @@ def test_single_gpu():
         ret = run_cmd(cmd)
         if ret != 0:
             return
-        
+
         print("")
 
 
