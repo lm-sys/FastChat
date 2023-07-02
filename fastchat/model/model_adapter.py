@@ -413,7 +413,8 @@ class CodeT5pAdapter(BaseModelAdapter):
             config=config,
             torch_dtype=torch.float16,
             low_cpu_mem_usage=True,
-            trust_remote_code=True)
+            trust_remote_code=True,
+        )
         return model, tokenizer
 
 
@@ -938,6 +939,7 @@ class BaichuanAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("one_shot")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
