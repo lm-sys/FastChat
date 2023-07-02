@@ -220,19 +220,23 @@ async def generate_stream(request: Request):
 async def get_status(request: Request):
     return worker.get_status()
 
+
 @app.post("/count_token")
 async def count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
+
 
 @app.post("/worker_get_conv_template")
 async def api_get_conv(request: Request):
     conv = get_conversation_template(args.model_path)
     return {"conv": conv}
 
+
 @app.post("/model_details")
 async def model_details(request: Request):
     return {"context_length": 2048}
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
