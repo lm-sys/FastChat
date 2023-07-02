@@ -269,7 +269,7 @@ def is_partial_stop(output: str, stop_str: str):
 def run_cmd(cmd: str):
     """Run a bash command."""
     print(cmd)
-    os.system(cmd)
+    return os.system(cmd)
 
 
 def is_sentence_complete(output: str):

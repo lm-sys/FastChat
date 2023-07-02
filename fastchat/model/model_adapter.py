@@ -379,7 +379,8 @@ class LongChatAdapter(BaseModelAdapter):
         return "longchat" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        config = AutoConfig.from_pretrained(model_path)
+        revision = from_pretrained_kwargs.get("revision", "main")
+        config = AutoConfig.from_pretrained(model_path, revision=revision)
 
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
         from fastchat.model.llama_condense_monkey_patch import (
@@ -389,7 +390,7 @@ class LongChatAdapter(BaseModelAdapter):
         replace_llama_with_condense(config.rope_condense_ratio)
 
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer)
+            model_path, use_fast=self.use_fast_tokenizer, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -408,17 +409,13 @@ class CodeT5pAdapter(BaseModelAdapter):
         return "codet5p" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        config = AutoConfig.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path,
-            config=config,
-            torch_dtype=torch.float16,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
+            **from_pretrained_kwargs
         )
         return model, tokenizer
 
@@ -432,7 +429,7 @@ class T5Adapter(BaseModelAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
         tokenizer = T5Tokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+            model_path, revision=revision
         )
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
@@ -472,12 +469,11 @@ class ChatGLMAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, config=config, trust_remote_code=True, revision=revision
+            model_path, trust_remote_code=True, revision=revision
         )
         model = AutoModel.from_pretrained(
-            model_path, config=config, trust_remote_code=True, **from_pretrained_kwargs
+            model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 
@@ -497,7 +493,7 @@ class DollyV2Adapter(BaseModelAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+            model_path, revision=revision
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
@@ -639,20 +635,6 @@ class OpenBuddyAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return "openbuddy" in model_path
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        if "-bf16" in model_path:
-            from_pretrained_kwargs["torch_dtype"] = torch.bfloat16
-            warnings.warn(
-                "## This is a bf16(bfloat16) variant of OpenBuddy. Please make sure your GPU supports bf16."
-            )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
-        )
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-                model_path, revision=revision, use_fast=self.use_fast_tokenizer)
-        return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("openbuddy")
@@ -883,20 +865,15 @@ class FalconAdapter(BaseModelAdapter):
         return "falcon" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        config = AutoConfig.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-        )
-
+        revision = from_pretrained_kwargs.get("revision", "main")
         # Strongly suggest using bf16, which is recommended by the author of Falcon
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            config=config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
             **from_pretrained_kwargs,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path, config=config)
         # In Falcon tokenizer config and special config there is not any pad token
         # Setting `pad_token_id` to 9, which corresponds to special token '>>SUFFIX<<'
         tokenizer.pad_token_id = 9
@@ -914,16 +891,13 @@ class TigerBotAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
-            config=config,
             trust_remote_code=True,
             revision=revision,
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            config=config,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
@@ -941,13 +915,12 @@ class BaichuanAdapter(BaseModelAdapter):
         return "baichuan" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        revision = from_pretrained_kwargs.get("revision", "main")
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, config=config, trust_remote_code=True
+            model_path, trust_remote_code=True, revision=revision
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            config=config,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
