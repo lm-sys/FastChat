@@ -61,7 +61,7 @@ class VLLMWorker:
         )
         self.tokenizer = llm_engine.engine.tokenizer
         self.conv = get_conversation_template(model_path)
-        self.context_length = get_context_length(
+        self.context_len = get_context_length(
             llm_engine.engine.model_config.hf_config
         )
 
