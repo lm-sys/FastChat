@@ -14,7 +14,13 @@ transformers.logging.set_verbosity_error()
 
 @torch.inference_mode()
 def generate_stream_codet5p(
-    model, tokenizer, params, device, context_len=2048, stream_interval=2
+    model,
+    tokenizer,
+    params,
+    device,
+    context_len=2048,
+    stream_interval=2,
+    judge_sent_end=False,
 ):
     prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
