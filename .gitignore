@@ -3,13 +3,14 @@ __pycache__
 *.pyc
 *.egg-info
 dist
+.venv
 
 # Log
 *.log
+*.log.*
 *.json
-
-# Data
-!**/alpaca-data-conversation.json
+!playground/deepspeed_config_s2.json
+!playground/deepspeed_config_s3.json
 
 # Editor
 .idea
@@ -19,3 +20,11 @@ dist
 .DS_Store
 wandb
 output
+
+# Data
+*.pkl
+*.csv
+tests/state_of_the_union.txt
+
+# Build
+build
