@@ -16,11 +16,11 @@ from fastchat.llm_judge.common import (
     check_data,
     play_a_match_pair,
     play_a_match_single,
+    get_model_list,
     Judge,
     MatchPair,
     MatchSingle,
     NEED_REF_CATS,
-    DEFAULT_MODEL_LIST,
 )
 
 
@@ -86,8 +86,8 @@ def make_match_all_pairs(
                 a_1 = model_answers[m_1][q_id]
                 a_2 = model_answers[m_2][q_id]
                 if ref_answers is not None:
-                    ref = ref_answer[judge.model_name][q_id]
-                    match = Match(
+                    ref = ref_answers[judge.model_name][q_id]
+                    match = MatchPair(
                         dict(q),
                         m_1,
                         m_2,
@@ -98,7 +98,7 @@ def make_match_all_pairs(
                         multi_turn=multi_turn,
                     )
                 else:
-                    match = Match(
+                    match = MatchPair(
                         dict(q), m_1, m_2, a_1, a_2, judge, multi_turn=multi_turn
                     )
                 matches.append(match)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
         questions = questions[: args.first_n]
 
     if args.model_list is None:
-        models = DEFAULT_MODEL_LIST[args.bench_name]
+        models = get_model_list(answer_dir)
     else:
         models = args.model_list
 

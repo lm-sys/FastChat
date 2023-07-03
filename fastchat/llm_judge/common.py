@@ -21,47 +21,6 @@ TIE_DELTA = 0.1
 
 # Categories that need reference answers
 NEED_REF_CATS = ["math", "reasoning", "coding"]
-DEFAULT_MODEL_LIST = {
-    "vicuna_bench": [
-        "vicuna-13b",
-        "vicuna-7b",
-        "llama-13b",
-        "alpaca-13b",
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "claude-v1",
-    ],
-    "mt_bench": [
-        "vicuna-13b-v1.2",
-        "llama-13b",
-        "alpaca-13b",
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "claude-v1",
-    ],
-    # "mt_bench": [
-    #     "llama-13b",
-    #     "alpaca-13b",
-    #     "gpt-3.5-turbo",
-    #     "gpt-4",
-    #     "claude-v1",
-    #     "claude-instant-v1",
-    #     "guanaco-65b",
-    #     "guanaco-33b",
-    #     "wizardlm-30b",
-    #     "wizardlm-13b",
-    #     "vicuna-7b-v1.3",
-    #     "vicuna-13b-v1.3",
-    #     "vicuna-33b-v1.3",
-    #     "falcon-40b-instruct",
-    #     "palm-2-chat-bison-001",
-    #     "mpt-7b-chat",
-    #     "fastchat-t5-3b",
-    #     "nous-hermes-13b",
-    #     "gpt4all-13b-snoozy",
-    #     "chatglm-6b",
-    # ],
-}
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -628,3 +587,9 @@ def check_data(questions, model_answers, ref_answers, models, judges):
             assert (
                 q["question_id"] in ref_answers[jg.model_name]
             ), f"Missing reference answer to Question {q['question_id']} for judge {jg.model_name}"
+
+
+def get_model_list(answer_dir):
+    file_paths = glob.glob(f'{answer_dir}/*.jsonl')
+    file_names = [os.path.splitext(os.path.basename(f))[0] for f in file_paths]
+    return file_names
