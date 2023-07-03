@@ -60,9 +60,9 @@ See more command options and how to handle out-of-memory in the "Inference with 
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
-| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
-| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
-| 33B  | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-33b-v1.3` | [lmsys/vicuna-33b-v1.3](https://huggingface.co/lmsys/vicuna-33b-v1.3) |
+| 7B   | `python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3`  | [lmsys/vicuna-7b-v1.3](https://huggingface.co/lmsys/vicuna-7b-v1.3)   |
+| 13B  | `python3 -m fastchat.serve.cli --model-name lmsys/vicuna-13b-v1.3` | [lmsys/vicuna-13b-v1.3](https://huggingface.co/lmsys/vicuna-13b-v1.3) |
+| 33B  | `python3 -m fastchat.serve.cli --model-name lmsys/vicuna-33b-v1.3` | [lmsys/vicuna-33b-v1.3](https://huggingface.co/lmsys/vicuna-33b-v1.3) |
 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
@@ -71,15 +71,15 @@ We release LongChat models under LLaMA's [model license](https://github.com/face
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
-| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-7b-16k`  | [lmsys/longchat-7b-16k](https://huggingface.co/lmsys/longchat-7b-16k)   |
-| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-13b-16k` | [lmsys/longchat-13b-16k](https://huggingface.co/lmsys/longchat-13b-16k) |
+| 7B   | `python3 -m fastchat.serve.cli --model-name lmsys/longchat-7b-16k`  | [lmsys/longchat-7b-16k](https://huggingface.co/lmsys/longchat-7b-16k)   |
+| 13B  | `python3 -m fastchat.serve.cli --model-name lmsys/longchat-13b-16k` | [lmsys/longchat-13b-16k](https://huggingface.co/lmsys/longchat-13b-16k) |
 
 ### FastChat-T5
 You can use the commands below to chat with FastChat-T5. It will automatically download the weights from Hugging Face repos.
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
-| 3B   | `python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0`  | [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0) |
+| 3B   | `python3 -m fastchat.serve.cli --model-name lmsys/fastchat-t5-3b-v1.0`  | [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0) |
 
 ## Inference with Command Line Interface
 
@@ -96,28 +96,28 @@ See a complete list of supported models and instructions to add a new model [her
 #### Single GPU
 The command below requires around 14GB of GPU memory for Vicuna-7B and 28GB of GPU memory for Vicuna-13B.
 See the "No Enough Memory" section below if you do not have enough memory.
-`--model-path` can be a local folder or a Hugging Face repo name.
+`--model-name` can be a local folder or a Hugging Face repo name.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3
 ```
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3 --num-gpus 2
 ```
 
 #### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 30GB of CPU memory for Vicuna-7B and around 60GB of CPU memory for Vicuna-13B.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3 --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3 --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
@@ -129,7 +129,7 @@ source /opt/intel/oneapi/setvars.sh
 
 Use `--device xpu` to enable XPU/GPU acceleration.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device xpu
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
@@ -139,7 +139,7 @@ This can reduce memory usage by around half with slightly degraded model quality
 It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --load-8bit
+python3 -m fastchat.serve.cli --model-name lmsys/vicuna-7b-v1.3 --load-8bit
 ```
 
 In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
@@ -165,7 +165,7 @@ This controller manages the distributed workers.
 
 #### Launch the model worker(s)
 ```bash
-python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.model_worker --model-name lmsys/vicuna-7b-v1.3
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...". The model worker will register itself to the controller .
 
@@ -189,9 +189,9 @@ If the models do not show up, try to reboot the gradio web server.
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
 # worker 0
-CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
+CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-name lmsys/vicuna-7b-v1.3 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
 # worker 1
-CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
+CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-name lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
 ```
 - You can also launch a multi-tab gradio server, which includes the Chatbot Arena tabs.
 ```bash
