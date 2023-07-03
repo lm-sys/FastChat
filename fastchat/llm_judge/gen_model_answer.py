@@ -6,8 +6,8 @@ python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fa
 import argparse
 import json
 import os
-import time
 import random
+import time
 
 import shortuuid
 import torch
