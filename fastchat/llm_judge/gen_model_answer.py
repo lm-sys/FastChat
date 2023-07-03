@@ -130,8 +130,8 @@ def get_model_answers(
                         output = output[: output.find(conv.stop_str)]
                     output = output.strip()
 
-                    if conv.name == "xgen":
-                        output = output.replace("Assistant:", "").strip()
+                    if conv.name == "xgen" and output.startswith("Assistant:"):
+                        output = output.replace("Assistant:", "", 1).strip()
                 except RuntimeError as e:
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
