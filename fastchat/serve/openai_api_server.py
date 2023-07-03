@@ -8,12 +8,10 @@ Usage:
 python3 -m fastchat.serve.openai_api_server
 """
 import asyncio
-
 import argparse
 import asyncio
 import json
 import logging
-
 import os
 from typing import Generator, Optional, Union, Dict, List, Any
 
@@ -57,7 +55,6 @@ from fastchat.protocol.openai_api_protocol import (
     ModelPermission,
     UsageInfo,
 )
-
 from fastchat.protocol.api_protocol import (
     APIChatCompletionRequest,
     APITokenCheckRequest,
@@ -77,7 +74,6 @@ class AppSettings(BaseSettings):
 
 
 app_settings = AppSettings()
-
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
@@ -121,7 +117,7 @@ async def check_model(request) -> Optional[JSONResponse]:
     ret = None
     async with httpx.AsyncClient() as client:
         try:
-            _worker_addr = await _get_worker_address(request.model, client)
+            _worker_addr = await get_worker_address(request.model, client)
         except:
             models_ret = await client.post(controller_address + "/list_models")
             models = models_ret.json()["models"]
@@ -134,7 +130,7 @@ async def check_model(request) -> Optional[JSONResponse]:
 
 async def check_length(request, prompt, max_tokens):
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(request.model, client)
+        worker_addr = await get_worker_address(request.model, client)
 
         response = await client.post(
             worker_addr + "/model_details",
@@ -208,18 +204,18 @@ def check_requests(request) -> Optional[JSONResponse]:
     return None
 
 
-def process_input(model_name, input):
-    if isinstance(input, str):
-        input = [input]
-    elif isinstance(input, list):
-        if isinstance(input[0], int):
+def process_input(model_name, inp):
+    if isinstance(inp, str):
+        inp = [inp]
+    elif isinstance(inp, list):
+        if isinstance(inp[0], int):
             decoding = tiktoken.model.encoding_for_model(model_name)
-            input = [decoding.decode(input)]
-        elif isinstance(input[0], list):
+            inp = [decoding.decode(inp)]
+        elif isinstance(inp[0], list):
             decoding = tiktoken.model.encoding_for_model(model_name)
-            input = [decoding.decode(text) for text in input]
+            inp = [decoding.decode(text) for text in inp]
 
-    return input
+    return inp
 
 
 async def get_gen_params(
@@ -267,7 +263,6 @@ async def get_gen_params(
 
     if max_tokens is None:
         max_tokens = 512
-
     gen_params = {
         "model": model_name,
         "prompt": prompt,
@@ -289,7 +284,7 @@ async def get_gen_params(
     return gen_params
 
 
-async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str:
+async def get_worker_address(model_name: str, client: httpx.AsyncClient) -> str:
     """
     Get worker address based on the requested model
 
@@ -315,7 +310,7 @@ async def _get_worker_address(model_name: str, client: httpx.AsyncClient) -> str
 async def get_conv(model_name: str):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(model_name, client)
+        worker_addr = await get_worker_address(model_name, client)
         conv_template = conv_template_map.get((worker_addr, model_name))
         if conv_template is None:
             response = await client.post(
@@ -377,10 +372,9 @@ async def create_chat_completion(request: ChatCompletionRequest):
         return StreamingResponse(generator, media_type="text/event-stream")
 
     choices = []
-    # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
-        content = asyncio.create_task(chat_completion(request.model, gen_params))
+        content = asyncio.create_task(generate_completion(gen_params))
         chat_completions.append(content)
     try:
         all_tasks = await asyncio.gather(*chat_completions)
@@ -397,9 +391,10 @@ async def create_chat_completion(request: ChatCompletionRequest):
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
-        task_usage = UsageInfo.parse_obj(content["usage"])
-        for usage_key, usage_value in task_usage.dict().items():
-            setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+        if "usage" in content:
+            task_usage = UsageInfo.parse_obj(content["usage"])
+            for usage_key, usage_value in task_usage.dict().items():
+                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
     return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
 
@@ -426,7 +421,7 @@ async def chat_completion_stream_generator(
         yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
 
         previous_text = ""
-        async for content in chat_completion_stream(model_name, gen_params):
+        async for content in generate_completion_stream(gen_params):
             if content["error_code"] != 0:
                 yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
@@ -456,54 +451,6 @@ async def chat_completion_stream_generator(
     yield "data: [DONE]\n\n"
 
 
-async def chat_completion_stream(model_name: str, gen_params: Dict[str, Any]):
-    controller_url = app_settings.controller_address
-    async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(model_name, client)
-        delimiter = b"\0"
-        async with client.stream(
-            "POST",
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            timeout=WORKER_API_TIMEOUT,
-        ) as response:
-            # content = await response.aread()
-            async for raw_chunk in response.aiter_raw():
-                for chunk in raw_chunk.split(delimiter):
-                    if not chunk:
-                        continue
-                    data = json.loads(chunk.decode())
-                    yield data
-
-
-async def chat_completion(
-    model_name: str, gen_params: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
-    async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(model_name, client)
-
-        output = None
-        delimiter = b"\0"
-
-        async with client.stream(
-            "POST",
-            worker_addr + "/worker_generate_stream",
-            headers=headers,
-            json=gen_params,
-            timeout=WORKER_API_TIMEOUT,
-        ) as response:
-            content = await response.aread()
-
-        for chunk in content.split(delimiter):
-            if not chunk:
-                continue
-            data = json.loads(chunk.decode())
-            output = data
-
-        return output
-
-
 @app.post("/v1/completions", dependencies=[Depends(check_api_key)])
 async def create_completion(request: CompletionRequest):
     error_check_ret = await check_model(request)
@@ -526,7 +473,7 @@ async def create_completion(request: CompletionRequest):
     else:
         text_completions = []
         for text in request.prompt:
-            payload = await get_gen_params(
+            gen_params = await get_gen_params(
                 request.model,
                 text,
                 temperature=request.temperature,
@@ -537,7 +484,7 @@ async def create_completion(request: CompletionRequest):
                 stop=request.stop,
             )
             for i in range(request.n):
-                content = asyncio.create_task(generate_completion(payload))
+                content = asyncio.create_task(generate_completion(gen_params))
                 text_completions.append(content)
 
         try:
@@ -574,7 +521,7 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
     for text in request.prompt:
         for i in range(n):
             previous_text = ""
-            payload = await get_gen_params(
+            gen_params = await get_gen_params(
                 request.model,
                 text,
                 temperature=request.temperature,
@@ -584,7 +531,7 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
                 stream=request.stream,
                 stop=request.stop,
             )
-            async for content in generate_completion_stream(payload):
+            async for content in generate_completion_stream(gen_params):
                 if content["error_code"] != 0:
                     yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
                     yield "data: [DONE]\n\n"
@@ -619,12 +566,11 @@ async def generate_completion_stream_generator(request: CompletionRequest, n: in
 async def generate_completion_stream(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(payload["model"], client)
-
+        worker_addr = await get_worker_address(payload["model"], client)
         delimiter = b"\0"
         async with client.stream(
             "POST",
-            worker_addr + "/worker_generate_completion_stream",
+            worker_addr + "/worker_generate_stream",
             headers=headers,
             json=payload,
             timeout=WORKER_API_TIMEOUT,
@@ -639,12 +585,11 @@ async def generate_completion_stream(payload: Dict[str, Any]):
 
 
 async def generate_completion(payload: Dict[str, Any]):
-    controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(payload["model"], client)
+        worker_addr = await get_worker_address(payload["model"], client)
 
         response = await client.post(
-            worker_addr + "/worker_generate_completion",
+            worker_addr + "/worker_generate",
             headers=headers,
             json=payload,
             timeout=WORKER_API_TIMEOUT,
@@ -704,7 +649,7 @@ async def get_embedding(payload: Dict[str, Any]):
     controller_address = app_settings.controller_address
     model_name = payload["model"]
     async with httpx.AsyncClient() as client:
-        worker_addr = await _get_worker_address(model_name, client)
+        worker_addr = await get_worker_address(model_name, client)
 
         response = await client.post(
             worker_addr + "/worker_get_embeddings",
@@ -728,7 +673,7 @@ async def count_tokens(request: APITokenCheckRequest):
     checkedList = []
     async with httpx.AsyncClient() as client:
         for item in request.prompts:
-            worker_addr = await _get_worker_address(item.model, client)
+            worker_addr = await get_worker_address(item.model, client)
 
             response = await client.post(
                 worker_addr + "/model_details",
@@ -799,7 +744,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
-        content = asyncio.create_task(chat_completion(request.model, gen_params))
+        content = asyncio.create_task(generate_completion(gen_params))
         chat_completions.append(content)
     try:
         all_tasks = await asyncio.gather(*chat_completions)

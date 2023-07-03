@@ -147,6 +147,12 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
+    ["codet5p-6b"],
+    "CodeT5p-6b",
+    "https://huggingface.co/Salesforce/codet5p-6b",
+    "Code completion model released by Salesforce",
+)
+register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],
     "FastChat-T5",
     "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0",
