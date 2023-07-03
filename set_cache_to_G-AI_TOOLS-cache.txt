@@ -1,0 +1,1 @@
+set TRANSFORMERS_CACHE=G:\AI_TOOLS\cache

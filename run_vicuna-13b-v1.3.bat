@@ -1,0 +1,1 @@
+conda activate vicuna && python -m fastchat.serve.cli --model-name ./models/vicuna-13b-v1.3

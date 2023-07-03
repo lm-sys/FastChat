@@ -10,7 +10,7 @@ from quant import make_quant
 
 
 def load_quant(model, checkpoint, wbits, groupsize=-1, faster_kernel=False, exclude_layers=['lm_head'], kernel_switch_threshold=128):
-    config = AutoConfig.from_pretrained(model)
+    config = AutoConfig.from_pretrained(model, use_auth_token=True)
     def noop(*args, **kwargs):
         pass
     torch.nn.init.kaiming_uniform_ = noop 

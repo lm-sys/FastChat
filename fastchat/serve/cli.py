@@ -93,7 +93,7 @@ def main(args):
     else:
         raise ValueError(f"Invalid device: {args.device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=True)
     
     if args.wbits > 0:
         from fastchat.serve.load_gptq_model import load_quantized
@@ -101,7 +101,7 @@ def main(args):
         print("Loading GPTQ quantized model...")
         model = load_quantized(model_name)
     else:
-        model = AutoModelForCausalLM.from_pretrained(model_name,
+        model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=True,
             low_cpu_mem_usage=True, **kwargs)
 
     if args.device == "cuda" and num_gpus == 1:
