@@ -728,6 +728,21 @@ register_conv_template(
     )
 )
 
+# ref: https://huggingface.co/Salesforce/xgen-7b-8k-inst
+register_conv_template(
+    Conversation(
+        name="xgen",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "###"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+        stop_token_ids=[50256, 0, 1, 2],
+        stop_str="<|endoftext|>",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
