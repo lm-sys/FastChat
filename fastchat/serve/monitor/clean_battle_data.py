@@ -37,12 +37,8 @@ IDENTITY_WORDS = [
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4, 5]:
+    for month in [4, 5, 6]:
         for day in range(1, 32):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-
-    for month in [6]:
-        for day in range(1, 10):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     num_servers = 12
@@ -203,7 +199,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--mode", type=str, choices=["simple",
-        "anony_release"], default="simple")
+        "conv_release"], default="simple")
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
@@ -218,21 +214,22 @@ if __name__ == "__main__":
             for key in ["conversation_a", "conversation_b",
                         "judge", "question_id", "turn"]:
                 del x[key]
-    elif args.mode == "anony_release":
+        print("Samples:")
+        for i in range(4):
+            print(battles[i])
+        output = f"clean_battle_{cutoff_date}.json"
+    elif args.mode == "conv_release":
         new_battles = []
         for x in battles:
             if not x["anony"]:
                 continue
-            for key in ["tstamp", "rounds"]:
+            #for key in ["tstamp", "rounds"]:
+            for key in ["rounds"]:
                 del x[key]
             new_battles.append(x)
         battles = new_battles
+        output = f"clean_battle_conv_release_{cutoff_date}.json"
 
-    #print("Samples:")
-    #for i in range(4):
-    #    print(battles[i])
-
-    output = f"clean_battle_{cutoff_date}.json"
     with open(output, "w") as fout:
-        json.dump(battles, fout, indent=2)
+        json.dump(battles, fout, indent=2, ensure_ascii=False)
     print(f"Write cleaned data to {output}")
