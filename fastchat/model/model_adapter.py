@@ -10,6 +10,7 @@ if sys.version_info >= (3, 9):
 else:
     from functools import lru_cache as cache
 
+import accelerate
 import psutil
 import torch
 
@@ -189,11 +190,16 @@ def load_model(
                 revision=revision,
             )
     elif gptq_config and gptq_config.wbits < 16:
-        return load_gptq_quantized(
+        model, tokenizer = load_gptq_quantized(
             model_path,
-            gptq_config,
-            device=device,
+            gptq_config
         )
+        if num_gpus != 1:
+            device_map = accelerate.infer_auto_device_map(model, max_memory=kwargs["max_memory"], no_split_module_classes=["LlamaDecoderLayer"])
+            model = accelerate.dispatch_model(model, device_map=device_map, offload_buffers=True)
+        else:
+            model.to(device)
+        return model, tokenizer
     kwargs["revision"] = revision
 
     # Load model
