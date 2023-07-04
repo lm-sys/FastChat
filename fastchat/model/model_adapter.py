@@ -926,6 +926,30 @@ class BaichuanAdapter(BaseModelAdapter):
         return get_conv_template("one_shot")
 
 
+class XGenAdapter(BaseModelAdapter):
+    """The model adapter for Salesforce/xgen-7b"""
+
+    def match(self, model_path: str):
+        return "xgen" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        model.config.eos_token_id = 50256
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("xgen")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -963,6 +987,7 @@ register_model_adapter(TuluAdapter)
 register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
+register_model_adapter(XGenAdapter)
 register_model_adapter(PythiaAdapter)
 
 # After all adapters, try the default base adapter.

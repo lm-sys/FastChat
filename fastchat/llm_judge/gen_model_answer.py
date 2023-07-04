@@ -6,6 +6,7 @@ python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fa
 import argparse
 import json
 import os
+import random
 import time
 
 import shortuuid
@@ -30,6 +31,8 @@ def run_eval(
     max_gpu_memory,
 ):
     questions = load_questions(question_file, question_begin, question_end)
+    # random shuffle the questions to balance the loading
+    random.shuffle(questions)
 
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
@@ -42,7 +45,7 @@ def run_eval(
     else:
         get_answers_func = get_model_answers
 
-    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
+    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model) // 2
     ans_handles = []
     for i in range(0, len(questions), chunk_size):
         ans_handles.append(
@@ -89,9 +92,9 @@ def get_model_answers(
         else:
             temperature = 0.7
 
+        choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            choices = []
             conv = get_conversation_template(model_id)
             turns = []
             for j in range(len(question["turns"])):
@@ -106,24 +109,33 @@ def get_model_answers(
                 else:
                     do_sample = True
 
-                output_ids = model.generate(
-                    torch.as_tensor(input_ids).cuda(),
-                    do_sample=do_sample,
-                    temperature=temperature,
-                    max_new_tokens=max_new_token,
-                )
-                if model.config.is_encoder_decoder:
-                    output_ids = output_ids[0]
-                else:
-                    output_ids = output_ids[0][len(input_ids[0]) :]
-                output = tokenizer.decode(
-                    output_ids,
-                    skip_special_tokens=True,
-                    spaces_between_special_tokens=False,
-                )
-                if conv.stop_str:
-                    output = output[: output.find(conv.stop_str)]
-                output = output.strip()
+                # some models may error out when generating long outputs
+                try:
+                    output_ids = model.generate(
+                        torch.as_tensor(input_ids).cuda(),
+                        do_sample=do_sample,
+                        temperature=temperature,
+                        max_new_tokens=max_new_token,
+                    )
+                    if model.config.is_encoder_decoder:
+                        output_ids = output_ids[0]
+                    else:
+                        output_ids = output_ids[0][len(input_ids[0]) :]
+                    output = tokenizer.decode(
+                        output_ids,
+                        skip_special_tokens=True,
+                        spaces_between_special_tokens=False,
+                    )
+                    if conv.stop_str:
+                        output = output[: output.find(conv.stop_str)]
+                    output = output.strip()
+
+                    if conv.name == "xgen" and output.startswith("Assistant:"):
+                        output = output.replace("Assistant:", "", 1).strip()
+                except RuntimeError as e:
+                    print("ERROR question ID: ", question["question_id"])
+                    output = "ERROR"
+
                 turns.append(output)
                 conv.messages[-1][-1] = output
 
