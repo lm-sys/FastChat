@@ -32,7 +32,7 @@ def tag_moderation(text):
 
 def tag_openai_moderation(x):
     conv = x["conversation_a"]
-    user_prompts = ".".join([x["content"] for x in conv if x["role"] == "user"])
+    user_prompts = "\n".join([x["content"] for x in conv if x["role"] == "user"])
     result = tag_moderation(user_prompts)
     x["openai_moderation"] = result
 
