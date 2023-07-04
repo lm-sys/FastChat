@@ -10,9 +10,9 @@ if sys.version_info >= (3, 9):
 else:
     from functools import lru_cache as cache
 
+import accelerate
 import psutil
 import torch
-import accelerate
 
 from transformers import (
     AutoConfig,
