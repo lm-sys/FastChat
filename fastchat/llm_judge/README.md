@@ -1,5 +1,5 @@
 # LLM Judge
-| [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | [Leaderboard](https://chat.lmsys.org/?leaderboard) |
+| [Paper](https://arxiv.org/abs/2306.05685) | [Demo](https://huggingface.co/spaces/lmsys/mt-bench) | [Leaderboard](https://chat.lmsys.org/?leaderboard) | [Human Annotation Dataset](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments) |
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
 MT-bench is a set of challenging multi-turn open-ended questions for evaluating chat assistants.
@@ -168,18 +168,16 @@ llama-13b         20   617  163   0.02500    0.77125
 - `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
 
 ## Release Plan
-Our first release contains:
+Our current release contains:
 - The MT-bench questions in [data/mt_bench/question.jsonl](data/mt_bench/question.jsonl).
 - The model answers and GPT-4 judgments available on Google Drive.
 - The judge prompts in [data/judge_prompts.jsonl](data/judge_prompts.jsonl).
+- The 3K expert-level human annotation at [lmsys/mt_bench_human_judgments](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments).
 
 The next release will include:
 - All data
-    - 3K expert votes
     - 30K arena conversations with human votes
-- All code
-    - computing agreement between judges
-    - others
+- Other code
 
 ## Citation
 

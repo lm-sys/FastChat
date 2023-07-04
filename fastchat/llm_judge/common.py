@@ -1,3 +1,7 @@
+"""
+Common data structures and utilities.
+"""
+
 import ast
 import dataclasses
 import glob
