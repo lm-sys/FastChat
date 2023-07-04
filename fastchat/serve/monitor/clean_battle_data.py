@@ -29,7 +29,7 @@ IDENTITY_WORDS = [
     "claude",
     "bard",
     "palm",
-    "Lamda",
+    "lamda",
     "google",
     "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**",
 ]
@@ -42,7 +42,7 @@ def get_log_files(max_num_files=None):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     for month in [6]:
-        for day in range(1, 20):
+        for day in range(1, 10):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
     num_servers = 12
@@ -61,6 +61,14 @@ def remove_html(raw):
     if raw.startswith("<h3>"):
         return raw[raw.find(": ") + 2 : -len("</h3>\n")]
     return raw
+
+
+def to_openai_format(messages):
+    roles = ["user", "assistant"]
+    ret = []
+    for i, x in enumerate(messages):
+        ret.append({"role": roles[i % 2], "content": x[1]})
+    return ret
 
 
 def clean_battle_data(log_files):
@@ -86,7 +94,7 @@ def clean_battle_data(log_files):
     }
 
     all_models = set()
-    ct_annoy = 0
+    ct_anony = 0
     ct_invalid = 0
     ct_leaked_identity = 0
     battles = []
@@ -112,7 +120,7 @@ def clean_battle_data(log_files):
         if models_public[0] == "" or models_public[0] == "Model A":
             anony = True
             models = models_hidden
-            ct_annoy += 1
+            ct_anony += 1
         else:
             anony = False
             models = models_public
@@ -148,12 +156,23 @@ def clean_battle_data(log_files):
         # Replace bard with palm
         models = [m.replace("bard", "palm-2") for m in models]
 
+        question_id = row["states"][0]["conv_id"]
+        conversation_a = to_openai_format(
+            row["states"][0]["messages"][row["states"][0]["offset"]:])
+        conversation_b = to_openai_format(
+            row["states"][1]["messages"][row["states"][1]["offset"]:])
+
         # Save the result
         battles.append(
             dict(
+                question_id=question_id,
                 model_a=models[0],
                 model_b=models[1],
                 winner=convert_type[row["type"]],
+                judge="arena_user",
+                conversation_a=conversation_a,
+                conversation_b=conversation_b,
+                turn=len(conversation_a) // 2,
                 anony=anony,
                 rounds=rounds,
                 language=lang_code,
@@ -173,7 +192,7 @@ def clean_battle_data(log_files):
         f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
         f"#leaked_identity: {ct_leaked_identity}"
     )
-    print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
+    print(f"#battles: {len(battles)}, #anony: {ct_anony}")
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
 
@@ -183,6 +202,8 @@ def clean_battle_data(log_files):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
+    parser.add_argument("--mode", type=str, choices=["simple",
+        "anony_release"], default="simple")
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
@@ -192,9 +213,24 @@ if __name__ == "__main__":
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y%m%d")
 
-    print("Samples:")
-    for i in range(4):
-        print(battles[i])
+    if args.mode == "simple":
+        for x in battles:
+            for key in ["conversation_a", "conversation_b",
+                        "judge", "question_id", "turn"]:
+                del x[key]
+    elif args.mode == "anony_release":
+        new_battles = []
+        for x in battles:
+            if not x["anony"]:
+                continue
+            for key in ["tstamp", "rounds"]:
+                del x[key]
+            new_battles.append(x)
+        battles = new_battles
+
+    #print("Samples:")
+    #for i in range(4):
+    #    print(battles[i])
 
     output = f"clean_battle_{cutoff_date}.json"
     with open(output, "w") as fout:
