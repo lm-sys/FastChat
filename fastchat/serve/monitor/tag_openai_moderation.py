@@ -49,7 +49,7 @@ if __name__ == "__main__":
     battles = json.load(open(args.input))
 
     if args.first_n:
-        battles = battles[:args.first_n]
+        battles = battles[: args.first_n]
 
     with ThreadPoolExecutor(args.parallel) as executor:
         for line in tqdm(

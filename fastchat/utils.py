@@ -145,6 +145,7 @@ def violates_moderation(text):
     Check whether the text violates OpenAI moderation API.
     """
     import openai
+
     try:
         flagged = openai.Moderation.create(input=text)["results"][0]["flagged"]
     except openai.error.OpenAIError as e:

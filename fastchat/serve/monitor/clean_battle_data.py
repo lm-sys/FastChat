@@ -154,9 +154,11 @@ def clean_battle_data(log_files):
 
         question_id = row["states"][0]["conv_id"]
         conversation_a = to_openai_format(
-            row["states"][0]["messages"][row["states"][0]["offset"]:])
+            row["states"][0]["messages"][row["states"][0]["offset"] :]
+        )
         conversation_b = to_openai_format(
-            row["states"][1]["messages"][row["states"][1]["offset"]:])
+            row["states"][1]["messages"][row["states"][1]["offset"] :]
+        )
 
         # Save the result
         battles.append(
@@ -198,8 +200,9 @@ def clean_battle_data(log_files):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
-    parser.add_argument("--mode", type=str, choices=["simple",
-        "conv_release"], default="simple")
+    parser.add_argument(
+        "--mode", type=str, choices=["simple", "conv_release"], default="simple"
+    )
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
@@ -211,8 +214,13 @@ if __name__ == "__main__":
 
     if args.mode == "simple":
         for x in battles:
-            for key in ["conversation_a", "conversation_b",
-                        "judge", "question_id", "turn"]:
+            for key in [
+                "conversation_a",
+                "conversation_b",
+                "judge",
+                "question_id",
+                "turn",
+            ]:
                 del x[key]
         print("Samples:")
         for i in range(4):
@@ -223,7 +231,7 @@ if __name__ == "__main__":
         for x in battles:
             if not x["anony"]:
                 continue
-            #for key in ["tstamp", "rounds"]:
+            # for key in ["tstamp", "rounds"]:
             for key in ["rounds"]:
                 del x[key]
             new_battles.append(x)
