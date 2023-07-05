@@ -467,7 +467,7 @@ def normalize_game_key_single(gamekey, result):
             "g2_judgment": result["g1_judgment"],
         }
         return new_gamekey, new_result
-    
+
 
 def normalize_game_key_dict(judgment_dict):
     """Make the model names sorted in the game keys."""
@@ -562,7 +562,7 @@ def resolve_pairwise_judgment_dict(
 
 
 def resolve_single_judgment_dict(
-        question, model_judgments_normal, model_judgments_math, multi_turn=False
+    question, model_judgments_normal, model_judgments_math, multi_turn=False
 ):
     """Return the correct single answer grading judge."""
     if multi_turn:
@@ -599,7 +599,8 @@ def get_pairwise_judge_explanation(gamekey, judgment_dict):
         )
     except KeyError:
         return "N/A"
-    
+
+
 def get_single_judge_explanation(gamekey, judgment_dict):
     """Get model judge explanation."""
     try:

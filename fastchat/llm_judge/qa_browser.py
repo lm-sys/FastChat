@@ -17,7 +17,7 @@ from fastchat.llm_judge.common import (
     resolve_single_judgment_dict,
     resolve_pairwise_judgment_dict,
     get_single_judge_explanation,
-    get_pairwise_judge_explanation
+    get_pairwise_judge_explanation,
 )
 
 
@@ -55,27 +55,33 @@ def display_pairwise_answer(
     gamekey = (qid, model_selector1, model_selector2)
 
     judgment_dict = resolve_pairwise_judgment_dict(
-        q, model_judgments_normal_pairwise, model_judgments_math_pairwise, multi_turn=False
+        q,
+        model_judgments_normal_pairwise,
+        model_judgments_math_pairwise,
+        multi_turn=False,
     )
 
-    explanation = "##### Model Judgment (first turn)\n" + get_pairwise_judge_explanation(
-        gamekey, judgment_dict
+    explanation = (
+        "##### Model Judgment (first turn)\n"
+        + get_pairwise_judge_explanation(gamekey, judgment_dict)
     )
 
     judgment_dict_turn2 = resolve_pairwise_judgment_dict(
-        q, model_judgments_normal_pairwise, model_judgments_math_pairwise, multi_turn=True
+        q,
+        model_judgments_normal_pairwise,
+        model_judgments_math_pairwise,
+        multi_turn=True,
     )
 
-    explanation_turn2 = "##### Model Judgment (second turn)\n" + get_pairwise_judge_explanation(
-        gamekey, judgment_dict_turn2
+    explanation_turn2 = (
+        "##### Model Judgment (second turn)\n"
+        + get_pairwise_judge_explanation(gamekey, judgment_dict_turn2)
     )
 
     return chat_mds + [explanation] + [explanation_turn2]
 
 
-def display_single_answer(
-        question_selector, model_selector1, request:gr.Request
-):
+def display_single_answer(question_selector, model_selector1, request: gr.Request):
     q = question_selector_map[question_selector]
     qid = q["question_id"]
 
@@ -96,8 +102,9 @@ def display_single_answer(
         q, model_judgments_normal_single, model_judgments_math_single, multi_turn=True
     )
 
-    explanation_turn2 = "##### Model Judgment (second turn)\n" + get_single_judge_explanation(
-        gamekey, judgment_dict_turn2
+    explanation_turn2 = (
+        "##### Model Judgment (second turn)\n"
+        + get_single_judge_explanation(gamekey, judgment_dict_turn2)
     )
 
     return chat_mds + [explanation] + [explanation_turn2]
@@ -247,7 +254,7 @@ def build_pairwise_browser_tab():
             [question_selector] + model_selectors,
             chat_mds + [model_explanation] + [model_explanation2],
         )
-    
+
     return (category_selector,)
 
 
@@ -259,7 +266,7 @@ def build_single_answer_browser_tab():
     num_turns = 2
     side_names = ["A"]
 
-    # Build question selector map 
+    # Build question selector map
     for q in questions:
         preview = f"{q['question_id']}: " + q["turns"][0][:128] + "..."
         question_selector_map[preview] = q
@@ -273,7 +280,7 @@ def build_single_answer_browser_tab():
             category_selector = gr.Dropdown(
                 choices=category_selector_choices,
                 label="Category",
-                ).style(container=False)
+            ).style(container=False)
         with gr.Column(scale=100):
             question_selector = gr.Dropdown(
                 choices=question_selector_choices,
@@ -299,7 +306,7 @@ def build_single_answer_browser_tab():
                 with gr.Column(scale=100):
                     chat_mds.append(gr.Markdown())
 
-                if j==0:
+                if j == 0:
                     with gr.Column(scale=1, min_width=8):
                         gr.Markdown()
 
@@ -401,8 +408,12 @@ if __name__ == "__main__":
 
     question_file = f"data/{args.bench_name}/question.jsonl"
     answer_dir = f"data/{args.bench_name}/model_answer"
-    pairwise_model_judgment_file = f"data/{args.bench_name}/model_judgment/gpt-4_pair.jsonl"
-    single_model_judgment_file = f"data/{args.bench_name}/model_judgment/gpt-4_single.jsonl"
+    pairwise_model_judgment_file = (
+        f"data/{args.bench_name}/model_judgment/gpt-4_pair.jsonl"
+    )
+    single_model_judgment_file = (
+        f"data/{args.bench_name}/model_judgment/gpt-4_single.jsonl"
+    )
 
     # Load questions
     questions = load_questions(question_file, None, None)
@@ -411,8 +422,12 @@ if __name__ == "__main__":
     model_answers = load_model_answers(answer_dir)
 
     # Load model judgments
-    model_judgments_normal_single = model_judgments_math_single = load_single_model_judgments(single_model_judgment_file)
-    model_judgments_normal_pairwise = model_judgments_math_pairwise = load_pairwise_model_judgments(pairwise_model_judgment_file)
+    model_judgments_normal_single = (
+        model_judgments_math_single
+    ) = load_single_model_judgments(single_model_judgment_file)
+    model_judgments_normal_pairwise = (
+        model_judgments_math_pairwise
+    ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
 
     demo = build_demo()
     demo.queue(concurrency_count=10, status_update_rate=10, api_open=False).launch(
