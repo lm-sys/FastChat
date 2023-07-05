@@ -353,6 +353,7 @@ async def api_get_embeddings(request: Request):
     params = await request.json()
     await acquire_model_semaphore()
     embedding = worker.get_embeddings(params)
+    release_model_semaphore()
     return JSONResponse(content=embedding)
 
 
@@ -391,7 +392,12 @@ if __name__ == "__main__":
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
-    parser.add_argument("--limit-model-concurrency", type=int, default=5)
+    parser.add_argument(
+        "--limit-model-concurrency",
+        type=int,
+        default=5,
+        help="Limit the model concurrency to prevent OOM.",
+    )
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
