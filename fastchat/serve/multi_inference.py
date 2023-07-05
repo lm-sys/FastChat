@@ -99,6 +99,8 @@ if __name__ == "__main__":
     parser.add_argument("--output_path", type=str)
     parser.add_argument("--max-prompt-tokens", type=int, default=1024)
     parser.add_argument("--top_p", type=float, default=0.9)
+    # compatability with stool
+    parser.add_argument("--dump_dir", type=str, default="")
     args = parser.parse_args()
 
     # Reset default repetition penalty for T5 models.
