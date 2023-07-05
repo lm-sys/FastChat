@@ -56,6 +56,13 @@ def split_one_sample(sample):
     return new_samples
 
 
+def worker(input_data):
+    result = []
+    for sample in input_data:
+        result.extend(split_one_sample(sample))
+    return result
+
+
 def split_all(content, begin, end, tokenizer_, max_length_):
     """
     Keep the maximum round of conversations within the max token length constraint
@@ -67,8 +74,10 @@ def split_all(content, begin, end, tokenizer_, max_length_):
     content = content[begin:end]
     new_content = []
 
+    # Split content into chunks
+    chunks = [content[i : i + 1000] for i in range(0, len(content), 1000)]
     with ProcessPoolExecutor() as executor:
-        for result in tqdm(executor.map(split_one_sample, content), total=len(content)):
+        for result in tqdm(executor.map(worker, chunks), total=len(chunks)):
             new_content.extend(result)
 
     return new_content

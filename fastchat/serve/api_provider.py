@@ -5,6 +5,7 @@ import random
 import time
 
 from fastchat.utils import build_logger
+from fastchat.constants import WORKER_API_TIMEOUT
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -67,6 +68,8 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
 
 
 def bard_api_stream_iter(state):
+    import requests
+
     # TODO: we will use the official PaLM 2 API sooner or later,
     # and we will update this function accordingly. So here we just hard code the
     # Bard worker address. It is going to be deprecated anyway.

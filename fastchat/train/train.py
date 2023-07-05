@@ -1,4 +1,5 @@
-# Adopted from tatsu-lab@stanford_alpaca. Below is the original copyright:
+# This code is based on tatsu-lab/stanford_alpaca. Below is the original copyright:
+#
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,31 +108,33 @@ def preprocess(
 
     assert conv.sep_style == SeparatorStyle.ADD_COLON_TWO
 
-    # Mask targets
+    # Mask targets. Only compute loss on the assistant outputs.
     sep = conv.sep + conv.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
-        rounds = conversation.split(conv.sep2)
+        turns = conversation.split(conv.sep2)
         cur_len = 1
         target[:cur_len] = IGNORE_TOKEN_ID
-        for i, rou in enumerate(rounds):
-            if rou == "":
+        for i, turn in enumerate(turns):
+            if turn == "":
                 break
+            turn_len = len(tokenizer(turn).input_ids)
 
-            parts = rou.split(sep)
+            parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            round_len = len(tokenizer(rou).input_ids)
+            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
             instruction_len = len(tokenizer(parts[0]).input_ids) - 2
 
+            # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
+            cur_len += turn_len
 
-            cur_len += round_len
         target[cur_len:] = IGNORE_TOKEN_ID
 
-        if False:
+        if False:  # Inspect and check the correctness of masking
             z = target.clone()
             z = torch.where(z == IGNORE_TOKEN_ID, tokenizer.unk_token_id, z)
             rank0_print(tokenizer.decode(z))
