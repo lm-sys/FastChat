@@ -81,7 +81,7 @@ def heart_beat_worker(controller):
 
 
 class ModelWorker:
-    """A single worker for a single model."""
+    """A single sub-worker for a single model."""
 
     def __init__(
         self,
