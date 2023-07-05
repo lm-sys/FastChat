@@ -41,11 +41,8 @@ from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
     get_conversation_template,
+    get_generate_stream_function,
 )
-from fastchat.model.model_chatglm import generate_stream_chatglm
-from fastchat.model.model_falcon import generate_stream_falcon
-from fastchat.model.model_codet5p import generate_stream_codet5p
-from fastchat.serve.inference import generate_stream
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
@@ -100,20 +97,7 @@ class ModelWorker:
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.context_len = get_context_length(self.model.config)
-
-        # generate_stream
-        is_chatglm = "chatglm" in str(type(self.model)).lower()
-        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
-        is_codet5p = "codet5p" in str(type(self.model)).lower()
-
-        if is_chatglm:
-            self.generate_stream_func = generate_stream_chatglm
-        elif is_falcon:
-            self.generate_stream_func = generate_stream_falcon
-        elif is_codet5p:
-            self.generate_stream_func = generate_stream_codet5p
-        else:
-            self.generate_stream_func = generate_stream
+        self.generate_stream_func = get_generate_stream_function(self.model, model_path)
 
         if not no_register:
             self.register_to_controller()
