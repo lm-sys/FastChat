@@ -7,13 +7,10 @@ See documentations at docs/vllm_integration.md
 import argparse
 import asyncio
 import json
-import threading
-import time
-import uuid
+from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
-import requests
 import torch
 import uvicorn
 from vllm import AsyncLLMEngine
@@ -21,130 +18,39 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.model.model_adapter import get_conversation_template
-from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
+from fastchat.serve.model_worker import (
+    BaseModelWorker,
+    logger,
+    worker_id,
+    global_counter,
+    model_semaphore,
+)
+from fastchat.utils import get_context_length
 
 
-worker_id = str(uuid.uuid4())[:6]
-logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
-
-global_counter = 0
-model_semaphore = None
-
-
-def heart_beat_worker(controller):
-    while True:
-        time.sleep(WORKER_HEART_BEAT_INTERVAL)
-        controller.send_heart_beat()
-
-
-class VLLMWorker:
+class VLLMWorker(BaseModelWorker):
     def __init__(
         self,
-        controller_addr,
-        worker_addr,
-        worker_id,
-        no_register,
-        model_path,
-        model_names,
-        llm_engine,
+        controller_addr: str,
+        worker_addr: str,
+        worker_id: str,
+        model_path: str,
+        model_names: List[str],
+        no_register: bool,
+        llm_engine: AsyncLLMEngine,
     ):
-        self.controller_addr = controller_addr
-        self.worker_addr = worker_addr
-        self.worker_id = worker_id
-        if model_path.endswith("/"):
-            model_path = model_path[:-1]
-        self.model_names = model_names or [model_path.split("/")[-1]]
+        super().__init__(
+            controller_addr, worker_addr, worker_id, model_path, model_names
+        )
+
         logger.info(
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
         self.tokenizer = llm_engine.engine.tokenizer
-        self.conv = get_conversation_template(model_path)
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:
-            self.register_to_controller()
-            self.heart_beat_thread = threading.Thread(
-                target=heart_beat_worker, args=(self,)
-            )
-            self.heart_beat_thread.start()
-
-    def register_to_controller(self):
-        logger.info("Register to controller")
-
-        url = self.controller_addr + "/register_worker"
-        data = {
-            "worker_name": self.worker_addr,
-            "check_heart_beat": True,
-            "worker_status": self.get_status(),
-        }
-        r = requests.post(url, json=data)
-        assert r.status_code == 200
-
-    def send_heart_beat(self):
-        logger.info(
-            f"Send heart beat. Models: {self.model_names}. "
-            f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
-            f"global_counter: {global_counter}. "
-            f"worker_id: {worker_id}. "
-        )
-
-        url = self.controller_addr + "/receive_heart_beat"
-
-        while True:
-            try:
-                ret = requests.post(
-                    url,
-                    json={
-                        "worker_name": self.worker_addr,
-                        "queue_length": self.get_queue_length(),
-                    },
-                    timeout=5,
-                )
-                exist = ret.json()["exist"]
-                break
-            except requests.exceptions.RequestException as e:
-                logger.error(f"heart beat error: {e}")
-            time.sleep(5)
-
-        if not exist:
-            self.register_to_controller()
-
-    def get_queue_length(self):
-        if (
-            model_semaphore is None
-            or model_semaphore._value is None
-            or model_semaphore._waiters is None
-        ):
-            return 0
-        else:
-            return (
-                args.limit_model_concurrency
-                - model_semaphore._value
-                + len(model_semaphore._waiters)
-            )
-
-    def get_status(self):
-        return {
-            "model_names": self.model_names,
-            "speed": 1,
-            "queue_length": self.get_queue_length(),
-        }
-
-    def count_token(self, params):
-        prompt = params["prompt"]
-        input_ids = self.tokenizer(prompt).input_ids
-        input_echo_len = len(input_ids)
-
-        ret = {
-            "count": input_echo_len,
-            "error_code": 0,
-        }
-        return ret
-
-    def get_conv_template(self):
-        return {"conv": self.conv}
+            self.init_heart_beat()
 
     async def generate_stream(self, params):
         context = params.pop("prompt")
@@ -296,9 +202,9 @@ if __name__ == "__main__":
         args.controller_address,
         args.worker_address,
         worker_id,
-        args.no_register,
         args.model_path,
         args.model_names,
+        args.no_register,
         engine,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
