@@ -109,8 +109,8 @@ If you want to run multiple models on the same machine and in the same process, 
 ```bash
 python3 -m fastchat.serve.model_multi_worker \
     --model-path lmsys/vicuna-7b-v1.3 \
-    --model-path lmsys/longchat-7b-16k \
     --model-names vicuna-7b-v1.3 \
+    --model-path lmsys/longchat-7b-16k \
     --model-names longchat-7b-16k
 ```
 
