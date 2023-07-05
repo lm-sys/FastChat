@@ -1,5 +1,5 @@
 """
-A multi-model worker.  This supports running a list of models on the same
+A multi-model worker that contains multiple sub-works one for each model.  This supports running a list of models on the same
 machine so that they can (potentially) share the same background weights.
 
 Each model can have one or more model names.
