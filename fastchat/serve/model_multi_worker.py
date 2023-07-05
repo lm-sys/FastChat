@@ -4,7 +4,7 @@ machine so that they can (potentially) share the same background weights.
 
 Each model can have one or more model names.
 
-This multi-worker assumes the models shares some underlying weights and thus
+This multi-model worker assumes the models shares some underlying weights and thus
 reports the combined queue lengths for health checks.
 
 We recommend using this with multiple Peft models (with `peft` in the name)
