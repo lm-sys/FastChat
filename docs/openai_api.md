@@ -104,10 +104,11 @@ curl http://localhost:8000/v1/embeddings \
 
 ### Running multiple 
 
-If you want to run multiple models on the same machine and in the same process, you can replace the `model_worker` step above with a multi model variant:
+If you want to run multiple models on the same machine and in the same process,
+you can replace the `model_worker` step above with a multi model variant:
 
 ```bash
-python3 -m fastchat.serve.model_multi_worker \
+python3 -m fastchat.serve.multi_model_worker \
     --model-path lmsys/vicuna-7b-v1.3 \
     --model-names vicuna-7b-v1.3 \
     --model-path lmsys/longchat-7b-16k \

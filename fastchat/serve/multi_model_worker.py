@@ -1,11 +1,12 @@
 """
-A multi-model worker that contains multiple sub-works one for each model.  This supports running a list of models on the same
-machine so that they can (potentially) share the same background weights.
+A multi-model worker that contains multiple sub-works one for each model.  This
+supports running a list of models on the same machine so that they can
+(potentially) share the same background weights.
 
 Each model can have one or more model names.
 
-This multi-model worker assumes the models shares some underlying weights and thus
-reports the combined queue lengths for health checks.
+This multi-model worker assumes the models shares some underlying weights and
+thus reports the combined queue lengths for health checks.
 
 We recommend using this with multiple Peft models (with `peft` in the name)
 where all Peft models are trained on the exact same base model.
