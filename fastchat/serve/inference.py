@@ -28,8 +28,11 @@ from transformers.generation.logits_process import (
 )
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
-from fastchat.model.model_adapter import (load_model, get_conversation_template,
-    get_generate_stream_function)
+from fastchat.model.model_adapter import (
+    load_model,
+    get_conversation_template,
+    get_generate_stream_function,
+)
 from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 

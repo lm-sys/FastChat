@@ -234,6 +234,7 @@ def get_conversation_template(model_path: str) -> Conversation:
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     """Get the generate_stream function for inference."""
     from fastchat.serve.inference import generate_stream
+
     model_type = str(type(model)).lower()
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
