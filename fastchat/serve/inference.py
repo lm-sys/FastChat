@@ -58,8 +58,8 @@ def generate_stream(
     model,
     tokenizer,
     params: Dict,
-    device,
-    context_len: int = 2048,
+    device: str,
+    context_len: int,
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
@@ -169,7 +169,7 @@ def generate_stream(
         else:
             stopped = False
 
-        # yield the output tokens
+        # Yield the output tokens
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             if echo:
                 tmp_output_ids = output_ids
