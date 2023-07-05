@@ -135,7 +135,7 @@ async def check_length(request, prompt, max_tokens):
         response = await client.post(
             worker_addr + "/model_details",
             headers=headers,
-            json={},
+            json={"model": request.model},
             timeout=WORKER_API_TIMEOUT,
         )
         context_len = response.json()["context_length"]
@@ -143,7 +143,7 @@ async def check_length(request, prompt, max_tokens):
         response = await client.post(
             worker_addr + "/count_token",
             headers=headers,
-            json={"prompt": prompt},
+            json={"model": request.model, "prompt": prompt},
             timeout=WORKER_API_TIMEOUT,
         )
         token_num = response.json()["count"]
@@ -316,7 +316,7 @@ async def get_conv(model_name: str):
             response = await client.post(
                 worker_addr + "/worker_get_conv_template",
                 headers=headers,
-                json={},
+                json={"model": model_name},
                 timeout=WORKER_API_TIMEOUT,
             )
             conv_template = response.json()["conv"]
@@ -678,7 +678,7 @@ async def count_tokens(request: APITokenCheckRequest):
             response = await client.post(
                 worker_addr + "/model_details",
                 headers=headers,
-                json={},
+                json={"model": item.model},
                 timeout=WORKER_API_TIMEOUT,
             )
             context_len = response.json()["context_length"]
@@ -686,7 +686,7 @@ async def count_tokens(request: APITokenCheckRequest):
             response = await client.post(
                 worker_addr + "/count_token",
                 headers=headers,
-                json={"prompt": item.prompt},
+                json={"prompt": item.prompt, "model": item.model},
                 timeout=WORKER_API_TIMEOUT,
             )
             token_num = response.json()["count"]
@@ -714,7 +714,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    gen_params = get_gen_params(
+    gen_params = await get_gen_params(
         request.model,
         request.messages,
         temperature=request.temperature,
@@ -741,7 +741,6 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         return StreamingResponse(generator, media_type="text/event-stream")
 
     choices = []
-    # TODO: batch the requests. maybe not necessary if using CacheFlow worker
     chat_completions = []
     for i in range(request.n):
         content = asyncio.create_task(generate_completion(gen_params))
