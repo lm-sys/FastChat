@@ -56,12 +56,9 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.serve.inference import generate_stream
-from fastchat.serve.model_worker import ModelWorker
+from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
-
-worker_id = str(uuid.uuid4())[:6]
-logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
 # We store both the underlying workers and a mapping from their model names to
 # the worker instance.  This makes it easy to fetch the appropriate worker for
@@ -121,7 +118,6 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    print(params)
     await acquire_model_semaphore()
     worker = worker_map[params["model"]]
     output = worker.generate_gate(params)
@@ -165,7 +161,6 @@ async def api_get_conv(request: Request):
 @app.post("/model_details")
 async def api_model_details(request: Request):
     params = await request.json()
-    print(params)
     worker = worker_map[params["model"]]
     return {"context_length": worker.context_len}
 
@@ -216,11 +211,11 @@ if __name__ == "__main__":
         act_order=args.gptq_act_order,
     )
 
+    if args.model_names is None:
+        args.model_names = [[x.split("/")[-1] for x in args.model_path]]
+
     workers = []
-    model_specs = zip(
-        args.model_path, args.model_names if args.model_names else args.model_path
-    )
-    for model_path, model_names in model_specs:
+    for model_path, model_names in zip(args.model_path, args.model_names):
         w = ModelWorker(
             args.controller_address,
             args.worker_address,
@@ -228,13 +223,13 @@ if __name__ == "__main__":
             model_path,
             model_names,
             args.no_register,
-            args.device,
-            args.num_gpus,
-            args.max_gpu_memory,
-            args.load_8bit,
-            args.cpu_offloading,
-            gptq_config,
-            args.stream_interval,
+            device=args.device,
+            num_gpus=args.num_gpus,
+            max_gpu_memory=args.max_gpu_memory,
+            load_8bit=args.load_8bit,
+            cpu_offloading=args.cpu_offloading,
+            gptq_config=gptq_config,
+            stream_interval=args.stream_interval,
         )
         workers.append(w)
         for model_name in model_names:
