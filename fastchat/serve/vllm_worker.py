@@ -69,7 +69,7 @@ class VLLMWorker(BaseModelWorker):
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
-        stop_token_ids.append(tokenizer.eos_token_id)
+        stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
 
         # Handle stop_str
