@@ -22,6 +22,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
 from pydantic import BaseSettings
+from sse_starlette.sse import EventSourceResponse
 import shortuuid
 import tiktoken
 import uvicorn
@@ -469,7 +470,7 @@ async def create_completion(request: CompletionRequest):
 
     if request.stream:
         generator = generate_completion_stream_generator(request, request.n)
-        return StreamingResponse(generator, media_type="text/event-stream")
+        return EventSourceResponse(response_stream, ping=600)
     else:
         text_completions = []
         for text in request.prompt:
