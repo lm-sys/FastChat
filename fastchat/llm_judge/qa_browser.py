@@ -335,26 +335,6 @@ def build_single_answer_browser_tab():
 
 
 block_css = """
-#notice_markdown {
-    font-size: 104%
-}
-#notice_markdown th {
-    display: none;
-}
-#notice_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_markdown {
-    font-size: 104%
-}
-#leaderboard_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_dataframe td {
-    line-height: 0.1em;
-}
 #user_question_1 {
     background-color: #DEEBF7;
 }
