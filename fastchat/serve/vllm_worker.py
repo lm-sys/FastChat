@@ -26,7 +26,6 @@ from fastchat.serve.model_worker import (
 from fastchat.utils import get_context_length
 
 
-worker_semaphore = None
 app = FastAPI()
 
 
@@ -38,11 +37,13 @@ class VLLMWorker(BaseModelWorker):
         worker_id: str,
         model_path: str,
         model_names: List[str],
+        limit_worker_concurrency: int,
         no_register: bool,
         llm_engine: AsyncLLMEngine,
     ):
         super().__init__(
-            controller_addr, worker_addr, worker_id, model_path, model_names
+            controller_addr, worker_addr, worker_id, model_path, model_names,
+            limit_worker_concurrency,
         )
 
         logger.info(
@@ -107,14 +108,13 @@ class VLLMWorker(BaseModelWorker):
 
 
 def release_worker_semaphore():
-    worker_semaphore.release()
+    worker.semaphore.release()
 
 
 def acquire_worker_semaphore():
-    global worker_semaphore
-    if worker_semaphore is None:
-        worker_semaphore = asyncio.Semaphore(args.limit_worker_concurrency)
-    return worker_semaphore.acquire()
+    if worker.semaphore is None:
+        worker.semaphore = asyncio.Semaphore(worker.limit_worker_concurrency)
+    return worker.semaphore.acquire()
 
 
 def create_background_tasks(request_id):
@@ -146,7 +146,7 @@ async def api_generate(request: Request):
     params["request_id"] = request_id
     output = await worker.generate(params)
     release_worker_semaphore()
-    engine.abort(request_id)
+    await engine.abort(request_id)
     return JSONResponse(output)
 
 
@@ -204,6 +204,7 @@ if __name__ == "__main__":
         worker_id,
         args.model_path,
         args.model_names,
+        args.limit_worker_concurrency,
         args.no_register,
         engine,
     )

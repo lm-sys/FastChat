@@ -48,14 +48,13 @@ from fastchat.utils import build_logger, pretty_print_semaphore, get_context_len
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
-worker_semaphore = None
 app = FastAPI()
 
 
-def heart_beat_worker(controller):
+def heart_beat_worker(obj):
     while True:
         time.sleep(WORKER_HEART_BEAT_INTERVAL)
-        controller.send_heart_beat()
+        obj.send_heart_beat()
 
 
 class BaseModelWorker:
@@ -66,6 +65,7 @@ class BaseModelWorker:
         worker_id: str,
         model_path: str,
         model_names: List[str],
+        limit_worker_concurrency: int,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -73,11 +73,13 @@ class BaseModelWorker:
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_names = model_names or [model_path.split("/")[-1]]
+        self.limit_worker_concurrency = limit_worker_concurrency
 
         self.conv = get_conversation_template(model_path)
         self.tokenizer = None
         self.context_len = None
         self.call_ct = 0
+        self.semaphore = None
 
         self.heart_beat_thread = None
 
@@ -95,7 +97,7 @@ class BaseModelWorker:
         data = {
             "worker_name": self.worker_addr,
             "check_heart_beat": True,
-            "worker_status": None,
+            "worker_status": self.get_status(),
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
@@ -103,7 +105,7 @@ class BaseModelWorker:
     def send_heart_beat(self):
         logger.info(
             f"Send heart beat. Models: {self.model_names}. "
-            f"Semaphore: {pretty_print_semaphore(worker_semaphore)}. "
+            f"Semaphore: {pretty_print_semaphore(self.semaphore)}. "
             f"call_ct: {self.call_ct}. "
             f"worker_id: {self.worker_id}. "
         )
@@ -131,16 +133,16 @@ class BaseModelWorker:
 
     def get_queue_length(self):
         if (
-            worker_semaphore is None
-            or worker_semaphore._value is None
-            or worker_semaphore._waiters is None
+            self.semaphore is None
+            or self.semaphore._value is None
+            or self.semaphore._waiters is None
         ):
             return 0
         else:
             return (
-                args.limit_worker_concurrency
-                - worker_semaphore._value
-                + len(worker_semaphore._waiters)
+                self.limit_worker_concurrency
+                - self.semaphore._value
+                + len(self.semaphore._waiters)
             )
 
     def get_status(self):
@@ -173,6 +175,7 @@ class ModelWorker(BaseModelWorker):
         worker_id: str,
         model_path: str,
         model_names: List[str],
+        limit_worker_concurrency: int,
         no_register: bool,
         device: str,
         num_gpus: int,
@@ -183,7 +186,8 @@ class ModelWorker(BaseModelWorker):
         stream_interval: int = 2,
     ):
         super().__init__(
-            controller_addr, worker_addr, worker_id, model_path, model_names
+            controller_addr, worker_addr, worker_id, model_path, model_names,
+            limit_worker_concurrency,
         )
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
@@ -318,14 +322,13 @@ class ModelWorker(BaseModelWorker):
 
 
 def release_worker_semaphore():
-    worker_semaphore.release()
+    worker.semaphore.release()
 
 
 def acquire_worker_semaphore():
-    global worker_semaphore
-    if worker_semaphore is None:
-        worker_semaphore = asyncio.Semaphore(args.limit_worker_concurrency)
-    return worker_semaphore.acquire()
+    if worker.semaphore is None:
+        worker.semaphore = asyncio.Semaphore(worker.limit_worker_concurrency)
+    return worker.semaphore.acquire()
 
 
 def create_background_tasks():
@@ -427,7 +430,8 @@ if __name__ == "__main__":
         worker_id,
         args.model_path,
         args.model_names,
-        args.no_register,
+        args.limit_worker_concurrency,
+        no_register=args.no_register,
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,
