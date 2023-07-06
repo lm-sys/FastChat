@@ -50,22 +50,53 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["vicuna-13b", "vicuna-7b"],
+    [
+        "vicuna-13b",
+        "vicuna-13b-v1.3",
+        "vicuna-7b",
+        "vicuna-7b-v1.3",
+        "vicuna-33b",
+        "vicuna-33b-v1.3",
+    ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
+)
+register_model_info(
+    ["wizardlm-13b"],
+    "WizardLM",
+    "https://github.com/nlpxucan/WizardLM",
+    "an instruction-following LLM using evol-instruct by Microsoft",
+)
+register_model_info(
+    ["guanaco-33b", "guanaco-65b"],
+    "Guanaco",
+    "https://github.com/artidoro/qlora",
+    "a model fine-tuned with QLoRA by UW",
+)
+register_model_info(
+    ["mpt-7b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-7b",
+    "a chatbot fine-tuned from MPT-7B by MosaicML",
+)
+register_model_info(
+    ["mpt-30b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT-30B by MosaicML",
+)
+register_model_info(
+    ["gpt4all-13b-snoozy"],
+    "GPT4All-Snoozy",
+    "https://github.com/nomic-ai/gpt4all",
+    "A finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
     ["koala-13b"],
     "Koala",
     "https://bair.berkeley.edu/blog/2023/04/03/koala",
     "a dialogue model for academic research by BAIR",
-)
-register_model_info(
-    ["oasst-pythia-12b"],
-    "OpenAssistant (oasst)",
-    "https://open-assistant.io",
-    "an Open Assistant for everyone by LAION",
 )
 register_model_info(
     ["RWKV-4-Raven-14B"],
@@ -80,10 +111,22 @@ register_model_info(
     "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
-    ["chatglm-6b"],
+    ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
+)
+register_model_info(
+    ["oasst-pythia-12b"],
+    "OpenAssistant (oasst)",
+    "https://open-assistant.io",
+    "an Open Assistant for everyone by LAION",
+)
+register_model_info(
+    ["oasst-sft-7-llama-30b"],
+    "OpenAssistant (oasst)",
+    "https://open-assistant.io",
+    "an Open Assistant for everyone by LAION",
 )
 register_model_info(
     ["llama-13b"],
@@ -104,7 +147,13 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
-    ["fastchat-t5-3b"],
+    ["codet5p-6b"],
+    "CodeT5p-6b",
+    "https://huggingface.co/Salesforce/codet5p-6b",
+    "Code completion model released by Salesforce",
+)
+register_model_info(
+    ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],
     "FastChat-T5",
     "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0",
     "a chat assistant fine-tuned from FLAN-T5 by LMSYS",
@@ -114,12 +163,6 @@ register_model_info(
     "Phoenix-7B",
     "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b",
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
-)
-register_model_info(
-    ["mpt-7b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
 )
 register_model_info(
     ["billa-7b-sft"],
@@ -140,8 +183,39 @@ register_model_info(
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
 register_model_info(
-    ["airoboros-7b-gpt4-1.1", "airoboros-13b-gpt4-1.1", "airoboros-33b-gpt4"],
-    "airoboros GPT4",
-    "https://huggingface.co/jondurbin/airoboros-33b-gpt4",
+    ["airoboros-7b-gpt4-1.4", "airoboros-13b-gpt4-1.4", "airoboros-33b-gpt4-1.4", "airoboros-65b-gpt4-1.4"],
+    "airoboros",
+    "https://huggingface.co/jondurbin/airoboros-33b-gpt4-1.4",
     "an instruction-tuned LlaMa model tuned with 100% synthetic instruction-response pairs from GPT4"
+)
+register_model_info(
+    ["Robin-7b-v2", "Robin-13b-v2", "Robin-33b-v2"],
+    "Robin-v2",
+    "https://huggingface.co/OptimalScale/robin-7b-v2-delta",
+    "A chatbot fine-tuned from LLaMA-7b, achieving competitive performance on chitchat, commonsense reasoning and instruction-following tasks, by OptimalScale, HKUST.",
+)
+register_model_info(
+    ["manticore-13b-chat"],
+    "Manticore 13B Chat",
+    "https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg",
+    "A chatbot fine-tuned from LlaMa across several CoT and chat datasets.",
+)
+register_model_info(
+    ["redpajama-incite-7b-chat"],
+    "RedPajama-INCITE-7B-Chat",
+    "https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat",
+    "A chatbot fine-tuned from RedPajama-INCITE-7B-Base by Together",
+)
+register_model_info(
+    ["falcon-7b", "falcon-7b-instruct", "falcon-40b", "falcon-40b-instruct"],
+    "Falcon",
+    "https://huggingface.co/tiiuae/falcon-40b",
+    "TII's flagship series of large language models",
+)
+register_model_info(
+    ["tigerbot-7b-sft"],
+    "Tigerbot",
+    "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
+    "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
+>>>>>>> da0641e567cf93756b0978ab5a6b092e96f06240
 )

@@ -14,6 +14,7 @@ cd FastChat
 pip3 install -e .
 ```
 
+
 ### Launch servers
 ```
 cd fastchat_logs/controller
@@ -26,10 +27,17 @@ cd fastchat_logs/server0
 export OPENAI_API_KEY=
 export ANTHROPIC_API_KEY=
 
-python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --moderate --concurrency 10 --add-chatgpt --add-claude --add-bard --anony-only --elo ~/elo_results_20230508.pkl
+python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results_20230619.pkl --leaderboard-table-file ~/elo_results/leaderboard_table_20230619.csv
 
 python3 backup_logs.py
 ```
+
+
+### Check the launch time
+```
+for i in $(seq 0 11); do cat fastchat_logs/server$i/gradio_web_server.log | grep "Running on local URL" | tail -n 1; done
+```
+
 
 ### Increase the limit of max open files
 One process (do not need reboot)
@@ -46,7 +54,29 @@ System (need reboot): Add the lines below to `/etc/security/limits.conf`
 ```
 
 
-### Check the launch time
+### Gradio edit  (3.35.2)
+1. gtag and canvas
 ```
-for i in $(seq 0 11); do cat fastchat_logs/server$i/gradio_web_server.log | grep "Running on local URL" | tail -n 1; done
+vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/templates/frontend/index.html
+```
+
+```
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K6D24EE9ED"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K6D24EE9ED');
+  window.__gradio_mode__ = "app";
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+```
+
+2. Loading
+```
+vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/templates/frontend/assets/index-188ef5e8.js
+```
+
+```
+%s/"Loading..."/"Loading...(Please refresh if it takes more than 30 seconds)"/g
 ```

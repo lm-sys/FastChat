@@ -1,8 +1,14 @@
+"""
+Clean chatbot arena battle log.
+
+Usage:
+python3 clean_battle_data.py --mode conv_release
+"""
 import argparse
 import datetime
 import json
-from pytz import timezone
 import os
+from pytz import timezone
 import time
 
 from tqdm import tqdm
@@ -26,21 +32,20 @@ IDENTITY_WORDS = [
     "claude",
     "bard",
     "palm",
-    "Lamda",
+    "lamda",
     "google",
-    "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**",
+    "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
 ]
+
+for i in range(len(IDENTITY_WORDS)):
+    IDENTITY_WORDS[i] = IDENTITY_WORDS[i].lower()
 
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4]:
-        for day in range(24, 32):
+    for month in [4, 5, 6]:
+        for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
-    for month in [5]:
-        for day in range(1, 24):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-    cutoff_date = dates[-1].replace("-", "")
 
     num_servers = 12
     filenames = []
@@ -51,13 +56,21 @@ def get_log_files(max_num_files=None):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
-    return filenames, cutoff_date
+    return filenames
 
 
 def remove_html(raw):
     if raw.startswith("<h3>"):
         return raw[raw.find(": ") + 2 : -len("</h3>\n")]
     return raw
+
+
+def to_openai_format(messages):
+    roles = ["user", "assistant"]
+    ret = []
+    for i, x in enumerate(messages):
+        ret.append({"role": roles[i % 2], "content": x[1]})
+    return ret
 
 
 def clean_battle_data(log_files):
@@ -83,7 +96,7 @@ def clean_battle_data(log_files):
     }
 
     all_models = set()
-    ct_annoy = 0
+    ct_anony = 0
     ct_invalid = 0
     ct_leaked_identity = 0
     battles = []
@@ -109,7 +122,7 @@ def clean_battle_data(log_files):
         if models_public[0] == "" or models_public[0] == "Model A":
             anony = True
             models = models_hidden
-            ct_annoy += 1
+            ct_anony += 1
         else:
             anony = False
             models = models_public
@@ -145,12 +158,25 @@ def clean_battle_data(log_files):
         # Replace bard with palm
         models = [m.replace("bard", "palm-2") for m in models]
 
-        # Keep the result
+        question_id = row["states"][0]["conv_id"]
+        conversation_a = to_openai_format(
+            row["states"][0]["messages"][row["states"][0]["offset"] :]
+        )
+        conversation_b = to_openai_format(
+            row["states"][1]["messages"][row["states"][1]["offset"] :]
+        )
+
+        # Save the result
         battles.append(
             dict(
+                question_id=question_id,
                 model_a=models[0],
                 model_b=models[1],
-                win=convert_type[row["type"]],
+                winner=convert_type[row["type"]],
+                judge="arena_user",
+                conversation_a=conversation_a,
+                conversation_b=conversation_b,
+                turn=len(conversation_a) // 2,
                 anony=anony,
                 rounds=rounds,
                 language=lang_code,
@@ -170,7 +196,7 @@ def clean_battle_data(log_files):
         f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
         f"#leaked_identity: {ct_leaked_identity}"
     )
-    print(f"#battles: {len(battles)}, #annoy: {ct_annoy}")
+    print(f"#battles: {len(battles)}, #anony: {ct_anony}")
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
 
@@ -180,16 +206,44 @@ def clean_battle_data(log_files):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
+    parser.add_argument(
+        "--mode", type=str, choices=["simple", "conv_release"], default="simple"
+    )
     args = parser.parse_args()
 
-    log_files, cutoff_date = get_log_files(args.max_num_files)
+    log_files = get_log_files(args.max_num_files)
     battles = clean_battle_data(log_files)
+    last_updated_tstamp = battles[-1]["tstamp"]
+    cutoff_date = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y%m%d")
 
-    print("Samples:")
-    for i in range(4):
-        print(battles[i])
+    if args.mode == "simple":
+        for x in battles:
+            for key in [
+                "conversation_a",
+                "conversation_b",
+                "judge",
+                "question_id",
+                "turn",
+            ]:
+                del x[key]
+        print("Samples:")
+        for i in range(4):
+            print(battles[i])
+        output = f"clean_battle_{cutoff_date}.json"
+    elif args.mode == "conv_release":
+        new_battles = []
+        for x in battles:
+            if not x["anony"]:
+                continue
+            # for key in ["tstamp", "rounds"]:
+            for key in ["rounds"]:
+                del x[key]
+            new_battles.append(x)
+        battles = new_battles
+        output = f"clean_battle_conv_{cutoff_date}.json"
 
-    output = f"clean_battle_{cutoff_date}.json"
     with open(output, "w") as fout:
-        json.dump(battles, fout, indent=2)
+        json.dump(battles, fout, indent=2, ensure_ascii=False)
     print(f"Write cleaned data to {output}")

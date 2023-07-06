@@ -9,6 +9,8 @@ dist
 *.log
 *.log.*
 *.json
+!playground/deepspeed_config_s2.json
+!playground/deepspeed_config_s3.json
 
 # Editor
 .idea
@@ -22,6 +24,7 @@ output
 # Data
 *.pkl
 *.csv
+tests/state_of_the_union.txt
 
 # Build
 build

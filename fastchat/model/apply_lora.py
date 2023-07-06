@@ -26,7 +26,7 @@ def apply_lora(base_model_path, target_model_path, lora_path):
     lora_model = PeftModel.from_pretrained(
         base,
         lora_path,
-        torch_dtype=torch.float16,
+        # torch_dtype=torch.float16
     )
 
     print("Applying the LoRA")

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fschat"
-version = "0.2.11"
+version = "0.2.18"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -13,8 +13,8 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "accelerate", "fastapi", "gradio==3.23", "httpx", "markdown2[all]", "nh3", "numpy",
-    "prompt_toolkit>=3.0.0", "pydantic", "requests", "rich>=10.0.0", "sentencepiece",
+    "accelerate", "fastapi", "gradio==3.35.2", "httpx", "markdown2[all]", "nh3", "numpy",
+    "peft", "prompt_toolkit>=3.0.0", "pydantic", "requests", "rich>=10.0.0", "sentencepiece",
     "shortuuid", "shortuuid", "tiktoken", "tokenizers>=0.12.1", "torch",
     "transformers>=4.28.0,<4.29.0", "uvicorn", "wandb",
 ]
