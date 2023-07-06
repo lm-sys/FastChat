@@ -22,10 +22,12 @@ from fastchat.serve.model_worker import (
     BaseModelWorker,
     logger,
     worker_id,
-    global_counter,
-    model_semaphore,
 )
 from fastchat.utils import get_context_length
+
+
+global_counter = 0
+model_semaphore = None
 
 
 class VLLMWorker(BaseModelWorker):
