@@ -173,13 +173,13 @@ def single_to_gradio_chat_mds(question, ans, turn=None):
     ref_md = ""
     if turn is None:
         if ref[0] != "" or ref[1] != "":
-            mds[6] = f"##### Reference Solution\nQ1. {ref[0]}\nQ2. {ref[1]}"
+            mds[4] = f"##### Reference Solution\nQ1. {ref[0]}\nQ2. {ref[1]}"
     else:
         x = ref[turn] if turn < len(ref) else ""
         if x:
-            mds[6] = f"##### Reference Solution\n{ref[turn]}"
+            mds[4] = f"##### Reference Solution\n{ref[turn]}"
         else:
-            mds[6] = ""
+            mds[4] = ""
     return mds
 
 
@@ -266,11 +266,11 @@ def build_single_answer_browser_tab():
     num_turns = 2
     side_names = ["A"]
 
-    # Build question selector map
-    for q in questions:
-        preview = f"{q['question_id']}: " + q["turns"][0][:128] + "..."
-        question_selector_map[preview] = q
-        category_selector_map[q["category"]].append(preview)
+    # # Build question selector map
+    # for q in questions:
+    #     preview = f"{q['question_id']}: " + q["turns"][0][:128] + "..."
+    #     question_selector_map[preview] = q
+    #     category_selector_map[q["category"]].append(preview)
     question_selector_choices = list(question_selector_map.keys())
     category_selector_choices = list(category_selector_map.keys())
 
