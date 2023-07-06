@@ -210,7 +210,6 @@ def main(args):
             args.judge_sent_end,
             args.debug,
             history=not args.no_history,
-            context_len=args.context_length,
         )
     except KeyboardInterrupt:
         print("exit...")
