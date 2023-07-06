@@ -42,7 +42,11 @@ class VLLMWorker(BaseModelWorker):
         llm_engine: AsyncLLMEngine,
     ):
         super().__init__(
-            controller_addr, worker_addr, worker_id, model_path, model_names,
+            controller_addr,
+            worker_addr,
+            worker_id,
+            model_path,
+            model_names,
             limit_worker_concurrency,
         )
 

@@ -25,6 +25,7 @@ import uuid
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
+
 try:
     from transformers import (
         AutoTokenizer,
@@ -232,7 +233,7 @@ if __name__ == "__main__":
             "model_names": [m for w in workers for m in w.model_names],
             "speed": 1,
             "queue_length": sum([w.get_queue_length() for w in workers]),
-        }
+        },
     }
     r = requests.post(url, json=data)
     assert r.status_code == 200
