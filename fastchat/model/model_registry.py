@@ -217,5 +217,4 @@ register_model_info(
     "Tigerbot",
     "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
     "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
->>>>>>> da0641e567cf93756b0978ab5a6b092e96f06240
 )

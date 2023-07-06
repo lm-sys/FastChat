@@ -75,7 +75,6 @@ def generate_stream(
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
     stop_token_ids.append(tokenizer.eos_token_id)
-    context_len = int(params.get("context_len", 2048))
 
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
@@ -288,7 +287,6 @@ def chat_loop(
     judge_sent_end: bool,
     debug: bool,
     history: bool = True,
-    context_len: int = 2048,
 ):
     # Model
     model, tokenizer = load_model(
@@ -359,7 +357,6 @@ def chat_loop(
             "stop": conv.stop_str,
             "stop_token_ids": conv.stop_token_ids,
             "echo": False,
-            "context_len": context_len,
         }
 
         chatio.prompt_for_output(conv.roles[1])

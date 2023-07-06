@@ -224,8 +224,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=2048)
-    parser.add_argument("--context-length", type=int, default=2048)
+    parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--no-history", action="store_true")
     parser.add_argument(
         "--style",
