@@ -69,8 +69,7 @@ worker_map = {}
 # Note: For now the semaphore locks access to all models managed by the worker.
 # This makes sense when all models are Peft models sharing the same underlying
 # base model weights.  It probably doesn't make sense in other scenarios.
-global_counter = 0
-model_semaphore = None
+worker_semaphore = None
 
 
 def heart_beat_worker(controller):
@@ -82,21 +81,20 @@ def heart_beat_worker(controller):
 app = FastAPI()
 
 
-def release_model_semaphore():
-    model_semaphore.release()
+def release_worker_semaphore():
+    worker_semaphore.release()
 
 
-def acquire_model_semaphore():
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    return model_semaphore.acquire()
+def acquire_worker_semaphore():
+    global worker_semaphore
+    if worker_semaphore is None:
+        worker_semaphore = asyncio.Semaphore(args.limit_worker_concurrency)
+    return worker_semaphore.acquire()
 
 
 def create_background_tasks():
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    background_tasks.add_task(release_worker_semaphore)
     return background_tasks
 
 
@@ -108,7 +106,7 @@ def create_background_tasks():
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     worker = worker_map[params["model"]]
     generator = worker.generate_stream_gate(params)
     background_tasks = create_background_tasks()
@@ -118,17 +116,17 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     worker = worker_map[params["model"]]
     output = worker.generate_gate(params)
-    release_model_semaphore()
+    release_worker_semaphore()
     return JSONResponse(output)
 
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     worker = worker_map[params["model"]]
     embedding = worker.get_embeddings(params)
     background_tasks = create_background_tasks()
@@ -191,7 +189,7 @@ if __name__ == "__main__":
         action="append",
         help="One or more model names.  Values must be aligned with `--model-path` values.",
     )
-    parser.add_argument("--limit-model-concurrency", type=int, default=5)
+    parser.add_argument("--limit-worker-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()

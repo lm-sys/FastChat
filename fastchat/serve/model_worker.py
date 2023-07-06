@@ -48,9 +48,7 @@ from fastchat.utils import build_logger, pretty_print_semaphore, get_context_len
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
-global_counter = 0
-model_semaphore = None
-
+worker_semaphore = None
 app = FastAPI()
 
 
@@ -79,6 +77,7 @@ class BaseModelWorker:
         self.conv = get_conversation_template(model_path)
         self.tokenizer = None
         self.context_len = None
+        self.call_ct = 0
 
         self.heart_beat_thread = None
 
@@ -104,9 +103,9 @@ class BaseModelWorker:
     def send_heart_beat(self):
         logger.info(
             f"Send heart beat. Models: {self.model_names}. "
-            f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
-            f"global_counter: {global_counter}. "
-            f"worker_id: {worker_id}. "
+            f"Semaphore: {pretty_print_semaphore(worker_semaphore)}. "
+            f"call_ct: {self.call_ct}. "
+            f"worker_id: {self.worker_id}. "
         )
 
         url = self.controller_addr + "/receive_heart_beat"
@@ -132,16 +131,16 @@ class BaseModelWorker:
 
     def get_queue_length(self):
         if (
-            model_semaphore is None
-            or model_semaphore._value is None
-            or model_semaphore._waiters is None
+            worker_semaphore is None
+            or worker_semaphore._value is None
+            or worker_semaphore._waiters is None
         ):
             return 0
         else:
             return (
-                args.limit_model_concurrency
-                - model_semaphore._value
-                + len(model_semaphore._waiters)
+                args.limit_worker_concurrency
+                - worker_semaphore._value
+                + len(worker_semaphore._waiters)
             )
 
     def get_status(self):
@@ -208,6 +207,8 @@ class ModelWorker(BaseModelWorker):
             self.init_heart_beat()
 
     def generate_stream_gate(self, params):
+        self.call_ct += 1
+
         try:
             for output in self.generate_stream_func(
                 self.model,
@@ -248,6 +249,8 @@ class ModelWorker(BaseModelWorker):
 
     @torch.inference_mode()
     def get_embeddings(self, params):
+        self.call_ct += 1
+
         try:
             tokenizer = self.tokenizer
             is_llama = "llama" in str(
@@ -314,28 +317,27 @@ class ModelWorker(BaseModelWorker):
         return ret
 
 
-def release_model_semaphore():
-    model_semaphore.release()
+def release_worker_semaphore():
+    worker_semaphore.release()
 
 
-def acquire_model_semaphore():
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    return model_semaphore.acquire()
+def acquire_worker_semaphore():
+    global worker_semaphore
+    if worker_semaphore is None:
+        worker_semaphore = asyncio.Semaphore(args.limit_worker_concurrency)
+    return worker_semaphore.acquire()
 
 
 def create_background_tasks():
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    background_tasks.add_task(release_worker_semaphore)
     return background_tasks
 
 
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     generator = worker.generate_stream_gate(params)
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
@@ -344,18 +346,18 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     output = worker.generate_gate(params)
-    release_model_semaphore()
+    release_worker_semaphore()
     return JSONResponse(output)
 
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     embedding = worker.get_embeddings(params)
-    release_model_semaphore()
+    release_worker_semaphore()
     return JSONResponse(content=embedding)
 
 
@@ -395,7 +397,7 @@ if __name__ == "__main__":
         help="Optional display comma separated names",
     )
     parser.add_argument(
-        "--limit-model-concurrency",
+        "--limit-worker-concurrency",
         type=int,
         default=5,
         help="Limit the model concurrency to prevent OOM.",
