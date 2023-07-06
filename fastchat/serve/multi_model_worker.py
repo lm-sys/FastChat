@@ -212,7 +212,7 @@ if __name__ == "__main__":
     )
 
     if args.model_names is None:
-        args.model_names = [[x.split("/")[-1] for x in args.model_path]]
+        args.model_names = [[x.split("/")[-1]] for x in args.model_path]
 
     workers = []
     for model_path, model_names in zip(args.model_path, args.model_names):
