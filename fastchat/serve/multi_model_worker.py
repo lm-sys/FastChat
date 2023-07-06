@@ -25,9 +25,6 @@ import uuid
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
-
-from fastchat.modules.gptq import GptqConfig
-
 try:
     from transformers import (
         AutoTokenizer,
@@ -55,6 +52,7 @@ from fastchat.model.model_adapter import (
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
+from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.inference import generate_stream
 from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
@@ -65,31 +63,21 @@ from fastchat.utils import build_logger, pretty_print_semaphore, get_context_len
 # each API call.
 workers = []
 worker_map = {}
-
-# Note: For now the semaphore locks access to all models managed by the worker.
-# This makes sense when all models are Peft models sharing the same underlying
-# base model weights.  It probably doesn't make sense in other scenarios.
-worker_semaphore = None
-
-
-def heart_beat_worker(controller):
-    while True:
-        time.sleep(WORKER_HEART_BEAT_INTERVAL)
-        controller.send_heart_beat()
-
-
 app = FastAPI()
 
 
 def release_worker_semaphore():
-    worker_semaphore.release()
+    workers[0].semaphore.release()
 
 
 def acquire_worker_semaphore():
-    global worker_semaphore
-    if worker_semaphore is None:
-        worker_semaphore = asyncio.Semaphore(args.limit_worker_concurrency)
-    return worker_semaphore.acquire()
+    if workers[0].semaphore is None:
+        # Share the same semaphore for all workers because
+        # all workers share the same GPU.
+        semaphore = asyncio.Semaphore(workers[0].limit_worker_concurrency)
+        for w in workers:
+            w.semaphore = semaphore
+    return workers[0].semaphore.acquire()
 
 
 def create_background_tasks():
@@ -212,6 +200,7 @@ if __name__ == "__main__":
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
 
+    # Launch all workers
     workers = []
     for model_path, model_names in zip(args.model_path, args.model_names):
         w = ModelWorker(
@@ -220,6 +209,7 @@ if __name__ == "__main__":
             worker_id,
             model_path,
             model_names,
+            args.limit_worker_concurrency,
             args.no_register,
             device=args.device,
             num_gpus=args.num_gpus,
@@ -232,5 +222,19 @@ if __name__ == "__main__":
         workers.append(w)
         for model_name in model_names:
             worker_map[model_name] = w
+
+    # Register all models
+    url = args.controller_address + "/register_worker"
+    data = {
+        "worker_name": workers[0].worker_addr,
+        "check_heart_beat": not args.no_register,
+        "worker_status": {
+            "model_names": [m for w in workers for m in w.model_names],
+            "speed": 1,
+            "queue_length": sum([w.get_queue_length() for w in workers]),
+        }
+    }
+    r = requests.post(url, json=data)
+    assert r.status_code == 200
 
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
