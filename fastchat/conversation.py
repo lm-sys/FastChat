@@ -104,19 +104,19 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
+            # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
+            round_add_n = 1 if self.name == "chatglm2" else 0
             if self.system:
-                ret = self.system + "\n"
+                ret = self.system + self.sep
             else:
                 ret = ""
 
-            if len(self.messages) <= 2:
-                return ret + self.messages[0][1]
-
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
-                    ret += f"[Round {i//2}]\n"
+                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
+
                 if message:
-                    ret += f"{role}：{message}\n"
+                    ret += f"{role}：{message}{self.sep}"
                 else:
                     ret += f"{role}："
             return ret
@@ -223,7 +223,10 @@ conv_templates: Dict[str, Conversation] = {}
 def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
-        assert template.name not in conv_templates, f"{name} has been registered."
+        assert (
+            template.name not in conv_templates
+        ), f"{template.name} has been registered."
+
     conv_templates[template.name] = template
 
 
@@ -333,6 +336,19 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.CHATGLM,
         sep="\n",
+    )
+)
+
+# ChatGLM2 default template
+register_conv_template(
+    Conversation(
+        name="chatglm2",
+        system="",
+        roles=("问", "答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATGLM,
+        sep="\n\n",
     )
 )
 
@@ -709,6 +725,21 @@ register_conv_template(
         sep_style=SeparatorStyle.ROBIN,
         sep="\n\n",
         stop_str="###",
+    )
+)
+
+# ref: https://huggingface.co/Salesforce/xgen-7b-8k-inst
+register_conv_template(
+    Conversation(
+        name="xgen",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "###"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+        stop_token_ids=[50256, 0, 1, 2],
+        stop_str="<|endoftext|>",
     )
 )
 

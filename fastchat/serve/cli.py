@@ -192,6 +192,7 @@ def main(args):
                 act_order=args.gptq_act_order,
             ),
             args.revision,
+            args.judge_sent_end,
             args.debug,
         )
     except KeyboardInterrupt:
@@ -223,6 +224,11 @@ if __name__ == "__main__":
         "--mouse",
         action="store_true",
         help="[Rich Style]: Enable mouse support for cursor positioning.",
+    )
+    parser.add_argument(
+        "--judge-sent-end",
+        action="store_true",
+        help="Whether enable the correction logic that interrupts the output of sentences due to EOS.",
     )
     parser.add_argument(
         "--debug",

@@ -26,7 +26,7 @@ class GptqConfig:
     )
 
 
-def load_gptq_quantized(model_name, gptq_config: GptqConfig, device):
+def load_gptq_quantized(model_name, gptq_config: GptqConfig):
     print("Loading GPTQ quantized model...")
 
     try:
@@ -58,7 +58,6 @@ def load_gptq_quantized(model_name, gptq_config: GptqConfig, device):
             gptq_config.wbits,
             gptq_config.groupsize,
         )
-    model.to(device)
 
     return model, tokenizer
 

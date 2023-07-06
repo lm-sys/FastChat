@@ -111,7 +111,7 @@ register_model_info(
     "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
-    ["chatglm-6b"],
+    ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
@@ -145,6 +145,12 @@ register_model_info(
     "StableLM",
     "https://github.com/stability-AI/stableLM",
     "Stability AI language models",
+)
+register_model_info(
+    ["codet5p-6b"],
+    "CodeT5p-6b",
+    "https://huggingface.co/Salesforce/codet5p-6b",
+    "Code completion model released by Salesforce",
 )
 register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],
