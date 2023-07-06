@@ -71,14 +71,23 @@ def replace_special_tokens(
 ) -> str:
     if not text:
         return text
+
+    def _insert_vline(token: str) -> str:
+        if len(token) < 2:
+            return " "
+        elif len(token) == 2:
+            return token[0] + "|" + token[1]
+        else:
+            return token[:1] + "|" + token[1:-1] + "|" + token[-1:]
+
     if tokenizer.bos_token:
-        text = text.replace(tokenizer.bos_token, f"[{tokenizer.bos_token}]")
+        text = text.replace(tokenizer.bos_token, _insert_vline(tokenizer.bos_token))
     if tokenizer.eos_token:
-        text = text.replace(tokenizer.eos_token, f"[{tokenizer.eos_token}]")
+        text = text.replace(tokenizer.eos_token, _insert_vline(tokenizer.eos_token))
     if tokenizer.pad_token:
-        text = text.replace(tokenizer.pad_token, f"[{tokenizer.pad_token}]")
+        text = text.replace(tokenizer.pad_token, _insert_vline(tokenizer.pad_token))
     if tokenizer.unk_token:
-        text = text.replace(tokenizer.unk_token, f"[{tokenizer.unk_token}]")
+        text = text.replace(tokenizer.unk_token, _insert_vline(tokenizer.unk_token))
     return text
 
 
