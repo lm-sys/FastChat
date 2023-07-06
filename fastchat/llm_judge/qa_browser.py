@@ -203,14 +203,12 @@ def build_pairwise_browser_tab():
     with gr.Row():
         with gr.Column(scale=1, min_width=200):
             category_selector = gr.Dropdown(
-                choices=category_selector_choices,
-                label="Category",
-                container=False)
+                choices=category_selector_choices, label="Category", container=False
+            )
         with gr.Column(scale=100):
             question_selector = gr.Dropdown(
-                choices=question_selector_choices,
-                label="Question",
-                container=False)
+                choices=question_selector_choices, label="Question", container=False
+            )
 
     model_selectors = [None] * num_sides
     with gr.Row():
@@ -220,7 +218,8 @@ def build_pairwise_browser_tab():
                     choices=models,
                     value=models[i] if len(models) > i else "",
                     label=f"Model {side_names[i]}",
-                    container=False)
+                    container=False,
+                )
 
     # Conversation
     chat_mds = []
@@ -278,14 +277,12 @@ def build_single_answer_browser_tab():
     with gr.Row():
         with gr.Column(scale=1, min_width=200):
             category_selector = gr.Dropdown(
-                choices=category_selector_choices,
-                label="Category",
-                container=False)
+                choices=category_selector_choices, label="Category", container=False
+            )
         with gr.Column(scale=100):
             question_selector = gr.Dropdown(
-                choices=question_selector_choices,
-                label="Question",
-                container=False)
+                choices=question_selector_choices, label="Question", container=False
+            )
 
     model_selectors = [None] * num_sides
     with gr.Row():
@@ -295,7 +292,8 @@ def build_single_answer_browser_tab():
                     choices=models,
                     value=models[i] if len(models) > i else "",
                     label=f"Model {side_names[i]}",
-                    container=False)
+                    container=False,
+                )
 
     # Conversation
     chat_mds = []
