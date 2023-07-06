@@ -72,13 +72,13 @@ def replace_special_tokens(
     if not text:
         return text
     if tokenizer.bos_token:
-        text = text.replace(tokenizer.bos_token, "<|s|>")
+        text = text.replace(tokenizer.bos_token, f"[{tokenizer.bos_token}]")
     if tokenizer.eos_token:
-        text = text.replace(tokenizer.eos_token, "<|/s|>")
+        text = text.replace(tokenizer.eos_token, f"[{tokenizer.eos_token}]")
     if tokenizer.pad_token:
-        text = text.replace(tokenizer.pad_token, "<|pad|>")
+        text = text.replace(tokenizer.pad_token, f"[{tokenizer.pad_token}]")
     if tokenizer.unk_token:
-        text = text.replace(tokenizer.unk_token, "<|unk|>")
+        text = text.replace(tokenizer.unk_token, f"[{tokenizer.unk_token}]")
     return text
 
 
