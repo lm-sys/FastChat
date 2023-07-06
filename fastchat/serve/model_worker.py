@@ -95,7 +95,7 @@ class BaseModelWorker:
         data = {
             "worker_name": self.worker_addr,
             "check_heart_beat": True,
-            "worker_status": self.get_status(),
+            "worker_status": None,
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200
