@@ -181,6 +181,7 @@ class ModelWorker(BaseModelWorker):
         load_8bit: bool = False,
         cpu_offloading: bool = False,
         gptq_config: bool = None,
+        stream_interval: int = 2,
     ):
         super().__init__(
             controller_addr, worker_addr, worker_id, model_path, model_names
@@ -201,6 +202,7 @@ class ModelWorker(BaseModelWorker):
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.context_len = get_context_length(self.model.config)
         self.generate_stream_func = get_generate_stream_function(self.model, model_path)
+        self.stream_interval = stream_interval
 
         if not no_register:
             self.init_heart_beat()
@@ -213,7 +215,7 @@ class ModelWorker(BaseModelWorker):
                 params,
                 self.device,
                 self.context_len,
-                args.stream_interval,
+                self.stream_interval,
             ):
                 ret = {
                     "text": output["text"],
@@ -430,5 +432,6 @@ if __name__ == "__main__":
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,
+        stream_interval=args.stream_interval,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
