@@ -234,6 +234,7 @@ if __name__ == "__main__":
             args.load_8bit,
             args.cpu_offloading,
             gptq_config,
+            args.stream_interval,
         )
         workers.append(w)
         for model_name in model_names:
