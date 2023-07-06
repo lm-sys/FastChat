@@ -211,7 +211,6 @@ if __name__ == "__main__":
 
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
-    all_model_names = sum(args.model_names, [])
 
     workers = []
     for model_path, model_names in zip(args.model_path, args.model_names):
@@ -220,7 +219,7 @@ if __name__ == "__main__":
             args.worker_address,
             worker_id,
             model_path,
-            all_model_names,
+            model_names,
             args.no_register,
             device=args.device,
             num_gpus=args.num_gpus,
