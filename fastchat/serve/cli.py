@@ -32,8 +32,7 @@ class SimpleChatIO(ChatIO):
     def __init__(self, multiline: bool = False):
         self._multiline = multiline
 
-    @staticmethod
-    def prompt_for_input(role) -> str:
+    def prompt_for_input(self, role) -> str:
         if not self._multiline:
             return input(f"{role}: ")
 
