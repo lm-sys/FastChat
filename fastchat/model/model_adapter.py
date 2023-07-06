@@ -411,6 +411,7 @@ class VicunaAdapter(BaseModelAdapter):
 
 class AiroborosAdapter(BaseModelAdapter):
     """The model adapter for jondurbin/airoboros-*"""
+
     def match(self, model_path: str):
         return "airoboros" in model_path
 
