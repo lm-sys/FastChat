@@ -627,7 +627,7 @@ class MPTAdapter(BaseModelAdapter):
     """The model adapter for MPT series (mosaicml/mpt-7b-chat, mosaicml/mpt-30b-chat)"""
 
     def match(self, model_path: str):
-        return "mpt" in model_path
+        return "mpt" in model_path and not "airoboros" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
