@@ -66,6 +66,22 @@ def rank0_print(*args):
         print(*args)
 
 
+def replace_special_tokens(
+    tokenizer: transformers.PreTrainedTokenizer, text: str
+) -> str:
+    if not text:
+        return text
+    if tokenizer.bos_token:
+        text = text.replace(tokenizer.bos_token, "<|s|>")
+    if tokenizer.eos_token:
+        text = text.replace(tokenizer.eos_token, "<|/s|>")
+    if tokenizer.pad_token:
+        text = text.replace(tokenizer.pad_token, "<|pad|>")
+    if tokenizer.unk_token:
+        text = text.replace(tokenizer.unk_token, "<|unk|>")
+    return text
+
+
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
     state_dict = trainer.model.state_dict()
@@ -93,7 +109,9 @@ def preprocess(
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
             assert role == conv.roles[j % 2], f"{i}"
-            conv.append_message(role, sentence["value"])
+            conv.append_message(
+                role, replace_special_tokens(tokenizer, sentence["value"])
+            )
         conversations.append(conv.get_prompt())
 
     # Tokenize conversations
@@ -114,19 +132,21 @@ def preprocess(
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
         turns = conversation.split(conv.sep2)
-        cur_len = 1
+        # TODO: make sure the original logic why start with 1?
+        cur_len = 0
         target[:cur_len] = IGNORE_TOKEN_ID
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            turn_len = len(tokenizer(turn).input_ids)
+            # Fixing the mismatch warning
+            turn_len = len(tokenizer(turn + conv.sep2).input_ids)
 
             parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
-            instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+            # TODO: not clear why -2 is needed, removed here
+            instruction_len = len(tokenizer(parts[0]).input_ids)
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
