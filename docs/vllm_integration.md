@@ -13,3 +13,8 @@ See the supported models [here](https://vllm.readthedocs.io/en/latest/models/sup
    ```
    python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3
    ```
+
+   If you see tokenizer errors, try
+   ```
+   python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3 --tokenizer hf-internal-testing/llama-tokenizer
+   ```
