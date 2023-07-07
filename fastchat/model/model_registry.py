@@ -223,3 +223,9 @@ register_model_info(
     "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
     "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
 )
+register_model_info(
+    ["internlm-chat-7b", "internlm-chat-7b-8k"],
+    "InternLM",
+    "https://huggingface.co/internlm/internlm-chat-7b",
+    "InternLM is a multi-language large-scale language model (LLM), developed by SHLAB.",
+)
