@@ -782,6 +782,7 @@ register_conv_template(
         sep_style=SeparatorStyle.CHATINTERN,
         sep="<eoh>",
         sep2="<eoa>",
+        stop_token_ids=[1, 103028],
         stop_str="<|User|>",
     )
 )
