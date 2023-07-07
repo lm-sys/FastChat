@@ -46,11 +46,19 @@ class BaseModelAdapter:
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            use_fast=self.use_fast_tokenizer,
-            revision=revision,
-        )
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=self.use_fast_tokenizer,
+                revision=revision,
+            )
+        except TypeError:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=False,
+                revision=revision,
+            )
+
         model = AutoModelForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
@@ -401,6 +409,31 @@ class VicunaAdapter(BaseModelAdapter):
             )
 
 
+class AiroborosAdapter(BaseModelAdapter):
+    """The model adapter for jondurbin/airoboros-*"""
+
+    def match(self, model_path: str):
+        return "airoboros" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("airoboros_v1")
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        if "mpt" not in model_path:
+            return super().load_model(model_path, from_pretrained_kwargs)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            max_seq_len=8192,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=True
+        )
+        return model, tokenizer
+
+
 class LongChatAdapter(BaseModelAdapter):
     "Model adapater for LongChat models (e.g., lmsys/longchat-7b-16k)."
 
@@ -595,7 +628,7 @@ class MPTAdapter(BaseModelAdapter):
     """The model adapter for MPT series (mosaicml/mpt-7b-chat, mosaicml/mpt-30b-chat)"""
 
     def match(self, model_path: str):
-        return "mpt" in model_path
+        return "mpt" in model_path and not "airoboros" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -981,10 +1014,23 @@ class XGenAdapter(BaseModelAdapter):
         return get_conv_template("xgen")
 
 
+class NousHermesAdapter(BaseModelAdapter):
+    """The model adapter for NousResearch/Nous-Hermes-13b"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "Nous-Hermes" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("alpaca")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
+register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
 register_model_adapter(CodeT5pAdapter)
 register_model_adapter(T5Adapter)
@@ -1019,6 +1065,7 @@ register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
 register_model_adapter(XGenAdapter)
+register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 
 # After all adapters, try the default base adapter.

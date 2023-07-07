@@ -1,5 +1,8 @@
 """
 Clean chatbot arena battle log.
+
+Usage:
+python3 clean_battle_data.py --mode conv_release
 """
 import argparse
 import datetime
@@ -31,8 +34,11 @@ IDENTITY_WORDS = [
     "palm",
     "lamda",
     "google",
-    "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**",
+    "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
 ]
+
+for i in range(len(IDENTITY_WORDS)):
+    IDENTITY_WORDS[i] = IDENTITY_WORDS[i].lower()
 
 
 def get_log_files(max_num_files=None):
@@ -236,7 +242,7 @@ if __name__ == "__main__":
                 del x[key]
             new_battles.append(x)
         battles = new_battles
-        output = f"clean_battle_conv_release_{cutoff_date}.json"
+        output = f"clean_battle_conv_{cutoff_date}.json"
 
     with open(output, "w") as fout:
         json.dump(battles, fout, indent=2, ensure_ascii=False)

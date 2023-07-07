@@ -286,6 +286,7 @@ def chat_loop(
     revision: str,
     judge_sent_end: bool,
     debug: bool,
+    history: bool = True,
 ):
     # Model
     model, tokenizer = load_model(
@@ -320,9 +321,12 @@ def chat_loop(
             conv = get_conversation_template(model_path)
         return conv
 
-    conv = new_chat()
+    conv = None
 
     while True:
+        if not history or not conv:
+            conv = new_chat()
+
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
         except EOFError:

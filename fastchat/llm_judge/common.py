@@ -489,7 +489,7 @@ def normalize_game_key_dict(judgment_dict):
     return ret
 
 
-def load_model_judgments(filename: str):
+def load_pairwise_model_judgments(filename: str):
     """Load model judgments.
 
     The return value is a dict of type:
@@ -532,10 +532,35 @@ def load_model_judgments(filename: str):
     return normalized
 
 
-def resolve_default_judgment_dict(
+def load_single_model_judgments(filename: str):
+    """Load model judgments.
+
+    The return value is a dict of type:
+    Dict[judge: Tuple -> Dict[game_key: tuple -> game_result: dict]
+    """
+    judge_dict = {}
+
+    for line in open(filename):
+        obj = json.loads(line)
+        judge = tuple(obj["judge"])
+        qid, model = obj["question_id"], obj["model"]
+
+        if judge not in judge_dict:
+            judge_dict[judge] = {}
+
+        gamekey = (qid, model)
+
+        judge_dict[judge][gamekey] = {
+            "score": obj["score"],
+            "judgment": obj["judgment"],
+        }
+    return judge_dict
+
+
+def resolve_pairwise_judgment_dict(
     question, model_judgments_normal, model_judgments_math, multi_turn=False
 ):
-    """Return the correct default judge."""
+    """Return the correct pairwise judge."""
     if multi_turn:
         if question["category"] in NEED_REF_CATS:
             return model_judgments_math[("gpt-4", "pair-math-v1-multi-turn")]
@@ -547,7 +572,22 @@ def resolve_default_judgment_dict(
         return model_judgments_normal[("gpt-4", "pair-v2")]
 
 
-def get_model_judge_explanation(gamekey, judgment_dict):
+def resolve_single_judgment_dict(
+    question, model_judgments_normal, model_judgments_math, multi_turn=False
+):
+    """Return the correct single answer grading judge."""
+    if multi_turn:
+        if question["category"] in NEED_REF_CATS:
+            return model_judgments_math[("gpt-4", "single-math-v1-multi-turn")]
+        return model_judgments_normal[("gpt-4", "single-v1-multi-turn")]
+
+    if question["category"] in NEED_REF_CATS:
+        return model_judgments_math[("gpt-4", "single-math-v1")]
+    else:
+        return model_judgments_normal[("gpt-4", "single-v1")]
+
+
+def get_pairwise_judge_explanation(gamekey, judgment_dict):
     """Get model judge explanation."""
     try:
         qid, model_1, model_2 = gamekey
@@ -567,6 +607,24 @@ def get_model_judge_explanation(gamekey, judgment_dict):
             + f"\n\n`--------------------------`\n\n"
             + f"**Game 2**. **A**: {model_2}, **B**: {model_1}\n\n"
             f"**Judgment**: {g2_judgment}"
+        )
+    except KeyError:
+        return "N/A"
+
+
+def get_single_judge_explanation(gamekey, judgment_dict):
+    """Get model judge explanation."""
+    try:
+        qid, model = gamekey
+
+        res = judgment_dict[gamekey]
+
+        g1_judgment = res["judgment"]
+        g1_score = res["score"]
+
+        return (
+            f"**Game 1**. **A**: {model}, **Score**: {g1_score}\n\n"
+            f"**Judgment**: {g1_judgment}"
         )
     except KeyError:
         return "N/A"
