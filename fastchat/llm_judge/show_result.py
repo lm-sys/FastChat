@@ -75,7 +75,9 @@ def display_result_pairwise(args):
     df["win_rate"] = df["win"] / (df["win"] + df["loss"] + df["tie"])
     df["loss_rate"] = df["loss"] / (df["win"] + df["loss"] + df["tie"])
     # each tie counts as 0.5 win + 0.5 loss
-    df["win_rate_with_tie"] = (df["win"] + 0.5 * df["tie"]) / (df["win"] + df["loss"] + df["tie"])
+    df["win_rate_with_tie"] = (df["win"] + 0.5 * df["tie"]) / (
+        df["win"] + df["loss"] + df["tie"]
+    )
     # print(df.sort_values(by="win_rate", ascending=False))
     # print(df.sort_values(by="loss_rate", ascending=True))
     print(df.sort_values(by="win_rate_with_tie", ascending=False))
