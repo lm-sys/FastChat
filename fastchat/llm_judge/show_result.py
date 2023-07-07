@@ -18,13 +18,19 @@ def display_result_single(args):
     df_all = pd.read_json(input_file, lines=True)
     df = df_all[["model", "score", "turn"]]
 
+    if args.model_list is not None:
+        df = df[df["model"].isin(args.model_list)]
+
+    print("\n########## First turn ##########")
     df_1 = df[df["turn"] == 1].groupby(["model", "turn"]).mean()
     print(df_1.sort_values(by="score", ascending=False))
 
     if args.bench_name == "mt_bench":
+        print("\n########## Second turn ##########")
         df_2 = df[df["turn"] == 2].groupby(["model", "turn"]).mean()
         print(df_2.sort_values(by="score", ascending=False))
 
+        print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
         print(df_3.sort_values(by="score", ascending=False))
 
@@ -75,12 +81,12 @@ def display_result_pairwise(args):
     df["win_rate"] = df["win"] / (df["win"] + df["loss"] + df["tie"])
     df["loss_rate"] = df["loss"] / (df["win"] + df["loss"] + df["tie"])
     # each tie counts as 0.5 win + 0.5 loss
-    df["win_rate_with_tie"] = (df["win"] + 0.5 * df["tie"]) / (
+    df["win_rate_adjusted"] = (df["win"] + 0.5 * df["tie"]) / (
         df["win"] + df["loss"] + df["tie"]
     )
     # print(df.sort_values(by="win_rate", ascending=False))
     # print(df.sort_values(by="loss_rate", ascending=True))
-    print(df.sort_values(by="win_rate_with_tie", ascending=False))
+    print(df.sort_values(by="win_rate_adjusted", ascending=False))
 
 
 if __name__ == "__main__":

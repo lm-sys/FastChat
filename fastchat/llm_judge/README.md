@@ -22,33 +22,25 @@ pip install openai anthropic ray
 ```
 
 ## Review Pre-Generated Model Answers and Judgments
-The model answers and LLM judgments used in the paper are available on Google Drive.
-You can download them and open a gradio demo to review them.
+We provide pre-generated model answers and judgments for some popular models.
+You can view them at this [demo](https://huggingface.co/spaces/lmsys/mt-bench).
 
-- Download the data:
+To download the data, use 
 ```
-cd fastchat/llm_judge
-pip3 install gdown
-gdown --fuzzy https://drive.google.com/file/d/1LNOc7NAc7BXM1LMhRlorsrMu38G9yoHT/view?usp=sharing
-tar xzf llm_judge_repo_data.tar.gz
+python3 download_mt_bench_pregenerated.py
 ```
-- Open a gradio [demo](https://huggingface.co/spaces/lmsys/mt-bench) for browsing the questions, answers, and judgments.
-```
-python qa_browser.py --share
-```
-
-A screenshot:
-<img src="../../assets/qa_browser.png" width="90%">
 
 ## MT-Bench
 
-### How to evaluate a model on MT-bench?
+### Evaluate a model on MT-bench
 
 #### Step 1. Generate model answers to MT-bench questions
 ```
 python gen_model_answer.py --model-path [MODEL-PATH] --model-id [MODEL-ID]
 ```
-Note: `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.
+Arguments:
+  - `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.
+  - `[MODEL-ID]` is a name you give to the model.
 
 e.g.,
 ```
@@ -58,13 +50,15 @@ The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
-#### Step 2. Run GPT-4 judge with score-based single-answer grading
+#### Step 2. Run GPT-4 judge
+There are several options to use GPT-4 as a judge, such as pairwise winrate and single-answer grading.
+In MT-bench, we recommond single-answer grading as the default mode.
+This mode asks GPT-4 to grade and give a score to model's answer directly without pairwise comparison.
+For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
+
 ```
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 ```
-
-The default score-based mode asks GPT-4 to grade and give a score to model's answer without comparison.
-For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 - Generate GPT-4 judgments
 e.g.,
@@ -99,24 +93,23 @@ The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 > python show_result.py
                     score
 model
-gpt-4            8.937500
-gpt-3.5-turbo    7.925000
-claude-v1        7.503125
-vicuna-13b-v1.2  6.156250
-alpaca-13b       4.918750
-llama-13b        3.190625
+gpt-4            8.990625
+claude-v1        7.900000
+vicuna-13b-v1.3  6.387500
+alpaca-13b       4.531250
+llama-13b        2.606250
 ```
 
 ### Other grading options
-Besides score-based mode, we also support two additional grading options:
-- `pariwise-baseline`: pairwise comparison against a baseline model.
-- `pairwise-all`: run pairwise comparisons between all model pairs on all questions.
+Besides single-answer grading, we also support two additional grading options:
+- `pariwise-baseline`: run pairwise comparison against a baseline model.
+- `pairwise-all`: run pairwise comparison between all model pairs on all questions.
 
 #### Option 2: pairwise comparison against a baseline (default: gpt-3.5-turbo)
 
 - Generate GPT-4 judgments
 ```
-> python gen_judgment.py  --mode pairwise-baseline --model-list vicuna-13b-v1.3 alpaca-13b llama-13b --parallel 2
+> python gen_judgment.py --mode pairwise-baseline --model-list vicuna-13b-v1.3 alpaca-13b llama-13b --parallel 2
 Stats:
 {
     "bench_name": "mt_bench",
@@ -137,13 +130,14 @@ The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_pair.jsonl`
 ```
 > python show_result.py --mode pairwise-baseline
 Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
-                 win  loss  tie  win_rate  loss_rate  win_rate_with_tie
+
+                 win  loss  tie  win_rate  loss_rate  win_rate_adjusted
 model
-gpt-4            111     7   42   0.69375    0.04375            0.82500
-claude-v1         75    27   58   0.46875    0.16875            0.65000
-vicuna-13b-v1.3   33    73   54   0.20625    0.45625            0.37500
-alpaca-13b         8   130   22   0.05000    0.81250            0.11875
-llama-13b          3   141   16   0.01875    0.88125            0.06875
+gpt-4            111     7   42  0.693750   0.043750           0.825000
+claude-v1         75    27   58  0.468750   0.168750           0.650000
+vicuna-13b-v1.3   33    73   54  0.206250   0.456250           0.375000
+alpaca-13b        13   259   48  0.040625   0.809375           0.115625
+llama-13b          4   280   36  0.012500   0.875000           0.068750
 ```
 
 #### Option 3: Run GPT-4 judge with all pair comparisons
@@ -157,16 +151,9 @@ This could be more expensive when #models increases, but it gives you a more com
 
 ```
 > python show_result.py --mode pairwise-all
-Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
-                 win  loss  tie  win_rate  loss_rate
-model
-gpt-4            617    45  138   0.77125    0.05625
-claude-v1        445   115  240   0.55625    0.14375
-gpt-3.5-turbo    372   198  230   0.46500    0.24750
-vicuna-13b-v1.2  242   310  248   0.30250    0.38750
-alpaca-13b       104   515  181   0.13000    0.64375
-llama-13b         20   617  163   0.02500    0.77125
 ```
+
+NOTE: The results of this command with our pre-generated data is not accurate because we did not run all pairs in our pre-generated data. The results will be biased if you did not run all pairs but use this command to show results.
 
 ### How to get GPT-3.5/GPT-4/Claude's answer?
 - `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
