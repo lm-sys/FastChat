@@ -58,83 +58,45 @@ The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
-#### Step 2. Run GPT-4 judge with pairwise comparison against a baseline (default: gpt-3.5-turbo)
+#### Step 2. Run GPT-4 judge with score-based single-answer grading
 ```
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 ```
 
-e.g.,
-```
-> python gen_judgment.py --model-list vicuna-13b-v1.2 alpaca-13b gpt-3.5-turbo --parallel 2
-Stats:
-{
-    "bench": "mt_bench",
-    "mode": "pairwise-baseline",
-    "judge": "gpt-4",
-    "baseline": "gpt-3.5-turbo",
-    "model_list": [
-        "vicuna-13b-v1.2",
-        "alpaca-13b",
-        "gpt-3.5-turbo",
-    ],
-    "total_num_questions": 80,
-    "total_num_matches": 320,
-    "output_path": "data/mt_bench/model_judgment/gpt-4_pair.jsonl"
-}
-Press Enter to confirm...
-```
-
-The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_pair.jsonl`
-
-#### Setp 3. Show win-rate
-```
-> python show_result.py
-Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
-                 win  loss  tie  win_rate  loss_rate
-model
-gpt-4            107     9   44   0.66875    0.05625
-claude-v1         64    23   73   0.40000    0.14375
-vicuna-13b-v1.2   21    72   67   0.13125    0.45000
-alpaca-13b         5   129   26   0.03125    0.80625
-llama-13b          1   139   20   0.00625    0.86875
-```
-
-### Other grading options
-Besides pairwise comparison against a fixed baseline model, we also support two additional grading options:
-- `single`: do single-answer grading without pairwise comparison.
-- `pairwise-all`: run pairwise comparisons between all model pairs on all questions.
-
-#### Option 2: Single-answer grading
-
-This option asks GPT-4 to grade and give a score to a single answer without comparison, so it is also a scalable option.
+The default score-based mode asks GPT-4 to grade and give a score to model's answer without comparison.
 For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 - Generate GPT-4 judgments
+e.g.,
 ```
-python gen_judgment.py --mode single --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
+> python gen_judgment.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-v1 gpt-3.5-turbo gpt-4 --parallel 2
 Stats:
 {
-    "bench": "mt_bench",
+    "bench_name": "mt_bench",
     "mode": "single",
     "judge": "gpt-4",
     "baseline": null,
     "model_list": [
-        "vicuna-13b-v1.2",
-        "llama-13b",
+        "vicuna-13b-v1.3",
         "alpaca-13b",
+        "llama-13b",
+        "claude-v1",
         "gpt-3.5-turbo",
-        "gpt-4",
-        "claude-v1"
+        "gpt-4"
     ],
     "total_num_questions": 80,
     "total_num_matches": 960,
     "output_path": "data/mt_bench/model_judgment/gpt-4_single.jsonl"
 }
+Press Enter to confirm...
 ```
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
+
+#### Step 3. Show MT-bench score
+
 - Show the MT-bench score
 ```
-> python show_result.py --mode single
+> python show_result.py
                     score
 model
 gpt-4            8.937500
@@ -143,6 +105,45 @@ claude-v1        7.503125
 vicuna-13b-v1.2  6.156250
 alpaca-13b       4.918750
 llama-13b        3.190625
+```
+
+### Other grading options
+Besides score-based mode, we also support two additional grading options:
+- `pariwise-baseline`: pairwise comparison against a baseline model.
+- `pairwise-all`: run pairwise comparisons between all model pairs on all questions.
+
+#### Option 2: pairwise comparison against a baseline (default: gpt-3.5-turbo)
+
+- Generate GPT-4 judgments
+```
+> python gen_judgment.py  --mode pairwise-baseline --model-list vicuna-13b-v1.3 alpaca-13b llama-13b --parallel 2
+Stats:
+{
+    "bench_name": "mt_bench",
+    "mode": "pairwise-baseline",
+    "judge": "gpt-4",
+    "baseline": "gpt-3.5-turbo",
+    "model_list": [
+        "vicuna-13b-v1.3",
+        "alpaca-13b",
+        "llama-13b"
+    ],
+    "total_num_questions": 80,
+    "total_num_matches": 480,
+    "output_path": "data/mt_bench/model_judgment/gpt-4_pair.jsonl"
+}
+```
+The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_pair.jsonl`
+```
+> python show_result.py --mode pairwise-baseline
+Input file: data/mt_bench/model_judgment/gpt-4_pair.jsonl
+                 win  loss  tie  win_rate  loss_rate  win_rate_with_tie
+model
+gpt-4            111     7   42   0.69375    0.04375            0.82500
+claude-v1         75    27   58   0.46875    0.16875            0.65000
+vicuna-13b-v1.3   33    73   54   0.20625    0.45625            0.37500
+alpaca-13b         8   130   22   0.05000    0.81250            0.11875
+llama-13b          3   141   16   0.01875    0.88125            0.06875
 ```
 
 #### Option 3: Run GPT-4 judge with all pair comparisons
