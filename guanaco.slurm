@@ -17,7 +17,7 @@ source sc_venv_template/activate.sh
 
 srun python3 -m fastchat.serve.model_worker \
      --controller http://haicluster1.fz-juelich.de:21001 \
-     --port 31002 --worker http://$(hostname):31002 \
+     --port 31003 --worker http://$(hostname):31003 \
      --num-gpus 7 \
      --host 0.0.0.0 \
      --model-path /p/haicluster/llama/FastChat/models/guanaco-65b-merged \

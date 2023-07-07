@@ -17,7 +17,7 @@ source sc_venv_template/activate.sh
 
 srun python3 -m fastchat.serve.model_worker \
      --controller http://haicluster1.fz-juelich.de:21001 \
-     --port 31002 --worker http://$(hostname):31002 \
+     --port 31011 --worker http://$(hostname):31011 \
      --num-gpus 4 \
      --host 0.0.0.0 \
      --model-path /p/haicluster/llama/FastChat/models/vicuna-33b-v1.3 \
