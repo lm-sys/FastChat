@@ -23,7 +23,7 @@ import os
 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
-from peft import LoraConfig, get_peft_model, prepare_model_for_int8_training, prepare_model_for_kbit_training, set_peft_model_state_dict
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
 import torch
