@@ -66,31 +66,6 @@ def rank0_print(*args):
         print(*args)
 
 
-def replace_special_tokens(
-    tokenizer: transformers.PreTrainedTokenizer, text: str
-) -> str:
-    if not text:
-        return text
-
-    def _insert_vline(token: str) -> str:
-        if len(token) < 2:
-            return " "
-        elif len(token) == 2:
-            return token[0] + "|" + token[1]
-        else:
-            return token[:1] + "|" + token[1:-1] + "|" + token[-1:]
-
-    if tokenizer.bos_token:
-        text = text.replace(tokenizer.bos_token, _insert_vline(tokenizer.bos_token))
-    if tokenizer.eos_token:
-        text = text.replace(tokenizer.eos_token, _insert_vline(tokenizer.eos_token))
-    if tokenizer.pad_token:
-        text = text.replace(tokenizer.pad_token, _insert_vline(tokenizer.pad_token))
-    if tokenizer.unk_token:
-        text = text.replace(tokenizer.unk_token, _insert_vline(tokenizer.unk_token))
-    return text
-
-
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
     state_dict = trainer.model.state_dict()
@@ -118,9 +93,7 @@ def preprocess(
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
             assert role == conv.roles[j % 2], f"{i}"
-            conv.append_message(
-                role, replace_special_tokens(tokenizer, sentence["value"])
-            )
+            conv.append_message(role, sentence["value"])
         conversations.append(conv.get_prompt())
 
     # Tokenize conversations
@@ -141,21 +114,19 @@ def preprocess(
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
         turns = conversation.split(conv.sep2)
-        # TODO: make sure the original logic why start with 1?
-        cur_len = 0
+        cur_len = 1
         target[:cur_len] = IGNORE_TOKEN_ID
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            # Fixing the mismatch warning
-            turn_len = len(tokenizer(turn + conv.sep2).input_ids)
+            turn_len = len(tokenizer(turn).input_ids)
 
             parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # TODO: not clear why -2 is needed, removed here
-            instruction_len = len(tokenizer(parts[0]).input_ids)
+            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
+            instruction_len = len(tokenizer(parts[0]).input_ids) - 2
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
