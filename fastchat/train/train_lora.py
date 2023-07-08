@@ -131,7 +131,6 @@ def train():
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         device_map=device_map,
-        load_in_8bit=True,
         torch_dtype=torch.float16,
 
         quantization_config=BitsAndBytesConfig(
@@ -163,10 +162,7 @@ def train():
             model.is_parallelizable = True
             model.model_parallel = True
 
-    model = prepare_model_for_kbit_training(
-        base_model, use_gradient_checkpointing=training_args.gradient_checkpointing
-    )
-    model = get_peft_model(model, lora_config)
+    model = get_peft_model(base_model, lora_config)
     print("GET PEFT MODEL...")#
     print(f"BASE MODEL TYPE: {type(base_model)}")
     print(f"MODEL TYPE: {type(model)}")

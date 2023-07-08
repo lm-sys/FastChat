@@ -1,4 +1,4 @@
-deepspeed --num_gpus 2 train_lora.py \
+deepspeed --num_gpus 6 train_lora.py \
     --model_name_or_path lmsys/vicuna-7b-v1.3  \
     --lora_r 8 \
     --lora_alpha 16 \
@@ -24,8 +24,6 @@ deepspeed --num_gpus 2 train_lora.py \
     --tf32 True \
     --model_max_length 2048 \
     --q_lora False \
-    --deepspeed FastChat/playground/deepspeed_config_s2.json \
-    --optim adamw_bnb_8bit \
+    --deepspeed playground/deepspeed_config_s2.json \
     --gradient_checkpointing True \
     --lora_weight_path ./lora_weights \
-    --load_best_model_at_end True
