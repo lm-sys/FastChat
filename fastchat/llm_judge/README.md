@@ -44,7 +44,7 @@ Arguments:
 
 e.g.,
 ```
-python gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
+python gen_model_answer.py --model-path lmsys/vicuna-7b-v1.3 --model-id vicuna-7b-v1.3
 ```
 The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
@@ -90,10 +90,13 @@ The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 
 - Show the MT-bench score
 ```
-> python show_result.py
+> python show_result.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-v1 gpt-3.5-turbo gpt-4
+
+########## Average ##########
                     score
 model
 gpt-4            8.990625
+gpt-3.5-turbo    7.943750
 claude-v1        7.900000
 vicuna-13b-v1.3  6.387500
 alpaca-13b       4.531250
