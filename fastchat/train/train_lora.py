@@ -109,7 +109,9 @@ def train():
     if lora_args.q_lora:
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if ddp else None
         if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
-            logging.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
+            logging.warning(
+                "FSDP and ZeRO3 are both currently incompatible with QLoRA."
+            )
 
     compute_dtype = (
         torch.float16
