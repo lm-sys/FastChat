@@ -56,7 +56,12 @@ if __name__ == "__main__":
 
         if "model_1" in obj:  # pair
             model = obj["model_1"]
-            key = (obj["model_1"], obj["model_2"], obj["question_id"], tuple(obj["judge"]))
+            key = (
+                obj["model_1"],
+                obj["model_2"],
+                obj["question_id"],
+                tuple(obj["judge"]),
+            )
         else:  # single
             model = obj["model"]
             key = (obj["model"], obj["question_id"], tuple(obj["judge"]))
@@ -75,7 +80,13 @@ if __name__ == "__main__":
     print(f"in models: {models}, number: {len(models)}")
     print(f"missing models: {missing_models}")
     print(f"#in: {len(raw_lines)}, #out: {len(rets)}")
-    rets.sort(key=lambda x: (x["model"] if "model" in x else x["model_1"], x["question_id"], x["turn"]))
+    rets.sort(
+        key=lambda x: (
+            x["model"] if "model" in x else x["model_1"],
+            x["question_id"],
+            x["turn"],
+        )
+    )
 
     with open(outfile, "w") as fout:
         for x in rets:

@@ -37,7 +37,6 @@ filenames = [
     "data/mt_bench/model_answer/vicuna-7b-v1.3.jsonl",
     "data/mt_bench/model_answer/wizardlm-13b.jsonl",
     "data/mt_bench/model_answer/wizardlm-30b.jsonl",
-
     "data/mt_bench/model_judgment/gpt-4_single.jsonl",
     "data/mt_bench/model_judgment/gpt-4_pair.jsonl",
 ]
