@@ -22,10 +22,11 @@ from fastchat.serve.model_worker import (
     BaseModelWorker,
     logger,
     worker_id,
-    global_counter,
-    model_semaphore,
 )
 from fastchat.utils import get_context_length
+
+
+app = FastAPI()
 
 
 class VLLMWorker(BaseModelWorker):
@@ -36,11 +37,17 @@ class VLLMWorker(BaseModelWorker):
         worker_id: str,
         model_path: str,
         model_names: List[str],
+        limit_worker_concurrency: int,
         no_register: bool,
         llm_engine: AsyncLLMEngine,
     ):
         super().__init__(
-            controller_addr, worker_addr, worker_id, model_path, model_names
+            controller_addr,
+            worker_addr,
+            worker_id,
+            model_path,
+            model_names,
+            limit_worker_concurrency,
         )
 
         logger.info(
@@ -53,20 +60,25 @@ class VLLMWorker(BaseModelWorker):
             self.init_heart_beat()
 
     async def generate_stream(self, params):
+        self.call_ct += 1
+
         context = params.pop("prompt")
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
+        stop_token_ids = params.get("stop_token_ids", None) or []
+        stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
 
         # Handle stop_str
         if stop_str is None:
-            stop_str = []
-
-        # TODO(Hao): handle stop token IDs
-        # stop_token_ids = params.get("stop_token_ids", None) or []
+            stop = []
+        else:
+            stop = [stop_str]
+        for tid in stop_token_ids:
+            stop.append(self.tokenizer.decode(tid))
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -77,7 +89,7 @@ class VLLMWorker(BaseModelWorker):
             temperature=temperature,
             top_p=top_p,
             use_beam_search=False,
-            stop=stop_str,
+            stop=stop,
             max_tokens=max_new_tokens,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
@@ -91,7 +103,6 @@ class VLLMWorker(BaseModelWorker):
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
-            text_outputs = text_outputs.replace("</s>", "")
             # Note: usage is not supported yet
             ret = {"text": text_outputs, "error_code": 0, "usage": {}}
             yield (json.dumps(ret) + "\0").encode()
@@ -102,19 +113,14 @@ class VLLMWorker(BaseModelWorker):
         return json.loads(x[:-1].decode())
 
 
-app = FastAPI()
+def release_worker_semaphore():
+    worker.semaphore.release()
 
 
-def release_model_semaphore():
-    model_semaphore.release()
-
-
-def acquire_model_semaphore():
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    return model_semaphore.acquire()
+def acquire_worker_semaphore():
+    if worker.semaphore is None:
+        worker.semaphore = asyncio.Semaphore(worker.limit_worker_concurrency)
+    return worker.semaphore.acquire()
 
 
 def create_background_tasks(request_id):
@@ -122,7 +128,7 @@ def create_background_tasks(request_id):
         await engine.abort(request_id)
 
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    background_tasks.add_task(release_worker_semaphore)
     background_tasks.add_task(abort_request)
     return background_tasks
 
@@ -130,7 +136,7 @@ def create_background_tasks(request_id):
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
     generator = worker.generate_stream(params)
@@ -141,12 +147,12 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
     output = await worker.generate(params)
-    release_model_semaphore()
-    engine.abort(request_id)
+    release_worker_semaphore()
+    await engine.abort(request_id)
     return JSONResponse(output)
 
 
@@ -185,7 +191,7 @@ if __name__ == "__main__":
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
-    parser.add_argument("--limit-model-concurrency", type=int, default=1024)
+    parser.add_argument("--limit-worker-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--num-gpus", type=int, default=1)
 
@@ -204,6 +210,7 @@ if __name__ == "__main__":
         worker_id,
         args.model_path,
         args.model_names,
+        args.limit_worker_concurrency,
         args.no_register,
         engine,
     )

@@ -203,24 +203,27 @@ def build_pairwise_browser_tab():
     with gr.Row():
         with gr.Column(scale=1, min_width=200):
             category_selector = gr.Dropdown(
-                choices=category_selector_choices,
-                label="Category",
-            ).style(container=False)
+                choices=category_selector_choices, label="Category", container=False
+            )
         with gr.Column(scale=100):
             question_selector = gr.Dropdown(
-                choices=question_selector_choices,
-                label="Question",
-            ).style(container=False)
+                choices=question_selector_choices, label="Question", container=False
+            )
 
     model_selectors = [None] * num_sides
     with gr.Row():
         for i in range(num_sides):
             with gr.Column():
+                if i == 0:
+                    value = models[0]
+                else:
+                    value = "gpt-3.5-turbo"
                 model_selectors[i] = gr.Dropdown(
                     choices=models,
-                    value=models[i] if len(models) > i else "",
+                    value=value,
                     label=f"Model {side_names[i]}",
-                ).style(container=False)
+                    container=False,
+                )
 
     # Conversation
     chat_mds = []
@@ -278,14 +281,12 @@ def build_single_answer_browser_tab():
     with gr.Row():
         with gr.Column(scale=1, min_width=200):
             category_selector = gr.Dropdown(
-                choices=category_selector_choices,
-                label="Category",
-            ).style(container=False)
+                choices=category_selector_choices, label="Category", container=False
+            )
         with gr.Column(scale=100):
             question_selector = gr.Dropdown(
-                choices=question_selector_choices,
-                label="Question",
-            ).style(container=False)
+                choices=question_selector_choices, label="Question", container=False
+            )
 
     model_selectors = [None] * num_sides
     with gr.Row():
@@ -295,7 +296,8 @@ def build_single_answer_browser_tab():
                     choices=models,
                     value=models[i] if len(models) > i else "",
                     label=f"Model {side_names[i]}",
-                ).style(container=False)
+                    container=False,
+                )
 
     # Conversation
     chat_mds = []
@@ -335,26 +337,6 @@ def build_single_answer_browser_tab():
 
 
 block_css = """
-#notice_markdown {
-    font-size: 104%
-}
-#notice_markdown th {
-    display: none;
-}
-#notice_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_markdown {
-    font-size: 104%
-}
-#leaderboard_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_dataframe td {
-    line-height: 0.1em;
-}
 #user_question_1 {
     background-color: #DEEBF7;
 }
@@ -387,10 +369,10 @@ def build_demo():
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
 """
         )
-        with gr.Tab("Pairwise Comparison"):
-            (category_selector,) = build_pairwise_browser_tab()
         with gr.Tab("Single Answer Grading"):
-            (category_selector2,) = build_single_answer_browser_tab()
+            (category_selector,) = build_single_answer_browser_tab()
+        with gr.Tab("Pairwise Comparison"):
+            (category_selector2,) = build_pairwise_browser_tab()
         demo.load(load_demo, [], [category_selector])
         demo.load(load_demo, [], [category_selector2])
 
