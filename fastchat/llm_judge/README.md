@@ -68,26 +68,7 @@ python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurren
 
 e.g.,
 ```
-> python gen_judgment.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-v1 gpt-3.5-turbo gpt-4 --parallel 2
-Stats:
-{
-    "bench_name": "mt_bench",
-    "mode": "single",
-    "judge": "gpt-4",
-    "baseline": null,
-    "model_list": [
-        "vicuna-13b-v1.3",
-        "alpaca-13b",
-        "llama-13b",
-        "claude-v1",
-        "gpt-3.5-turbo",
-        "gpt-4"
-    ],
-    "total_num_questions": 80,
-    "total_num_matches": 960,
-    "output_path": "data/mt_bench/model_judgment/gpt-4_single.jsonl"
-}
-Press Enter to confirm...
+python gen_judgment.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-v1 gpt-3.5-turbo gpt-4 --parallel 2
 ```
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 
