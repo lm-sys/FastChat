@@ -83,6 +83,8 @@ The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
   python show_result.py
   ```
 
+---
+
 ### Other grading options
 Besides score-based single-answer grading, we also support two additional grading options based on win rates:
 - `pariwise-baseline`: run pairwise comparison against a baseline model.
