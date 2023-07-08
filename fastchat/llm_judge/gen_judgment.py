@@ -185,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mode",
         type=str,
-        default="pairwise-baseline",
+        default="single",
         choices=["pairwise-baseline", "pairwise-all", "single"],
         help=(
             "Evaluation mode. "
