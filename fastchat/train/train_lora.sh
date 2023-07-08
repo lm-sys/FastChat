@@ -25,6 +25,5 @@ deepspeed --num_gpus 6 train_lora.py \
     --model_max_length 2048 \
     --q_lora False \
     --deepspeed playground/deepspeed_config_s2.json \
-    --optim adamw_bnb_8bit \
     --gradient_checkpointing True \
     --lora_weight_path ./lora_weights \
