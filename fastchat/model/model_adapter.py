@@ -654,7 +654,11 @@ class MPTAdapter(BaseModelAdapter):
         elif "mpt-30b-instruct" in model_path:
             return get_conv_template("mpt-30b-instruct")
         else:
-            raise ValueError(f"Unknown MPT model: {model_path}")
+            print(
+                "Warning: Loading base MPT model with `zero_shot` conversation configuration.  "
+                "If this is not desired, inspect model configurations and names."
+            )
+            return get_conv_template("zero_shot")
 
 
 class BaizeAdapter(BaseModelAdapter):
@@ -1026,6 +1030,32 @@ class NousHermesAdapter(BaseModelAdapter):
         return get_conv_template("alpaca")
 
 
+class InternLMChatAdapter(BaseModelAdapter):
+    """The model adapter for internlm/internlm-chat-7b"""
+
+    def match(self, model_path: str):
+        return "internlm-chat" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        model = model.eval()
+        if "8k" in model_path.lower():
+            model.config.max_sequence_length = 8192
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("internlm-chat")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1067,6 +1097,7 @@ register_model_adapter(BaichuanAdapter)
 register_model_adapter(XGenAdapter)
 register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
+register_model_adapter(InternLMChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
