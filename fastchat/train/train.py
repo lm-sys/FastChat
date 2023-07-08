@@ -48,7 +48,8 @@ class DataArguments:
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
-    optim: str = field(default="adamw_torch")
+    #optim: str = field(default="adamw_torch")
+    optim: str = field(default="lion_8bit")
     model_max_length: int = field(
         default=512,
         metadata={
@@ -219,13 +220,14 @@ def make_supervised_data_module(
     # Split train/test
     np.random.seed(0)
     perm = np.random.permutation(len(raw_data))
-    split = int(len(perm) * 0.98)
+    split = int(len(perm) * 0.90)
+    #print(f"SPLIT IS {split}")
     train_indices = perm[:split]
     eval_indices = perm[split:]
     train_raw_data = [raw_data[i] for i in train_indices]
     eval_raw_data = [raw_data[i] for i in eval_indices]
     rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
-
+    
     train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
     eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
