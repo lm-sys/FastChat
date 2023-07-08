@@ -138,15 +138,11 @@ python compute_agreement.py --judges gpt4-pair human --votefiles human_judgments
 
 ## Release Plan
 Our current release contains:
-- The MT-bench questions in [data/mt_bench/question.jsonl](data/mt_bench/question.jsonl).
-- The model answers and GPT-4 judgments available on Google Drive.
-- The judge prompts in [data/judge_prompts.jsonl](data/judge_prompts.jsonl).
-- The 3K expert-level human annotation at [lmsys/mt_bench_human_judgments](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments).
+- The MT-bench questions, prompts, pre-generated answers, and pre-generated judgments.
+- The 3K expert-level human annotations.
 
 The next release will include:
-- All data
-    - 30K arena conversations with human votes
-- Other code
+- 30K arena conversations with human votes
 
 ## Citation
 
