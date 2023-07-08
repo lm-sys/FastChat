@@ -35,13 +35,14 @@ from train import (
     make_supervised_data_module,
 )
 
-#rom deepspeed.accelerate import accelerator
+# rom deepspeed.accelerate import accelerator
 
-#from fastchat.train.llama_flash_attn_monkey_patch import (
+# from fastchat.train.llama_flash_attn_monkey_patch import (
 #    replace_llama_attn_with_flash_attn,
-#)
+# )
 
-#replace_llama_attn_with_flash_attn()
+# replace_llama_attn_with_flash_attn()
+
 
 @dataclass
 class LoraArguments:
@@ -64,6 +65,7 @@ def maybe_zero_3(param):
     else:
         param = param.detach().cpu().clone()
     return param
+
 
 # Borrowed from peft.utils.get_peft_model_state_dict
 def get_peft_state_maybe_zero_3(named_params, bias):
@@ -89,6 +91,7 @@ def get_peft_state_maybe_zero_3(named_params, bias):
         raise NotImplementedError
     to_return = {k: maybe_zero_3(v) for k, v in to_return.items()}
     return to_return
+
 
 def train():
     parser = transformers.HfArgumentParser(
@@ -132,7 +135,6 @@ def train():
         cache_dir=training_args.cache_dir,
         device_map=device_map,
         torch_dtype=torch.float16,
-
         quantization_config=BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
@@ -163,7 +165,7 @@ def train():
             model.model_parallel = True
 
     model = get_peft_model(base_model, lora_config)
-    print("GET PEFT MODEL...")#
+    print("GET PEFT MODEL...")  #
     print(f"BASE MODEL TYPE: {type(base_model)}")
     print(f"MODEL TYPE: {type(model)}")
 
@@ -227,10 +229,18 @@ def train():
         trainer.save_model(lora_args.lora_weight_path)
 
         # Workaround to use peft save_pretrained
-        fine_tuned_weight_path = os.path.join(lora_args.lora_weight_path, 'pytorch_model.bin')
-        lora_model = get_peft_model(base_model, lora_config) # Need base_model (original llama) and lora_config to create a PEFT model
-        lora_model.load_state_dict(torch.load(fine_tuned_weight_path, map_location="cpu"))
-        lora_model.save_pretrained(lora_args.lora_weight_path) # save_pretrained to later use PeftModel.from_pretrained
+        fine_tuned_weight_path = os.path.join(
+            lora_args.lora_weight_path, "pytorch_model.bin"
+        )
+        lora_model = get_peft_model(
+            base_model, lora_config
+        )  # Need base_model (original llama) and lora_config to create a PEFT model
+        lora_model.load_state_dict(
+            torch.load(fine_tuned_weight_path, map_location="cpu")
+        )
+        lora_model.save_pretrained(
+            lora_args.lora_weight_path
+        )  # save_pretrained to later use PeftModel.from_pretrained
 
         print("SAVE PRETRAINED SUCCESSFULLY!!!!!!!")
 
