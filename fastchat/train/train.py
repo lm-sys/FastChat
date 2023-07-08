@@ -154,8 +154,8 @@ def preprocess(
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
-            instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+            # "-1" is hardcoded for the LLaMA tokenizer to make the offset correct.
+            instruction_len = len(tokenizer(parts[0]).input_ids) - 1
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
