@@ -84,7 +84,7 @@ The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
   ```
 
 ### Other grading options
-Besides single-answer grading, we also support two additional grading options:
+Besides score-based single-answer grading, we also support two additional grading options based on win rates:
 - `pariwise-baseline`: run pairwise comparison against a baseline model.
 - `pairwise-all`: run pairwise comparison between all model pairs on all questions.
 
@@ -92,22 +92,7 @@ Besides single-answer grading, we also support two additional grading options:
 
 - Generate GPT-4 judgments
 ```
-> python gen_judgment.py --mode pairwise-baseline --model-list vicuna-13b-v1.3 alpaca-13b llama-13b --parallel 2
-Stats:
-{
-    "bench_name": "mt_bench",
-    "mode": "pairwise-baseline",
-    "judge": "gpt-4",
-    "baseline": "gpt-3.5-turbo",
-    "model_list": [
-        "vicuna-13b-v1.3",
-        "alpaca-13b",
-        "llama-13b"
-    ],
-    "total_num_questions": 80,
-    "total_num_matches": 480,
-    "output_path": "data/mt_bench/model_judgment/gpt-4_pair.jsonl"
-}
+python gen_judgment.py --mode pairwise-baseline --model-list vicuna-13b-v1.3 alpaca-13b llama-13b --parallel 2
 ```
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_pair.jsonl`
 
