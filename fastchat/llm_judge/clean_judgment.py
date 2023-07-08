@@ -1,6 +1,7 @@
 """
 Clean model judgment files.
 """
+import argparse
 import json
 
 selected_models = [
@@ -39,7 +40,11 @@ selected_models = [
 
 
 if __name__ == "__main__":
-    infile = "data/mt_bench/model_judgment/gpt-4_single.jsonl"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--infile", type=str)
+    args = parser.parse_args()
+
+    infile = args.infile
     outfile = infile.replace(".jsonl", "_clean.jsonl")
 
     raw_lines = open(infile).readlines()
@@ -49,12 +54,17 @@ if __name__ == "__main__":
     for line in raw_lines:
         obj = json.loads(line)
 
-        key = (obj["model"], obj["question_id"], tuple(obj["judge"]))
+        if "model_1" in obj:  # pair
+            model = obj["model_1"]
+            key = (obj["model_1"], obj["model_2"], obj["question_id"], tuple(obj["judge"]))
+        else:  # single
+            model = obj["model"]
+            key = (obj["model"], obj["question_id"], tuple(obj["judge"]))
+
         if key in visited:
             continue
         visited.add(key)
 
-        model = obj["model"]
         if model not in selected_models:
             continue
         models.add(model)
@@ -65,7 +75,7 @@ if __name__ == "__main__":
     print(f"in models: {models}, number: {len(models)}")
     print(f"missing models: {missing_models}")
     print(f"#in: {len(raw_lines)}, #out: {len(rets)}")
-    rets.sort(key=lambda x: (x["model"], x["question_id"], x["turn"]))
+    rets.sort(key=lambda x: (x["model"] if "model" in x else x["model_1"], x["question_id"], x["turn"]))
 
     with open(outfile, "w") as fout:
         for x in rets:
