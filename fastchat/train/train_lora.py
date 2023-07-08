@@ -27,7 +27,6 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
 import torch
-from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 
 from fastchat.train.train import (
     DataArguments,
