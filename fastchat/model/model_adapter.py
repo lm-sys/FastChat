@@ -654,7 +654,11 @@ class MPTAdapter(BaseModelAdapter):
         elif "mpt-30b-instruct" in model_path:
             return get_conv_template("mpt-30b-instruct")
         else:
-            raise ValueError(f"Unknown MPT model: {model_path}")
+            print(
+                "Warning: Loading base MPT model with `zero_shot` conversation configuration.  "
+                "If this is not desired, inspect model configurations and names."
+            )
+            return get_conv_template("zero_shot")
 
 
 class BaizeAdapter(BaseModelAdapter):
