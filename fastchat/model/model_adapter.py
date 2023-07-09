@@ -36,8 +36,11 @@ from fastchat.model.monkey_patch_non_inplace import (
 )
 from fastchat.utils import get_gpu_memory
 
-use_cache = os.environ.get("SHARE_BASE", "false") == "true"
-print(f"use_cache: {use_cache}")
+# Check an environment variable to check if we should be sharing Peft model
+# weights.  When false we treat all Peft models as separate.
+peft_share_base_weights = (
+    os.environ.get("PEFT_SHARE_BASE_WEIGHTS", "false").lower() == "true"
+)
 
 
 class BaseModelAdapter:
@@ -258,8 +261,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif use_cache and "peft" in model_path:
-        # Return a _super_ custom stream function that loads the right adapter
+    elif peft_share_base_weights and "peft" in model_path:
+        # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
         @torch.inference_mode()
@@ -389,26 +392,31 @@ class PeftModelAdapter:
         # So, to make this work we:
         #  1. Cache the first peft model loaded for a given base models.
         #  2. Call `load_model` for any follow on Peft models.
-        #  3. Make sure we laod the adapters by the model_path.  Why? This is
+        #  3. Make sure we load the adapters by the model_path.  Why? This is
         #  what's accessible during inference time.
         #  4. In get_generate_stream_function, make sure we load the right
         #  adapter before doing inference.  This *should* be safe when calls
         #  are blocked the same semaphore.
-        if use_cache:
+        if peft_share_base_weights:
             if base_model_path in peft_model_cache:
                 model, tokenizer = peft_model_cache[base_model_path]
+                # Super important: make sure we use model_path as the
+                # `adapter_name`.
                 model.load_adapter(model_path, adapter_name=model_path)
             else:
                 base_adapter = get_model_adapter(base_model_path)
                 base_model, tokenizer = base_adapter.load_model(
                     base_model_path, from_pretrained_kwargs
                 )
+                # Super important: make sure we use model_path as the
+                # `adapter_name`.
                 model = PeftModel.from_pretrained(
                     base_model, model_path, adapter_name=model_path
                 )
                 peft_model_cache[base_model_path] = (model, tokenizer)
             return model, tokenizer
 
+        # In the normal case, load up the base model weights again.
         base_adapter = get_model_adapter(base_model_path)
         base_model, tokenizer = base_adapter.load_model(
             base_model_path, from_pretrained_kwargs
