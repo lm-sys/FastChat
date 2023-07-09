@@ -357,6 +357,28 @@ class PeftModelAdapter(BaseModelAdapter):
 
         return model, tokenizer
 
+    def load_compress_model(self, model_path, device, torch_dtype, revision="main"):
+                """Loads the base model then the (peft) adapter weights"""
+        from peft import PeftConfig, PeftModel
+
+        config = PeftConfig.from_pretrained(model_path)
+        base_model_path = config.base_model_name_or_path
+        if "peft" in base_model_path:
+            raise ValueError(
+                f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
+            )
+        base_adapter = get_model_adapter(base_model_path)
+        base_model, tokenizer = base_adapter.load_compress_model(
+            base_model_path,
+            device,
+            torch_dtype,
+            revision=revision,
+        )
+        model = PeftModel.from_pretrained(base_model, model_path)
+        return model, tokenizer
+
+
+
     def get_default_conv_template(self, model_path: str) -> Conversation:
         """Uses the conv template of the base model"""
         from peft import PeftConfig, PeftModel
