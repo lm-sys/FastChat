@@ -358,7 +358,7 @@ class PeftModelAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def load_compress_model(self, model_path, device, torch_dtype, revision="main"):
-                """Loads the base model then the (peft) adapter weights"""
+        """Loads the base model then the (peft) adapter weights"""
         from peft import PeftConfig, PeftModel
 
         config = PeftConfig.from_pretrained(model_path)
@@ -376,8 +376,6 @@ class PeftModelAdapter(BaseModelAdapter):
         )
         model = PeftModel.from_pretrained(base_model, model_path)
         return model, tokenizer
-
-
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         """Uses the conv template of the base model"""
