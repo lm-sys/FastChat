@@ -30,7 +30,7 @@ torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
 After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/55051ad0f23fef5eeecbda14a2e3e128ffcb2a98/fastchat/utils.py#L166-L185) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
 
 ### Fine-tuning using (Q)LoRA
-You can use the following command to train Vicuna-7B using QLoRA using ZeRO2. Note that ZeRO3 is not currently supported with QLoRA but ZeRO3 does support LoRA, which has a reference configuraiton under `playground/deepspeed_config_s3.json`.
+You can use the following command to train Vicuna-7B using QLoRA using ZeRO2. Note that ZeRO3 is not currently supported with QLoRA but ZeRO3 does support LoRA, which has a reference configuraiton under playground/deepspeed_config_s3.json. To use QLoRA, you must have bitsandbytes>=0.39.0 and transformers>=4.30.0 installed.
 ```bash
 deepspeed train_lora.py \
     --model_name_or_path ~/model_weights/llama-7b  \

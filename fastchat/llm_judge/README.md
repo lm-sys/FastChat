@@ -54,6 +54,8 @@ python gen_model_answer.py --model-path lmsys/vicuna-7b-v1.3 --model-id vicuna-7
 ```
 The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
+To make sure FastChat loads the correct prompt template, see the supported models and how to add a new model [here](../../docs/model_support.md#how-to-support-a-new-model).
+
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
 #### Step 2. Generate GPT-4 judgments
