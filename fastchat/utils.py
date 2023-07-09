@@ -65,11 +65,11 @@ def build_logger(logger_name, logger_filename):
     )
     handler.setFormatter(formatter)
 
-    for logger in [stdout_logger, stderr_logger, logger]:
-        if logger in visited_loggers:
+    for i in [stdout_logger, stderr_logger, logger]:
+        if i in visited_loggers:
             continue
-        visited_loggers.add(logger)
-        logger.addHandler(handler)
+        visited_loggers.add(i)
+        i.addHandler(handler)
 
     return logger
 
