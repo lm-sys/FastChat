@@ -331,7 +331,7 @@ def remove_parent_directory_name(model_path):
     return model_path.split("/")[-1]
 
 
-class PeftModelAdapter:
+class PeftModelAdapter(BaseModelAdapter):
     """Loads any "peft" model and it's base model."""
 
     def match(self, model_path: str):
