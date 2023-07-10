@@ -30,7 +30,11 @@
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
 - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
 - Any [EleutherAI](https://huggingface.co/EleutherAI) pythia model such as [pythia-6.9b](https://huggingface.co/EleutherAI/pythia-6.9b)
-- Any [Peft](https://github.com/huggingface/peft) adapter trained ontop of a model above.  To activate, must have `peft` in the model path.
+- Any [Peft](https://github.com/huggingface/peft) adapter trained on top of a
+  model above.  To activate, must have `peft` in the model path.  Note: If
+  loading multiple peft models, you can have them share the base model weights by
+  setting the environment variable `PEFT_SHARE_BASE_WEIGHTS=true` in any model
+  worker.
 
 ## How to support a new model
 
