@@ -179,6 +179,7 @@ SAMPLING_WEIGHTS = {
     "fastchat-t5-3b": 0.9,
     "alpaca-13b": 0.9,
     "chatglm-6b": 0.9,
+    "chatglm2-6b": 0.9,
     "stablelm-tuned-alpha-7b": 0.3,
     "dolly-v2-12b": 0.3,
     "llama-13b": 0.1,

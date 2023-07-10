@@ -6,7 +6,6 @@ import math
 import pickle
 from pytz import timezone
 
-import gdown
 import numpy as np
 import pandas as pd
 import plotly.express as px

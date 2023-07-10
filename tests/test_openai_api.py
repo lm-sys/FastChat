@@ -25,6 +25,18 @@ def test_completion(model):
     print(prompt + completion.choices[0].text)
 
 
+def test_completion_stream(model):
+    prompt = "Once upon a time"
+    res = openai.Completion.create(
+        model=model, prompt=prompt, max_tokens=64, stream=True
+    )
+    print(prompt, end="")
+    for chunk in res:
+        content = chunk["choices"][0]["text"]
+        print(content, end="", flush=True)
+    print()
+
+
 def test_embedding(model):
     embedding = openai.Embedding.create(model=model, input="Hello world!")
     print(f"embedding len: {len(embedding['data'][0]['embedding'])}")
@@ -92,6 +104,7 @@ if __name__ == "__main__":
     for model in models:
         print(f"===== Test {model} ======")
         test_completion(model)
+        test_completion_stream(model)
         test_embedding(model)
         test_chat_completion(model)
         test_chat_completion_stream(model)

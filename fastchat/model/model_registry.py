@@ -111,7 +111,7 @@ register_model_info(
     "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
-    ["chatglm-6b"],
+    ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
@@ -147,6 +147,12 @@ register_model_info(
     "Stability AI language models",
 )
 register_model_info(
+    ["codet5p-6b"],
+    "CodeT5p-6b",
+    "https://huggingface.co/Salesforce/codet5p-6b",
+    "Code completion model released by Salesforce",
+)
+register_model_info(
     ["fastchat-t5-3b", "fastchat-t5-3b-v1.0"],
     "FastChat-T5",
     "https://huggingface.co/lmsys/fastchat-t5-3b-v1.0",
@@ -177,6 +183,17 @@ register_model_info(
     "A chatbot fine-tuned from LLaMA with ChatGPT self-chat data and Self-Disillation with Feedback (SDF) by UCSD and SYSU.",
 )
 register_model_info(
+    [
+        "airoboros-7b-gpt4-1.4",
+        "airoboros-13b-gpt4-1.4",
+        "airoboros-33b-gpt4-1.4",
+        "airoboros-65b-gpt4-1.4",
+    ],
+    "airoboros",
+    "https://huggingface.co/jondurbin/airoboros-33b-gpt4-1.4",
+    "an instruction-tuned LlaMa model tuned with 100% synthetic instruction-response pairs from GPT4",
+)
+register_model_info(
     ["Robin-7b-v2", "Robin-13b-v2", "Robin-33b-v2"],
     "Robin-v2",
     "https://huggingface.co/OptimalScale/robin-7b-v2-delta",
@@ -205,4 +222,10 @@ register_model_info(
     "Tigerbot",
     "https://huggingface.co/TigerResearch/tigerbot-7b-sft",
     "TigerBot is a large-scale language model (LLM) with multiple languages and tasks.",
+)
+register_model_info(
+    ["internlm-chat-7b", "internlm-chat-7b-8k"],
+    "InternLM",
+    "https://huggingface.co/internlm/internlm-chat-7b",
+    "InternLM is a multi-language large-scale language model (LLM), developed by SHLAB.",
 )

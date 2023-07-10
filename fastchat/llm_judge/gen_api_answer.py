@@ -17,6 +17,7 @@ from fastchat.llm_judge.common import (
     temperature_config,
     chat_compeletion_openai,
     chat_compeletion_anthropic,
+    chat_compeletion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template
@@ -33,6 +34,7 @@ def get_answer(
         temperature = 0.7
 
     choices = []
+    chat_state = None  # for palm-2 model
     for i in range(num_choices):
         conv = get_conversation_template(model)
 
@@ -46,6 +48,10 @@ def get_answer(
             elif model in ["claude-v1", "claude-instant-v1"]:
                 output = chat_compeletion_anthropic(
                     model, conv, temperature, max_tokens
+                )
+            elif model == "palm-2-chat-bison-001":
+                chat_state, output = chat_compeletion_palm(
+                    chat_state, model, conv, temperature, max_tokens
                 )
             else:
                 raise ValueError(f"Invalid judge model name: {model}")

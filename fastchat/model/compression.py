@@ -100,9 +100,7 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(
-    model_path, device, torch_dtype, use_fast=False, revision="main"
-):
+def load_compress_model(model_path, device, torch_dtype, use_fast, revision="main"):
     # partially load model
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, use_fast=use_fast, revision=revision

@@ -1,3 +1,7 @@
+"""
+Common data structures and utilities.
+"""
+
 import ast
 import dataclasses
 import glob
@@ -13,7 +17,7 @@ import anthropic
 from fastchat.model.model_adapter import get_conversation_template
 
 # API setting constants
-API_MAX_RETRY = 8
+API_MAX_RETRY = 16
 API_RETRY_SLEEP = 10
 API_ERROR_OUTPUT = "$ERROR$"
 
@@ -21,25 +25,6 @@ TIE_DELTA = 0.1
 
 # Categories that need reference answers
 NEED_REF_CATS = ["math", "reasoning", "coding"]
-DEFAULT_MODEL_LIST = {
-    "vicuna_bench": [
-        "vicuna-13b",
-        "vicuna-7b",
-        "llama-13b",
-        "alpaca-13b",
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "claude-v1",
-    ],
-    "mt_bench": [
-        "vicuna-13b-v1.2",
-        "llama-13b",
-        "alpaca-13b",
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "claude-v1",
-    ],
-}
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -173,7 +158,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[1], None)
 
     if model in ["gpt-3.5-turbo", "gpt-4"]:
-        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=1024)
+        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ["claude-v1", "claude-instant-v1"]:
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
@@ -454,6 +439,32 @@ def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
     return output.strip()
 
 
+def chat_compeletion_palm(chat_state, model, conv, temperature, max_tokens):
+    from fastchat.serve.api_provider import init_palm_chat
+
+    assert model == "palm-2-chat-bison-001"
+
+    if chat_state is None:
+        chat_state = init_palm_chat("chat-bison@001")
+
+    parameters = {
+        "temperature": temperature,
+        "top_p": 0.8,
+        "top_k": 40,
+        "max_output_tokens": max_tokens,
+    }
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            response = chat_state.send_message(conv.messages[-2][1], **parameters)
+            output = response.text
+            break
+        except Exception as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return chat_state, output
+
+
 def normalize_game_key_single(gamekey, result):
     """Make the model names sorted in a game key."""
     qid, model_1, model_2 = gamekey
@@ -478,7 +489,7 @@ def normalize_game_key_dict(judgment_dict):
     return ret
 
 
-def load_model_judgments(filename: str):
+def load_pairwise_model_judgments(filename: str):
     """Load model judgments.
 
     The return value is a dict of type:
@@ -521,10 +532,35 @@ def load_model_judgments(filename: str):
     return normalized
 
 
-def resolve_default_judgment_dict(
+def load_single_model_judgments(filename: str):
+    """Load model judgments.
+
+    The return value is a dict of type:
+    Dict[judge: Tuple -> Dict[game_key: tuple -> game_result: dict]
+    """
+    judge_dict = {}
+
+    for line in open(filename):
+        obj = json.loads(line)
+        judge = tuple(obj["judge"])
+        qid, model = obj["question_id"], obj["model"]
+
+        if judge not in judge_dict:
+            judge_dict[judge] = {}
+
+        gamekey = (qid, model)
+
+        judge_dict[judge][gamekey] = {
+            "score": obj["score"],
+            "judgment": obj["judgment"],
+        }
+    return judge_dict
+
+
+def resolve_pairwise_judgment_dict(
     question, model_judgments_normal, model_judgments_math, multi_turn=False
 ):
-    """Return the correct default judge."""
+    """Return the correct pairwise judge."""
     if multi_turn:
         if question["category"] in NEED_REF_CATS:
             return model_judgments_math[("gpt-4", "pair-math-v1-multi-turn")]
@@ -536,7 +572,22 @@ def resolve_default_judgment_dict(
         return model_judgments_normal[("gpt-4", "pair-v2")]
 
 
-def get_model_judge_explanation(gamekey, judgment_dict):
+def resolve_single_judgment_dict(
+    question, model_judgments_normal, model_judgments_math, multi_turn=False
+):
+    """Return the correct single answer grading judge."""
+    if multi_turn:
+        if question["category"] in NEED_REF_CATS:
+            return model_judgments_math[("gpt-4", "single-math-v1-multi-turn")]
+        return model_judgments_normal[("gpt-4", "single-v1-multi-turn")]
+
+    if question["category"] in NEED_REF_CATS:
+        return model_judgments_math[("gpt-4", "single-math-v1")]
+    else:
+        return model_judgments_normal[("gpt-4", "single-v1")]
+
+
+def get_pairwise_judge_explanation(gamekey, judgment_dict):
     """Get model judge explanation."""
     try:
         qid, model_1, model_2 = gamekey
@@ -561,6 +612,24 @@ def get_model_judge_explanation(gamekey, judgment_dict):
         return "N/A"
 
 
+def get_single_judge_explanation(gamekey, judgment_dict):
+    """Get model judge explanation."""
+    try:
+        qid, model = gamekey
+
+        res = judgment_dict[gamekey]
+
+        g1_judgment = res["judgment"]
+        g1_score = res["score"]
+
+        return (
+            f"**Game 1**. **A**: {model}, **Score**: {g1_score}\n\n"
+            f"**Judgment**: {g1_judgment}"
+        )
+    except KeyError:
+        return "N/A"
+
+
 def check_data(questions, model_answers, ref_answers, models, judges):
     # check model answers
     for m in models:
@@ -580,3 +649,9 @@ def check_data(questions, model_answers, ref_answers, models, judges):
             assert (
                 q["question_id"] in ref_answers[jg.model_name]
             ), f"Missing reference answer to Question {q['question_id']} for judge {jg.model_name}"
+
+
+def get_model_list(answer_dir):
+    file_paths = glob.glob(f"{answer_dir}/*.jsonl")
+    file_names = [os.path.splitext(os.path.basename(f))[0] for f in file_paths]
+    return file_names

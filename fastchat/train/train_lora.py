@@ -116,13 +116,11 @@ def train():
     print(f"device_map is: {device_map}")
 
     if lora_args.q_lora:
-        print("USING QLORA!!!!!!!!")
-        world_size = int(os.environ.get("WORLD_SIZE", 1))
-        device_map = (
-            {"": int(os.environ.get("LOCAL_RANK") or 0)} if world_size != 1 else None
-        )
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if ddp else None
         if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
-            logging.warn("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
+            logging.warning(
+                "FSDP and ZeRO3 are both currently incompatible with QLoRA."
+            )
 
     compute_dtype = (
         torch.float16
@@ -159,13 +157,13 @@ def train():
         model = prepare_model_for_kbit_training(
             base_model, use_gradient_checkpointing=training_args.gradient_checkpointing
         )
-        if torch.cuda.device_count() > 1:
+        if not ddp and torch.cuda.device_count() > 1:
             # keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
             model.is_parallelizable = True
             model.model_parallel = True
 
     model = get_peft_model(base_model, lora_config)
-    print("GET PEFT MODEL...")  #
+    print("GET PEFT MODEL...")  
     print(f"BASE MODEL TYPE: {type(base_model)}")
     print(f"MODEL TYPE: {type(model)}")
 
@@ -208,7 +206,7 @@ def train():
     trainer.save_state()
 
     # check if zero3 mode enabled
-    if trainer.hf_deepspeed_config_orig.is_zero3():
+    if deepspeed.is_deepspeed_zero3_enabled():
         # use deepspeed engine internal function to gather state dict
         # state_dict_zero3 contains whole parameters of base and lora adapters
         # we will not extract lora parameters since peft save_pretrained will do that

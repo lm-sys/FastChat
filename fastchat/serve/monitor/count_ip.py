@@ -59,7 +59,7 @@ def count_ips(log_files):
 
             ip_counter[model][ip] += 1
 
-    models = ["claude-v1", "chatglm-6b"]
+    models = ["claude-v1", "chatglm-6b", "chatglm2-6b"]
     top_k = 20
 
     for m in models:

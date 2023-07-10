@@ -6,7 +6,7 @@ import requests
 import threading
 import time
 
-from fastchat.conversation import default_conversation
+from fastchat.conversation import get_conv_template
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     if worker_addr == "":
         return
 
-    conv = default_conversation.copy()
+    conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Tell me a story with more than 1000 words")
     prompt_template = conv.get_prompt()
     prompts = [prompt_template for _ in range(args.n_thread)]

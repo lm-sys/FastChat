@@ -22,6 +22,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e '.[dev]'
+    - name: Run linter
+      run: |
+        pylint -d all -e E0602 ./fastchat/
     - name: Check formatting
       run: |
         black --check .
