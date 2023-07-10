@@ -15,6 +15,7 @@
   - example: `python3 -m fastchat.serve.cli --model-path mosaicml/mpt-7b-chat`
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
 - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
+- [NousResearch/Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
 - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
 - [OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5](https://huggingface.co/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5)
 - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
@@ -27,8 +28,13 @@
 - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+- [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
 - Any [EleutherAI](https://huggingface.co/EleutherAI) pythia model such as [pythia-6.9b](https://huggingface.co/EleutherAI/pythia-6.9b)
-- Any [Peft](https://github.com/huggingface/peft) adapter trained ontop of a model above.  To activate, must have `peft` in the model path.
+- Any [Peft](https://github.com/huggingface/peft) adapter trained on top of a
+  model above.  To activate, must have `peft` in the model path.  Note: If
+  loading multiple peft models, you can have them share the base model weights by
+  setting the environment variable `PEFT_SHARE_BASE_WEIGHTS=true` in any model
+  worker.
 
 ## How to support a new model
 

@@ -29,8 +29,22 @@ from fastchat.serve.inference import ChatIO, chat_loop
 
 
 class SimpleChatIO(ChatIO):
+    def __init__(self, multiline: bool = False):
+        self._multiline = multiline
+
     def prompt_for_input(self, role) -> str:
-        return input(f"{role}: ")
+        if not self._multiline:
+            return input(f"{role}: ")
+
+        prompt_data = []
+        line = input(f"{role} [ctrl-d/z on empty line to end]: ")
+        while True:
+            prompt_data.append(line.strip())
+            try:
+                line = input()
+            except EOFError as e:
+                break
+        return "\n".join(prompt_data)
 
     def prompt_for_output(self, role: str):
         print(f"{role}: ", end="", flush=True)
@@ -165,7 +179,7 @@ def main(args):
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
     if args.style == "simple":
-        chatio = SimpleChatIO()
+        chatio = SimpleChatIO(args.multiline)
     elif args.style == "rich":
         chatio = RichChatIO(args.multiline, args.mouse)
     elif args.style == "programmatic":
@@ -194,6 +208,7 @@ def main(args):
             args.revision,
             args.judge_sent_end,
             args.debug,
+            history=not args.no_history,
         )
     except KeyboardInterrupt:
         print("exit...")
@@ -208,6 +223,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
     parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--no-history", action="store_true")
     parser.add_argument(
         "--style",
         type=str,
@@ -218,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--multiline",
         action="store_true",
-        help="[Rich Style]: Enable multiline input. Use ESC+Enter for newline.",
+        help="Enable multiline input. Use ESC+Enter for newline.",
     )
     parser.add_argument(
         "--mouse",

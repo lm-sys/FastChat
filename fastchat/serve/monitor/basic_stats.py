@@ -149,12 +149,12 @@ def report_basic_stats(log_files):
     anony_vote_hist_all = anony_vote_df_all["type"].value_counts()
     anony_vote_df_1_day = get_anony_vote_df(df_1_day)
     anony_vote_hist_1_day = anony_vote_df_1_day["type"].value_counts()
-    anony_vote_df_1_hour = get_anony_vote_df(df_1_hour)
-    anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
+    # anony_vote_df_1_hour = get_anony_vote_df(df_1_hour)
+    # anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
     anony_vote_hist = merge_counts(
-        [anony_vote_hist_all, anony_vote_hist_1_day, anony_vote_hist_1_hour],
+        [anony_vote_hist_all, anony_vote_hist_1_day],
         on="type",
-        names=["All", "Last Day", "Last Hour"],
+        names=["All", "Last Day"],
     )
     anony_vote_hist_md = anony_vote_hist.to_markdown(index=False, tablefmt="github")
 
