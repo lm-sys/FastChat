@@ -2,6 +2,7 @@
 Chat with a model with command line interface.
 
 Usage:
+python3 -m cli --model lmsys/vicuna-7b-v1.3
 python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
 python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
 
@@ -23,10 +24,13 @@ from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 
-from fastchat.model.model_adapter import add_model_args
+#from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
-from fastchat.serve.inference import ChatIO, chat_loop
+#from fastchat.serve.inference import ChatIO, chat_loop
 
+sys.path.append('/home/minhvn/workspace/llm/FastChat/fastchat/')
+from model.model_adapter import add_model_args
+from inference import ChatIO, chat_loop
 
 class SimpleChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
@@ -86,6 +90,7 @@ class RichChatIO(ChatIO):
         #  above it. We need to cut off "live" when a code block is done.
 
         # Create a Live context for updating the console output
+        text = "I cannot help bro"
         with Live(console=self._console, refresh_per_second=4) as live:
             # Read lines from the stream
             for outputs in output_stream:
@@ -172,6 +177,7 @@ def main(args):
         chatio = ProgrammaticChatIO()
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
+    
     try:
         chat_loop(
             args.model_path,
@@ -192,11 +198,11 @@ def main(args):
                 act_order=args.gptq_act_order,
             ),
             args.revision,
+            #args.judge_sent_end,
             args.debug,
         )
     except KeyboardInterrupt:
-        print("exit...")
-
+        print("keyboard interrupted exit...")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -223,6 +229,11 @@ if __name__ == "__main__":
         "--mouse",
         action="store_true",
         help="[Rich Style]: Enable mouse support for cursor positioning.",
+    )
+    parser.add_argument(
+        "--judge-sent-end",
+        action="store_true",
+        help="Whether enable the correction logic that interrupts the output of sentences due to EOS.",
     )
     parser.add_argument(
         "--debug",

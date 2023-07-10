@@ -6,6 +6,7 @@ from typing import Iterable, Optional
 import sys
 import time
 import warnings
+import re
 
 import psutil
 import torch
@@ -27,12 +28,22 @@ from transformers.generation.logits_process import (
     TopPLogitsWarper,
 )
 
+sys.path.append('/home/minhvn/workspace/llm/FastChat/fastchat/')
+sys.path.append('/home/minhvn/workspace/llm/FastChat/')
+
 from fastchat.conversation import get_conv_template, SeparatorStyle
-from fastchat.model.model_adapter import load_model, get_conversation_template
-from fastchat.model.chatglm_model import chatglm_generate_stream
-from fastchat.model.falcon_model import falcon_generate_stream
+
+#from fastchat.model.model_adapter import load_model, get_conversation_template
+#from fastchat.model.chatglm_model import chatglm_generate_stream
+#from fastchat.model.falcon_model import falcon_generate_stream
 from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import is_partial_stop
+
+from model.model_adapter import load_model, get_conversation_template
+from model.chatglm_model import chatglm_generate_stream
+from model.falcon_model import falcon_generate_stream
+
+from api_call import extract_features
 
 
 def prepare_logits_processor(
@@ -146,6 +157,10 @@ def generate_stream(
 
         output_ids.append(token)
 
+        #print(f"INPUT_IDS: {input_ids}")
+        #print(f"OUTPUT_IDS: {output_ids}")
+        #print(f"OUTPUT_IDS LEN: {len(output_ids)}")
+
         if token in stop_token_ids:
             stopped = True
         else:
@@ -164,6 +179,9 @@ def generate_stream(
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False,
             )
+            #print(f"At i={i}, echo= {echo}, rfind_start= {rfind_start}, input_echo_len={input_echo_len}")
+            #print(f"BEFORE DECODER: {tmp_output_ids}")
+            #print(f"AFTER DECODER: {output}")
 
             partially_stopped = False
             if stop_str:
@@ -172,6 +190,7 @@ def generate_stream(
                     if pos != -1:
                         output = output[:pos]
                         stopped = True
+                        print(f"STOP HERE!!!")
                     else:
                         partially_stopped = is_partial_stop(output, stop_str)
                 elif isinstance(stop_str, Iterable):
@@ -211,6 +230,10 @@ def generate_stream(
     else:
         finish_reason = None
 
+    #print(f"finish_reason: {finish_reason}")
+    print(f"GENERATE STREAM: {output}")
+    print("-----------" * 50)
+
     yield {
         "text": output,
         "usage": {
@@ -225,6 +248,38 @@ def generate_stream(
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()
+
+### APPLY API CALLING!
+def generate_special_stream(model, tokenizer, gen_params, device, context_len=2048, stream_interval=2):
+    prompt = gen_params["prompt"]
+    output_stream = generate_stream(model, tokenizer, gen_params, device)
+    outputs = ""
+    for data in output_stream:
+        if not data:
+            continue
+        outputs = data["text"]
+    ### After iterating the output_stream generator (yield) above,
+    ### it is exhausted. Need to recreate
+
+    if "Function:" in outputs and "Observation" in outputs:
+        print(f"First outputs: {outputs}\n")
+        new_outputs = extract_features(outputs)
+        print(f"New outputs: {new_outputs}\n")
+        # Concatenate outputs with new outputs to create a 2nd inference prompt
+        prompt = re.search(r".*?(?=ASSISTANT:)", prompt).group(0)
+        #prompt = prompt + '\nInput:\n' + outputs + new_outputs + " \n ASSISTANT: Final Answer: "
+        prompt = prompt + '\nInput:\n' + outputs + new_outputs + " \n ASSISTANT: "
+
+        #prompt = prompt + '\nInput:\n' + outputs + new_outputs + " Final Answer: "
+        print(f"Final prompt: {prompt}\n")
+
+    # New output_stream
+    gen_params["prompt"] = prompt
+    output_stream = generate_stream(model, tokenizer, gen_params, device)
+
+    gen_params = {}
+    return output_stream
+
 
 
 class ChatIO(abc.ABC):
@@ -269,6 +324,9 @@ def chat_loop(
         revision,
         debug,
     )
+    print(f"Model used: {type(model)}")
+    print(f"Tokenizer used: {type(tokenizer)}")
+
     is_chatglm = "chatglm" in str(type(model)).lower()
     is_t5 = "t5" in str(type(model)).lower()
     is_falcon = "rwforcausallm" in str(type(model)).lower()
@@ -285,11 +343,15 @@ def chat_loop(
             conv = get_conversation_template(model_path)
         return conv
 
-    conv = new_chat()
+    #conv = new_chat()
 
     while True:
+        conv = new_chat()
         try:
             inp = chatio.prompt_for_input(conv.roles[0])
+            #print(inp)
+            #inp = "What position does tannm take on at the company?"
+            #print(inp)
         except EOFError:
             inp = ""
 
@@ -311,7 +373,9 @@ def chat_loop(
         elif is_falcon:
             generate_stream_func = falcon_generate_stream
         else:
-            generate_stream_func = generate_stream
+            #generate_stream_func = generate_stream
+            # Modify this for api call
+            generate_stream_func = generate_special_stream
 
         gen_params = {
             "model": model_path,
@@ -325,18 +389,53 @@ def chat_loop(
         }
 
         chatio.prompt_for_output(conv.roles[1])
+
+        """
         output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        outputs = ""
+        
+        for data in output_stream:
+            if not data:
+                continue
+            outputs = data["text"]
+        ### After iterating the output_stream generator (yield) above,
+        ### it is exhausted. Need to recreate
+    
+        if "Function" in outputs and "Observation" in outputs:
+            #print(f"First outputs: {outputs}")
+            new_outputs = extract_features(outputs)
+            # Concatenate outputs with new outputs to create a 2nd inference prompt
+            prompt = prompt + '\nInput:\n' + outputs + new_outputs
+
+        # New output_stream
+        gen_params = {
+            "model": model_path,
+            "prompt": prompt,
+            "temperature": temperature,
+            "repetition_penalty": repetition_penalty,
+            "max_new_tokens": max_new_tokens,
+            "stop": conv.stop_str,
+            "stop_token_ids": conv.stop_token_ids,
+            "echo": False,
+        }
+        output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        """
+        output_stream = generate_stream_func(model, tokenizer, gen_params, device)
+        final_answer = chatio.stream_output(output_stream)
+            
         t = time.time()
-        outputs = chatio.stream_output(output_stream)
         duration = time.time() - t
-        conv.update_last_message(outputs.strip())
+        #outputs = chatio.stream_output((output_stream))
+
+        # Use this to append messages to the conversation history
+        conv.update_last_message(final_answer.strip())
 
         if debug:
-            num_tokens = len(tokenizer.encode(outputs))
+            num_tokens = len(tokenizer.encode(final_answer))
             msg = {
                 "conv_template": conv.name,
                 "prompt": prompt,
-                "outputs": outputs,
+                "outputs": final_answer,
                 "speed (token/s)": round(num_tokens / duration, 2),
             }
             print(f"\n{msg}\n")

@@ -1,11 +1,12 @@
-deepspeed --num_gpus 6 train_lora.py \
+wandb disabled
+deepspeed --num_gpus 1 train_lora_original.py \
     --model_name_or_path lmsys/vicuna-7b-v1.3  \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
-    --data_path $DATA_PATH \
-    --output_dir ./vicuna_checkpoints \
-    --num_train_epochs 150 \
+    --data_path /home/minhvn/workspace/llm/FastChat/fastchat/data/rikkei_clean.json \
+    --output_dir ./vicuna_checkpoints_1 \
+    --num_train_epochs 1 \
     --fp16 True \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
@@ -24,6 +25,6 @@ deepspeed --num_gpus 6 train_lora.py \
     --tf32 True \
     --model_max_length 2048 \
     --q_lora False \
-    --deepspeed playground/deepspeed_config_s2.json \
+    --deepspeed /home/minhvn/workspace/llm/FastChat/playground/deepspeed_config_s2.json \
     --gradient_checkpointing True \
-    --lora_weight_path ./lora_weights \
+    --lora_weight_path ./lol \

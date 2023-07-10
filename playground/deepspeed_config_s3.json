@@ -28,6 +28,9 @@
             "weight_decay": "auto"
         }
     },
+    "fp16": {
+        "enabled": "auto"
+    },
     "train_batch_size": "auto",
     "micro_batch_size_per_gpu": "auto",
     "gradient_accumulation_steps": "auto"
