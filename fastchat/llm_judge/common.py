@@ -422,18 +422,18 @@ def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+            c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
             prompt = conv.get_prompt()
-            response = c.completion(
+            response = c.completions.create(
                 model=model,
                 prompt=prompt,
                 stop_sequences=[anthropic.HUMAN_PROMPT],
                 max_tokens_to_sample=max_tokens,
                 temperature=temperature,
             )
-            output = response["completion"]
+            output = response.completion
             break
-        except anthropic.ApiException as e:
+        except anthropic.APIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
     return output.strip()
