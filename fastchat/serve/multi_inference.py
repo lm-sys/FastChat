@@ -46,6 +46,8 @@ def dialog_to_prompt(conv, messages):
     for role, message in zip(roles, messages):
         conv.append_message(role, message["content"])
 
+    conv.append_message(conv.roles[1], None)
+
     return conv.get_prompt()
 
 
