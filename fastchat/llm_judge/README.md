@@ -18,14 +18,14 @@ To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as j
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
 pip install -e .
-pip install openai anthropic ray
+pip install openai anthropic==0.3.2 ray
 ```
 
 ## Review Pre-Generated Model Answers and Judgments
 We provide pre-generated model answers and judgments for some models.
 You can view them at this [demo](https://huggingface.co/spaces/lmsys/mt-bench).
 
-To download the pre-generated data, use 
+To download the pre-generated data, use
 ```
 python3 download_mt_bench_pregenerated.py
 ```
