@@ -24,7 +24,7 @@ import pathlib
 from typing import Dict, Optional, Sequence, List
 
 import torch
-# import torch.distributed as dist
+import torch.distributed as dist
 
 
 from deepspeed import zero
@@ -47,6 +47,7 @@ DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
+
 
 
 @dataclass
@@ -77,8 +78,7 @@ def get_peft_state_maybe_zero_3(named_params, bias):
     if bias == "none":
         to_return = {k: t for k, t in named_params if "lora_" in k}
     elif bias == "all":
-        to_return = {k: t for k,
-                     t in named_params if "lora_" in k or "bias" in k}
+        to_return = {k: t for k, t in named_params if "lora_" in k or "bias" in k}
     elif bias == "lora_only":
         to_return = {}
         maybe_lora_bias = {}
@@ -97,6 +97,7 @@ def get_peft_state_maybe_zero_3(named_params, bias):
         raise NotImplementedError
     to_return = {k: maybe_zero_3(v) for k, v in to_return.items()}
     return to_return
+
 
 
 @dataclass
@@ -130,10 +131,9 @@ class TrainingArguments(transformers.TrainingArguments):
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str, state_dict: dict):
     """Collects the state dict and dump to disk."""
-
+    
     if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu()
-                          for key, value in state_dict.items()}
+        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
@@ -150,8 +150,7 @@ def smart_tokenizer_and_embedding_resize(
     """
     num_new_tokens = tokenizer.add_special_tokens(special_tokens_dict)
     for new_token in other_tokens:
-        num_new_tokens += tokenizer.add_tokens(
-            AddedToken(new_token, normalized=False))
+        num_new_tokens += tokenizer.add_tokens(AddedToken(new_token, normalized=False))
 
     model.resize_token_embeddings(len(tokenizer))
 
@@ -184,8 +183,7 @@ def _tokenize_fn(
         )
         for text in strings
     ]
-    input_ids = labels = [tokenized.input_ids[0]
-                          for tokenized in tokenized_list]
+    input_ids = labels = [tokenized.input_ids[0] for tokenized in tokenized_list]
     input_ids_lens = labels_lens = [
         tokenized.input_ids.ne(tokenizer.pad_token_id).sum().item()
         for tokenized in tokenized_list
@@ -218,15 +216,14 @@ def _form_qa(
             # truncate answer if it is too long
             content_a = None
             if tokenized_len > max_length:
-                content_a = tokenized_conversation[cur_idx: cur_idx + max_length]
+                content_a = tokenized_conversation[cur_idx : cur_idx + max_length]
             else:
-                content_a = tokenized_conversation[cur_idx: cur_idx + tokenized_len]
+                content_a = tokenized_conversation[cur_idx : cur_idx + tokenized_len]
             content_a.append(eos_id)
             a_list.append(content_a)
             content_q = None
             if cur_idx >= max_length:
-                content_q = tokenized_conversation[cur_idx -
-                                                   max_length: cur_idx]
+                content_q = tokenized_conversation[cur_idx - max_length : cur_idx]
             else:
                 content_q = tokenized_conversation[:cur_idx]
             content_q.append(eos_id)
@@ -297,8 +294,7 @@ def preprocess(
         conversations.append(conversation)
     # TODO(Dacheng): This is related to whether the dataset has been truncated..
     # Assume we get long conversations, don't pad, don't return tensor
-    tokenized_conversations = tokenizer(
-        conversations, max_length=None)["input_ids"]
+    tokenized_conversations = tokenizer(conversations, max_length=None)["input_ids"]
     q_list = []
     a_list = []
     # count for EOS length
@@ -306,8 +302,7 @@ def preprocess(
     from tqdm import tqdm
 
     for tokenized_conversation, source in tqdm(zip(tokenized_conversations, sources)):
-        tokenized_sentence = _tokenize_fn(
-            [s["value"] for s in source], tokenizer)
+        tokenized_sentence = _tokenize_fn([s["value"] for s in source], tokenizer)
         tokenized_lens = tokenized_sentence["input_ids_lens"]
         tokenized_lens = [l - 1 for l in tokenized_lens]
         speakers = [sentence["from"] for sentence in source]
@@ -339,36 +334,38 @@ class SupervisedDataset(Dataset):
 
         # save to file
         # Make sure only the first process is processing the dataset
-        # if dist.get_rank() != 0:
-        #     dist.barrier()
-        self.preprocessed_path = preprocessed_path
-        if os.path.exists(self.preprocessed_path):
-            logging.warning("loading from preprocessed data")
-            with open(self.preprocessed_path, "r") as f:
-                data_dict = json.load(f)
-            # if dist.get_rank() == 0:
-            #     dist.barrier()
-        else:
-            if not os.path.exists("preprocessed_data"):
-                os.mkdir("preprocessed_data")
-            assert dist.get_rank() == 0, "Only the first process should process"
-            logging.warning("Loading data...")
-            list_data_dict = json.load(open(data_path, "r"))
+        
+        if training_args.local_rank == 0:
+        if dist.get_rank() != 0:
+            dist.barrier()
+            self.preprocessed_path = preprocessed_path
+            if os.path.exists(self.preprocessed_path):
+                logging.warning("loading from preprocessed data")
+                with open(self.preprocessed_path, "r") as f:
+                    data_dict = json.load(f)
+                if dist.get_rank() == 0:
+                    dist.barrier()
+            else:
+                if not os.path.exists("preprocessed_data"):
+                    os.mkdir("preprocessed_data")
+                assert dist.get_rank() == 0, "Only the first process should process"
+                logging.warning("Loading data...")
+                list_data_dict = json.load(open(data_path, "r"))
 
-            logging.warning("Formatting inputs...")
-            sources = []
+                logging.warning("Formatting inputs...")
+                sources = []
 
-            sources = [example["conversations"] for example in list_data_dict]
+                sources = [example["conversations"] for example in list_data_dict]
 
-            data_dict = preprocess(sources, tokenizer)
-            json_data_dict = json.dumps(data_dict)
+                data_dict = preprocess(sources, tokenizer)
+                json_data_dict = json.dumps(data_dict)
 
-            # Remember to close file to avoid concurrent r/w
-            with open(self.preprocessed_path, "w") as f:
-                f.write(json_data_dict)
+                # Remember to close file to avoid concurrent r/w
+                with open(self.preprocessed_path, "w") as f:
+                    f.write(json_data_dict)
 
             # Release barrier
-            # dist.barrier()
+            dist.barrier()
 
         if num_data != -1:
             data_dict["input_ids"] = data_dict["input_ids"][:num_data]
@@ -458,7 +455,7 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
     )
-
+    
     (
         model_args,
         data_args,
@@ -470,8 +467,7 @@ def train():
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
     if lora_args.q_lora:
-        device_map = {"": int(os.environ.get(
-            "LOCAL_RANK") or 0)} if ddp else None
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if ddp else None
         if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
             logging.warning(
                 "FSDP and ZeRO3 are both currently incompatible with QLoRA."
@@ -482,6 +478,7 @@ def train():
         if training_args.fp16
         else (torch.bfloat16 if training_args.bf16 else torch.float32)
     )
+    
 
     model = transformers.AutoModelForSeq2SeqLM.from_pretrained(
         model_args.model_name_or_path,
@@ -496,7 +493,7 @@ def train():
         if lora_args.q_lora
         else None,
     )
-
+    
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
@@ -505,7 +502,7 @@ def train():
         bias=lora_args.lora_bias,
         task_type=TaskType.SEQ_2_SEQ_LM
     )
-
+    
     if lora_args.q_lora:
         model = prepare_model_for_kbit_training(
             model, use_gradient_checkpointing=training_args.gradient_checkpointing
@@ -521,7 +518,7 @@ def train():
 
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
-
+    
     # Dacheng: Note we can only use T5Tokenizer, otherwise it will prepend
     # a space before special tokens.
     tokenizer = transformers.T5Tokenizer.from_pretrained(
@@ -539,10 +536,7 @@ def train():
         model=model,
     )
 
-    if training_args.deepspeed is not None and training_args.local_rank == 0:
-        data_module = make_supervised_data_module(
-            tokenizer=tokenizer, data_args=data_args)
-
+    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
@@ -569,9 +563,7 @@ def train():
         )
 
     if training_args.local_rank == 0:
-        safe_save_model_for_hf_trainer(
-            trainer=trainer, output_dir=training_args.output_dir, state_dict=state_dict)
-
+        safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir, state_dict=state_dict)
 
 if __name__ == "__main__":
     train()
