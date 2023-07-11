@@ -24,7 +24,7 @@ import pathlib
 from typing import Dict, Optional, Sequence, List
 
 import torch
-import torch.distributed as dist
+# import torch.distributed as dist
 
 
 from deepspeed import zero
@@ -339,8 +339,8 @@ class SupervisedDataset(Dataset):
 
         # save to file
         # Make sure only the first process is processing the dataset
-        if dist.get_rank() != 0:
-            dist.barrier()
+        # if dist.get_rank() != 0:
+        #     dist.barrier()
         self.preprocessed_path = preprocessed_path
         if os.path.exists(self.preprocessed_path):
             logging.warning("loading from preprocessed data")

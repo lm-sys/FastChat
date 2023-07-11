@@ -24,7 +24,7 @@ import pathlib
 from typing import Dict, Optional, Sequence, List
 
 import torch
-import torch.distributed as dist
+# import torch.distributed as dist
 
 
 from deepspeed import zero
