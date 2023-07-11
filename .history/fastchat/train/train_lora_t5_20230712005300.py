@@ -538,7 +538,7 @@ def train():
         model=model,
     )
 
-    # if training_args.deepspeed is not None and training_args.local_rank == 0:
+    if training_args.deepspeed is not None and training_args.local_rank == 0:
     data_module = make_supervised_data_module(
         tokenizer=tokenizer, data_args=data_args)
 
