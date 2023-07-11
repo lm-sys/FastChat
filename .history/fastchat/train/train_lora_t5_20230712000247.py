@@ -24,13 +24,16 @@ import pathlib
 from typing import Dict, Optional, Sequence, List
 
 import torch
-import torch.distributed as dist
+
+
+from deepspeed import zero
+from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 import transformers
 from torch.utils.data import Dataset
-from transformers import Trainer, AddedToken
+from transformers import Trainer, AddedToken, BitsAndBytesConfig, deepspeed
 
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 from fastchat.model.model_adapter import get_conversation_template
 
@@ -45,17 +48,29 @@ DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
 
+
 @dataclass
 class LoraArguments:
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
     lora_target_modules: List[str] = field(
-        default_factory=lambda: ["q_proj", "v_proj"]
+        default_factory=lambda: ["q", "v"]
     )
     lora_weight_path: str = ""
     lora_bias: str = "none"
     q_lora: bool = False
+
+
+def maybe_zero_3(param):
+    if hasattr(param, "ds_id"):
+        assert param.ds_status == ZeroParamStatus.NOT_AVAILABLE
+        with zero.GatheredParameters([param]):
+            param = param.data.detach().cpu().clone()
+    else:
+        param = param.detach().cpu().clone()
+    return param
+
 
 @dataclass
 class ModelArguments:
@@ -410,6 +425,15 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
     )
+    
+    (
+        model_args,
+        data_args,
+        training_args,
+        lora_args,
+    ) = parser.parse_args_into_dataclasses()
+
+
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     model = transformers.AutoModelForSeq2SeqLM.from_pretrained(

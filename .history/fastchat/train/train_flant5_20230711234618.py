@@ -50,7 +50,7 @@ class LoraArguments:
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
-    lora_target_modules: List[str] = field(
+    lora_target_modules: typing.List[str] = field(
         default_factory=lambda: ["q_proj", "v_proj"]
     )
     lora_weight_path: str = ""
