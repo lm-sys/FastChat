@@ -24,6 +24,7 @@ import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
+import torch.distributed as dist
 
 import transformers
 from torch.utils.data import Dataset
@@ -76,7 +77,6 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
     state_dict = trainer.model.state_dict()
     if trainer.args.should_save:
         cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        # potential bug for T5 model
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
@@ -276,13 +276,20 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         # save to file
+        # Make sure only the first process is processing the dataset
+        if dist.get_rank() != 0:
+            dist.barrier()
         self.preprocessed_path = preprocessed_path
-        if not os.path.exists("./preprocessed_data/"):
-            os.mkdir("preprocessed_data/")
         if os.path.exists(self.preprocessed_path):
-            print("loading from preprocessed data")
-            data_dict = json.load(open(self.preprocessed_path, "r"))
+            logging.warning("loading from preprocessed data")
+            with open(self.preprocessed_path, "r") as f:
+                data_dict = json.load(f)
+            if dist.get_rank() == 0:
+                dist.barrier()
         else:
+            if not os.path.exists("preprocessed_data"):
+                os.mkdir("preprocessed_data")
+            assert dist.get_rank() == 0, "Only the first process should process"
             logging.warning("Loading data...")
             list_data_dict = json.load(open(data_path, "r"))
 
@@ -294,11 +301,12 @@ class SupervisedDataset(Dataset):
             data_dict = preprocess(sources, tokenizer)
             json_data_dict = json.dumps(data_dict)
 
-            # open file for writing, "w"
-            f = open(self.preprocessed_path, "w")
+            # Remember to close file to avoid concurrent r/w
+            with open(self.preprocessed_path, "w") as f:
+                f.write(json_data_dict)
 
-            # write json object to file
-            f.write(json_data_dict)
+            # Release barrier
+            dist.barrier()
 
         if num_data != -1:
             data_dict["input_ids"] = data_dict["input_ids"][:num_data]

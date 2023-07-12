@@ -9,27 +9,34 @@ import time
 import gradio as gr
 import numpy as np
 
+from fastchat.constants import (
+    MODERATION_MSG,
+    CONVERSATION_LIMIT_MSG,
+    INACTIVE_MSG,
+    INPUT_CHAR_LEN_LIMIT,
+    CONVERSATION_TURN_LIMIT,
+)
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_web_server import (
-    http_bot,
+    State,
+    bot_response,
     get_conv_log_filename,
     no_change_btn,
     enable_btn,
     disable_btn,
-    model_info,
     learn_more_md,
+    get_model_description_md,
+    ip_expiration_dict,
 )
 from fastchat.utils import (
     build_logger,
     violates_moderation,
-    moderation_msg,
 )
 
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
-num_models = 2
+num_sides = 2
 enable_moderation = False
 
 
@@ -39,7 +46,7 @@ def set_global_vars_named(enable_moderation_):
 
 
 def load_demo_side_by_side_named(models, url_params):
-    states = (None,) * num_models
+    states = (None,) * num_sides
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
@@ -50,14 +57,14 @@ def load_demo_side_by_side_named(models, url_params):
         model_right = model_left
 
     selector_updates = (
-        gr.Dropdown.update(model_left, visible=True),
-        gr.Dropdown.update(model_right, visible=True),
+        gr.Dropdown.update(choices=models, value=model_left, visible=True),
+        gr.Dropdown.update(choices=models, value=model_right, visible=True),
     )
 
     return (
         states
         + selector_updates
-        + (gr.Chatbot.update(visible=True),) * num_models
+        + (gr.Chatbot.update(visible=True),) * num_sides
         + (
             gr.Textbox.update(visible=True),
             gr.Box.update(visible=True),
@@ -123,15 +130,14 @@ def bothbad_vote_last_response(
 def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (named). ip: {request.client.host}")
     states = [state0, state1]
-    for i in range(num_models):
-        states[i].messages[-1][-1] = None
-        states[i].skip_next = False
+    for i in range(num_sides):
+        states[i].conv.update_last_message(None)
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history (named). ip: {request.client.host}")
-    return [None] * num_models + [None] * num_models + [""] + [disable_btn] * 6
+    return [None] * num_sides + [None] * num_sides + [""] + [disable_btn] * 6
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
@@ -142,21 +148,40 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-def add_text(state0, state1, text, request: gr.Request):
-    logger.info(f"add_text (named). ip: {request.client.host}. len: {len(text)}")
+def add_text(
+    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+):
+    ip = request.client.host
+    logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
+    model_selectors = [model_selector0, model_selector1]
 
-    for i in range(num_models):
+    # Init states if necessary
+    for i in range(num_sides):
         if states[i] is None:
-            states[i] = get_conversation_template("vicuna")
+            states[i] = State(model_selectors[i])
 
     if len(text) <= 0:
-        for i in range(num_models):
+        for i in range(num_sides):
             states[i].skip_next = True
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
             + [""]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    if ip_expiration_dict[ip] < time.time():
+        logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [INACTIVE_MSG]
             + [
                 no_change_btn,
             ]
@@ -169,22 +194,37 @@ def add_text(state0, state1, text, request: gr.Request):
             logger.info(
                 f"violate moderation (named). ip: {request.client.host}. text: {text}"
             )
-            for i in range(num_models):
+            for i in range(num_sides):
                 states[i].skip_next = True
             return (
                 states
                 + [x.to_gradio_chatbot() for x in states]
-                + [moderation_msg]
+                + [MODERATION_MSG]
                 + [
                     no_change_btn,
                 ]
                 * 6
             )
 
-    text = text[:1536]  # Hard cut-off
-    for i in range(num_models):
-        states[i].append_message(states[i].roles[0], text)
-        states[i].append_message(states[i].roles[1], None)
+    conv = states[0].conv
+    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
+        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [CONVERSATION_LIMIT_MSG]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    for i in range(num_sides):
+        states[i].conv.append_message(states[i].conv.roles[0], text)
+        states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
     return (
@@ -198,17 +238,15 @@ def add_text(state0, state1, text, request: gr.Request):
     )
 
 
-def http_bot_all(
+def bot_response_multi(
     state0,
     state1,
-    model_selector0,
-    model_selector1,
     temperature,
     top_p,
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"http_bot_all (named). ip: {request.client.host}")
+    logger.info(f"bot_response_multi (named). ip: {request.client.host}")
 
     if state0.skip_next:
         # This generate call is skipped due to invalid inputs
@@ -221,13 +259,11 @@ def http_bot_all(
         return
 
     states = [state0, state1]
-    model_selector = [model_selector0, model_selector1]
     gen = []
-    for i in range(num_models):
+    for i in range(num_sides):
         gen.append(
-            http_bot(
+            bot_response(
                 states[i],
-                model_selector[i],
                 temperature,
                 top_p,
                 max_new_tokens,
@@ -235,10 +271,10 @@ def http_bot_all(
             )
         )
 
-    chatbots = [None] * num_models
+    chatbots = [None] * num_sides
     while True:
         stop = True
-        for i in range(num_models):
+        for i in range(num_sides):
             try:
                 ret = next(gen[i])
                 states[i], chatbots[i] = ret[0], ret[1]
@@ -249,11 +285,14 @@ def http_bot_all(
         if stop:
             break
 
+
+def flash_buttons():
+    btn_updates = [
+        [disable_btn] * 4 + [enable_btn] * 2,
+        [enable_btn] * 6,
+    ]
     for i in range(10):
-        if i % 2 == 0:
-            yield states + chatbots + [disable_btn] * 4 + [enable_btn] * 2
-        else:
-            yield states + chatbots + [enable_btn] * 6
+        yield btn_updates[i % 2]
         time.sleep(0.2)
 
 
@@ -265,7 +304,7 @@ def build_side_by_side_ui_named(models):
 - You pick the models you want to chat with.
 - You can do multiple rounds of conversations before voting.
 - Click "Clear history" to start a new round.
-- [[Blog](https://lmsys.org/blog/2023-05-03-arena/)] [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
+- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
@@ -273,48 +312,34 @@ By using this service, users are required to agree to the following terms: The s
 ### Choose two models to chat with (view [leaderboard](?leaderboard))
 """
 
-    model_description_md = """
-| | | |
-| ---- | ---- | ---- |
-"""
-    for i, name in enumerate(models):
-        if i % 3 == 0:
-            model_description_md += "|"
+    states = [gr.State() for _ in range(num_sides)]
+    model_selectors = [None] * num_sides
+    chatbots = [None] * num_sides
 
-        if name in model_info:
-            name, link, desc = model_info[name]
-            model_description_md += f" [{name}]({link}): {desc} |"
-        else:
-            model_description_md += f" |"
-        if i % 3 == 2:
-            model_description_md += "\n"
-
-    states = [gr.State() for _ in range(num_models)]
-    model_selectors = [None] * num_models
-    chatbots = [None] * num_models
-
+    model_description_md = get_model_description_md(models)
     notice = gr.Markdown(
         notice_markdown + model_description_md, elem_id="notice_markdown"
     )
 
     with gr.Box(elem_id="share-region-named"):
         with gr.Row():
-            for i in range(num_models):
+            for i in range(num_sides):
                 with gr.Column():
                     model_selectors[i] = gr.Dropdown(
                         choices=models,
                         value=models[i] if len(models) > i else "",
                         interactive=True,
                         show_label=False,
-                    ).style(container=False)
+                        container=False,
+                    )
 
         with gr.Row():
-            for i in range(num_models):
+            for i in range(num_sides):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
-                    chatbots[i] = grChatbot(
-                        label=label, elem_id=f"chatbot", visible=False
-                    ).style(height=550)
+                    chatbots[i] = gr.Chatbot(
+                        label=label, elem_id=f"chatbot", visible=False, height=550
+                    )
 
         with gr.Box() as button_row:
             with gr.Row():
@@ -329,7 +354,8 @@ By using this service, users are required to agree to the following terms: The s
                 show_label=False,
                 placeholder="Enter text and press ENTER",
                 visible=False,
-            ).style(container=False)
+                container=False,
+            )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False)
 
@@ -356,7 +382,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Top P",
         )
         max_output_tokens = gr.Slider(
-            minimum=0,
+            minimum=16,
             maximum=1024,
             value=512,
             step=64,
@@ -398,9 +424,11 @@ By using this service, users are required to agree to the following terms: The s
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
-        http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
     clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
 
@@ -426,24 +454,32 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
-    for i in range(num_models):
+    for i in range(num_sides):
         model_selectors[i].change(
             clear_history, None, states + chatbots + [textbox] + btn_list
         )
 
     textbox.submit(
-        add_text, states + [textbox], states + chatbots + [textbox] + btn_list
+        add_text,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
-        http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
     send_btn.click(
-        add_text, states + [textbox], states + chatbots + [textbox] + btn_list
+        add_text,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
-        http_bot_all,
-        states + model_selectors + [temperature, top_p, max_output_tokens],
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
     )
 
     return (

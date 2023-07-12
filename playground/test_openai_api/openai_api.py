@@ -2,8 +2,10 @@ import os
 
 from fastchat.model import get_conversation_template
 
+
 def chatgpt():
     import openai
+
     model = "gpt-3.5-turbo"
     conv = get_conversation_template(model)
     conv.append_message(conv.roles[0], "Hello!")

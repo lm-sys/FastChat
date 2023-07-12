@@ -6,7 +6,7 @@ python3 -m fastchat.data.optional_clean --in input.json --out output.json --keep
 python3 -m fastchat.data.optional_clean --in input.json --out output.json --skip-lang en
 
 Requirement:
-pip3 install polyglot icu pyicu pycld2 morfessor
+pip3 install polyglot pyicu pycld2
 """
 import argparse
 import json
@@ -86,5 +86,5 @@ if __name__ == "__main__":
         if not skip(conv, args):
             new_content.append(conv)
 
-    print(f"return {len(new_content)} out of {len(content)}, start dump ...")
-    json.dump(new_content, open(out_file, "w"), indent=2)
+    print(f"#in: {len(content)}, #out: {len(new_content)}")
+    json.dump(new_content, open(out_file, "w"), indent=2, ensure_ascii=False)

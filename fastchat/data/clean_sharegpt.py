@@ -88,6 +88,8 @@ def clean_html_one_sample(sample):
     if len(sample["conversations"]) <= 1:
         return (sample, 1)
 
+    char_count = 0
+    new_conversations = []
     for i, c in enumerate(sample["conversations"]):
         if c["from"] != roles[i % 2]:
             return (sample, 2)
@@ -100,7 +102,23 @@ def clean_html_one_sample(sample):
         except (bs4.builder.ParserRejectedMarkup, AssertionError):
             return (sample, 4)
 
-        c["value"] = new_val
+        # Filter empty answers like https://sharegpt.com/c/mrllZ6u
+        if not new_val or not new_val[0].isprintable():
+            break
+
+        char_count += len(new_val)
+        new_conversations.append(
+            {
+                "from": c["from"],
+                "value": new_val,
+            }
+        )
+
+    new_conversations = new_conversations[: len(new_conversations) // 2 * 2]
+    sample["conversations"] = new_conversations
+
+    if char_count < 16 or len(sample["conversations"]) <= 0:
+        return (sample, 1)
 
     return (sample, 0)
 
@@ -116,6 +134,7 @@ def clean_html_all(content, begin, end):
     cnt_too_short = 0
     cnt_id_duplication = 0
     cnt_value_duplication = 0
+    cnt_plugin = 0
     cnt_tag = 0
 
     content = content[begin:end]
@@ -128,7 +147,7 @@ def clean_html_all(content, begin, end):
 
     visited = {}
     new_content = []
-    for sample, error_code in tqdm(processed):
+    for sample, error_code in processed:
         cid = sample["id"]
         skipped = True
 
@@ -150,17 +169,20 @@ def clean_html_all(content, begin, end):
         elif cid in visited:
             print(f"id {cid} is an id duplication of {visited[cid]}")
             cnt_id_duplication += 1
-        elif (
-            sample["conversations"][1]["value"],
-            len(sample["conversations"]),
-        ) in visited:
-            key = (sample["conversations"][1]["value"], len(sample["conversations"]))
-            print(f"id {cid} is a value duplication of {visited[key]}")
-            cnt_value_duplication += 1
+        elif sample.get("plugins", None) is not None:
+            print(f"id {cid} contains plugin")
+            cnt_plugin += 1
         else:
-            key = (sample["conversations"][1]["value"], len(sample["conversations"]))
-            visited[cid] = visited[key] = cid
-            skipped = False
+            key = (
+                sample["conversations"][0]["value"],
+                sample["conversations"][1]["value"],
+            )
+            if key in visited:
+                print(f"id {cid} is a value duplication of {visited[key]}")
+                cnt_value_duplication += 1
+            else:
+                visited[cid] = visited[key] = cid
+                skipped = False
 
         if not skipped:
             new_content.append(sample)
@@ -172,7 +194,7 @@ def clean_html_all(content, begin, end):
         f"cnt_blocked_words: {cnt_blocked_words}, cnt_parser_error: {cnt_parser_error}, "
         f"cnt_wrong_format: {cnt_wrong_format}, "
         f"cnt_too_short: {cnt_too_short}, cnt_id_duplication: {cnt_id_duplication}, "
-        f"cnt_value_duplication: {cnt_value_duplication}, "
+        f"cnt_value_duplication: {cnt_value_duplication}, cnt_plugin: {cnt_plugin}"
     )
 
     return new_content
@@ -181,7 +203,7 @@ def clean_html_all(content, begin, end):
 def main(args):
     content = json.load(open(args["in_file"], "r"))
     content = clean_html_all(content, args["begin"], args["end"])
-    json.dump(content, open(args["out_file"], "w"), indent=2)
+    json.dump(content, open(args["out_file"], "w"), indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":
