@@ -33,7 +33,7 @@ After training, please use our post-processing [function](https://github.com/lm-
 You can use the following command to train Vicuna-7B using QLoRA using ZeRO2. Note that ZeRO3 is not currently supported with QLoRA but ZeRO3 does support LoRA, which has a reference configuraiton under playground/deepspeed_config_s3.json. To use QLoRA, you must have bitsandbytes>=0.39.0 and transformers>=4.30.0 installed.
 ```bash
 deepspeed fastchat/train/train_lora.py \
-    --model_name_or_path openlm-research/open_llama_7b \
+    --model_name_or_path ~/model_weights/llama-7b \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
