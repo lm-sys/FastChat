@@ -36,6 +36,7 @@ IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
+    flash_attn: bool = False
 
 
 @dataclass
@@ -222,7 +223,8 @@ def make_supervised_data_module(
     # Split train/test
     np.random.seed(0)
     perm = np.random.permutation(len(raw_data))
-    split = int(len(perm) * 0.98)
+    split = int(len(perm) * 0.90)
+    # print(f"SPLIT IS {split}")
     train_indices = perm[:split]
     eval_indices = perm[split:]
     train_raw_data = [raw_data[i] for i in train_indices]
