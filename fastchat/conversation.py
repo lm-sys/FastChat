@@ -787,6 +787,21 @@ register_conv_template(
     )
 )
 
+# StarChat template
+register_conv_template(
+    Conversation(
+        name="starchat",
+        system="<system>\n",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|endoftext|>",
+        stop_token_ids=[0],
+        stop_str="<|endoftext|>",
+    )
+)
+
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
