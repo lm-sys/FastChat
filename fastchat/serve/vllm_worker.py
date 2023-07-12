@@ -73,10 +73,13 @@ class VLLMWorker(BaseModelWorker):
         echo = params.get("echo", True)
 
         # Handle stop_str
-        if stop_str is None:
-            stop = []
-        else:
+        if isinstance(stop_str, str) and stop_str != "":
             stop = [stop_str]
+        elif isinstance(stop_str, list) and stop_str != []:
+            stop = stop_str
+        else:
+            stop = []
+
         for tid in stop_token_ids:
             stop.append(self.tokenizer.decode(tid))
 
