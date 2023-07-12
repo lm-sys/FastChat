@@ -44,8 +44,8 @@ replace_llama_attn_with_flash_attn()
 
 @dataclass
 class LoraArguments:
-    lora_r: int = 16
-    lora_alpha: int = 32
+    lora_r: int = 8
+    lora_alpha: int = 16
     lora_dropout: float = 0.05
     lora_target_modules: typing.List[str] = field(
         default_factory=lambda: ["q_proj", "v_proj"]
