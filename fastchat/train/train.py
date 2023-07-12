@@ -14,7 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import warnings
 import copy
+import logging
 from dataclasses import dataclass, field
 import json
 import pathlib
@@ -32,6 +34,9 @@ from fastchat.model.model_adapter import get_conversation_template
 
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 
+
+logging.basicConfig(level=logging.INFO)
+# np.random.seed(100)
 
 @dataclass
 class ModelArguments:
@@ -66,13 +71,29 @@ def rank0_print(*args):
         print(*args)
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-    """Collects the state dict and dump to disk."""
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
+# def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
+#     """Collects the state dict and dump to disk."""
+#     # Hao: fix the FSDP save error
+#     if int(torch.__version__[0]) < 2:
+#         warnings.warn("You might run out of GPU memory when you call `safe_save_model_for_hf_trainer()` "
+#                       "at the end of your training if you are running on a GPU with less than 40GB memory. "
+#                       "Please refer to https://github.com/tatsu-lab/stanford_alpaca/issues/81 about how to "
+#                       "work around it.")
+#         FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+#                                                           StateDictType.FULL_STATE_DICT,
+#                                                           FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+#                                                           FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+#     else:
+#         FSDP.FullyShardedDataParallel.set_state_dict_type(trainer.model,
+#                                                           StateDictType.FULL_STATE_DICT,
+#                                                           FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
+#                                                           FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True))
+#
+#     state_dict = trainer.model.state_dict()
+#     if trainer.args.should_save:
+#         cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
+#         del state_dict
+#         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
 def preprocess(
@@ -220,18 +241,20 @@ def make_supervised_data_module(
     raw_data = json.load(open(data_args.data_path, "r"))
 
     # Split train/test
-    np.random.seed(0)
-    perm = np.random.permutation(len(raw_data))
-    split = int(len(perm) * 0.98)
-    train_indices = perm[:split]
-    eval_indices = perm[split:]
-    train_raw_data = [raw_data[i] for i in train_indices]
-    eval_raw_data = [raw_data[i] for i in eval_indices]
-    rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
+    # perm = np.random.permutation(len(raw_data))
+    # split = int(len(perm) * 0.98)
+    # train_indices = perm[:split]
+    # eval_indices = perm[split:]
+    # train_raw_data = [raw_data[i] for i in train_indices]
+    # eval_raw_data = [raw_data[i] for i in eval_indices]
+    # rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
 
-    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
-    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
-    return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
+    # train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
+    # eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
+    
+    rank0_print(f"######## train {len(raw_data)}")
+    train_dataset = dataset_cls(raw_data, tokenizer=tokenizer)
+    return dict(train_dataset=train_dataset, eval_dataset=None)
 
 
 def train():
@@ -245,6 +268,8 @@ def train():
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
+        low_cpu_mem_usage=True,
+        torch_dtype=torch.float16
     )
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -266,8 +291,10 @@ def train():
     else:
         trainer.train()
     trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+    trainer.save_model(output_dir=training_args.output_dir)
 
 
 if __name__ == "__main__":
+    from fastchat.train.hf_save_model_monkey_patch import replace_hf_save_model
+    replace_hf_save_model()
     train()

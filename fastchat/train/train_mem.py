@@ -10,4 +10,6 @@ replace_llama_attn_with_flash_attn()
 from fastchat.train.train import train
 
 if __name__ == "__main__":
+    from fastchat.train.hf_save_model_monkey_patch import replace_hf_save_model
+    replace_hf_save_model()
     train()
