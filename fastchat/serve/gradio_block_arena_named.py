@@ -26,7 +26,6 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     learn_more_md,
     get_model_description_md,
-    ip_expiration_dict,
 )
 from fastchat.utils import (
     build_logger,
@@ -46,8 +45,6 @@ def set_global_vars_named(enable_moderation_):
 
 
 def load_demo_side_by_side_named(models, url_params):
-    states = (None,) * num_sides
-
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
         weights = ([8, 4, 2, 1] + [1] * 32)[: len(models) - 1]
@@ -55,6 +52,7 @@ def load_demo_side_by_side_named(models, url_params):
         model_right = np.random.choice(models[1:], p=weights)
     else:
         model_right = model_left
+    states = (State(model_left), State(model_right))
 
     selector_updates = (
         gr.Dropdown.update(choices=models, value=model_left, visible=True),
@@ -127,17 +125,20 @@ def bothbad_vote_last_response(
     return ("",) + (disable_btn,) * 4
 
 
-def regenerate(state0, state1, request: gr.Request):
+def regenerate(state0: State, state1: State, request: gr.Request):
     logger.info(f"regenerate (named). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_sides):
         states[i].conv.update_last_message(None)
+        states[i].skip_next = False
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
-def clear_history(request: gr.Request):
+def clear_history(state0: State, state1: State, request: gr.Request):
     logger.info(f"clear_history (named). ip: {request.client.host}")
-    return [None] * num_sides + [None] * num_sides + [""] + [disable_btn] * 6
+    state0.reset_conv()
+    state1.reset_conv()
+    return [state0, state1] + [None] * num_sides + [""] + [disable_btn] * 6
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
@@ -149,17 +150,21 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0: State,
+    state1: State,
+    model_selector0,
+    model_selector1,
+    text,
+    request: gr.Request,
 ):
     ip = request.client.host
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
 
-    # Init states if necessary
+    # Update model in states if necessary
     for i in range(num_sides):
-        if states[i] is None:
-            states[i] = State(model_selectors[i])
+        states[i].update_model(model_selectors[i])
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -174,7 +179,7 @@ def add_text(
             * 6
         )
 
-    if ip_expiration_dict[ip] < time.time():
+    if state0.session_expired() or state1.session_expired():
         logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
@@ -430,7 +435,7 @@ By using this service, users are required to agree to the following terms: The s
     ).then(
         flash_buttons, [], btn_list
     )
-    clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+    clear_btn.click(clear_history, states, states + chatbots + [textbox] + btn_list)
 
     share_js = """
 function (a, b, c, d) {
@@ -456,7 +461,7 @@ function (a, b, c, d) {
 
     for i in range(num_sides):
         model_selectors[i].change(
-            clear_history, None, states + chatbots + [textbox] + btn_list
+            clear_history, states, states + chatbots + [textbox] + btn_list
         )
 
     textbox.submit(

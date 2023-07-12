@@ -26,7 +26,6 @@ from fastchat.serve.gradio_web_server import (
     enable_btn,
     disable_btn,
     learn_more_md,
-    ip_expiration_dict,
 )
 from fastchat.utils import (
     build_logger,
@@ -38,7 +37,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 num_sides = 2
 enable_moderation = False
 anony_names = ["", ""]
-models = []
+models: list[str] = []
 
 
 def set_global_vars_anony(enable_moderation_):
@@ -50,7 +49,9 @@ def load_demo_side_by_side_anony(models_, url_params):
     global models
     models = models_
 
-    states = (None,) * num_sides
+    model_left, model_right = pick_random_models(models)
+    states = (State(model_left), State(model_right))
+
     selector_updates = (
         gr.Markdown.update(visible=True),
         gr.Markdown.update(visible=True),
@@ -137,18 +138,24 @@ def bothbad_vote_last_response(
         yield x
 
 
-def regenerate(state0, state1, request: gr.Request):
+def regenerate(state0: State, state1: State, request: gr.Request):
     logger.info(f"regenerate (anony). ip: {request.client.host}")
     states = [state0, state1]
     for i in range(num_sides):
         states[i].conv.update_last_message(None)
+        states[i].skip_next = False
     return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
 
 
-def clear_history(request: gr.Request):
+def clear_history(state0: State, state1: State, request: gr.Request):
     logger.info(f"clear_history (anony). ip: {request.client.host}")
+    model_left, model_right = pick_random_models(models)
+    state0.update_model(model_left)
+    state1.update_model(model_right)
+    state0.reset_conv()
+    state1.reset_conv()
     return (
-        [None] * num_sides + [None] * num_sides + anony_names + [""] + [disable_btn] * 6
+        [state0, state1] + [None] * num_sides + anony_names + [""] + [disable_btn] * 6
     )
 
 
@@ -187,51 +194,50 @@ SAMPLING_WEIGHTS = {
 
 SAMPLING_BOOST_MODELS = []
 
-model_pairs = []
-model_pairs_weights = []
+model_pairs: list[tuple[str, str]] = []
+model_pairs_weights: list[float] = []
+
+
+def pick_random_models(models: list[str]) -> tuple[str, str]:
+    global model_pairs, model_pairs_weights
+
+    # Pick two models
+    if len(model_pairs) == 0:
+        for i in range(len(models)):
+            for j in range(len(models)):
+                if i == j:
+                    continue
+                a = models[i]
+                b = models[j]
+                w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
+                if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
+                    w *= 5
+                model_pairs.append((a, b))
+                model_pairs_weights.append(w)
+
+        model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
+        # for p, w in zip(model_pairs, model_pairs_weights):
+        #    print(p, w)
+
+    if len(model_pairs) >= 1:
+        idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
+        model_left, model_right = model_pairs[idx]
+    else:
+        model_left = model_right = models[0]
+    return model_left, model_right
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0: State,
+    state1: State,
+    model_selector0,
+    model_selector1,
+    text,
+    request: gr.Request,
 ):
     ip = request.client.host
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
-    model_selectors = [model_selector0, model_selector1]
-
-    # Init states if necessary
-    if states[0] is None:
-        assert states[1] is None
-        global model_pairs, model_pairs_weights
-
-        # Pick two models
-        if len(model_pairs) == 0:
-            for i in range(len(models)):
-                for j in range(len(models)):
-                    if i == j:
-                        continue
-                    a = models[i]
-                    b = models[j]
-                    w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
-                    if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
-                        w *= 5
-                    model_pairs.append((a, b))
-                    model_pairs_weights.append(w)
-
-            model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
-            # for p, w in zip(model_pairs, model_pairs_weights):
-            #    print(p, w)
-
-        if len(model_pairs) >= 1:
-            idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
-            model_left, model_right = model_pairs[idx]
-        else:
-            model_left = model_right = models[0]
-
-        states = [
-            State(model_left),
-            State(model_right),
-        ]
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -246,7 +252,7 @@ def add_text(
             * 6
         )
 
-    if ip_expiration_dict[ip] < time.time():
+    if state0.session_expired() or state1.session_expired():
         logger.info(f"inactive (anony). ip: {request.client.host}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
@@ -485,7 +491,9 @@ Please scroll down and start chatting. You can view a leaderboard of participati
         flash_buttons, [], btn_list
     )
     clear_btn.click(
-        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list
+        clear_history,
+        states,
+        states + chatbots + model_selectors + [textbox] + btn_list,
     )
 
     share_js = """
