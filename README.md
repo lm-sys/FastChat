@@ -263,6 +263,9 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --lazy_preprocess True
 ```
 
+Flash attention does not yet support V100 GPUs. You can use the [memory-efficient attention](https://arxiv.org/abs/2112.05682) as an equivalent in place of flash attention.
+Follow [these instructions](https://github.com/facebookresearch/xformers#installing-xformers) to install the xformer library by Meta. Then, you can use the script [train_xformer.py](https://github.com/lm-sys/FastChat/tree/main/fastchat/train/train_xformer.py) as an alternative of flash attention.  
+
 If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
 ### Other models and LoRA support
