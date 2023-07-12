@@ -103,15 +103,19 @@ def get_model_adapter(model_path: str) -> BaseModelAdapter:
     adapter_matched_last_path = None
 
     for adapter in model_adapters:
-        if adapter.match(model_last_folder_path) and type(adapter) != BaseModelAdapter :
+        if adapter.match(model_last_folder_path) and type(adapter) != BaseModelAdapter:
             adapter_matched_last_path = adapter
         elif adapter.match(model_path) and not adapter_matched_full_path:
             adapter_matched_full_path = adapter
         if adapter_matched_last_path and adapter_matched_full_path:
             break
- 
+
     if adapter_matched_full_path or adapter_matched_last_path:
-        return adapter_matched_last_path if adapter_matched_last_path else adapter_matched_full_path
+        return (
+            adapter_matched_last_path
+            if adapter_matched_last_path
+            else adapter_matched_full_path
+        )
     raise ValueError(f"No valid model adapter for {model_path}")
 
 
