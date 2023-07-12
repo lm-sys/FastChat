@@ -373,7 +373,16 @@ class PeftModelAdapter:
 
     def match(self, model_path: str):
         """Accepts any model path with "peft" in the name"""
-        return "peft" in model_path
+        if os.path.exists(os.path.join(model_path, "adapter_config.json")):
+            return True
+        else:
+            from huggingface_hub import HfApi
+
+            api = HfApi()
+            model_info = api.model_info(model_path)
+            repo_files = [file.rfilename for file in model_info.siblings]
+            if "adapter_config.json" in repo_files:
+                return True
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
@@ -381,6 +390,8 @@ class PeftModelAdapter:
 
         config = PeftConfig.from_pretrained(model_path)
         base_model_path = config.base_model_name_or_path
+        if base_model_path is None or base_model_path == "":
+            raise ValueError(f"PeftModelAdapter cannot be loaded without a base model")
         if "peft" in base_model_path:
             raise ValueError(
                 f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
