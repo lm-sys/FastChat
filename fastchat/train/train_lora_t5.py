@@ -24,7 +24,7 @@ import pathlib
 from typing import Dict, Optional, Sequence, List
 
 import torch
-# import torch.distributed as dist
+import torch.distributed as dist
 
 
 from deepspeed import zero
@@ -339,15 +339,15 @@ class SupervisedDataset(Dataset):
 
         # save to file
         # Make sure only the first process is processing the dataset
-        # if dist.get_rank() != 0:
-        #     dist.barrier()
+        if dist.get_rank() != 0:
+            dist.barrier()
         self.preprocessed_path = preprocessed_path
         if os.path.exists(self.preprocessed_path):
             logging.warning("loading from preprocessed data")
             with open(self.preprocessed_path, "r") as f:
                 data_dict = json.load(f)
-            # if dist.get_rank() == 0:
-            #     dist.barrier()
+            if dist.get_rank() == 0:
+                dist.barrier()
         else:
             if not os.path.exists("preprocessed_data"):
                 os.mkdir("preprocessed_data")
@@ -368,7 +368,7 @@ class SupervisedDataset(Dataset):
                 f.write(json_data_dict)
 
             # Release barrier
-            # dist.barrier()
+            dist.barrier()
 
         if num_data != -1:
             data_dict["input_ids"] = data_dict["input_ids"][:num_data]
@@ -538,7 +538,6 @@ def train():
         model=model,
     )
 
-    # if training_args.deepspeed is not None and training_args.local_rank == 0:
     data_module = make_supervised_data_module(
         tokenizer=tokenizer, data_args=data_args)
 

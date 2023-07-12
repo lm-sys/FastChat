@@ -1,0 +1,1200 @@
+[2023-07-12 13:18:13,107] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:18:16,128] [WARNING] [runner.py:196:fetch_hostfile] Unable to find hostfile, will proceed with training with local resources only.
+Detected CUDA_VISIBLE_DEVICES=0,1,3,4: setting --include=localhost:0,1,3,4
+[2023-07-12 13:18:16,187] [INFO] [runner.py:555:main] cmd = /fsx/divyanshu/miniconda3/bin/python -u -m deepspeed.launcher.launch --world_info=eyJsb2NhbGhvc3QiOiBbMCwgMSwgMywgNF19 --master_addr=127.0.0.1 --master_port=29500 --enable_each_rank_log=None fastchat/train/train_lora_t5.py --model_name_or_path google/flan-t5-xl --data_path ./data/dummy_conversation.json  
+[2023-07-12 13:18:19,588] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:18:22,644] [INFO] [launch.py:145:main] WORLD INFO DICT: {'localhost': [0, 1, 3, 4]}
+[2023-07-12 13:18:22,644] [INFO] [launch.py:151:main] nnodes=1, num_local_procs=4, node_rank=0
+[2023-07-12 13:18:22,644] [INFO] [launch.py:162:main] global_rank_mapping=defaultdict(<class 'list'>, {'localhost': [0, 1, 2, 3]})
+[2023-07-12 13:18:22,644] [INFO] [launch.py:163:main] dist_world_size=4
+[2023-07-12 13:18:22,644] [INFO] [launch.py:165:main] Setting CUDA_VISIBLE_DEVICES=0,1,3,4
+[2023-07-12 13:18:25,403] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:18:25,404] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:18:25,523] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:18:25,523] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+binbin  /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('53975'), PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles'), PosixPath('1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('53975'), PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('pmix-server.1122308;tcp4'), PosixPath('//127.0.0.1'), PosixPath('53975')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles'), PosixPath('1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975'), PosixPath('//127.0.0.1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+[2023-07-12 13:18:31,656] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1123931
+[2023-07-12 13:18:31,808] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1123932
+[2023-07-12 13:18:31,959] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1123933
+[2023-07-12 13:18:31,960] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1123934
+[2023-07-12 13:18:31,978] [ERROR] [launch.py:321:sigkill_handler] ['/fsx/divyanshu/miniconda3/bin/python', '-u', 'fastchat/train/train_lora_t5.py', '--local_rank=3', '--model_name_or_path', 'google/flan-t5-xl', '--data_path', './data/dummy_conversation.json', ' '] exits with return code = 2
+[2023-07-12 13:19:19,250] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:19:22,124] [WARNING] [runner.py:196:fetch_hostfile] Unable to find hostfile, will proceed with training with local resources only.
+Detected CUDA_VISIBLE_DEVICES=0,1,3,4: setting --include=localhost:0,1,3,4
+[2023-07-12 13:19:22,182] [INFO] [runner.py:555:main] cmd = /fsx/divyanshu/miniconda3/bin/python -u -m deepspeed.launcher.launch --world_info=eyJsb2NhbGhvc3QiOiBbMCwgMSwgMywgNF19 --master_addr=127.0.0.1 --master_port=29500 --enable_each_rank_log=None fastchat/train/train_lora_t5.py --model_name_or_path google/flan-t5-xl --data_path ./data/dummy_conversation.json  
+[2023-07-12 13:19:25,587] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:19:28,562] [INFO] [launch.py:145:main] WORLD INFO DICT: {'localhost': [0, 1, 3, 4]}
+[2023-07-12 13:19:28,562] [INFO] [launch.py:151:main] nnodes=1, num_local_procs=4, node_rank=0
+[2023-07-12 13:19:28,562] [INFO] [launch.py:162:main] global_rank_mapping=defaultdict(<class 'list'>, {'localhost': [0, 1, 2, 3]})
+[2023-07-12 13:19:28,562] [INFO] [launch.py:163:main] dist_world_size=4
+[2023-07-12 13:19:28,562] [INFO] [launch.py:165:main] Setting CUDA_VISIBLE_DEVICES=0,1,3,4
+[2023-07-12 13:19:31,336] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:19:31,336] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:19:31,346] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:19:31,348] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+binbin  /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975'), PosixPath('//127.0.0.1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('53975'), PosixPath('pmix-server.1122308;tcp4'), PosixPath('//127.0.0.1')}
+  warn(msg)
+CUDA SETUP: Detected CUDA version 121
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975'), PosixPath('//127.0.0.1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('53975'), PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles'), PosixPath('1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+usage: train_lora_t5.py [-h] [--model_name_or_path MODEL_NAME_OR_PATH]
+                        [--data_path DATA_PATH]
+                        [--lazy_preprocess [LAZY_PREPROCESS]]
+                        [--num_data NUM_DATA]
+                        [--preprocessed_path PREPROCESSED_PATH] --output_dir
+                        OUTPUT_DIR
+                        [--overwrite_output_dir [OVERWRITE_OUTPUT_DIR]]
+                        [--do_train [DO_TRAIN]] [--do_eval [DO_EVAL]]
+                        [--do_predict [DO_PREDICT]]
+                        [--evaluation_strategy {no,steps,epoch}]
+                        [--prediction_loss_only [PREDICTION_LOSS_ONLY]]
+                        [--per_device_train_batch_size PER_DEVICE_TRAIN_BATCH_SIZE]
+                        [--per_device_eval_batch_size PER_DEVICE_EVAL_BATCH_SIZE]
+                        [--per_gpu_train_batch_size PER_GPU_TRAIN_BATCH_SIZE]
+                        [--per_gpu_eval_batch_size PER_GPU_EVAL_BATCH_SIZE]
+                        [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
+                        [--eval_accumulation_steps EVAL_ACCUMULATION_STEPS]
+                        [--eval_delay EVAL_DELAY]
+                        [--learning_rate LEARNING_RATE]
+                        [--weight_decay WEIGHT_DECAY]
+                        [--adam_beta1 ADAM_BETA1] [--adam_beta2 ADAM_BETA2]
+                        [--adam_epsilon ADAM_EPSILON]
+                        [--max_grad_norm MAX_GRAD_NORM]
+                        [--num_train_epochs NUM_TRAIN_EPOCHS]
+                        [--max_steps MAX_STEPS]
+                        [--lr_scheduler_type {linear,cosine,cosine_with_restarts,polynomial,constant,constant_with_warmup,inverse_sqrt}]
+                        [--warmup_ratio WARMUP_RATIO]
+                        [--warmup_steps WARMUP_STEPS]
+                        [--log_level {debug,info,warning,error,critical,passive}]
+                        [--log_level_replica {debug,info,warning,error,critical,passive}]
+                        [--log_on_each_node [LOG_ON_EACH_NODE]]
+                        [--no_log_on_each_node] [--logging_dir LOGGING_DIR]
+                        [--logging_strategy {no,steps,epoch}]
+                        [--logging_first_step [LOGGING_FIRST_STEP]]
+                        [--logging_steps LOGGING_STEPS]
+                        [--logging_nan_inf_filter [LOGGING_NAN_INF_FILTER]]
+                        [--no_logging_nan_inf_filter]
+                        [--save_strategy {no,steps,epoch}]
+                        [--save_steps SAVE_STEPS]
+                        [--save_total_limit SAVE_TOTAL_LIMIT]
+                        [--save_safetensors [SAVE_SAFETENSORS]]
+                        [--save_on_each_node [SAVE_ON_EACH_NODE]]
+                        [--no_cuda [NO_CUDA]]
+                        [--use_mps_device [USE_MPS_DEVICE]] [--seed SEED]
+                        [--data_seed DATA_SEED]
+                        [--jit_mode_eval [JIT_MODE_EVAL]]
+                        [--use_ipex [USE_IPEX]] [--bf16 [BF16]]
+                        [--fp16 [FP16]] [--fp16_opt_level FP16_OPT_LEVEL]
+                        [--half_precision_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--bf16_full_eval [BF16_FULL_EVAL]]
+                        [--fp16_full_eval [FP16_FULL_EVAL]] [--tf32 TF32]
+                        [--local_rank LOCAL_RANK]
+                        [--xpu_backend {mpi,ccl,gloo}]
+                        [--tpu_num_cores TPU_NUM_CORES]
+                        [--tpu_metrics_debug [TPU_METRICS_DEBUG]]
+                        [--debug DEBUG]
+                        [--dataloader_drop_last [DATALOADER_DROP_LAST]]
+                        [--eval_steps EVAL_STEPS]
+                        [--dataloader_num_workers DATALOADER_NUM_WORKERS]
+                        [--past_index PAST_INDEX] [--run_name RUN_NAME]
+                        [--disable_tqdm DISABLE_TQDM]
+                        [--remove_unused_columns [REMOVE_UNUSED_COLUMNS]]
+                        [--no_remove_unused_columns]
+                        [--label_names LABEL_NAMES [LABEL_NAMES ...]]
+                        [--load_best_model_at_end [LOAD_BEST_MODEL_AT_END]]
+                        [--metric_for_best_model METRIC_FOR_BEST_MODEL]
+                        [--greater_is_better GREATER_IS_BETTER]
+                        [--ignore_data_skip [IGNORE_DATA_SKIP]]
+                        [--sharded_ddp SHARDED_DDP] [--fsdp FSDP]
+                        [--fsdp_min_num_params FSDP_MIN_NUM_PARAMS]
+                        [--fsdp_config FSDP_CONFIG]
+                        [--fsdp_transformer_layer_cls_to_wrap FSDP_TRANSFORMER_LAYER_CLS_TO_WRAP]
+                        [--deepspeed DEEPSPEED]
+                        [--label_smoothing_factor LABEL_SMOOTHING_FACTOR]
+                        [--optim OPTIM] [--optim_args OPTIM_ARGS]
+                        [--adafactor [ADAFACTOR]]
+                        [--group_by_length [GROUP_BY_LENGTH]]
+                        [--length_column_name LENGTH_COLUMN_NAME]
+                        [--report_to REPORT_TO [REPORT_TO ...]]
+                        [--ddp_find_unused_parameters DDP_FIND_UNUSED_PARAMETERS]
+                        [--ddp_bucket_cap_mb DDP_BUCKET_CAP_MB]
+                        [--dataloader_pin_memory [DATALOADER_PIN_MEMORY]]
+                        [--no_dataloader_pin_memory]
+                        [--skip_memory_metrics [SKIP_MEMORY_METRICS]]
+                        [--no_skip_memory_metrics]
+                        [--use_legacy_prediction_loop [USE_LEGACY_PREDICTION_LOOP]]
+                        [--push_to_hub [PUSH_TO_HUB]]
+                        [--resume_from_checkpoint RESUME_FROM_CHECKPOINT]
+                        [--hub_model_id HUB_MODEL_ID]
+                        [--hub_strategy {end,every_save,checkpoint,all_checkpoints}]
+                        [--hub_token HUB_TOKEN]
+                        [--hub_private_repo [HUB_PRIVATE_REPO]]
+                        [--gradient_checkpointing [GRADIENT_CHECKPOINTING]]
+                        [--include_inputs_for_metrics [INCLUDE_INPUTS_FOR_METRICS]]
+                        [--fp16_backend {auto,cuda_amp,apex,cpu_amp}]
+                        [--push_to_hub_model_id PUSH_TO_HUB_MODEL_ID]
+                        [--push_to_hub_organization PUSH_TO_HUB_ORGANIZATION]
+                        [--push_to_hub_token PUSH_TO_HUB_TOKEN]
+                        [--mp_parameters MP_PARAMETERS]
+                        [--auto_find_batch_size [AUTO_FIND_BATCH_SIZE]]
+                        [--full_determinism [FULL_DETERMINISM]]
+                        [--torchdynamo TORCHDYNAMO] [--ray_scope RAY_SCOPE]
+                        [--ddp_timeout DDP_TIMEOUT]
+                        [--torch_compile [TORCH_COMPILE]]
+                        [--torch_compile_backend TORCH_COMPILE_BACKEND]
+                        [--torch_compile_mode TORCH_COMPILE_MODE]
+                        [--cache_dir CACHE_DIR]
+                        [--model_max_length MODEL_MAX_LENGTH]
+                        [--lora_r LORA_R] [--lora_alpha LORA_ALPHA]
+                        [--lora_dropout LORA_DROPOUT]
+                        [--lora_target_modules LORA_TARGET_MODULES [LORA_TARGET_MODULES ...]]
+                        [--lora_weight_path LORA_WEIGHT_PATH]
+                        [--lora_bias LORA_BIAS] [--q_lora [Q_LORA]]
+train_lora_t5.py: error: the following arguments are required: --output_dir
+[2023-07-12 13:19:37,574] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1124564
+[2023-07-12 13:19:37,646] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1124565
+[2023-07-12 13:19:37,646] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1124566
+[2023-07-12 13:19:37,665] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1124567
+[2023-07-12 13:19:37,815] [ERROR] [launch.py:321:sigkill_handler] ['/fsx/divyanshu/miniconda3/bin/python', '-u', 'fastchat/train/train_lora_t5.py', '--local_rank=3', '--model_name_or_path', 'google/flan-t5-xl', '--data_path', './data/dummy_conversation.json', ' '] exits with return code = 2
+[2023-07-12 13:27:57,447] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:27:59,817] [WARNING] [runner.py:196:fetch_hostfile] Unable to find hostfile, will proceed with training with local resources only.
+Detected CUDA_VISIBLE_DEVICES=0,1,3,4: setting --include=localhost:0,1,3,4
+[2023-07-12 13:27:59,872] [INFO] [runner.py:555:main] cmd = /fsx/divyanshu/miniconda3/bin/python -u -m deepspeed.launcher.launch --world_info=eyJsb2NhbGhvc3QiOiBbMCwgMSwgMywgNF19 --master_addr=127.0.0.1 --master_port=29500 --enable_each_rank_log=None fastchat/train/train_lora_t5.py --model_name_or_path google/flan-t5-xl --data_path ./data/dummy_conversation.json --bf16 True --output_dir ./checkpoints_flant5_3b --num_train_epochs 3 --per_device_train_batch_size 1 --per_device_eval_batch_size 1 --gradient_accumulation_steps 4 --evaluation_strategy no --save_strategy steps --save_steps 300 --save_total_limit 1 --learning_rate 2e-5 --weight_decay 0. --warmup_ratio 0.03 --lr_scheduler_type cosine --logging_steps 1 --model_max_length 2048 --preprocessed_path ./preprocessed_data/processed.json --gradient_checkpointing True --q_lora True --deepspeed playground/deepspeed_config_s2.json
+[2023-07-12 13:28:02,921] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:28:05,239] [INFO] [launch.py:145:main] WORLD INFO DICT: {'localhost': [0, 1, 3, 4]}
+[2023-07-12 13:28:05,239] [INFO] [launch.py:151:main] nnodes=1, num_local_procs=4, node_rank=0
+[2023-07-12 13:28:05,239] [INFO] [launch.py:162:main] global_rank_mapping=defaultdict(<class 'list'>, {'localhost': [0, 1, 2, 3]})
+[2023-07-12 13:28:05,240] [INFO] [launch.py:163:main] dist_world_size=4
+[2023-07-12 13:28:05,240] [INFO] [launch.py:165:main] Setting CUDA_VISIBLE_DEVICES=0,1,3,4
+[2023-07-12 13:28:08,016] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:28:08,016] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:28:08,164] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2023-07-12 13:28:08,208] [INFO] [real_accelerator.py:110:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('53975'), PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles'), PosixPath('1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+
+===================================BUG REPORT===================================
+Welcome to bitsandbytes. For bug reports, please run
+
+python -m bitsandbytes
+
+ and submit this information together with your error trace to: https://github.com/TimDettmers/bitsandbytes/issues
+================================================================================
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+bin /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('1'), PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /fsx/divyanshu/miniconda3 did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: /opt/amazon/efa/lib:/opt/amazon/openmpi/lib:/opt/aws-ofi-nccl/lib:/usr/local/lib:/usr/lib did not contain ['libcudart.so', 'libcudart.so.11.0', 'libcudart.so.12.0'] as expected! Searching further paths...
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('//127.0.0.1'), PosixPath('pmix-server.1122308;tcp4'), PosixPath('53975')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles'), PosixPath('1')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-git-34853bfd12.sock')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/usr/share/modules/$MODULE_VERSION/modulefiles')}
+  warn(msg)
+/fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/cuda_setup/main.py:149: UserWarning: WARNING: The following directories listed in your path were found to be non-existent: {PosixPath('/run/user/424401269/vscode-ipc-c7af04c7-1b69-4716-9310-334126612a3d.sock')}
+  warn(msg)
+CUDA_SETUP: WARNING! libcudart.so not found in any environmental path. Searching in backup paths...
+CUDA SETUP: CUDA runtime path found: /usr/local/cuda/lib64/libcudart.so
+CUDA SETUP: Highest compute capability among GPUs detected: 8.0
+CUDA SETUP: Detected CUDA version 121
+CUDA SETUP: Loading binary /fsx/divyanshu/miniconda3/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda121.so...
+[2023-07-12 13:28:13,397] [WARNING] [comm.py:152:init_deepspeed_backend] NCCL backend in DeepSpeed not yet implemented
+[2023-07-12 13:28:13,398] [INFO] [comm.py:594:init_distributed] cdb=None
+[2023-07-12 13:28:13,510] [WARNING] [comm.py:152:init_deepspeed_backend] NCCL backend in DeepSpeed not yet implemented
+[2023-07-12 13:28:13,510] [INFO] [comm.py:594:init_distributed] cdb=None
+[2023-07-12 13:28:13,538] [WARNING] [comm.py:152:init_deepspeed_backend] NCCL backend in DeepSpeed not yet implemented
+[2023-07-12 13:28:13,538] [INFO] [comm.py:594:init_distributed] cdb=None
+[2023-07-12 13:28:13,575] [WARNING] [comm.py:152:init_deepspeed_backend] NCCL backend in DeepSpeed not yet implemented
+[2023-07-12 13:28:13,575] [INFO] [comm.py:594:init_distributed] cdb=None
+[2023-07-12 13:28:13,575] [INFO] [comm.py:625:init_distributed] Initializing TorchBackend in DeepSpeed with backend nccl
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s][2023-07-12 13:28:31,267] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1130988
+[2023-07-12 13:28:31,540] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1130989
+[2023-07-12 13:28:31,540] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1130990
+[2023-07-12 13:28:32,014] [INFO] [launch.py:315:sigkill_handler] Killing subprocess 1130991
+[2023-07-12 13:28:32,408] [ERROR] [launch.py:321:sigkill_handler] ['/fsx/divyanshu/miniconda3/bin/python', '-u', 'fastchat/train/train_lora_t5.py', '--local_rank=3', '--model_name_or_path', 'google/flan-t5-xl', '--data_path', './data/dummy_conversation.json', '--bf16', 'True', '--output_dir', './checkpoints_flant5_3b', '--num_train_epochs', '3', '--per_device_train_batch_size', '1', '--per_device_eval_batch_size', '1', '--gradient_accumulation_steps', '4', '--evaluation_strategy', 'no', '--save_strategy', 'steps', '--save_steps', '300', '--save_total_limit', '1', '--learning_rate', '2e-5', '--weight_decay', '0.', '--warmup_ratio', '0.03', '--lr_scheduler_type', 'cosine', '--logging_steps', '1', '--model_max_length', '2048', '--preprocessed_path', './preprocessed_data/processed.json', '--gradient_checkpointing', 'True', '--q_lora', 'True', '--deepspeed', 'playground/deepspeed_config_s2.json'] exits with return code = -15
