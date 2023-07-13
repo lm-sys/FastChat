@@ -150,12 +150,12 @@ def mask_targets(conversations, targets, tokenizer, conv):
 def preprocess(sources, tokenizer: transformers.PreTrainedTokenizer, **kwargs) -> Dict:
     systems = None if not kwargs else kwargs.get("systems", None)
 
-    # 如果数据量较小，直接在主线程中处理
+    # If the data volume is small, process it directly in the main thread
     if len(sources) <= 1000:
         conversations, conv = apply_prompt_template(sources, systems)
         input_ids, targets = tokenize_conversations(conversations, tokenizer)
         targets = mask_targets(conversations, targets, tokenizer, conv)
-    else:  # 如果数据量较大，使用多线程处理
+    else:  # If the data volume is large, use multithreading for processing
         with Pool() as p:
             conversations, conv = p.apply_async(
                 apply_prompt_template, (sources, tokenizer, systems)
