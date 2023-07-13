@@ -1,6 +1,7 @@
 """Model adapter registration."""
 
 import math
+import os
 import sys
 from typing import Dict, List, Optional
 import warnings
@@ -11,7 +12,8 @@ else:
     from functools import lru_cache as cache
 
 import accelerate
-import os
+from huggingface_hub import list_repo_files
+from huggingface_hub.utils import RepositoryNotFoundError
 import psutil
 import torch
 from transformers import (
@@ -97,9 +99,18 @@ def register_model_adapter(cls):
 @cache
 def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
+    model_path_basename = os.path.basename(os.path.normpath(model_path))
+
+    # Try the basename of model_path at first
+    for adapter in model_adapters:
+        if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
+            return adapter
+
+    # Then try the full path
     for adapter in model_adapters:
         if adapter.match(model_path):
             return adapter
+
     raise ValueError(f"No valid model adapter for {model_path}")
 
 
@@ -375,14 +386,17 @@ class PeftModelAdapter:
         """Accepts any model path with "peft" in the name"""
         if os.path.exists(os.path.join(model_path, "adapter_config.json")):
             return True
+        elif os.path.exists(os.path.join(model_path, "config.json")):
+            return False
         else:
-            from huggingface_hub import HfApi
-
-            api = HfApi()
-            model_info = api.model_info(model_path)
-            repo_files = [file.rfilename for file in model_info.siblings]
-            if "adapter_config.json" in repo_files:
-                return True
+            try:
+                list_remote_files = list_repo_files(model_path)
+                if "adapter_config.json" in list_remote_files:
+                    return True
+            except (RepositoryNotFoundError, ValueError) as e:
+                # Ignore this type of error.
+                pass
+        return False
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
@@ -390,8 +404,6 @@ class PeftModelAdapter:
 
         config = PeftConfig.from_pretrained(model_path)
         base_model_path = config.base_model_name_or_path
-        if base_model_path is None or base_model_path == "":
-            raise ValueError(f"PeftModelAdapter cannot be loaded without a base model")
         if "peft" in base_model_path:
             raise ValueError(
                 f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
