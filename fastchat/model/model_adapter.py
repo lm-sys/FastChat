@@ -99,9 +99,18 @@ def register_model_adapter(cls):
 @cache
 def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
+    model_path_basename = os.path.basename(os.path.normpath(model_path))
+
+    # Try the basename of model_path at first
+    for adapter in model_adapters:
+        if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
+            return adapter
+
+    # Then try the full path
     for adapter in model_adapters:
         if adapter.match(model_path):
             return adapter
+
     raise ValueError(f"No valid model adapter for {model_path}")
 
 
