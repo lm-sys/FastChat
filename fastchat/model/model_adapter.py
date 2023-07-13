@@ -1146,6 +1146,16 @@ class InternLMChatAdapter(BaseModelAdapter):
         return get_conv_template("internlm-chat")
 
 
+class StarChatAdapter(BaseModelAdapter):
+    """The model adapter for HuggingFaceH4/starchat-beta"""
+
+    def match(self, model_path: str):
+        return "starchat" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("starchat")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1188,6 +1198,7 @@ register_model_adapter(XGenAdapter)
 register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
+register_model_adapter(StarChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

@@ -29,6 +29,7 @@
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
 - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
+- [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
 - Any [EleutherAI](https://huggingface.co/EleutherAI) pythia model such as [pythia-6.9b](https://huggingface.co/EleutherAI/pythia-6.9b)
 - Any [Peft](https://github.com/huggingface/peft) adapter trained on top of a
   model above.  To activate, must have `peft` in the model path.  Note: If
