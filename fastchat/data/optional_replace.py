@@ -75,7 +75,6 @@ if __name__ == "__main__":
         out_file = "in_file_replace.json"
 
     content = json.load(open(in_file, "r"))
-    num_conv = len(content)
 
     for conv in tqdm(content):
         replace(conv, tokenizer)
