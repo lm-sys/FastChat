@@ -1,4 +1,4 @@
-deepspeed --num_gpus 6 fastchat/train/train_lora.py \
+deepspeed fastchat/train/train_lora.py \
     --model_name_or_path lmsys/vicuna-7b-v1.3  \
     --lora_r 8 \
     --lora_alpha 16 \
@@ -24,7 +24,6 @@ deepspeed --num_gpus 6 fastchat/train/train_lora.py \
     --tf32 True \
     --model_max_length 2048 \
     --q_lora False \
-    --deepspeed $PATH_TO_DEEPSPEED_CONFIG_S2 \
+    --deepspeed $PATH_TO_DEEPSPEED_CONFIG \
     --gradient_checkpointing True \
-    --lora_weight_path ./lora_weights \
     --flash_attn False
