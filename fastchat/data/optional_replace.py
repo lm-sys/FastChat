@@ -72,7 +72,7 @@ if __name__ == "__main__":
         )
 
     if out_file is None:
-        out_file = "in_file_replace.json"
+        out_file = f"{in_file}_replace.json"
 
     content = json.load(open(in_file, "r"))
 
