@@ -384,7 +384,7 @@ class PeftModelAdapter:
                 list_remote_files = list_repo_files(model_path)
                 if "adapter_config.json" in list_remote_files:
                     return True
-            except RepositoryNotFoundError as e:
+            except (HfHubHTTPError, ValueError) as e:
                 # Ignore this type of error.
                 pass
         return False
