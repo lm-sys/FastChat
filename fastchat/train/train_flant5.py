@@ -24,7 +24,6 @@ import pathlib
 from typing import Dict, Optional, Sequence
 
 import torch
-
 import torch.distributed as dist
 
 import transformers
