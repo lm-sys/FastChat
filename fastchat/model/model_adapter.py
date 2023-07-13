@@ -373,7 +373,17 @@ class PeftModelAdapter:
 
     def match(self, model_path: str):
         """Accepts any model path with "peft" in the name"""
-        return "peft" in model_path
+        if os.path.exists(os.path.join(model_path, "adapter_config.json")):
+            return True
+        elif os.path.exists(os.path.join(model_path, "config.json")):
+            return False
+        else:
+            from huggingface_hub import list_repo_files
+
+            list_remote_files = list_repo_files(model_path)
+            if "adapter_config.json" in list_remote_files:
+                return True
+        return False
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
