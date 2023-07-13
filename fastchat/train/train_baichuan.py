@@ -246,7 +246,6 @@ def make_supervised_data_module(
         LazySupervisedDataset
         if data_args.lazy_preprocess
         else SupervisedDataset
-        # TPLazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
     rank0_print("Loading data...")
     data_path = data_args.data_path
