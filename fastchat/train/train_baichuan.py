@@ -243,9 +243,7 @@ def make_supervised_data_module(
     """Make dataset and collator for supervised fine-tuning."""
     train_ratio = min(train_ratio, 1.0)
     dataset_cls = (
-        LazySupervisedDataset
-        if data_args.lazy_preprocess
-        else SupervisedDataset
+        LazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
     rank0_print("Loading data...")
     data_path = data_args.data_path
