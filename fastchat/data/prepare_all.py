@@ -14,7 +14,8 @@ llama_weights = "~/model_weights/llama-7b/"
 cmd_list = [
     f"python3 -m fastchat.data.clean_sharegpt --in {prefix}_html.json --out {prefix}_clean.json",
     f"python3 -m fastchat.data.optional_clean --in {prefix}_clean.json --out {prefix}_clean_lang.json --skip-lang ko",
-    f"python3 -m fastchat.data.split_long_conversation --in {prefix}_clean_lang.json --out {prefix}_clean_lang_split.json --model-name {llama_weights}",
+    f"python3 -m fastchat.data.optional_replace --in {prefix}_clean_lang.json --out {prefix}_clean_lang_replace.json --model-name-or-path {llama_weights}",
+    f"python3 -m fastchat.data.split_long_conversation --in {prefix}_clean_lang_replace.json --out {prefix}_clean_lang_split.json --model-name {llama_weights}",
     f"python3 -m fastchat.data.filter_wrong_format --in {prefix}_clean_lang_split.json --out {prefix}_clean_lang_split.json",
     f"python3 -m fastchat.data.split_train_test --in {prefix}_clean_lang_split.json --ratio 0.99",
     f"python3 -m fastchat.data.hardcoded_questions",
