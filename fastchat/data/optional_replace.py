@@ -5,7 +5,7 @@ Usage:
 python3 -m fastchat.data.optional_replace --in input.json --out output.json --model-name-or-path <your_token_path>
 
 Requirement:
-pip3 install transformers
+pip3 install transformers tqdm
 """
 import argparse
 import json
