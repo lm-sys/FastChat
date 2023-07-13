@@ -391,8 +391,6 @@ class PeftModelAdapter:
 
         config = PeftConfig.from_pretrained(model_path)
         base_model_path = config.base_model_name_or_path
-        if base_model_path is None or base_model_path == "":
-            raise ValueError(f"PeftModelAdapter cannot be loaded without a base model")
         if "peft" in base_model_path:
             raise ValueError(
                 f"PeftModelAdapter cannot load a base model with 'peft' in the name: {config.base_model_name_or_path}"
