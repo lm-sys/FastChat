@@ -3,7 +3,7 @@ You can use the following command to train FastChat-T5 with 4 x A100 (40GB).
 ```bash
 torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
     --model_name_or_path google/flan-t5-xl \
-    --data_path /data/dummy.json \
+    --data_path ./data/dummy_conversation.json \
     --bf16 True \
     --output_dir ./checkpoints_flant5_3b \
     --num_train_epochs 3 \
@@ -85,7 +85,7 @@ deepspeed fastchat/train/train_lora_t5.py \
         --gradient_checkpointing True \
         --q_lora True     \
         --deepspeed playground/deepspeed_config_s2.json
-
+        
 ```
 
 
