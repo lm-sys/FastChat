@@ -28,7 +28,7 @@ import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
 import torch
 
-from train import (
+from fastchat.train.train import (
     DataArguments,
     ModelArguments,
     TrainingArguments,
