@@ -15,11 +15,10 @@ echo "Falcon-40b is a pytorch2-only model"
 cd /p/haicluster/llama/FastChat
 source sc_venv_falcon/activate.sh
 
-
 srun python3 -m fastchat.serve.model_worker \
      --controller http://haicluster1.fz-juelich.de:21001 \
      --port 31002 --worker http://$(hostname):31002 \
      --num-gpus 5 \
      --host 0.0.0.0 \
-     --model-path /p/haicluster/llama/FastChat/models/falcon-40b-instruct\
+     --model-path models/falcon-40b-instruct
 
