@@ -59,7 +59,9 @@ learn_more_md = """
 This is made by Helmholtz AI Jülich.
 """
 
-blablador= '<img src="https://helmholtzai-fzj.github.io/FastChat/blablador.png" width="160">'
+blablador = (
+    '<img src="https://helmholtzai-fzj.github.io/FastChat/blablador.png" width="160">'
+)
 
 ip_expiration_dict = defaultdict(lambda: 0)
 
