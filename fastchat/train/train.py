@@ -245,6 +245,8 @@ def train():
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
+        torch_dtype=torch.float32,
+        trust_remote_code=True
     )
     model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
