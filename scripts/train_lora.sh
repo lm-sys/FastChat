@@ -1,4 +1,4 @@
-deepspeed --num_gpus 6 train_lora.py \
+deepspeed --num_gpus 6 fastchat/train/train_lora.py \
     --model_name_or_path lmsys/vicuna-7b-v1.3  \
     --lora_r 8 \
     --lora_alpha 16 \
