@@ -14,12 +14,9 @@ cd /p/haicluster/llama/FastChat
 source sc_venv_template/activate.sh
 
 
-srun python3 -m fastchat.serve.model_worker \
+srun python3 fastchat/serve/model_worker.py \
      --controller http://haicluster1.fz-juelich.de:21001 \
      --port 31017 --worker http://$(hostname):31017 \
      --num-gpus 2 \
      --host 0.0.0.0 \
-     --model-path /p/haicluster/llama/FastChat/models/Baichuan-13B-Chat
-
-
-#     --max-gpu-memory 22Gb \
+     --model-path /p/haicluster/llama/FastChat/models/baichuan-13b-chat
