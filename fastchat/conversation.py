@@ -796,9 +796,9 @@ register_conv_template(
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.CHATML,
-        sep="<|endoftext|>",
-        stop_token_ids=[0],
-        stop_str="<|endoftext|>",
+        sep="<|end|>",
+        stop_token_ids=[0, 49155],
+        stop_str="<|end|>",
     )
 )
 
