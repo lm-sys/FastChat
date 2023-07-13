@@ -1,6 +1,7 @@
 """Model adapter registration."""
 
 import math
+import os
 import sys
 from typing import Dict, List, Optional
 import warnings
@@ -11,7 +12,8 @@ else:
     from functools import lru_cache as cache
 
 import accelerate
-import os
+from huggingface_hub import list_repo_files
+from huggingface_hub.utils import RepositoryNotFoundError
 import psutil
 import torch
 from transformers import (
@@ -378,11 +380,13 @@ class PeftModelAdapter:
         elif os.path.exists(os.path.join(model_path, "config.json")):
             return False
         else:
-            from huggingface_hub import list_repo_files
-
-            list_remote_files = list_repo_files(model_path)
-            if "adapter_config.json" in list_remote_files:
-                return True
+            try:
+                list_remote_files = list_repo_files(model_path)
+                if "adapter_config.json" in list_remote_files:
+                    return True
+            except (RepositoryNotFoundError, ValueError) as e:
+                # Ignore this type of error.
+                pass
         return False
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
