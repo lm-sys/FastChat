@@ -76,6 +76,7 @@ class BaseModelWorker:
         self.limit_worker_concurrency = limit_worker_concurrency
 
         self.conv = get_conversation_template(model_path)
+        self.conv.sep_style = int(self.conv.sep_style)
         self.tokenizer = None
         self.context_len = None
         self.call_ct = 0

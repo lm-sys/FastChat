@@ -3,11 +3,11 @@ Conversation prompt templates.
 """
 
 import dataclasses
-from enum import auto, Enum
+from enum import auto, IntEnum
 from typing import List, Any, Dict
 
 
-class SeparatorStyle(Enum):
+class SeparatorStyle(IntEnum):
     """Separator styles."""
 
     ADD_COLON_SINGLE = auto()
