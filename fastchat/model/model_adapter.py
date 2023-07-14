@@ -272,7 +272,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif peft_share_base_weights and "peft" in model_path:
+    elif peft_share_base_weights and "peft" in model_path.lower():
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
@@ -509,7 +509,7 @@ class AiroborosAdapter(BaseModelAdapter):
         return get_conv_template("airoboros_v1")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        if "mpt" not in model_path:
+        if "mpt" not in model_path.lower():
             return super().load_model(model_path, from_pretrained_kwargs)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
@@ -632,7 +632,7 @@ class ChatGLMAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         model_path = model_path.lower()
-        if "chatglm2" in model_path:
+        if "chatglm2" in model_path.lower():
             return get_conv_template("chatglm2")
         return get_conv_template("chatglm")
 
@@ -665,7 +665,7 @@ class OasstPythiaAdapter(BaseModelAdapter):
     """The model adapter for OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5"""
 
     def match(self, model_path: str):
-        return "oasst" in model_path and "pythia" in model_path.lower()
+        return "oasst" in model_path.lower() and "pythia" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
@@ -685,7 +685,7 @@ class OasstLLaMAAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         if "OpenAssistant-SFT-7-Llama-30B-HF" in model_path.lower():
             return True
-        return "oasst" in model_path and "pythia" not in model_path.lower()
+        return "oasst" in model_path.lower() and "pythia" not in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_llama")
@@ -718,7 +718,7 @@ class MPTAdapter(BaseModelAdapter):
     """The model adapter for MPT series (mosaicml/mpt-7b-chat, mosaicml/mpt-30b-chat)"""
 
     def match(self, model_path: str):
-        return "mpt" in model_path and not "airoboros" in model_path.lower()
+        return "mpt" in model_path.lower() and not "airoboros" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -737,11 +737,11 @@ class MPTAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "mpt-7b-chat" in model_path:
+        if "mpt-7b-chat" in model_path.lower():
             return get_conv_template("mpt-7b-chat")
-        elif "mpt-30b-chat" in model_path:
+        elif "mpt-30b-chat" in model_path.lower():
             return get_conv_template("mpt-30b-chat")
-        elif "mpt-30b-instruct" in model_path:
+        elif "mpt-30b-instruct" in model_path.lower():
             return get_conv_template("mpt-30b-instruct")
         else:
             print(
@@ -933,7 +933,7 @@ class WizardLMAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         model_path = model_path.lower()
-        if "13b" in model_path or "30b" in model_path:
+        if "13b" in model_path.lower() or "30b" in model_path.lower():
             return get_conv_template("vicuna_v1.1")
         else:
             # TODO: use the recommended template for 7B
@@ -981,7 +981,7 @@ class ChangGPTAdapter(BaseModelAdapter):
     """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""
 
     def match(self, model_path: str):
-        return "polyglot" in model_path and "chang" in model_path.lower()
+        return "polyglot" in model_path.lower() and "chang" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("polyglot_changgpt")
