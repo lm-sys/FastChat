@@ -25,6 +25,10 @@ FastChat is an open platform for training, serving, and evaluating large languag
 
 ## Install
 
+### Prerequisites
+#### Running models on AMD GPUs
+If you want to run models using an AMD GPU, install ROCm and [the ROCm version of PyTorch](https://pytorch.org/get-started/locally/) before you install FastChat.
+
 ### Method 1: With pip
 
 ```bash
@@ -137,7 +141,8 @@ Vicuna-7B can run on an Intel Arc A770 16GB.
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
-Vicuna-13B with 8-bit compression can run on a single NVIDIA 3090/4080/T4/V100(16GB) GPU.
+
+Vicuna-13B with 8-bit compression can run on a single GPU with 16 GB of VRAM, like an Nvidia RTX 3090, RTX 4080, T4, or V100 (16GB), or an AMD RX 6800 XT.
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --load-8bit
 ```
