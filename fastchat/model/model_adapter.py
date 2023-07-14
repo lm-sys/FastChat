@@ -683,7 +683,7 @@ class OasstLLaMAAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        if "OpenAssistant-SFT-7-Llama-30B-HF" in model_path:
+        if "OpenAssistant-SFT-7-Llama-30B-HF" in model_path.lower():
             return True
         return "oasst" in model_path and "pythia" not in model_path.lower()
 
