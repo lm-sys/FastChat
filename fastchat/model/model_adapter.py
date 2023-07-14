@@ -917,7 +917,7 @@ class SnoozyAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "gpt4all" in model_path and "snoozy" in model_path.lower()
+        return "gpt4all" in model_path.lower() and "snoozy" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("snoozy")
