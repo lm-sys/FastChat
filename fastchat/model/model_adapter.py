@@ -1012,7 +1012,7 @@ class TuluAdapter(BaseModelAdapter):
 
 
 class FalconAdapter(BaseModelAdapter):
-    """The model adapter for tiiuae/falcon-40b."""
+    """The model adapter for tiiuae/falcon-40b"""
 
     def match(self, model_path: str):
         return "falcon" in model_path.lower()
@@ -1062,10 +1062,10 @@ class TigerBotAdapter(BaseModelAdapter):
 
 
 class BaichuanAdapter(BaseModelAdapter):
-    """The model adapter for baichuan-inc/baichuan-7B"""
+    """The model adapter for Baichuan models (e.g., baichuan-inc/Baichuan-7B)"""
 
     def match(self, model_path: str):
-        return "baichuan" in model_path
+        return "baichuan" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
