@@ -211,7 +211,6 @@ class LazySupervisedDataset(Dataset):
         self.tokenizer = tokenizer
 
         rank0_print("Formatting inputs...Skip in lazy mode")
-        self.tokenizer = tokenizer
         self.raw_data = raw_data
         self.cached_data_dict = {}
 
