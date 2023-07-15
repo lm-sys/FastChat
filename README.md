@@ -25,10 +25,6 @@ FastChat is an open platform for training, serving, and evaluating large languag
 
 ## Install
 
-### Prerequisites
-#### Running models on AMD GPUs
-If you want to run models using an AMD GPU, install ROCm and [the ROCm version of PyTorch](https://pytorch.org/get-started/locally/) before you install FastChat.
-
 ### Method 1: With pip
 
 ```bash
@@ -142,14 +138,17 @@ If you do not have enough memory, you can enable 8-bit compression by adding `--
 This can reduce memory usage by around half with slightly degraded model quality.
 It is compatible with the CPU, GPU, and Metal backend.
 
-Vicuna-13B with 8-bit compression can run on a single GPU with 16 GB of VRAM, like an Nvidia RTX 3090, RTX 4080, T4, or V100 (16GB), or an AMD RX 6800 XT.
+Vicuna-13B with 8-bit compression can run on a single GPU with 16 GB of VRAM, like an Nvidia RTX 3090, RTX 4080, T4, V100 (16GB), or an AMD RX 6800 XT.
+
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --load-8bit
 ```
 
-In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory. This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
+In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory.
+This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
 
 #### More Platforms
+- For AMD GPU users, please install ROCm and [the ROCm version of PyTorch](https://pytorch.org/get-started/locally/) before you install FastChat. See also this [post](https://github.com/lm-sys/FastChat/issues/104#issuecomment-1613791563).
 - FastChat supports GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
