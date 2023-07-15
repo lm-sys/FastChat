@@ -39,8 +39,6 @@ from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
 
-replace_llama_attn_with_flash_attn()
-
 
 @dataclass
 class LoraArguments:
@@ -101,6 +99,9 @@ def train():
         training_args,
         lora_args,
     ) = parser.parse_args_into_dataclasses()
+
+    if model_args.flash_attn:
+        replace_llama_attn_with_flash_attn()
 
     device_map = None
     world_size = int(os.environ.get("WORLD_SIZE", 1))
