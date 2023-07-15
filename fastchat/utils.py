@@ -287,5 +287,7 @@ def get_context_length(config):
     """Get the context length of a model from a huggingface model config."""
     for key in SEQUENCE_LENGTH_KEYS:
         if hasattr(config, key):
-            return getattr(config, key)
+            val = getattr(config, key)
+            if val is not None:
+                return val
     return 2048
