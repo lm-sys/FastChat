@@ -1081,7 +1081,10 @@ class BaichuanAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+        # for Baichuan-13B-Chat
+        if "chat" in model_path.lower():
+            return get_conv_template("baichuan-chat")
+        return get_conv_template("zero_shot")
 
 
 class XGenAdapter(BaseModelAdapter):
