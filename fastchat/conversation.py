@@ -306,10 +306,10 @@ register_conv_template(
     )
 )
 
-# Vicuna v1.1 template
+# Vicuna v1.3 template
 register_conv_template(
     Conversation(
-        name="vicuna_v1.1",
+        name="vicuna_v1.3",
         system="A chat between a curious user and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
@@ -830,7 +830,7 @@ register_conv_template(
 )
 
 if __name__ == "__main__":
-    conv = get_conv_template("vicuna_v1.1")
+    conv = get_conv_template("vicuna_v1.3")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")

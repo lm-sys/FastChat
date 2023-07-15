@@ -485,7 +485,7 @@ class VicunaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         if "v0" in remove_parent_directory_name(model_path):
             return get_conv_template("one_shot")
-        return get_conv_template("vicuna_v1.1")
+        return get_conv_template("vicuna_v1.3")
 
     def raise_warning_for_old_weights(self, model):
         if isinstance(model, LlamaForCausalLM) and model.model.vocab_size > 32000:
@@ -554,7 +554,7 @@ class LongChatAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vicuna_v1.1")
+        return get_conv_template("vicuna_v1.3")
 
 
 class CodeT5pAdapter(BaseModelAdapter):
@@ -934,7 +934,7 @@ class WizardLMAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         model_path = model_path.lower()
         if "13b" in model_path or "30b" in model_path:
-            return get_conv_template("vicuna_v1.1")
+            return get_conv_template("vicuna_v1.3")
         else:
             # TODO: use the recommended template for 7B
             # (https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
@@ -996,7 +996,7 @@ class CamelAdapter(BaseModelAdapter):
         return "camel" in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vicuna_v1.1")
+        return get_conv_template("vicuna_v1.3")
 
 
 class TuluAdapter(BaseModelAdapter):
@@ -1161,7 +1161,6 @@ class StarChatAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
-register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
@@ -1202,6 +1201,7 @@ register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
+register_model_adapter(PeftModelAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
