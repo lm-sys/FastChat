@@ -273,11 +273,13 @@ def is_sentence_complete(output: str):
 
 # Models don't use the same configuration key for determining the maximum
 # sequence length.  Store them here so we can sanely check them.
+# NOTE: The ordering here is important.  Some models have two of these and we
+# have a preference for which value gets used.
 SEQUENCE_LENGTH_KEYS = [
-    "max_position_embeddings",
     "max_sequence_length",
-    "max_seq_len",
     "seq_length",
+    "max_position_embeddings",
+    "max_seq_len",
 ]
 
 
@@ -285,5 +287,7 @@ def get_context_length(config):
     """Get the context length of a model from a huggingface model config."""
     for key in SEQUENCE_LENGTH_KEYS:
         if hasattr(config, key):
-            return getattr(config, key)
+            val = getattr(config, key)
+            if val is not None:
+                return val
     return 2048
