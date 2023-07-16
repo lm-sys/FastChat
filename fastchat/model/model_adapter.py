@@ -12,8 +12,6 @@ else:
     from functools import lru_cache as cache
 
 import accelerate
-from huggingface_hub import list_repo_files
-from huggingface_hub.utils import RepositoryNotFoundError
 import psutil
 import torch
 from transformers import (
@@ -265,6 +263,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
+    is_peft = "peft" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -272,7 +271,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif peft_share_base_weights and "peft" in model_path:
+    elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
@@ -386,17 +385,7 @@ class PeftModelAdapter:
         """Accepts any model path with "peft" in the name"""
         if os.path.exists(os.path.join(model_path, "adapter_config.json")):
             return True
-        elif os.path.exists(os.path.join(model_path, "config.json")):
-            return False
-        else:
-            try:
-                list_remote_files = list_repo_files(model_path)
-                if "adapter_config.json" in list_remote_files:
-                    return True
-            except (RepositoryNotFoundError, ValueError) as e:
-                # Ignore this type of error.
-                pass
-        return False
+        return "peft" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
