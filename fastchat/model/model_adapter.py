@@ -99,16 +99,17 @@ def register_model_adapter(cls):
 @cache
 def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
-    model_path_basename = os.path.basename(os.path.normpath(model_path))
-
-    # Try the basename of model_path at first
-    for adapter in model_adapters:
-        if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
-            return adapter
-
-    # Then try the full path
+    # Try the fullname of model_path at first.  Some models (namely Peft)
+    # require remotely checking HuggingFace hub which depends on org ids that
+    # prefix the model name.
     for adapter in model_adapters:
         if adapter.match(model_path):
+            return adapter
+
+    # Then try just the basename path.
+    model_path_basename = os.path.basename(os.path.normpath(model_path))
+    for adapter in model_adapters:
+        if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
             return adapter
 
     raise ValueError(f"No valid model adapter for {model_path}")
@@ -265,6 +266,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
+    is_peft = "peft" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -272,7 +274,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif peft_share_base_weights and "peft" in model_path:
+    elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
