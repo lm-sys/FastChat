@@ -1116,7 +1116,7 @@ class InternLMChatAdapter(BaseModelAdapter):
     """The model adapter for internlm/internlm-chat-7b"""
 
     def match(self, model_path: str):
-        return "internlm-chat" in model_path.lower()
+        return "internlm" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
