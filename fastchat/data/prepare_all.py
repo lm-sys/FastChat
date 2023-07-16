@@ -9,7 +9,9 @@ from fastchat.utils import run_cmd
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--prefix", type=str, default="~/datasets/sharegpt_20230521")
-    parser.add_argument("--model-name-or-path", type=str, default="~/model_weights/llama-7b")
+    parser.add_argument(
+        "--model-name-or-path", type=str, default="~/model_weights/llama-7b"
+    )
     args = parser.parse_args()
 
     prefix = args.prefix
