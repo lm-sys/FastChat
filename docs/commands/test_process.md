@@ -37,3 +37,15 @@ CUDA_VISIBLE_DEVICES=7 python3 -m fastchat.serve.model_worker --model-path ~/mod
 ```
 python3 -m fastchat.serve.gradio_web_server_multi
 ```
+
+### Test Peft Serving
+
+```
+python3 -m fastchat.serve.controller
+```
+
+```
+PEFT_SHARE_BASE_WEIGHTS=true python3 -m fastchat.serve.multi_model_worker \
+  --model-path SurfaceData/dummy_pythia160m_lora16_peft_chat \
+  --model-path SurfaceData/dummy_pythia160m_lora8_peft_chat
+```
