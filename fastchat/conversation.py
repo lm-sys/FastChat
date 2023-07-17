@@ -818,8 +818,8 @@ register_conv_template(
     # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
     Conversation(
         name="baichuan-chat",
-        system="A chat between a curious <reserved_102> and a <reserved_103>. The <reserved_103> gives helpful, detailed, and polite answers to the <reserved_102>'s questions.\n\n",
-        roles=("<reserved_102>", "<reserved_103>"),
+        system="",
+        roles=(" <reserved_102> ", " <reserved_103> "),
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_TWO,
