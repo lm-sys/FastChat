@@ -181,7 +181,6 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]
-            #ret = self.system
             ret = ""
             for i, (role, message) in enumerate(self.messages):
                 if message:
@@ -843,7 +842,8 @@ register_conv_template(
     )
 )
 
-# Vicuna v1.1 template
+# llama2 template
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
 register_conv_template(
     Conversation(
         name="llama-2",
