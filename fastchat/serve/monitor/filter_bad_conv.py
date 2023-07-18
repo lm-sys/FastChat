@@ -22,7 +22,8 @@ class TypeCode(Enum):
     ANONYMIZED = auto()
     REDACTED = auto()
     BAD_FORMAT = auto()
-    BLOCKED_WORDS = auto()
+    BLOCKED_WORD = auto()
+    BLOCKED_MODEL = auto()
     TOO_SHORT = auto()
     TOO_FREQUENT = auto()
 
@@ -52,7 +53,11 @@ def detect_type(conv):
 
             for w in blocked_words:
                 if w in msg:
-                    return TypeCode.BLOCKED_WORDS
+                    return TypeCode.BLOCKED_WORD
+
+    for key in ["model_a", "model_b"]:
+        if conv[key] in ["vicuna-33b", "mpt-30b-chat"]:
+            return TypeCode.BLOCKED_MODEL
 
     return TypeCode.CORRECT
 
@@ -95,7 +100,8 @@ if __name__ == "__main__":
     ct_error = 0
     ct_lang_filter = 0
     ct_flagged = 0
-    ct_blocked_words = 0
+    ct_blocked_word = 0
+    ct_blocked_model = 0
     ct_too_short = 0
     ct_too_frequent = 0
 
@@ -113,8 +119,11 @@ if __name__ == "__main__":
         elif type_code == TypeCode.REDACTED:
             ct_redacted += 1
             continue
-        elif type_code == TypeCode.BLOCKED_WORDS:
-            ct_blocked_words += 1
+        elif type_code == TypeCode.BLOCKED_WORD:
+            ct_blocked_word += 1
+            continue
+        elif type_code == TypeCode.BLOCKED_MODEL:
+            ct_blocked_model += 1
             continue
         elif type_code == TypeCode.TOO_SHORT:
             ct_too_short += 1
@@ -137,8 +146,8 @@ if __name__ == "__main__":
 
     print(f"ct_anonymized: {ct_anonymized}, ct_redacted: {ct_redacted}")
     print(f"ct_bad_format: {ct_bad_format}, ct_flagged: {ct_flagged}")
-    print(f"ct_blocked_words: {ct_blocked_words}, ct_too_short: {ct_too_short}")
-    print(f"ct_too_frequent: {ct_anonymized}")
+    print(f"ct_blocked_word: {ct_blocked_word}, ct_blocked_model: {ct_blocked_model}")
+    print(f"ct_too_short: {ct_too_short}, ct_too_frequent: {ct_anonymized}")
     print(f"new_conv: {len(new_convs)}")
 
     out_file = args.in_file.replace(".json", ".out.json")
