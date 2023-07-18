@@ -90,7 +90,7 @@ register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-Snoozy",
     "https://github.com/nomic-ai/gpt4all",
-    "A finetuned LLaMA model on assistant style data by Nomic AI",
+    "a finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
     ["koala-13b"],
