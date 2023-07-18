@@ -56,7 +56,7 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["llama-2-7b-chat", "llama-2-13b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
+    ["llama-2-13b-chat", "llama-2-7b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
     "Llama 2",
     "playground/test_openai_api/openai_api.py",
     "open foundation and fine-tuned chat models by Meta",
