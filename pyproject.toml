@@ -16,15 +16,16 @@ dependencies = [
     "accelerate", "fastapi", "gradio", "httpx", "markdown2[all]", "nh3", "numpy",
     "peft", "prompt_toolkit>=3.0.0", "pydantic<=2.0", "requests", "rich>=10.0.0", "sentencepiece",
     "shortuuid", "shortuuid", "tiktoken", "tokenizers>=0.12.1", "torch",
-    "transformers>=4.28.0,<4.29.0", "uvicorn", "wandb",
+    "transformers>=4.28.0,<=4.30.0", "uvicorn", "wandb", "datasets", "deepspeed", "bitsandbytes", "scipy",
+    "xformers", "einops"
 ]
 
 [project.optional-dependencies]
 dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
-"Homepage" = "https://github.com/lm-sys/fastchat"
-"Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
+"Homepage" = "https://github.com/airoura163/FastChat"
+"Bug Tracker" = "https://github.com/airoura163/FastChat/issues"
 
 [tool.setuptools.packages.find]
 exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
