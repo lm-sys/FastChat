@@ -181,10 +181,14 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]
-            ret = self.system
+            #ret = self.system
+            ret = ""
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + message + seps[i % 2]
+                    if i == 0:
+                        ret += self.system + message
+                    else:
+                        ret += role + " " + message + seps[i % 2]
                 else:
                     ret += role
             return ret
@@ -851,9 +855,10 @@ register_conv_template(
         roles=("[INST]", "[/INST]"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2="</s><s>",
+        stop_token_ids=[2]
     )
 )
 
