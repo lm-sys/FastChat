@@ -79,8 +79,7 @@ if __name__ == "__main__":
     # Count frequency
     for conv in convs:
         for key in ["conversation_a", "conversation_b"]:
-            messages = [row["content"] for row in conv[key]
-                        if row["role"] == "user"]
+            messages = [row["content"] for row in conv[key] if row["role"] == "user"]
             for msg in messages:
                 if not isinstance(msg, str):
                     continue
