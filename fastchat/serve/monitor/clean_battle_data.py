@@ -137,7 +137,6 @@ def clean_battle_data(log_files):
             ct_invalid += 1
             continue
         lang_code = detect_language(state["messages"][state["offset"]][1])
-        rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked
         leaked_identity = False
@@ -184,7 +183,6 @@ def clean_battle_data(log_files):
                 conversation_b=conversation_b,
                 turn=len(conversation_a) // 2,
                 anony=anony,
-                rounds=rounds,
                 language=lang_code,
                 tstamp=row["tstamp"],
             )
@@ -230,7 +228,6 @@ if __name__ == "__main__":
                 "conversation_a",
                 "conversation_b",
                 "question_id",
-                "turn",
             ]:
                 del x[key]
         print("Samples:")
@@ -242,8 +239,7 @@ if __name__ == "__main__":
         for x in battles:
             if not x["anony"]:
                 continue
-            # for key in ["tstamp", "rounds"]:
-            for key in ["rounds"]:
+            for key in []:
                 del x[key]
             new_battles.append(x)
         battles = new_battles
