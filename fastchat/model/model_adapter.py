@@ -1148,7 +1148,7 @@ class StarChatAdapter(BaseModelAdapter):
         return get_conv_template("starchat")
 
 class Llama2Adapter(BaseModelAdapter):
-    """The model adapter for alpaca"""
+    """The model adapter for llama-2"""
 
     def match(self, model_path: str):
         return "llama-2" in model_path.lower()
@@ -1201,6 +1201,7 @@ register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
+register_model_adapter(Llama2Adapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
