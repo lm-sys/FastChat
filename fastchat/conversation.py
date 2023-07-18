@@ -16,6 +16,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_SINGLE = auto()
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
+    LLAMA2 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -112,6 +113,18 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.LLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += self.system + message
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -826,6 +839,26 @@ register_conv_template(
         sep="",
         sep2="</s>",
         stop_token_ids=[2, 195],
+    )
+)
+
+# llama2 template
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+register_conv_template(
+    Conversation(
+        name="llama-2",
+        system="<s>[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  "
+        "Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. "
+        "Please ensure that your responses are socially unbiased and positive in nature.\n\n"
+        "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. "
+        "If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n ",
+        roles=("[INST]", "[/INST]"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2="</s><s>",
+        stop_token_ids=[2],
     )
 )
 
