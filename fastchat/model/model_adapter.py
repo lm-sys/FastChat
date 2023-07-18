@@ -265,6 +265,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
+    is_peft = "peft" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -272,7 +273,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif peft_share_base_weights and "peft" in model_path.lower():
+    elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
