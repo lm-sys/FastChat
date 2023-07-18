@@ -811,7 +811,7 @@ class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
     def match(self, model_path: str):
-        return model_path in ["claude-v1", "claude-instant-v1"]
+        return model_path in ["claude-2", "claude-instant-1"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
