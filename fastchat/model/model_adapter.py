@@ -811,7 +811,7 @@ class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
     def match(self, model_path: str):
-        return model_path in ["claude-v1", "claude-instant-v1"]
+        return model_path in ["claude-v1", "claude-instant-v1", "claude-2"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1146,6 +1146,16 @@ class StarChatAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("starchat")
+
+class Llama2Adapter(BaseModelAdapter):
+    """The model adapter for alpaca"""
+
+    def match(self, model_path: str):
+        return "llama-2" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-2")
+
 
 
 # Note: the registration order matters.
