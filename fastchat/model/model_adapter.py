@@ -767,7 +767,7 @@ class RwkvAdapter(BaseModelAdapter):
     """The model adapter for BlinkDL/RWKV-4-Raven"""
 
     def match(self, model_path: str):
-        return "RWKV-4" in model_path.lower()
+        return "rwkv-4" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         from fastchat.model.rwkv_model import RwkvModel
@@ -1114,7 +1114,7 @@ class NousHermesAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "Nous-Hermes" in model_path.lower()
+        return "nous-hermes" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("alpaca")
