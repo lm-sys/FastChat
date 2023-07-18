@@ -1,5 +1,5 @@
 # LLM Judge
-| [Paper](https://arxiv.org/abs/2306.05685) | [Leaderboard](https://chat.lmsys.org/?leaderboard) | [MT-bench Human Annotation Dataset](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments) | [Chatbot Arena Conversation Dataset](https://huggingface.co/datasets/lmsys/chatbot_arena_conversations)
+| [Paper](https://arxiv.org/abs/2306.05685) | [Leaderboard](https://chat.lmsys.org/?leaderboard) | [MT-bench Human Annotation Dataset](https://huggingface.co/datasets/lmsys/mt_bench_human_judgments) | [Chatbot Arena Conversation Dataset](https://huggingface.co/datasets/lmsys/chatbot_arena_conversations) |
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
 MT-bench is a set of challenging multi-turn open-ended questions for evaluating chat assistants.
