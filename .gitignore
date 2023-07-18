@@ -32,3 +32,5 @@ build
 
 # Jupyter Lab
 *.ipynb_checkpoints/
+
+checkpoints/

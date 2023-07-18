@@ -1,0 +1,47 @@
+deepspeed --include=localhost:0 --master_port 61000 fastchat/train/train_lora_plus.py \
+    --model_name_or_path huggyllama/llama-7b  \
+    --data_path data/dummy_conversation.json \
+    --dataset "data/alpaca_data_cleaned_1000.json" \
+    --dataset_format "alpaca" \
+    --cache_dir /data0/huggingface/hub/ \
+    --output_dir ./checkpoints \
+    --num_train_epochs 5 \
+    --fp16 False \
+    --bf16 True \
+    --tf32 True \
+    --gradient_checkpointing True \
+    --flash_attn False \
+    --xformers True \
+    --per_device_train_batch_size 8 \
+    --per_device_eval_batch_size 2 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "steps" \
+    --eval_steps 10  \
+    --save_strategy "steps" \
+    --save_steps 20 \
+    --save_total_limit 2 \
+    --logging_strategy "steps" \
+    --logging_steps 1 \
+    --lora_r 8 \
+    --lora_alpha 16 \
+    --lora_dropout 0.05 \
+    --q_lora False \
+    --data_seed 42 \
+    --do_train \
+    --model_max_length 2048 \
+    --source_max_len 2048 \
+    --target_max_len 256 \
+    --do_eval \
+    --eval_dataset_size 100 \
+    --max_eval_samples 1000 \
+    --dataloader_num_workers 3 \
+    --remove_unused_columns False \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --adam_beta2 0.999 \
+    --max_grad_norm 0.3 \
+    --seed 0 \
+    --report_to wandb \
+    --deepspeed playground/deepspeed_config_s2.json
