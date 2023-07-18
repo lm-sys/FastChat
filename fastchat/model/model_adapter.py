@@ -1,6 +1,7 @@
 """Model adapter registration."""
 
 import math
+import os
 import sys
 from typing import Dict, List, Optional
 import warnings
@@ -11,7 +12,6 @@ else:
     from functools import lru_cache as cache
 
 import accelerate
-import os
 import psutil
 import torch
 from transformers import (
@@ -97,9 +97,18 @@ def register_model_adapter(cls):
 @cache
 def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
+    model_path_basename = os.path.basename(os.path.normpath(model_path))
+
+    # Try the basename of model_path at first
+    for adapter in model_adapters:
+        if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
+            return adapter
+
+    # Then try the full path
     for adapter in model_adapters:
         if adapter.match(model_path):
             return adapter
+
     raise ValueError(f"No valid model adapter for {model_path}")
 
 
@@ -254,6 +263,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
+    is_peft = "peft" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -261,7 +271,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
-    elif peft_share_base_weights and "peft" in model_path:
+    elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
         # the right weights are available.
@@ -373,6 +383,8 @@ class PeftModelAdapter:
 
     def match(self, model_path: str):
         """Accepts any model path with "peft" in the name"""
+        if os.path.exists(os.path.join(model_path, "adapter_config.json")):
+            return True
         return "peft" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
@@ -989,7 +1001,7 @@ class TuluAdapter(BaseModelAdapter):
 
 
 class FalconAdapter(BaseModelAdapter):
-    """The model adapter for tiiuae/falcon-40b."""
+    """The model adapter for tiiuae/falcon-40b"""
 
     def match(self, model_path: str):
         return "falcon" in model_path.lower()
@@ -1039,10 +1051,10 @@ class TigerBotAdapter(BaseModelAdapter):
 
 
 class BaichuanAdapter(BaseModelAdapter):
-    """The model adapter for baichuan-inc/baichuan-7B"""
+    """The model adapter for Baichuan models (e.g., baichuan-inc/Baichuan-7B)"""
 
     def match(self, model_path: str):
-        return "baichuan" in model_path
+        return "baichuan" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1058,7 +1070,10 @@ class BaichuanAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+        # for Baichuan-13B-Chat
+        if "chat" in model_path.lower():
+            return get_conv_template("baichuan-chat")
+        return get_conv_template("zero_shot")
 
 
 class XGenAdapter(BaseModelAdapter):
@@ -1101,7 +1116,7 @@ class InternLMChatAdapter(BaseModelAdapter):
     """The model adapter for internlm/internlm-chat-7b"""
 
     def match(self, model_path: str):
-        return "internlm-chat" in model_path.lower()
+        return "internlm" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1121,6 +1136,16 @@ class InternLMChatAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("internlm-chat")
+
+
+class StarChatAdapter(BaseModelAdapter):
+    """The model adapter for HuggingFaceH4/starchat-beta"""
+
+    def match(self, model_path: str):
+        return "starchat" in model_path
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("starchat")
 
 
 # Note: the registration order matters.
@@ -1165,6 +1190,7 @@ register_model_adapter(XGenAdapter)
 register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
+register_model_adapter(StarChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

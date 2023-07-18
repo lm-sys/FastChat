@@ -3,17 +3,18 @@ Conversation prompt templates.
 """
 
 import dataclasses
-from enum import auto, Enum
+from enum import auto, IntEnum
 from typing import List, Any, Dict
 
 
-class SeparatorStyle(Enum):
+class SeparatorStyle(IntEnum):
     """Separator styles."""
 
     ADD_COLON_SINGLE = auto()
     ADD_COLON_TWO = auto()
     ADD_COLON_SPACE_SINGLE = auto()
     NO_COLON_SINGLE = auto()
+    NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     CHATGLM = auto()
     CHATML = auto()
@@ -87,6 +88,15 @@ class Conversation:
             for role, message in self.messages:
                 if message:
                     ret += role + message + self.sep
+                else:
+                    ret += role
+            return ret
+        elif self.sep_style == SeparatorStyle.NO_COLON_TWO:
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + message + seps[i % 2]
                 else:
                     ret += role
             return ret
@@ -787,6 +797,37 @@ register_conv_template(
     )
 )
 
+# StarChat template
+register_conv_template(
+    Conversation(
+        name="starchat",
+        system="<system>\n",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|end|>",
+        stop_token_ids=[0, 49155],
+        stop_str="<|end|>",
+    )
+)
+
+# Baichuan-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
+    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
+    Conversation(
+        name="baichuan-chat",
+        system="",
+        roles=(" <reserved_102> ", " <reserved_103> "),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_token_ids=[2, 195],
+    )
+)
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

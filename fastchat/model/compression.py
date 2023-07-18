@@ -116,6 +116,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             model_path,
             low_cpu_mem_usage=True,
             torch_dtype=torch_dtype,
+            trust_remote_code=True,
             revision=revision,
             trust_remote_code=True
         )

@@ -1,5 +1,3 @@
-# Usage: deepspeed train_lora.py --deepspeed <$PATH_TO_DEEPSPEED_CONFIG>
-
 # Adopted from tatsu-lab@stanford_alpaca. Below is the original copyright:
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
 #
@@ -15,29 +13,46 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from collections import defaultdict
+import copy
+import os
 from dataclasses import dataclass, field
+import random
+import json
 import logging
 import pathlib
-import typing
-import os
+from typing import Dict, Optional, Sequence, List
+
+import torch
+import torch.distributed as dist
+
 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-import transformers
-from transformers import Trainer, BitsAndBytesConfig, deepspeed
-import torch
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 
-from fastchat.train.train import (
-    DataArguments,
-    ModelArguments,
-    TrainingArguments,
+import transformers
+from torch.utils.data import Dataset
+from transformers import Trainer, AddedToken, BitsAndBytesConfig, deepspeed
+
+from fastchat.train.train_flant5 import (
+    smart_tokenizer_and_embedding_resize,
     make_supervised_data_module,
 )
 
-from fastchat.train.llama_flash_attn_monkey_patch import (
-    replace_llama_attn_with_flash_attn,
-)
+from fastchat.train.train_lora import get_peft_state_maybe_zero_3
+
+from fastchat.model.model_adapter import get_conversation_template
+
+default_conversation = get_conversation_template("t5")
+
+# TODO: import and use code from ../data/dataset.py
+
+IGNORE_INDEX = -100
+DEFAULT_PAD_TOKEN = "[PAD]"
+DEFAULT_EOS_TOKEN = "</s>"
+DEFAULT_BOS_TOKEN = "</s>"
+DEFAULT_UNK_TOKEN = "</s>"
 
 
 @dataclass
@@ -45,48 +60,50 @@ class LoraArguments:
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
-    lora_target_modules: typing.List[str] = field(
-        default_factory=lambda: ["q_proj", "v_proj"]
-    )
+    lora_target_modules: List[str] = field(default_factory=lambda: ["q", "v"])
     lora_weight_path: str = ""
     lora_bias: str = "none"
     q_lora: bool = False
 
 
-def maybe_zero_3(param):
-    if hasattr(param, "ds_id"):
-        assert param.ds_status == ZeroParamStatus.NOT_AVAILABLE
-        with zero.GatheredParameters([param]):
-            param = param.data.detach().cpu().clone()
-    else:
-        param = param.detach().cpu().clone()
-    return param
+@dataclass
+class ModelArguments:
+    model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
 
 
-# Borrowed from peft.utils.get_peft_model_state_dict
-def get_peft_state_maybe_zero_3(named_params, bias):
-    if bias == "none":
-        to_return = {k: t for k, t in named_params if "lora_" in k}
-    elif bias == "all":
-        to_return = {k: t for k, t in named_params if "lora_" in k or "bias" in k}
-    elif bias == "lora_only":
-        to_return = {}
-        maybe_lora_bias = {}
-        lora_bias_names = set()
-        for k, t in named_params:
-            if "lora_" in k:
-                to_return[k] = t
-                bias_name = k.split("lora_")[0] + "bias"
-                lora_bias_names.add(bias_name)
-            elif "bias" in k:
-                maybe_lora_bias[k] = t
-        for k, t in maybe_lora_bias:
-            if bias_name in lora_bias_names:
-                to_return[bias_name] = t
-    else:
-        raise NotImplementedError
-    to_return = {k: maybe_zero_3(v) for k, v in to_return.items()}
-    return to_return
+@dataclass
+class DataArguments:
+    data_path: str = field(
+        default=None, metadata={"help": "Path to the training data."}
+    )
+    lazy_preprocess: bool = False
+    num_data: int = -1
+    preprocessed_path: str = field(
+        default=None, metadata={"help": "Path to the preprocessed training data."}
+    )
+
+
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    cache_dir: Optional[str] = field(default=None)
+    optim: str = field(default="adamw_torch")
+    model_max_length: int = field(
+        default=2048,
+        metadata={
+            "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
+        },
+    )
+
+
+def safe_save_model_for_hf_trainer(
+    trainer: transformers.Trainer, output_dir: str, state_dict: dict
+):
+    """Collects the state dict and dump to disk."""
+
+    if trainer.args.should_save:
+        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
+        del state_dict
+        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
 def train():
@@ -99,9 +116,6 @@ def train():
         training_args,
         lora_args,
     ) = parser.parse_args_into_dataclasses()
-
-    if model_args.flash_attn:
-        replace_llama_attn_with_flash_attn()
 
     device_map = None
     world_size = int(os.environ.get("WORLD_SIZE", 1))
@@ -119,7 +133,7 @@ def train():
         else (torch.bfloat16 if training_args.bf16 else torch.float32)
     )
 
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         device_map=device_map,
@@ -132,13 +146,14 @@ def train():
         if lora_args.q_lora
         else None,
     )
+
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
         target_modules=lora_args.lora_target_modules,
         lora_dropout=lora_args.lora_dropout,
         bias=lora_args.lora_bias,
-        task_type="CAUSAL_LM",
+        task_type=TaskType.SEQ_2_SEQ_LM,
     )
 
     if lora_args.q_lora:
@@ -157,28 +172,34 @@ def train():
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
+    # Dacheng: Note we can only use T5Tokenizer, otherwise it will prepend
+    # a space before special tokens.
+    tokenizer = transformers.T5Tokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
         padding_side="right",
         use_fast=False,
     )
-    tokenizer.pad_token = tokenizer.unk_token
+
+    smart_tokenizer_and_embedding_resize(
+        special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
+        other_tokens=["<", "{", "\n", "}", "`", " ", "\\", "^", "\t"],
+        tokenizer=tokenizer,
+        model=model,
+    )
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
-
-    model.config.use_cache = False
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
     trainer.save_state()
-
     # check if zero3 mode enabled
     if deepspeed.is_deepspeed_zero3_enabled():
         # use deepspeed engine internal function to gather state dict
@@ -196,7 +217,9 @@ def train():
         )
 
     if training_args.local_rank == 0:
-        model.save_pretrained(training_args.output_dir, state_dict=state_dict)
+        safe_save_model_for_hf_trainer(
+            trainer=trainer, output_dir=training_args.output_dir, state_dict=state_dict
+        )
 
 
 if __name__ == "__main__":
