@@ -43,7 +43,7 @@ for i in range(len(IDENTITY_WORDS)):
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4, 5, 6]:
+    for month in [4, 5, 6, 7]:
         for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
@@ -96,6 +96,7 @@ def clean_battle_data(log_files):
     }
 
     all_models = set()
+    all_ips = dict()
     ct_anony = 0
     ct_invalid = 0
     ct_leaked_identity = 0
@@ -136,7 +137,6 @@ def clean_battle_data(log_files):
             ct_invalid += 1
             continue
         lang_code = detect_language(state["messages"][state["offset"]][1])
-        rounds = (len(state["messages"]) - state["offset"]) // 2
 
         # Drop conversations if the model names are leaked
         leaked_identity = False
@@ -166,6 +166,11 @@ def clean_battle_data(log_files):
             row["states"][1]["messages"][row["states"][1]["offset"] :]
         )
 
+        ip = row["ip"]
+        if ip not in all_ips:
+            all_ips[ip] = len(all_ips)
+        user_id = all_ips[ip]
+
         # Save the result
         battles.append(
             dict(
@@ -173,12 +178,11 @@ def clean_battle_data(log_files):
                 model_a=models[0],
                 model_b=models[1],
                 winner=convert_type[row["type"]],
-                judge="arena_user",
+                judge=f"arena_user_{user_id}",
                 conversation_a=conversation_a,
                 conversation_b=conversation_b,
                 turn=len(conversation_a) // 2,
                 anony=anony,
-                rounds=rounds,
                 language=lang_code,
                 tstamp=row["tstamp"],
             )
@@ -223,9 +227,7 @@ if __name__ == "__main__":
             for key in [
                 "conversation_a",
                 "conversation_b",
-                "judge",
                 "question_id",
-                "turn",
             ]:
                 del x[key]
         print("Samples:")
@@ -237,8 +239,7 @@ if __name__ == "__main__":
         for x in battles:
             if not x["anony"]:
                 continue
-            # for key in ["tstamp", "rounds"]:
-            for key in ["rounds"]:
+            for key in []:
                 del x[key]
             new_battles.append(x)
         battles = new_battles

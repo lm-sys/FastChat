@@ -280,6 +280,7 @@ SEQUENCE_LENGTH_KEYS = [
     "seq_length",
     "max_position_embeddings",
     "max_seq_len",
+    "model_max_length",
 ]
 
 

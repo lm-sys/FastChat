@@ -110,7 +110,7 @@ def get_model_list(controller_url, add_chatgpt, add_claude, add_palm):
     if add_chatgpt:
         models += ["gpt-3.5-turbo", "gpt-4"]
     if add_claude:
-        models += ["claude-v1", "claude-instant-v1"]
+        models += ["claude-2", "claude-instant-1"]
     if add_palm:
         models += ["palm-2"]
 
@@ -307,7 +307,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "claude-v1" or model_name == "claude-instant-v1":
+    elif model_name == "claude-2" or model_name == "claude-instant-1":
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
@@ -693,7 +693,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--add-claude",
         action="store_true",
-        help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
+        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
     )
     parser.add_argument(
         "--add-palm",
