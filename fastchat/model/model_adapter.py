@@ -1147,6 +1147,7 @@ class StarChatAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("starchat")
 
+
 class Llama2Adapter(BaseModelAdapter):
     """The model adapter for llama-2"""
 
@@ -1161,7 +1162,6 @@ class Llama2Adapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
-
 
 
 # Note: the registration order matters.

@@ -16,6 +16,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_SINGLE = auto()
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
+    LLAMA2 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -23,7 +24,6 @@ class SeparatorStyle(IntEnum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
-    LLAMA2 = auto()
 
 
 @dataclasses.dataclass
@@ -114,6 +114,18 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.LLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += self.system + message
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role
+            return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
             # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
@@ -178,18 +190,6 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.LLAMA2:
-            seps = [self.sep, self.sep2]
-            ret = ""
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    if i == 0:
-                        ret += self.system + message
-                    else:
-                        ret += role + " " + message + seps[i % 2]
-                else:
-                    ret += role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -858,7 +858,7 @@ register_conv_template(
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2="</s><s>",
-        stop_token_ids=[2]
+        stop_token_ids=[2],
     )
 )
 
