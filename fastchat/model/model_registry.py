@@ -58,7 +58,7 @@ register_model_info(
 register_model_info(
     ["llama-2-13b-chat", "llama-2-7b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
     "Llama 2",
-    "playground/test_openai_api/openai_api.py",
+    "https://ai.meta.com/llama/",
     "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
