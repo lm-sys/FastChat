@@ -199,7 +199,7 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
-    def handle_no_worker(params):
+    def handle_no_worker(self, params):
         logger.info(f"no worker: {params['model']}")
         ret = {
             "text": SERVER_ERROR_MSG,
@@ -207,7 +207,7 @@ class Controller:
         }
         return json.dumps(ret).encode() + b"\0"
 
-    def handle_worker_timeout(worker_address):
+    def handle_worker_timeout(self, worker_address):
         logger.info(f"worker timeout: {worker_address}")
         ret = {
             "text": SERVER_ERROR_MSG,
