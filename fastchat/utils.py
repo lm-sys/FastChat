@@ -294,7 +294,7 @@ def get_length_by_key(config, key):
 
 
 def get_context_length(config):
-    """Iterate through the dictionary and get context length."""
+    """Get the context length of a model from a huggingface model config."""
     for key in SEQUENCE_LENGTH_KEYS:
         val = get_length_by_key(config, key)
         if val is not None:
