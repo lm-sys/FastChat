@@ -24,8 +24,8 @@ dependencies = [
 dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
-"Homepage" = "https://github.com/airoura163/FastChat"
-"Bug Tracker" = "https://github.com/airoura163/FastChat/issues"
+"Homepage" = "https://github.com/lm-sys/fastchat"
+"Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
 
 [tool.setuptools.packages.find]
 exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
