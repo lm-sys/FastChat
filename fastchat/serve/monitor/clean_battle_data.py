@@ -13,7 +13,7 @@ import time
 
 from tqdm import tqdm
 
-from fastchat.serve.monitor.basic_stats import get_log_files
+from fastchat.serve.monitor.basic_stats import get_log_files, NUM_SERVERS
 from fastchat.utils import detect_language
 
 
@@ -47,10 +47,9 @@ def get_log_files(max_num_files=None):
         for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 12
     filenames = []
     for d in dates:
-        for i in range(num_servers):
+        for i in range(NUM_SERVERS):
             name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)
