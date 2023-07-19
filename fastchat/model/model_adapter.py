@@ -811,7 +811,7 @@ class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
     def match(self, model_path: str):
-        return model_path in ["claude-v1", "claude-instant-v1"]
+        return model_path in ["claude-2", "claude-instant-1"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1148,6 +1148,22 @@ class StarChatAdapter(BaseModelAdapter):
         return get_conv_template("starchat")
 
 
+class Llama2Adapter(BaseModelAdapter):
+    """The model adapter for llama-2"""
+
+    def match(self, model_path: str):
+        return "llama-2" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-2")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1191,6 +1207,7 @@ register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
+register_model_adapter(Llama2Adapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
