@@ -291,6 +291,11 @@ def train():
         cache_dir=training_args.cache_dir,
     )
     model.config.use_cache = False
+    if training_args.model_max_length > 4096:
+        import math
+
+        scaling_factor = math.ceil(training_args.model_max_length / 4096)
+        model.config.rope_scaling = {"type": "linear", "factor": scaling_factor}
     # Tie the weights
     model.tie_weights()
 

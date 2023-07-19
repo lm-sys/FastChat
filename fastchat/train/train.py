@@ -248,6 +248,12 @@ def train():
         cache_dir=training_args.cache_dir,
     )
     model.config.use_cache = False
+    if training_args.model_max_length > 2048:
+        import math
+
+        scaling_factor = math.ceil(training_args.model_max_length / 2048)
+        model.config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
