@@ -1,3 +1,8 @@
+# Used for train_lora_plus.py, aim to extend FastChat to support more dataset formats and file formats.
+# At the same time, more parameters are added.
+
+# Adopted from https://github.com/artidoro/qlora
+
 from fastchat.train.train import (
     DataArguments,
     ModelArguments,

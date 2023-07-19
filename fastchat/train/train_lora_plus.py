@@ -1,4 +1,4 @@
-# Usage: deepspeed train_lora.py --deepspeed <$PATH_TO_DEEPSPEED_CONFIG>
+# Usage: deepspeed train_lora_plus.py --deepspeed <$PATH_TO_DEEPSPEED_CONFIG>
 
 # Adopted from tatsu-lab@stanford_alpaca. Below is the original copyright:
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
@@ -15,28 +15,17 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dataclasses import dataclass, field
-import logging
-import pathlib
-import typing
-import os
 import argparse
+import logging
+import os
+import pathlib
 
+import torch
+import transformers
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
-import torch
-
-from fastchat.train.train import (
-    make_supervised_data_module
-)
-from fastchat.train.data_module import (
-    smart_tokenizer_and_embedding_resize,
-    DEFAULT_PAD_TOKEN,
-    make_custom_data_module
-)
 
 from fastchat.train.argument_module import (
     AH_DataArguments,
@@ -44,10 +33,18 @@ from fastchat.train.argument_module import (
     AH_TrainingArguments,
     AH_LoraArguments
 )
-
+from fastchat.train.data_module import (
+    smart_tokenizer_and_embedding_resize,
+    DEFAULT_PAD_TOKEN,
+    make_custom_data_module
+)
 from fastchat.train.llama_xformers_attn_monkey_patch import (
     replace_llama_attn_with_xformers_attn,
 )
+from fastchat.train.train import (
+    make_supervised_data_module
+)
+
 
 def maybe_zero_3(param):
     if hasattr(param, "ds_id"):

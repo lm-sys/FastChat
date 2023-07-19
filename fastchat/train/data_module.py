@@ -1,40 +1,18 @@
-from collections import defaultdict
-import copy
-import json
-import os
-from os.path import exists, join, isdir
-from dataclasses import dataclass, field
-import sys
-from typing import Optional, Dict, Sequence
-import numpy as np
-from tqdm import tqdm
-import logging
-import bitsandbytes as bnb
-import pandas as pd
+# Used for train_lora_plus.py, aim to extend FastChat to support more dataset formats and file formats.
+# At the same time, more parameters are added.
 
+# Adopted from https://github.com/artidoro/qlora
+import copy
+import logging
+import os
+from dataclasses import dataclass
+from typing import Dict, Sequence
+
+import pandas as pd
 import torch
 import transformers
-from torch.nn.utils.rnn import pad_sequence
-import argparse
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    set_seed,
-    Seq2SeqTrainer,
-    BitsAndBytesConfig,
-    LlamaTokenizer
-
-)
 from datasets import load_dataset, Dataset
-
-from peft import (
-    LoraConfig,
-    get_peft_model,
-    PeftModel
-)
-from peft.tuners.lora import LoraLayer
-from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-
+from torch.nn.utils.rnn import pad_sequence
 
 torch.backends.cuda.matmul.allow_tf32 = True
 
