@@ -38,9 +38,7 @@ from fastchat.train.data_module import (
     DEFAULT_PAD_TOKEN,
     make_custom_data_module
 )
-from fastchat.train.llama_xformers_attn_monkey_patch import (
-    replace_llama_attn_with_xformers_attn,
-)
+
 from fastchat.train.train import (
     make_supervised_data_module
 )
@@ -95,9 +93,21 @@ def train():
     args = argparse.Namespace(
         **vars(model_args), **vars(data_args), **vars(training_args), **vars(lora_args)
     )
-    if model_args.xformers: 
-        print("replace_llama_attn_with_xformers_attn")
-        replace_llama_attn_with_xformers_attn
+
+    if model_args.flash_attn and model_args.xformers:
+        raise ValueError("At most one of flash_attn and xformers can be True, but not both")
+
+    if model_args.flash_attn:
+        from fastchat.train.llama_flash_attn_monkey_patch import (
+            replace_llama_attn_with_flash_attn,
+        )
+        replace_llama_attn_with_flash_attn()
+
+    if model_args.xformers:
+        from fastchat.train.llama_xformers_attn_monkey_patch import (
+            replace_llama_attn_with_xformers_attn,
+        )
+        replace_llama_attn_with_xformers_attn()
         
     # if model_args.flash_attn:
     #     replace_llama_attn_with_flash_attn()

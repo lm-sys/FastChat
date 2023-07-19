@@ -1,6 +1,5 @@
-deepspeed --include=localhost:0 --master_port 61000 fastchat/train/train_lora_plus.py \
+deepspeed --master_port 61000 fastchat/train/train_lora_plus.py \
     --model_name_or_path huggyllama/llama-7b  \
-    --data_path data/dummy_conversation.json \
     --dataset "data/alpaca_data_cleaned_1000.json" \
     --dataset_format "alpaca" \
     --cache_dir /data0/huggingface/hub/ \
@@ -16,9 +15,9 @@ deepspeed --include=localhost:0 --master_port 61000 fastchat/train/train_lora_pl
     --per_device_eval_batch_size 2 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "steps" \
-    --eval_steps 10  \
+    --eval_steps 20  \
     --save_strategy "steps" \
-    --save_steps 20 \
+    --save_steps 50 \
     --save_total_limit 2 \
     --logging_strategy "steps" \
     --logging_steps 1 \
