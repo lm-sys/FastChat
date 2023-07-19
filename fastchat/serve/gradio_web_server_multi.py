@@ -71,7 +71,7 @@ def load_demo(url_params, request: gr.Request):
         if args.add_chatgpt:
             models_anony += ["gpt-4", "gpt-3.5-turbo"]
         if args.add_claude:
-            models_anony += ["claude-v1", "claude-instant-v1"]
+            models_anony += ["claude-2", "claude-instant-1"]
         if args.add_palm:
             models_anony += ["palm-2"]
 
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--add-claude",
         action="store_true",
-        help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
+        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
     )
     parser.add_argument(
         "--add-palm",

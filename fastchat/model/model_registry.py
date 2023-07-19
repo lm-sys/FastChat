@@ -32,13 +32,19 @@ register_model_info(
     "ChatGPT-3.5 by OpenAI",
 )
 register_model_info(
-    ["claude-v1"],
+    ["claude-2"],
+    "Claude",
+    "https://www.anthropic.com/index/claude-2",
+    "Claude 2 by Anthropic",
+)
+register_model_info(
+    ["claude-1"],
     "Claude",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude by Anthropic",
 )
 register_model_info(
-    ["claude-instant-v1"],
+    ["claude-instant-1"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
@@ -48,6 +54,12 @@ register_model_info(
     "PaLM 2 Chat",
     "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
     "PaLM 2 for Chat (chat-bison@001) by Google",
+)
+register_model_info(
+    ["llama-2-13b-chat", "llama-2-7b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
+    "Llama 2",
+    "https://ai.meta.com/llama/",
+    "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
     [
@@ -129,11 +141,12 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
-    ["llama-13b"],
+    ["llama-7b", "llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
     "open and efficient foundation language models by Meta",
 )
+
 register_model_info(
     ["dolly-v2-12b"],
     "Dolly",
