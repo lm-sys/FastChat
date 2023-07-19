@@ -29,6 +29,7 @@ from transformers.trainer_pt_utils import LabelSmoother
 
 from fastchat.conversation import SeparatorStyle
 from fastchat.model.model_adapter import get_conversation_template
+from fastchat.utils import get_length_by_key
 
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 
@@ -248,10 +249,11 @@ def train():
         cache_dir=training_args.cache_dir,
     )
     model.config.use_cache = False
-    if training_args.model_max_length > 2048:
+    orig_ctx_len = get_length_by_key(model.config, "max_position_embeddings")
+    if training_args.model_max_length > orig_ctx_len:
         import math
 
-        scaling_factor = math.ceil(training_args.model_max_length / 2048)
+        scaling_factor = math.ceil(training_args.model_max_length / orig_ctx_len)
         model.config.rope_scaling = {"type": "linear", "factor": scaling_factor}
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
