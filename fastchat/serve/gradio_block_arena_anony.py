@@ -183,7 +183,6 @@ SAMPLING_WEIGHTS = {
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
     "chatglm-6b": 0.5,
-
     # deprecated
     "gpt4all-13b-snoozy": 1.0,
     "koala-13b": 1.0,
