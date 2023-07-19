@@ -180,7 +180,7 @@ def train():
     trainer.save_state()
 
     # check if zero3 mode enabled
-    if deepspeed.is_deepspeed_zero3_enabled():
+    if trainer.args.deepspeed and trainer.hf_deepspeed_config_orig.is_zero3():
         # use deepspeed engine internal function to gather state dict
         # state_dict_zero3 contains whole parameters of base and lora adapters
         # we will not extract lora parameters since peft save_pretrained will do that
