@@ -107,7 +107,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         tokenizer = AutoTokenizer.from_pretrained(
         model_path, use_fast=use_fast, revision=revision,trust_remote_code=True)
     
-    except Exception as e:
+    except ValueError as e:
         tokenizer = AutoTokenizer.from_pretrained(
         model_path, use_fast=False, revision=revision,trust_remote_code=True)
     with init_empty_weights():
@@ -123,7 +123,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         # some models are loaded by AutoModel but not AutoModelForCausalLM, such as chatglm, chatglm2
         try:
             model = AutoModelForCausalLM.from_config(config,trust_remote_code=True)
-        except Exception as e:
+        except NameError as e:
             model = AutoModel.from_config(config,trust_remote_code=True)
         linear_weights = get_compressed_list(model)
 
