@@ -229,8 +229,9 @@ class Controller:
                 speed += worker_status["speed"]
                 queue_length += worker_status["queue_length"]
 
+        model_names = sorted(list(model_names))
         return {
-            "model_names": list(model_names),
+            "model_names": model_names,
             "speed": speed,
             "queue_length": queue_length,
         }
