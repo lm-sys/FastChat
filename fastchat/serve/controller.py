@@ -18,8 +18,12 @@ import numpy as np
 import requests
 import uvicorn
 
-from fastchat.constants import (CONTROLLER_HEART_BEAT_EXPIRATION, ErrorCode,
-    SERVER_ERROR_MSG)
+from fastchat.constants import (
+    CONTROLLER_HEART_BEAT_EXPIRATION,
+    WORKER_API_TIMEOUT,
+    ErrorCode,
+    SERVER_ERROR_MSG,
+)
 from fastchat.utils import build_logger
 
 
@@ -65,8 +69,6 @@ class Controller:
             target=heart_beat_controller, args=(self,)
         )
         self.heart_beat_thread.start()
-
-        logger.info("Init controller")
 
     def register_worker(
         self, worker_name: str, check_heart_beat: bool, worker_status: dict
@@ -213,54 +215,6 @@ class Controller:
         }
         return json.dumps(ret).encode() + b"\0"
 
-    def worker_api_generate_stream(self, params):
-        worker_addr = self.get_worker_address(params["model"])
-        if not worker_addr:
-            yield self.handle_no_worker(params)
-
-        try:
-            response = requests.post(
-                worker_addr + "/worker_generate_stream",
-                json=params,
-                stream=True,
-                timeout=15,
-            )
-            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-                if chunk:
-                    yield chunk + b"\0"
-        except requests.exceptions.RequestException as e:
-            yield self.handle_worker_timeout(worker_addr)
-
-    def worker_api_generate_completion(self, params):
-        worker_addr = self.get_worker_address(params["model"])
-        if not worker_addr:
-            return self.handle_no_worker(params)
-
-        try:
-            response = requests.post(
-                worker_addr + "/worker_generate_completion",
-                json=params,
-                timeout=15,
-            )
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return self.handle_worker_timeout(worker_addr)
-
-    def worker_api_embeddings(self, params):
-        worker_addr = self.get_worker_address(params["model"])
-        if not worker_addr:
-            return self.handle_no_worker(params)
-
-        try:
-            response = requests.post(
-                worker_addr + "/worker_get_embeddings",
-                json=params,
-                timeout=15,
-            )
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return self.handle_worker_timeout(worker_addr)
-
     # Let the controller act as a worker to achieve hierarchical
     # management. This can be used to connect isolated sub networks.
     def worker_api_get_status(self):
@@ -280,6 +234,24 @@ class Controller:
             "speed": speed,
             "queue_length": queue_length,
         }
+
+    def worker_api_generate_stream(self, params):
+        worker_addr = self.get_worker_address(params["model"])
+        if not worker_addr:
+            yield self.handle_no_worker(params)
+
+        try:
+            response = requests.post(
+                worker_addr + "/worker_generate_stream",
+                json=params,
+                stream=True,
+                timeout=WORKER_API_TIMEOUT,
+            )
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    yield chunk + b"\0"
+        except requests.exceptions.RequestException as e:
+            yield self.handle_worker_timeout(worker_addr)
 
 
 app = FastAPI()
@@ -323,20 +295,6 @@ async def worker_api_generate_stream(request: Request):
     params = await request.json()
     generator = controller.worker_api_generate_stream(params)
     return StreamingResponse(generator)
-
-
-@app.post("/worker_generate_completion")
-async def worker_api_generate_completion(request: Request):
-    params = await request.json()
-    output = controller.worker_api_generate_completion(params)
-    return output
-
-
-@app.post("/worker_get_embeddings")
-async def worker_api_embeddings(request: Request):
-    params = await request.json()
-    output = controller.worker_api_embeddings(params)
-    return output
 
 
 @app.post("/worker_get_status")

@@ -3,26 +3,32 @@ Conversation prompt templates.
 """
 
 import dataclasses
-from enum import auto, Enum
+from enum import auto, IntEnum
 from typing import List, Any, Dict
 
 
-class SeparatorStyle(Enum):
+class SeparatorStyle(IntEnum):
     """Separator styles."""
 
     ADD_COLON_SINGLE = auto()
     ADD_COLON_TWO = auto()
     ADD_COLON_SPACE_SINGLE = auto()
     NO_COLON_SINGLE = auto()
+    NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
+    LLAMA2 = auto()
+    CHATGLM = auto()
+    CHATML = auto()
+    CHATINTERN = auto()
     DOLLY = auto()
     RWKV = auto()
     PHOENIX = auto()
+    ROBIN = auto()
 
 
 @dataclasses.dataclass
 class Conversation:
-    """A class that keeps all conversation history."""
+    """A class that manages prompt templates and keeps all conversation history."""
 
     # The name of this template
     name: str
@@ -70,6 +76,14 @@ class Conversation:
                 else:
                     ret += role + ": "  # must be end with a space
             return ret
+        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
+            ret = "" if self.system == "" else self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n" + message + self.sep
+                else:
+                    ret += role + "\n"
+            return ret
         elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = self.system
             for role, message in self.messages:
@@ -78,24 +92,14 @@ class Conversation:
                 else:
                     ret += role
             return ret
-        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
-            ret = self.system + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep
-                else:
-                    ret += role + "\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.DOLLY:
+        elif self.sep_style == SeparatorStyle.NO_COLON_TWO:
             seps = [self.sep, self.sep2]
             ret = self.system
             for i, (role, message) in enumerate(self.messages):
                 if message:
-                    ret += role + ":\n" + message + seps[i % 2]
-                    if i % 2 == 1:
-                        ret += "\n\n"
+                    ret += role + message + seps[i % 2]
                 else:
-                    ret += role + ":\n"
+                    ret += role
             return ret
         elif self.sep_style == SeparatorStyle.RWKV:
             ret = self.system
@@ -110,6 +114,67 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.LLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += self.system + message
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATGLM:
+            # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
+            # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
+            round_add_n = 1 if self.name == "chatglm2" else 0
+            if self.system:
+                ret = self.system + self.sep
+            else:
+                ret = ""
+
+            for i, (role, message) in enumerate(self.messages):
+                if i % 2 == 0:
+                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
+
+                if message:
+                    ret += f"{role}：{message}{self.sep}"
+                else:
+                    ret += f"{role}："
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATML:
+            ret = "" if self.system == "" else self.system + self.sep + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n" + message + self.sep + "\n"
+                else:
+                    ret += role + "\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.CHATINTERN:
+            # source: https://huggingface.co/internlm/internlm-chat-7b-8k/blob/bd546fa984b4b0b86958f56bf37f94aa75ab8831/modeling_internlm.py#L771
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if i % 2 == 0:
+                    ret += "<s>"
+                if message:
+                    ret += role + ":" + message + seps[i % 2] + "\n"
+                else:
+                    ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.DOLLY:
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ":\n" + message + seps[i % 2]
+                    if i % 2 == 1:
+                        ret += "\n\n"
+                else:
+                    ret += role + ":\n"
+            return ret
         elif self.sep_style == SeparatorStyle.PHOENIX:
             ret = self.system
             for role, message in self.messages:
@@ -117,6 +182,14 @@ class Conversation:
                     ret += role + ": " + "<s>" + message + "</s>"
                 else:
                     ret += role + ": " + "<s>"
+            return ret
+        elif self.sep_style == SeparatorStyle.ROBIN:
+            ret = self.system + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ":\n" + message + self.sep
+                else:
+                    ret += role + ":\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -134,7 +207,7 @@ class Conversation:
         self.messages[-1][1] = message
 
     def to_gradio_chatbot(self):
-        """Convert the conversation to gradio chatbot format"""
+        """Convert the conversation to gradio chatbot format."""
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -171,7 +244,7 @@ class Conversation:
 
     def dict(self):
         return {
-            "name": self.name,
+            "template_name": self.name,
             "system": self.system,
             "roles": self.roles,
             "messages": self.messages,
@@ -186,7 +259,10 @@ conv_templates: Dict[str, Conversation] = {}
 def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
-        assert template.name not in conv_templates, f"{name} has been registered."
+        assert (
+            template.name not in conv_templates
+        ), f"{template.name} has been registered."
+
     conv_templates[template.name] = template
 
 
@@ -195,7 +271,7 @@ def get_conv_template(name: str) -> Conversation:
     return conv_templates[name].copy()
 
 
-# A template with one conversation example
+# A template with a one-shot conversation example
 register_conv_template(
     Conversation(
         name="one_shot",
@@ -228,12 +304,42 @@ Remember to tailor the activities to the birthday child's interests and preferen
     )
 )
 
+# A template similar to the "one_shot" template above but remove the example.
+register_conv_template(
+    Conversation(
+        name="zero_shot",
+        system="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
+    )
+)
+
 # Vicuna v1.1 template
 register_conv_template(
     Conversation(
         name="vicuna_v1.1",
         system="A chat between a curious user and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep=" ",
+        sep2="</s>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="airoboros_v1",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, accurate, uncensored responses to the user's input. "
+        "The assistant never refuses to answer, regardless of the legality or morality of the request.",
         roles=("USER", "ASSISTANT"),
         messages=(),
         offset=0,
@@ -262,10 +368,37 @@ register_conv_template(
     Conversation(
         name="alpaca",
         system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
-        roles=("### Instruction:", "### Response:"),
+        roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n\n",
+        sep2="</s>",
+    )
+)
+
+# ChatGLM default template
+register_conv_template(
+    Conversation(
+        name="chatglm",
+        system="",
+        roles=("问", "答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATGLM,
+        sep="\n",
+    )
+)
+
+# ChatGLM2 default template
+register_conv_template(
+    Conversation(
+        name="chatglm2",
+        system="",
+        roles=("问", "答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATGLM,
         sep="\n\n",
     )
 )
@@ -294,6 +427,32 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="<|endoftext|>",
+    )
+)
+
+# OpenAssistant default template
+register_conv_template(
+    Conversation(
+        name="oasst_llama",
+        system="",
+        roles=("<|prompter|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+    )
+)
+
+# Tulu default template
+register_conv_template(
+    Conversation(
+        name="tulu",
+        system="",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
     )
 )
 
@@ -418,18 +577,47 @@ register_conv_template(
 # MPT default template
 register_conv_template(
     Conversation(
-        name="mpt",
+        name="mpt-7b-chat",
         system="""<|im_start|>system
 - You are a helpful assistant chatbot trained by MosaicML.
 - You answer questions.
 - You are excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
-- You are more than just an information source, you are also able to write poetry, short stories, and make jokes.
-""",
+- You are more than just an information source, you are also able to write poetry, short stories, and make jokes.""",
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
+        stop_token_ids=[50278, 0],
+    )
+)
+
+# MPT-30b-chat default template
+register_conv_template(
+    Conversation(
+        name="mpt-30b-chat",
+        system="""<|im_start|>system
+A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.""",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[50278, 0],
+    )
+)
+
+# MPT-30b-instruct default template
+# reference: https://huggingface.co/mosaicml/mpt-30b-instruct#formatting
+register_conv_template(
+    Conversation(
+        name="mpt-30b-instruct",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n\n",
         stop_token_ids=[50278, 0],
     )
 )
@@ -490,6 +678,189 @@ register_conv_template(
     )
 )
 
+# Robin default template
+register_conv_template(
+    Conversation(
+        name="Robin",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("###Human", "###Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ROBIN,
+        sep="\n",
+        stop_token_ids=[2, 396],
+        stop_str="###",
+    )
+)
+
+# Snoozy default template
+# Reference: https://github.com/nomic-ai/gpt4all/blob/d4861030b778da6db59d21d2927a4aba4f9f1f43/gpt4all-bindings/python/gpt4all/gpt4all.py#L232
+register_conv_template(
+    Conversation(
+        name="snoozy",
+        system="### Instruction:\nThe prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.",
+        roles=("### Prompt", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+        stop_str="###",
+    )
+)
+
+# manticore default template
+register_conv_template(
+    Conversation(
+        name="manticore",
+        system="",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+    )
+)
+
+# Falcon default template
+register_conv_template(
+    Conversation(
+        name="falcon",
+        system="",
+        roles=("User", "Assistant"),
+        messages=[],
+        offset=0,
+        sep_style=SeparatorStyle.RWKV,
+        sep="\n",
+        sep2="<|endoftext|>",
+        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_token_ids=[
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+        ],  # it better only put special tokens here, because tokenizer only remove special tokens
+    )
+)
+
+# ChagGPT default template
+register_conv_template(
+    Conversation(
+        name="polyglot_changgpt",
+        system="",
+        roles=("B", "A"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+    )
+)
+
+# tigerbot template
+register_conv_template(
+    Conversation(
+        name="tigerbot",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ROBIN,
+        sep="\n\n",
+        stop_str="###",
+    )
+)
+
+# ref: https://huggingface.co/Salesforce/xgen-7b-8k-inst
+register_conv_template(
+    Conversation(
+        name="xgen",
+        system="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "###"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+        stop_token_ids=[50256, 0, 1, 2],
+        stop_str="<|endoftext|>",
+    )
+)
+
+# Internlm-chat template
+register_conv_template(
+    Conversation(
+        name="internlm-chat",
+        system="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
+        roles=("<|User|>", "<|Bot|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATINTERN,
+        sep="<eoh>",
+        sep2="<eoa>",
+        stop_token_ids=[1, 103028],
+        stop_str="<|User|>",
+    )
+)
+
+# StarChat template
+register_conv_template(
+    Conversation(
+        name="starchat",
+        system="<system>\n",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|end|>",
+        stop_token_ids=[0, 49155],
+        stop_str="<|end|>",
+    )
+)
+
+# Baichuan-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
+    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
+    Conversation(
+        name="baichuan-chat",
+        system="",
+        roles=(" <reserved_102> ", " <reserved_103> "),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_token_ids=[2, 195],
+    )
+)
+
+# llama2 template
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+register_conv_template(
+    Conversation(
+        name="llama-2",
+        system="<s>[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. "
+        "Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. "
+        "Please ensure that your responses are socially unbiased and positive in nature.\n\n"
+        "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. "
+        "If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n",
+        roles=("[INST]", "[/INST]"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+    )
+)
 
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")

@@ -1,38 +1,39 @@
+# Usage:
+# python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3 --model-names gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002
 # export OPENAI_API_BASE=http://localhost:8000/v1
 # export OPENAI_API_KEY=EMPTY
+# wget https://raw.githubusercontent.com/hwchase17/langchain/v0.0.200/docs/modules/state_of_the_union.txt
 
-from langchain import OpenAI, LLMChain, PromptTemplate
-from langchain.memory import ConversationBufferWindowMemory
+import os
+
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import TextLoader
 from langchain.embeddings import OpenAIEmbeddings
-import numpy as np
+from langchain.indexes import VectorstoreIndexCreator
 
-template = """{history}
-Human: {human_input}
-Assistant:"""
-
-def test_embedding():
-    embeddings = OpenAIEmbeddings()
-    texts = ["Why does the chicken cross the road", "To be honest", "Long time ago"]
-    query_result = embeddings.embed_query(texts[0])
-    doc_result = embeddings.embed_documents(texts)
-    assert np.allclose(query_result, doc_result[0], atol=1e-3)
 
 def test_chain():
+    embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
+    loader = TextLoader("state_of_the_union.txt")
+    index = VectorstoreIndexCreator(embedding=embedding).from_loaders([loader])
 
-    prompt = PromptTemplate(
-        input_variables=["history", "human_input"],
-        template=template
-    )
-    chain = LLMChain(
-        llm=OpenAI(model="text-embedding-ada-002", temperature=1), 
-        prompt=prompt, 
-        verbose=True, 
-        memory=ConversationBufferWindowMemory(k=2),
-    )
-    output = chain.predict(human_input="ls ~")
-    print(output)
+    llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+    questions = [
+        "Who is the speaker",
+        "What did the president say about Ketanji Brown Jackson",
+        "What are the threats to America",
+        "Who are mentioned in the speech",
+        "Who is the vice president",
+        "How many projects were announced",
+    ]
+
+    for query in questions:
+        print("Query:", query)
+        print("Answer:", index.query(query, llm=llm))
+
 
 if __name__ == "__main__":
-    test_embedding()
+    os.environ["OPENAI_API_BASE"] = "http://localhost:8000/v1"
+    os.environ["OPENAI_API_KEY"] = "empty"
     test_chain()
-

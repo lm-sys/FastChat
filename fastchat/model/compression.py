@@ -5,12 +5,13 @@ import os
 
 from accelerate import init_empty_weights
 from accelerate.utils import set_module_tensor_to_device
+from huggingface_hub import snapshot_download
 import torch
 from torch import Tensor
-import torch.nn as nn
 from torch.nn import functional as F
+import torch.nn as nn
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
 
 @dataclasses.dataclass
@@ -44,7 +45,9 @@ class CLinear(nn.Module):
 
     def forward(self, input: Tensor) -> Tensor:
         weight = decompress(self.weight, default_compression_config)
-        return F.linear(input.to(weight.dtype), weight, self.bias)
+        if self.bias is None:
+            return F.linear(input.to(weight.dtype), weight)
+        return F.linear(input.to(weight.dtype), weight, self.bias.to(weight.dtype))
 
 
 def compress_module(module, target_device):
@@ -97,18 +100,32 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
         )
 
 
-def load_compress_model(model_path, device, torch_dtype):
+def load_compress_model(model_path, device, torch_dtype, use_fast, revision="main"):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-    base_pattern = os.path.join(model_path, "pytorch_model-*.bin")
-    files = glob.glob(base_pattern)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=use_fast, trust_remote_code=True, revision=revision
+    )
 
     with init_empty_weights():
         config = AutoConfig.from_pretrained(
-            model_path, low_cpu_mem_usage=True, torch_dtype=torch_dtype
+            model_path,
+            low_cpu_mem_usage=True,
+            torch_dtype=torch_dtype,
+            trust_remote_code=True,
+            revision=revision,
         )
-        model = AutoModelForCausalLM.from_config(config)
+        model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
         linear_weights = get_compressed_list(model)
+
+    if os.path.exists(model_path):
+        # `model_path` is a local folder
+        base_pattern = os.path.join(model_path, "pytorch_model*.bin")
+    else:
+        # `model_path` is a cached Hugging Face repo
+        model_path = snapshot_download(model_path, revision=revision)
+        base_pattern = os.path.join(model_path, "pytorch_model*.bin")
+
+    files = glob.glob(base_pattern)
 
     compressed_state_dict = {}
 
