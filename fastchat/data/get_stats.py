@@ -34,15 +34,6 @@ def tokenize_dataset(content):
     return processed
 
 
-def compute_avg_turns(content):
-    res_lens = []
-
-    for c in content:
-        turns.append(len(c["conversations"]) // 2)
-
-    return np.mean(turns)
-
-
 def compute_stats(content):
     total_len = 0
     turns = []
