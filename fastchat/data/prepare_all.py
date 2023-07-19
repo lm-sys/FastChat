@@ -18,7 +18,11 @@ if __name__ == "__main__":
     in_prefix = args.prefix
     model_path = args.model_name_or_path
     seq_len = args.seq_len
-    prefix = f"{in_prefix}_{seq_len}".replace("4096", "4k").replace("8192", "8k").replace("16384", "16k")
+    prefix = (
+        f"{in_prefix}_{seq_len}".replace("4096", "4k")
+        .replace("8192", "8k")
+        .replace("16384", "16k")
+    )
 
     cmd_list = [
         f"python3 -m fastchat.data.clean_sharegpt --in {in_prefix}_html.json --out {prefix}_clean.json",
