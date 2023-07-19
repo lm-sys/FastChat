@@ -81,22 +81,16 @@ register_model_info(
     "an instruction-following LLM using evol-instruct by Microsoft",
 )
 register_model_info(
+    ["mpt-7b-chat", "mpt-30b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT by MosaicML",
+)
+register_model_info(
     ["guanaco-33b", "guanaco-65b"],
     "Guanaco",
     "https://github.com/artidoro/qlora",
     "a model fine-tuned with QLoRA by UW",
-)
-register_model_info(
-    ["mpt-7b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
-)
-register_model_info(
-    ["mpt-30b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-30b",
-    "a chatbot fine-tuned from MPT-30B by MosaicML",
 )
 register_model_info(
     ["gpt4all-13b-snoozy"],
@@ -117,16 +111,16 @@ register_model_info(
     "an RNN with transformer-level LLM performance",
 )
 register_model_info(
-    ["alpaca-13b"],
-    "Alpaca",
-    "https://crfm.stanford.edu/2023/03/13/alpaca.html",
-    "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
-)
-register_model_info(
     ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
+)
+register_model_info(
+    ["alpaca-13b"],
+    "Alpaca",
+    "https://crfm.stanford.edu/2023/03/13/alpaca.html",
+    "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
     ["oasst-pythia-12b"],
