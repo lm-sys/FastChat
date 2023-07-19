@@ -293,7 +293,7 @@ def train():
     )
     model.config.use_cache = False
     orig_ctx_len = get_length_by_key(model.config, "max_position_embeddings")
-    if training_args.model_max_length > orig_ctx_len:
+    if orig_ctx_len and training_args.model_max_length > orig_ctx_len:
         import math
 
         scaling_factor = math.ceil(training_args.model_max_length / orig_ctx_len)
