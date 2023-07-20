@@ -120,20 +120,24 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             revision=revision,
             trust_remote_code=True
         )
-        # some models are loaded by AutoModel but not AutoModelForCausalLM, such as chatglm, chatglm2
+        # some models are loaded by AutoModel but not AutoModelForCausalLM, 
+        # such as chatglm, chatglm2
         try:
             model = AutoModelForCausalLM.from_config(config,trust_remote_code=True)
         except NameError:
             model = AutoModel.from_config(config,trust_remote_code=True)
         linear_weights = get_compressed_list(model)
-
     if os.path.exists(model_path):
         # `model_path` is a local folder
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     else:
         # `model_path` is a cached Hugging Face repo
-        # We don't necessarily need to download the model' repo again if there is a cache. So check the default huggingface cache first.
-        model_path_temp = os.path.join(os.getenv("HOME"),".cache/huggingface/hub","models--"+model_path.replace("/","--"),"snapshots/")
+        # We don't necessarily need to download the model' repo again if there is a cache. 
+        # So check the default huggingface cache first.
+        model_path_temp = os.path.join(os.getenv("HOME"),
+                                       ".cache/huggingface/hub",
+                                       "models--"+model_path.replace("/","--"),
+                                       "snapshots/")
         if os.path.exists(model_path_temp):
             temp_last_dir = os.listdir(model_path_temp)[-1]
             model_path = os.path.join(model_path_temp, temp_last_dir)
