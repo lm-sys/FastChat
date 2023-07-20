@@ -862,6 +862,20 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="cutegpt",
+        system="",
+        roles=("问：", "答：\n"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="\n",
+        sep2="\n",
+        stop_str = "<end>",
+    )
+)
+
 if __name__ == "__main__":
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")

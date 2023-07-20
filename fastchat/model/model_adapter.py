@@ -1163,6 +1163,25 @@ class Llama2Adapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
 
+class CuteGPTAdapter(BaseModelAdapter):
+    """The model adapter for llama-2"""
+
+    def match(self, model_path: str):
+        return "cutegpt" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = LlamaTokenizer.from_pretrained(model_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        tokenizer.eos_token_id = tokenizer.convert_tokens_to_ids('<end>')
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.eos_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cutegpt")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -1208,6 +1227,7 @@ register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
+register_model_adapter(CuteGPTAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
