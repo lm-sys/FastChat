@@ -56,7 +56,7 @@ class WorkerInfo:
 def heart_beat_controller(controller):
     while True:
         time.sleep(CONTROLLER_HEART_BEAT_EXPIRATION)
-        controller.remove_stable_workers_by_expiration()
+        controller.remove_stale_workers_by_expiration()
 
 
 class Controller:
@@ -189,7 +189,7 @@ class Controller:
         logger.info(f"Receive heart beat. {worker_name}")
         return True
 
-    def remove_stable_workers_by_expiration(self):
+    def remove_stale_workers_by_expiration(self):
         expire = time.time() - CONTROLLER_HEART_BEAT_EXPIRATION
         to_delete = []
         for worker_name, w_info in self.worker_info.items():
