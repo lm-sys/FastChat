@@ -17,7 +17,7 @@ CONVERSATION_TURN_LIMIT = 50
 # Session expiration time
 SESSION_EXPIRATION_TIME = 3600
 # The output dir of log files
-LOGDIR = "."
+LOGDIR = os.getenv("LOGDIR", ".")
 
 
 ##### For the controller and workers (could be overwritten through ENV variables.)

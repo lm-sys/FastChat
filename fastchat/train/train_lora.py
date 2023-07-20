@@ -31,13 +31,25 @@ import torch
 from fastchat.train.train import (
     DataArguments,
     ModelArguments,
-    TrainingArguments,
     make_supervised_data_module,
 )
 
 from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
+
+
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    cache_dir: Optional[str] = field(default=None)
+    optim: str = field(default="adamw_torch")
+    model_max_length: int = field(
+        default=512,
+        metadata={
+            "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
+        },
+    )
+    flash_attn: bool = False
 
 
 @dataclass
@@ -100,7 +112,7 @@ def train():
         lora_args,
     ) = parser.parse_args_into_dataclasses()
 
-    if model_args.flash_attn:
+    if training_args.flash_attn:
         replace_llama_attn_with_flash_attn()
 
     device_map = None

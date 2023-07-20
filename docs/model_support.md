@@ -1,6 +1,8 @@
 # Model Support
 
 ## Supported models
+- [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+   - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf
 - Vicuna, Alpaca, LLaMA, Koala
    - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)

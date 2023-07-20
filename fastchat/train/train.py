@@ -36,13 +36,15 @@ IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
-    flash_attn: bool = False
 
 
 @dataclass
 class DataArguments:
     data_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
+    )
+    eval_data_path: str = field(
+        default=None, metadata={"help": "Path to the evaluation data."}
     )
     lazy_preprocess: bool = False
 
@@ -218,20 +220,16 @@ def make_supervised_data_module(
         LazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
     rank0_print("Loading data...")
-    raw_data = json.load(open(data_args.data_path, "r"))
 
-    # Split train/test
-    np.random.seed(0)
-    perm = np.random.permutation(len(raw_data))
-    split = int(len(perm) * 0.98)
-    train_indices = perm[:split]
-    eval_indices = perm[split:]
-    train_raw_data = [raw_data[i] for i in train_indices]
-    eval_raw_data = [raw_data[i] for i in eval_indices]
-    rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
+    train_json = json.load(open(data_args.data_path, "r"))
+    train_dataset = dataset_cls(train_json, tokenizer=tokenizer)
 
-    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
-    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
+    if data_args.eval_data_path:
+        eval_json = json.load(open(data_args.eval_data_path, "r"))
+        eval_dataset = dataset_cls(eval_json, tokenizer=tokenizer)
+    else:
+        eval_dataset = None
+
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
