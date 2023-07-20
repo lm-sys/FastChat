@@ -125,8 +125,8 @@ def visualize_pairwise_win_fraction(battles, model_order):
         row_beats_col,
         color_continuous_scale="RdBu",
         text_auto=".2f",
-        height=600,
-        width=600,
+        height=700,
+        width=700,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -150,8 +150,8 @@ def visualize_battle_count(battles, model_order):
     fig = px.imshow(
         battle_counts.loc[model_order, model_order],
         text_auto=True,
-        height=600,
-        width=600,
+        height=700,
+        width=700,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -171,8 +171,8 @@ def visualize_average_win_rate(battles):
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        height=400,
-        width=600,
+        height=500,
+        width=700,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
@@ -202,8 +202,8 @@ def visualize_bootstrap_elo_rating(df):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        height=400,
-        width=600,
+        height=500,
+        width=700,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
