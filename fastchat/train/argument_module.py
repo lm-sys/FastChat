@@ -61,6 +61,10 @@ class AH_ModelArguments(ModelArguments):
         default=False,
         metadata={"help": "Enables using xformers or not."}
     )
+    flash_attn: bool = field(
+        default=False,
+        metadata={"help": "Enables using flash attention or not."}
+    )
 
 @dataclass
 class AH_TrainingArguments(TrainingArguments):
