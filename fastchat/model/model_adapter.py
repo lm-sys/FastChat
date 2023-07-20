@@ -654,7 +654,8 @@ class OasstPythiaAdapter(BaseModelAdapter):
     """The model adapter for OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5"""
 
     def match(self, model_path: str):
-        return "oasst" in model_path.lower() and "pythia" in model_path.lower()
+        model_path = model_path.lower()
+        return "oasst" in model_path and "pythia" in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
@@ -672,9 +673,10 @@ class OasstLLaMAAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        if "OpenAssistant-SFT-7-Llama-30B-HF" in model_path.lower():
+        if "openassistant-sft-7-llama-30b-hf" in model_path.lower():
             return True
-        return "oasst" in model_path.lower() and "pythia" not in model_path.lower()
+        model_path = model_path.lower()
+        return "oasst" in model_path and "pythia" not in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_llama")
@@ -707,7 +709,8 @@ class MPTAdapter(BaseModelAdapter):
     """The model adapter for MPT series (mosaicml/mpt-7b-chat, mosaicml/mpt-30b-chat)"""
 
     def match(self, model_path: str):
-        return "mpt" in model_path.lower() and not "airoboros" in model_path.lower()
+        model_path = model_path.lower()
+        return "mpt" in model_path and not "airoboros" in model_path
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -906,7 +909,8 @@ class SnoozyAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "gpt4all" in model_path.lower() and "snoozy" in model_path.lower()
+        model_path = model_path.lower()
+        return "gpt4all" in model_path and "snoozy" in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("snoozy")
@@ -970,7 +974,8 @@ class ChangGPTAdapter(BaseModelAdapter):
     """The model adapter for lcw99/polyglot-ko-12.8b-chang-instruct-chat"""
 
     def match(self, model_path: str):
-        return "polyglot" in model_path.lower() and "chang" in model_path.lower()
+        model_path = model_path.lower()
+        return "polyglot" in model_path and "chang" in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("polyglot_changgpt")
