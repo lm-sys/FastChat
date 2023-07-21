@@ -677,9 +677,9 @@ class OasstLLaMAAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        if "openassistant-sft-7-llama-30b-hf" in model_path.lower():
-            return True
         model_path = model_path.lower()
+        if "openassistant-sft-7-llama-30b-hf" in model_path:
+            return True
         return "oasst" in model_path and "pythia" not in model_path
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
