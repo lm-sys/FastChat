@@ -729,11 +729,12 @@ class MPTAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "mpt-7b-chat" in model_path.lower():
+        model_path = model_path.lower()
+        if "mpt-7b-chat" in model_path:
             return get_conv_template("mpt-7b-chat")
-        elif "mpt-30b-chat" in model_path.lower():
+        elif "mpt-30b-chat" in model_path:
             return get_conv_template("mpt-30b-chat")
-        elif "mpt-30b-instruct" in model_path.lower():
+        elif "mpt-30b-instruct" in model_path:
             return get_conv_template("mpt-30b-instruct")
         else:
             print(
