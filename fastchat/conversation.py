@@ -872,7 +872,7 @@ register_conv_template(
         sep_style=SeparatorStyle.NO_COLON_TWO,
         sep="\n",
         sep2="\n",
-        stop_str = "<end>",
+        stop_str="<end>",
     )
 )
 
