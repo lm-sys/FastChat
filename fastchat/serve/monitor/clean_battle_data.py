@@ -101,6 +101,9 @@ def clean_battle_data(log_files):
     ct_leaked_identity = 0
     battles = []
     for row in data:
+        if row["models"][0] is None or row["models"][1] is None:
+            continue
+
         # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
