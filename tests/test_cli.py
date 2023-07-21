@@ -44,7 +44,7 @@ def test_multi_gpu():
     for model_path in models:
         cmd = (
             f"python3 -m fastchat.serve.cli --model-path {model_path} "
-            f"--style programmatic --num-gpus 2 < test_cli_inputs.txt"
+            f"--style programmatic --num-gpus 2 --max-gpu-memory 14Gib < test_cli_inputs.txt"
         )
         ret = run_cmd(cmd)
         if ret != 0:

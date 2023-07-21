@@ -1,5 +1,8 @@
 """
 Conversation prompt templates.
+
+We kindly request that you import fastchat instead of copying this file if you want to use it.
+You can contribute back the changes you want to make.
 """
 
 import dataclasses
