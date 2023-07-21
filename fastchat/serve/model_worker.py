@@ -35,6 +35,7 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
+from fastchat.conversation import get_conv_template
 from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
@@ -66,6 +67,7 @@ class BaseModelWorker:
         model_path: str,
         model_names: List[str],
         limit_worker_concurrency: int,
+        conv_template: str = None,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -74,8 +76,10 @@ class BaseModelWorker:
             model_path = model_path[:-1]
         self.model_names = model_names or [model_path.split("/")[-1]]
         self.limit_worker_concurrency = limit_worker_concurrency
-
-        self.conv = get_conversation_template(model_path)
+        if conv_template:
+            self.conv = get_conv_template(conv_template)
+        else:
+            self.conv = get_conversation_template(model_path)
         self.conv.sep_style = int(self.conv.sep_style)
         self.tokenizer = None
         self.context_len = None
@@ -185,6 +189,7 @@ class ModelWorker(BaseModelWorker):
         cpu_offloading: bool = False,
         gptq_config: bool = None,
         stream_interval: int = 2,
+        conv_template: str = None,
     ):
         super().__init__(
             controller_addr,
@@ -193,6 +198,7 @@ class ModelWorker(BaseModelWorker):
             model_path,
             model_names,
             limit_worker_concurrency,
+            conv_template=conv_template,
         )
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
@@ -405,6 +411,9 @@ if __name__ == "__main__":
         help="Optional display comma separated names",
     )
     parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
+    parser.add_argument(
         "--limit-worker-concurrency",
         type=int,
         default=5,
@@ -444,5 +453,6 @@ if __name__ == "__main__":
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,
         stream_interval=args.stream_interval,
+        conv_template=args.conv_template,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
