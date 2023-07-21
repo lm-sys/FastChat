@@ -11,7 +11,7 @@ from torch import Tensor
 from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer,AutoModel
 
 
 @dataclasses.dataclass
@@ -102,27 +102,46 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
 
 def load_compress_model(model_path, device, torch_dtype, use_fast, revision="main"):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path, use_fast=use_fast, trust_remote_code=True, revision=revision
-    )
-
+    # `use_fast=True`` is not supported for some models.
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=use_fast, revision=revision,trust_remote_code=True)
+    except TypeError:
+        tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=False, revision=revision,trust_remote_code=True)
     with init_empty_weights():
+        # `trust_remote_code` should be set as `True` for both AutoConfig and AutoModel
         config = AutoConfig.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
             torch_dtype=torch_dtype,
             trust_remote_code=True,
             revision=revision,
+            trust_remote_code=True
         )
-        model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
+        # some models are loaded by AutoModel but not AutoModelForCausalLM, 
+        # such as chatglm, chatglm2
+        try:
+            model = AutoModelForCausalLM.from_config(config,trust_remote_code=True)
+        except NameError:
+            model = AutoModel.from_config(config,trust_remote_code=True)
         linear_weights = get_compressed_list(model)
-
     if os.path.exists(model_path):
         # `model_path` is a local folder
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     else:
         # `model_path` is a cached Hugging Face repo
-        model_path = snapshot_download(model_path, revision=revision)
+        # We don't necessarily need to download the model' repo again if there is a cache. 
+        # So check the default huggingface cache first.
+        model_path_temp = os.path.join(os.getenv("HOME"),
+                                       ".cache/huggingface/hub",
+                                       "models--"+model_path.replace("/","--"),
+                                       "snapshots/")
+        if os.path.exists(model_path_temp):
+            temp_last_dir = os.listdir(model_path_temp)[-1]
+            model_path = os.path.join(model_path_temp, temp_last_dir)
+        else:
+            model_path = snapshot_download(model_path, revision=revision)
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
 
     files = glob.glob(base_pattern)

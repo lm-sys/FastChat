@@ -65,10 +65,14 @@ class BaseModelAdapter:
                 use_fast=False,
                 revision=revision,
             )
-
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
-        )
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+            )
+        except NameError:
+            model = AutoModel.from_pretrained(
+                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+            )
         return model, tokenizer
 
     def load_compress_model(self, model_path, device, torch_dtype, revision="main"):
