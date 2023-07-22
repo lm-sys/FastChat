@@ -12,6 +12,9 @@ from typing import List
 import threading
 import uuid
 
+import torch
+import torch.nn.functional as F
+
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
@@ -30,8 +33,7 @@ except ImportError:
         LLaMATokenizer,
         AutoModel,
     )
-import torch
-import torch.nn.functional as F
+
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
