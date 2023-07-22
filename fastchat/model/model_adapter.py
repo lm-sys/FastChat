@@ -246,7 +246,7 @@ def load_model(
         model.to(device)
 
     if device == "xpu":
-        model = torch.xpu.optimize(model, inplace=True)
+        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
