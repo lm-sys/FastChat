@@ -236,7 +236,6 @@ def load_model(
     kwargs["revision"] = revision
 
     # Load model
-    adapter = get_model_adapter(model_path)
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
