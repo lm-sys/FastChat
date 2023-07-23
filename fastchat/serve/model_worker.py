@@ -12,9 +12,6 @@ from typing import List
 import threading
 import uuid
 
-import torch
-import torch.nn.functional as F
-
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
