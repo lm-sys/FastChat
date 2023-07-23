@@ -33,7 +33,8 @@ except ImportError:
         LLaMATokenizer,
         AutoModel,
     )
-
+import torch
+import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
