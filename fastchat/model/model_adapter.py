@@ -239,13 +239,14 @@ def load_model(
     adapter = get_model_adapter(model_path)
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device == "mps":
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+        "mps",
+        "xpu",
+    ):
         model.to(device)
 
-    elif device == "xpu":
-        model.eval()
-        model = model.to("xpu")
-        model = torch.xpu.optimize(model, dtype=torch.bfloat16, inplace=True)
+    if device == "xpu":
+        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
