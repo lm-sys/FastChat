@@ -21,4 +21,5 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --tf32 True \
     --model_max_length 2048 \
     --gradient_checkpointing True \
-    --lazy_preprocess True
+    --lazy_preprocess True \
+    --disable_tqdm False
