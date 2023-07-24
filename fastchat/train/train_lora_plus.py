@@ -25,7 +25,7 @@ import transformers
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from transformers import Trainer, BitsAndBytesConfig, deepspeed
+from transformers import Trainer, BitsAndBytesConfig, deepspeed, LlamaTokenizer
 
 from fastchat.train.argument_module import (
     AH_DataArguments,

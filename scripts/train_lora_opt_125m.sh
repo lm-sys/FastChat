@@ -1,26 +1,26 @@
-deepspeed --master_port 61000 fastchat/train/train_lora_plus.py \
-    --model_name_or_path huggyllama/llama-7b  \
+deepspeed --include localhost:0,1 --master_port 61000 fastchat/train/train_lora_plus.py \
+    --model_name_or_path facebook/opt-125m \
     --dataset "data/alpaca_data_cleaned_1000.json" \
     --dataset_format "alpaca" \
-    --cache_dir /data0/huggingface/hub/ \
+    --cache_dir /workspace/cache \
     --output_dir ./checkpoints \
     --num_train_epochs 5 \
-    --fp16 False \
-    --bf16 True \
-    --tf32 True \
+    --fp16 True \
+    --bf16 False \
+    --tf32 False \
     --gradient_checkpointing True \
     --flash_attn False \
     --xformers True \
-    --per_device_train_batch_size 8 \
-    --per_device_eval_batch_size 2 \
+    --per_device_train_batch_size 24 \
+    --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "steps" \
     --eval_steps 20  \
     --save_strategy "steps" \
     --save_steps 50 \
-    --save_total_limit 2 \
+    --save_total_limit 10 \
     --logging_strategy "steps" \
-    --logging_steps 1 \
+    --logging_steps 10 \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
@@ -32,7 +32,7 @@ deepspeed --master_port 61000 fastchat/train/train_lora_plus.py \
     --target_max_len 256 \
     --do_eval \
     --eval_dataset_size 100 \
-    --max_eval_samples 1000 \
+    --max_eval_samples 100 \
     --dataloader_num_workers 3 \
     --remove_unused_columns False \
     --learning_rate 2e-5 \
@@ -43,4 +43,5 @@ deepspeed --master_port 61000 fastchat/train/train_lora_plus.py \
     --max_grad_norm 0.3 \
     --seed 0 \
     --report_to wandb \
+    --disable_tqdm False \
     --deepspeed playground/deepspeed_config_s2.json
