@@ -1,5 +1,5 @@
 deepspeed --include localhost:0,1 --master_port 61000 fastchat/train/train_lora_plus.py \
-    --model_name_or_path huggyllama/llama-7b \
+    --model_name_or_path /workspace/cache/models--huggyllama--llama-7b/snapshots/8416d3fefb0cb3ff5775a7b13c1692d10ff1aa16/ \
     --dataset "data/alpaca_data_cleaned_1000.json" \
     --dataset_format "alpaca" \
     --cache_dir /workspace/cache \
@@ -11,7 +11,7 @@ deepspeed --include localhost:0,1 --master_port 61000 fastchat/train/train_lora_
     --gradient_checkpointing True \
     --flash_attn False \
     --xformers True \
-    --per_device_train_batch_size 24 \
+    --per_device_train_batch_size 32 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "steps" \
