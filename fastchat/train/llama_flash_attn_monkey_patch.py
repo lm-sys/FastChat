@@ -9,7 +9,7 @@ from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
 
 from einops import rearrange
 
-from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
+from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func
 from flash_attn.bert_padding import unpad_input, pad_input
 
 
@@ -75,7 +75,7 @@ def forward(
         cu_q_lens = torch.arange(
             0, (bsz + 1) * q_len, step=q_len, dtype=torch.int32, device=qkv.device
         )
-        output = flash_attn_unpadded_qkvpacked_func(
+        output = flash_attn_varlen_qkvpacked_func(
             qkv, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
         )
         output = rearrange(output, "(b s) ... -> b s ...", b=bsz)
@@ -86,7 +86,7 @@ def forward(
         x_unpad = rearrange(
             x_unpad, "nnz (three h d) -> nnz three h d", three=3, h=nheads
         )
-        output_unpad = flash_attn_unpadded_qkvpacked_func(
+        output_unpad = flash_attn_varlen_qkvpacked_func(
             x_unpad, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
         )
         output = rearrange(
