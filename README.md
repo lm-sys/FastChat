@@ -264,7 +264,8 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --tf32 True \
     --model_max_length 2048 \
     --gradient_checkpointing True \
-    --lazy_preprocess True
+    --lazy_preprocess True \
+    --disable_tqdm False
 ```
 
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
