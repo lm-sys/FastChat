@@ -54,8 +54,8 @@ class Conversation:
     stop_token_ids: List[int] = None
 
     def get_prompt(self) -> str:
-        system_prompt = self.system.format(system_msg=self.system_msg)
         """Get the prompt for generation."""
+        system_prompt = self.system.format(system_msg=self.system_msg)
         if self.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
             ret = system_prompt + self.sep
             for role, message in self.messages:
