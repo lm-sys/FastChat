@@ -22,24 +22,24 @@ python setup.py install		# install awq CUDA kernels
 
 ## Quantize models with AWQ
 
-Several sample scripts for AWQ quantization are provided [here](https://github.com/mit-han-lab/llm-awq/tree/main/scripts). An example for quantizing opt-6.7B is as follows.
+Several sample scripts for AWQ quantization are provided [here](https://github.com/mit-han-lab/llm-awq/tree/main/scripts). An example for quantizing LLaMA2-7b-chat is as follows.
 
 1. Perform AWQ search and save search results (the search results for many commonly used models are provided in [AWQ model zoo](https://github.com/mit-han-lab/llm-awq/tree/main#awq-model-zoo)):
 
 ```bash
-python -m awq.entry --model_path /PATH/TO/OPT/opt-6.7b \
+python -m awq.entry --model_path /PATH/TO/llama2-hf/llama-2-7b-chat \
     --w_bit 4 --q_group_size 128 \
-    --run_awq --dump_awq awq_cache/opt-6.7b-w4-g128.pt
+    --run_awq --dump_awq awq_cache/llama-2-7b-chat-w4-g128.pt
 ```
 
 2. Generate real quantized weights (INT4)
 
 ```bash
 mkdir quant_cache
-python -m awq.entry --model_path /PATH/TO/OPT/opt-6.7b \
+python -m awq.entry --model_path /PATH/TO/llama2-hf/llama-2-7b-chat \
     --w_bit 4 --q_group_size 128 \
-    --load_awq awq_cache/opt-6.7b-w4-g128.pt \
-    --q_backend real --dump_quant quant_cache/opt-6.7b-w4-g128-awq.pt
+    --load_awq awq_cache/llama-2-7b-chat-w4-g128.pt \
+    --q_backend real --dump_quant quant_cache/llama-2-7b-chat-w4-g128-awq.pt
 ```
 
 * AWQ also supports evaluating the accuracy of quantization. Learn more from [this link](https://github.com/mit-han-lab/llm-awq/tree/main#usage).
@@ -48,10 +48,10 @@ python -m awq.entry --model_path /PATH/TO/OPT/opt-6.7b \
 
 ```bash
 python3 -m fastchat.serve.cli \
-    --model-path /PATH/TO/OPT/opt-6.7b \ 		   # Path to the Hugging Face repo/model
+    --model-path /PATH/TO/llama2-hf/llama-2-7b-chat \ 	  # Path to the Hugging Face repo/model
     --awq-wbits 4 \
     --awq-groupsize 128 \
-    --awq-ckpt quant_cache/opt-6.7b-w4-g128-awq.pt # Path to the AWQ quantized checkpoint
+    --awq-ckpt quant_cache/llama-2-7b-chat-w4-g128-awq.pt # Path to the AWQ quantized checkpoint
 ```
 
 * Note that we only use the Hugging Face directory to configure our model. And the FP16 weights will not be loaded. You can also copy the AWQ quantized checkpoint to the Hugging Face directory. In that case, there is no need to specify `--awq-ckpt`.
