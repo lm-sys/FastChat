@@ -17,6 +17,7 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 
+
 from fastchat.modules.gptq import GptqConfig
 
 try:
@@ -37,18 +38,15 @@ import torch
 import torch.nn.functional as F
 import uvicorn
 
-sys.path.append('/home/minhvn/workspace/llm/FastChat/fastchat/model')
-
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
-from model_adapter import (
+from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
     get_conversation_template,
 )
-from chatglm_model import chatglm_generate_stream
-from falcon_model import falcon_generate_stream
-#from fastchat.serve.inference import generate_stream
-from inference import generate_stream, generate_special_stream
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.serve.inference import generate_stream, generate_special_stream
 from fastchat.utils import build_logger, pretty_print_semaphore
 
 GB = 1 << 30

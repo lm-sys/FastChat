@@ -24,13 +24,10 @@ from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 
-#from fastchat.model.model_adapter import add_model_args
+from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
-#from fastchat.serve.inference import ChatIO, chat_loop
+from fastchat.serve.inference import ChatIO, chat_loop
 
-sys.path.append('/home/minhvn/workspace/llm/FastChat/fastchat/')
-from model.model_adapter import add_model_args
-from inference import ChatIO, chat_loop
 
 class SimpleChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
@@ -177,7 +174,7 @@ def main(args):
         chatio = ProgrammaticChatIO()
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
-    
+
     try:
         chat_loop(
             args.model_path,
@@ -198,11 +195,12 @@ def main(args):
                 act_order=args.gptq_act_order,
             ),
             args.revision,
-            #args.judge_sent_end,
+            # args.judge_sent_end,
             args.debug,
         )
     except KeyboardInterrupt:
         print("keyboard interrupted exit...")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

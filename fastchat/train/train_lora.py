@@ -28,16 +28,27 @@ import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
 import torch
 
-from train import (
+from fastchat.train import (
     DataArguments,
     ModelArguments,
-    TrainingArguments,
     make_supervised_data_module,
 )
 
 from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
+
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    cache_dir: typing.Optional[str] = field(default=None)
+    optim: str = field(default="adamw_torch")
+    model_max_length: int = field(
+        default=512,
+        metadata={
+            "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
+        },
+    )
+    flash_attn: bool = False
 
 
 @dataclass
@@ -100,16 +111,15 @@ def train():
         lora_args,
     ) = parser.parse_args_into_dataclasses()
 
-    if model_args.flash_attn == True:
-        print("Using Flash Attention!")
+    if training_args.flash_attn:
         replace_llama_attn_with_flash_attn()
 
     device_map = "auto"
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
     device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if ddp else None
-
     if lora_args.q_lora:
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)} if ddp else None
         if len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled():
             logging.warning(
                 "FSDP and ZeRO3 are both currently incompatible with QLoRA."
@@ -121,7 +131,7 @@ def train():
         else (torch.bfloat16 if training_args.bf16 else torch.float32)
     )
 
-    base_model = transformers.AutoModelForCausalLM.from_pretrained(
+    model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         device_map=device_map,
@@ -135,7 +145,6 @@ def train():
         if lora_args.q_lora
         else None,
     )
-
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
@@ -147,14 +156,14 @@ def train():
 
     if lora_args.q_lora:
         model = prepare_model_for_kbit_training(
-            base_model, use_gradient_checkpointing=training_args.gradient_checkpointing
+            model, use_gradient_checkpointing=training_args.gradient_checkpointing
         )
         if not ddp and torch.cuda.device_count() > 1:
             # keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
             model.is_parallelizable = True
             model.model_parallel = True
 
-    model = get_peft_model(base_model, lora_config)
+    model = get_peft_model(model, lora_config)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
 
@@ -177,17 +186,12 @@ def train():
 
     print(f"Training data has {len(data_module['train_dataset'])} examples")
     print(f"Eval data has {len(data_module['eval_dataset'])} examples")
-
-    if torch.cuda.device_count() > 1:
-        model.is_parallelizable = True
-        model.model_parallel = True
     model.config.use_cache = False
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
-
     trainer.save_state()
 
     # check if zero3 mode enabled
@@ -207,26 +211,8 @@ def train():
         )
 
     if training_args.local_rank == 0:
-        # Save full model weights (including lora weights) to lora_weight_path
-        trainer.save_model(lora_args.lora_weight_path)
-
-        # Workaround to use peft save_pretrained
-        fine_tuned_weight_path = os.path.join(
-            lora_args.lora_weight_path, "pytorch_model.bin"
-        )
-        lora_model = get_peft_model(
-            base_model, lora_config
-        )  # Need base_model (original llama) and lora_config to create a PEFT model
-        lora_model.load_state_dict(
-            torch.load(fine_tuned_weight_path, map_location="cpu")
-        )
-        lora_model.save_pretrained(
-            lora_args.lora_weight_path
-        )  # use save_pretrained to later use PeftModel.from_pretrained
-
-        print("Save pretrained successfully!")
+        model.save_pretrained(training_args.output_dir, state_dict=state_dict)
 
 
 if __name__ == "__main__":
-    with torch.autocast("cuda"):
-        train()
+    train()

@@ -36,8 +36,6 @@ from fastchat.utils import get_gpu_memory
 from peft import LoraConfig, PeftModel
 
 
-
-
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
@@ -126,7 +124,6 @@ def load_model(
     gptq_config: Optional[GptqConfig] = None,
     revision: str = "main",
     debug: bool = False,
-    #lora: str = None
 ):
     """Load a model from Hugging Face."""
 
@@ -201,13 +198,6 @@ def load_model(
             device=device,
         )
     kwargs["revision"] = revision
-
-    """
-    ### TODO: ADD this for LoRa fine-tuning
-    if lora is not None:
-        kwargs["lora"] = lora
-    ###
-    """
 
     # Load model
     adapter = get_model_adapter(model_path)
@@ -323,17 +313,9 @@ class VicunaAdapter(BaseModelAdapter):
         )
         self.raise_warning_for_old_weights(model)
         
-        ### Model is lora fine-tuned
-        lora_model_id = '/home/minhvn/workspace/llm/FastChat/fastchat/train/best_model'
+        # Use LoRa fine-tuned model
+        lora_model_id = 'vicuna_checkpoints' # provide your lora weights path
         model = PeftModel.from_pretrained(model, lora_model_id)
-
-        """
-        #### TODO: ADD THIS FOR VICUNA LORA FINE-TUNED
-        if "lora" in from_pretrained_kwargs:
-            lora_model_id = from_pretrained_kwargs["lora"]
-            model = PeftModel.from_pretrained(model, lora_model_id)
-        ###
-        """
 
         return model, tokenizer
 
