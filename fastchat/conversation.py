@@ -906,7 +906,7 @@ if __name__ == "__main__":
 
     print()
 
-    print('Output from llama-2')
+    print('Output from llama-2:')
     conv = get_conv_template("llama-2")
     conv.set_system_msg("You are a helpful, respectful and honest assistant.")
     conv.append_message(conv.roles[0], "Hello!")
