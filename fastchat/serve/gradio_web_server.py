@@ -12,7 +12,6 @@ import time
 import uuid
 
 import sys
-
 import gradio as gr
 import requests
 
@@ -30,12 +29,10 @@ from fastchat.constants import (
     SESSION_EXPIRATION_TIME,
 )
 
-sys.path.append('/home/minhvn/workspace/llm/FastChat/fastchat/')
-
-#from fastchat.model.model_adapter import get_conversation_template
-from model.model_adapter import get_conversation_template
-#from fastchat.model.model_registry import model_info
-from model.model_registry import model_info
+from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_registry import model_info
+from fastchat.model.model_registry import model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
     openai_api_stream_iter,
@@ -211,10 +208,9 @@ def add_text(state, model_selector, text, request: gr.Request):
     ip = request.client.host
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
-    ### Trying to clear history after every convo:
-    state = None # This will delete the whole chat block
-    ###
-    
+    # Clear history after every convo. This will delete the whole chat block
+    state = None
+
     if state is None:
         state = State(model_selector)
 
@@ -236,8 +232,6 @@ def add_text(state, model_selector, text, request: gr.Request):
                 no_change_btn,
             ) * 5
 
-    ## Attempt to clear chat history
-    #state.conv = get_conversation_template(model_selector) #Also delete the chat block
     conv = state.conv
 
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -383,12 +377,10 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
                 if "vicuna" in model_name:
                     output = post_process_code(output)
                 conv.update_last_message(output + "▌")
-                print(f"\nOUTPUT IF: {output}\n")
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 conv.update_last_message(output)
-                print(f"\nOUTPUT ELSE: {output}\n")
                 yield (state, state.to_gradio_chatbot()) + (
                     disable_btn,
                     disable_btn,
@@ -431,7 +423,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
 
     finish_tstamp = time.time()
     logger.info(f"{output}")
-    print(f"\nOUTPUT: {output}\n")
 
     with open(get_conv_log_filename(), "a") as fout:
         data = {
@@ -449,11 +440,8 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             "ip": request.client.host,
         }
         fout.write(json.dumps(data) + "\n")
-    
 
     ### Experiment: Try to restart/clear convo history every new chat
-    
-    
 
 
 block_css = """
