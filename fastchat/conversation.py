@@ -37,7 +37,6 @@ class Conversation:
     name: str
     # The system prompt
     system: str
-    system_msg: str = ""
     # Two roles
     roles: List[str]
     # All messages. Each item is (role, message).
@@ -48,6 +47,7 @@ class Conversation:
     sep_style: SeparatorStyle
     sep: str
     sep2: str = None
+    system_msg: str = ""
     # Stop criteria (the default one is EOS token)
     stop_str: str = None
     # Stops generation if meeting any token in this list
@@ -896,7 +896,8 @@ register_conv_template(
 )
 
 if __name__ == "__main__":
-    conv = get_conv_template("vicuna_v1.1")
+    conv = get_conv_template("llama-2")
+    conv.set_system_msg("You are a helpful, respectful and honest assistant.")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
