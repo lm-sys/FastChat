@@ -896,6 +896,7 @@ register_conv_template(
 )
 
 if __name__ == "__main__":
+    print('Output from vicuna_v1.1:')
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
@@ -903,6 +904,9 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
 
+    print()
+
+    print('Output from llama-2')
     conv = get_conv_template("llama-2")
     conv.set_system_msg("You are a helpful, respectful and honest assistant.")
     conv.append_message(conv.roles[0], "Hello!")
