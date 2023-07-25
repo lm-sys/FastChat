@@ -1,8 +1,7 @@
 deepspeed --include localhost:0,1 --master_port 61000 fastchat/train/train_lora_plus.py \
-    --model_name_or_path /workspace/cache/models--huggyllama--llama-7b/snapshots/8416d3fefb0cb3ff5775a7b13c1692d10ff1aa16/ \
+    --model_name_or_path huggyllama/llama-7b \
     --dataset "data/alpaca_data_cleaned_1000.json" \
     --dataset_format "alpaca" \
-    --cache_dir /workspace/cache \
     --output_dir ./checkpoints \
     --num_train_epochs 5 \
     --fp16 True \
