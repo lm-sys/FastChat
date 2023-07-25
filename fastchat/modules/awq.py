@@ -49,7 +49,7 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     torch.set_default_dtype(torch.half)
     model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
 
-    if any(name in model_name for name in ["llama", "vicuna"]):
+    if any(name in find_awq_ckpt(awq_config) for name in ["llama", "vicuna"]):
         model = load_quant.load_awq_llama_fast(model, find_awq_ckpt(awq_config), awq_config.wbits, awq_config.groupsize, device)
         make_quant_attn(model, device)
         make_quant_norm(model)
