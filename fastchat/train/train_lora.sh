@@ -1,10 +1,11 @@
-deepspeed --num_gpus 6 train_lora.py \
-    --model_name_or_path lmsys/vicuna-7b-v1.3  \
+deepspeed --num_gpus 6 fastchat/train/train_lora.py \
+    --model_name_or_path /media/2T_HDD1/minhvn/.cache/huggingface/hub/models--lmsys--vicuna-7b-v1.3/snapshots/RikkeiGPT-vicuna-7b-v1.3 \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
-    --data_path $DATA_PATH \
-    --output_dir ./checkpoints \
+    --data_path rikkei_train_clean.json \
+    --eval_data_path rikkei_eval_clean.json \
+    --output_dir ./vicuna_checkpoints \
     --num_train_epochs 150 \
     --fp16 True \
     --per_device_train_batch_size 2 \
@@ -13,18 +14,17 @@ deepspeed --num_gpus 6 train_lora.py \
     --evaluation_strategy "steps" \
     --eval_steps 100  \
     --save_strategy "steps" \
-    --save_steps 200 \
+    --save_steps 500 \
     --save_total_limit 2 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
     --logging_strategy "steps" \
-    --logging_steps 1 \
+    --logging_steps 100 \
     --tf32 True \
     --model_max_length 2048 \
     --q_lora False \
-    --deepspeed $PATH_TO_DEEPSPEED_CONFIG_S2 \
+    --deepspeed playground/deepspeed_config_s2.json \
     --gradient_checkpointing True \
-    --lora_weight_path ./lora_weights \
-    --flash_attn False
+    --flash_attn False \
