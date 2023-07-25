@@ -121,7 +121,7 @@ python show_result.py --mode pairwise-all
 
 You can use this [colab notebook](https://colab.research.google.com/drive/15O3Y8Rxq37PuMlArE291P4OC6ia37PQK#scrollTo=5i8R0l-XqkgO) to plot the radar figure for MT-bench.
 
-![MT-bench radar plot](data/mt_bench/misc/radar.png | width=200)
+<img src="data/mt_bench/misc/radar.png" width="200" height="150">
 
 ### How to get GPT-3.5/GPT-4/Claude's answer?
 - `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
