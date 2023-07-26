@@ -1,5 +1,5 @@
 """
-A model worker executes the model.
+A model worker that executes the model.
 """
 import argparse
 import asyncio
@@ -8,17 +8,13 @@ import logging
 import json
 import os
 import time
-from typing import List, Union
+from typing import List
 import threading
 import uuid
-import sys
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import requests
-
-
-from fastchat.modules.gptq import GptqConfig
 
 try:
     from transformers import (
@@ -44,28 +40,25 @@ from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
     get_conversation_template,
+    get_generate_stream_function,
 )
-from fastchat.model.model_chatglm import generate_stream_chatglm
-from fastchat.model.model_falcon import generate_stream_falcon
-from fastchat.serve.inference import generate_stream, generate_special_stream
-from fastchat.utils import build_logger, pretty_print_semaphore
+from fastchat.modules.gptq import GptqConfig
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
-GB = 1 << 30
 
-worker_id = str(uuid.uuid4())[:6]
+worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
-global_counter = 0
 
-model_semaphore = None
+app = FastAPI()
 
 
-def heart_beat_worker(controller):
+def heart_beat_worker(obj):
     while True:
         time.sleep(WORKER_HEART_BEAT_INTERVAL)
-        controller.send_heart_beat()
+        obj.send_heart_beat()
 
 
-class ModelWorker:
+class BaseModelWorker:
     def __init__(
         self,
         controller_addr: str,
@@ -117,9 +110,9 @@ class ModelWorker:
     def send_heart_beat(self):
         logger.info(
             f"Send heart beat. Models: {self.model_names}. "
-            f"Semaphore: {pretty_print_semaphore(model_semaphore)}. "
-            f"global_counter: {global_counter}. "
-            f"worker_id: {worker_id}. "
+            f"Semaphore: {pretty_print_semaphore(self.semaphore)}. "
+            f"call_ct: {self.call_ct}. "
+            f"worker_id: {self.worker_id}. "
         )
 
         url = self.controller_addr + "/receive_heart_beat"
@@ -145,16 +138,16 @@ class ModelWorker:
 
     def get_queue_length(self):
         if (
-            model_semaphore is None
-            or model_semaphore._value is None
-            or model_semaphore._waiters is None
+            self.semaphore is None
+            or self.semaphore._value is None
+            or self.semaphore._waiters is None
         ):
             return 0
         else:
             return (
-                args.limit_model_concurrency
-                - model_semaphore._value
-                + len(model_semaphore._waiters)
+                self.limit_worker_concurrency
+                - self.semaphore._value
+                + len(self.semaphore._waiters)
             )
 
     def get_status(self):
@@ -229,6 +222,8 @@ class ModelWorker(BaseModelWorker):
             self.init_heart_beat()
 
     def generate_stream_gate(self, params):
+        self.call_ct += 1
+
         try:
             for output in self.generate_stream_func(
                 self.model,
@@ -236,7 +231,7 @@ class ModelWorker(BaseModelWorker):
                 params,
                 self.device,
                 self.context_len,
-                args.stream_interval,
+                self.stream_interval,
             ):
                 ret = {
                     "text": output["text"],
@@ -263,42 +258,19 @@ class ModelWorker(BaseModelWorker):
             yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
-        try:
-            ret = {"text": "", "error_code": 0}
-            for output in self.generate_stream_func(
-                self.model,
-                self.tokenizer,
-                params,
-                self.device,
-                self.context_len,
-                args.stream_interval,
-            ):
-                ret["text"] = output["text"]
-            if "usage" in output:
-                ret["usage"] = output["usage"]
-            if "finish_reason" in output:
-                ret["finish_reason"] = output["finish_reason"]
-            if "logprobs" in output:
-                ret["logprobs"] = output["logprobs"]
-        except torch.cuda.OutOfMemoryError as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
-            }
-        except (ValueError, RuntimeError) as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.INTERNAL_ERROR,
-            }
-        return ret
+        for x in self.generate_stream_gate(params):
+            pass
+        return json.loads(x[:-1].decode())
 
     @torch.inference_mode()
     def get_embeddings(self, params):
+        self.call_ct += 1
+
         try:
             tokenizer = self.tokenizer
             is_llama = "llama" in str(
                 type(self.model)
-            )  # vicuna support batch inference
+            )  # llama supports batch inference
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
             if is_llama:
@@ -360,31 +332,26 @@ class ModelWorker(BaseModelWorker):
         return ret
 
 
-app = FastAPI()
+def release_worker_semaphore():
+    worker.semaphore.release()
 
 
-def release_model_semaphore():
-    model_semaphore.release()
-
-
-def acquire_model_semaphore():
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    return model_semaphore.acquire()
+def acquire_worker_semaphore():
+    if worker.semaphore is None:
+        worker.semaphore = asyncio.Semaphore(worker.limit_worker_concurrency)
+    return worker.semaphore.acquire()
 
 
 def create_background_tasks():
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    background_tasks.add_task(release_worker_semaphore)
     return background_tasks
 
 
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     generator = worker.generate_stream_gate(params)
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
@@ -393,37 +360,19 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     output = worker.generate_gate(params)
-    release_model_semaphore()
+    release_worker_semaphore()
     return JSONResponse(output)
-
-
-@app.post("/worker_generate_completion_stream")
-async def api_generate_completion_stream(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
-    return StreamingResponse(generator, background=background_tasks)
-
-
-@app.post("/worker_generate_completion")
-async def api_generate_completion(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    completion = worker.generate_gate(params)
-    background_tasks = create_background_tasks()
-    return JSONResponse(content=completion, background=background_tasks)
 
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
-    await acquire_model_semaphore()
+    await acquire_worker_semaphore()
     embedding = worker.get_embeddings(params)
-    background_tasks = create_background_tasks()
-    return JSONResponse(content=embedding, background=background_tasks)
+    release_worker_semaphore()
+    return JSONResponse(content=embedding)
 
 
 @app.post("/worker_get_status")
@@ -432,7 +381,7 @@ async def api_get_status(request: Request):
 
 
 @app.post("/count_token")
-async def count_token(request: Request):
+async def api_count_token(request: Request):
     params = await request.json()
     return worker.count_token(params)
 
@@ -443,7 +392,7 @@ async def api_get_conv(request: Request):
 
 
 @app.post("/model_details")
-async def model_details(request: Request):
+async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
@@ -493,7 +442,6 @@ if __name__ == "__main__":
         args.controller_address,
         args.worker_address,
         worker_id,
-        args.no_register,
         args.model_path,
         args.model_names,
         args.limit_worker_concurrency,
