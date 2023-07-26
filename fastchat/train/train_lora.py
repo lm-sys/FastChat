@@ -38,6 +38,7 @@ from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
 
+
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
     cache_dir: typing.Optional[str] = field(default=None)
@@ -49,6 +50,7 @@ class TrainingArguments(transformers.TrainingArguments):
         },
     )
     flash_attn: bool = False
+
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):

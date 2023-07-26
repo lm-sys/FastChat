@@ -34,6 +34,7 @@ from fastchat.model.monkey_patch_non_inplace import (
 )
 from fastchat.utils import get_gpu_memory
 
+
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
@@ -453,9 +454,9 @@ class VicunaAdapter(BaseModelAdapter):
             **from_pretrained_kwargs,
         )
         self.raise_warning_for_old_weights(model)
-        
+
         # Use LoRa fine-tuned model
-        lora_model_id = 'vicuna_checkpoints' # provide your lora weights path
+        lora_model_id = "vicuna_checkpoints"  # provide your lora weights path
         model = PeftModel.from_pretrained(model, lora_model_id)
 
         return model, tokenizer
