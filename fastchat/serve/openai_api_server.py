@@ -249,7 +249,7 @@ async def get_gen_params(
         for message in messages:
             msg_role = message["role"]
             if msg_role == "system":
-                conv.system = message["content"]
+                conv.set_system_msg(message["content"])
             elif msg_role == "user":
                 conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
