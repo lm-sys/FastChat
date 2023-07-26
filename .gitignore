@@ -49,6 +49,7 @@ train_lora_original.sh
 train_lora_update.py
 train_lora_update.sh
 
+!peft_lora_model/*
 
 
 
