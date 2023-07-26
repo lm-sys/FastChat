@@ -441,8 +441,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         }
         fout.write(json.dumps(data) + "\n")
 
-    ### Experiment: Try to restart/clear convo history every new chat
-
 
 block_css = """
 #notice_markdown {

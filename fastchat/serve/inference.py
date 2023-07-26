@@ -39,6 +39,7 @@ from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_le
 from api_call import extract_features
 import re
 
+
 def prepare_logits_processor(
     temperature: float, repetition_penalty: float, top_p: float, top_k: int
 ) -> LogitsProcessorList:
@@ -82,8 +83,8 @@ def generate_stream(
         temperature, repetition_penalty, top_p, top_k
     )
 
-    #Print prompt
-    print(f"PROMPT: {prompt}\n")
+    # Print prompt
+    # print(f"PROMPT: {prompt}\n")
     input_ids = tokenizer(prompt).input_ids
 
     if model.config.is_encoder_decoder:
@@ -245,8 +246,8 @@ def generate_stream(
         finish_reason = None
 
     # Print stream generated from inference
-    print(f"GENERATE STREAM: {output}")
-    print("-----------" * 50)
+    # print(f"GENERATE STREAM: {output}")
+    # print("-----------" * 50)
     yield {
         "text": output,
         "usage": {
@@ -264,7 +265,8 @@ def generate_stream(
     if device == "xpu":
         torch.xpu.empty_cache()
 
-# Function to add API calling for inference
+
+# Function to add API calling for inference (inference 2 times)
 def generate_special_stream(
     model,
     tokenizer,
@@ -274,8 +276,15 @@ def generate_special_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
-    prompt = gen_params["prompt"]
-    output_stream = generate_stream(model, tokenizer, gen_params, device)
+    prompt = params["prompt"]
+    output_stream = generate_stream(
+        model,
+        tokenizer,
+        params,
+        device,
+        context_len=context_len,
+        judge_sent_end=judge_sent_end,
+    )
     output_stream_list = list(output_stream)
     outputs = ""
     for data in output_stream_list:
@@ -295,14 +304,23 @@ def generate_special_stream(
             + new_outputs
             + "\nFinal Answer:  ASSISTANT: "
         )
-        gen_params["prompt"] = prompt
+        params["prompt"] = prompt
         # Get the new inference result
-        output_stream = generate_stream(model, tokenizer, gen_params, device)
+        output_stream = generate_stream(
+            model,
+            tokenizer,
+            params,
+            device,
+            context_len=context_len,
+            judge_sent_end=judge_sent_end,
+        )
     else:
         # Retrieve the original output
         output_stream = (data for data in output_stream_list)
 
     return output_stream
+
+
 class ChatIO(abc.ABC):
     @abc.abstractmethod
     def prompt_for_input(self, role: str) -> str:
