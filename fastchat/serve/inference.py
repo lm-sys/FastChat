@@ -279,41 +279,6 @@ def generate_special_stream(
     return output_stream
 
 
-# Function to add API calling for inference
-def generate_special_stream(
-    model, tokenizer, gen_params, device, context_len=2048, stream_interval=2
-):
-    prompt = gen_params["prompt"]
-    output_stream = generate_stream(model, tokenizer, gen_params, device)
-    output_stream_list = list(output_stream)
-    outputs = ""
-    for data in output_stream_list:
-        if not data:
-            continue
-        outputs = data["text"]
-
-    if "Function:" in outputs and "Observation:" in outputs:
-        new_outputs = extract_features(outputs)
-        # Use regex to fix prompt
-        prompt = re.search(r".*?(?=ASSISTANT:)", prompt).group(0)
-        # Make sure the prompt has the same format as the prompt in dataset
-        prompt = (
-            prompt
-            + "\nInput:\n"
-            + outputs
-            + new_outputs
-            + "\nFinal Answer:  ASSISTANT: "
-        )
-        gen_params["prompt"] = prompt
-        # Get the new inference result
-        output_stream = generate_stream(model, tokenizer, gen_params, device)
-    else:
-        # Retrieve the original output
-        output_stream = (data for data in output_stream_list)
-
-    return output_stream
-
-
 class ChatIO(abc.ABC):
     @abc.abstractmethod
     def prompt_for_input(self, role: str) -> str:
@@ -356,6 +321,7 @@ def chat_loop(
         revision,
         debug,
     )
+
     print(f"Model used: {type(model)}")
     print(f"Tokenizer used: {type(tokenizer)}")
 
