@@ -5,7 +5,7 @@ deepspeed --num_gpus 6 fastchat/train/train_lora.py \
     --lora_dropout 0.05 \
     --data_path rikkei_train_clean.json \
     --eval_data_path rikkei_eval_clean.json \
-    --output_dir ./vicuna_checkpoints \
+    --output_dir ./peft_lora_model \
     --num_train_epochs 150 \
     --fp16 True \
     --per_device_train_batch_size 2 \
