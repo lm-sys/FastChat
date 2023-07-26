@@ -2,9 +2,10 @@
 import abc
 import gc
 import math
-from typing import Iterable, Optional
+
 import sys
 import time
+from typing import Iterable, Optional, Dict
 import warnings
 import re
 
@@ -29,13 +30,13 @@ from transformers.generation.logits_process import (
 )
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
-
+from fastchat.model.model_adapter import (
+    load_model,
+    get_conversation_template,
+    get_generate_stream_function,
+)
 from fastchat.modules.gptq import GptqConfig
-from fastchat.utils import is_partial_stop
-
-from fastchat.model.model_adapter import load_model, get_conversation_template
-from fastchat.model.model_chatglm import generate_stream_chatglm
-from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 from api_call import extract_features
 
@@ -80,14 +81,14 @@ def generate_stream(
     # print(f"PROMPT: {prompt}\n")
 
     input_ids = tokenizer(prompt).input_ids
-    output_ids = list(input_ids)
 
     if model.config.is_encoder_decoder:
         max_src_len = context_len
-    else:
-        max_src_len = context_len - max_new_tokens - 8
+    else:  # truncate
+        max_src_len = context_len - max_new_tokens - 1
 
     input_ids = input_ids[-max_src_len:]
+    output_ids = list(input_ids)
     input_echo_len = len(input_ids)
 
     if model.config.is_encoder_decoder:
@@ -239,6 +240,43 @@ def generate_stream(
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()
+
+
+# Function to add API calling for inference
+def generate_special_stream(
+    model, tokenizer, gen_params, device, context_len=2048, stream_interval=2
+):
+    prompt = gen_params["prompt"]
+    output_stream = generate_stream(model, tokenizer, gen_params, device)
+    output_stream_list = list(output_stream)
+    outputs = ""
+    for data in output_stream_list:
+        if not data:
+            continue
+        outputs = data["text"]
+
+    if "Function:" in outputs and "Observation:" in outputs:
+        new_outputs = extract_features(outputs)
+        # Use regex to fix prompt
+        prompt = re.search(r".*?(?=ASSISTANT:)", prompt).group(0)
+        # Make sure the prompt has the same format as the prompt in dataset
+        prompt = (
+            prompt
+            + "\nInput:\n"
+            + outputs
+            + new_outputs
+            + "\nFinal Answer:  ASSISTANT: "
+        )
+        gen_params["prompt"] = prompt
+        # Get the new inference result
+        output_stream = generate_stream(model, tokenizer, gen_params, device)
+    else:
+        # Retrieve the original output
+        output_stream = (data for data in output_stream_list)
+
+    return output_stream
 
 
 # Function to add API calling for inference
