@@ -7,15 +7,6 @@
     "contiguous_gradients": true,
     "overlap_comm": true
   },  
-  "optimizer": {
-    "type": "AdamW",
-    "params": {
-        "lr": "auto",
-        "betas": "auto",
-        "eps": "auto",
-        "weight_decay": "auto"
-    }
-},
   "fp16": {
     "enabled": "auto"
   },

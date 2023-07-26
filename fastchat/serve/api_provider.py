@@ -39,7 +39,7 @@ def openai_api_stream_iter(model_name, messages, temperature, top_p, max_new_tok
 def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
     import anthropic
 
-    c = anthropic.Client(os.environ["ANTHROPIC_API_KEY"])
+    c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     # Make requests
     gen_params = {
@@ -50,7 +50,7 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = c.completion_stream(
+    res = c.completions.create(
         prompt=prompt,
         stop_sequences=[anthropic.HUMAN_PROMPT],
         max_tokens_to_sample=max_new_tokens,
@@ -59,9 +59,11 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
         model=model_name,
         stream=True,
     )
+    text = ""
     for chunk in res:
+        text += chunk.completion
         data = {
-            "text": chunk["completion"],
+            "text": text,
             "error_code": 0,
         }
         yield data

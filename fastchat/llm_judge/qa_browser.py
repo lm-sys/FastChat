@@ -354,10 +354,12 @@ block_css = """
 
 def load_demo():
     dropdown_update = gr.Dropdown.update(value=list(category_selector_map.keys())[0])
-    return dropdown_update
+    return dropdown_update, dropdown_update
 
 
 def build_demo():
+    build_question_selector_map()
+
     with gr.Blocks(
         title="MT-Bench Browser",
         theme=gr.themes.Base(text_size=gr.themes.sizes.text_lg),
@@ -369,13 +371,11 @@ def build_demo():
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
 """
         )
-        build_question_selector_map()
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
         with gr.Tab("Pairwise Comparison"):
             (category_selector2,) = build_pairwise_browser_tab()
-        demo.load(load_demo, [], [category_selector])
-        demo.load(load_demo, [], [category_selector2])
+        demo.load(load_demo, [], [category_selector, category_selector2])
 
     return demo
 

@@ -17,7 +17,9 @@
 from dataclasses import dataclass, field
 import json
 import math
+import jsonlines
 import pathlib
+from multiprocessing import Pool
 from typing import Dict, Optional, Sequence
 
 import numpy as np
@@ -42,9 +44,6 @@ class ModelArguments:
 class DataArguments:
     data_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
-    )
-    eval_data_path: str = field(
-        default=None, metadata={"help": "Path to the evaluation data."}
     )
     lazy_preprocess: bool = False
 
@@ -78,18 +77,12 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
-def preprocess(
-    sources,
-    tokenizer: transformers.PreTrainedTokenizer,
-) -> Dict:
+def apply_prompt_template(sources, systems=None):
     conv = get_conversation_template("vicuna")
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
-
-    # Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]["from"]] != conv.roles[0]:
-            # Skip the first one if it is not from human
             source = source[1:]
 
         conv.messages = []
@@ -97,9 +90,14 @@ def preprocess(
             role = roles[sentence["from"]]
             assert role == conv.roles[j % 2], f"{i}"
             conv.append_message(role, sentence["value"])
-        conversations.append(conv.get_prompt())
+        if systems and systems[i]:
+            conv.system = systems[i]
+        prompt = conv.get_prompt()
+        conversations.append(prompt)
+    return conversations, conv
 
-    # Tokenize conversations
+
+def tokenize_conversations(conversations, tokenizer):
     input_ids = tokenizer(
         conversations,
         return_tensors="pt",
@@ -108,30 +106,28 @@ def preprocess(
         truncation=True,
     ).input_ids
     targets = input_ids.clone()
+    return input_ids, targets
 
-    assert conv.sep_style == SeparatorStyle.ADD_COLON_TWO
 
-    # Mask targets. Only compute loss on the assistant outputs.
+def mask_targets(conversations, targets, tokenizer, conv):
     sep = conv.sep + conv.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
         turns = conversation.split(conv.sep2)
-        cur_len = 1
+        cur_len = 0
         target[:cur_len] = IGNORE_TOKEN_ID
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            turn_len = len(tokenizer(turn).input_ids)
+            turn_len = len(tokenizer(turn + conv.sep2).input_ids)
 
             parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
-            instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+            instruction_len = len(tokenizer(parts[0]).input_ids) - 1
 
-            # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
             cur_len += turn_len
 
@@ -149,6 +145,30 @@ def preprocess(
                     f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
                     f" (ignored)"
                 )
+    return targets
+
+
+def preprocess(sources, tokenizer: transformers.PreTrainedTokenizer, **kwargs) -> Dict:
+    systems = None if not kwargs else kwargs.get("systems", None)
+
+    # If the data volume is small, process it directly in the main thread
+    if len(sources) <= 1000:
+        conversations, conv = apply_prompt_template(sources, systems)
+        input_ids, targets = tokenize_conversations(conversations, tokenizer)
+        targets = mask_targets(conversations, targets, tokenizer, conv)
+    else:  # If the data volume is large, use multithreading for processing
+        with Pool() as p:
+            conversations, conv = p.apply_async(
+                apply_prompt_template, (sources, tokenizer, systems)
+            ).get()
+            input_ids, targets = p.apply_async(
+                tokenize_conversations, (conversations, tokenizer)
+            ).get()
+            targets = p.apply_async(
+                mask_targets, (conversations, targets, tokenizer, conv)
+            ).get()
+            p.close()
+            p.join()
 
     return dict(
         input_ids=input_ids,
@@ -164,8 +184,10 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         rank0_print("Formatting inputs...")
+        systems = [example.get("system", "") for example in raw_data]
         sources = [example["conversations"] for example in raw_data]
-        data_dict = preprocess(sources, tokenizer)
+
+        data_dict = preprocess(sources, tokenizer, systems=systems)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
@@ -190,7 +212,6 @@ class LazySupervisedDataset(Dataset):
         self.tokenizer = tokenizer
 
         rank0_print("Formatting inputs...Skip in lazy mode")
-        self.tokenizer = tokenizer
         self.raw_data = raw_data
         self.cached_data_dict = {}
 
@@ -201,7 +222,11 @@ class LazySupervisedDataset(Dataset):
         if i in self.cached_data_dict:
             return self.cached_data_dict[i]
 
-        ret = preprocess([self.raw_data[i]["conversations"]], self.tokenizer)
+        ret = preprocess(
+            [self.raw_data[i]["conversations"]],
+            self.tokenizer,
+            systems=[self.raw_data[i].get("system", "")],
+        )
         ret = dict(
             input_ids=ret["input_ids"][0],
             labels=ret["labels"][0],
@@ -213,23 +238,37 @@ class LazySupervisedDataset(Dataset):
 
 
 def make_supervised_data_module(
-    tokenizer: transformers.PreTrainedTokenizer, data_args
+    tokenizer: transformers.PreTrainedTokenizer, data_args, train_ratio=0.98
 ) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
+    train_ratio = min(train_ratio, 1.0)
     dataset_cls = (
         LazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
     rank0_print("Loading data...")
+    data_path = data_args.data_path
+    if data_path.endswith(".json"):
+        raw_data = json.load(open(data_path, "r"))
+    elif data_path.endswith(".jsonl"):
+        with jsonlines.open(data_path, mode="r") as reader:
+            raw_data = [item for item in reader]
 
-    train_json = json.load(open(data_args.data_path, "r"))
-    train_dataset = dataset_cls(train_json, tokenizer=tokenizer)
-
-    if data_args.eval_data_path:
-        eval_json = json.load(open(data_args.eval_data_path, "r"))
-        eval_dataset = dataset_cls(eval_json, tokenizer=tokenizer)
+    # Split train/test
+    np.random.seed(0)
+    perm = np.random.permutation(len(raw_data))
+    split = int(len(perm) * train_ratio)
+    train_indices = perm[:split]
+    if train_ratio < 1:
+        eval_indices = perm[split:]
     else:
-        eval_dataset = None
+        # if train_ratio==1, we use 5% of data as eval data, make sure trainer will not throw error when eval data is empty
+        eval_indices = perm[-int(len(perm) * 0.05) :]
+    train_raw_data = [raw_data[i] for i in train_indices]
+    eval_raw_data = [raw_data[i] for i in eval_indices]
+    rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
 
+    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
+    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
@@ -241,8 +280,15 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
+    config = transformers.AutoConfig.from_pretrained(
+        model_args.model_name_or_path,
+        trust_remote_code=True,
+        cache_dir=training_args.cache_dir,
+    )
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
+        config=config,
+        trust_remote_code=True,
         cache_dir=training_args.cache_dir,
     )
     model.config.use_cache = False
@@ -253,24 +299,34 @@ def train():
         scaling_factor = math.ceil(training_args.model_max_length / orig_ctx_len)
         model.config.rope_scaling = {"type": "linear", "factor": scaling_factor}
 
+    # Tie the weights
+    model.tie_weights()
+
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
+        config=config,
+        trust_remote_code=True,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
         padding_side="right",
         use_fast=False,
     )
+    # NOTE: if the token_id exceed the vocab_size will cause failing in training process! we need add special config and resize the embedding size!
     tokenizer.pad_token = tokenizer.unk_token
-    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    print(f"tokens len: {len(tokenizer)}")
+    model.resize_token_embeddings(len(tokenizer))
 
+    data_module = make_supervised_data_module(
+        tokenizer=tokenizer, train_ratio=0.98, data_args=data_args
+    )
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
+
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
-    model.config.use_cache = True
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
 

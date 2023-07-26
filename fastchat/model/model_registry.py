@@ -32,13 +32,19 @@ register_model_info(
     "ChatGPT-3.5 by OpenAI",
 )
 register_model_info(
-    ["claude-v1"],
+    ["claude-2"],
+    "Claude",
+    "https://www.anthropic.com/index/claude-2",
+    "Claude 2 by Anthropic",
+)
+register_model_info(
+    ["claude-1"],
     "Claude",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude by Anthropic",
 )
 register_model_info(
-    ["claude-instant-v1"],
+    ["claude-instant-1"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
@@ -48,6 +54,12 @@ register_model_info(
     "PaLM 2 Chat",
     "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
     "PaLM 2 for Chat (chat-bison@001) by Google",
+)
+register_model_info(
+    ["llama-2-13b-chat", "llama-2-7b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
+    "Llama 2",
+    "https://ai.meta.com/llama/",
+    "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
     [
@@ -69,28 +81,22 @@ register_model_info(
     "an instruction-following LLM using evol-instruct by Microsoft",
 )
 register_model_info(
+    ["mpt-7b-chat", "mpt-30b-chat"],
+    "MPT-Chat",
+    "https://www.mosaicml.com/blog/mpt-30b",
+    "a chatbot fine-tuned from MPT by MosaicML",
+)
+register_model_info(
     ["guanaco-33b", "guanaco-65b"],
     "Guanaco",
     "https://github.com/artidoro/qlora",
     "a model fine-tuned with QLoRA by UW",
 )
 register_model_info(
-    ["mpt-7b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-7b",
-    "a chatbot fine-tuned from MPT-7B by MosaicML",
-)
-register_model_info(
-    ["mpt-30b-chat"],
-    "MPT-Chat",
-    "https://www.mosaicml.com/blog/mpt-30b",
-    "a chatbot fine-tuned from MPT-30B by MosaicML",
-)
-register_model_info(
     ["gpt4all-13b-snoozy"],
     "GPT4All-Snoozy",
     "https://github.com/nomic-ai/gpt4all",
-    "A finetuned LLaMA model on assistant style data by Nomic AI",
+    "a finetuned LLaMA model on assistant style data by Nomic AI",
 )
 register_model_info(
     ["koala-13b"],
@@ -105,16 +111,16 @@ register_model_info(
     "an RNN with transformer-level LLM performance",
 )
 register_model_info(
-    ["alpaca-13b"],
-    "Alpaca",
-    "https://crfm.stanford.edu/2023/03/13/alpaca.html",
-    "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
-)
-register_model_info(
     ["chatglm-6b", "chatglm2-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",
+)
+register_model_info(
+    ["alpaca-13b"],
+    "Alpaca",
+    "https://crfm.stanford.edu/2023/03/13/alpaca.html",
+    "a model fine-tuned from LLaMA on instruction-following demonstrations by Stanford",
 )
 register_model_info(
     ["oasst-pythia-12b"],
@@ -129,11 +135,12 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
-    ["llama-13b"],
+    ["llama-7b", "llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
     "open and efficient foundation language models by Meta",
 )
+
 register_model_info(
     ["dolly-v2-12b"],
     "Dolly",

@@ -39,6 +39,7 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
+from fastchat.conversation import get_conv_template
 from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
@@ -67,18 +68,13 @@ def heart_beat_worker(controller):
 class ModelWorker:
     def __init__(
         self,
-        controller_addr,
-        worker_addr,
-        worker_id,
-        no_register,
-        model_path,
-        model_names,
-        device,
-        num_gpus,
-        max_gpu_memory,
-        load_8bit=False,
-        cpu_offloading=False,
-        gptq_config=None,
+        controller_addr: str,
+        worker_addr: str,
+        worker_id: str,
+        model_path: str,
+        model_names: List[str],
+        limit_worker_concurrency: int,
+        conv_template: str = None,
     ):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -86,45 +82,25 @@ class ModelWorker:
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_names = model_names or [model_path.split("/")[-1]]
-        self.device = device
+        self.limit_worker_concurrency = limit_worker_concurrency
+        if conv_template:
+            self.conv = get_conv_template(conv_template)
+        else:
+            self.conv = get_conversation_template(model_path)
+        self.conv.sep_style = int(self.conv.sep_style)
+        self.tokenizer = None
+        self.context_len = None
+        self.call_ct = 0
+        self.semaphore = None
 
-        logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
-        self.model, self.tokenizer = load_model(
-            model_path,
-            device,
-            num_gpus,
-            max_gpu_memory,
-            load_8bit,
-            cpu_offloading,
-            gptq_config,
+        self.heart_beat_thread = None
+
+    def init_heart_beat(self):
+        self.register_to_controller()
+        self.heart_beat_thread = threading.Thread(
+            target=heart_beat_worker, args=(self,)
         )
-        self.conv = get_conversation_template(model_path)
-        if self.tokenizer.pad_token == None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
-        else:
-            self.context_len = 2048
-
-        # generate_stream
-        is_chatglm = "chatglm" in str(type(self.model)).lower()
-        is_falcon = "rwforcausallm" in str(type(self.model)).lower()
-        if is_chatglm:
-            self.generate_stream_func = chatglm_generate_stream
-        elif is_falcon:
-            self.generate_stream_func = falcon_generate_stream
-        else:
-            self.generate_stream_func = generate_special_stream
-
-        if not no_register:
-            self.register_to_controller()
-            self.heart_beat_thread = threading.Thread(
-                target=heart_beat_worker, args=(self,)
-            )
-            self.heart_beat_thread.start()
+        self.heart_beat_thread.start()
 
     def register_to_controller(self):
         logger.info("Register to controller")
@@ -201,6 +177,56 @@ class ModelWorker:
 
     def get_conv_template(self):
         return {"conv": self.conv}
+
+
+class ModelWorker(BaseModelWorker):
+    def __init__(
+        self,
+        controller_addr: str,
+        worker_addr: str,
+        worker_id: str,
+        model_path: str,
+        model_names: List[str],
+        limit_worker_concurrency: int,
+        no_register: bool,
+        device: str,
+        num_gpus: int,
+        max_gpu_memory: str,
+        load_8bit: bool = False,
+        cpu_offloading: bool = False,
+        gptq_config: bool = None,
+        stream_interval: int = 2,
+        conv_template: str = None,
+    ):
+        super().__init__(
+            controller_addr,
+            worker_addr,
+            worker_id,
+            model_path,
+            model_names,
+            limit_worker_concurrency,
+            conv_template=conv_template,
+        )
+
+        logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
+        self.model, self.tokenizer = load_model(
+            model_path,
+            device,
+            num_gpus,
+            max_gpu_memory,
+            load_8bit,
+            cpu_offloading,
+            gptq_config,
+        )
+        self.device = device
+        if self.tokenizer.pad_token == None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.context_len = get_context_length(self.model.config)
+        self.generate_stream_func = get_generate_stream_function(self.model, model_path)
+        self.stream_interval = stream_interval
+
+        if not no_register:
+            self.init_heart_beat()
 
     def generate_stream_gate(self, params):
         try:
@@ -435,7 +461,15 @@ if __name__ == "__main__":
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
-    parser.add_argument("--limit-model-concurrency", type=int, default=5)
+    parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
+    parser.add_argument(
+        "--limit-worker-concurrency",
+        type=int,
+        default=5,
+        help="Limit the model concurrency to prevent OOM.",
+    )
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     args = parser.parse_args()
@@ -462,11 +496,15 @@ if __name__ == "__main__":
         args.no_register,
         args.model_path,
         args.model_names,
-        args.device,
-        args.num_gpus,
-        args.max_gpu_memory,
-        args.load_8bit,
-        args.cpu_offloading,
-        gptq_config,
+        args.limit_worker_concurrency,
+        no_register=args.no_register,
+        device=args.device,
+        num_gpus=args.num_gpus,
+        max_gpu_memory=args.max_gpu_memory,
+        load_8bit=args.load_8bit,
+        cpu_offloading=args.cpu_offloading,
+        gptq_config=gptq_config,
+        stream_interval=args.stream_interval,
+        conv_template=args.conv_template,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

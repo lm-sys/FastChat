@@ -20,6 +20,7 @@ dist
 .DS_Store
 wandb
 output
+checkpoints_flant5_3b
 
 # Data
 *.pkl

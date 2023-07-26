@@ -34,9 +34,10 @@ def main(args):
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    input_ids = tokenizer([prompt]).input_ids
+    inputs = tokenizer([prompt])
+    inputs = {k: torch.tensor(v).to(args.device) for k, v in inputs.items()}
     output_ids = model.generate(
-        torch.as_tensor(input_ids).cuda(),
+        **inputs,
         do_sample=True,
         temperature=args.temperature,
         repetition_penalty=args.repetition_penalty,
@@ -46,7 +47,7 @@ def main(args):
     if model.config.is_encoder_decoder:
         output_ids = output_ids[0]
     else:
-        output_ids = output_ids[0][len(input_ids[0]) :]
+        output_ids = output_ids[0][len(inputs["input_ids"][0]) :]
     outputs = tokenizer.decode(
         output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
     )
