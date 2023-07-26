@@ -3,7 +3,7 @@
 import math
 import os
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 import warnings
 
 if sys.version_info >= (3, 9):
@@ -14,7 +14,6 @@ else:
 import accelerate
 import psutil
 import torch
-
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -29,10 +28,19 @@ from transformers import (
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
+from fastchat.model.model_chatglm import generate_stream_chatglm
+from fastchat.model.model_codet5p import generate_stream_codet5p
+from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
 from fastchat.utils import get_gpu_memory
+
+# Check an environment variable to check if we should be sharing Peft model
+# weights.  When false we treat all Peft models as separate.
+peft_share_base_weights = (
+    os.environ.get("PEFT_SHARE_BASE_WEIGHTS", "false").lower() == "true"
+)
 
 
 class BaseModelAdapter:
@@ -94,7 +102,6 @@ def register_model_adapter(cls):
 def get_model_adapter(model_path: str) -> BaseModelAdapter:
     """Get a model adapter for a model_path."""
     model_path_basename = os.path.basename(os.path.normpath(model_path))
-
     # Try the basename of model_path at first
     for adapter in model_adapters:
         if adapter.match(model_path_basename) and type(adapter) != BaseModelAdapter:
@@ -244,7 +251,7 @@ def get_conversation_template(model_path: str) -> Conversation:
 
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     """Get the generate_stream function for inference."""
-    from fastchat.serve.inference import generate_stream
+    from fastchat.serve.inference import generate_stream, generate_special_stream
 
     model_type = str(type(model)).lower()
     is_chatglm = "chatglm" in model_type
@@ -273,7 +280,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             judge_sent_end: bool = False,
         ):
             model.set_adapter(model_path)
-            for x in generate_stream(
+            for x in generate_special_stream(
                 model,
                 tokenizer,
                 params,
@@ -286,7 +293,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
 
         return generate_stream_peft
     else:
-        return generate_stream
+        return generate_special_stream
 
 
 def add_model_args(parser):
@@ -365,7 +372,7 @@ def remove_parent_directory_name(model_path):
 peft_model_cache = {}
 
 
-class PeftModelAdapter:
+class PeftModelAdapter(BaseModelAdapter):
     """Loads any "peft" model and it's base model."""
 
     def match(self, model_path: str):
@@ -455,9 +462,11 @@ class VicunaAdapter(BaseModelAdapter):
         )
         self.raise_warning_for_old_weights(model)
 
-        # Use LoRa fine-tuned model
+        """
+        # Use LoRa fine-tuned model (another way)
         lora_model_id = "vicuna_checkpoints"  # provide your lora weights path
         model = PeftModel.from_pretrained(model, lora_model_id)
+        """
 
         return model, tokenizer
 
@@ -1193,6 +1202,7 @@ class CuteGPTAdapter(BaseModelAdapter):
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(VicunaAdapter)
+register_model_adapter(PeftModelAdapter)
 register_model_adapter(T5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
