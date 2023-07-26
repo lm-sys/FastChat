@@ -9,8 +9,6 @@ from transformers import (
     TextIteratorStreamer,
 )
 
-transformers.logging.set_verbosity_error()
-
 
 @torch.inference_mode()
 def generate_stream_codet5p(
