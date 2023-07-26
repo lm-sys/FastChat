@@ -3,8 +3,9 @@ import numpy
 import sys
 import os
 
-sys.path.append("/home/minhvn/workspace/llm/data-generation")
-from tools.contact import contact
+FUNCTION_CALLING_PATH = ""  # provide path for the function to use
+sys.path.append(FUNCTION_CALLING_PATH)
+from contact import contact  # contact is the function to be used
 
 
 def extract_features(result: str):
@@ -18,5 +19,10 @@ def extract_features(result: str):
 
     output = ""
     if function_name == "contact":
-        output += contact(keyword=keyword)
+        try:
+            database_result = contact(keyword=keyword)
+            output += database_result
+        except Exception as e:
+            output += "Employee name doesn't exist or not mentioned"
+
     return output
