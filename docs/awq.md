@@ -35,4 +35,37 @@ python3 -m fastchat.serve.cli \
     --awq-groupsize 128 
 ```
 
-## Benchmark (TBD)
+## Benchmark
+
+* Through **4-bit weight quantization**, AWQ helps to run larger language models within the device memory restriction and prominently accelerates token generation. All benchmarks are done with group_size 128. 
+
+* Benchmark on NVIDIA RTX A6000:
+
+  | Model           | Bits | Max Memory (MiB) | Speed (ms/token) | AWQ Speedup |
+  | --------------- | ---- | ---------------- | ---------------- | ----------- |
+  | vicuna-7b       | 16   | 13543            | 26.06            | /           |
+  | vicuna-7b       | 4    | 5547             | 12.43            | 2.1x        |
+  | llama2-7b-chat  | 16   | 13543            | 27.14            | /           |
+  | llama2-7b-chat  | 4    | 5547             | 12.44            | 2.2x        |
+  | vicuna-13b      | 16   | 25647            | 44.91            | /           |
+  | vicuna-13b      | 4    | 9355             | 17.30            | 2.6x        |
+  | llama2-13b-chat | 16   | 25647            | 47.28            | /           |
+  | llama2-13b-chat | 4    | 9355             | 20.28            | 2.3x        |
+
+* NVIDIA RTX 4090:
+
+  | Model           | FP16 Speed (ms/token) | AWQ 4bit Speed (ms/token) | AWQ Speedup |
+  | --------------- | --------------------- | ------------------------- | ----------- |
+  | vicuna-7b       | 19.09                 | 8.61                      | 2.2x        |
+  | llama2-7b-chat  | 19.97                 | 8.66                      | 2.3x        |
+  | vicuna-13b      | OOM                   | 12.17                     | /           |
+  | llama2-13b-chat | OOM                   | 13.54                     | /           |
+
+* NVIDIA Jetson Orin:
+
+  | Model           | FP16 Speed (ms/token) | AWQ 4bit Speed (ms/token) | AWQ Speedup |
+  | --------------- | --------------------- | ------------------------- | ----------- |
+  | vicuna-7b       | 93.12                 | 65.34                     | 1.4x        |
+  | llama2-7b-chat  | 104.71                | 75.11                     | 1.4x        |
+  | vicuna-13b      | OOM                   | 115.40                    | /           |
+  | llama2-13b-chat | OOM                   | 136.81                    | /           |
