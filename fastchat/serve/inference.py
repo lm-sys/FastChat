@@ -284,6 +284,7 @@ def chat_loop(
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
+    conv_system: Optional[str],
     temperature: float,
     repetition_penalty: float,
     max_new_tokens: int,
@@ -327,6 +328,8 @@ def chat_loop(
             conv = get_conv_template(conv_template)
         else:
             conv = get_conversation_template(model_path)
+        if conv_system:
+            conv.system = conv_system
         return conv
 
     conv = None
