@@ -221,13 +221,21 @@ def load_model(
                 revision=revision,
             )
     elif awq_config and awq_config.wbits < 16:
-        assert awq_config.wbits == 4, "Currently we only support 4-bit inference for AWQ."
+        assert (
+            awq_config.wbits == 4
+        ), "Currently we only support 4-bit inference for AWQ."
         model, tokenizer = load_awq_quantized(model_path, awq_config, device)
         if num_gpus != 1:
             device_map = accelerate.infer_auto_device_map(
                 model,
                 max_memory=kwargs["max_memory"],
-                no_split_module_classes=["OPTDecoderLayer", "LlamaDecoderLayer", "BloomBlock", "MPTBlock", "DecoderLayer"],
+                no_split_module_classes=[
+                    "OPTDecoderLayer",
+                    "LlamaDecoderLayer",
+                    "BloomBlock",
+                    "MPTBlock",
+                    "DecoderLayer",
+                ],
             )
             model = accelerate.dispatch_model(
                 model, device_map=device_map, offload_buffers=True
@@ -405,6 +413,7 @@ def add_model_args(parser):
         default=-1,
         help="Groupsize to use for AWQ quantization; default uses full row.",
     )
+
 
 def remove_parent_directory_name(model_path):
     """Remove parent directory name."""
