@@ -205,6 +205,8 @@ def main(args):
                 wbits=args.gptq_wbits,
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
+                model_basename=args.model_basename,
+                seqlen=args.seqlen
             ),
             args.revision,
             args.judge_sent_end,
@@ -222,6 +224,8 @@ if __name__ == "__main__":
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
     parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--model_basename", type=str)
+    parser.add_argument("--seqlen", type=int, default=4096)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--no-history", action="store_true")

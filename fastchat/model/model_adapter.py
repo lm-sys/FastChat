@@ -26,6 +26,7 @@ from transformers import (
 )
 
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
+from fastchat.modules.autogptq import load_gptq_quantized_autogptq
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.model_chatglm import generate_stream_chatglm
@@ -178,7 +179,8 @@ def load_model(
                     for i in range(num_gpus)
                 }
             else:
-                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+                kwargs["max_memory"] = {
+                    i: max_gpu_memory for i in range(num_gpus)}
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
         # Avoid bugs in mps backend by not using in-place operations.
@@ -220,18 +222,19 @@ def load_model(
                 revision=revision,
             )
     elif gptq_config and gptq_config.wbits < 16:
-        model, tokenizer = load_gptq_quantized(model_path, gptq_config)
-        if num_gpus != 1:
-            device_map = accelerate.infer_auto_device_map(
-                model,
-                max_memory=kwargs["max_memory"],
-                no_split_module_classes=["LlamaDecoderLayer"],
-            )
-            model = accelerate.dispatch_model(
-                model, device_map=device_map, offload_buffers=True
-            )
-        else:
-            model.to(device)
+        model, tokenizer = load_gptq_quantized_autogptq(
+            model_path, gptq_config.model_basename, gptq_config.seqlen)
+        # if num_gpus != 1:
+        #     device_map = accelerate.infer_auto_device_map(
+        #         model,
+        #         max_memory=kwargs["max_memory"],
+        #         no_split_module_classes=["LlamaDecoderLayer"],
+        #     )
+        #     model = accelerate.dispatch_model(
+        #         model, device_map=device_map, offload_buffers=True
+        #     )
+        # else:
+        #     model.to(device)
         return model, tokenizer
     kwargs["revision"] = revision
 
@@ -245,7 +248,8 @@ def load_model(
         model.to(device)
 
     if device == "xpu":
-        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
+        model = torch.xpu.optimize(
+            model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
@@ -558,7 +562,8 @@ class CodeT5pAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, revision=revision)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -638,7 +643,8 @@ class DollyV2Adapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -872,7 +878,8 @@ class RedPajamaINCITEAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -1019,7 +1026,8 @@ class FalconAdapter(BaseModelAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
         # Strongly suggest using bf16, which is recommended by the author of Falcon
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, revision=revision)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,

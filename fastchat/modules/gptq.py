@@ -15,23 +15,35 @@ class GptqConfig:
             "help": "Load quantized model. The path to the local GPTQ checkpoint."
         },
     )
-    wbits: int = field(default=16, metadata={"help": "#bits to use for quantization"})
+    wbits: int = field(default=16, metadata={
+                       "help": "#bits to use for quantization"})
     groupsize: int = field(
         default=-1,
-        metadata={"help": "Groupsize to use for quantization; default uses full row."},
+        metadata={
+            "help": "Groupsize to use for quantization; default uses full row."},
     )
     act_order: bool = field(
         default=True,
         metadata={"help": "Whether to apply the activation order GPTQ heuristic"},
     )
 
+    model_basename: str = field(
+        default=None,
+        metadata={
+            "help": "AutoGPTQ model base name"
+        },
+    )
+    seqlen: int = field(default=4096, metadata={"help": "AutoGPTQ seqlen"})
+
 
 def load_gptq_quantized(model_name, gptq_config: GptqConfig):
     print("Loading GPTQ quantized model...")
 
     try:
-        script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        module_path = os.path.join(script_path, "../repositories/GPTQ-for-LLaMa")
+        script_path = os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__)))
+        module_path = os.path.join(
+            script_path, "../repositories/GPTQ-for-LLaMa")
 
         sys.path.insert(0, module_path)
         from llama import load_quant
