@@ -16,8 +16,7 @@ To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as j
 ```
 git clone https://github.com/lm-sys/FastChat.git
 cd FastChat
-pip install -e .
-pip install openai anthropic==0.3.2 ray
+pip install -e ".[eval]"
 ```
 
 ## Review Pre-Generated Model Answers and Judgments
