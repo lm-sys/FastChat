@@ -131,8 +131,8 @@ def get_model_answers(
                         if isinstance(special_token, list):
                             for special_tok in special_token:
                                 output = output.replace(special_tok, "")
-                    else:
-                        output = output.replace(special_token, "")
+                        else:
+                            output = output.replace(special_token, "")
                     output = output.strip()
 
                     if conv.name == "xgen" and output.startswith("Assistant:"):
