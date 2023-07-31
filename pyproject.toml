@@ -21,6 +21,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["black==23.3.0", "pylint==2.8.2"]
+train = ["flash-attn>=2.0"]
+eval = ["openai", "anthropic>=0.3", "ray"]
 
 [project.urls]
 "Homepage" = "https://github.com/lm-sys/fastchat"

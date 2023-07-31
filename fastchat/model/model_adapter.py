@@ -28,6 +28,9 @@ from transformers import (
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
+from fastchat.model.llama_condense_monkey_patch import (
+    replace_llama_with_condense,
+)
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
@@ -527,14 +530,10 @@ class LongChatAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        config = AutoConfig.from_pretrained(model_path, revision=revision)
 
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
-        from fastchat.model.llama_condense_monkey_patch import (
-            replace_llama_with_condense,
-        )
-
-        replace_llama_with_condense(config.rope_condense_ratio)
+        config = AutoConfig.from_pretrained(model_path, revision=revision)
+        replace_llama_with_condense(config.rope_scaling["factor"])
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=self.use_fast_tokenizer, revision=revision
