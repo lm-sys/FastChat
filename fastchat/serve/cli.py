@@ -133,24 +133,13 @@ class RichChatIO(ChatIO):
         return text
 
 
-class ProgrammaticChatIO(ChatIO):
+class FileInputChatIO(ChatIO):
+    def __init__(self, input_file):
+        self._input_file = input_file
+
     def prompt_for_input(self, role) -> str:
-        contents = ""
-        # `end_sequence` signals the end of a message. It is unlikely to occur in
-        #  message content.
-        end_sequence = " __END_OF_A_MESSAGE_47582648__\n"
-        len_end = len(end_sequence)
-        while True:
-            if len(contents) >= len_end:
-                last_chars = contents[-len_end:]
-                if last_chars == end_sequence:
-                    break
-            try:
-                char = sys.stdin.read(1)
-                contents = contents + char
-            except EOFError:
-                continue
-        contents = contents[:-len_end]
+        with open(self._input_file, 'r') as f:
+            contents = f.read()
         print(f"[!OP:{role}]: {contents}", flush=True)
         return contents
 
@@ -184,7 +173,7 @@ def main(args):
     elif args.style == "rich":
         chatio = RichChatIO(args.multiline, args.mouse)
     elif args.style == "programmatic":
-        chatio = ProgrammaticChatIO()
+        chatio = FileInputChatIO(args.input_file)
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
