@@ -21,7 +21,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
-from pydantic import BaseSettings
 import shortuuid
 import tiktoken
 import uvicorn
@@ -61,6 +60,7 @@ from fastchat.protocol.api_protocol import (
     APITokenCheckResponse,
     APITokenCheckResponseItem,
 )
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
