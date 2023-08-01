@@ -271,6 +271,10 @@ class ChatIO(abc.ABC):
     def stream_output(self, output_stream):
         """Stream output."""
 
+    @abc.abstractmethod
+    def print_output(self, text: str):
+        """Print output."""
+
 
 def chat_loop(
     model_path: str,
@@ -340,9 +344,70 @@ def chat_loop(
             print("exit...")
             break
 
-        if inp == "!!reset":
+        elif inp == "!!reset":
             print("resetting...")
             conv = new_chat()
+            continue
+
+        elif inp.startswith("!!save"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!save <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            if not filename.endswith(".json"):
+                filename += ".json"
+
+            print("saving...", filename)
+
+            import json
+
+            with open(filename, "w") as file:
+                json.dump(conv.dict(), file)
+
+            continue
+
+        elif inp.startswith("!!load"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!load <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            import os
+
+            # Check if file exists and add .json if needed
+            if not os.path.exists(filename):
+                if (not filename.endswith(".json")) and os.path.exists(
+                    filename + ".json"
+                ):
+                    filename += ".json"
+                else:
+                    print("file not found:", filename)
+                    continue
+
+            print("loading...", filename)
+
+            import json
+
+            with open(filename, "r") as file:
+                new_conv = json.load(file)
+
+            conv = get_conv_template(new_conv["template_name"])
+            conv.system = new_conv["system"]
+            conv.roles = new_conv["roles"]
+            conv.messages = new_conv["messages"]
+            conv.offset = new_conv["offset"]
+
+            for message in conv.messages[conv.offset :]:
+                chatio.prompt_for_output(message[0])
+                chatio.print_output(message[1])
+
             continue
 
         conv.append_message(conv.roles[0], inp)
