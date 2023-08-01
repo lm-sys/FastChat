@@ -256,6 +256,7 @@ def train():
     # Load model and tokenizer
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
+        config=config,
         cache_dir=training_args.cache_dir,
     )
     tokenizer = transformers.AutoTokenizer.from_pretrained(
