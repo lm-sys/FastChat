@@ -8,7 +8,7 @@ import logging
 import json
 import os
 import time
-from typing import List
+from typing import List, Optional
 import threading
 import uuid
 
