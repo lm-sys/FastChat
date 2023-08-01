@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 import shortuuid
 import tiktoken
 import uvicorn
@@ -69,7 +69,7 @@ conv_template_map = {}
 class AppSettings(BaseSettings):
     # The address of the model controller.
     controller_address: str = "http://localhost:21001"
-    api_keys: List[str] = None
+    api_keys: Optional[List[str]] = None
 
 
 app_settings = AppSettings()
