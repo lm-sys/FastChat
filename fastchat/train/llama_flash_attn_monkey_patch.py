@@ -115,8 +115,7 @@ def forward(
         )
         output = rearrange(
             pad_input(
-                rearrange(output_unpad,
-                          "nnz h d -> nnz (h d)"), indices, bsz, q_len
+                rearrange(output_unpad, "nnz h d -> nnz (h d)"), indices, bsz, q_len
             ),
             "b s (h d) -> b s h d",
             h=nheads,
