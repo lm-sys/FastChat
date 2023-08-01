@@ -6,7 +6,7 @@ FastChat is an open platform for training, serving, and evaluating large languag
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
-- [2023/07] 🔥 We released **Vicuna v1.5** weights based on Llama 2. Download them [here](#vicuna-weights).
+- [2023/07] 🔥 We released **Vicuna v1.5** based on Llama 2 with 4K and 16K context lengths. Download [weights](#vicuna-weights).
 - [2023/07] 🔥 We released **Chatbot Arena Conversations**, a dataset containing 33k conversations with human preferences. Download it [here](https://huggingface.co/datasets/lmsys/chatbot_arena_conversations).
 
 <details><summary>More</summary>
