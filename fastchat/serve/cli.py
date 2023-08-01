@@ -25,6 +25,7 @@ from rich.markdown import Markdown
 
 from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.awq import AWQConfig
 from fastchat.serve.inference import ChatIO, chat_loop
 
 
@@ -205,6 +206,11 @@ def main(args):
                 wbits=args.gptq_wbits,
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
+            ),
+            AWQConfig(
+                ckpt=args.awq_ckpt or args.model_path,
+                wbits=args.awq_wbits,
+                groupsize=args.awq_groupsize,
             ),
             args.revision,
             args.judge_sent_end,
