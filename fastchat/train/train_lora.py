@@ -162,6 +162,13 @@ def train():
             model.is_parallelizable = True
             model.model_parallel = True
 
+    if training_args.flash_attn:
+        for name, module in model.named_modules():
+            if 'norm' in name:
+                module = module.to(compute_dtype)
+            if 'lm_head' in name or 'embed_tokens' in name:
+                if hasattr(module, 'weight'):
+                    module = module.to(compute_dtype)
     model = get_peft_model(model, lora_config)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
