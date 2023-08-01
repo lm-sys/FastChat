@@ -5,7 +5,7 @@
 | v1.5 | [7B](https://huggingface.co/lmsys/vicuna-7b-v1.5), [7B-16k](https://huggingface.co/lmsys/vicuna-7b-v1.5-16k), [13B](https://huggingface.co/lmsys/vicuna-13b-v1.5), [13B-16k](https://huggingface.co/lmsys/vicuna-13b-v1.5-16k) | `>=0.2.21` | Llama 2 | 370M|
 | v1.3 | [7B](https://huggingface.co/lmsys/vicuna-7b-v1.3), [13B](https://huggingface.co/lmsys/vicuna-13b-v1.3), [33B](//huggingface.co/lmsys/vicuna-33b-v1.3) | `>=0.2.1` | Llama 1 | 370M |
 | v1.1 | [7B](https://huggingface.co/lmsys/vicuna-7b-v1.1), [13B](https://huggingface.co/lmsys/vicuna-13b-v1.1) | `>=0.2.1` | Llama 1 | - |
-| v0 | [7B](https://huggingface.co/lmsys/vicuna-7b-delta-v0), [13B](https://huggingface.co/lmsys/vicuna-13b-delta-v0) | `<=0.1.10` | Llama 1 | - |
+| v0 | [7B-delta](https://huggingface.co/lmsys/vicuna-7b-delta-v0), [13B-delta](https://huggingface.co/lmsys/vicuna-13b-delta-v0) | `<=0.1.10` | Llama 1 | - |
 
 ### Updates
 - Major updates of weights v1.5
@@ -48,7 +48,7 @@ See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2
 
 ## How to Apply Delta Weights (Only Needed for Weights v0)
 
-We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights (v1.1 and v0) as delta weights to comply with the LLaMA model license.
+We release [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) weights v0 as delta weights to comply with the LLaMA model license.
 You can add our delta to the original LLaMA weights to obtain the Vicuna weights. Instructions:
 
 1. Get the original LLaMA weights in the Hugging Face format by following the instructions [here](https://huggingface.co/docs/transformers/main/model_doc/llama).
