@@ -8,7 +8,7 @@ import logging
 import json
 import os
 import time
-from typing import List
+from typing import List, Optional
 import threading
 import uuid
 
@@ -43,6 +43,7 @@ from fastchat.model.model_adapter import (
     get_generate_stream_function,
 )
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.awq import AWQConfig
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
@@ -187,7 +188,8 @@ class ModelWorker(BaseModelWorker):
         max_gpu_memory: str,
         load_8bit: bool = False,
         cpu_offloading: bool = False,
-        gptq_config: bool = None,
+        gptq_config: Optional[GptqConfig] = None,
+        awq_config: Optional[AWQConfig] = None,
         stream_interval: int = 2,
         conv_template: str = None,
     ):
@@ -204,12 +206,13 @@ class ModelWorker(BaseModelWorker):
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
             model_path,
-            device,
-            num_gpus,
-            max_gpu_memory,
-            load_8bit,
-            cpu_offloading,
-            gptq_config,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            gptq_config=gptq_config,
+            awq_config=awq_config,
         )
         self.device = device
         if self.tokenizer.pad_token == None:
@@ -437,6 +440,11 @@ if __name__ == "__main__":
         groupsize=args.gptq_groupsize,
         act_order=args.gptq_act_order,
     )
+    awq_config = AWQConfig(
+        ckpt=args.awq_ckpt or args.model_path,
+        wbits=args.awq_wbits,
+        groupsize=args.awq_groupsize,
+    )
 
     worker = ModelWorker(
         args.controller_address,
@@ -452,6 +460,7 @@ if __name__ == "__main__":
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,
+        awq_config=awq_config,
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
     )

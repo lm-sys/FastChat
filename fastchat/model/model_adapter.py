@@ -148,8 +148,8 @@ def raise_warning_for_incompatible_cpu_offloading_configuration(
 
 def load_model(
     model_path: str,
-    device: str,
-    num_gpus: int,
+    device: str = "cuda",
+    num_gpus: int = 1,
     max_gpu_memory: Optional[str] = None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
@@ -377,44 +377,44 @@ def add_model_args(parser):
         "--gptq-ckpt",
         type=str,
         default=None,
-        help="Load quantized model. The path to the local GPTQ checkpoint.",
+        help="Used for GPTQ. The path to the local GPTQ checkpoint.",
     )
     parser.add_argument(
         "--gptq-wbits",
         type=int,
         default=16,
         choices=[2, 3, 4, 8, 16],
-        help="#bits to use for quantization",
+        help="Used for GPTQ. #bits to use for quantization",
     )
     parser.add_argument(
         "--gptq-groupsize",
         type=int,
         default=-1,
-        help="Groupsize to use for quantization; default uses full row.",
+        help="Used for GPTQ. Groupsize to use for quantization; default uses full row.",
     )
     parser.add_argument(
         "--gptq-act-order",
         action="store_true",
-        help="Whether to apply the activation order GPTQ heuristic",
+        help="Used for GPTQ. Whether to apply the activation order GPTQ heuristic",
     )
     parser.add_argument(
         "--awq-ckpt",
         type=str,
         default=None,
-        help="Load quantized model. The path to the local AWQ checkpoint.",
+        help="Used for AWQ. Load quantized model. The path to the local AWQ checkpoint.",
     )
     parser.add_argument(
         "--awq-wbits",
         type=int,
         default=16,
         choices=[4, 16],
-        help="#bits to use for AWQ quantization",
+        help="Used for AWQ. #bits to use for AWQ quantization",
     )
     parser.add_argument(
         "--awq-groupsize",
         type=int,
         default=-1,
-        help="Groupsize to use for AWQ quantization; default uses full row.",
+        help="Used for AWQ. Groupsize to use for AWQ quantization; default uses full row.",
     )
 
 
