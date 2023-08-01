@@ -38,7 +38,7 @@ def main(args):
     inputs = {k: torch.tensor(v).to(args.device) for k, v in inputs.items()}
     output_ids = model.generate(
         **inputs,
-        do_sample=True,
+        do_sample=True if args.temperature > 1e-5 else False,
         temperature=args.temperature,
         repetition_penalty=args.repetition_penalty,
         max_new_tokens=args.max_new_tokens,
