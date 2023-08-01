@@ -32,7 +32,7 @@ USER: How are you?
 ASSISTANT: I am good.</s>
 ```
 
-See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L246-L259).
+See a full prompt template [here](https://github.com/lm-sys/FastChat/blob/d578599c69d060e6d40943f1b5b72af98956092a/fastchat/conversation.py#L286-L299) and example output [here](https://github.com/lm-sys/FastChat/blob/d578599c69d060e6d40943f1b5b72af98956092a/fastchat/conversation.py#L748-L753).
 
 ### Example prompt (weights v0)
 ```
@@ -44,7 +44,7 @@ A chat between a curious human and an artificial intelligence assistant. The ass
 ### Assistant: I am good.
 ```
 
-See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/daa2b9abe20597ebf34dc5df164d450456610c74/fastchat/conversation.py#L198-L229).
+See the full prompt template [here](https://github.com/lm-sys/FastChat/blob/d578599c69d060e6d40943f1b5b72af98956092a/fastchat/conversation.py#L238-L269).
 
 ## How to Apply Delta Weights (Only Needed for Weights v0)
 
