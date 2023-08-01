@@ -76,12 +76,11 @@ See more command options and how to handle out-of-memory in the "Inference with 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### LongChat
-We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md).
+We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE.md).
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
 | 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-7b-32k-v1.5`  | [lmsys/longchat-7b-32k](https://huggingface.co/lmsys/longchat-7b-32k-v1.5)   |
-| 13B  | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-13b-16k` | [lmsys/longchat-13b-16k](https://huggingface.co/lmsys/longchat-13b-16k) |
 
 ### FastChat-T5
 You can use the commands below to chat with FastChat-T5. It will automatically download the weights from Hugging Face repos.
