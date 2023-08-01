@@ -294,11 +294,11 @@ def chat_loop(
     # Model
     model, tokenizer = load_model(
         model_path,
-        device,
-        num_gpus,
-        max_gpu_memory,
-        load_8bit,
-        cpu_offloading,
+        device=device,
+        num_gpus=num_gpus,
+        max_gpu_memory=max_gpu_memory,
+        load_8bit=load_8bit,
+        cpu_offloading=cpu_offloading,
         gptq_config=gptq_config,
         awq_config=awq_config,
         revision=revision,

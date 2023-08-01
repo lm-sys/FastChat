@@ -204,12 +204,12 @@ class ModelWorker(BaseModelWorker):
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
             model_path,
-            device,
-            num_gpus,
-            max_gpu_memory,
-            load_8bit,
-            cpu_offloading,
-            gptq_config,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            gptq_config=gptq_config,
         )
         self.device = device
         if self.tokenizer.pad_token == None:

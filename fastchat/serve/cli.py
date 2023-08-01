@@ -201,20 +201,20 @@ def main(args):
             args.repetition_penalty,
             args.max_new_tokens,
             chatio,
-            GptqConfig(
+            gptq_config=GptqConfig(
                 ckpt=args.gptq_ckpt or args.model_path,
                 wbits=args.gptq_wbits,
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
             ),
-            AWQConfig(
+            awq_config=AWQConfig(
                 ckpt=args.awq_ckpt or args.model_path,
                 wbits=args.awq_wbits,
                 groupsize=args.awq_groupsize,
             ),
-            args.revision,
-            args.judge_sent_end,
-            args.debug,
+            revision=args.revision,
+            judge_sent_end=args.judge_sent_end,
+            debug=args.debug,
             history=not args.no_history,
         )
     except KeyboardInterrupt:
