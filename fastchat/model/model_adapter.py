@@ -148,8 +148,8 @@ def raise_warning_for_incompatible_cpu_offloading_configuration(
 
 def load_model(
     model_path: str,
-    device: str,
-    num_gpus: int,
+    device: str = "cuda",
+    num_gpus: int = 1,
     max_gpu_memory: Optional[str] = None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
