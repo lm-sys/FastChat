@@ -1,3 +1,13 @@
+"""
+Usage: python launch_all_serve_by_shell.py --model-path-address "THUDM/chatglm2-6b@localhost@2021" "huggyllama/llama-7b@localhost@2022" 
+
+Workers are listed in format of `model-path`@`host`@`port` 
+
+The key mechanism behind this scripts is: 
+    1, execute shell cmd to launch the controller/worker/openai-api-server;
+    2, check the log of controller/worker/openai-api-server to ensure that the serve is launched properly.
+Note that a few of non-critical `fastchat.serve` cmd options are not supported currently.
+"""
 import sys
 import os 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -17,7 +27,7 @@ parser.add_argument('--model-path-address',
                     default="THUDM/chatglm2-6b@localhost@20002",
                     nargs="+",
                     type=str,
-                    help="model path, host, and port, formatted as model-path@host@path")
+                    help="model path, host, and port, formatted as model-path@host@port")
 #---------------controller-------------------------
 
 parser.add_argument("--controller-host", type=str, default="localhost")
@@ -202,7 +212,7 @@ def string_args(args,args_list):
 
 def launch_worker(item):
             log_name = item.split("/")[-1].split("\\")[-1].replace("-","_").replace("@","_").replace(".","_")
-            # 先分割model-path-address,在传到string_args中分析参数
+            
             args.model_path,args.worker_host, args.worker_port = item.split("@")
             print("*"*80)        
             worker_str_args = string_args(args,worker_args)
