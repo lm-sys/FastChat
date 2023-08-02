@@ -392,7 +392,7 @@ def chat_loop(
                 new_conv = json.load(infile)
 
             conv = get_conv_template(new_conv["template_name"])
-            conv.set_system_message(new_conv["system"].system_message)
+            conv.set_system_message(new_conv["system_message"])
             conv.messages = new_conv["messages"]
             for message in conv.messages[conv.offset :]:
                 chatio.prompt_for_output(message[0])
