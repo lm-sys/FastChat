@@ -8,6 +8,8 @@ python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
 Other commands:
 - Type "!!exit" or an empty line to exit.
 - Type "!!reset" to start a new conversation.
+- Type "!!save <filename>" to save the conversation history to a json file.
+- Type "!!load <filename>" to load a conversation history from a json file.
 """
 import argparse
 import os
@@ -62,6 +64,9 @@ class SimpleChatIO(ChatIO):
         print(" ".join(output_text[pre:]), flush=True)
         return " ".join(output_text)
 
+    def print_output(self, text: str):
+        print(text)
+
 
 class RichChatIO(ChatIO):
     bindings = KeyBindings()
@@ -73,7 +78,7 @@ class RichChatIO(ChatIO):
     def __init__(self, multiline: bool = False, mouse: bool = False):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
-            words=["!!exit", "!!reset"], pattern=re.compile("$")
+            words=["!!exit", "!!reset", "!!save", "!!load"], pattern=re.compile("$")
         )
         self._console = Console()
         self._multiline = multiline
@@ -133,6 +138,9 @@ class RichChatIO(ChatIO):
         self._console.print()
         return text
 
+    def print_output(self, text: str):
+        self.stream_output([{"text": text}])
+
 
 class ProgrammaticChatIO(ChatIO):
     def prompt_for_input(self, role) -> str:
@@ -169,6 +177,9 @@ class ProgrammaticChatIO(ChatIO):
                 pre = now
         print(" ".join(output_text[pre:]), flush=True)
         return " ".join(output_text)
+
+    def print_output(self, text: str):
+        print(text)
 
 
 def main(args):
