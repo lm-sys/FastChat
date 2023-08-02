@@ -377,7 +377,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         choices = []
         chat_completions = []
         for i in range(request.n):
-            content = asyncio.create_task(generate_completion(gen_params))
+            content = asyncio.create_task(generate_completion(gen_params, worker_addr))
             chat_completions.append(content)
         try:
             all_tasks = await asyncio.gather(*chat_completions)
@@ -495,7 +495,9 @@ async def create_completion(request: CompletionRequest):
                     stop=request.stop,
                 )
                 for i in range(request.n):
-                    content = asyncio.create_task(generate_completion(gen_params))
+                    content = asyncio.create_task(
+                        generate_completion(gen_params, worker_addr)
+                    )
                     text_completions.append(content)
 
             try:
@@ -597,10 +599,8 @@ async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
                     yield data
 
 
-async def generate_completion(payload: Dict[str, Any]):
+async def generate_completion(payload: Dict[str, Any], worker_addr: str):
     async with httpx.AsyncClient() as client:
-        worker_addr = await get_worker_address(payload["model"], client)
-
         response = await client.post(
             worker_addr + "/worker_generate",
             headers=headers,
@@ -764,7 +764,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         choices = []
         chat_completions = []
         for i in range(request.n):
-            content = asyncio.create_task(generate_completion(gen_params))
+            content = asyncio.create_task(generate_completion(gen_params, worker_addr))
             chat_completions.append(content)
         try:
             all_tasks = await asyncio.gather(*chat_completions)
