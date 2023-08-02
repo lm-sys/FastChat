@@ -115,11 +115,9 @@ async def check_model(request) -> Optional[JSONResponse]:
     controller_address = app_settings.controller_address
     ret = None
     async with httpx.AsyncClient() as client:
-        try:
-            _worker_addr = await get_worker_address(request.model, client)
-        except:
-            models_ret = await client.post(controller_address + "/list_models")
-            models = models_ret.json()["models"]
+        models_ret = await client.post(controller_address + "/list_models")
+        models = models_ret.json()["models"]
+        if request.model not in models:
             ret = create_error_response(
                 ErrorCode.INVALID_MODEL,
                 f"Only {'&&'.join(models)} allowed now, your model {request.model}",
