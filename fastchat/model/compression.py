@@ -157,8 +157,10 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
 
     files = glob.glob(base_pattern)
     if len(files) == 0:
-        raise ValueError(f"Cannot find any model weight files. "
-                         f"Please check your (cached) weight path: {model_path}")
+        raise ValueError(
+            f"Cannot find any model weight files. "
+            f"Please check your (cached) weight path: {model_path}"
+        )
 
     compressed_state_dict = {}
     for filename in tqdm(files):
