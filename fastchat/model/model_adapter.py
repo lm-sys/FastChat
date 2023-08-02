@@ -217,12 +217,15 @@ def load_model(
                 "8-bit quantization is not supported for multi-gpu inference."
             )
         else:
-            return adapter.load_compress_model(
+            model, tokenizer = adapter.load_compress_model(
                 model_path=model_path,
                 device=device,
                 torch_dtype=kwargs["torch_dtype"],
                 revision=revision,
             )
+            if debug:
+                print(model)
+            return model, tokenizer
     elif awq_config and awq_config.wbits < 16:
         assert (
             awq_config.wbits == 4

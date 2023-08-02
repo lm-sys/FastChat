@@ -140,17 +140,29 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             "models--" + model_path.replace("/", "--"),
             "snapshots/",
         )
+        downloaded = False
         if os.path.exists(model_path_temp):
             temp_last_dir = os.listdir(model_path_temp)[-1]
-            model_path = os.path.join(model_path_temp, temp_last_dir)
+            model_path_temp = os.path.join(model_path_temp, temp_last_dir)
+            base_pattern = os.path.join(model_path_temp, "pytorch_model*.bin")
+            files = glob.glob(base_pattern)
+            if len(files) > 0:
+                downloaded = True
+
+        if downloaded:
+            model_path = model_path_temp
         else:
             model_path = snapshot_download(model_path, revision=revision)
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
 
     files = glob.glob(base_pattern)
+    if len(files) == 0:
+        raise ValueError(
+            f"Cannot find any model weight files. "
+            f"Please check your (cached) weight path: {model_path}"
+        )
 
     compressed_state_dict = {}
-
     for filename in tqdm(files):
         tmp_state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
         for name in tmp_state_dict:
@@ -175,7 +187,10 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             )
     apply_compressed_weight(model, compressed_state_dict, device)
 
+    if torch_dtype == torch.float16:
+        model.half()
     model.to(device)
+    model.eval()
 
     return model, tokenizer
 
