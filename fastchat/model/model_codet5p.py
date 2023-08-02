@@ -9,8 +9,6 @@ from transformers import (
     TextIteratorStreamer,
 )
 
-transformers.logging.set_verbosity_error()
-
 
 @torch.inference_mode()
 def generate_stream_codet5p(
@@ -104,3 +102,5 @@ def generate_stream_codet5p(
     # clean
     gc.collect()
     torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()

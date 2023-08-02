@@ -153,7 +153,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
 
     system_prompt = judge.prompt_template["system_prompt"]
     conv = get_conversation_template(model)
-    conv.system = system_prompt
+    conv.set_system_message(system_prompt)
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
@@ -260,7 +260,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     conv.append_message(conv.roles[1], None)
 
     if model in ["gpt-3.5-turbo", "gpt-4"]:
-        conv.system = system_prompt
+        conv.set_system_message(system_prompt)
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ["claude-v1", "claude-instant-v1"]:
         if system_prompt != "You are a helpful assistant.":
