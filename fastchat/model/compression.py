@@ -190,6 +190,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
     if torch_dtype == torch.float16:
         model.half()
     model.to(device)
+    model.eval()
 
     return model, tokenizer
 
