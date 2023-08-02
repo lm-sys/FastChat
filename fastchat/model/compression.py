@@ -11,11 +11,7 @@ from torch import Tensor
 from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
-<<<<<<< HEAD
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer,AutoModel
-=======
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, AutoModel
->>>>>>> b452b9340903c1a39db760d05057f2b5de259978
 
 
 @dataclasses.dataclass
