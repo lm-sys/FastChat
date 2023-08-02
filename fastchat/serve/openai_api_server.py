@@ -343,52 +343,55 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    gen_params = await get_gen_params(
-        request.model,
-        request.messages,
-        temperature=request.temperature,
-        top_p=request.top_p,
-        max_tokens=request.max_tokens,
-        echo=False,
-        stream=request.stream,
-        stop=request.stop,
-    )
-    error_check_ret = await check_length(
-        request, gen_params["prompt"], gen_params["max_new_tokens"]
-    )
-    if error_check_ret is not None:
-        return error_check_ret
+    async with httpx.AsyncClient() as client:
+        worker_addr = await get_worker_address(request.model, client)
 
-    if request.stream:
-        generator = chat_completion_stream_generator(
-            request.model, gen_params, request.n
+        gen_params = await get_gen_params(
+            request.model,
+            request.messages,
+            temperature=request.temperature,
+            top_p=request.top_p,
+            max_tokens=request.max_tokens,
+            echo=False,
+            stream=request.stream,
+            stop=request.stop,
         )
-        return StreamingResponse(generator, media_type="text/event-stream")
+        error_check_ret = await check_length(
+            request, gen_params["prompt"], gen_params["max_new_tokens"], worker_addr, client
+        )
+        if error_check_ret is not None:
+            return error_check_ret
 
-    choices = []
-    chat_completions = []
-    for i in range(request.n):
-        content = asyncio.create_task(generate_completion(gen_params))
-        chat_completions.append(content)
-    try:
-        all_tasks = await asyncio.gather(*chat_completions)
-    except Exception as e:
-        return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
-    usage = UsageInfo()
-    for i, content in enumerate(all_tasks):
-        if content["error_code"] != 0:
-            return create_error_response(content["error_code"], content["text"])
-        choices.append(
-            ChatCompletionResponseChoice(
-                index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
-                finish_reason=content.get("finish_reason", "stop"),
+        if request.stream:
+            generator = chat_completion_stream_generator(
+                request.model, gen_params, request.n
             )
-        )
-        if "usage" in content:
-            task_usage = UsageInfo.parse_obj(content["usage"])
-            for usage_key, usage_value in task_usage.dict().items():
-                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+            return StreamingResponse(generator, media_type="text/event-stream")
+
+        choices = []
+        chat_completions = []
+        for i in range(request.n):
+            content = asyncio.create_task(generate_completion(gen_params))
+            chat_completions.append(content)
+        try:
+            all_tasks = await asyncio.gather(*chat_completions)
+        except Exception as e:
+            return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
+        usage = UsageInfo()
+        for i, content in enumerate(all_tasks):
+            if content["error_code"] != 0:
+                return create_error_response(content["error_code"], content["text"])
+            choices.append(
+                ChatCompletionResponseChoice(
+                    index=i,
+                    message=ChatMessage(role="assistant", content=content["text"]),
+                    finish_reason=content.get("finish_reason", "stop"),
+                )
+            )
+            if "usage" in content:
+                task_usage = UsageInfo.parse_obj(content["usage"])
+                for usage_key, usage_value in task_usage.dict().items():
+                    setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
     return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
 
@@ -708,55 +711,58 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    gen_params = await get_gen_params(
-        request.model,
-        request.messages,
-        temperature=request.temperature,
-        top_p=request.top_p,
-        max_tokens=request.max_tokens,
-        echo=False,
-        stream=request.stream,
-        stop=request.stop,
-    )
+    async with httpx.AsyncClient() as client:
+        worker_addr = await get_worker_address(request.model, client)
 
-    if request.repetition_penalty is not None:
-        gen_params["repetition_penalty"] = request.repetition_penalty
-
-    error_check_ret = await check_length(
-        request, gen_params["prompt"], gen_params["max_new_tokens"]
-    )
-    if error_check_ret is not None:
-        return error_check_ret
-
-    if request.stream:
-        generator = chat_completion_stream_generator(
-            request.model, gen_params, request.n
+        gen_params = await get_gen_params(
+            request.model,
+            request.messages,
+            temperature=request.temperature,
+            top_p=request.top_p,
+            max_tokens=request.max_tokens,
+            echo=False,
+            stream=request.stream,
+            stop=request.stop,
         )
-        return StreamingResponse(generator, media_type="text/event-stream")
 
-    choices = []
-    chat_completions = []
-    for i in range(request.n):
-        content = asyncio.create_task(generate_completion(gen_params))
-        chat_completions.append(content)
-    try:
-        all_tasks = await asyncio.gather(*chat_completions)
-    except Exception as e:
-        return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
-    usage = UsageInfo()
-    for i, content in enumerate(all_tasks):
-        if content["error_code"] != 0:
-            return create_error_response(content["error_code"], content["text"])
-        choices.append(
-            ChatCompletionResponseChoice(
-                index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
-                finish_reason=content.get("finish_reason", "stop"),
+        if request.repetition_penalty is not None:
+            gen_params["repetition_penalty"] = request.repetition_penalty
+
+        error_check_ret = await check_length(
+            request, gen_params["prompt"], gen_params["max_new_tokens"], worker_addr, client
+        )
+        if error_check_ret is not None:
+            return error_check_ret
+
+        if request.stream:
+            generator = chat_completion_stream_generator(
+                request.model, gen_params, request.n
             )
-        )
-        task_usage = UsageInfo.parse_obj(content["usage"])
-        for usage_key, usage_value in task_usage.dict().items():
-            setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+            return StreamingResponse(generator, media_type="text/event-stream")
+
+        choices = []
+        chat_completions = []
+        for i in range(request.n):
+            content = asyncio.create_task(generate_completion(gen_params))
+            chat_completions.append(content)
+        try:
+            all_tasks = await asyncio.gather(*chat_completions)
+        except Exception as e:
+            return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
+        usage = UsageInfo()
+        for i, content in enumerate(all_tasks):
+            if content["error_code"] != 0:
+                return create_error_response(content["error_code"], content["text"])
+            choices.append(
+                ChatCompletionResponseChoice(
+                    index=i,
+                    message=ChatMessage(role="assistant", content=content["text"]),
+                    finish_reason=content.get("finish_reason", "stop"),
+                )
+            )
+            task_usage = UsageInfo.parse_obj(content["usage"])
+            for usage_key, usage_value in task_usage.dict().items():
+                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
     return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
 
