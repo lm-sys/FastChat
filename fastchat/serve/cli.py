@@ -208,7 +208,7 @@ def main(args):
             args.load_8bit,
             args.cpu_offloading,
             args.conv_template,
-            args.conv_system,
+            args.conv_system_msg,
             args.temperature,
             args.repetition_penalty,
             args.max_new_tokens,
@@ -240,7 +240,7 @@ if __name__ == "__main__":
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
     parser.add_argument(
-        "--conv-system", type=str, default=None, help="Conversation system role."
+        "--conv-system-msg", type=str, default=None, help="Conversation system message."
     )
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
