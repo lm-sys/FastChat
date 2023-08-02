@@ -47,6 +47,10 @@ def get_log_files(max_num_files=None):
         for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
+    for month in [8]:
+        for day in range(1, 32):
+            dates.append(f"2023-{month:02d}-{day:02d}")
+
     filenames = []
     for d in dates:
         for i in range(NUM_SERVERS):
@@ -101,6 +105,9 @@ def clean_battle_data(log_files):
     ct_leaked_identity = 0
     battles = []
     for row in data:
+        if row["models"][0] is None or row["models"][1] is None:
+            continue
+
         # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
