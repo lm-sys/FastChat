@@ -40,7 +40,9 @@ pip install --upgrade openai
 Then, interact with model vicuna:
 ```python
 import openai
-openai.api_key = "EMPTY" # Not support yet
+# to get proper authentication, make sure to use a valid key that's listed in
+# the --api-keys flag. if no flag value is provided, the `api_key` will be ignored.
+openai.api_key = "EMPTY"
 openai.api_base = "http://localhost:8000/v1"
 
 model = "vicuna-7b-v1.3"
@@ -146,5 +148,4 @@ Some features to be implemented:
 - [ ] Support more parameters like `logprobs`, `logit_bias`, `user`, `presence_penalty` and `frequency_penalty`
 - [ ] Model details (permissions, owner and create time)
 - [ ] Edits API
-- [ ] Authentication and API key
 - [ ] Rate Limitation Settings

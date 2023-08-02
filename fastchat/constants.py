@@ -1,3 +1,7 @@
+"""
+Global constants.
+"""
+
 from enum import IntEnum
 import os
 

@@ -14,9 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import copy
 from dataclasses import dataclass, field
 import json
+import math
 import pathlib
 from typing import Dict, Optional, Sequence
 
@@ -241,11 +241,24 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+
+    # Set RoPE scaling factor
+    config = transformers.AutoConfig.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    model.config.use_cache = False
+    orig_ctx_len = getattr(config, "max_position_embeddings", None)
+    if orig_ctx_len and training_args.model_max_length > orig_ctx_len:
+        scaling_factor = float(math.ceil(training_args.model_max_length / orig_ctx_len))
+        config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+    config.use_cache = False
+
+    # Load model and tokenizer
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+        model_args.model_name_or_path,
+        config=config,
+        cache_dir=training_args.cache_dir,
+    )
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
@@ -255,15 +268,18 @@ def train():
     )
     tokenizer.pad_token = tokenizer.unk_token
 
+    # Load data
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+
+    # Start trainner
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
-
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
+    model.config.use_cache = True
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
 

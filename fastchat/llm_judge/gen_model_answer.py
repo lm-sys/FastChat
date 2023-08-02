@@ -123,11 +123,16 @@ def get_model_answers(
                         output_ids = output_ids[0][len(input_ids[0]) :]
                     output = tokenizer.decode(
                         output_ids,
-                        skip_special_tokens=True,
                         spaces_between_special_tokens=False,
                     )
                     if conv.stop_str:
                         output = output[: output.find(conv.stop_str)]
+                    for special_token in tokenizer.special_tokens_map.values():
+                        if isinstance(special_token, list):
+                            for special_tok in special_token:
+                                output = output.replace(special_tok, "")
+                        else:
+                            output = output.replace(special_token, "")
                     output = output.strip()
 
                     if conv.name == "xgen" and output.startswith("Assistant:"):

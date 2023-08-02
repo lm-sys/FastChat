@@ -16,6 +16,7 @@
 
 from dataclasses import dataclass, field
 import json
+import math
 import jsonlines
 import pathlib
 from multiprocessing import Pool
@@ -90,7 +91,7 @@ def apply_prompt_template(sources, systems=None):
             assert role == conv.roles[j % 2], f"{i}"
             conv.append_message(role, sentence["value"])
         if systems and systems[i]:
-            conv.system = systems[i]
+            conv.set_system_message(systems[i])
         prompt = conv.get_prompt()
         conversations.append(prompt)
     return conversations, conv
@@ -284,13 +285,18 @@ def train():
         trust_remote_code=True,
         cache_dir=training_args.cache_dir,
     )
+    # Set RoPE scaling factor
+    orig_ctx_len = getattr(config, "max_position_embeddings", None)
+    if orig_ctx_len and training_args.model_max_length > orig_ctx_len:
+        scaling_factor = float(math.ceil(training_args.model_max_length / orig_ctx_len))
+        config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+    config.use_cache = False
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         config=config,
         trust_remote_code=True,
         cache_dir=training_args.cache_dir,
     )
-    model.config.use_cache = False
     # Tie the weights
     model.tie_weights()
 

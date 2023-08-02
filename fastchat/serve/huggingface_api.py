@@ -18,11 +18,11 @@ from fastchat.model import load_model, get_conversation_template, add_model_args
 def main(args):
     model, tokenizer = load_model(
         args.model_path,
-        args.device,
-        args.num_gpus,
-        args.max_gpu_memory,
-        args.load_8bit,
-        args.cpu_offloading,
+        device=args.device,
+        num_gpus=args.num_gpus,
+        max_gpu_memory=args.max_gpu_memory,
+        load_8bit=args.load_8bit,
+        cpu_offloading=args.cpu_offloading,
         revision=args.revision,
         debug=args.debug,
     )
@@ -38,7 +38,7 @@ def main(args):
     inputs = {k: torch.tensor(v).to(args.device) for k, v in inputs.items()}
     output_ids = model.generate(
         **inputs,
-        do_sample=True,
+        do_sample=True if args.temperature > 1e-5 else False,
         temperature=args.temperature,
         repetition_penalty=args.repetition_penalty,
         max_new_tokens=args.max_new_tokens,

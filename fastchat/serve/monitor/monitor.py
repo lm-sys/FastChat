@@ -34,7 +34,7 @@ def make_leaderboard_md(elo_results):
 - [MT-Bench](https://arxiv.org/abs/2306.05685) - a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot) - a test to measure a model's multitask accuracy on 57 tasks.
 
-💻 We use [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge) to compute MT-bench scores (single-answer grading on a scale of 10). The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MMLU scores are computed by [InstructEval](https://github.com/declare-lab/instruct-eval) and [Chain-of-Thought Hub](https://github.com/FranxYao/chain-of-thought-hub). Higher values are better for all benchmarks. Empty cells mean not available.
+💻 Code: The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge). The MMLU scores are computed by [InstructEval](https://github.com/declare-lab/instruct-eval) and [Chain-of-Thought Hub](https://github.com/FranxYao/chain-of-thought-hub). Higher values are better for all benchmarks. Empty cells mean not available.
 """
     return leaderboard_md
 

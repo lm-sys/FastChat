@@ -11,13 +11,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
-def upload_hub(model_path, hub_repo_id, component):
+def upload_hub(model_path, hub_repo_id, component, private):
     if component == "all":
         components = ["model", "tokenizer"]
     else:
         components = [component]
 
-    kwargs = {"push_to_hub": True, "repo_id": hub_repo_id}
+    kwargs = {"push_to_hub": True, "repo_id": hub_repo_id, "private": args.private}
 
     if "model" in components:
         model = AutoModelForCausalLM.from_pretrained(
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--component", type=str, choices=["all", "model", "tokenizer"], default="all"
     )
+    parser.add_argument("--private", action="store_true")
     args = parser.parse_args()
 
-    upload_hub(args.model_path, args.hub_repo_id, args.component)
+    upload_hub(args.model_path, args.hub_repo_id, args.component, args.private)
