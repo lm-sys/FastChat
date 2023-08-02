@@ -91,7 +91,7 @@ def apply_prompt_template(sources, systems=None):
             assert role == conv.roles[j % 2], f"{i}"
             conv.append_message(role, sentence["value"])
         if systems and systems[i]:
-            conv.system = systems[i]
+            conv.set_system_message(systems[i])
         prompt = conv.get_prompt()
         conversations.append(prompt)
     return conversations, conv

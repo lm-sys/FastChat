@@ -231,7 +231,8 @@ async def get_gen_params(
     conv = await get_conv(model_name)
     conv = Conversation(
         name=conv["name"],
-        system=conv["system"],
+        system_template=conv["system_template"],
+        system_message=conv["system_message"],
         roles=conv["roles"],
         messages=list(conv["messages"]),  # prevent in-place modification
         offset=conv["offset"],
@@ -248,7 +249,7 @@ async def get_gen_params(
         for message in messages:
             msg_role = message["role"]
             if msg_role == "system":
-                conv.system = message["content"]
+                conv.set_system_message(message["content"])
             elif msg_role == "user":
                 conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
