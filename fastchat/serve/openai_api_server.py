@@ -125,25 +125,22 @@ async def check_model(request) -> Optional[JSONResponse]:
     return ret
 
 
-async def check_length(request, prompt, max_tokens):
-    async with httpx.AsyncClient() as client:
-        worker_addr = await get_worker_address(request.model, client)
+async def check_length(request, prompt, max_tokens, worker_addr, client:httpx.AsyncClient):
+    response = await client.post(
+        worker_addr + "/model_details",
+        headers=headers,
+        json={"model": request.model},
+        timeout=WORKER_API_TIMEOUT,
+    )
+    context_len = response.json()["context_length"]
 
-        response = await client.post(
-            worker_addr + "/model_details",
-            headers=headers,
-            json={"model": request.model},
-            timeout=WORKER_API_TIMEOUT,
-        )
-        context_len = response.json()["context_length"]
-
-        response = await client.post(
-            worker_addr + "/count_token",
-            headers=headers,
-            json={"model": request.model, "prompt": prompt},
-            timeout=WORKER_API_TIMEOUT,
-        )
-        token_num = response.json()["count"]
+    response = await client.post(
+        worker_addr + "/count_token",
+        headers=headers,
+        json={"model": request.model, "prompt": prompt},
+        timeout=WORKER_API_TIMEOUT,
+    )
+    token_num = response.json()["count"]
 
     if token_num + max_tokens > context_len:
         return create_error_response(
