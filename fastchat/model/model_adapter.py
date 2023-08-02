@@ -579,7 +579,8 @@ class LongChatAdapter(BaseModelAdapter):
 
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
         config = AutoConfig.from_pretrained(model_path, revision=revision)
-        replace_llama_with_condense(config.rope_scaling["factor"])
+        factor = config.rope_scaling["factor"]
+        replace_llama_with_condense(factor)
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=self.use_fast_tokenizer, revision=revision
@@ -589,6 +590,9 @@ class LongChatAdapter(BaseModelAdapter):
             low_cpu_mem_usage=True,
             **from_pretrained_kwargs,
         )
+        orig_ctx_len = getattr(config, "max_position_embeddings", None)
+        if orig_ctx_len and getattr(config, "max_sequence_length", None) is None:
+            model.config.max_sequence_length = int(factor * orig_ctx_len)
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
