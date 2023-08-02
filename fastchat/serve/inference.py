@@ -1,7 +1,9 @@
 """Inference for FastChat models."""
 import abc
 import gc
+import json
 import math
+import os
 import sys
 import time
 from typing import Iterable, Optional, Dict
@@ -284,6 +286,7 @@ def chat_loop(
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
+    conv_system_msg: Optional[str],
     temperature: float,
     repetition_penalty: float,
     max_new_tokens: int,
@@ -327,6 +330,8 @@ def chat_loop(
             conv = get_conv_template(conv_template)
         else:
             conv = get_conversation_template(model_path)
+        if conv_system_msg is not None:
+            conv.set_system_message(conv_system_msg)
         return conv
 
     conv = None
@@ -343,12 +348,10 @@ def chat_loop(
         if inp == "!!exit" or not inp:
             print("exit...")
             break
-
         elif inp == "!!reset":
             print("resetting...")
             conv = new_chat()
             continue
-
         elif inp.startswith("!!save"):
             args = inp.split(" ", 1)
 
@@ -362,14 +365,9 @@ def chat_loop(
                 filename += ".json"
 
             print("saving...", filename)
-
-            import json
-
-            with open(filename, "w") as file:
-                json.dump(conv.dict(), file)
-
+            with open(filename, "w") as outfile:
+                json.dump(conv.dict(), outfile)
             continue
-
         elif inp.startswith("!!load"):
             args = inp.split(" ", 1)
 
@@ -378,8 +376,6 @@ def chat_loop(
                 continue
             else:
                 filename = args[1]
-
-            import os
 
             # Check if file exists and add .json if needed
             if not os.path.exists(filename):
@@ -392,22 +388,15 @@ def chat_loop(
                     continue
 
             print("loading...", filename)
-
-            import json
-
-            with open(filename, "r") as file:
-                new_conv = json.load(file)
+            with open(filename, "r") as infile:
+                new_conv = json.load(infile)
 
             conv = get_conv_template(new_conv["template_name"])
-            conv.system = new_conv["system"]
-            conv.roles = new_conv["roles"]
+            conv.set_system_message(new_conv["system_message"])
             conv.messages = new_conv["messages"]
-            conv.offset = new_conv["offset"]
-
             for message in conv.messages[conv.offset :]:
                 chatio.prompt_for_output(message[0])
                 chatio.print_output(message[1])
-
             continue
 
         conv.append_message(conv.roles[0], inp)
