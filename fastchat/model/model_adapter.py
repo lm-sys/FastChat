@@ -225,6 +225,7 @@ def load_model(
             )
             if debug:
                 print(model)
+            return model, tokenizer
     elif awq_config and awq_config.wbits < 16:
         assert (
             awq_config.wbits == 4
