@@ -370,7 +370,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
         if request.stream:
             generator = chat_completion_stream_generator(
-                request.model, gen_params, request.n
+                request.model, gen_params, request.n, worker_addr
             )
             return StreamingResponse(generator, media_type="text/event-stream")
 
@@ -403,7 +403,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
 
 async def chat_completion_stream_generator(
-    model_name: str, gen_params: Dict[str, Any], n: int
+    model_name: str, gen_params: Dict[str, Any], n: int, worker_addr: str
 ) -> Generator[str, Any, None]:
     """
     Event stream format:
@@ -424,7 +424,7 @@ async def chat_completion_stream_generator(
         yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
 
         previous_text = ""
-        async for content in generate_completion_stream(gen_params):
+        async for content in generate_completion_stream(gen_params, worker_addr):
             if content["error_code"] != 0:
                 yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
@@ -545,7 +545,7 @@ async def generate_completion_stream_generator(
                 stream=request.stream,
                 stop=request.stop,
             )
-            async for content in generate_completion_stream(gen_params):
+            async for content in generate_completion_stream(gen_params, worker_addr):
                 if content["error_code"] != 0:
                     yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
                     yield "data: [DONE]\n\n"
@@ -577,10 +577,9 @@ async def generate_completion_stream_generator(
     yield "data: [DONE]\n\n"
 
 
-async def generate_completion_stream(payload: Dict[str, Any]):
+async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
     controller_address = app_settings.controller_address
     async with httpx.AsyncClient() as client:
-        worker_addr = await get_worker_address(payload["model"], client)
         delimiter = b"\0"
         async with client.stream(
             "POST",
@@ -758,7 +757,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
 
         if request.stream:
             generator = chat_completion_stream_generator(
-                request.model, gen_params, request.n
+                request.model, gen_params, request.n, worker_addr
             )
             return StreamingResponse(generator, media_type="text/event-stream")
 
