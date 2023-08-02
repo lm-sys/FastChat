@@ -109,7 +109,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         )
     except TypeError:
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=False, revision=revision, trust_remote_code=True
+            model_path, use_fast=~use_fast, revision=revision, trust_remote_code=True
         )
     with init_empty_weights():
         # `trust_remote_code` should be set as `True` for both AutoConfig and AutoModel
