@@ -10,7 +10,8 @@ import os
 import re
 import time
 from typing import Optional
-
+import litellm 
+from litellm import completion
 import openai
 import anthropic
 
@@ -163,6 +164,9 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
+    elif model in litellm.model_list: # adds support for Llama2 (Replicate) and Cohere
+        messages = conv.to_openai_api_messages()
+        response = completion(model, messages, temperature=0)
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
@@ -269,6 +273,9 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
+    elif model in litellm.model_list: # adds support for Llama2 (Replicate) and Cohere
+        messages = conv.to_openai_api_messages()
+        response = completion(model, messages, temperature=0)
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
