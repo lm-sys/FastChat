@@ -36,7 +36,9 @@ FastChat is an open platform for training, serving, and evaluating large languag
 ### Method 1: With pip
 
 ```bash
-pip3 install fschat
+pip3 install fschat # act as a controller and openai api server by default, no torch is needed.
+pip3 install fschat[model_worker] # add support for the model workers, torch is needed.
+pip3 install fschat[gradio] # if use the webui by gradio
 ```
 
 ### Method 2: From source
