@@ -894,9 +894,9 @@ register_conv_template(
         roles=("User", "Assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep_style=SeparatorStyle.ADD_COLON_SPACE_SINGLE,
         sep="<|end_of_turn|>\n",
-        stop_token_ids=[32000, 32001], # "<|end_of_turn|>"
+        stop_token_ids=[32000, 32001],  # "<|end_of_turn|>"
         stop_str="User",
     )
 )
