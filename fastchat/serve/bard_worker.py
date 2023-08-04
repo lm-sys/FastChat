@@ -28,8 +28,8 @@ class Message(BaseModel):
 
 class Response(BaseModel):
     content: str
-    factualityQueries: Optional[List]
-    textQuery: Optional[Union[str, List]]
+    factualityQueries: Optional[List] = None
+    textQuery: Optional[Union[str, List]] = None
     choices: List[dict]
     state: ConversationState
 

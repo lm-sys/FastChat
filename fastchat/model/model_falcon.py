@@ -136,3 +136,5 @@ def generate_stream_falcon(
     # clean
     gc.collect()
     torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()

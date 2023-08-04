@@ -1,7 +1,9 @@
 """Inference for FastChat models."""
 import abc
 import gc
+import json
 import math
+import os
 import sys
 import time
 from typing import Iterable, Optional, Dict
@@ -34,6 +36,7 @@ from fastchat.model.model_adapter import (
     get_generate_stream_function,
 )
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.awq import AWQConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
@@ -253,6 +256,8 @@ def generate_stream(
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()
 
 
 class ChatIO(abc.ABC):
@@ -268,6 +273,10 @@ class ChatIO(abc.ABC):
     def stream_output(self, output_stream):
         """Stream output."""
 
+    @abc.abstractmethod
+    def print_output(self, text: str):
+        """Print output."""
+
 
 def chat_loop(
     model_path: str,
@@ -277,27 +286,30 @@ def chat_loop(
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
+    conv_system_msg: Optional[str],
     temperature: float,
     repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
-    gptq_config: GptqConfig,
-    revision: str,
-    judge_sent_end: bool,
-    debug: bool,
+    gptq_config: Optional[GptqConfig] = None,
+    awq_config: Optional[AWQConfig] = None,
+    revision: str = "main",
+    judge_sent_end: bool = True,
+    debug: bool = True,
     history: bool = True,
 ):
     # Model
     model, tokenizer = load_model(
         model_path,
-        device,
-        num_gpus,
-        max_gpu_memory,
-        load_8bit,
-        cpu_offloading,
-        gptq_config,
-        revision,
-        debug,
+        device=device,
+        num_gpus=num_gpus,
+        max_gpu_memory=max_gpu_memory,
+        load_8bit=load_8bit,
+        cpu_offloading=cpu_offloading,
+        gptq_config=gptq_config,
+        awq_config=awq_config,
+        revision=revision,
+        debug=debug,
     )
     generate_stream_func = get_generate_stream_function(model, model_path)
 
@@ -318,6 +330,8 @@ def chat_loop(
             conv = get_conv_template(conv_template)
         else:
             conv = get_conversation_template(model_path)
+        if conv_system_msg is not None:
+            conv.set_system_message(conv_system_msg)
         return conv
 
     conv = None
@@ -334,10 +348,55 @@ def chat_loop(
         if inp == "!!exit" or not inp:
             print("exit...")
             break
-
-        if inp == "!!reset":
+        elif inp == "!!reset":
             print("resetting...")
             conv = new_chat()
+            continue
+        elif inp.startswith("!!save"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!save <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            if not filename.endswith(".json"):
+                filename += ".json"
+
+            print("saving...", filename)
+            with open(filename, "w") as outfile:
+                json.dump(conv.dict(), outfile)
+            continue
+        elif inp.startswith("!!load"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!load <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            # Check if file exists and add .json if needed
+            if not os.path.exists(filename):
+                if (not filename.endswith(".json")) and os.path.exists(
+                    filename + ".json"
+                ):
+                    filename += ".json"
+                else:
+                    print("file not found:", filename)
+                    continue
+
+            print("loading...", filename)
+            with open(filename, "r") as infile:
+                new_conv = json.load(infile)
+
+            conv = get_conv_template(new_conv["template_name"])
+            conv.set_system_message(new_conv["system_message"])
+            conv.messages = new_conv["messages"]
+            for message in conv.messages[conv.offset :]:
+                chatio.prompt_for_output(message[0])
+                chatio.print_output(message[1])
             continue
 
         conv.append_message(conv.roles[0], inp)

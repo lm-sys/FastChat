@@ -12,7 +12,6 @@ from typing import AsyncGenerator, Generator
 import warnings
 
 import requests
-import torch
 
 from fastchat.constants import LOGDIR
 
@@ -122,6 +121,8 @@ def disable_torch_init():
 
 def get_gpu_memory(max_gpus=None):
     """Get available memory for each GPU."""
+    import torch
+
     gpu_memory = []
     num_gpus = (
         torch.cuda.device_count()
@@ -161,6 +162,8 @@ def clean_flant5_ckpt(ckpt_path):
     Flan-t5 trained with HF+FSDP saves corrupted  weights for shared embeddings,
     Use this function to make sure it can be correctly loaded.
     """
+    import torch
+
     index_file = os.path.join(ckpt_path, "pytorch_model.bin.index.json")
     index_json = json.load(open(index_file, "r"))
 
@@ -287,8 +290,7 @@ SEQUENCE_LENGTH_KEYS = [
 def get_context_length(config):
     """Get the context length of a model from a huggingface model config."""
     for key in SEQUENCE_LENGTH_KEYS:
-        if hasattr(config, key):
-            val = getattr(config, key)
-            if val is not None:
-                return val
+        val = getattr(config, key, None)
+        if val is not None:
+            return val
     return 2048

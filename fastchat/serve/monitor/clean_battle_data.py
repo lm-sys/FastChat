@@ -13,7 +13,7 @@ import time
 
 from tqdm import tqdm
 
-from fastchat.serve.monitor.basic_stats import get_log_files
+from fastchat.serve.monitor.basic_stats import get_log_files, NUM_SERVERS
 from fastchat.utils import detect_language
 
 
@@ -47,10 +47,13 @@ def get_log_files(max_num_files=None):
         for day in range(1, 32):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 12
+    for month in [8]:
+        for day in range(1, 32):
+            dates.append(f"2023-{month:02d}-{day:02d}")
+
     filenames = []
     for d in dates:
-        for i in range(num_servers):
+        for i in range(NUM_SERVERS):
             name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)
@@ -102,6 +105,9 @@ def clean_battle_data(log_files):
     ct_leaked_identity = 0
     battles = []
     for row in data:
+        if row["models"][0] is None or row["models"][1] is None:
+            continue
+
         # Resolve model names
         models_public = [remove_html(row["models"][0]), remove_html(row["models"][1])]
         if "model_name" in row["states"][0]:
@@ -156,7 +162,12 @@ def clean_battle_data(log_files):
             continue
 
         # Replace bard with palm
-        models = [m.replace("bard", "palm-2") for m in models]
+        models = [
+            m.replace("bard", "palm-2")
+            .replace("claude-v1", "claude-1")
+            .replace("claude-instant-v1", "claude-instant-1")
+            for m in models
+        ]
 
         question_id = row["states"][0]["conv_id"]
         conversation_a = to_openai_format(
