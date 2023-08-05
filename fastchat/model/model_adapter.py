@@ -1262,6 +1262,7 @@ class OpenOrcaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("open-orca")
 
+
 class QwenChatAdapter(BaseModelAdapter):
     """The model adapter for Qwen/Qwen-7B-Chat
     To run this model, you need to ensure additional flash attention installation:
