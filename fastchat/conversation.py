@@ -896,6 +896,7 @@ register_conv_template(
     )
 )
 
+
 # Qwen-chat default template
 # source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
 register_conv_template(
