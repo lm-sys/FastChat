@@ -873,6 +873,30 @@ register_conv_template(
     )
 )
 
+# OpenOrcaxOpenChat-Preview2-13B template
+register_conv_template(
+    Conversation(
+        name="open-orca",
+        system_template="{system_message}",
+        system_message="You are a helpful assistant. Please answer truthfully and write out your "
+        "thinking step by step to be sure you get the right answer. If you make a mistake or encounter "
+        "an error in your thinking, say so out loud and attempt to correct it. If you don't know or "
+        "aren't sure about something, say so clearly. You will act as a professional logician, mathematician, "
+        "and physicist. You will also act as the most appropriate type of expert to answer any particular "
+        "question or solve the relevant problem; state which expert type your are, if so. Also think of "
+        "any particular named expert that would be ideal to answer the relevant question or solve the "
+        "relevant problem; name and act as them, if appropriate.",
+        roles=("User", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SPACE_SINGLE,
+        sep="<|end_of_turn|>\n",
+        stop_token_ids=[32000, 32001],  # "<|end_of_turn|>"
+        stop_str="User",
+    )
+)
+
+
 if __name__ == "__main__":
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
