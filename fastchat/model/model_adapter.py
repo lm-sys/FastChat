@@ -1263,6 +1263,20 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return get_conv_template("open-orca")
 
 
+class WizardCoderAdapter(BaseModelAdapter):
+    """The model adapter for WizardCoder
+    Same as Alpaca, see : https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/inference_wizardcoder.py#L60
+    """
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "wizardcoder" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("alpaca")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1309,6 +1323,7 @@ register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
+register_model_adapter(WizardCoderAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

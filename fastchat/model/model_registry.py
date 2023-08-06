@@ -81,6 +81,12 @@ register_model_info(
     "an instruction-following LLM using evol-instruct by Microsoft",
 )
 register_model_info(
+    ["wizardcoder-15b-v1.0"],
+    "WizardLM",
+    "https://github.com/nlpxucan/WizardLM/tree/main/WizardCoder",
+    "Empowering Code Large Language Models with Evol-Instruct",
+)
+register_model_info(
     ["mpt-7b-chat", "mpt-30b-chat"],
     "MPT-Chat",
     "https://www.mosaicml.com/blog/mpt-30b",
