@@ -303,6 +303,11 @@ async def worker_api_get_status(request: Request):
     return controller.worker_api_get_status()
 
 
+@app.get("/test_connection")
+async def worker_api_get_status(request: Request):
+    return "success"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")

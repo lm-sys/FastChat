@@ -130,7 +130,7 @@ class BaseModelWorker:
                 )
                 exist = ret.json()["exist"]
                 break
-            except requests.exceptions.RequestException as e:
+            except (requests.exceptions.RequestException, KeyError) as e:
                 logger.error(f"heart beat error: {e}")
             time.sleep(5)
 

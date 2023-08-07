@@ -6,7 +6,7 @@ import os
 from pytz import timezone
 import time
 
-import pandas as pd
+import pandas as pd  # pandas>=2.0.3
 import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
