@@ -1274,7 +1274,7 @@ class WizardCoderAdapter(BaseModelAdapter):
         return "wizardcoder" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("alpaca")
+        return get_conv_template("wizardcoder")
 
 
 # Note: the registration order matters.
