@@ -397,7 +397,8 @@ def chat_loop(
             else:
                 filename = args[1]
 
-            if not filename.endswith(".json"):
+            # Add .json if extension not present
+            if not "." in filename:
                 filename += ".json"
 
             print("saving...", filename)
