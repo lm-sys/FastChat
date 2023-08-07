@@ -22,7 +22,7 @@ if __name__ == "__main__":
     random.shuffle(convs)
 
     for number in args.number:
-        new_convs = convs[: number]
+        new_convs = convs[:number]
 
         output = args.input.replace(".json", f"_{number//K}k.json")
         with open(output, "w") as fout:

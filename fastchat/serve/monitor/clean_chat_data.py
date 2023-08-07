@@ -18,7 +18,9 @@ from fastchat.serve.monitor.clean_battle_data import to_openai_format
 from fastchat.utils import detect_language
 
 
-NETWORK_ERROR_MSG = "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.".lower()
+NETWORK_ERROR_MSG = (
+    "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.".lower()
+)
 
 
 def get_log_files(max_num_files=None):
@@ -75,9 +77,7 @@ def clean_chat_data(log_files):
             continue
 
         state = row["state"]
-        conversation = to_openai_format(
-            state["messages"][state["offset"]:]
-        )
+        conversation = to_openai_format(state["messages"][state["offset"] :])
         model = row["model"]
         if not isinstance(model, str):
             ct_invalid += 1
@@ -124,7 +124,9 @@ def clean_chat_data(log_files):
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     print(f"#raw: {len(raw_data)}, #chat: {len(chats)}")
-    print(f"#invalid_conv_id: {ct_invalid_conv_id}, #network_error: {ct_network_error}, #invalid: {ct_invalid}")
+    print(
+        f"#invalid_conv_id: {ct_invalid_conv_id}, #network_error: {ct_network_error}, #invalid: {ct_invalid}"
+    )
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
 
