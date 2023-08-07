@@ -8,6 +8,8 @@ python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
 Other commands:
 - Type "!!exit" or an empty line to exit.
 - Type "!!reset" to start a new conversation.
+- Type "!!remove" to remove the last prompt.
+- Type "!!regen" to regenerate the last message.
 - Type "!!save <filename>" to save the conversation history to a json file.
 - Type "!!load <filename>" to load a conversation history from a json file.
 """
