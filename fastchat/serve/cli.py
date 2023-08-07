@@ -78,7 +78,8 @@ class RichChatIO(ChatIO):
     def __init__(self, multiline: bool = False, mouse: bool = False):
         self._prompt_session = PromptSession(history=InMemoryHistory())
         self._completer = WordCompleter(
-            words=["!!exit", "!!reset", "!!save", "!!load"], pattern=re.compile("$")
+            words=["!!exit", "!!reset", "!!remove", "!!regen", "!!save", "!!load"],
+            pattern=re.compile("$"),
         )
         self._console = Console()
         self._multiline = multiline

@@ -334,6 +334,11 @@ def chat_loop(
             conv.set_system_message(conv_system_msg)
         return conv
 
+    def reload_conv(conv):
+        for message in conv.messages[conv.offset :]:
+            chatio.prompt_for_output(message[0])
+            chatio.print_output(message[1])
+
     conv = None
 
     while True:
@@ -352,6 +357,37 @@ def chat_loop(
             print("resetting...")
             conv = new_chat()
             continue
+        elif inp == "!!remove":
+            print("removing last message...")
+            if len(conv.messages) > conv.offset:
+                # Assistant
+                if conv.messages[-1][0] == conv.roles[1]:
+                    conv.messages.pop()
+                # User
+                if conv.messages[-1][0] == conv.roles[0]:
+                    conv.messages.pop()
+                reload_conv(conv)
+            else:
+                print("No messages to remove.")
+            continue
+        elif inp == "!!regen":
+            print("regenerating last message...")
+            if len(conv.messages) > conv.offset:
+                # Assistant
+                if conv.messages[-1][0] == conv.roles[1]:
+                    conv.messages.pop()
+                # User
+                if conv.messages[-1][0] == conv.roles[0]:
+                    reload_conv(conv)
+                    # Set inp to previous message
+                    inp = conv.messages.pop()[1]
+                else:
+                    # Shouldn't happen in normal circumstances
+                    print("No user message to regenerate from.")
+                    continue
+            else:
+                print("No messages to regenerate.")
+                continue
         elif inp.startswith("!!save"):
             args = inp.split(" ", 1)
 
@@ -394,9 +430,7 @@ def chat_loop(
             conv = get_conv_template(new_conv["template_name"])
             conv.set_system_message(new_conv["system_message"])
             conv.messages = new_conv["messages"]
-            for message in conv.messages[conv.offset :]:
-                chatio.prompt_for_output(message[0])
-                chatio.print_output(message[1])
+            reload_conv(conv)
             continue
 
         conv.append_message(conv.roles[0], inp)
