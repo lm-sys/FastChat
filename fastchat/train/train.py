@@ -106,6 +106,7 @@ def preprocess(
         padding="max_length",
         max_length=tokenizer.model_max_length,
         truncation=True,
+        add_special_tokens=False,
     ).input_ids
     targets = input_ids.clone()
 
@@ -117,19 +118,17 @@ def preprocess(
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
         turns = conversation.split(conv.sep2)
-        cur_len = 1
-        target[:cur_len] = IGNORE_TOKEN_ID
+        cur_len = 0
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            turn_len = len(tokenizer(turn).input_ids)
+            turn_len = len(tokenizer(turn, add_special_tokens=False).input_ids) + 1  # 1 is </s> token at the end
 
             parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
-            instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+            instruction_len = len(tokenizer(parts[0], add_special_tokens=False).input_ids) - 1
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
