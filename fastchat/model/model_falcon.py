@@ -8,8 +8,6 @@ from transformers import TextIteratorStreamer, GenerationConfig
 
 from fastchat.utils import is_partial_stop
 
-transformers.logging.set_verbosity_error()
-
 
 @torch.inference_mode()
 def generate_stream_falcon(
