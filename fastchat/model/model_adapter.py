@@ -1264,9 +1264,7 @@ class OpenOrcaAdapter(BaseModelAdapter):
 
 
 class WizardCoderAdapter(BaseModelAdapter):
-    """The model adapter for WizardCoder
-    Same as Alpaca, see : https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/inference_wizardcoder.py#L60
-    """
+    """The model adapter for WizardCoder"""
 
     use_fast_tokenizer = False
 
@@ -1274,7 +1272,9 @@ class WizardCoderAdapter(BaseModelAdapter):
         return "wizardcoder" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("wizardcoder")
+        # Same as Alpaca, see : 
+        # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/inference_wizardcoder.py#L60
+        return get_conv_template("alpaca")
 
 
 # Note: the registration order matters.
