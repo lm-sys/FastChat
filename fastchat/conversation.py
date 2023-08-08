@@ -840,7 +840,6 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
-        sep2="",
         stop_token_ids=[],
     )
 )
