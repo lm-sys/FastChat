@@ -1,26 +1,14 @@
 from typing import List, Optional, Tuple
-import logging
+import warnings
 
 import torch
 from torch import nn
-import warnings
 import transformers
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
 
-try:
-    from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func
-    from flash_attn.bert_padding import unpad_input, pad_input
-except Exception:
-    raise ModuleNotFoundError(
-        "Please install FlashAttention first, e.g., with pip install flash-attn --no-build-isolation, Learn more at https://github.com/Dao-AILab/flash-attention#installation-and-features"
-    )
-
-try:
-    from einops import rearrange
-except Exception:
-    raise ModuleNotFoundError(
-        "Please install einops first, e.g., with pip install einops"
-    )
+from einops import rearrange
+from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func
+from flash_attn.bert_padding import unpad_input, pad_input
 
 
 # ADAPTED from https://github.com/allenai/open-instruct/blob/main/open_instruct/llama_flash_attn_monkey_patch.py
@@ -135,7 +123,7 @@ def _prepare_decoder_attention_mask(
 def replace_llama_attn_with_flash_attn():
     cuda_major, cuda_minor = torch.cuda.get_device_capability()
     if cuda_major < 8:
-        logging.warning(
+        warnings.warn(
             "Flash attention is only supported on A100 or H100 GPU during training due to head dim > 64 backward."
             "ref: https://github.com/HazyResearch/flash-attention/issues/190#issuecomment-1523359593"
         )
