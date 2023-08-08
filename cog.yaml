@@ -1,0 +1,33 @@
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+  cuda: "11.8"
+
+  # python version in the form '3.8' or '3.8.12'
+  python_version: "3.8.16"
+  
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "numpy==1.24.2"
+    - "torch==2.0.1"
+    - "accelerate==0.20.3"
+    - "peft==0.2.0"
+    - "sentencepiece==0.1.97"
+    - "tensorizer==1.0.1"
+    - "jinja2==3.1.2"
+    - "deepspeed==0.8.3"
+    - "transformers>=4.0.0"
+
+  run:
+  # speed up downloading weights with gcloud storage cp
+  - "echo 'deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main' | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list"
+  - "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -"
+  - "apt-get update && apt-get install google-cloud-cli"
+    
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
