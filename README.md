@@ -36,9 +36,7 @@ FastChat is an open platform for training, serving, and evaluating large languag
 ### Method 1: With pip
 
 ```bash
-pip3 install fschat # act as a controller and openai api server by default, no torch is needed.
-pip3 install fschat[model_worker] # add support for the model workers, torch is needed.
-pip3 install fschat[gradio] # if use the webui by gradio
+pip3 install fschat
 ```
 
 ### Method 2: From source
@@ -57,7 +55,7 @@ brew install rust cmake
 2. Install Package
 ```bash
 pip3 install --upgrade pip  # enable PEP 660 support
-pip3 install -e .
+pip3 install -e ".[model_worker, webui]"
 ```
 
 ## Model Weights
