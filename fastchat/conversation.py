@@ -830,7 +830,7 @@ register_conv_template(
 
 # Baichuan-13B-Chat template
 register_conv_template(
-    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/19ef51ba5bad8935b03acd20ff04a269210983bc/modeling_baichuan.py#L555
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/19ef51ba5bad8935b03acd20ff04a269210983bc/modeling_baichuan.py#L555
     # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
     # https://github.com/baichuan-inc/Baichuan-13B/issues/25
     Conversation(
