@@ -122,13 +122,17 @@ def preprocess(
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            turn_len = len(tokenizer(turn, add_special_tokens=False).input_ids) + 1  # 1 is </s> token at the end
+            turn_len = (
+                len(tokenizer(turn, add_special_tokens=False).input_ids) + 1
+            )  # 1 is </s> token at the end
 
             parts = turn.split(sep)
             if len(parts) != 2:
                 break
             parts[0] += sep
-            instruction_len = len(tokenizer(parts[0], add_special_tokens=False).input_ids) - 1
+            instruction_len = (
+                len(tokenizer(parts[0], add_special_tokens=False).input_ids) - 1
+            )
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
