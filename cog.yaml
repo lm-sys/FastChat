@@ -21,6 +21,11 @@ build:
     - "jinja2==3.1.2"
     - "deepspeed==0.8.3"
     - "transformers>=4.0.0"
+    - "prompt_toolkit==3.0.39"
+    - "markdown-it-py==3.0.0"
+    - "mdurl==0.1.2"
+    - "pygments-2.16.1"
+    - "rich==13.5.2"
 
   run:
   # speed up downloading weights with gcloud storage cp
