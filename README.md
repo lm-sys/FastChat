@@ -55,7 +55,7 @@ brew install rust cmake
 2. Install Package
 ```bash
 pip3 install --upgrade pip  # enable PEP 660 support
-pip3 install -e .
+pip3 install -e ".[model_worker, webui]"
 ```
 
 ## Model Weights

@@ -897,6 +897,28 @@ register_conv_template(
 )
 
 
+# Qwen-chat default template
+# source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
+register_conv_template(
+    Conversation(
+        name="qwen-7b-chat",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are a helpful assistant.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[
+            151643,
+            151644,
+            151645,
+        ],  # "<|endoftext|>", "<|im_start|>", "<|im_end|>"
+        stop_str="<|endoftext|>",
+    )
+)
+
+
 if __name__ == "__main__":
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
