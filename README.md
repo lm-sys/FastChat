@@ -65,6 +65,8 @@ pip3 install -e .
 You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
 See more command options and how to handle out-of-memory in the "Inference with Command Line Interface" section below.
 
+**NOTE: `transformers>=4.31` is required for 16K versions.**
+
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
 | 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5`  | [lmsys/vicuna-7b-v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5)   |
@@ -76,7 +78,7 @@ See more command options and how to handle out-of-memory in the "Inference with 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### LongChat
-We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE.md).
+We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |

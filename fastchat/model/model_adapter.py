@@ -1239,6 +1239,30 @@ class CuteGPTAdapter(BaseModelAdapter):
         return get_conv_template("cutegpt")
 
 
+class OpenOrcaAdapter(BaseModelAdapter):
+    "Model adapater for Open-Orca models (e.g., Open-Orca/OpenOrcaxOpenChat-Preview2-13B)" ""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "openorca" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        ).eval()
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("open-orca")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1284,6 +1308,7 @@ register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
 register_model_adapter(CuteGPTAdapter)
+register_model_adapter(OpenOrcaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
