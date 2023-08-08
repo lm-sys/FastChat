@@ -62,12 +62,11 @@ class BaseModelAdapter:
                 model_path,
                 use_fast=self.use_fast_tokenizer,
                 revision=revision,
+                trust_remote_code=True,
             )
         except TypeError:
             tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=False,
-                revision=revision,
+                model_path, use_fast=False, revision=revision, trust_remote_code=True
             )
         try:
             model = AutoModelForCausalLM.from_pretrained(
