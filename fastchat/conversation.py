@@ -932,7 +932,7 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="###",
         sep2="",
-        stop_str=["###", "</s>", "[UNK]"]
+        stop_str=["###", "</s>", "[UNK]"],
     )
 )
 
