@@ -289,8 +289,10 @@ SEQUENCE_LENGTH_KEYS = [
 
 def get_context_length(config):
     """Get the context length of a model from a huggingface model config."""
+    rope_scaling = getattr(config, "rope_scaling", {})
+    rope_factor = rope_scaling.get("factor", 1)
     for key in SEQUENCE_LENGTH_KEYS:
         val = getattr(config, key, None)
         if val is not None:
-            return val
+            return int(rope_factor * val)
     return 2048
