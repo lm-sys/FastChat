@@ -1271,7 +1271,7 @@ class WizardCoderAdapter(BaseModelAdapter):
         return "wizardcoder" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        # Same as Alpaca, see : 
+        # Same as Alpaca, see :
         # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/inference_wizardcoder.py#L60
         return get_conv_template("alpaca")
 
