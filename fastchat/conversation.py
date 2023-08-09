@@ -830,17 +830,17 @@ register_conv_template(
 
 # Baichuan-13B-Chat template
 register_conv_template(
-    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/19ef51ba5bad8935b03acd20ff04a269210983bc/modeling_baichuan.py#L555
     # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
+    # https://github.com/baichuan-inc/Baichuan-13B/issues/25
     Conversation(
         name="baichuan-chat",
-        roles=(" <reserved_102> ", " <reserved_103> "),
+        roles=("<reserved_102>", "<reserved_103>"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
-        sep2="</s>",
-        stop_token_ids=[2, 195],
+        stop_token_ids=[],
     )
 )
 
