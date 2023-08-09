@@ -919,6 +919,24 @@ register_conv_template(
 )
 
 
+# AquilaChat default template
+# source: https://github.com/FlagAI-Open/FlagAI/blob/master/examples/Aquila/Aquila-chat/cyg_conversation.py
+register_conv_template(
+    Conversation(
+        name="aquila-chat",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="###",
+        sep2="",
+        stop_str=["###", "</s>", "[UNK]"],
+    )
+)
+
+
 if __name__ == "__main__":
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
