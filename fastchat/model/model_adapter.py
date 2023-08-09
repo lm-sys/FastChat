@@ -1310,7 +1310,6 @@ class QwenChatAdapter(BaseModelAdapter):
             config=config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            fp16=True,
             **from_pretrained_kwargs,
         ).eval()
         if hasattr(model.config, "use_dynamic_ntk") and model.config.use_dynamic_ntk:
