@@ -1333,17 +1333,10 @@ class BGEAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        # config = AutoConfig.from_pretrained(
-        #     model_path,
-        #     trust_remote_code=True,
-        # )
-        # config.use_flash_attn = False
-        # config.fp16 = True
         model = AutoModel.from_pretrained(
             model_path,
             **from_pretrained_kwargs,
         )
-
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, revision=revision
         )
