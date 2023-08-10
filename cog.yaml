@@ -24,7 +24,7 @@ build:
     - "prompt_toolkit==3.0.39"
     - "markdown-it-py==3.0.0"
     - "mdurl==0.1.2"
-    - "pygments-2.16.1"
+    - "pygments==2.16.1"
     - "rich==13.5.2"
 
   run:
