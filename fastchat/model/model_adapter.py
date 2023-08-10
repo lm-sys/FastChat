@@ -1298,19 +1298,20 @@ class QwenChatAdapter(BaseModelAdapter):
         return "qwen" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        from transformers.generation import GenerationConfig
-
         revision = from_pretrained_kwargs.get("revision", "main")
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+        )
+        config.use_flash_attn = False
+        config.fp16 = True
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
+            config=config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            fp16=True,
             **from_pretrained_kwargs,
         ).eval()
-        model.generation_config = GenerationConfig.from_pretrained(
-            model_path, trust_remote_code=True
-        )
         if hasattr(model.config, "use_dynamic_ntk") and model.config.use_dynamic_ntk:
             model.config.max_sequence_length = 16384
         tokenizer = AutoTokenizer.from_pretrained(
