@@ -112,9 +112,11 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
 ```
 
 #### Multiple GPUs
-You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
+You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine. 
+It says that when you do not specify the argument max_gpu_memory, the kwargs['device_map'] will be set to sequential, instead of the wanted auto. So you can try adding the argument, Use `--max-gpu-memory "10GiB"`. when you set this argument, maybe you can solve the problem of 'out of memory' caused by loading large amounts of data.
+`Tips`: Remember to set the --max-gpu-memory parameter, because when I use five 32G graphics cards to load 13B-16K and 33B models, it will always give priority to loading the front graphics card memory to full, which leads to the Sometimes, an error will always be reported, and then out of memory will be displayed. When I added this parameter and set the memory to 20Gib, it was finally normal. Of course, you need to set a reasonable size according to the actual memory of your own single graphics card.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory "10GiB"
 ```
 
 #### CPU Only
