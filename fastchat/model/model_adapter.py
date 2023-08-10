@@ -1262,6 +1262,20 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return get_conv_template("open-orca")
 
 
+class WizardCoderAdapter(BaseModelAdapter):
+    """The model adapter for WizardCoder"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "wizardcoder" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        # Same as Alpaca, see :
+        # https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/inference_wizardcoder.py#L60
+        return get_conv_template("alpaca")
+
+
 class QwenChatAdapter(BaseModelAdapter):
     """The model adapter for Qwen/Qwen-7B-Chat
     To run this model, you need to ensure additional flash attention installation:
@@ -1284,19 +1298,20 @@ class QwenChatAdapter(BaseModelAdapter):
         return "qwen" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        from transformers.generation import GenerationConfig
-
         revision = from_pretrained_kwargs.get("revision", "main")
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+        )
+        config.use_flash_attn = False
+        config.fp16 = True
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
+            config=config,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            fp16=True,
             **from_pretrained_kwargs,
         ).eval()
-        model.generation_config = GenerationConfig.from_pretrained(
-            model_path, trust_remote_code=True
-        )
         if hasattr(model.config, "use_dynamic_ntk") and model.config.use_dynamic_ntk:
             model.config.max_sequence_length = 16384
         tokenizer = AutoTokenizer.from_pretrained(
@@ -1306,6 +1321,30 @@ class QwenChatAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("qwen-7b-chat")
+
+
+class AquilaChatAdapter(BaseModelAdapter):
+    """The model adapter for BAAI/AquilaChat-7B"""
+
+    def match(self, model_path: str):
+        return "aquila" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        model = model.eval()
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("aquila-chat")
 
 
 # Note: the registration order matters.
@@ -1354,7 +1393,9 @@ register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
+register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
+register_model_adapter(AquilaChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
