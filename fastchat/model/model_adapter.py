@@ -1298,6 +1298,8 @@ class QwenChatAdapter(BaseModelAdapter):
         return "qwen" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from transformers.generation import GenerationConfig
+
         revision = from_pretrained_kwargs.get("revision", "main")
         config = AutoConfig.from_pretrained(
             model_path,
@@ -1305,6 +1307,9 @@ class QwenChatAdapter(BaseModelAdapter):
         )
         config.use_flash_attn = False
         config.fp16 = True
+        generation_config = GenerationConfig.from_pretrained(
+            model_path, trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
@@ -1317,6 +1322,13 @@ class QwenChatAdapter(BaseModelAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, revision=revision
         )
+        tokenizer.eos_token_id = config.eos_token_id
+        tokenizer.bos_token_id = config.bos_token_id
+        tokenizer.pad_token_id = generation_config.pad_token_id
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.bos_token_id = tokenizer.bos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
