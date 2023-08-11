@@ -26,6 +26,7 @@ build:
     - "mdurl==0.1.2"
     - "pygments==2.16.1"
     - "rich==13.5.2"
+    - "safetensors==0.3.2"
 
   run:
   # speed up downloading weights with gcloud storage cp
