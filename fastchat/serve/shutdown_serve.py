@@ -5,9 +5,11 @@ options: "all","controller","model_worker","openai_api_server"， `all` means to
 """
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 import subprocess
 import argparse
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--down", choices=["all", "controller", "model_worker", "openai_api_server"]
