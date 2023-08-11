@@ -1,6 +1,6 @@
 """
 Usage：
-python shutdown_serve.py --serve all
+python shutdown_serve.py --down all
 options: "all","controller","model_worker","openai_api_server"， `all` means to stop all related servers 
 """
 import sys
@@ -21,4 +21,4 @@ else:
     shell_script = base_shell.format(serve)
 print(f"execute shell cmd: {shell_script}")
 subprocess.run(shell_script, shell=True, check=True)
-print(f"{args.serve} has been shutdown!")
+print(f"{args.down} has been shutdown!")
