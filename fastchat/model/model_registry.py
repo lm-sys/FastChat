@@ -56,19 +56,19 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["llama-2-13b-chat", "llama-2-7b-chat", "llama-2-34b-chat", "llama-2-70b-chat"],
+    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
     "Llama 2",
     "https://ai.meta.com/llama/",
     "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
     [
+        "vicuna-33b",
+        "vicuna-33b-v1.3",
         "vicuna-13b",
         "vicuna-13b-v1.3",
         "vicuna-7b",
         "vicuna-7b-v1.3",
-        "vicuna-33b",
-        "vicuna-33b-v1.3",
     ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
