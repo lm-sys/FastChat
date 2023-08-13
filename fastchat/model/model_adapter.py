@@ -1335,6 +1335,29 @@ class QwenChatAdapter(BaseModelAdapter):
         return get_conv_template("qwen-7b-chat")
 
 
+class BGEAdapter(BaseModelAdapter):
+    """The model adapter for BGE"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "bge" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModel.from_pretrained(
+            model_path,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("one_shot")
+
+
 class AquilaChatAdapter(BaseModelAdapter):
     """The model adapter for BAAI/AquilaChat-7B"""
 
@@ -1408,6 +1431,7 @@ register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
+register_model_adapter(BGEAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
