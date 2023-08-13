@@ -3,12 +3,10 @@ Usage：
 python shutdown_serve.py --down all
 options: "all","controller","model_worker","openai_api_server"， `all` means to stop all related servers 
 """
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-import subprocess
 import argparse
+import os
+import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

@@ -365,7 +365,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--max-gpu-memory",
         type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'",
+        help="The maximum memory per GPU for storing model weights. Use a string like '13Gib'",
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"

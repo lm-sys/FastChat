@@ -78,7 +78,7 @@ See more command options and how to handle out-of-memory in the "Inference with 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### LongChat
-We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
+We release [LongChat](https://lmsys.org/blog/2023-06-29-longchat/) models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
@@ -113,10 +113,17 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine. 
-It says that when you do not specify the argument max_gpu_memory, the kwargs['device_map'] will be set to sequential, instead of the wanted auto. So you can try adding the argument, Use `--max-gpu-memory "10GiB"`. when you set this argument, maybe you can solve the problem of 'out of memory' caused by loading large amounts of data.
-`Tips`: Remember to set the --max-gpu-memory parameter, because when I use five 32G graphics cards to load 13B-16K and 33B models, it will always give priority to loading the front graphics card memory to full, which leads to the Sometimes, an error will always be reported, and then out of memory will be displayed. When I added this parameter and set the memory to 20Gib, it was finally normal. Of course, you need to set a reasonable size according to the actual memory of your own single graphics card.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory "10GiB"
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
+```
+
+Tips:
+Sometimes the "auto" device mapping strategy in huggingface/transformers does not perfectly balance the memory allocation across multiple GPUs.
+You can use `--max-gpu-memory` to specify the maximum memory per GPU for storing model weights.
+This allows it to allocate more meory for activations, so you can use longer context lengths or larger batch sizes. For example,
+
+```
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory 8GiB
 ```
 
 #### CPU Only
