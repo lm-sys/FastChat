@@ -277,7 +277,7 @@ class ModelWorker(BaseModelWorker):
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
             is_bert = "bert" in str(type(self.model))
-            
+
             if is_llama:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"
