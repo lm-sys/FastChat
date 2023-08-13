@@ -119,8 +119,8 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
 
 Tips:
 Sometimes the "auto" device mapping strategy in huggingface/transformers does not perfectly balance the memory allocation across multiple GPUs.
-You can use `--max-gpu-memory` to specify the maximum memory per gpu for storing model weights.
-This allows it to allocate more meory for activations, so you can use longer context lenghts or larger batch sizes. For example,
+You can use `--max-gpu-memory` to specify the maximum memory per GPU for storing model weights.
+This allows it to allocate more meory for activations, so you can use longer context lengths or larger batch sizes. For example,
 
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory 8GiB
