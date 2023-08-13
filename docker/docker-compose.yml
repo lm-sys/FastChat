@@ -9,7 +9,7 @@ services:
     ports:
       - "21001:21001"
     restart: always
-    entrypoint: ["python3.8.16", "-m", "fastchat.serve.controller", "--host", "0.0.0.0", "--port", "21001"]
+    entrypoint: ["python3.8", "-m", "fastchat.serve.controller", "--host", "0.0.0.0", "--port", "21001"]
 
   fastchat-model-worker:
     build:
@@ -26,7 +26,7 @@ services:
               count: 2
               capabilities: [gpu]
     restart: always
-    entrypoint: ["python3.8.16", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-13b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
+    entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-13b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
   
   fastchat-gradio-web:
     build:
@@ -36,7 +36,7 @@ services:
     ports:
       - "8080:8080"  # YOUR_PORT where you want the Gradio web UI to be accessible on.
     restart: always
-    entrypoint: ["python3.8.16", "-m", "fastchat.serve.gradio_web_server_multi"]
+    entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi"]
   
   fastchat-api-server:
     build:
@@ -46,7 +46,7 @@ services:
     ports:
       - "8000:8000"
     restart: always
-    entrypoint: ["python3.8.16", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
+    entrypoint: ["python3.8", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
 
 volumes:
   huggingface:

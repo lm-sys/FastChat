@@ -12,4 +12,5 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3.8 get-pip.py
 
 # Install the required Python packages
-RUN pip install prompt_toolkit rich safetensors fschat
+RUN pip install prompt_toolkit rich safetensors fschat plotly
+
