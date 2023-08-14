@@ -28,4 +28,5 @@ RUN pip install \
     pygments==2.16.1 \
     rich==13.5.2 \
     safetensors==0.3.2 \
+    gradio==3.40 \
     fschat
