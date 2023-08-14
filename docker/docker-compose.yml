@@ -1,14 +1,14 @@
-version: "3.9"
+version: "3.9" #updates for Thomas AI build
 
 services:
   fastchat-controller:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fastchat:latest
+    image: fastchat:controller
     ports:
       - "21001:21001"
-    restart: always
+    restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.controller", "--host", "0.0.0.0", "--port", "21001"]
 
   fastchat-model-worker:
@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - huggingface:/root/.cache/huggingface
-    image: fastchat:latest
+    image: fastchat:worker
     deploy:
       resources:
         reservations:
@@ -25,17 +25,17 @@ services:
             - driver: nvidia
               count: 2
               capabilities: [gpu]
-    restart: always
-    entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-13b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
+    restart: "on-failure:5"
+    entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-7b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
   
   fastchat-gradio-web:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fastchat:latest
+    image: fastchat:web_interface
     ports:
       - "8080:8080"  # YOUR_PORT where you want the Gradio web UI to be accessible on.
-    restart: always
+    restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi"]
   
   fastchat-api-server:
@@ -45,8 +45,9 @@ services:
     image: fastchat:latest
     ports:
       - "8000:8000"
-    restart: always
+    restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
 
 volumes:
   huggingface:
+    name: vicuna_7b_volume
