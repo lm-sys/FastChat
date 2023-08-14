@@ -936,6 +936,21 @@ register_conv_template(
     )
 )
 
+# Llama2-Chinese default template
+# source: https://huggingface.co/FlagAlpha
+register_conv_template(
+    Conversation(
+        name="llama2-chinese",
+        system_message="<s>{system_message}</s>",
+        roles=("Human", "Assistant", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="\n</s><s>",
+        stop_str="</s>",
+    )
+)
 
 if __name__ == "__main__":
     print("Vicuna template:")
