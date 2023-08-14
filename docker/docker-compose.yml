@@ -38,7 +38,8 @@ services:
     restart: "on-failure:5"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi"]
+    # Assuming the connection URL is passed as an argument, but this might vary based on your application's specifics
+    entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi", "--controller-url", "http://fastchat-controller:21001"]
 
   fastchat-api-server:
     build:
@@ -55,6 +56,7 @@ services:
 volumes:
   huggingface:
     name: vicuna_7b_volume
+
 
 
 # fastchat-controller: Acts as a controller.
