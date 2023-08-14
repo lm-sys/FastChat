@@ -1,4 +1,4 @@
-# Adopted from tatsu-lab@stanford_alpaca. Below is the original copyright:
+# Adapted from tatsu-lab@stanford_alpaca. Below is the original copyright:
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
