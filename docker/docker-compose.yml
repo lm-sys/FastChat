@@ -27,17 +27,19 @@ services:
               capabilities: [gpu]
     restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-7b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
-  
+
   fastchat-gradio-web:
     build:
       context: .
       dockerfile: Dockerfile
     image: fastchat:web_interface
     ports:
-      - "8080:8080"  # YOUR_PORT where you want the Gradio web UI to be accessible on.
+      - "8080:8080"
     restart: "on-failure:5"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi"]
-  
+
   fastchat-api-server:
     build:
       context: .
@@ -46,8 +48,16 @@ services:
     ports:
       - "8000:8000"
     restart: "on-failure:5"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     entrypoint: ["python3.8", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
 
 volumes:
   huggingface:
     name: vicuna_7b_volume
+
+
+# fastchat-controller: Acts as a controller.
+# fastchat-model-worker: The service responsible for running models.  This is where the models seem to be used.
+# fastchat-gradio-web: A Gradio web interface service.
+# fastchat-api-server: A server that acts as an API for your chat service.
