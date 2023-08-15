@@ -248,3 +248,9 @@ register_model_info(
     "https://huggingface.co/Qwen/Qwen-7B-Chat",
     "Qwen is a multi-language large-scale language model (LLM), developed by Damo Academy.",
 )
+register_model_info(
+    ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
+    "Llama2-Chinese",
+    "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
+    "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
+)

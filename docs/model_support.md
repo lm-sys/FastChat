@@ -42,6 +42,7 @@
   loading multiple peft models, you can have them share the base model weights by
   setting the environment variable `PEFT_SHARE_BASE_WEIGHTS=true` in any model
   worker.
+- [FlagAlpha/Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
 
 ## How to support a new model
 
