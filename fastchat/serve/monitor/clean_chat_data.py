@@ -1,8 +1,8 @@
 """
-Clean chatbot arena battle log.
+Clean chatbot arena chat log.
 
 Usage:
-python3 clean_battle_data.py --mode conv_release
+python3 clean_chat_data.py --mode conv_release
 """
 import argparse
 import datetime
@@ -145,9 +145,6 @@ def clean_chat_data(log_files):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
-    parser.add_argument(
-        "--mode", type=str, choices=["simple", "conv_release"], default="simple"
-    )
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)

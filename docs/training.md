@@ -87,5 +87,3 @@ deepspeed fastchat/train/train_lora_t5.py \
         --deepspeed playground/deepspeed_config_s2.json
         
 ```
-
-
