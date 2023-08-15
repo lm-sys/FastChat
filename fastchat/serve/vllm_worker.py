@@ -40,6 +40,7 @@ class VLLMWorker(BaseModelWorker):
         limit_worker_concurrency: int,
         no_register: bool,
         llm_engine: AsyncLLMEngine,
+        conv_template: str,
     ):
         super().__init__(
             controller_addr,
@@ -48,6 +49,7 @@ class VLLMWorker(BaseModelWorker):
             model_path,
             model_names,
             limit_worker_concurrency,
+            conv_template,
         )
 
         logger.info(
@@ -198,6 +200,9 @@ if __name__ == "__main__":
     parser.add_argument("--limit-worker-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
@@ -217,5 +222,6 @@ if __name__ == "__main__":
         args.limit_worker_concurrency,
         args.no_register,
         engine,
+        args.conv_template,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
