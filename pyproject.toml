@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fschat"
-version = "0.2.23"
+version = "0.2.24"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -15,13 +15,13 @@ classifiers = [
 dependencies = [
     "fastapi", "httpx", "markdown2[all]", "nh3", "numpy",
     "prompt_toolkit>=3.0.0", "pydantic<2,>=1", "requests", "rich>=10.0.0",
-    "shortuuid", "tiktoken", "uvicorn", "wandb"
+    "shortuuid", "tiktoken", "uvicorn",
 ]
 
 [project.optional-dependencies]
 model_worker = ["accelerate>=0.21", "peft", "sentencepiece", "torch", "transformers>=4.31.0"]
 webui = ["gradio"]
-train = ["einops", "flash-attn>=2.0"]
+train = ["einops", "flash-attn>=2.0", "wandb"]
 llm_judge = ["openai", "anthropic>=0.3", "ray"]
 dev = ["black==23.3.0", "pylint==2.8.2"]
 

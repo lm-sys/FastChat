@@ -309,7 +309,7 @@ def build_side_by_side_ui_named(models):
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
-### Choose two models to chat with (view [leaderboard](?leaderboard))
+### Choose two models to chat with (view [leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard))
 """
 
     states = [gr.State() for _ in range(num_sides)]

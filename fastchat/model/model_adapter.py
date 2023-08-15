@@ -365,7 +365,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--max-gpu-memory",
         type=str,
-        help="The maximum memory per gpu. Use a string like '13Gib'",
+        help="The maximum memory per GPU for storing model weights. Use a string like '13Gib'",
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
@@ -1298,6 +1298,8 @@ class QwenChatAdapter(BaseModelAdapter):
         return "qwen" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from transformers.generation import GenerationConfig
+
         revision = from_pretrained_kwargs.get("revision", "main")
         config = AutoConfig.from_pretrained(
             model_path,
@@ -1305,6 +1307,9 @@ class QwenChatAdapter(BaseModelAdapter):
         )
         config.use_flash_attn = False
         config.fp16 = True
+        generation_config = GenerationConfig.from_pretrained(
+            model_path, trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             config=config,
@@ -1317,10 +1322,40 @@ class QwenChatAdapter(BaseModelAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, revision=revision
         )
+        tokenizer.eos_token_id = config.eos_token_id
+        tokenizer.bos_token_id = config.bos_token_id
+        tokenizer.pad_token_id = generation_config.pad_token_id
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.bos_token_id = tokenizer.bos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("qwen-7b-chat")
+
+
+class BGEAdapter(BaseModelAdapter):
+    """The model adapter for BGE"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "bge" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModel.from_pretrained(
+            model_path,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("one_shot")
 
 
 class AquilaChatAdapter(BaseModelAdapter):
@@ -1396,6 +1431,7 @@ register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
+register_model_adapter(BGEAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

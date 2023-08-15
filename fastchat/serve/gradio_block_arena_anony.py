@@ -162,36 +162,37 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4": 1.5,
-    "gpt-3.5-turbo": 1.5,
-    "claude-2": 1.5,
-    "claude-instant-1": 1.5,
+    "gpt-4": 2,
+    "gpt-3.5-turbo": 2,
+    "claude-2": 2,
+    "claude-instant-1": 2,
+    # tire 1
+    "palm-2": 1.5,
     "llama-2-13b-chat": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "mpt-30b-chat": 1.5,
-    # tier 1
-    "palm-2": 1.0,
-    "wizardlm-13b": 1.0,
+    "wizardlm-13b": 1.5,
+    # tier 2
     "guanaco-33b": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
-    # tier 2
-    "mpt-7b-chat": 0.5,
-    "oasst-pythia-12b": 0.5,
-    "RWKV-4-Raven-14B": 0.5,
+    # tier 3
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
     "chatglm-6b": 0.5,
     # deprecated
-    "gpt4all-13b-snoozy": 1.0,
-    "koala-13b": 1.0,
+    "mpt-7b-chat": 0.1,
+    "oasst-pythia-12b": 0.1,
+    "RWKV-4-Raven-14B": 0.1,
+    "gpt4all-13b-snoozy": 0.1,
+    "koala-13b": 0.1,
     "stablelm-tuned-alpha-7b": 0.1,
     "dolly-v2-12b": 0.1,
     "llama-13b": 0.1,
 }
 
-SAMPLING_BOOST_MODELS = ["llama-2-13b-chat", "llama-2-7b-chat", "claude-2"]
+SAMPLING_BOOST_MODELS = []
 
 model_pairs = []
 model_pairs_weights = []
@@ -374,11 +375,14 @@ def build_side_by_side_ui_anony(models):
 - Click "Clear history" to start a new round.
 - | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
+### Leaderboard
+See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
+
 ### Terms of use
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
 ### Battle
-Please scroll down and start chatting. You can view a leaderboard of participating models in the fourth tab above labeled 'Leaderboard' or by clicking [here](?leaderboard). The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Vicuna).
+Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Vicuna).
 """
 
     states = [gr.State() for _ in range(num_sides)]

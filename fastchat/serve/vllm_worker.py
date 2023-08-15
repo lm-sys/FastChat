@@ -69,19 +69,20 @@ class VLLMWorker(BaseModelWorker):
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
-        stop_token_ids.append(self.tokenizer.eos_token_id)
+        if self.tokenizer.eos_token_id is not None:
+            stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
 
         # Handle stop_str
+        stop = set()
         if isinstance(stop_str, str) and stop_str != "":
-            stop = [stop_str]
+            stop.add(stop_str)
         elif isinstance(stop_str, list) and stop_str != []:
-            stop = stop_str
-        else:
-            stop = []
+            stop.update(stop_str)
 
         for tid in stop_token_ids:
-            stop.append(self.tokenizer.decode(tid))
+            if tid is not None:
+                stop.add(self.tokenizer.decode(tid))
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -92,7 +93,7 @@ class VLLMWorker(BaseModelWorker):
             temperature=temperature,
             top_p=top_p,
             use_beam_search=False,
-            stop=stop,
+            stop=list(stop),
             max_tokens=max_new_tokens,
         )
         results_generator = engine.generate(context, sampling_params, request_id)

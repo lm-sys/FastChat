@@ -36,7 +36,7 @@ FastChat is an open platform for training, serving, and evaluating large languag
 ### Method 1: With pip
 
 ```bash
-pip3 install fschat
+pip3 install "fschat[model_worker,webui]"
 ```
 
 ### Method 2: From source
@@ -55,7 +55,7 @@ brew install rust cmake
 2. Install Package
 ```bash
 pip3 install --upgrade pip  # enable PEP 660 support
-pip3 install -e ".[model_worker, webui]"
+pip3 install -e ".[model_worker,webui]"
 ```
 
 ## Model Weights
@@ -78,7 +78,7 @@ See more command options and how to handle out-of-memory in the "Inference with 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
 ### LongChat
-We release LongChat models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
+We release [LongChat](https://lmsys.org/blog/2023-06-29-longchat/) models under LLaMA's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
 
 | Size | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
@@ -112,9 +112,18 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
 ```
 
 #### Multiple GPUs
-You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
+You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine. 
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
+```
+
+Tips:
+Sometimes the "auto" device mapping strategy in huggingface/transformers does not perfectly balance the memory allocation across multiple GPUs.
+You can use `--max-gpu-memory` to specify the maximum memory per GPU for storing model weights.
+This allows it to allocate more meory for activations, so you can use longer context lengths or larger batch sizes. For example,
+
+```
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory 8GiB
 ```
 
 #### CPU Only
@@ -282,6 +291,8 @@ torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
     --lazy_preprocess True
 ```
 
+Tips:
+- If you are using V100 which is not supported by FlashAttention, you can use the [memory-efficient attention](https://arxiv.org/abs/2112.05682) implemented in [xFormers](https://github.com/facebookresearch/xformers). Install xformers and replace `fastchat/train/train_mem.py` above with [fastchat/train/train_xformers.py](fastchat/train/train_xformers.py).
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
 - If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 

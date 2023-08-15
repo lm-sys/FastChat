@@ -276,6 +276,8 @@ class ModelWorker(BaseModelWorker):
             )  # llama supports batch inference
             is_chatglm = "chatglm" in str(type(self.model))
             is_t5 = "t5" in str(type(self.model))
+            is_bert = "bert" in str(type(self.model))
+
             if is_llama:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"
@@ -295,6 +297,22 @@ class ModelWorker(BaseModelWorker):
                 ret = {
                     "embedding": normalized_embeddings.tolist(),
                     "token_num": torch.sum(attention_mask).item(),
+                }
+            elif is_bert:
+                embedding = []
+                token_num = 0
+                for text in params["input"]:
+                    input_ids = tokenizer.encode(text, return_tensors="pt").to(
+                        self.device
+                    )
+                    model_output = self.model(input_ids)
+                    data = model_output[0][:, 0]
+                    data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
+                    embedding.append(data.tolist())
+                    token_num += len(input_ids[0])
+                ret = {
+                    "embedding": embedding,
+                    "token_num": token_num,
                 }
             else:
                 embedding = []
