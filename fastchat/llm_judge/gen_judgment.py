@@ -291,11 +291,14 @@ if __name__ == "__main__":
     # Filter out existed matches
     total_num_matches = len(matches)
     filtered_matches = []
-    with open(output_file, "r") as f:
-        existed_matches = [json.loads(line) for line in f]
-    uniq_ids = []
-    for e in existed_matches:
-        uniq_ids.append(f"{e['question_id']}_{e['model']}_{e['judge'][1]}")
+    try:
+        with open(output_file, "r") as f:
+            existed_matches = [json.loads(line) for line in f]
+    except FileNotFoundError:
+        existed_matches = []
+    uniq_ids = [
+        f"{e['question_id']}_{e['model']}_{e['judge'][1]}" for e in existed_matches
+    ]
     for match in matches:
         uniq_id = f"{match.question['question_id']}_{match.answer['model_id']}_{match.judge.prompt_template['name']}"
         if uniq_id in uniq_ids:
