@@ -23,7 +23,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 2
+              count: 1
               capabilities: [gpu]
     restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-7b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]

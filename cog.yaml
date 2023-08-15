@@ -29,6 +29,7 @@ build:
     - "safetensors==0.3.2"
     - "gradio==3.40"
     - "plotly<=5.16.0"
+    - "transformers>=4.31"
 
   run:
   # speed up downloading weights with gcloud storage cp

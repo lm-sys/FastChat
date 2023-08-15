@@ -27,7 +27,7 @@ RUN pip install numpy==1.24.2 \
     tensorizer==1.0.1 \
     jinja2==3.1.2 \
     deepspeed==0.8.3 \
-    transformers>=4.0.0 \
+    "transformers>=4.31" \
     prompt_toolkit==3.0.39 \
     "markdown-it-py<=3.0.0" \
     mdurl==0.1.2 \
