@@ -2,6 +2,7 @@ version: "3.9" #updates for Thomas AI build
 
 services:
   fastchat-controller:
+    # container_name: fastchat-controller
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,6 +13,7 @@ services:
     entrypoint: ["python3.8", "-m", "fastchat.serve.controller", "--host", "0.0.0.0", "--port", "21001"]
 
   fastchat-model-worker:
+    container_name: fastchat-model
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,12 +25,13 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: 2
               capabilities: [gpu]
     restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-7b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
 
   fastchat-gradio-web:
+    # container_name: fastchat-web-ui
     build:
       context: .
       dockerfile: Dockerfile
@@ -42,6 +45,7 @@ services:
     entrypoint: ["python3.8", "-m", "fastchat.serve.gradio_web_server_multi", "--controller-url", "http://fastchat-controller:21001"]
 
   fastchat-api-server:
+    # container_name: fastchat-api
     build:
       context: .
       dockerfile: Dockerfile

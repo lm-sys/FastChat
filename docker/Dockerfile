@@ -1,16 +1,24 @@
-#v2.1 with updates for the Vicuna fastchat install.  Added additional python packages for Gradio Web Interface
+#v2.4 with updates for the Vicuna fastchat install.  Added additional python packages for Gradio Web Interface, 
+# moved python package install to a requirements.txt and added a Healthcheck component.
+# Added Python_Cude_Alloc_Conf
 # Base image with CUDA support
 FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
 
-# Set environment variable to ensure Python output is unbuffered
-ENV PYTHONUNBUFFERED=1
+# Metadata as described above
+LABEL version="2.4" \
+      description="Docker image for Vicuna fastchat with Gradio Web Interface" \
+      maintainer="trig_tanning.Oj@icloud.com"
 
-# Add the deadsnakes PPA and install required packages
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 
+    # PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb=256
+
+# Add the deadsnakes PPA, install curl and required packages
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get install -y software-properties-common curl && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y python3.8 python3.8-distutils curl && \
+    apt-get install -y python3.8 python3.8-distutils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -18,22 +26,11 @@ RUN apt-get update && \
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3.8 get-pip.py
 
-# Install the required Python packages
-RUN pip install numpy==1.24.2 \
-    torch==2.0.1 \
-    accelerate==0.20.3 \
-    peft==0.2.0 \
-    sentencepiece==0.1.97 \
-    tensorizer==1.0.1 \
-    jinja2==3.1.2 \
-    deepspeed==0.8.3 \
-    "transformers>=4.31" \
-    prompt_toolkit==3.0.39 \
-    "markdown-it-py<=3.0.0" \
-    mdurl==0.1.2 \
-    pygments==2.16.1 \
-    "rich<=13.5.2" \
-    safetensors==0.3.2 \
-    gradio==3.40 \
-    "plotly<=5.16.0" \
-    fschat
+# Copy requirements file and install dependencies
+COPY requirements.txt /requirements.txt
+RUN pip install -r requirements.txt && \
+    rm -rf /root/.cache/pip/*
+
+# Add healthcheck (replace with your own healthcheck if not a web server on port 8000)
+HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
+
