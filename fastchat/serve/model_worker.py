@@ -92,7 +92,7 @@ class BaseModelWorker:
     def init_heart_beat(self):
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
-            target=heart_beat_worker, args=(self,)
+            target=heart_beat_worker, args=(self,), daemon=True,
         )
         self.heart_beat_thread.start()
 
@@ -417,7 +417,7 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
-if __name__ == "__main__":
+def create_model_worker():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
@@ -482,4 +482,9 @@ if __name__ == "__main__":
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
     )
+    return args, worker
+
+
+if __name__ == "__main__":
+    args, worker = create_model_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
