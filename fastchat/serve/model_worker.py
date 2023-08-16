@@ -172,6 +172,21 @@ class BaseModelWorker:
     def get_conv_template(self):
         return {"conv": self.conv}
 
+#  recommendations for the various arguments:
+# controller_addr and worker_addr: These would likely be addresses (IP:Port format) for your controller and worker. You'll have to set them based on your infrastructure.
+# worker_id: This could be a unique identifier for this specific worker, especially if you plan to run multiple workers.
+# model_path: This is the path to your trained model's saved state. Without knowing the specifics of where you've stored your model, I can't provide a direct path. If your model is stored as a .pt or .pth file in a folder named models in the root directory, then you'd set this as model_path="/path/to/your/model.pth".
+# model_names: This could be a list of names of models you have in your model path. If you only have one, it might look like model_names=["my_model_name"].
+# limit_worker_concurrency: Depending on the type of model and the workload, you might want to restrict the number of concurrent tasks the worker can handle. This might be especially relevant if you are dealing with very large models or intensive tasks.
+# no_register: This seems like a boolean flag, probably to determine whether the worker should automatically register with a controller or not. The specific use would depend on your infrastructure and needs.
+# device: Since you have 2 GPUs, you'd likely want to use them. You can set this to "cuda:0" to use the first GPU, "cuda:1" to use the second, or "cuda" to let PyTorch decide.
+# num_gpus: You've already set it to 2.
+# max_gpu_memory: This defines the maximum amount of GPU memory the worker should use. If you want to utilize all available memory, you might need to first check how much memory each of your GPUs has and then set this value.
+# load_8bit: This is likely related to model quantization. If you've quantized your model to 8 bits for faster inference, you'd set this to True.
+# cpu_offloading: If you want to offload some operations to the CPU to save GPU memory, set this to True.
+# gptq_config and awq_config: These appear to be configurations related to model quantization. If you're not using quantization, or if you're unsure, you can leave them as None.
+# stream_interval: Without context, this is a bit difficult to suggest a specific value for. It's set to 2 by default in your function signature.
+# conv_template: Again, without specific context, I'm unsure of the appropriate value. If it's related to some sort of template or configuration for convolutions, you'd set it accordingly.
 
 class ModelWorker(BaseModelWorker):
     def __init__(
@@ -183,11 +198,11 @@ class ModelWorker(BaseModelWorker):
         model_names: List[str],
         limit_worker_concurrency: int,
         no_register: bool,
-        device: str,
-        num_gpus: int,
-        max_gpu_memory: str,
+        device: str = "cuda",
+        num_gpus: int = 2,
+        max_gpu_memory: str = "12GB",
         load_8bit: bool = False,
-        cpu_offloading: bool = False,
+        cpu_offloading: bool = True,
         gptq_config: Optional[GptqConfig] = None,
         awq_config: Optional[AWQConfig] = None,
         stream_interval: int = 2,
