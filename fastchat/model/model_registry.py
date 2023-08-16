@@ -254,3 +254,15 @@ register_model_info(
     "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
     "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
 )
+register_model_info(
+    ["Vigogne-2-7B-Instruct", "Vigogne-2-13B-Instruct"],
+    "Vigogne-Instruct",
+    "https://huggingface.co/bofenghuang/vigogne-2-7b-instruct",
+    "Vigogne-Instruct is a French large language model (LLM) optimized for instruction-following, developed by Bofeng Huang",
+)
+register_model_info(
+    ["Vigogne-2-7B-Chat", "Vigogne-2-13B-Chat"],
+    "Vigogne-Chat",
+    "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
+    "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
+)
