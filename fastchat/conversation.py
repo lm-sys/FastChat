@@ -952,6 +952,24 @@ register_conv_template(
     )
 )
 
+# Vigogne Chat default template
+# source: https://github.com/bofenghuang/vigogne
+register_conv_template(
+    Conversation(
+        name="vigogne-chat",
+        system_template="<|system|>: {system_message}",
+        system_message="Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). "
+        "Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.",
+        roles=("<|user|>", "<|assistant|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>\n",
+        stop_str="<|user|>",
+    )
+)
+
 if __name__ == "__main__":
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
