@@ -31,6 +31,6 @@ COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt && \
     rm -rf /root/.cache/pip/*
 
-# Add healthcheck (replace with your own healthcheck if not a web server on port 8000)
+# Add healthcheck (replace with your own healthcheck if not a web server on port 8080)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
 
