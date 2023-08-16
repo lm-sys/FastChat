@@ -193,7 +193,7 @@ class ModelWorker(BaseModelWorker):
         stream_interval: int = 2,
         conv_template: str = None,
         embed_in_truncate: bool = False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             controller_addr,
@@ -269,20 +269,18 @@ class ModelWorker(BaseModelWorker):
         return json.loads(x[:-1].decode())
 
     def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
-        if model_type_dict.get('is_llama'):
+        if model_type_dict.get("is_llama"):
             model_output = self.model(
                 input_ids, attention_mask=attention_mask, output_hidden_states=True
             )
             data = model_output.hidden_states[-1]
-        elif model_type_dict.get('is_bert'):
+        elif model_type_dict.get("is_bert"):
             model_output = self.model(input_ids)
             data = model_output[0]
-        elif model_type_dict.get('is_t5'):
-            model_output = self.model(
-                input_ids, decoder_input_ids=input_ids
-            )
+        elif model_type_dict.get("is_t5"):
+            model_output = self.model(input_ids, decoder_input_ids=input_ids)
             data = model_output.encoder_last_hidden_state
-        elif model_type_dict.get('is_chatglm'):
+        elif model_type_dict.get("is_chatglm"):
             model_output = self.model(input_ids, output_hidden_states=True)
             data = model_output.hidden_states[-1].transpose(0, 1)
         else:
@@ -294,7 +292,7 @@ class ModelWorker(BaseModelWorker):
         token_num = torch.sum(attention_mask).item()
 
         return sum_embeddings, token_num
-        
+
     @torch.inference_mode()
     def get_embeddings(self, params):
         self.call_ct += 1
@@ -302,17 +300,22 @@ class ModelWorker(BaseModelWorker):
         try:
             tokenizer = self.tokenizer
             ret = {"embedding": [], "token_num": 0}
-            
+
             model_type_dict = {
-                "is_llama": "llama" in str(type(self.model)),  # llama supports batch inference
+                "is_llama": "llama"
+                in str(type(self.model)),  # llama supports batch inference
                 "is_t5": "t5" in str(type(self.model)),
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
             }
-            
+
             if self.embed_in_truncate:
                 encoding = tokenizer.batch_encode_plus(
-                    params["input"], padding=True, truncation='longest_first', return_tensors="pt", max_length=self.context_len
+                    params["input"],
+                    padding=True,
+                    truncation="longest_first",
+                    return_tensors="pt",
+                    max_length=self.context_len,
                 )
             else:
                 encoding = tokenizer.batch_encode_plus(
@@ -320,9 +323,11 @@ class ModelWorker(BaseModelWorker):
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = encoding["attention_mask"].to(self.device)
-            
+
             if self.embed_in_truncate:
-                chunk_embeddings, token_num = self.__process_embed_chunk(input_ids, attention_mask, **model_type_dict)
+                chunk_embeddings, token_num = self.__process_embed_chunk(
+                    input_ids, attention_mask, **model_type_dict
+                )
                 embedding = chunk_embeddings / token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
                 ret = {
@@ -333,13 +338,15 @@ class ModelWorker(BaseModelWorker):
                 all_embeddings = []
                 all_token_num = 0
                 for i in range(0, input_ids.size(1), self.context_len):
-                    chunk_input_ids = input_ids[:, i:i + self.context_len]
-                    chunk_attention_mask = attention_mask[:, i:i + self.context_len]
-                    
-                    chunk_embeddings, token_num = self.__process_embed_chunk(chunk_input_ids, chunk_attention_mask, **model_type_dict)
+                    chunk_input_ids = input_ids[:, i : i + self.context_len]
+                    chunk_attention_mask = attention_mask[:, i : i + self.context_len]
+
+                    chunk_embeddings, token_num = self.__process_embed_chunk(
+                        chunk_input_ids, chunk_attention_mask, **model_type_dict
+                    )
                     all_embeddings.append(chunk_embeddings)
                     all_token_num += token_num
-                
+
                 all_embeddings_tensor = torch.stack(all_embeddings)
                 embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
