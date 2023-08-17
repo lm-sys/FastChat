@@ -273,7 +273,9 @@ class ModelWorker(BaseModelWorker):
             model_output = self.model(input_ids, attention_mask=attention_mask)
             data = model_output[0]
         elif model_type_dict.get("is_t5"):
-            model_output = self.model(input_ids, attention_mask=attention_mask, decoder_input_ids=input_ids)
+            model_output = self.model(
+                input_ids, attention_mask=attention_mask, decoder_input_ids=input_ids
+            )
             data = model_output.encoder_last_hidden_state
         else:
             model_output = self.model(
