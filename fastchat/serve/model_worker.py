@@ -269,23 +269,20 @@ class ModelWorker(BaseModelWorker):
         return json.loads(x[:-1].decode())
 
     def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
-        if model_type_dict.get("is_llama"):
+        if model_type_dict.get("is_bert"):
+            model_output = self.model(input_ids, attention_mask=attention_mask)
+            data = model_output[0]
+        elif model_type_dict.get("is_t5"):
+            model_output = self.model(input_ids, attention_mask=attention_mask, decoder_input_ids=input_ids)
+            data = model_output.encoder_last_hidden_state
+        else:
             model_output = self.model(
                 input_ids, attention_mask=attention_mask, output_hidden_states=True
             )
-            data = model_output.hidden_states[-1]
-        elif model_type_dict.get("is_bert"):
-            model_output = self.model(input_ids)
-            data = model_output[0]
-        elif model_type_dict.get("is_t5"):
-            model_output = self.model(input_ids, decoder_input_ids=input_ids)
-            data = model_output.encoder_last_hidden_state
-        elif model_type_dict.get("is_chatglm"):
-            model_output = self.model(input_ids, output_hidden_states=True)
-            data = model_output.hidden_states[-1].transpose(0, 1)
-        else:
-            model_output = self.model(input_ids, output_hidden_states=True)
-            data = model_output.hidden_states[-1]
+            if model_type_dict.get("is_chatglm"):
+                data = model_output.hidden_states[-1].transpose(0, 1)
+            else:
+                data = model_output.hidden_states[-1]
         mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
         masked_embeddings = data * mask
         sum_embeddings = torch.sum(masked_embeddings, dim=1)
