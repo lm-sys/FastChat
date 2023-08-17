@@ -535,7 +535,7 @@ class VicunaAdapter(BaseModelAdapter):
                 "which will generate unexpected results with the "
                 "current fastchat.\nYou can try one of the following methods:\n"
                 "1. Upgrade your weights to the new Vicuna-v1.3: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
-                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template one_shot`\n"
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
 
