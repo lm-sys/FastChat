@@ -1,12 +1,14 @@
 """
 A model worker that executes the model.
 """
-import argparse
+# NOTE: This is imported and called as soon as possible, before imports that use CUDA.
+from fastchat.args.set_args import set_args
+args = set_args(["model", "model_worker"])
+
 import asyncio
 import dataclasses
 import logging
 import json
-import os
 import time
 from typing import List, Optional
 import threading
@@ -36,9 +38,9 @@ import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
 from fastchat.conversation import get_conv_template
+
 from fastchat.model.model_adapter import (
     load_model,
-    add_model_args,
     get_conversation_template,
     get_generate_stream_function,
 )
@@ -418,39 +420,7 @@ async def api_model_details(request: Request):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, default="localhost")
-    parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
-    parser.add_argument(
-        "--controller-address", type=str, default="http://localhost:21001"
-    )
-    add_model_args(parser)
-    parser.add_argument(
-        "--model-names",
-        type=lambda s: s.split(","),
-        help="Optional display comma separated names",
-    )
-    parser.add_argument(
-        "--conv-template", type=str, default=None, help="Conversation prompt template."
-    )
-    parser.add_argument(
-        "--limit-worker-concurrency",
-        type=int,
-        default=5,
-        help="Limit the model concurrency to prevent OOM.",
-    )
-    parser.add_argument("--stream-interval", type=int, default=2)
-    parser.add_argument("--no-register", action="store_true")
-    args = parser.parse_args()
     logger.info(f"args: {args}")
-
-    if args.gpus:
-        if len(args.gpus.split(",")) < args.num_gpus:
-            raise ValueError(
-                f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
-            )
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
     gptq_config = GptqConfig(
         ckpt=args.gptq_ckpt or args.model_path,

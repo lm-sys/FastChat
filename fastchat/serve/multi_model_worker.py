@@ -11,7 +11,10 @@ thus reports the combined queue lengths for health checks.
 We recommend using this with multiple Peft models (with `peft` in the name)
 where all Peft models are trained on the exact same base model.
 """
-import argparse
+# NOTE: This is imported and called as soon as possible, before imports that use CUDA.
+from fastchat.args.set_args import set_args
+args = set_args(["model", "multi_model_worker"])
+
 import asyncio
 import dataclasses
 import logging
@@ -45,9 +48,9 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
+
 from fastchat.model.model_adapter import (
     load_model,
-    add_model_args,
     get_conversation_template,
 )
 from fastchat.model.model_chatglm import generate_stream_chatglm
@@ -153,43 +156,7 @@ async def api_model_details(request: Request):
 
 
 if __name__ == "__main__":
-    # Note: Ensure we resolve arg conflicts.  We let `add_model_args` add MOST
-    # of the model args but we'll override one to have an append action that
-    # supports multiple values.
-    parser = argparse.ArgumentParser(conflict_handler="resolve")
-    parser.add_argument("--host", type=str, default="localhost")
-    parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
-    parser.add_argument(
-        "--controller-address", type=str, default="http://localhost:21001"
-    )
-    add_model_args(parser)
-    # Override the model path to be repeated and align it with model names.
-    parser.add_argument(
-        "--model-path",
-        type=str,
-        default=[],
-        action="append",
-        help="One or more paths to model weights to load. This can be a local folder or a Hugging Face repo ID.",
-    )
-    parser.add_argument(
-        "--model-names",
-        type=lambda s: s.split(","),
-        action="append",
-        help="One or more model names.  Values must be aligned with `--model-path` values.",
-    )
-    parser.add_argument("--limit-worker-concurrency", type=int, default=5)
-    parser.add_argument("--stream-interval", type=int, default=2)
-    parser.add_argument("--no-register", action="store_true")
-    args = parser.parse_args()
     logger.info(f"args: {args}")
-
-    if args.gpus:
-        if len(args.gpus.split(",")) < args.num_gpus:
-            raise ValueError(
-                f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
-            )
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
     gptq_config = GptqConfig(
         ckpt=args.gptq_ckpt or args.model_path,

@@ -5,13 +5,16 @@ Usage:
 python3 -m fastchat.serve.huggingface_api --model lmsys/vicuna-7b-v1.3
 python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 """
-import argparse
+# NOTE: This is imported and called as soon as possible, before imports that use CUDA.
+from fastchat.args.set_args import set_args
+args = set_args(["model", "huggingface"])
+
 import json
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from fastchat.model import load_model, get_conversation_template, add_model_args
+from fastchat.model import load_model, get_conversation_template
 
 
 @torch.inference_mode()
@@ -57,17 +60,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add_model_args(parser)
-    parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--message", type=str, default="Hello! Who are you?")
-    args = parser.parse_args()
-
-    # Reset default repetition penalty for T5 models.
-    if "t5" in args.model_path and args.repetition_penalty == 1.0:
-        args.repetition_penalty = 1.2
-
     main(args)

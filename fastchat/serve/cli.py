@@ -13,8 +13,10 @@ Other commands:
 - Type "!!save <filename>" to save the conversation history to a json file.
 - Type "!!load <filename>" to load a conversation history from a json file.
 """
-import argparse
-import os
+# NOTE: This is imported and called as soon as possible, before imports that use CUDA.
+from fastchat.args.set_args import set_args
+args = set_args(["model", "cli"])
+
 import re
 import sys
 
@@ -27,7 +29,6 @@ from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 
-from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.serve.inference import ChatIO, chat_loop
@@ -186,14 +187,6 @@ class ProgrammaticChatIO(ChatIO):
 
 
 def main(args):
-    if args.gpus:
-        if len(args.gpus.split(",")) < args.num_gpus:
-            raise ValueError(
-                f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
-            )
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
-        os.environ["XPU_VISIBLE_DEVICES"] = args.gpus
-
     if args.style == "simple":
         chatio = SimpleChatIO(args.multiline)
     elif args.style == "rich":
@@ -237,44 +230,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add_model_args(parser)
-    parser.add_argument(
-        "--conv-template", type=str, default=None, help="Conversation prompt template."
-    )
-    parser.add_argument(
-        "--conv-system-msg", type=str, default=None, help="Conversation system message."
-    )
-    parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--no-history", action="store_true")
-    parser.add_argument(
-        "--style",
-        type=str,
-        default="simple",
-        choices=["simple", "rich", "programmatic"],
-        help="Display style.",
-    )
-    parser.add_argument(
-        "--multiline",
-        action="store_true",
-        help="Enable multiline input. Use ESC+Enter for newline.",
-    )
-    parser.add_argument(
-        "--mouse",
-        action="store_true",
-        help="[Rich Style]: Enable mouse support for cursor positioning.",
-    )
-    parser.add_argument(
-        "--judge-sent-end",
-        action="store_true",
-        help="Whether enable the correction logic that interrupts the output of sentences due to EOS.",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Print useful debug information (e.g., prompts)",
-    )
-    args = parser.parse_args()
     main(args)
