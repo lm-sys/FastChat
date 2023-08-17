@@ -814,6 +814,7 @@ register_conv_template(
 )
 
 # StarChat template
+# reference: https://huggingface.co/spaces/HuggingFaceH4/starchat-playground/blob/main/dialogues.py
 register_conv_template(
     Conversation(
         name="starchat",
