@@ -56,8 +56,10 @@ def forward(
     # shape: (b, s, num_heads, head_dim)
 
     kv_seq_len = k.shape[1]
+    past_kv_len = 0
     if past_key_value is not None:
-        kv_seq_len += past_key_value[0].shape[1]
+        past_kv_len = past_key_value[0].shape[1]
+        kv_seq_len += past_kv_len
 
     cos_sin = self.rotary_emb(v, seq_len=kv_seq_len)
     q, k = apply_rotary_pos_emb(q, k, cos_sin, position_ids)
@@ -70,12 +72,33 @@ def forward(
     past_key_value = (k, v) if use_cache else None
 
     key_padding_mask = attention_mask
+    # Ideally we could just do this:
+    #  q, indices, cu_q_lens, max_s = unpad_input(q, key_padding_mask[:, -q_len:])
+    # but this does not work as Flash attention treats the q seq and kv seq as starting at index 0
+    # which then breaks the causality logic. Probably if q_len >> past_kv_len we should
+    # just skip flash attention. Leaving this in for now to demonstrate correctness of
+    # flash attention information even when q needs padding.
+    # TODO(siddartha): delegate back to original implementation on this condition.
+    if past_kv_len > 0:
+        q = torch.cat(
+            (
+                torch.full(
+                    (bsz, past_kv_len, self.num_heads, self.head_dim),
+                    0.0,
+                    dtype=q.dtype,
+                    device=q.device,
+                ),
+                q,
+            ),
+            dim=1,
+        )
+
     if key_padding_mask is None:
         output = flash_attn_func(q, k, v, 0.0, softmax_scale=None, causal=True).view(
-            bsz, q_len, -1
+            bsz, q_len + past_kv_len, -1
         )
     else:
-        q, indices, cu_q_lens, max_s = unpad_input(q, key_padding_mask[:, -q_len:])
+        q, indices, cu_q_lens, max_s = unpad_input(q, key_padding_mask)
         # We can skip concat and call unpad twice but seems better to call unpad only once.
         kv, _, cu_k_lens, max_k = unpad_input(
             torch.stack((k, v), dim=2), key_padding_mask
@@ -92,7 +115,11 @@ def forward(
             causal=True,
         )
         output_unpad = output_unpad.reshape(-1, self.num_heads * self.head_dim)
-        output = pad_input(output_unpad, indices, bsz, q_len)
+        output = pad_input(output_unpad, indices, bsz, q_len + past_kv_len)
+
+    # Need to strip off the zero query outputs.
+    if past_kv_len > 0:
+        output = output[:, past_kv_len:, ...]
 
     return self.o_proj(output), None, past_key_value
 
@@ -118,7 +145,7 @@ def _prepare_decoder_attention_mask(
         )
 
     if attention_mask is not None and torch.all(attention_mask):
-        return None
+        return None  # This uses the faster call when training with full samples
 
     return attention_mask
 
@@ -136,6 +163,7 @@ def replace_llama_attn_with_flash_attn():
 
 
 def test():
+    from fastchat.train.llama_flash_attn_monkey_patch import forward as fastchat_forward
     from transformers.models.llama.configuration_llama import LlamaConfig
 
     config = LlamaConfig(
@@ -143,7 +171,7 @@ def test():
         intermediate_size=128,
         num_hidden_layers=1,
         num_attention_heads=8,
-        max_position_embeddings=1024,
+        max_position_embeddings=16,
     )
     device = torch.device("cuda")
     model = LlamaModel(config)
@@ -153,32 +181,27 @@ def test():
         -1, seqlen
     )
 
-    hf_forward = LlamaAttention.forward
     mask = torch.full((bsz, seqlen), True, dtype=torch.bool, device=device)
-    for i in range(20):
+    for i in range(4):
         hidden = torch.rand((bsz, seqlen, hs), dtype=torch.float16, device=device)
         if i:
             mask[0, -i:] = False
             mask[1, :i] = False
-        LlamaAttention.forward = hf_forward
+
         lmask = model._prepare_decoder_attention_mask(mask, hidden.shape[:2], hidden, 0)
         ref, _, _ = attn.forward(
             hidden, attention_mask=lmask, position_ids=position_ids
         )
 
-        from fastchat.train.llama_flash_attn_monkey_patch import (
-            forward as fastchat_forward,
+        fast, _, _ = fastchat_forward(
+            attn, hidden, attention_mask=mask, position_ids=position_ids
         )
 
-        LlamaAttention.forward = fastchat_forward
-        fast, _, _ = attn.forward(
-            hidden, attention_mask=mask, position_ids=position_ids
+        lmask = _prepare_decoder_attention_mask(
+            model, mask, hidden.shape[:2], hidden, 0
         )
-
-        LlamaAttention.forward = forward
-        lmask = _prepare_decoder_attention_mask(None, mask, hidden.shape[:2], hidden, 0)
-        test, _, _ = attn.forward(
-            hidden, attention_mask=lmask, position_ids=position_ids
+        test, _, _ = forward(
+            attn, hidden, attention_mask=lmask, position_ids=position_ids
         )
 
         print(f"Mean(abs(ref)) = {torch.mean(torch.abs(ref))}")
@@ -186,6 +209,50 @@ def test():
         print(f"Mean(abs(ref - test)) = {torch.mean(torch.abs(ref - test))}")
         print(f"Mean(abs(fast - test)) = {torch.mean(torch.abs(fast - test))}")
         print(f"allclose(fast, test) = {torch.allclose(fast, test)}")
+
+    with torch.no_grad():
+        # Also check that past_kv is handled properly
+        hidden = torch.rand((bsz, seqlen, hs), dtype=torch.float16, device=device)
+        part_len = seqlen // 4
+        assert part_len * 4 == seqlen
+        mask = torch.full((bsz, seqlen), True, dtype=torch.bool, device=device)
+        mask[0, -2:] = False
+        lmask = _prepare_decoder_attention_mask(
+            model, mask, hidden.shape[:2], hidden, 0
+        )
+        oneshot, _, _ = forward(
+            attn, hidden, attention_mask=lmask, position_ids=position_ids
+        )
+        parts = []
+        past_kv, past_kv_len = None, 0
+        for i in range(4):
+            start = part_len * i
+            end = start + part_len
+            hidden_part = hidden[:, start:end, ...]
+            lmask = _prepare_decoder_attention_mask(
+                model,
+                mask[:, start:end],
+                hidden_part.shape[:2],
+                hidden_part,
+                past_kv_len,
+            )
+            part, _, past_kv = forward(
+                attn,
+                hidden_part.clone(),
+                attention_mask=lmask,
+                position_ids=position_ids[:, start:end],
+                past_key_value=past_kv,
+                use_cache=True,
+            )
+            parts.append(part)
+            past_kv_len = past_kv[0].shape[1]
+
+        print(
+            f"allclose(oneshot[:, 0], parts[0]) = {torch.allclose(oneshot[:, :part_len], parts[0])}"
+        )
+        print(
+            f"allclose(oneshot, parts) = {torch.allclose(oneshot, torch.cat(parts, dim=1))}"
+        )
 
 
 if __name__ == "__main__":
