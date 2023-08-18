@@ -260,15 +260,15 @@ async def get_gen_params(
 
     if max_tokens is None:
         max_tokens = 512
-    gen_params = {
-        "model": model_name,
-        "prompt": prompt,
-        "temperature": temperature,
-        "top_p": top_p,
-        "max_new_tokens": max_tokens,
-        "echo": echo,
-        "stream": stream,
-    }
+        gen_params = {
+            "model": model_name,
+            "prompt": prompt,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_new_tokens": max_tokens,
+            "echo": echo,
+            "stream": stream,
+        }
 
     if not stop:
         gen_params.update(
