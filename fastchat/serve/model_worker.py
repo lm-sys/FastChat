@@ -270,17 +270,16 @@ class ModelWorker(BaseModelWorker):
 
     def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
         if model_type_dict.get("is_bert"):
-            model_output = self.model(input_ids, attention_mask=attention_mask)
-            data = model_output[0]
+            model_output = self.model(input_ids)
+            if model_type_dict.get("is_robert"):
+                data = model_output.last_hidden_state
+            else:
+                data = model_output[0]
         elif model_type_dict.get("is_t5"):
-            model_output = self.model(
-                input_ids, attention_mask=attention_mask, decoder_input_ids=input_ids
-            )
+            model_output = self.model(input_ids, decoder_input_ids=input_ids)
             data = model_output.encoder_last_hidden_state
         else:
-            model_output = self.model(
-                input_ids, attention_mask=attention_mask, output_hidden_states=True
-            )
+            model_output = self.model(input_ids, output_hidden_states=True)
             if model_type_dict.get("is_chatglm"):
                 data = model_output.hidden_states[-1].transpose(0, 1)
             else:
@@ -306,6 +305,7 @@ class ModelWorker(BaseModelWorker):
                 "is_t5": "t5" in str(type(self.model)),
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
+                "is_robert": "robert" in str(type(self.model)),
             }
 
             if self.embed_in_truncate:
