@@ -1,4 +1,4 @@
-version: "3.9" #updates for Thomas AI build
+version: "4.1" #updates for Thomas AI build, set gpus --all
 
 services:
   fastchat-controller:
@@ -24,9 +24,9 @@ services:
       resources:
         reservations:
           devices:
-            - driver: nvidia
-              count: 2
-              capabilities: [gpu]
+          - driver: nvidia
+            count: all  # To utilize all GPUs
+            capabilities: [gpu]
     restart: "on-failure:5"
     entrypoint: ["python3.8", "-m", "fastchat.serve.model_worker", "--model-names", "${FASTCHAT_WORKER_MODEL_NAMES:-vicuna-7b-v1.5-16k}", "--model-path", "${FASTCHAT_WORKER_MODEL_PATH:-lmsys/vicuna-7b-v1.3}", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
 
@@ -60,10 +60,3 @@ services:
 volumes:
   huggingface:
     name: vicuna_7b_volume
-
-
-
-# fastchat-controller: Acts as a controller.
-# fastchat-model-worker: The service responsible for running models.  This is where the models seem to be used.
-# fastchat-gradio-web: A Gradio web interface service.
-# fastchat-api-server: A server that acts as an API for your chat service.
