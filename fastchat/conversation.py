@@ -126,7 +126,7 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if i == 0:
-                        ret += system_prompt + message
+                        ret += system_prompt + message + " "
                     else:
                         ret += role + " " + message + seps[i % 2]
                 else:
@@ -814,10 +814,11 @@ register_conv_template(
 )
 
 # StarChat template
+# reference: https://huggingface.co/spaces/HuggingFaceH4/starchat-playground/blob/main/dialogues.py
 register_conv_template(
     Conversation(
         name="starchat",
-        system_template="<system>{system_message}\n",
+        system_template="<system>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         messages=(),
         offset=0,
