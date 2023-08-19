@@ -1,12 +1,13 @@
-#v2.7 with updates for the Vicuna fastchat install.  Added additional python packages for Gradio Web Interface, 
+#v2.8 with updates for the Vicuna fastchat install.  Added additional python packages for Gradio Web Interface, 
 # moved python package install to a requirements.txt and added a Healthcheck component.
-# Added Python_Cude_Alloc_Conf, and path for use of cuda.
+# Added Python_Cude_Alloc_Conf, and path for use of cuda.  Added signature and other ignores for ubuntu and nvidia repo errors
+# CDN bug opened for nvidia.
 
 # Base image with CUDA support
 FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
 
 # Metadata as described above
-LABEL version="2.4" \
+LABEL version="2.8" \
       description="Docker image for Vicuna fastchat with Gradio Web Interface" \
       maintainer="trig_tanning.Oj@icloud.com"
 
@@ -16,19 +17,21 @@ ENV PYTHONUNBUFFERED=1 \
     # Note: If you need the PYTORCH_CUDA_ALLOC_CONF, uncomment the next line
     # PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb=256
 
-# Claer APT cache and allow apt to continue even if it encounters signature errors
+# Get GPG Keys
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+
+# Clear APT cache and allow apt to continue even if it encounters signature errors
 RUN apt-get clean && apt-get update --allow-insecure-repositories
 
-# Add the deadsnakes PPA, install curl and required packages
-RUN apt-get update && \
-    apt-get install -y software-properties-common curl && \
-    add-apt-repository ppa:deadsnakes/ppa && \
+# Add the repository directly to resolve signature issues during docker build
+RUN echo "deb [trusted=yes] http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main" >> /etc/apt/sources.list && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && \
     apt-get update && \
-    apt-get install -y python3.8 python3.8-distutils && \
+    apt-get install -y software-properties-common curl python3.8 python3.8-distutils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3.8 get-pip.py 
+    python3.8 get-pip.py
 
 # Clear pip cache
 RUN pip cache purge
