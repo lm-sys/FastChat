@@ -1,6 +1,6 @@
-#v2.8 with updates for the Vicuna fastchat install.  Added additional python packages for Gradio Web Interface, 
+# v2.8 with updates for the Vicuna fastchat install. Added additional python packages for Gradio Web Interface,
 # moved python package install to a requirements.txt and added a Healthcheck component.
-# Added Python_Cude_Alloc_Conf, and path for use of cuda.  Added signature and other ignores for ubuntu and nvidia repo errors
+# Added Python_Cude_Alloc_Conf, and path for use of cuda. Added signature and other ignores for ubuntu and nvidia repo errors
 # CDN bug opened for nvidia.
 
 # Base image with CUDA support
@@ -26,7 +26,7 @@ RUN apt-get clean && apt-get update --allow-insecure-repositories
 # Add the repository directly to resolve signature issues during docker build
 RUN echo "deb [trusted=yes] http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main" >> /etc/apt/sources.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && \
-    apt-get update && \
+    apt-get update --allow-insecure-repositories && \
     apt-get install -y software-properties-common curl python3.8 python3.8-distutils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -41,10 +41,10 @@ COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt && rm -rf /root/.cache/pip/*
 
 # Check nvcc access
-RUN which nvcc
+# RUN which nvcc
 
 # Install Flash-attn for training, requires ninja, packaging, pytorch. Currently commented out to get environment up.
-RUN pip install flash-attn>=2.0
+# RUN pip install flash-attn>=2.0
 
 # Add healthcheck (replace with your own healthcheck if not a web server on port 8080)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
