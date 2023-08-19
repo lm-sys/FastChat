@@ -199,7 +199,7 @@ class ModelWorker(BaseModelWorker):
         limit_worker_concurrency: int,
         no_register: bool,
         device: str = "cuda",
-        num_gpus: int = 2,
+        num_gpus: int = 1,
         max_gpu_memory: str = "12GB",
         load_8bit: bool = False,
         cpu_offloading: bool = True,
