@@ -2,7 +2,7 @@ packaging>=23.0
 ninja>=1.11.1
 numpy==1.24.2
 torch==2.0.1
-accelerate==0.20.3
+accelerate>=0.20.3
 peft==0.2.0
 sentencepiece==0.1.97
 tensorizer==1.0.1
@@ -34,4 +34,16 @@ wandb>=0.15.8
 wandb-summarizer>=0.1.2
 requests>=2.31.0
 openai>=0.27.8
+nvidia-cublas-cu11==11.10.3.66
+nvidia-cuda-cupti-cu11==11.7.101
+nvidia-cuda-nvrtc-cu11==11.7.99
+nvidia-cuda-runtime-cu11==11.7.99
+nvidia-cudnn-cu11==8.5.0.96
+nvidia-cufft-cu11==10.9.0.58
+nvidia-curand-cu11==10.2.10.91
+nvidia-cusolver-cu11==11.4.0.1
+nvidia-cusparse-cu11==11.7.4.91
+nvidia-nccl-cu11==2.14.3
+nvidia-nvtx-cu11==11.7.91
+huggingface-hub==0.16.3
 fschat>=0.2.24
