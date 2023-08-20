@@ -502,6 +502,34 @@ class PeftModelAdapter:
         return base_adapter.get_default_conv_template(config.base_model_name_or_path)
 
 
+class JSLMAlphaAdapter(BaseModelAdapter):
+    """
+    Model adapter for Japanese StableLM Alpha (JSLM-Alpha) instruct model
+    https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
+    """
+
+    def match(self, model_path: str):
+        return "japanese-stablelm-instruct-alpha-7b" in model_path.lower()
+    
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+
+        tokenizer = LlamaTokenizer.from_pretrained(
+            "novelai/nerdstash-tokenizer-v1", 
+            additional_special_tokens=['▁▁']
+        )
+        from_pretrained_kwargs.pop("trust_remote_code", None)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,    
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs
+        )
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path:str):
+        return get_conv_template("jslm_alpha")
+
 class VicunaAdapter(BaseModelAdapter):
     "Model adapater for Vicuna models (e.g., lmsys/vicuna-7b-v1.3)" ""
 
@@ -1384,6 +1412,7 @@ class AquilaChatAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(JSLMAlphaAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
@@ -1435,3 +1464,50 @@ register_model_adapter(BGEAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
+
+
+if __name__ == "__main__":
+    model, tokenizer = load_model(
+        model_path="stabilityai/japanese-stablelm-instruct-alpha-7b",
+        device="cuda",   
+    )
+    model.eval()
+    model.half()
+
+    user_query = """
+    美術の名作を子供向けのインタラクティブな体験に変えるためのアイデアを5つ挙げ、それぞれの作品とそのアイデアを説明してください。
+    """.strip()
+
+    def build_prompt(user_query, inputs="", sep="\n\n### "):
+        sys_msg = "以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。"
+        p = sys_msg
+        roles = ["指示", "応答"]
+        msgs = [": \n" + user_query, ": "]
+        if inputs:
+            roles.insert(1, "入力")
+            msgs.insert(1, ": \n" + inputs)
+        for role, msg in zip(roles, msgs):
+            p += sep + role + msg
+        return p
+        
+    prompt = build_prompt(user_query)
+
+    input_ids = tokenizer.encode(
+        prompt, 
+        add_special_tokens=False, 
+        return_tensors="pt"
+    )
+
+    seed = 23
+    torch.manual_seed(seed)
+
+    tokens = model.generate(
+        input_ids.to(device=model.device),
+        max_new_tokens=256,
+        temperature=1,
+        top_p=0.95,
+        do_sample=True,
+    )
+
+    out = tokenizer.decode(tokens[0], skip_special_tokens=True)
+    print(out)

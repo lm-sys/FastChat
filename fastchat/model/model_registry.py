@@ -248,3 +248,9 @@ register_model_info(
     "https://huggingface.co/Qwen/Qwen-7B-Chat",
     "Qwen is a multi-language large-scale language model (LLM), developed by Damo Academy.",
 )
+register_model_info(
+    ["japanese-stablelm-instruct-alpha-7b"],
+    "JSLM Alpha",
+    "https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b",
+    "JSLM Alpha is a 7B Japanese instruct model, developed by Stability AI Japan.",
+)

@@ -54,6 +54,8 @@ class Conversation:
     stop_str: str = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
+    # TODO: (meng) Adhoc way to adjust tokenizer behavior (mainly for NAI tokenizer)
+    add_special_tokens: bool = True
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -261,6 +263,7 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
+            add_special_tokens=self.add_special_tokens,
         )
 
     def dict(self):
@@ -959,6 +962,7 @@ register_conv_template(
         sep="\n\n### ",
         stop_str=["<|endoftext|>", "###"],
         stop_token_ids=[3],
+        add_special_tokens=False,
     )
 )
 
