@@ -27,6 +27,7 @@ class SeparatorStyle(IntEnum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
+    JSLM_ALPHA = auto()
 
 
 @dataclasses.dataclass
@@ -196,6 +197,14 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.JSLM_ALPHA:
+            ret = self.system_message + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": \n" + message + self.sep
+                else:
+                    ret += role + ": \n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -937,6 +946,23 @@ register_conv_template(
 )
 
 
+# conv template for JSLM ALPHA with NAI tokenizer
+# source: https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
+register_conv_template(
+    Conversation(
+        name="jslm_alpha",
+        system_message="以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。",
+        roles=("指示", "応答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JSLM_ALPHA,
+        sep="\n\n### ",
+        stop_str=["<|endoftext|>", "###"],
+        stop_token_ids=[3],
+    )
+)
+
+
 if __name__ == "__main__":
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
@@ -954,5 +980,15 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("\n")
+
+    print("JSLM Alpha template:")
+    conv = get_conv_template("jslm_alpha")
+    conv.append_message(conv.roles[0], "こんにちは")
+    conv.append_message(conv.roles[1], "こんにちは")
+    conv.append_message(conv.roles[0], "お元気ですか？")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
