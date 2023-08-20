@@ -507,9 +507,17 @@ class JSLMAlphaAdapter(BaseModelAdapter):
     Model adapter for Japanese StableLM Alpha (JSLM-Alpha) instruct model
     https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
     """
+    model_variation = None
 
     def match(self, model_path: str):
-        return "japanese-stablelm-instruct-alpha-7b" in model_path.lower()
+        model_path = model_path.lower()
+        if model_path == "japanese-stablelm-instruct-alpha-7b":
+            self.model_variation = "alpha" 
+        # TODO: adhoc, better matching later
+        elif "jslm-alpha-" in model_path or "checkpoint-" in os.path.basename(model_path):
+            self.model_variation = "alpha-dev"
+        
+        return True if self.model_variation else False
     
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -519,7 +527,15 @@ class JSLMAlphaAdapter(BaseModelAdapter):
             additional_special_tokens=['▁▁']
         )
         from_pretrained_kwargs.pop("trust_remote_code", None)
-        model = AutoModelForCausalLM.from_pretrained(
+
+        if self.model_variation == "alpha":
+            clm_cls = AutoModelForCausalLM
+        else:
+            from fastchat.model.japanese_stablelm_alpha.modeling_japanese_stablelm_alpha \
+                import JapaneseStableLMAlphaForCausalLM
+            clm_cls = JapaneseStableLMAlphaForCausalLM
+
+        model = clm_cls.from_pretrained(
             model_path,    
             low_cpu_mem_usage=True,
             trust_remote_code=True,
@@ -528,6 +544,7 @@ class JSLMAlphaAdapter(BaseModelAdapter):
         return model, tokenizer
     
     def get_default_conv_template(self, model_path:str):
+        # TODO: (meng) might need to adapt default conv tpl based on model version
         return get_conv_template("jslm_alpha")
 
 class VicunaAdapter(BaseModelAdapter):
