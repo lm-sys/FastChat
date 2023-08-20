@@ -11,7 +11,7 @@ An open platform for training, serving, and evaluating large language model base
 
 <a href="https://chat.lmsys.org"><img src="assets/demo-narrow.gif" width="70%"></a>
 
-Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [Twitter](https://twitter.com/lmsysorg) to get the latest updates.
+Join our [Discord](https://discord.gg/h6kCZb72G7) server and follow our [X](https://x.com/lmsysorg) to get the latest updates.
 
 ## Contents
 - [Install](#install)
