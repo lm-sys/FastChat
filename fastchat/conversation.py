@@ -343,6 +343,23 @@ register_conv_template(
     )
 )
 
+# conv template for JSLM ALPHA with NAI tokenizer
+# source: https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
+register_conv_template(
+    Conversation(
+        name="jslm_alpha",
+        system_message="以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。",
+        roles=("指示", "応答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JSLM_ALPHA,
+        sep="\n\n### ",
+        stop_str="<|endoftext|>",
+        stop_token_ids=[3],
+        add_special_tokens=False,
+    )
+)
+
 # Vicuna v1.1 template
 register_conv_template(
     Conversation(
@@ -949,25 +966,17 @@ register_conv_template(
 )
 
 
-# conv template for JSLM ALPHA with NAI tokenizer
-# source: https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
-register_conv_template(
-    Conversation(
-        name="jslm_alpha",
-        system_message="以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。",
-        roles=("指示", "応答"),
-        messages=(),
-        offset=0,
-        sep_style=SeparatorStyle.JSLM_ALPHA,
-        sep="\n\n### ",
-        stop_str=["<|endoftext|>", "###"],
-        stop_token_ids=[3],
-        add_special_tokens=False,
-    )
-)
-
-
 if __name__ == "__main__":
+    print("JSLM Alpha template:")
+    conv = get_conv_template("jslm_alpha")
+    conv.append_message(conv.roles[0], "こんにちは")
+    conv.append_message(conv.roles[1], "こんにちは")
+    conv.append_message(conv.roles[0], "お元気ですか？")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("\n")
+
     print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
@@ -984,15 +993,5 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.get_prompt())
-
-    print("\n")
-
-    print("JSLM Alpha template:")
-    conv = get_conv_template("jslm_alpha")
-    conv.append_message(conv.roles[0], "こんにちは")
-    conv.append_message(conv.roles[1], "こんにちは")
-    conv.append_message(conv.roles[0], "お元気ですか？")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
