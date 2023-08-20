@@ -32,16 +32,17 @@ two_score_pattern_backup = re.compile("\[(\d+\.?\d*),\s?(\d+\.?\d*)\]")
 one_score_pattern = re.compile("\[\[(\d+\.?\d*)\]\]")
 one_score_pattern_backup = re.compile("\[(\d+\.?\d*)\]")
 
+# TODO: (meng) thinking about changing setting for japanese llm usage
 # Sampling temperature configs for
 temperature_config = {
-    "writing": 0.7,
-    "roleplay": 0.7,
-    "extraction": 0.0,
-    "math": 0.0,
-    "coding": 0.0,
-    "reasoning": 0.0,
-    "stem": 0.1,
-    "humanities": 0.1,
+    "writing": 0.5,
+    "roleplay": 0.5,
+    "extraction": 0.2,
+    "math": 0.1,
+    "coding": 0.1,
+    "reasoning": 0.1,
+    "stem": 0.2,
+    "humanities": 0.2,
 }
 
 reverse_model_map = {
@@ -166,7 +167,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
-    if judge.prompt_template["output_format"] == "[[rating]]":
+    if judge.prompt_template["output_format"] in ["[[rating]]", "[[評価]]"]:
         match = re.search(one_score_pattern, judgment)
         if not match:
             match = re.search(one_score_pattern_backup, judgment)
@@ -221,7 +222,7 @@ def play_a_match_single(match: MatchPair, output_file: str):
     if output_file:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "a") as fout:
-            fout.write(json.dumps(result) + "\n")
+            fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
 
