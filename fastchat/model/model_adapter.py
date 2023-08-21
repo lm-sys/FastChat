@@ -1469,7 +1469,9 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "open-llama" in model_path.lower() and "open-instruct" in model_path.lower()
+        return (
+            "open-llama" in model_path.lower() and "open-instruct" in model_path.lower()
+        )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1489,6 +1491,7 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("alpaca")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
