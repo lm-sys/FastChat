@@ -4,7 +4,7 @@ import glob
 import os
 from typing import Dict
 from accelerate import init_empty_weights
-from accelerate.utils import set_module_tensor_to_device
+from accelerate.utils import set_module_tensor_to_device,get_balanced_memory, infer_auto_device_map
 from huggingface_hub import snapshot_download
 import torch
 from torch import Tensor
@@ -12,7 +12,7 @@ from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, AutoModel
-from accelerate.utils import get_balanced_memory, infer_auto_device_map
+
 
 
 @dataclasses.dataclass
