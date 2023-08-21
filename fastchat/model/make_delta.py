@@ -2,7 +2,7 @@
 Make the delta weights by subtracting base weights.
 
 Usage:
-python3 -m fastchat.model.make_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta ~/model_weights/vicuna-13b-delta --hub-repo-id lmsys/vicuna-13b-delta
+python3 -m fastchat.model.make_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta ~/model_weights/vicuna-13b-delta --hub-repo-id lmsys/vicuna-13b-delta-v1.1
 """
 import argparse
 
@@ -14,20 +14,14 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 def make_delta(base_model_path, target_model_path, delta_path):
     print(f"Loading the base model from {base_model_path}")
     base = AutoModelForCausalLM.from_pretrained(
-        base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+        base_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+    )
 
     print(f"Loading the target model from {target_model_path}")
-    target = AutoModelForCausalLM.from_pretrained(target_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
-
-    DEFAULT_PAD_TOKEN = "[PAD]"
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_path, use_fast=False)
-    num_new_tokens = base_tokenizer.add_special_tokens(dict(pad_token=DEFAULT_PAD_TOKEN))
-
-    base.resize_token_embeddings(len(base_tokenizer))
-    input_embeddings = base.get_input_embeddings().weight.data
-    output_embeddings = base.get_output_embeddings().weight.data
-    input_embeddings[-num_new_tokens:] = 0
-    output_embeddings[-num_new_tokens:] = 0
+    target = AutoModelForCausalLM.from_pretrained(
+        target_model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
+    )
+    target_tokenizer = AutoTokenizer.from_pretrained(target_model_path, use_fast=False)
 
     print("Calculating the delta")
     for name, param in tqdm(target.state_dict().items(), desc="Calculating delta"):
@@ -40,7 +34,6 @@ def make_delta(base_model_path, target_model_path, delta_path):
     else:
         kwargs = {}
     target.save_pretrained(delta_path, **kwargs)
-    target_tokenizer = AutoTokenizer.from_pretrained(target_model_path, use_fast=False)
     target_tokenizer.save_pretrained(delta_path, **kwargs)
 
 
@@ -49,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--base-model-path", type=str, required=True)
     parser.add_argument("--target-model-path", type=str, required=True)
     parser.add_argument("--delta-path", type=str, required=True)
-    parser.add_argument("--hub-repo-id", type=str, required=True)
+    parser.add_argument("--hub-repo-id", type=str)
     args = parser.parse_args()
 
     make_delta(args.base_model_path, args.target_model_path, args.delta_path)
