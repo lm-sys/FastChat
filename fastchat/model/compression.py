@@ -109,6 +109,8 @@ def load_compress_model(
     torch_dtype: torch.dtype = torch.float32,
     use_fast: bool = True,
     revision="main",
+    num_gpus=2,
+    max_gpu_memory="20GiB"
 ):
     print("Loading and compressing model...")
     # partially load model
@@ -136,16 +138,23 @@ def load_compress_model(
             model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
         except NameError:
             model = AutoModel.from_config(config, trust_remote_code=True)
-        balaced_memory = get_balanced_memory(
-            model,
-            dtype=torch_dtype,
-            low_zero=False,
-            no_split_module_classes=model._no_split_modules,
-        )
+        if not max_gpu_memory:
+            max_memory = get_balanced_memory(
+                model,
+                dtype=torch_dtype,
+                low_zero=False,
+                no_split_module_classes=model._no_split_modules,
+            )
+        else:
+            import re
+            import psutil
+            gbit = int(float(re.search("[0-9]+",max_gpu_memory).group(0))*1024**3)
+            max_memory = {i:gbit for i in range(num_gpus)}
+            max_memory["cpu"] = psutil.virtual_memory().available
         device_map = infer_auto_device_map(
             model,
             dtype=torch_dtype,
-            max_memory=balaced_memory,
+            max_memory=max_memory,
             no_split_module_classes=model._no_split_modules,
         )
 
@@ -188,7 +197,7 @@ def load_compress_model(
         tmp_state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
         for name in tmp_state_dict:
             device_rank = get_sublayer_device(device_map=device_map, layer_name=name)
-            device_rank = f"cuda:{device_rank}"
+            device_rank = f"{device}:{device_rank}"
             if name in linear_weights:
                 tensor = tmp_state_dict[name].to(device_rank).data.to(torch_dtype)
                 compressed_state_dict[name] = compress(
@@ -206,7 +215,7 @@ def load_compress_model(
     for name in model.state_dict():
         if name not in linear_weights:
             device_rank = get_sublayer_device(device_map=device_map, layer_name=name)
-            device_rank = f"cuda:{device_rank}"
+            device_rank = f"{device}:{device_rank}"
             set_module_tensor_to_device(
                 model, name, device_rank, value=compressed_state_dict[name]
             )
