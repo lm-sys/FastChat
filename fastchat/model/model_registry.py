@@ -146,7 +146,12 @@ register_model_info(
     "https://arxiv.org/abs/2302.13971",
     "open and efficient foundation language models by Meta",
 )
-
+register_model_info(
+    ["open-llama-7b-v2-open-instruct", "open-llama-7b-open-instruct"],
+    "Open LLaMa (Open Instruct)",
+    "https://medium.com/vmware-data-ml-blog/starter-llm-for-the-enterprise-instruction-tuning-openllama-7b-d05fc3bbaccc",
+    "Open LLaMa fine-tuned on instruction-following data by VMware",
+)
 register_model_info(
     ["dolly-v2-12b"],
     "Dolly",
