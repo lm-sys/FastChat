@@ -40,6 +40,7 @@ def test_completion_stream(model):
 def test_embedding(model):
     embedding = openai.Embedding.create(model=model, input="Hello world!")
     print(f"embedding len: {len(embedding['data'][0]['embedding'])}")
+    print(f"embedding value[:5]: {embedding['data'][0]['embedding'][:5]}")
 
 
 def test_chat_completion(model):

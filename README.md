@@ -132,6 +132,11 @@ This runs on the CPU only and does not require GPU. It requires around 30GB of C
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
 ```
 
+Use Intel AI Accelerator AVX512_BF16/AMX to accelerate CPU inference.
+```
+CPU_ISA=amx python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
+```
+
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
