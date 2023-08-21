@@ -4,13 +4,13 @@ A model worker that executes the model.
 import argparse
 import asyncio
 import dataclasses
+import gc
 import logging
 import json
 import os
+import threading
 import time
 from typing import List, Optional
-import threading
-import gc
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -93,7 +93,9 @@ class BaseModelWorker:
     def init_heart_beat(self):
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
-            target=heart_beat_worker, args=(self,), daemon=True,
+            target=heart_beat_worker,
+            args=(self,),
+            daemon=True,
         )
         self.heart_beat_thread.start()
 
@@ -301,8 +303,7 @@ class ModelWorker(BaseModelWorker):
             ret = {"embedding": [], "token_num": 0}
 
             model_type_dict = {
-                "is_llama": "llama"
-                in str(type(self.model)),  # llama supports batch inference
+                "is_llama": "llama" in str(type(self.model)),
                 "is_t5": "t5" in str(type(self.model)),
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
@@ -322,7 +323,7 @@ class ModelWorker(BaseModelWorker):
                     params["input"], padding=True, return_tensors="pt"
                 )
             input_ids = encoding["input_ids"].to(self.device)
-            attention_mask = encoding["attention_mask"].to(self.device)
+            attention_mask = input_ids != tokenizer.pad_token_id
 
             if self.embed_in_truncate:
                 chunk_embeddings, token_num = self.__process_embed_chunk(

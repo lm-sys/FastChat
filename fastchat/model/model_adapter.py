@@ -6,9 +6,6 @@ import sys
 from typing import Dict, List, Optional
 import warnings
 
-from fastchat.constants import CPU_ISA
-
-
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -28,6 +25,7 @@ from transformers import (
     T5Tokenizer,
 )
 
+from fastchat.constants import CPU_ISA
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.conversation import Conversation, get_conv_template
