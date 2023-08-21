@@ -10,6 +10,7 @@ import os
 import time
 from typing import List, Optional
 import threading
+import gc
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -352,6 +353,10 @@ class ModelWorker(BaseModelWorker):
 
                 ret["embedding"] = normalized_embeddings.tolist()
                 ret["token_num"] = all_token_num
+            gc.collect()
+            torch.cuda.empty_cache()
+            if self.device == "xpu":
+                torch.xpu.empty_cache()
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
