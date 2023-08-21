@@ -110,7 +110,7 @@ def load_compress_model(
     use_fast: bool = True,
     revision="main",
     num_gpus=2,
-    max_gpu_memory="20GiB"
+    max_gpu_memory="20GiB",
 ):
     print("Loading and compressing model...")
     # partially load model
@@ -148,8 +148,9 @@ def load_compress_model(
         else:
             import re
             import psutil
-            gbit = int(float(re.search("[0-9]+",max_gpu_memory).group(0))*1024**3)
-            max_memory = {i:gbit for i in range(num_gpus)}
+
+            gbit = int(float(re.search("[0-9]+", max_gpu_memory).group(0)) * 1024**3)
+            max_memory = {i: gbit for i in range(num_gpus)}
             max_memory["cpu"] = psutil.virtual_memory().available
         device_map = infer_auto_device_map(
             model,

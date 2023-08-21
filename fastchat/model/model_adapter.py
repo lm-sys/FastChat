@@ -222,7 +222,7 @@ def load_model(
                 torch_dtype=kwargs["torch_dtype"],
                 revision=revision,
                 num_gpus=num_gpus,
-                max_gpu_memory=max_gpu_memory
+                max_gpu_memory=max_gpu_memory,
             )
             if debug:
                 print(model)
