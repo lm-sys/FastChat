@@ -214,24 +214,24 @@ def process_input(model_name, inp):
 
 
 async def get_gen_params(
-    model_name: str,
-    worker_addr: str,
-    messages: Union[str, List[Dict[str, str]]],
-    *,
-    temperature: float,
+    model_name: str,                                 # 函数的第一个参数，表示模型的名称。
+    worker_addr: str,                                # 函数的第二个参数，表示工作节点的地址。
+    messages: Union[str, List[Dict[str, str]]],      # 函数的第三个参数，表示消息，它可以是一个字符串或一个字典的列表。
+    *,                                               # 使用 * 以表示后续参数都需要使用关键字来传递。
+    temperature: float,                              # 函数的其他参数定义。
     top_p: float,
     max_tokens: Optional[int],
     echo: Optional[bool],
     stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
-) -> Dict[str, Any]:
-    conv = await get_conv(model_name, worker_addr)
-    conv = Conversation(
+) -> Dict[str, Any]:                                 # 指明函数的返回类型为字典。
+    conv = await get_conv(model_name, worker_addr)  # 异步地获取与特定模型和工作节点相关的会话对象。
+    conv = Conversation(                            # 使用从`get_conv`获取的数据来创建一个`Conversation`对象。
         name=conv["name"],
         system_template=conv["system_template"],
         system_message=conv["system_message"],
         roles=conv["roles"],
-        messages=list(conv["messages"]),  # prevent in-place modification
+        messages=list(conv["messages"]),             # prevent in-place modification
         offset=conv["offset"],
         sep_style=SeparatorStyle(conv["sep_style"]),
         sep=conv["sep"],
@@ -239,28 +239,24 @@ async def get_gen_params(
         stop_str=conv["stop_str"],
         stop_token_ids=conv["stop_token_ids"],
     )
-
-    if isinstance(messages, str):
-        prompt = messages
-    else:
-        for message in messages:
-            msg_role = message["role"]
-            if msg_role == "system":
+    if isinstance(messages, str):                   # 判断`messages`是否是字符串类型。
+        prompt = messages                           # 如果`messages`是字符串，则将其值赋给`prompt`。
+    else:                                           # 否则，对于非字符串的`messages`。
+        for message in messages:                    # 遍历`messages`中的每个消息。
+            msg_role = message["role"]               # 从当前消息中提取角色。
+            if msg_role == "system":                 # 根据角色将消息添加到`conv`。
                 conv.set_system_message(message["content"])
             elif msg_role == "user":
                 conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
                 conv.append_message(conv.roles[1], message["content"])
             else:
-                raise ValueError(f"Unknown role: {msg_role}")
-
-        # Add a blank message for the assistant.
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-
-    if max_tokens is None:
-        max_tokens = 512
-    gen_params = {
+                raise ValueError(f"Unknown role: {msg_role}")  # 当给定未知的角色时，抛出错误。
+        conv.append_message(conv.roles[1], None)    # 为助手添加一个空消息。
+        prompt = conv.get_prompt()                  # 获取`conv`的提示内容。
+    if max_tokens is None:                          # 检查`max_tokens`是否为`None`。
+        max_tokens = 512                            # 如果为`None`，则默认设置为512。
+    gen_params = {                                  # 创建一个`gen_params`字典，该字典包含生成完成的各种参数。
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
@@ -269,16 +265,15 @@ async def get_gen_params(
         "echo": echo,
         "stream": stream,
     }
-
-    if not stop:
-        gen_params.update(
+    if not stop:                                    # 检查是否提供了`stop`参数。
+        gen_params.update(                          # 如果没有，从`conv`更新`stop`和`stop_token_ids`。
             {"stop": conv.stop_str, "stop_token_ids": conv.stop_token_ids}
         )
     else:
-        gen_params.update({"stop": stop})
+        gen_params.update({"stop": stop})           # 使用提供的`stop`更新`gen_params`。
+    logger.debug(f"==== request ====\n{gen_params}")  # 使用日志器记录`gen_params`的内容。
+    return gen_params                                # 返回`gen_params`字典。
 
-    logger.debug(f"==== request ====\n{gen_params}")
-    return gen_params
 
 
 async def get_worker_address(model_name: str, client: httpx.AsyncClient) -> str:
