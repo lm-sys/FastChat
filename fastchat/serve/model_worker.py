@@ -321,7 +321,7 @@ class ModelWorker(BaseModelWorker):
                     params["input"], padding=True, return_tensors="pt"
                 )
             input_ids = encoding["input_ids"].to(self.device)
-            attention_mask = (input_ids != tokenizer.pad_token_id)
+            attention_mask = input_ids != tokenizer.pad_token_id
 
             if self.embed_in_truncate:
                 chunk_embeddings, token_num = self.__process_embed_chunk(
