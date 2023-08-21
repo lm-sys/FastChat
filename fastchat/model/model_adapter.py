@@ -25,6 +25,7 @@ from transformers import (
     T5Tokenizer,
 )
 
+from fastchat.constants import CPU_ISA
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.conversation import Conversation, get_conv_template
@@ -167,6 +168,15 @@ def load_model(
     )
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
+        if CPU_ISA in ["avx512_bf16", "amx"]:
+            try:
+                import intel_extension_for_pytorch as ipex
+
+                kwargs = {"torch_dtype": torch.bfloat16}
+            except ImportError:
+                warnings.warn(
+                    "Intel Extension for PyTorch is not installed, it can be installed to accelerate cpu inference"
+                )
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if num_gpus != 1:
@@ -266,6 +276,13 @@ def load_model(
 
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
+
+    if (
+        device == "cpu"
+        and kwargs["torch_dtype"] is torch.bfloat16
+        and CPU_ISA is not None
+    ):
+        model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
         "mps",
@@ -535,7 +552,7 @@ class VicunaAdapter(BaseModelAdapter):
                 "which will generate unexpected results with the "
                 "current fastchat.\nYou can try one of the following methods:\n"
                 "1. Upgrade your weights to the new Vicuna-v1.3: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
-                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template conv_one_shot`\n"
+                "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template one_shot`\n"
                 "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
             )
 
@@ -1352,6 +1369,41 @@ class BGEAdapter(BaseModelAdapter):
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True, revision=revision
         )
+        if hasattr(model.config, "max_position_embeddings") and hasattr(
+            tokenizer, "model_max_length"
+        ):
+            model.config.max_sequence_length = min(
+                model.config.max_position_embeddings, tokenizer.model_max_length
+            )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("one_shot")
+
+
+class E5Adapter(BaseModelAdapter):
+    """The model adapter for E5"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "e5" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModel.from_pretrained(
+            model_path,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        if hasattr(model.config, "max_position_embeddings") and hasattr(
+            tokenizer, "model_max_length"
+        ):
+            model.config.max_sequence_length = min(
+                model.config.max_position_embeddings, tokenizer.model_max_length
+            )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1543,6 +1595,7 @@ register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
+register_model_adapter(E5Adapter)
 register_model_adapter(Lamma2ChineseAdapter)
 register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)

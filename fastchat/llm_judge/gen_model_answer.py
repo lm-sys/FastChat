@@ -121,6 +121,17 @@ def get_model_answers(
                         output_ids = output_ids[0]
                     else:
                         output_ids = output_ids[0][len(input_ids[0]) :]
+
+                    # be consistent with the template's stop_token_ids
+                    if conv.stop_token_ids:
+                        stop_token_ids_index = [
+                            i
+                            for i, id in enumerate(output_ids)
+                            if id in conv.stop_token_ids
+                        ]
+                        if len(stop_token_ids_index) > 0:
+                            output_ids = output_ids[: stop_token_ids_index[0]]
+
                     output = tokenizer.decode(
                         output_ids,
                         spaces_between_special_tokens=False,
