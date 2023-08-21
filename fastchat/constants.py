@@ -22,6 +22,8 @@ CONVERSATION_TURN_LIMIT = 50
 SESSION_EXPIRATION_TIME = 3600
 # The output dir of log files
 LOGDIR = os.getenv("LOGDIR", ".")
+# CPU Instruction Set Architecture
+CPU_ISA = os.getenv("CPU_ISA")
 
 
 ##### For the controller and workers (could be overwritten through ENV variables.)

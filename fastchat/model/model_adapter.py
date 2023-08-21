@@ -6,6 +6,9 @@ import sys
 from typing import Dict, List, Optional
 import warnings
 
+from fastchat.constants import CPU_ISA
+
+
 if sys.version_info >= (3, 9):
     from functools import cache
 else:
@@ -167,6 +170,15 @@ def load_model(
     )
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
+        if CPU_ISA in ["avx512_bf16", "amx"]:
+            try:
+                import intel_extension_for_pytorch as ipex
+
+                kwargs = {"torch_dtype": torch.bfloat16}
+            except ImportError:
+                warnings.warn(
+                    "Intel Extension for PyTorch is not installed, it can be installed to accelerate cpu inference"
+                )
     elif device == "cuda":
         kwargs = {"torch_dtype": torch.float16}
         if num_gpus != 1:
@@ -266,6 +278,13 @@ def load_model(
 
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
+
+    if (
+        device == "cpu"
+        and kwargs["torch_dtype"] is torch.bfloat16
+        and CPU_ISA is not None
+    ):
+        model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
         "mps",
