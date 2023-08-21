@@ -130,7 +130,7 @@ def get_model_answers(
                             if id in conv.stop_token_ids
                         ]
                         if len(stop_token_ids_index) > 0:
-                            output_ids = output_ids[:stop_token_ids_index[0]]
+                            output_ids = output_ids[: stop_token_ids_index[0]]
 
                     output = tokenizer.decode(
                         output_ids,
