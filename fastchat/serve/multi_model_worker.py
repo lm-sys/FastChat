@@ -152,7 +152,7 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
-if __name__ == "__main__":
+def create_multi_model_worker():
     # Note: Ensure we resolve arg conflicts.  We let `add_model_args` add MOST
     # of the model args but we'll override one to have an append action that
     # supports multiple values.
@@ -238,4 +238,9 @@ if __name__ == "__main__":
     r = requests.post(url, json=data)
     assert r.status_code == 200
 
+    return args, workers
+
+
+if __name__ == "__main__":
+    args, workers = create_multi_model_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

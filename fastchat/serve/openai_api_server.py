@@ -791,7 +791,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
 ### END GENERAL API - NOT OPENAI COMPATIBLE ###
 
 
-if __name__ == "__main__":
+def create_openai_api_server():
     parser = argparse.ArgumentParser(
         description="FastChat ChatGPT-Compatible RESTful API server."
     )
@@ -830,5 +830,9 @@ if __name__ == "__main__":
     app_settings.api_keys = args.api_keys
 
     logger.info(f"args: {args}")
+    return args
 
+
+if __name__ == "__main__":
+    args = create_openai_api_server()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
