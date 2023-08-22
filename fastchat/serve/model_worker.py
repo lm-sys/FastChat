@@ -295,6 +295,7 @@ class ModelWorker(BaseModelWorker):
         return sum_embeddings, token_num
 
     def __encode_base64(self, embeddings: torch.Tensor) -> List[str]:
+        embeddings = embeddings.cpu()
         return [
             base64.b64encode(e.numpy().tobytes()).decode("utf-8") for e in embeddings
         ]
