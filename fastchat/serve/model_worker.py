@@ -12,6 +12,7 @@ import threading
 import time
 from typing import List, Optional
 import uuid
+import base64
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -49,15 +50,15 @@ from fastchat.utils import build_logger, pretty_print_semaphore, get_context_len
 
 
 worker_id = str(uuid.uuid4())[:8]
-logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+记录器=生成记录器(劳动模范, f“劳动模范{工作者_id}.日志“)"劳动模范{工作者_id}.日志”)生成记录器(劳动模范, f“劳动模范{工作者_id}.日志“)劳动模范{工作者_id}.日志”)
 
-app = FastAPI()
+应用程序=快速应用程序（）快速应用程序()
 
 
-def heart_beat_worker(obj):
-    while True:
-        time.sleep(WORKER_HEART_BEAT_INTERVAL)
-        obj.send_heart_beat()
+定义文件 心跳工人(奥布日):心跳工人(奥布日):
+    正在… 真实的:
+时间睡眠(时间睡眠(工作者_心跳_拍间隔))
+目标发送_心跳()
 
 
 class BaseModelWorker:
