@@ -634,6 +634,7 @@ async def create_embeddings(request: EmbeddingsRequest, model_name: str = None):
         payload = {
             "model": request.model,
             "input": batch,
+            "encoding_format": request.encoding_format,
         }
         embedding = await get_embedding(payload)
         if "error_code" in embedding and embedding["error_code"] != 0:
