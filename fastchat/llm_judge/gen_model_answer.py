@@ -81,7 +81,7 @@ def get_model_answers(
         device="cuda",
         num_gpus=num_gpus_per_model,
         max_gpu_memory=max_gpu_memory,
-        load_8bit=False,
+        load_8bit=True,
         cpu_offloading=True,
         debug=False,
     )
