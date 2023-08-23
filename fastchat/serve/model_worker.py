@@ -3,6 +3,7 @@ A model worker that executes the model.
 """
 import argparse
 import asyncio
+import base64
 import dataclasses
 import gc
 import logging
@@ -294,6 +295,12 @@ class ModelWorker(BaseModelWorker):
 
         return sum_embeddings, token_num
 
+    def __encode_base64(self, embeddings: torch.Tensor) -> List[str]:
+        embeddings = embeddings.cpu()
+        return [
+            base64.b64encode(e.numpy().tobytes()).decode("utf-8") for e in embeddings
+        ]
+
     @torch.inference_mode()
     def get_embeddings(self, params):
         self.call_ct += 1
@@ -325,16 +332,15 @@ class ModelWorker(BaseModelWorker):
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
 
+            base64_encode = params.get("encoding_format", None)
+
             if self.embed_in_truncate:
                 chunk_embeddings, token_num = self.__process_embed_chunk(
                     input_ids, attention_mask, **model_type_dict
                 )
                 embedding = chunk_embeddings / token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
-                ret = {
-                    "embedding": normalized_embeddings.tolist(),
-                    "token_num": token_num,
-                }
+                ret["token_num"] = token_num
             else:
                 all_embeddings = []
                 all_token_num = 0
@@ -352,8 +358,14 @@ class ModelWorker(BaseModelWorker):
                 embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
 
-                ret["embedding"] = normalized_embeddings.tolist()
                 ret["token_num"] = all_token_num
+
+            if base64_encode == "base64":
+                out_embeddings = self.__encode_base64(normalized_embeddings)
+            else:
+                out_embeddings = normalized_embeddings.tolist()
+            ret["embedding"] = out_embeddings
+
             gc.collect()
             torch.cuda.empty_cache()
             if self.device == "xpu":
