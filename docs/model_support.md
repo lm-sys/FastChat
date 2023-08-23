@@ -1,21 +1,23 @@
 # Model Support
 
 ## Supported models
+
 - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-   - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf`
+  - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf`
 - Vicuna, Alpaca, LLaMA, Koala
-   - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
+  - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
 - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
 - [BAAI/bge-large-en](https://huggingface.co/BAAI/bge-large-en#using-huggingface-transformers)
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-   - example: `python3 -m fastchat.serve.cli --model-path ~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth`
+  - example: `python3 -m fastchat.serve.cli --model-path ~/model_weights/RWKV-4-Raven-7B-v11x-Eng99%-Other1%-20230429-ctx8192.pth`
 - [bofenghuang/vigogne-2-7b-instruct](https://huggingface.co/bofenghuang/vigogne-2-7b-instruct)
 - [bofenghuang/vigogne-2-7b-chat](https://huggingface.co/bofenghuang/vigogne-2-7b-chat)
 - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
 - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
 - [FlagAlpha/Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
 - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
+- [FreedomIntelligence/ReaLM-7b-v1](https://huggingface.co/FreedomIntelligence/Realm-7b)
 - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
 - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
 - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
@@ -51,11 +53,13 @@
 
 To support a new model in FastChat, you need to correctly handle its prompt template and model loading.
 The goal is to make the following command run with the correct prompts.
+
 ```
 python3 -m fastchat.serve.cli --model [YOUR_MODEL_PATH]
 ```
 
 You can run this example command to learn the code logic.
+
 ```
 python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
 ```
@@ -63,6 +67,7 @@ python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
 You can add `--debug` to see the actual prompt sent to the model.
 
 ### Steps
+
 FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
 
 1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one.
