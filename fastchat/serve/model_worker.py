@@ -3,6 +3,7 @@ A model worker that executes the model.
 """
 import argparse
 import asyncio
+import base64
 import dataclasses
 import gc
 import logging
@@ -12,7 +13,6 @@ import threading
 import time
 from typing import List, Optional
 import uuid
-import base64
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
