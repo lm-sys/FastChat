@@ -17,7 +17,8 @@ import argparse
 import os
 import re
 import sys
-
+# for testing codes when is not used as a library
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter

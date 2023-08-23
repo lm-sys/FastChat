@@ -3,6 +3,7 @@
 import math
 import os
 import sys
+
 from typing import Dict, List, Optional
 import warnings
 
@@ -78,13 +79,21 @@ class BaseModelAdapter:
             )
         return model, tokenizer
 
-    def load_compress_model(self, model_path, device, torch_dtype, revision="main"):
+    def load_compress_model(self, 
+                            model_path:str, 
+                            device:str, 
+                            torch_dtype:torch.dtype, 
+                            revision="main",
+                            num_gpus:int=1,
+                            max_gpu_memory:str=None):
         return load_compress_model(
             model_path,
             device,
             torch_dtype,
             use_fast=self.use_fast_tokenizer,
             revision=revision,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory
         )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -211,22 +220,19 @@ def load_model(
         )
         kwargs["load_in_8bit"] = load_8bit
     elif load_8bit:
-        if num_gpus != 1:
-            warnings.warn(
-                "8-bit quantization is not supported for multi-gpu inference."
-            )
-        else:
-            model, tokenizer = adapter.load_compress_model(
-                model_path=model_path,
-                device=device,
-                torch_dtype=kwargs["torch_dtype"],
-                revision=revision,
-                num_gpus=num_gpus,
-                max_gpu_memory=max_gpu_memory,
-            )
-            if debug:
-                print(model)
-            return model, tokenizer
+        model, tokenizer = adapter.load_compress_model(
+            model_path=model_path,
+            device=device,
+            torch_dtype=kwargs["torch_dtype"],
+            revision=revision,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+        )
+        if debug:
+            print(model)
+            print("*"*100)
+            print(f"The kwargs is:{kwargs}")
+        return model, tokenizer
     elif awq_config and awq_config.wbits < 16:
         assert (
             awq_config.wbits == 4
@@ -280,7 +286,8 @@ def load_model(
 
     if debug:
         print(model)
-
+        print("*"*100)
+        print(f"The kwargs is:{kwargs}")
     return model, tokenizer
 
 
