@@ -5,7 +5,11 @@ import os
 import psutil
 import re
 from accelerate import init_empty_weights
-from accelerate.utils import set_module_tensor_to_device,get_balanced_memory, infer_auto_device_map
+from accelerate.utils import (
+    set_module_tensor_to_device,
+    get_balanced_memory,
+    infer_auto_device_map,
+)
 from huggingface_hub import snapshot_download
 import torch
 from torch import Tensor
@@ -13,7 +17,6 @@ from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, AutoModel
-
 
 
 @dataclasses.dataclass
@@ -112,7 +115,7 @@ def load_compress_model(
     revision="main",
     num_gpus=1,
     max_gpu_memory=None,
-    ):
+):
     print("Loading and compressing model...")
     # partially load model
     # `use_fast=True`` is not supported for some models.
@@ -136,14 +139,12 @@ def load_compress_model(
         # some models are loaded by AutoModel but not AutoModelForCausalLM,
         # such as chatglm, chatglm2
         try:
-            model = AutoModelForCausalLM.from_config(config, 
-                                                     trust_remote_code=True,
-                                                     device=device)
+            model = AutoModelForCausalLM.from_config(
+                config, trust_remote_code=True, device=device
+            )
         except NameError:
-            model = AutoModel.from_config(config, 
-                                          trust_remote_code=True,
-                                          device=device)
-        if device not in ["cpu","mps"]:
+            model = AutoModel.from_config(config, trust_remote_code=True, device=device)
+        if device not in ["cpu", "mps"]:
             if not max_gpu_memory:
                 max_memory = get_balanced_memory(
                     model,
@@ -152,7 +153,9 @@ def load_compress_model(
                     no_split_module_classes=model._no_split_modules,
                 )
             else:
-                gbit = int(float(re.search("[0-9]+", max_gpu_memory).group(0)) * 1024**3)
+                gbit = int(
+                    float(re.search("[0-9]+", max_gpu_memory).group(0)) * 1024**3
+                )
                 max_memory = {i: gbit for i in range(num_gpus)}
                 max_memory["cpu"] = psutil.virtual_memory().available
             device_map = infer_auto_device_map(
@@ -201,9 +204,9 @@ def load_compress_model(
     for filename in tqdm(files):
         tmp_state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
         for name in tmp_state_dict:
-            device_rank = get_sublayer_device(device_map=device_map, 
-                                              layer_name=name,
-                                              device=device)
+            device_rank = get_sublayer_device(
+                device_map=device_map, layer_name=name, device=device
+            )
             if name in linear_weights:
                 tensor = tmp_state_dict[name].to(device_rank).data.to(torch_dtype)
                 compressed_state_dict[name] = compress(
@@ -221,9 +224,9 @@ def load_compress_model(
 
     for name in model.state_dict():
         if name not in linear_weights:
-            device_rank = get_sublayer_device(device_map=device_map, 
-                                              layer_name=name,
-                                              device=device)
+            device_rank = get_sublayer_device(
+                device_map=device_map, layer_name=name, device=device
+            )
             set_module_tensor_to_device(
                 model, name, device_rank, value=compressed_state_dict[name]
             )
@@ -326,7 +329,7 @@ def decompress(packed_data, config):
         return data.view(original_shape)
 
 
-def get_sublayer_device(device_map: dict, layer_name: str, device:str):
+def get_sublayer_device(device_map: dict, layer_name: str, device: str):
     if device == "cpu":
         return "cpu"
     for key, value in device_map.items():

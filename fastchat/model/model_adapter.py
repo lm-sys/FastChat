@@ -80,13 +80,15 @@ class BaseModelAdapter:
             )
         return model, tokenizer
 
-    def load_compress_model(self, 
-                            model_path:str, 
-                            device:str, 
-                            torch_dtype:torch.dtype, 
-                            revision="main",
-                            num_gpus:int=1,
-                            max_gpu_memory:str=None):
+    def load_compress_model(
+        self,
+        model_path: str,
+        device: str,
+        torch_dtype: torch.dtype,
+        revision="main",
+        num_gpus: int = 1,
+        max_gpu_memory: str = None,
+    ):
         return load_compress_model(
             model_path,
             device,
@@ -94,7 +96,7 @@ class BaseModelAdapter:
             use_fast=self.use_fast_tokenizer,
             revision=revision,
             num_gpus=num_gpus,
-            max_gpu_memory=max_gpu_memory
+            max_gpu_memory=max_gpu_memory,
         )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -240,7 +242,7 @@ def load_model(
         )
         if debug:
             print(model)
-            print("*"*100)
+            print("*" * 100)
             print(f"The kwargs is:{kwargs}")
         return model, tokenizer
     elif awq_config and awq_config.wbits < 16:
@@ -303,7 +305,7 @@ def load_model(
 
     if debug:
         print(model)
-        print("*"*100)
+        print("*" * 100)
         print(f"The kwargs is:{kwargs}")
     return model, tokenizer
 
