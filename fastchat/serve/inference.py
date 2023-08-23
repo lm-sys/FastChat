@@ -115,14 +115,17 @@ def generate_stream(
                 )
                 logits = model.lm_head(out[0])
             else:
-                out = model(torch.as_tensor([input_ids], device=model.device), use_cache=True)
+                out = model(
+                    torch.as_tensor([input_ids], device=model.device), use_cache=True
+                )
                 logits = out.logits
             past_key_values = out.past_key_values
         else:  # decoding
             if model.config.is_encoder_decoder:
                 out = model.decoder(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids], device=model.device
+                        [[token] if not sent_interrupt else output_ids],
+                        device=model.device,
                     ),
                     encoder_hidden_states=encoder_output,
                     use_cache=True,
@@ -134,7 +137,8 @@ def generate_stream(
             else:
                 out = model(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids], device=model.device
+                        [[token] if not sent_interrupt else output_ids],
+                        device=model.device,
                     ),
                     use_cache=True,
                     past_key_values=past_key_values if not sent_interrupt else None,
