@@ -146,7 +146,12 @@ register_model_info(
     "https://arxiv.org/abs/2302.13971",
     "open and efficient foundation language models by Meta",
 )
-
+register_model_info(
+    ["open-llama-7b-v2-open-instruct", "open-llama-7b-open-instruct"],
+    "Open LLaMa (Open Instruct)",
+    "https://medium.com/vmware-data-ml-blog/starter-llm-for-the-enterprise-instruction-tuning-openllama-7b-d05fc3bbaccc",
+    "Open LLaMa fine-tuned on instruction-following data by VMware",
+)
 register_model_info(
     ["dolly-v2-12b"],
     "Dolly",
@@ -247,4 +252,22 @@ register_model_info(
     "Qwen",
     "https://huggingface.co/Qwen/Qwen-7B-Chat",
     "Qwen is a multi-language large-scale language model (LLM), developed by Damo Academy.",
+)
+register_model_info(
+    ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
+    "Llama2-Chinese",
+    "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
+    "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
+)
+register_model_info(
+    ["Vigogne-2-7B-Instruct", "Vigogne-2-13B-Instruct"],
+    "Vigogne-Instruct",
+    "https://huggingface.co/bofenghuang/vigogne-2-7b-instruct",
+    "Vigogne-Instruct is a French large language model (LLM) optimized for instruction-following, developed by Bofeng Huang",
+)
+register_model_info(
+    ["Vigogne-2-7B-Chat", "Vigogne-2-13B-Chat"],
+    "Vigogne-Chat",
+    "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
+    "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
 )

@@ -3,13 +3,15 @@ A model worker that executes the model.
 """
 import argparse
 import asyncio
+import base64
 import dataclasses
+import gc
 import logging
 import json
 import os
+import threading
 import time
 from typing import List, Optional
-import threading
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -92,7 +94,9 @@ class BaseModelWorker:
     def init_heart_beat(self):
         self.register_to_controller()
         self.heart_beat_thread = threading.Thread(
-            target=heart_beat_worker, args=(self,)
+            target=heart_beat_worker,
+            args=(self,),
+            daemon=True,
         )
         self.heart_beat_thread.start()
 
@@ -192,6 +196,8 @@ class ModelWorker(BaseModelWorker):
         awq_config: Optional[AWQConfig] = None,
         stream_interval: int = 2,
         conv_template: str = None,
+        embed_in_truncate: bool = False,
+        **kwargs,
     ):
         super().__init__(
             controller_addr,
@@ -220,6 +226,7 @@ class ModelWorker(BaseModelWorker):
         self.context_len = get_context_length(self.model.config)
         self.generate_stream_func = get_generate_stream_function(self.model, model_path)
         self.stream_interval = stream_interval
+        self.embed_in_truncate = embed_in_truncate
 
         if not no_register:
             self.init_heart_beat()
@@ -265,81 +272,104 @@ class ModelWorker(BaseModelWorker):
             pass
         return json.loads(x[:-1].decode())
 
+    def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
+        if model_type_dict.get("is_bert"):
+            model_output = self.model(input_ids)
+            if model_type_dict.get("is_robert"):
+                data = model_output.last_hidden_state
+            else:
+                data = model_output[0]
+        elif model_type_dict.get("is_t5"):
+            model_output = self.model(input_ids, decoder_input_ids=input_ids)
+            data = model_output.encoder_last_hidden_state
+        else:
+            model_output = self.model(input_ids, output_hidden_states=True)
+            if model_type_dict.get("is_chatglm"):
+                data = model_output.hidden_states[-1].transpose(0, 1)
+            else:
+                data = model_output.hidden_states[-1]
+        mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
+        masked_embeddings = data * mask
+        sum_embeddings = torch.sum(masked_embeddings, dim=1)
+        token_num = torch.sum(attention_mask).item()
+
+        return sum_embeddings, token_num
+
+    def __encode_base64(self, embeddings: torch.Tensor) -> List[str]:
+        embeddings = embeddings.cpu()
+        return [
+            base64.b64encode(e.numpy().tobytes()).decode("utf-8") for e in embeddings
+        ]
+
     @torch.inference_mode()
     def get_embeddings(self, params):
         self.call_ct += 1
 
         try:
             tokenizer = self.tokenizer
-            is_llama = "llama" in str(
-                type(self.model)
-            )  # llama supports batch inference
-            is_chatglm = "chatglm" in str(type(self.model))
-            is_t5 = "t5" in str(type(self.model))
-            is_bert = "bert" in str(type(self.model))
+            ret = {"embedding": [], "token_num": 0}
 
-            if is_llama:
+            model_type_dict = {
+                "is_llama": "llama" in str(type(self.model)),
+                "is_t5": "t5" in str(type(self.model)),
+                "is_chatglm": "chatglm" in str(type(self.model)),
+                "is_bert": "bert" in str(type(self.model)),
+                "is_robert": "robert" in str(type(self.model)),
+            }
+
+            if self.embed_in_truncate:
+                encoding = tokenizer.batch_encode_plus(
+                    params["input"],
+                    padding=True,
+                    truncation="longest_first",
+                    return_tensors="pt",
+                    max_length=self.context_len,
+                )
+            else:
                 encoding = tokenizer.batch_encode_plus(
                     params["input"], padding=True, return_tensors="pt"
                 )
-                input_ids = encoding["input_ids"].to(self.device)
-                attention_mask = encoding["attention_mask"].to(self.device)
-                model_output = self.model(
-                    input_ids, attention_mask, output_hidden_states=True
+            input_ids = encoding["input_ids"].to(self.device)
+            attention_mask = input_ids != tokenizer.pad_token_id
+
+            base64_encode = params.get("encoding_format", None)
+
+            if self.embed_in_truncate:
+                chunk_embeddings, token_num = self.__process_embed_chunk(
+                    input_ids, attention_mask, **model_type_dict
                 )
-                data = model_output.hidden_states[-1]
-                mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
-                masked_embeddings = data * mask
-                sum_embeddings = torch.sum(masked_embeddings, dim=1)
-                seq_length = torch.sum(mask, dim=1)
-                embedding = sum_embeddings / seq_length
+                embedding = chunk_embeddings / token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
-                ret = {
-                    "embedding": normalized_embeddings.tolist(),
-                    "token_num": torch.sum(attention_mask).item(),
-                }
-            elif is_bert:
-                embedding = []
-                token_num = 0
-                for text in params["input"]:
-                    input_ids = tokenizer.encode(text, return_tensors="pt").to(
-                        self.device
-                    )
-                    model_output = self.model(input_ids)
-                    data = model_output[0][:, 0]
-                    data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
-                    embedding.append(data.tolist())
-                    token_num += len(input_ids[0])
-                ret = {
-                    "embedding": embedding,
-                    "token_num": token_num,
-                }
+                ret["token_num"] = token_num
             else:
-                embedding = []
-                token_num = 0
-                for text in params["input"]:
-                    input_ids = tokenizer.encode(text, return_tensors="pt").to(
-                        self.device
+                all_embeddings = []
+                all_token_num = 0
+                for i in range(0, input_ids.size(1), self.context_len):
+                    chunk_input_ids = input_ids[:, i : i + self.context_len]
+                    chunk_attention_mask = attention_mask[:, i : i + self.context_len]
+
+                    chunk_embeddings, token_num = self.__process_embed_chunk(
+                        chunk_input_ids, chunk_attention_mask, **model_type_dict
                     )
-                    if is_t5:
-                        model_output = self.model(
-                            input_ids, decoder_input_ids=input_ids
-                        )
-                    else:
-                        model_output = self.model(input_ids, output_hidden_states=True)
-                    if is_chatglm:
-                        data = (model_output.hidden_states[-1].transpose(0, 1))[0]
-                    elif is_t5:
-                        data = model_output.encoder_last_hidden_state[0]
-                    else:
-                        data = model_output.hidden_states[-1][0]
-                    data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
-                    embedding.append(data.tolist())
-                    token_num += len(input_ids[0])
-                ret = {
-                    "embedding": embedding,
-                    "token_num": token_num,
-                }
+                    all_embeddings.append(chunk_embeddings)
+                    all_token_num += token_num
+
+                all_embeddings_tensor = torch.stack(all_embeddings)
+                embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
+                normalized_embeddings = F.normalize(embedding, p=2, dim=1)
+
+                ret["token_num"] = all_token_num
+
+            if base64_encode == "base64":
+                out_embeddings = self.__encode_base64(normalized_embeddings)
+            else:
+                out_embeddings = normalized_embeddings.tolist()
+            ret["embedding"] = out_embeddings
+
+            gc.collect()
+            torch.cuda.empty_cache()
+            if self.device == "xpu":
+                torch.xpu.empty_cache()
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
@@ -417,7 +447,7 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
-if __name__ == "__main__":
+def create_model_worker():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
@@ -434,6 +464,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
+    parser.add_argument("--embed-in-truncate", action="store_true")
     parser.add_argument(
         "--limit-worker-concurrency",
         type=int,
@@ -481,5 +512,11 @@ if __name__ == "__main__":
         awq_config=awq_config,
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
+        embed_in_truncate=args.embed_in_truncate,
     )
+    return args, worker
+
+
+if __name__ == "__main__":
+    args, worker = create_model_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

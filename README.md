@@ -120,7 +120,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
 Tips:
 Sometimes the "auto" device mapping strategy in huggingface/transformers does not perfectly balance the memory allocation across multiple GPUs.
 You can use `--max-gpu-memory` to specify the maximum memory per GPU for storing model weights.
-This allows it to allocate more meory for activations, so you can use longer context lengths or larger batch sizes. For example,
+This allows it to allocate more memory for activations, so you can use longer context lengths or larger batch sizes. For example,
 
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory 8GiB
@@ -130,6 +130,11 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --m
 This runs on the CPU only and does not require GPU. It requires around 30GB of CPU memory for Vicuna-7B and around 60GB of CPU memory for Vicuna-13B.
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
+```
+
+Use Intel AI Accelerator AVX512_BF16/AMX to accelerate CPU inference.
+```
+CPU_ISA=amx python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
