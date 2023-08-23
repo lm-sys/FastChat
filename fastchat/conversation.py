@@ -942,7 +942,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="llama2-chinese",
-        system_message="<s>{system_message}</s>",
+        system_template="<s>{system_message}</s>",
         roles=("Human", "Assistant", "System"),
         messages=(),
         offset=0,
