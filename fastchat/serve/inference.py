@@ -118,9 +118,7 @@ def generate_stream(
                 )
                 logits = model.lm_head(out[0])
             else:
-                out = model(
-                    torch.as_tensor([input_ids], device=device), use_cache=True
-                )
+                out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
                 logits = out.logits
             past_key_values = out.past_key_values
         else:  # decoding
