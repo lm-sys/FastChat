@@ -9,9 +9,9 @@ import os
 import time
 import concurrent.futures
 
+import openai
 import shortuuid
 import tqdm
-import openai
 
 from fastchat.llm_judge.common import (
     load_questions,
