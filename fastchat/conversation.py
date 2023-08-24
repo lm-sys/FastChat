@@ -555,6 +555,19 @@ register_conv_template(
     )
 )
 
+# ReaLM default template
+register_conv_template(
+    Conversation(
+        name="ReaLM-7b-v1",
+        system_message="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.PHOENIX,
+        sep="</s>",
+    )
+)
+
 # ChatGPT default template
 register_conv_template(
     Conversation(

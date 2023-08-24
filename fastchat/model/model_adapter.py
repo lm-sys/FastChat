@@ -863,6 +863,23 @@ class PhoenixAdapter(BaseModelAdapter):
         return get_conv_template("phoenix")
 
 
+class ReaLMAdapter(BaseModelAdapter):
+    """The model adapter for FreedomIntelligence/ReaLM-7b"""
+
+    def match(self, model_path: str):
+        return "ReaLM" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ReaLM-7b-v1")
+
+
 class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
@@ -1600,6 +1617,7 @@ register_model_adapter(Lamma2ChineseAdapter)
 register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
+register_model_adapter(ReaLMAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

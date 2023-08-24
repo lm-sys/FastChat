@@ -183,6 +183,12 @@ register_model_info(
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
 )
 register_model_info(
+    ["realm-7b-v1"],
+    "ReaLM",
+    "https://github.com/FreedomIntelligence/ReaLM",
+    "A chatbot fine-tuned from LLaMA2 with data generated via iterative calls to UserGPT and ChatGPT by CUHK(SZ) and SRIBD.",
+)
+register_model_info(
     ["billa-7b-sft"],
     "BiLLa-7B-SFT",
     "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
