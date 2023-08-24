@@ -288,6 +288,29 @@ if __name__ == "__main__":
         multi_turn=True,
     )
 
+    # Filter out existed matches
+    total_num_matches = len(matches)
+    filtered_matches = []
+    try:
+        with open(output_file, "r") as f:
+            existed_matches = [json.loads(line) for line in f]
+    except FileNotFoundError:
+        existed_matches = []
+    uniq_ids = set(
+        [
+            f"{e['question_id']}_{e['model']}_{e['judge'][0]}_{e['judge'][1]}_{e['turn']}"
+            for e in existed_matches
+        ]
+    )
+    for match in matches:
+        turn = 2 if match.judge.multi_turn else 1
+        uniq_id = f"{match.question['question_id']}_{match.answer['model_id']}_{match.judge.model_name}_{match.judge.prompt_template['name']}_{turn}"
+        if uniq_id in uniq_ids:
+            print(f"Skip {uniq_id}")
+        else:
+            filtered_matches.append(match)
+    matches = filtered_matches
+
     match_stat = {}
     match_stat["bench_name"] = args.bench_name
     match_stat["mode"] = args.mode
@@ -295,7 +318,8 @@ if __name__ == "__main__":
     match_stat["baseline"] = baseline_model
     match_stat["model_list"] = models
     match_stat["total_num_questions"] = len(questions)
-    match_stat["total_num_matches"] = len(matches)
+    match_stat["total_num_matches"] = total_num_matches
+    match_stat["current_num_matches"] = len(matches)
     match_stat["output_path"] = output_file
 
     # Show match stats and prompt enter to continue
