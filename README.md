@@ -1,3 +1,12 @@
+# Japanese MT-Bench
+
+This repo provides Japanese MT-Bench questions and prompts to evaluate your models with LLM-as-a-judge.
+
+For more details, see the following:
+
+- [fastchat/llm_judge/data/japanese_mt_bench](https://github.com/Stability-AI/FastChat/tree/jp-stable/fastchat/llm_judge/data/japanese_mt_bench), which contains Japanese MT-Bench questions, model answers, and judgements
+- [fastchat/llm_judge/README.md](https://github.com/Stability-AI/FastChat/blob/jp-stable/fastchat/llm_judge/README.md) for how to generate model answers and judgements
+
 # FastChat
 | [**Demo**](https://chat.lmsys.org/) | [**Chatbot Arena**](https://arena.lmsys.org) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**Twitter**](https://twitter.com/lmsysorg) |
 
