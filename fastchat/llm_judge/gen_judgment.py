@@ -296,11 +296,15 @@ if __name__ == "__main__":
             existed_matches = [json.loads(line) for line in f]
     except FileNotFoundError:
         existed_matches = []
-    uniq_ids = [
-        f"{e['question_id']}_{e['model']}_{e['judge'][1]}" for e in existed_matches
-    ]
+    uniq_ids = set(
+        [
+            f"{e['question_id']}_{e['model']}_{e['judge'][0]}_{e['judge'][1]}_{e['turn']}"
+            for e in existed_matches
+        ]
+    )
     for match in matches:
-        uniq_id = f"{match.question['question_id']}_{match.answer['model_id']}_{match.judge.prompt_template['name']}"
+        turn = 2 if match.judge.multi_turn else 1
+        uniq_id = f"{match.question['question_id']}_{match.answer['model_id']}_{match.judge.model_name}_{match.judge.prompt_template['name']}_{turn}"
         if uniq_id in uniq_ids:
             print(f"Skip {uniq_id}")
         else:
