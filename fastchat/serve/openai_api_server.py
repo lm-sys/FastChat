@@ -277,14 +277,22 @@ async def get_gen_params(
         "max_new_tokens": max_tokens,
         "echo": echo,
         "stream": stream,
+        "stop_token_ids": conv.stop_token_ids,
     }
 
-    if not stop:
-        gen_params.update(
-            {"stop": conv.stop_str, "stop_token_ids": conv.stop_token_ids}
-        )
-    else:
-        gen_params.update({"stop": stop})
+    def __add_to_set(s, new_stop):
+        if not s:
+            return
+        if isinstance(s, str):
+            new_stop.add(s)
+        else:
+            new_stop.update(s)
+
+    new_stop = set()
+    __add_to_set(stop, new_stop)
+    __add_to_set(conv.stop_str, new_stop)
+
+    gen_params["stop"] = list(new_stop)
 
     logger.debug(f"==== request ====\n{gen_params}")
     return gen_params
