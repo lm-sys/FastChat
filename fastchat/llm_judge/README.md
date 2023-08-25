@@ -14,10 +14,31 @@ To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as j
 
 ## Install
 ```
-git clone https://github.com/lm-sys/FastChat.git
+git clone https://github.com/Stability-AI/FastChat.git
 cd FastChat
 pip install -e ".[model_worker,llm_judge]"
 ```
+
+## Quickstart for Japanese MT-Bench
+
+Let's say you want to evaluate `stabilityai/japanese-stablelm-instruct-alpha-7b`:
+
+```
+cd fastchat/llm_judge
+
+# Step 1. Generate model answers to MT-bench questions
+# This will generate `data/japanese_mt_bench/model_answer/japanese-stablelm-instruct-alpha-7b.jsonl`
+python gen_model_answer.py --bench-name japanese_mt_bench --max-turns 1 --model-path stabilityai/japanese-stablelm-instruct-alpha-7b --model-id japanese-stablelm-instruct-alpha-7b
+
+# Step 2. Generate GPT-4 judgments
+# This will generate `data/japanese_mt_bench/model_judgment/gpt-4_single.jsonl`
+OPENAI_API_KEY=<API-KEY> python gen_judgment.py --bench-name japanese_mt_bench --model-list japanese-stablelm-instruct-alpha-7b
+
+# Step 3. Show MT-bench scores
+python show_result.py --bench-name japanese_mt_bench
+```
+
+For more details, see the section `Evaluate a model on MT-bench` below.
 
 ## Review Pre-Generated Model Answers and Judgments
 We provide pre-generated model answers and judgments for some models.
