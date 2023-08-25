@@ -7,7 +7,7 @@ You can contribute back the changes you want to make.
 
 import dataclasses
 from enum import auto, IntEnum
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Union
 
 
 class SeparatorStyle(IntEnum):
@@ -50,7 +50,7 @@ class Conversation:
     sep: str = "\n"
     sep2: str = None
     # Stop criteria (the default one is EOS token)
-    stop_str: str = None
+    stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
 
