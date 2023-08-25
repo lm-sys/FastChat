@@ -28,6 +28,7 @@ import transformers
 from transformers import Trainer, BitsAndBytesConfig, deepspeed
 import torch
 
+from transformers import LlamaForCausalLM, LlamaTokenizer
 from fastchat.train.train import (
     DataArguments,
     ModelArguments,
@@ -58,7 +59,7 @@ class LoraArguments:
     lora_alpha: int = 16
     lora_dropout: float = 0.05
     lora_target_modules: typing.List[str] = field(
-        default_factory=lambda: ["q_proj", "v_proj"]
+        default_factory=lambda: ["q_proj","k_proj","v_proj","o_proj","down_proj","gate_proj","up_proj"]
     )
     lora_weight_path: str = ""
     lora_bias: str = "none"
@@ -163,13 +164,6 @@ def train():
             model.model_parallel = True
 
     model = get_peft_model(model, lora_config)
-    if training_args.flash_attn:
-        for name, module in model.named_modules():
-            if "norm" in name:
-                module = module.to(compute_dtype)
-            if "lm_head" in name or "embed_tokens" in name:
-                if hasattr(module, "weight"):
-                    module = module.to(compute_dtype)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
 
