@@ -32,7 +32,7 @@ python gen_model_answer.py --bench-name japanese_mt_bench --max-turns 1 --model-
 
 # Step 2. Generate GPT-4 judgments
 # This will generate `data/japanese_mt_bench/model_judgment/gpt-4_single.jsonl`
-OPENAI_API_KEY=<API-KEY> python gen_judgment.py --bench-name japanese_mt_bench --model-list japanese-stablelm-instruct-alpha-7b
+OPENAI_API_KEY=<API-KEY> python gen_judgment.py --bench-name japanese_mt_bench --model-list japanese-stablelm-instruct-alpha-7b --judge-file data/judge_ja_prompts.jsonl
 
 # Step 3. Show MT-bench scores
 python show_result.py --bench-name japanese_mt_bench
