@@ -130,22 +130,22 @@ Another option is to run pairwise comparisons on all possible pairs.
 This could be more expensive when #models increases, but it gives you a more comprehensive information.
 
 ```
-python gen_judgment.py --mode pairwise-all --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
+python gen_judgment.py --bench-name japanese_mt_bench --mode pairwise-all --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 ```
 
 ```
-python show_result.py --mode pairwise-all
+python show_result.py --bench-name japanese_mt_bench --mode pairwise-all
 ```
 
 ### How to get GPT-3.5/GPT-4/Claude's answer?
-- `python gen_api_answer.py --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
+- `python gen_api_answer.py --bench-name japanese_mt_bench --model [MODEL-NAME]` to generate GPT-3.5/4 and Claude's answers.
 
 
 ### How to plot the radar figure?
 
-You can use this [colab notebook](https://colab.research.google.com/drive/15O3Y8Rxq37PuMlArE291P4OC6ia37PQK#scrollTo=5i8R0l-XqkgO) to plot the radar figure for MT-bench.
+You can use this [colab notebook](https://colab.research.google.com/drive/1X425IrlyEZ9zLhR1gC0ANIScF8FAC_be#scrollTo=5i8R0l-XqkgO&line=1&uniqifier=1) to plot the radar figure for MT-bench.
 
-<img src="data/mt_bench/misc/radar.png" width="600" height="450">
+<img src="data/japanese_mt_bench/misc/radar.png" width="600" height="450">
 
 
 ## Agreement Computation
