@@ -291,7 +291,7 @@ async def get_gen_params(
     new_stop = set()
     __add_to_set(stop, new_stop)
     __add_to_set(conv.stop_str, new_stop)
-    
+
     gen_params["stop"] = list(new_stop)
 
     logger.debug(f"==== request ====\n{gen_params}")
