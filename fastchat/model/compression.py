@@ -124,7 +124,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         # such as chatglm, chatglm2
         try:
             model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
-        except NameError:
+        except (NameError, ValueError):
             model = AutoModel.from_config(config, trust_remote_code=True)
         linear_weights = get_compressed_list(model)
     if os.path.exists(model_path):
