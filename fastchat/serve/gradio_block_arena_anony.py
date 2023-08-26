@@ -168,6 +168,7 @@ SAMPLING_WEIGHTS = {
     "claude-instant-1": 2,
     # tire 1
     "palm-2": 1.5,
+    "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
@@ -180,7 +181,7 @@ SAMPLING_WEIGHTS = {
     # tier 3
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
-    "chatglm-6b": 0.5,
+    "chatglm2-6b": 0.5,
     # deprecated
     "mpt-7b-chat": 0.1,
     "oasst-pythia-12b": 0.1,
@@ -190,9 +191,10 @@ SAMPLING_WEIGHTS = {
     "stablelm-tuned-alpha-7b": 0.1,
     "dolly-v2-12b": 0.1,
     "llama-13b": 0.1,
+    "chatglm-6b": 0.5,
 }
 
-SAMPLING_BOOST_MODELS = []
+SAMPLING_BOOST_MODELS = ["llama-2-70b-chat"]
 
 model_pairs = []
 model_pairs_weights = []
