@@ -61,6 +61,8 @@ The service is a research preview intended for non-commercial use only, subject 
 
 ip_expiration_dict = defaultdict(lambda: 0)
 
+openai_compatible_models_info = {}
+
 
 class State:
     def __init__(self, model_name):
@@ -100,13 +102,25 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list(controller_url, add_chatgpt, add_claude, add_palm):
-    ret = requests.post(controller_url + "/refresh_all_workers")
-    assert ret.status_code == 200
-    ret = requests.post(controller_url + "/list_models")
-    models = ret.json()["models"]
+def get_model_list(
+    controller_url, register_openai_compatible_models, add_chatgpt, add_claude, add_palm
+):
+    if controller_url:
+        ret = requests.post(controller_url + "/refresh_all_workers")
+        assert ret.status_code == 200
+        ret = requests.post(controller_url + "/list_models")
+        models = ret.json()["models"]
+    else:
+        models = []
 
     # Add API providers
+    if register_openai_compatible_models:
+        global openai_compatible_models_info
+        openai_compatible_models_info = json.load(
+            open(register_openai_compatible_models)
+        )
+        models += list(openai_compatible_models_info.keys())
+
     if add_chatgpt:
         models += ["gpt-3.5-turbo", "gpt-4"]
     if add_claude:
@@ -152,7 +166,11 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         models = get_model_list(
-            controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+            controller_url,
+            args.register_openai_compatible_models,
+            args.add_chatgpt,
+            args.add_claude,
+            args.add_palm,
         )
 
     return load_demo_single(models, url_params)
@@ -316,6 +334,18 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         stream_iter = palm_api_stream_iter(
             state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
         )
+    elif model_name in openai_compatible_models_info:
+        model_info = openai_compatible_models_info[model_name]
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_info["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_info["api_base"],
+            api_key=model_info["api_key"],
+        )
     else:
         # Query worker address
         ret = requests.post(
@@ -381,7 +411,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
                     enable_btn,
                 )
                 return
-            time.sleep(0.015)
     except requests.exceptions.RequestException as e:
         conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
@@ -702,10 +731,14 @@ if __name__ == "__main__":
         help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
     )
     parser.add_argument(
+        "--register-openai-compatible-models",
+        type=str,
+        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
-        default=None,
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
@@ -713,7 +746,11 @@ if __name__ == "__main__":
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
     models = get_model_list(
-        args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+        args.controller_url,
+        args.register_openai_compatible_models,
+        args.add_chatgpt,
+        args.add_claude,
+        args.add_palm,
     )
 
     # Set authorization credentials
