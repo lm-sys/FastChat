@@ -1000,7 +1000,7 @@ register_conv_template(
     )
 )
 
-# codellama2 template
+# Code Llama template
 # reference: https://huggingface.co/blog/codellama#conversational-instructions
 register_conv_template(
     Conversation(
