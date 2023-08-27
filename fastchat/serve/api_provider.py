@@ -22,8 +22,8 @@ def openai_api_stream_iter(
 ):
     import openai
 
-    openai.api_base = api_base or openai.api_base
-    openai.api_key = api_key or openai.api_key
+    openai.api_base = api_base or "https://api.openai.com/v1"
+    openai.api_key = api_key or os.environ["OPENAI_API_KEY"]
 
     # Make requests
     gen_params = {

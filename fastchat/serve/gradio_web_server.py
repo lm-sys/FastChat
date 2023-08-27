@@ -127,6 +127,7 @@ def get_model_list(
         models += ["claude-2", "claude-instant-1"]
     if add_palm:
         models += ["palm-2"]
+    models = list(set(models))
 
     priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
