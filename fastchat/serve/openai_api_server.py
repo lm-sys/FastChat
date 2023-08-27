@@ -17,6 +17,7 @@ from typing import Generator, Optional, Union, Dict, List, Any
 import aiohttp
 import fastapi
 from fastapi import Depends, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
@@ -32,7 +33,6 @@ from fastchat.constants import (
     ErrorCode,
 )
 from fastchat.conversation import Conversation, SeparatorStyle
-from fastapi.exceptions import RequestValidationError
 from fastchat.protocol.openai_api_protocol import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -222,6 +222,15 @@ def process_input(model_name, inp):
     return inp
 
 
+def _add_to_set(s, new_stop):
+    if not s:
+        return
+    if isinstance(s, str):
+        new_stop.add(s)
+    else:
+        new_stop.update(s)
+
+
 async def get_gen_params(
     model_name: str,
     worker_addr: str,
@@ -231,7 +240,6 @@ async def get_gen_params(
     top_p: float,
     max_tokens: Optional[int],
     echo: Optional[bool],
-    stream: Optional[bool],
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
@@ -276,21 +284,12 @@ async def get_gen_params(
         "top_p": top_p,
         "max_new_tokens": max_tokens,
         "echo": echo,
-        "stream": stream,
         "stop_token_ids": conv.stop_token_ids,
     }
 
-    def __add_to_set(s, new_stop):
-        if not s:
-            return
-        if isinstance(s, str):
-            new_stop.add(s)
-        else:
-            new_stop.update(s)
-
     new_stop = set()
-    __add_to_set(stop, new_stop)
-    __add_to_set(conv.stop_str, new_stop)
+    _add_to_set(stop, new_stop)
+    _add_to_set(conv.stop_str, new_stop)
 
     gen_params["stop"] = list(new_stop)
 
@@ -362,7 +361,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
         top_p=request.top_p,
         max_tokens=request.max_tokens,
         echo=False,
-        stream=request.stream,
         stop=request.stop,
     )
     error_check_ret = await check_length(
@@ -495,7 +493,6 @@ async def create_completion(request: CompletionRequest):
                 top_p=request.top_p,
                 max_tokens=request.max_tokens,
                 echo=request.echo,
-                stream=request.stream,
                 stop=request.stop,
             )
             for i in range(request.n):
@@ -548,7 +545,6 @@ async def generate_completion_stream_generator(
                 top_p=request.top_p,
                 max_tokens=request.max_tokens,
                 echo=request.echo,
-                stream=request.stream,
                 stop=request.stop,
             )
             async for content in generate_completion_stream(gen_params, worker_addr):
@@ -722,7 +718,6 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         top_p=request.top_p,
         max_tokens=request.max_tokens,
         echo=False,
-        stream=request.stream,
         stop=request.stop,
     )
 
