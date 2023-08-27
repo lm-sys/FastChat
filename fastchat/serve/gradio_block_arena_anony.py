@@ -369,7 +369,7 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
 - You can do multiple turns of conversations before voting.

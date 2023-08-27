@@ -298,7 +298,7 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
