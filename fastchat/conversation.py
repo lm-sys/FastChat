@@ -213,8 +213,6 @@ class Conversation:
                         ret += role + " " + message + seps[i % 2]
                 else:
                     ret += role
-            print("self.message=", self.messages)
-            print("ret=", ret)
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
