@@ -369,10 +369,10 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
-- You can do multiple rounds of conversations before voting.
+- You can do multiple turns of conversations before voting.
 - The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
 - Click "Clear history" to start a new round.
 - | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
