@@ -170,11 +170,13 @@ SAMPLING_WEIGHTS = {
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
+    "codellama-34b-instruct": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "mpt-30b-chat": 1.5,
     "wizardlm-13b": 1.5,
     # tier 2
+    "codellama-13b-instruct": 1.0,
     "guanaco-33b": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
