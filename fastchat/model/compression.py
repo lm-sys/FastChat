@@ -167,7 +167,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         tmp_state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
         for name in tmp_state_dict:
             if name in linear_weights:
-                if device == 'mps':
+                if device == "mps":
                     tensor = tmp_state_dict[name].half().to(device).data.to(torch_dtype)
                 else:
                     tensor = tmp_state_dict[name].to(device).data.to(torch_dtype)
@@ -175,7 +175,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
                     tensor, default_compression_config
                 )
             else:
-                if device == 'mps':
+                if device == "mps":
                     compressed_state_dict[name] = tmp_state_dict[name].to(device)
                 else:
                     compressed_state_dict[name] = tmp_state_dict[name].half().to(device)
