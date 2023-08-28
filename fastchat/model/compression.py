@@ -2,8 +2,8 @@ import dataclasses
 import gc
 import glob
 import os
-import psutil
 import re
+
 from accelerate import init_empty_weights
 from accelerate.utils import (
     set_module_tensor_to_device,
@@ -11,6 +11,7 @@ from accelerate.utils import (
     infer_auto_device_map,
 )
 from huggingface_hub import snapshot_download
+import psutil
 import torch
 from torch import Tensor
 from torch.nn import functional as F
@@ -144,7 +145,7 @@ def load_compress_model(
             )
         except NameError:
             model = AutoModel.from_config(config, trust_remote_code=True, device=device)
-        if device not in ["cpu", "mps"]:
+        if device == "cuda":
             if not max_gpu_memory:
                 max_memory = get_balanced_memory(
                     model,
