@@ -27,7 +27,6 @@ class SeparatorStyle(IntEnum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
-    CODELLAMA = auto()
 
 
 @dataclasses.dataclass
@@ -123,7 +122,10 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]
-            ret = system_prompt
+            if self.system_message:
+                ret = system_prompt
+            else:
+                ret = "<s>[INST] "
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if i == 0:
@@ -197,22 +199,6 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.CODELLAMA:
-            seps = [self.sep, self.sep2]
-            if self.system_message:
-                ret = system_prompt
-            else:
-                ret = "<s>[INST] "
-
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    if i == 0:
-                        ret += message + " "
-                    else:
-                        ret += role + " " + message + seps[i % 2]
-                else:
-                    ret += role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -886,7 +872,6 @@ register_conv_template(
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",
-        stop_token_ids=[2],
     )
 )
 
@@ -1000,7 +985,7 @@ register_conv_template(
     )
 )
 
-# codellama2 template
+# codellama template
 # reference: https://huggingface.co/blog/codellama#conversational-instructions
 register_conv_template(
     Conversation(
@@ -1009,10 +994,9 @@ register_conv_template(
         roles=("[INST]", "[/INST]"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.CODELLAMA,
+        sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",
-        stop_token_ids=[2],
     )
 )
 
