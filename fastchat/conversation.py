@@ -125,7 +125,7 @@ class Conversation:
             if self.system_message:
                 ret = system_prompt
             else:
-                ret = "<s>[INST] "
+                ret = "[INST] "
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     if i == 0:
@@ -861,7 +861,8 @@ register_conv_template(
 )
 
 # llama2 template
-# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+# reference: https://huggingface.co/blog/codellama#conversational-instructions
+# reference: https://github.com/facebookresearch/llama/blob/1a240688810f8036049e8da36b073f63d2ac552c/llama/generation.py#L212
 register_conv_template(
     Conversation(
         name="llama-2",
@@ -985,20 +986,6 @@ register_conv_template(
     )
 )
 
-# codellama template
-# reference: https://huggingface.co/blog/codellama#conversational-instructions
-register_conv_template(
-    Conversation(
-        name="codellama",
-        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
-        roles=("[INST]", "[/INST]"),
-        messages=(),
-        offset=0,
-        sep_style=SeparatorStyle.LLAMA2,
-        sep=" ",
-        sep2=" </s><s>",
-    )
-)
 
 if __name__ == "__main__":
     print("Vicuna template:")

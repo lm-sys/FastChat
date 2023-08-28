@@ -1575,7 +1575,7 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("codellama")
+        return get_conv_template("llama-2")
 
 
 # Note: the registration order matters.
