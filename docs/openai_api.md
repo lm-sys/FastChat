@@ -1,4 +1,4 @@
-# OpenAI-Compatible RESTful APIs & SDK
+# OpenAI-Compatible RESTful APIs
 
 FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
 The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
