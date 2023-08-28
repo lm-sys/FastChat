@@ -176,9 +176,9 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
                 )
             else:
                 if device == "mps":
-                    compressed_state_dict[name] = tmp_state_dict[name].to(device)
-                else:
                     compressed_state_dict[name] = tmp_state_dict[name].half().to(device)
+                else:
+                    compressed_state_dict[name] = tmp_state_dict[name].to(device)
             tmp_state_dict[name] = None
             tensor = None
             gc.collect()
