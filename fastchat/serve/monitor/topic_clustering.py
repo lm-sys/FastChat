@@ -20,7 +20,7 @@ from fastchat.utils import detect_language
 
 def remove_punctuation(input_string):
     # Make a translator object to remove all punctuation
-    translator = str.maketrans('', '', string.punctuation)
+    translator = str.maketrans("", "", string.punctuation)
 
     # Use the translator object to remove the punctuation
     no_punct = input_string.translate(translator)
@@ -33,7 +33,7 @@ def read_texts(input_file, min_length, english_only):
     with open(input_file, "r") as fin:
         for l in tqdm(fin.readlines()):
             l = json.loads(l)
-            #text = l["text"].strip()
+            # text = l["text"].strip()
             text = l["conversation_a"][0]["content"]
 
             # Filter language
@@ -48,8 +48,7 @@ def read_texts(input_file, min_length, english_only):
                     continue
 
             # De-duplication
-            words = sorted([x.lower() for x in remove_punctuation(text
-                ).split(" ")])
+            words = sorted([x.lower() for x in remove_punctuation(text).split(" ")])
             words = "".join(words)
             if words in visited:
                 continue
@@ -61,11 +60,13 @@ def read_texts(input_file, min_length, english_only):
 
 def get_embeddings(texts, model_name, batch_size):
     model = SentenceTransformer(model_name)
-    embeddings = model.encode(texts,
+    embeddings = model.encode(
+        texts,
         batch_size=batch_size,
         show_progress_bar=True,
         device="cuda",
-        convert_to_tensor=True)
+        convert_to_tensor=True,
+    )
     embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
     return embeddings.cpu()
 
@@ -91,8 +92,7 @@ def run_k_means(embeddings, num_clusters):
 
 def run_agg_cluster(embeddings, num_clusters):
     np.random.seed(0)
-    clustering_model = AgglomerativeClustering(
-        n_clusters=num_clusters)
+    clustering_model = AgglomerativeClustering(n_clusters=num_clusters)
     clustering_model.fit(embeddings)
     labels = torch.from_numpy(clustering_model.labels_)
 
@@ -118,7 +118,7 @@ def get_topk_indices(centers, labels, embeddings, topk):
     counts = torch.unique(labels, return_counts=True)[1]
     topk = min(topk, counts.min().item())
     for i in range(len(centers)):
-        tmp_indices = (labels == i)
+        tmp_indices = labels == i
         tmp_arange = arange[tmp_indices]
         tmp_embeddings = embeddings[tmp_indices]
 
@@ -145,14 +145,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-file", type=str, required=True)
     parser.add_argument("--model", type=str, default="all-mpnet-base-v2")
-        #default="all-MiniLM-L12-v2")
-        #default="multi-qa-distilbert-cos-v1")
+    # default="all-MiniLM-L12-v2")
+    # default="multi-qa-distilbert-cos-v1")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--min-length", type=int)
     parser.add_argument("--english-only", action="store_true")
     parser.add_argument("--num-clusters", type=int, default=20)
-    parser.add_argument("--cluster-alg", type=str,
-        choices=["kmeans", "aggcls"], default="kmeans")
+    parser.add_argument(
+        "--cluster-alg", type=str, choices=["kmeans", "aggcls"], default="kmeans"
+    )
     parser.add_argument("--show-top-k", type=int, default=20)
     parser.add_argument("--show-cut-off", type=int, default=512)
     args = parser.parse_args()
@@ -182,7 +183,7 @@ if __name__ == "__main__":
 
     with open(filename_prefix + "_all.txt", "w") as fout:
         for i in range(len(centers)):
-            tmp_indices = (labels == i)
+            tmp_indices = labels == i
             tmp_embeddings = embeddings[tmp_indices]
             tmp_texts = texts[tmp_indices]
 

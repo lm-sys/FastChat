@@ -14,7 +14,10 @@ import time
 from tqdm import tqdm
 
 from fastchat.serve.monitor.basic_stats import NUM_SERVERS
-from fastchat.serve.monitor.clean_battle_data import to_openai_format
+from fastchat.serve.monitor.clean_battle_data import (
+    to_openai_format,
+    replace_model_name,
+)
 from fastchat.utils import detect_language
 
 
@@ -40,7 +43,7 @@ def get_log_files(max_num_files=None):
             if os.path.exists(name):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
-    #filenames = list(reversed(filenames))
+    # filenames = list(reversed(filenames))
     filenames = filenames[-max_num_files:]
     return filenames
 
@@ -82,6 +85,7 @@ def clean_chat_data(log_files):
         if not isinstance(model, str):
             ct_invalid += 1
             continue
+        model = replace_model_name(model)
 
         try:
             lang_code = detect_language(state["messages"][state["offset"]][1])
@@ -132,7 +136,9 @@ def clean_chat_data(log_files):
         visited_conv_ids.add(chats[i]["conversation_id"])
         dedup_chats.append(chats[i])
 
-    print(f"#raw: {len(raw_data)}, #chat: {len(chats)}, #dedup_chat: {len(dedup_chats)}")
+    print(
+        f"#raw: {len(raw_data)}, #chat: {len(chats)}, #dedup_chat: {len(dedup_chats)}"
+    )
     print(
         f"#invalid_conv_id: {ct_invalid_conv_id}, #network_error: {ct_network_error}, #invalid: {ct_invalid}"
     )
