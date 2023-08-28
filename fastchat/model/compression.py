@@ -144,7 +144,7 @@ def load_compress_model(
             )
         except NameError:
             model = AutoModel.from_config(config, trust_remote_code=True, device=device)
-        if device not in ["cpu", "mps"]:
+        if device == "cuda"
             if not max_gpu_memory:
                 max_memory = get_balanced_memory(
                     model,
