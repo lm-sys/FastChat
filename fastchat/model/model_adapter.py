@@ -1562,6 +1562,22 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
         return get_conv_template("alpaca")
 
 
+class CodeLlamaAdapter(BaseModelAdapter):
+    """The model adapter for Code Llama"""
+
+    def match(self, model_path: str):
+        return "codellama" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-2")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1618,6 +1634,7 @@ register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
+register_model_adapter(CodeLlamaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
