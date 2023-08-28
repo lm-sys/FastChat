@@ -24,7 +24,7 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    learn_more_md,
+    acknowledgment_md,
     get_model_description_md,
     ip_expiration_dict,
 )
@@ -390,7 +390,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Max output tokens",
         )
 
-    gr.Markdown(learn_more_md)
+    gr.Markdown(acknowledgment_md)
 
     # Register listeners
     btn_list = [
