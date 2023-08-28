@@ -3,7 +3,6 @@ import gc
 import glob
 import os
 import re
-
 from accelerate import init_empty_weights
 from accelerate.utils import (
     set_module_tensor_to_device,
@@ -44,18 +43,22 @@ class CLinear(nn.Module):
         if weight is None:
             self.weight = None
         elif isinstance(weight, Tensor):
-            self.weight = compress(weight.data.to(device), default_compression_config)
+            self.weight = compress(weight.data, default_compression_config)
         else:
             self.weight = weight
         self.bias = bias
+        self.device = device
 
     def forward(self, input: Tensor) -> Tensor:
         weight = decompress(self.weight, default_compression_config)
+        input = input.to(weight.dtype).to(self.device)
         if self.bias is None:
-            return F.linear(input.to(weight.dtype), weight)
-        return F.linear(input.to(weight.dtype), weight, self.bias.to(weight.dtype))
+            return F.linear(input, weight)
+        self.bias = self.bias.to(weight.dtype).to(self.device)
+        return F.linear(input, weight, self.bias)
 
 
+# unused function
 def compress_module(module, target_device):
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
@@ -85,10 +88,11 @@ def get_compressed_list(module, prefix=""):
     return compressed_list
 
 
-def apply_compressed_weight(module, compressed_state_dict, target_device, prefix=""):
+def apply_compressed_weight(module, compressed_state_dict, prefix=""):
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
         if type(target_attr) == torch.nn.Linear:
+            # set every Linear to be CLinear
             full_name = (
                 f"{prefix}.{attr_str}.weight" if prefix else f"{attr_str}.weight"
             )
@@ -103,9 +107,7 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
             )
     for name, child in module.named_children():
         child_prefix = f"{prefix}.{name}" if prefix else name
-        apply_compressed_weight(
-            child, compressed_state_dict, target_device, child_prefix
-        )
+        apply_compressed_weight(child, compressed_state_dict, prefix=child_prefix)
 
 
 def load_compress_model(
@@ -209,7 +211,9 @@ def load_compress_model(
                 device_map=device_map, layer_name=name, device=device
             )
             if name in linear_weights:
+                # send linear_weights to corresponding device rank,such as CUDA:0
                 tensor = tmp_state_dict[name].to(device_rank).data.to(torch_dtype)
+                # execute compress on the device rank
                 compressed_state_dict[name] = compress(
                     tensor, default_compression_config
                 )
@@ -231,11 +235,11 @@ def load_compress_model(
             set_module_tensor_to_device(
                 model, name, device_rank, value=compressed_state_dict[name]
             )
-    apply_compressed_weight(model, compressed_state_dict, device)
+    apply_compressed_weight(model, compressed_state_dict)
 
     if torch_dtype == torch.float16:
         model.half()
-    model.to(device)
+    # model.to(device)
     model.eval()
     print("Loading and compressing model done.")
     return model, tokenizer
@@ -336,3 +340,16 @@ def get_sublayer_device(device_map: dict, layer_name: str, device: str):
     for key, value in device_map.items():
         if key in layer_name:
             return f"{device}:{value}"
+
+
+if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICE"] = "0,1"
+    model, tokenizer = load_compress_model(
+        model_path="THUDM/chatglm2-6b",
+        device="cuda",
+        torch_dtype=torch.float16,
+        use_fast=True,
+        revision="main",
+        num_gpus=2,
+        max_gpu_memory="20GiB",
+    )
