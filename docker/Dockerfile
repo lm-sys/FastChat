@@ -23,15 +23,16 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 # Clear APT cache and allow apt to continue even if it encounters signature errors
 RUN apt-get clean && apt-get update --allow-insecure-repositories
 
-# Add the repository directly to resolve signature issues during docker build
+# Add the repository directly to resolve signature issues during docker build, added git to install
 RUN echo "deb [trusted=yes] http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main" >> /etc/apt/sources.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && \
     apt-get update --allow-insecure-repositories && \
-    apt-get install -y software-properties-common curl python3.8 python3.8-distutils && \
+    apt-get install -y software-properties-common curl python3.8 python3.8-distutils git && \  
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3.8 get-pip.py
+
 
 # Clear pip cache
 RUN pip cache purge
@@ -44,7 +45,7 @@ RUN pip install -r requirements.txt && rm -rf /root/.cache/pip/*
 # RUN which nvcc
 
 # Install Flash-attn for training, requires ninja, packaging, pytorch. Currently commented out to get environment up.
-# RUN pip install flash-attn>=2.0
+RUN pip install flash-attn>=2.0
 
 # Add healthcheck (replace with your own healthcheck if not a web server on port 8080)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
