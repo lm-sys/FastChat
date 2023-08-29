@@ -18,6 +18,8 @@ import torch.nn as nn
 from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, AutoModel
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 @dataclasses.dataclass
 class CompressionConfig:
@@ -143,10 +145,10 @@ def load_compress_model(
         # such as chatglm, chatglm2
         try:
             model = AutoModelForCausalLM.from_config(
-                config, trust_remote_code=True, device=device
+                config, trust_remote_code=True
             )
         except NameError:
-            model = AutoModel.from_config(config, trust_remote_code=True, device=device)
+            model = AutoModel.from_config(config, trust_remote_code=True)
         if device == "cuda":
             if not max_gpu_memory:
                 max_memory = get_balanced_memory(
@@ -343,7 +345,7 @@ def get_sublayer_device(device_map: dict, layer_name: str, device: str):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICE"] = "0,1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
     model, tokenizer = load_compress_model(
         model_path="THUDM/chatglm2-6b",
         device="cuda",
@@ -353,3 +355,6 @@ if __name__ == "__main__":
         num_gpus=2,
         max_gpu_memory="20GiB",
     )
+    input_ids = tokenizer.encode("hello there")
+    res = model.generate(input_ids)
+    print("done!")
