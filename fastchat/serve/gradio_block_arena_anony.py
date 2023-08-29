@@ -25,7 +25,7 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    learn_more_md,
+    acknowledgment_md,
     ip_expiration_dict,
 )
 from fastchat.utils import (
@@ -170,11 +170,13 @@ SAMPLING_WEIGHTS = {
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
+    "codellama-34b-instruct": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "mpt-30b-chat": 1.5,
     "wizardlm-13b": 1.5,
     # tier 2
+    "codellama-13b-instruct": 1.0,
     "guanaco-33b": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
@@ -456,7 +458,7 @@ Please scroll down and start chatting. The models include both closed-source mod
             label="Max output tokens",
         )
 
-    gr.Markdown(learn_more_md)
+    gr.Markdown(acknowledgment_md)
 
     # Register listeners
     btn_list = [
