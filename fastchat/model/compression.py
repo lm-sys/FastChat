@@ -172,7 +172,9 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
                     tensor, default_compression_config
                 )
             else:
-                compressed_state_dict[name] = tmp_state_dict[name].to(device, dtype=torch_dtype)
+                compressed_state_dict[name] = tmp_state_dict[name].to(
+                    device, dtype=torch_dtype
+                )
             tmp_state_dict[name] = None
             tensor = None
             gc.collect()
