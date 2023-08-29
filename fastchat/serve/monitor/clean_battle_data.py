@@ -76,6 +76,15 @@ def to_openai_format(messages):
     return ret
 
 
+def replace_model_name(old_name):
+    return (
+        old_name.replace("bard", "palm-2")
+        .replace("claude-v1", "claude-1")
+        .replace("claude-instant-v1", "claude-instant-1")
+        .replace("oasst-sft-1-pythia-12b", "oasst-pythia-12b")
+    )
+
+
 def clean_battle_data(log_files):
     data = []
     for filename in tqdm(log_files, desc="read files"):
@@ -162,12 +171,7 @@ def clean_battle_data(log_files):
             continue
 
         # Replace bard with palm
-        models = [
-            m.replace("bard", "palm-2")
-            .replace("claude-v1", "claude-1")
-            .replace("claude-instant-v1", "claude-instant-1")
-            for m in models
-        ]
+        models = [replace_model_name(m) for m in models]
 
         question_id = row["states"][0]["conv_id"]
         conversation_a = to_openai_format(
