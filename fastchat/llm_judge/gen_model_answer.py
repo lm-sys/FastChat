@@ -77,7 +77,7 @@ def get_model_answers(
     max_gpu_memory,
 ):
     model, tokenizer = load_model(
-        model_path,
+        
         device="cuda",
         num_gpus=num_gpus_per_model,
         max_gpu_memory=max_gpu_memory,
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model-path",
         type=str,
-        required=True,
+        default="c:/Users/maxpo/OneDrive/Documents/GitHub/vicuna-7b-v1.5-16k",  # Updated the default path to your local model path
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument("--model-id", type=str, required=True)
