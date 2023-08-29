@@ -1,0 +1,44 @@
+import argparse
+import pickle
+
+from fastchat.llm_judge.common import chat_compeletion_openai
+from fastchat.conversation import get_conv_template
+
+
+def truncate_string(s, l):
+    half = int(l//2)
+    return s[:half] + s[-half:] if len(s) > l else s
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input-file", type=str, required=True)
+    parser.add_argument("--model", type=str, default="gpt-3.5-turbo")
+    args = parser.parse_args()
+
+    cluster_infos = pickle.load(open(args.input_file, "rb"))
+
+    num_total_prompts = sum([x[0] for x in cluster_infos])
+
+    topics = []
+    percentages = []
+    for i, info in enumerate(cluster_infos):
+        num_samples, prompts = info
+        percentage = num_samples / num_total_prompts
+        print(f"cluster {i}, #prompts {num_samples}, percentage: {percentage * 100:.2f}%")
+        instruct = "Given a list of user messages, use less than 8 words to summarize a central topic for all messages in English. Your output should only include a single line. Try to be specific."
+        prompt = "\n".join([truncate_string(x, l=200) for x in prompts[:150]])
+        prompt = "BEGIN OF THE MESSAGE LIST\n" + prompt  + "\nEND OF THE MESSAGE LIST."
+        conv = get_conv_template("chatgpt")
+        conv.set_system_message(instruct)
+        conv.append_message(conv.roles[0], prompt)
+        conv.append_message(conv.roles[1], None)
+
+        topic = chat_compeletion_openai(args.model, conv, temperature=0, max_tokens=256)
+        print(topic)
+
+        topics.append(topic)
+        percentages.append(round(percentage, 6))
+
+    print()
+    print(f"topics: {topics}")
+    print(f"percentages: {percentages}")

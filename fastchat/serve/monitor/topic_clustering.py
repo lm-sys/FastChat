@@ -2,9 +2,11 @@
 
 Usage:
 python3 topic_clustering.py --in arena.json --english-only --min-length 32
+python3 topic_clustering.py --in clean_conv_20230809_100k.json --english-only --min-length 32 --max-length 1024
 """
 import argparse
 import json
+import pickle
 import string
 import time
 
@@ -143,7 +145,7 @@ def get_topk_indices(centers, labels, embeddings, topk):
 def print_topk(texts, labels, topk_indices, show_cut_off):
     ret = ""
     for k in range(len(topk_indices)):
-        num_samples = torch.sum(labels == k)
+        num_samples = torch.sum(labels == k).item()
 
         ret += "=" * 20 + f" cluster {k}, #samples: {num_samples} " + "=" * 20 + "\n"
         for idx in topk_indices[k]:
@@ -151,6 +153,18 @@ def print_topk(texts, labels, topk_indices, show_cut_off):
         ret += "=" * 40 + "\n\n"
 
     return ret
+
+
+def get_cluster_info(texts, labels, topk_indices):
+    cluster_info = []
+    for k in range(len(topk_indices)):
+        num_samples = torch.sum(labels == k).item()
+        prompts = []
+        for idx in topk_indices[k]:
+            prompts.append(texts[idx])
+        cluster_info.append((num_samples, prompts))
+
+    return cluster_info
 
 
 if __name__ == "__main__":
@@ -191,6 +205,8 @@ if __name__ == "__main__":
     topk_str = print_topk(texts, labels, topk_indices, args.show_cut_off)
     num_clusters = len(centers)
 
+    cluster_info = get_cluster_info(texts, labels, topk_indices)
+
     # Dump results
     filename_prefix = f"results_c{num_clusters}_{args.cluster_alg}"
     print(topk_str)
@@ -209,3 +225,6 @@ if __name__ == "__main__":
             for text, score in zip(tmp_texts[sorted_indices], scores[sorted_indices]):
                 obj = {"cluster": i, "text": text, "sim": score.item()}
                 fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+    with open(filename_prefix + "_cluster.pkl", "wb") as fout:
+        pickle.dump(cluster_info, fout)
