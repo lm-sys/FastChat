@@ -27,14 +27,22 @@ def remove_punctuation(input_string):
     return no_punct
 
 
-def read_texts(input_file, min_length, english_only):
-    texts = []
+def read_texts(input_file, min_length, max_length, english_only):
     visited = set()
-    with open(input_file, "r") as fin:
-        for l in tqdm(fin.readlines()):
-            l = json.loads(l)
-            # text = l["text"].strip()
-            text = l["conversation_a"][0]["content"]
+    texts = []
+
+    lines = json.load(open(input_file, "r"))
+
+    for l in tqdm(lines):
+        if "text" in l:
+            line_texts = [l["text"]]
+        elif "conversation_a" in l:
+            line_texts = [x["content"] for x in l["conversation_a"] if x["role"] == "user"]
+        elif "conversation" in l:
+            line_texts = [x["content"] for x in l["conversation"] if x["role"] == "user"]
+
+        for text in line_texts:
+            text = text.strip()
 
             # Filter language
             if english_only:
@@ -42,9 +50,13 @@ def read_texts(input_file, min_length, english_only):
                 if lang != "English":
                     continue
 
-            # Filter short prompts
+            # Filter short or long prompts
             if min_length:
                 if len(text) < min_length:
+                    continue
+
+            if max_length:
+                if len(text) > max_length:
                     continue
 
             # De-duplication
@@ -149,12 +161,13 @@ if __name__ == "__main__":
     # default="multi-qa-distilbert-cos-v1")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--min-length", type=int)
+    parser.add_argument("--max-length", type=int)
     parser.add_argument("--english-only", action="store_true")
     parser.add_argument("--num-clusters", type=int, default=20)
     parser.add_argument(
         "--cluster-alg", type=str, choices=["kmeans", "aggcls"], default="kmeans"
     )
-    parser.add_argument("--show-top-k", type=int, default=20)
+    parser.add_argument("--show-top-k", type=int, default=200)
     parser.add_argument("--show-cut-off", type=int, default=512)
     args = parser.parse_args()
 
@@ -162,7 +175,10 @@ if __name__ == "__main__":
     show_top_k = args.show_top_k
     show_cut_off = args.show_cut_off
 
-    texts = read_texts(args.input_file, args.min_length, args.english_only)
+    texts = read_texts(args.input_file, args.min_length,
+                       args.max_length, args.english_only)
+    print(f"#text: {len(texts)}")
+
     embeddings = get_embeddings(texts, args.model, args.batch_size)
     if args.cluster_alg == "kmeans":
         centers, labels = run_k_means(embeddings, num_clusters)
