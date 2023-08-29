@@ -6,13 +6,17 @@ python3 summarize_cluster.py --in results_c20_kmeans_cluster.pkl --model gpt-4
 import argparse
 import pickle
 
-from fastchat.llm_judge.common import chat_compeletion_openai, chat_compeletion_anthropic
+from fastchat.llm_judge.common import (
+    chat_compeletion_openai,
+    chat_compeletion_anthropic,
+)
 from fastchat.conversation import get_conv_template
 
 
 def truncate_string(s, l):
-    half = int(l//2)
+    half = int(l // 2)
     return s[:half] + s[-half:] if len(s) > l else s
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -31,10 +35,14 @@ if __name__ == "__main__":
     for i, info in enumerate(cluster_infos):
         num_samples, prompts = info
         percentage = num_samples / num_total_prompts
-        print(f"cluster {i}, #prompts {num_samples}, percentage: {percentage * 100:.2f}%")
+        print(
+            f"cluster {i}, #prompts {num_samples}, percentage: {percentage * 100:.2f}%"
+        )
         instruct = "Given a list of user messages, use less than 8 words to summarize a central topic for all messages in English. Your output should only include a single line. Try to be specific."
-        prompt = "\n".join([truncate_string(x, l=200) for x in prompts[:args.num_prompts]])
-        prompt = "BEGIN OF THE MESSAGE LIST\n" + prompt  + "\nEND OF THE MESSAGE LIST."
+        prompt = "\n".join(
+            [truncate_string(x, l=200) for x in prompts[: args.num_prompts]]
+        )
+        prompt = "BEGIN OF THE MESSAGE LIST\n" + prompt + "\nEND OF THE MESSAGE LIST."
 
         if "gpt" in model:
             template_name = "chatgpt"

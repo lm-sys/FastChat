@@ -39,9 +39,13 @@ def read_texts(input_file, min_length, max_length, english_only):
         if "text" in l:
             line_texts = [l["text"]]
         elif "conversation_a" in l:
-            line_texts = [x["content"] for x in l["conversation_a"] if x["role"] == "user"]
+            line_texts = [
+                x["content"] for x in l["conversation_a"] if x["role"] == "user"
+            ]
         elif "conversation" in l:
-            line_texts = [x["content"] for x in l["conversation"] if x["role"] == "user"]
+            line_texts = [
+                x["content"] for x in l["conversation"] if x["role"] == "user"
+            ]
 
         for text in line_texts:
             text = text.strip()
@@ -189,8 +193,9 @@ if __name__ == "__main__":
     show_top_k = args.show_top_k
     show_cut_off = args.show_cut_off
 
-    texts = read_texts(args.input_file, args.min_length,
-                       args.max_length, args.english_only)
+    texts = read_texts(
+        args.input_file, args.min_length, args.max_length, args.english_only
+    )
     print(f"#text: {len(texts)}")
 
     embeddings = get_embeddings(texts, args.model, args.batch_size)
