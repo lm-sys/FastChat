@@ -35,8 +35,22 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
+    engine = ""
+    if model_name == "gpt-3.5-turbo":
+        openai.api_base = os.getenv("OPENAI_API_BASE_GPT35")
+        openai.api_key = os.getenv("OPENAI_API_KEY_GPT35")
+        openai.api_version = os.getenv("OPENAI_API_VERSION_GPT35")
+        openai.api_type = os.getenv("OPENAI_API_TYPE_GPT35")
+        engine = os.getenv("OPENAI_ENGINE_GPT35")
+    elif model_name == "gpt-4":
+        openai.api_base = os.getenv("OPENAI_API_BASE_GPT4")
+        openai.api_key = os.getenv("OPENAI_API_KEY_GPT4")
+        openai.api_version = os.getenv("OPENAI_API_VERSION_GPT4")
+        openai.api_type = os.getenv("OPENAI_API_TYPE_GPT4")
+        engine = os.getenv("OPENAI_ENGINE_GPT4")
     res = openai.ChatCompletion.create(
         model=model_name,
+        engine=engine,
         messages=messages,
         temperature=temperature,
         max_tokens=max_new_tokens,
