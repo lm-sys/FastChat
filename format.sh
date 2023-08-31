@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Adopted from https://github.com/skypilot-org/skypilot/blob/master/format.sh
+# Adapted from https://github.com/skypilot-org/skypilot/blob/master/format.sh
 
 # Cause the script to exit if a single command fails
 set -eo pipefail
