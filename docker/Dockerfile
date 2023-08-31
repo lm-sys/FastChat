@@ -4,7 +4,7 @@
 # CDN bug opened for nvidia.
 
 # Base image with CUDA support
-FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
+FROM nvidia/cuda:11.8.0-devel-ubuntu20.04
 
 # Metadata as described above
 LABEL version="2.8" \
@@ -22,6 +22,9 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 
 # Clear APT cache and allow apt to continue even if it encounters signature errors
 RUN apt-get clean && apt-get update --allow-insecure-repositories
+
+# Set DEBIAN_FRONTEND to noninteractive to prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Add the repository directly to resolve signature issues during docker build, added git to install
 RUN echo "deb [trusted=yes] http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main" >> /etc/apt/sources.list && \
@@ -45,7 +48,7 @@ RUN pip install -r requirements.txt && rm -rf /root/.cache/pip/*
 # RUN which nvcc
 
 # Install Flash-attn for training, requires ninja, packaging, pytorch. Currently commented out to get environment up.
-RUN pip install flash-attn>=2.0
+# RUN pip install flash-attn>=2.0
 
 # Add healthcheck (replace with your own healthcheck if not a web server on port 8080)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
