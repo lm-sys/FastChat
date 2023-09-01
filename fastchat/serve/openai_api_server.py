@@ -14,6 +14,7 @@ import logging
 import os
 from typing import Generator, Optional, Union, Dict, List, Any
 
+from emotion_analyzer import emotion_analyzer_function 
 import aiohttp
 import fastapi
 from fastapi import Depends, HTTPException
@@ -662,6 +663,11 @@ async def get_embedding(payload: Dict[str, Any]):
 
 ### GENERAL API - NOT OPENAI COMPATIBLE ###
 
+@app.post("/emotion_analyze")
+def analyze_text(item: Text):
+    analysis_result = get_cached_analysis(item.text)
+    return analysis_result
+    
 
 @app.post("/api/v1/token_check")
 async def count_tokens(request: APITokenCheckRequest):
