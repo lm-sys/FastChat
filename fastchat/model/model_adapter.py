@@ -1339,7 +1339,8 @@ class QwenChatAdapter(BaseModelAdapter):
             model_path,
             trust_remote_code=True,
         )
-        config.use_flash_attn = False
+        # NOTE: if you use the old version of model file, please remove the comments below
+        # config.use_flash_attn = False
         config.fp16 = True
         generation_config = GenerationConfig.from_pretrained(
             model_path, trust_remote_code=True
