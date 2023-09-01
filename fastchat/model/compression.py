@@ -128,7 +128,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         # such as chatglm, chatglm2
         try:
             # google/flan-* models are based on an AutoModelForSeq2SeqLM.
-            if 'T5Config' in str(type(config))
+            if 'T5Config' in str(type(config)):
                 model = AutoModelForSeq2SeqLM.from_config(config, trust_remote_code=True)
             else:
                 model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
