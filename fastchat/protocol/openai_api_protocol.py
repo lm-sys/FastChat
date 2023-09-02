@@ -151,11 +151,13 @@ class CompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
+    use_beam_search: Optional[bool] = False
+    best_of: Optional[int] = None
 
 
 class CompletionResponseChoice(BaseModel):
     index: int
-    text: str
+    text: Union[str, List[str]]
     logprobs: Optional[int] = None
     finish_reason: Optional[Literal["stop", "length"]] = None
 
