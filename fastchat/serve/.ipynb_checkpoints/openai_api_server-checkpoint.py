@@ -26,7 +26,6 @@ from pydantic import BaseSettings
 import shortuuid
 import tiktoken
 import uvicorn
-from fastchat.modules.emotion_analyzer_serve import get_cached_analysis
 
 from fastchat.constants import (
     WORKER_API_TIMEOUT,
