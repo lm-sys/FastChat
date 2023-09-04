@@ -106,6 +106,19 @@ class VLLMWorker(BaseModelWorker):
 
         async for request_output in results_generator:
             prompt = request_output.prompt
+            prompt_tokens = len(request_output.prompt_token_ids)
+            output_usage = []
+            for out in request_output.outputs:
+                completion_tokens = len(out.token_ids)
+                total_tokens = prompt_tokens + completion_tokens
+                output_usage.append(
+                    {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": total_tokens,
+                    }
+                )
+
             if echo:
                 text_outputs = [
                     prompt + output.text for output in request_output.outputs
@@ -116,7 +129,7 @@ class VLLMWorker(BaseModelWorker):
             if sampling_params.best_of is None:
                 text_outputs = [" ".join(text_outputs)]
             # Note: usage is not supported yet
-            ret = {"text": text_outputs, "error_code": 0, "usage": {}}
+            ret = {"text": text_outputs, "error_code": 0, "usage": output_usage}
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):

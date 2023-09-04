@@ -533,9 +533,18 @@ async def create_completion(request: CompletionRequest):
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
-            task_usage = UsageInfo.parse_obj(content["usage"])
-            for usage_key, usage_value in task_usage.dict().items():
-                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+            idx = 0
+            while True:
+                info = content["usage"]
+                if isinstance(info, list):
+                    info = info[idx]
+
+                task_usage = UsageInfo.parse_obj(info)
+
+                for usage_key, usage_value in task_usage.dict().items():
+                    setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+                idx += 1
+                break
 
         return CompletionResponse(
             model=request.model, choices=choices, usage=UsageInfo.parse_obj(usage)
