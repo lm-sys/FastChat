@@ -62,6 +62,8 @@ from fastchat.protocol.api_protocol import (
     APITokenCheckResponseItem,
 )
 
+from fastchat.modules.emotion_analyzer import get_cached_analysis, Text
+
 logger = logging.getLogger(__name__)
 
 conv_template_map = {}
@@ -663,10 +665,21 @@ async def get_embedding(payload: Dict[str, Any]):
 
 ### GENERAL API - NOT OPENAI COMPATIBLE ###
 
+<<<<<<< HEAD
 @app.post("/emotion_analyze")
 def analyze_text(item: Text):
     analysis_result = get_cached_analysis(item.text)
     return analysis_result
+=======
+@app.post("/api/v1/emotion_analyze")
+async def emotion_analyze(item: Text):
+    try:
+        analysis = get_cached_analysis(item.text)  # Using the imported function
+        return {"analysis": analysis}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+>>>>>>> main
 
 @app.post("/api/v1/token_check")
 async def count_tokens(request: APITokenCheckRequest):
