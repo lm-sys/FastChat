@@ -57,18 +57,20 @@ def build_logger(logger_name, logger_filename):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
-    os.makedirs(LOGDIR, exist_ok=True)
-    filename = os.path.join(LOGDIR, logger_filename)
-    handler = logging.handlers.TimedRotatingFileHandler(
-        filename, when="D", utc=True, encoding="utf-8"
-    )
-    handler.setFormatter(formatter)
+    # if LOGDIR is empty, then don't try output log to local file
+    if LOGDIR != "":
+        os.makedirs(LOGDIR, exist_ok=True)
+        filename = os.path.join(LOGDIR, logger_filename)
+        handler = logging.handlers.TimedRotatingFileHandler(
+            filename, when="D", utc=True, encoding="utf-8"
+        )
+        handler.setFormatter(formatter)
 
-    for l in [stdout_logger, stderr_logger, logger]:
-        if l in visited_loggers:
-            continue
-        visited_loggers.add(l)
-        l.addHandler(handler)
+        for l in [stdout_logger, stderr_logger, logger]:
+            if l in visited_loggers:
+                continue
+            visited_loggers.add(l)
+            l.addHandler(handler)
 
     return logger
 
