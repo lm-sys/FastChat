@@ -429,8 +429,8 @@ def add_model_args(parser):
     parser.add_argument(
         "--gptq-transformers-bits",
         type=int,
-        default=16,
-        choices=[2, 3, 4, 8, 16],
+        default=4,
+        choices=[2, 3, 4, 8],
         help="Used for GPTQ via Transformers. # bits to use for quantization.",
     )
     parser.add_argument(
