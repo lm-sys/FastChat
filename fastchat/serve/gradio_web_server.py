@@ -57,20 +57,11 @@ enable_moderation = False
 acknowledgment_md = """
 **Acknowledgment:** We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [AnyScale](https://www.anyscale.com/), and [HuggingFace](https://huggingface.co/) for their sponsorship.
 
-<div style="display: inline-block;">
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="kaggle" width="100">
-</div>
-
-<div style="display: inline-block;">
-<img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebook" alt="mbzuai" width="95">
-</div>
-
-<div style="display: inline-block;">
-<img src="https://docs.anyscale.com/site-assets/logo.png" alt="anyscale" width="130">
-</div>
-
-<div style="display: inline-block;">
-<img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="huggingface" width="130">
+<div class="image-container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
+    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
+    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="Image 4">
 </div>
 """
 
@@ -512,6 +503,18 @@ block_css = """
 }
 footer {
     display:none !important
+}
+.image-container {
+    display: flex;
+    align-items: center;
+    padding: 1px;
+}
+.image-container img {
+    margin: 0 30px;
+    height: 20px;
+    max-height: 100%;
+    width: auto;
+    max-width: 20%;
 }
 """
 
