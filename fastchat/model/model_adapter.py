@@ -23,6 +23,7 @@ from transformers import (
     LlamaTokenizer,
     LlamaForCausalLM,
     T5Tokenizer,
+    GPTQConfig
 )
 
 from fastchat.constants import CPU_ISA
@@ -56,7 +57,7 @@ class BaseModelAdapter:
     def match(self, model_path: str):
         return True
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
         try:
             tokenizer = AutoTokenizer.from_pretrained(
@@ -71,7 +72,7 @@ class BaseModelAdapter:
             )
         try:
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path, low_cpu_mem_usage=True, quantization_config=gptq_transformers_config, **from_pretrained_kwargs
             )
         except NameError:
             model = AutoModel.from_pretrained(
@@ -154,6 +155,7 @@ def load_model(
     load_8bit: bool = False,
     cpu_offloading: bool = False,
     gptq_config: Optional[GptqConfig] = None,
+    gptq_transformers_config: Optional[GPTQConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     revision: str = "main",
     debug: bool = False,
@@ -275,7 +277,7 @@ def load_model(
     kwargs["revision"] = revision
 
     # Load model
-    model, tokenizer = adapter.load_model(model_path, kwargs)
+    model, tokenizer = adapter.load_model(model_path, gptq_transformers_config, kwargs)
 
     if (
         device == "cpu"
@@ -415,6 +417,18 @@ def add_model_args(parser):
         "--gptq-act-order",
         action="store_true",
         help="Used for GPTQ. Whether to apply the activation order GPTQ heuristic",
+    )
+    parser.add_argument(
+        "--gptq-transformers-bits",
+        type=int,
+        default=16,
+        choices=[2, 3, 4, 8, 16],
+        help="Used for GPTQ via Transformers. # bits to use for quantization.",
+    )
+    parser.add_argument(
+        "--gptq-transformers-disable-exllama",
+        action="store_true",
+        help="Whether to use exllama backend. Only works with --gptq-transformers-bits 4.",
     )
     parser.add_argument(
         "--awq-ckpt",

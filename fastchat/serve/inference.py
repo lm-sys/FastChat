@@ -20,6 +20,7 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     T5Tokenizer,
     AutoConfig,
+    GPTQConfig
 )
 from transformers.generation.logits_process import (
     LogitsProcessorList,
@@ -297,6 +298,7 @@ def chat_loop(
     max_new_tokens: int,
     chatio: ChatIO,
     gptq_config: Optional[GptqConfig] = None,
+    gptq_transformers_config: Optional[GPTQConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
@@ -312,6 +314,7 @@ def chat_loop(
         load_8bit=load_8bit,
         cpu_offloading=cpu_offloading,
         gptq_config=gptq_config,
+        gptq_transformers_config=gptq_transformers_config,
         awq_config=awq_config,
         revision=revision,
         debug=debug,

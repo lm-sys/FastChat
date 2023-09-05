@@ -27,6 +27,8 @@ from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 
+from transformers import GPTQConfig
+
 from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
@@ -221,6 +223,10 @@ def main(args):
                 wbits=args.gptq_wbits,
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
+            ),
+            gptq_transformers_config = GPTQConfig(
+                bits=args.gptq_transformers_bits,
+                disable_exllama=args.gptq_transformers_disable_exllama
             ),
             awq_config=AWQConfig(
                 ckpt=args.awq_ckpt or args.model_path,
