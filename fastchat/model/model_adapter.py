@@ -60,8 +60,8 @@ class BaseModelAdapter:
     def load_model(
         self,
         model_path: str,
-        gptq_transformers_config: GPTQConfig,
         from_pretrained_kwargs: dict,
+        gptq_transformers_config: Optional[GPTQConfig] = None
     ):
         revision = from_pretrained_kwargs.get("revision", "main")
         try:
@@ -76,12 +76,19 @@ class BaseModelAdapter:
                 model_path, use_fast=False, revision=revision, trust_remote_code=True
             )
         try:
-            model = AutoModelForCausalLM.from_pretrained(
-                model_path,
-                low_cpu_mem_usage=True,
-                quantization_config=gptq_transformers_config,
-                **from_pretrained_kwargs,
-            )
+            if gptq_transformers_config:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_path,
+                    low_cpu_mem_usage=True,
+                    quantization_config=gptq_transformers_config,
+                    **from_pretrained_kwargs,
+                )
+            else:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_path,
+                    low_cpu_mem_usage=True,
+                    **from_pretrained_kwargs,
+                )
         except NameError:
             model = AutoModel.from_pretrained(
                 model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
@@ -285,7 +292,10 @@ def load_model(
     kwargs["revision"] = revision
 
     # Load model
-    model, tokenizer = adapter.load_model(model_path, gptq_transformers_config, kwargs)
+    if gptq_transformers_config and gptq_transformers_config.bits < 16:
+        model, tokenizer = adapter.load_model(model_path, kwargs, gptq_transformers_config)
+    else:
+         model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (
         device == "cpu"
@@ -429,7 +439,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--gptq-transformers-bits",
         type=int,
-        default=4,
+        default=16,
         choices=[2, 3, 4, 8],
         help="Used for GPTQ via Transformers. # bits to use for quantization.",
     )

@@ -500,10 +500,13 @@ def create_model_worker():
         groupsize=args.awq_groupsize,
     )
 
-    gptq_transformers_config = GPTQConfig(
-        bits=args.gptq_transformers_bits,
-        disable_exllama=args.gptq_transformers_disable_exllama,
-    )
+    if args.gptq_transformers_bits is 16:
+        gptq_transformers_config = None
+    else:
+        gptq_transformers_config = GPTQConfig(
+            bits=args.gptq_transformers_bits,
+            disable_exllama=args.gptq_transformers_disable_exllama,
+        )
 
     worker = ModelWorker(
         args.controller_address,
