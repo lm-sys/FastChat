@@ -1,8 +1,8 @@
 """
-Clean chatbot arena battle log.
+Clean chatbot arena chat log.
 
 Usage:
-python3 clean_battle_data.py --mode conv_release
+python3 clean_chat_data.py --mode conv_release
 """
 import argparse
 import datetime
@@ -13,8 +13,11 @@ import time
 
 from tqdm import tqdm
 
-from fastchat.serve.monitor.basic_stats import get_log_files, NUM_SERVERS
-from fastchat.serve.monitor.clean_battle_data import to_openai_format
+from fastchat.serve.monitor.basic_stats import NUM_SERVERS
+from fastchat.serve.monitor.clean_battle_data import (
+    to_openai_format,
+    replace_model_name,
+)
 from fastchat.utils import detect_language
 
 
@@ -40,7 +43,7 @@ def get_log_files(max_num_files=None):
             if os.path.exists(name):
                 filenames.append(name)
     max_num_files = max_num_files or len(filenames)
-    filenames = list(reversed(filenames))
+    # filenames = list(reversed(filenames))
     filenames = filenames[-max_num_files:]
     return filenames
 
@@ -82,6 +85,7 @@ def clean_chat_data(log_files):
         if not isinstance(model, str):
             ct_invalid += 1
             continue
+        model = replace_model_name(model)
 
         try:
             lang_code = detect_language(state["messages"][state["offset"]][1])
@@ -123,22 +127,30 @@ def clean_chat_data(log_files):
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    print(f"#raw: {len(raw_data)}, #chat: {len(chats)}")
+    # Deduplication
+    dedup_chats = []
+    visited_conv_ids = set()
+    for i in reversed(range(len(chats))):
+        if chats[i]["conversation_id"] in visited_conv_ids:
+            continue
+        visited_conv_ids.add(chats[i]["conversation_id"])
+        dedup_chats.append(chats[i])
+
+    print(
+        f"#raw: {len(raw_data)}, #chat: {len(chats)}, #dedup_chat: {len(dedup_chats)}"
+    )
     print(
         f"#invalid_conv_id: {ct_invalid_conv_id}, #network_error: {ct_network_error}, #invalid: {ct_invalid}"
     )
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
 
-    return chats
+    return list(reversed(dedup_chats))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-num-files", type=int)
-    parser.add_argument(
-        "--mode", type=str, choices=["simple", "conv_release"], default="simple"
-    )
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)

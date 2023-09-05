@@ -25,7 +25,7 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    learn_more_md,
+    acknowledgment_md,
     ip_expiration_dict,
 )
 from fastchat.utils import (
@@ -168,19 +168,22 @@ SAMPLING_WEIGHTS = {
     "claude-instant-1": 2,
     # tire 1
     "palm-2": 1.5,
+    "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
+    "codellama-34b-instruct": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "mpt-30b-chat": 1.5,
     "wizardlm-13b": 1.5,
     # tier 2
+    "codellama-13b-instruct": 1.0,
     "guanaco-33b": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     # tier 3
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
-    "chatglm-6b": 0.5,
+    "chatglm2-6b": 0.5,
     # deprecated
     "mpt-7b-chat": 0.1,
     "oasst-pythia-12b": 0.1,
@@ -190,9 +193,10 @@ SAMPLING_WEIGHTS = {
     "stablelm-tuned-alpha-7b": 0.1,
     "dolly-v2-12b": 0.1,
     "llama-13b": 0.1,
+    "chatglm-6b": 0.5,
 }
 
-SAMPLING_BOOST_MODELS = []
+SAMPLING_BOOST_MODELS = ["llama-2-70b-chat"]
 
 model_pairs = []
 model_pairs_weights = []
@@ -367,10 +371,10 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 ### Rules
 - Chat with two anonymous models side-by-side and vote for which one is better!
-- You can do multiple rounds of conversations before voting.
+- You can do multiple turns of conversations before voting.
 - The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
 - Click "Clear history" to start a new round.
 - | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
@@ -382,7 +386,7 @@ See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbo
 By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
 
 ### Battle
-Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Vicuna).
+Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Llama, Vicuna).
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -454,7 +458,7 @@ Please scroll down and start chatting. The models include both closed-source mod
             label="Max output tokens",
         )
 
-    gr.Markdown(learn_more_md)
+    gr.Markdown(acknowledgment_md)
 
     # Register listeners
     btn_list = [

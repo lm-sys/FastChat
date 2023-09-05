@@ -24,7 +24,7 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    learn_more_md,
+    acknowledgment_md,
     get_model_description_md,
     ip_expiration_dict,
 )
@@ -298,11 +298,11 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
-- You can do multiple rounds of conversations before voting.
+- You can do multiple turns of conversations before voting.
 - Click "Clear history" to start a new round.
 - | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
@@ -390,7 +390,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Max output tokens",
         )
 
-    gr.Markdown(learn_more_md)
+    gr.Markdown(acknowledgment_md)
 
     # Register listeners
     btn_list = [

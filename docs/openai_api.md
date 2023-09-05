@@ -1,4 +1,4 @@
-# OpenAI-Compatible RESTful APIs & SDK
+# OpenAI-Compatible RESTful APIs
 
 FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
 The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
@@ -62,7 +62,7 @@ completion = openai.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
-Streaming is also supported. See [test_openai_api.py](../tests/test_openai_api.py).
+Streaming is also supported. See [test_openai_api.py](../tests/test_openai_api.py).  If your api server is behind a proxy you'll need to turn off buffering, you can do so in Nginx by setting `proxy_buffering off;` in the location block for the proxy.
 
 ### cURL
 cURL is another good tool for observing the output of the api.

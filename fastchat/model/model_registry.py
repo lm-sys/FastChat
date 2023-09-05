@@ -62,6 +62,12 @@ register_model_info(
     "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
+    ["codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
+    "Code Llama",
+    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
+    "open foundation models for code by Meta",
+)
+register_model_info(
     [
         "vicuna-33b",
         "vicuna-33b-v1.3",
@@ -181,6 +187,12 @@ register_model_info(
     "Phoenix-7B",
     "https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b",
     "a multilingual chat assistant fine-tuned from Bloomz to democratize ChatGPT across languages by CUHK(SZ)",
+)
+register_model_info(
+    ["realm-7b-v1"],
+    "ReaLM",
+    "https://github.com/FreedomIntelligence/ReaLM",
+    "A chatbot fine-tuned from LLaMA2 with data generated via iterative calls to UserGPT and ChatGPT by CUHK(SZ) and SRIBD.",
 )
 register_model_info(
     ["billa-7b-sft"],

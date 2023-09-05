@@ -78,7 +78,6 @@ def load_compress_model(
             )
         else:
             device_map = None
-
     if os.path.exists(model_path):
         # `model_path` is a local folder
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
@@ -100,7 +99,6 @@ def load_compress_model(
             files = glob.glob(base_pattern)
             if len(files) > 0:
                 downloaded = True
-
         if downloaded:
             model_path = model_path_temp
         else:
@@ -126,7 +124,6 @@ def load_compress_model(
             files = glob.glob(base_pattern)
             if len(files) > 0:
                 downloaded = True
-
         if downloaded:
             model_path = model_path_temp
         else:

@@ -873,6 +873,23 @@ class PhoenixAdapter(BaseModelAdapter):
         return get_conv_template("phoenix")
 
 
+class ReaLMAdapter(BaseModelAdapter):
+    """The model adapter for FreedomIntelligence/ReaLM-7b"""
+
+    def match(self, model_path: str):
+        return "ReaLM" in model_path
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ReaLM-7b-v1")
+
+
 class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
@@ -1002,7 +1019,7 @@ class WizardLMAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         model_path = model_path.lower()
-        if "13b" in model_path or "30b" in model_path:
+        if "13b" in model_path or "30b" in model_path or "70b" in model_path:
             return get_conv_template("vicuna_v1.1")
         else:
             # TODO: use the recommended template for 7B
@@ -1332,7 +1349,8 @@ class QwenChatAdapter(BaseModelAdapter):
             model_path,
             trust_remote_code=True,
         )
-        config.use_flash_attn = False
+        # NOTE: if you use the old version of model file, please remove the comments below
+        # config.use_flash_attn = False
         config.fp16 = True
         generation_config = GenerationConfig.from_pretrained(
             model_path, trust_remote_code=True
@@ -1555,6 +1573,22 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
         return get_conv_template("alpaca")
 
 
+class CodeLlamaAdapter(BaseModelAdapter):
+    """The model adapter for Code Llama"""
+
+    def match(self, model_path: str):
+        return "codellama" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-2")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1610,6 +1644,8 @@ register_model_adapter(Lamma2ChineseAdapter)
 register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
+register_model_adapter(ReaLMAdapter)
+register_model_adapter(CodeLlamaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

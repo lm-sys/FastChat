@@ -49,18 +49,30 @@ def load_demo(url_params, request: gr.Request):
 
     selected = 0
     if "arena" in url_params:
-        selected = 1
+        selected = 0
     elif "compare" in url_params:
+        selected = 1
+    elif "single" in url_params:
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
 
     if args.model_list_mode == "reload":
         if args.anony_only_for_proprietary_model:
-            models = get_model_list(args.controller_url, False, False, False)
+            models = get_model_list(
+                args.controller_url,
+                args.register_openai_compatible_models,
+                False,
+                False,
+                False,
+            )
         else:
             models = get_model_list(
-                args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+                args.controller_url,
+                args.register_openai_compatible_models,
+                args.add_chatgpt,
+                args.add_claude,
+                args.add_palm,
             )
 
     single_updates = load_demo_single(models, url_params)
@@ -92,27 +104,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Single Model", id=0):
-                (
-                    a_state,
-                    a_model_selector,
-                    a_chatbot,
-                    a_textbox,
-                    a_send_btn,
-                    a_button_row,
-                    a_parameter_row,
-                ) = build_single_model_ui(models, add_promotion_links=True)
-                a_list = [
-                    a_state,
-                    a_model_selector,
-                    a_chatbot,
-                    a_textbox,
-                    a_send_btn,
-                    a_button_row,
-                    a_parameter_row,
-                ]
-
-            with gr.Tab("Chatbot Arena (battle)", id=1):
+            with gr.Tab("Chatbot Arena (battle)", id=0):
                 (
                     b_states,
                     b_model_selectors,
@@ -136,7 +128,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     ]
                 )
 
-            with gr.Tab("Chatbot Arena (side-by-side)", id=2):
+            with gr.Tab("Chatbot Arena (side-by-side)", id=1):
                 (
                     c_states,
                     c_model_selectors,
@@ -159,6 +151,26 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                         c_parameter_row,
                     ]
                 )
+
+            with gr.Tab("Single Model", id=2):
+                (
+                    a_state,
+                    a_model_selector,
+                    a_chatbot,
+                    a_textbox,
+                    a_send_btn,
+                    a_button_row,
+                    a_parameter_row,
+                ) = build_single_model_ui(models, add_promotion_links=True)
+                a_list = [
+                    a_state,
+                    a_model_selector,
+                    a_chatbot,
+                    a_textbox,
+                    a_send_btn,
+                    a_button_row,
+                    a_parameter_row,
+                ]
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
@@ -230,6 +242,11 @@ if __name__ == "__main__":
         help="Only add ChatGPT, Claude, Bard under anony battle tab",
     )
     parser.add_argument(
+        "--register-openai-compatible-models",
+        type=str,
+        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
@@ -245,10 +262,20 @@ if __name__ == "__main__":
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
     if args.anony_only_for_proprietary_model:
-        models = get_model_list(args.controller_url, False, False, False)
+        models = get_model_list(
+            args.controller_url,
+            args.register_openai_compatible_models,
+            False,
+            False,
+            False,
+        )
     else:
         models = get_model_list(
-            args.controller_url, args.add_chatgpt, args.add_claude, args.add_palm
+            args.controller_url,
+            args.register_openai_compatible_models,
+            args.add_chatgpt,
+            args.add_claude,
+            args.add_palm,
         )
 
     # Set authorization credentials
