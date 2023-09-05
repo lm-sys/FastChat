@@ -81,7 +81,7 @@ register_model_info(
     "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
 )
 register_model_info(
-    ["wizardlm-13b"],
+    ["wizardlm-70b", "wizardlm-30b", "wizardlm-13b"],
     "WizardLM",
     "https://github.com/nlpxucan/WizardLM",
     "an instruction-following LLM using evol-instruct by Microsoft",
