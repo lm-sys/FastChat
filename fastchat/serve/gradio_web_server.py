@@ -56,7 +56,7 @@ enable_moderation = False
 
 acknowledgment_md = """
 <div class="image-container">
-    <strong>Acknowledgment: &nbsp; </strong> We thank &nbsp; <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, &nbsp; <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, &nbsp; <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and &nbsp;<a href="https://huggingface.co/" target="_blank">HuggingFace</a> &nbsp; for their sponsorship.
+    <p> <strong>Acknowledgment: &nbsp; </strong> We thank &nbsp; <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, &nbsp; <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, &nbsp; <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and &nbsp;<a href="https://huggingface.co/" target="_blank">HuggingFace</a> &nbsp; for their sponsorship. </p>
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
     <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
     <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
