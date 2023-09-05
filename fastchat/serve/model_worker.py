@@ -24,6 +24,7 @@ try:
         AutoModelForCausalLM,
         LlamaTokenizer,
         AutoModel,
+        GPTQConfig
     )
 except ImportError:
     from transformers import (
@@ -31,6 +32,7 @@ except ImportError:
         AutoModelForCausalLM,
         LLaMATokenizer,
         AutoModel,
+        GPTQConfig
     )
 import torch
 import torch.nn.functional as F
@@ -193,6 +195,7 @@ class ModelWorker(BaseModelWorker):
         load_8bit: bool = False,
         cpu_offloading: bool = False,
         gptq_config: Optional[GptqConfig] = None,
+        gptq_transformers_config: Optional[GPTQConfig] = None,
         awq_config: Optional[AWQConfig] = None,
         stream_interval: int = 2,
         conv_template: str = None,
@@ -218,6 +221,7 @@ class ModelWorker(BaseModelWorker):
             load_8bit=load_8bit,
             cpu_offloading=cpu_offloading,
             gptq_config=gptq_config,
+            gptq_transformers_config=gptq_transformers_config,
             awq_config=awq_config,
         )
         self.device = device
@@ -483,6 +487,7 @@ def create_model_worker():
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
+    # TODO: Remove old GTPQ functionality in favor of new (built-in to Transformers)
     gptq_config = GptqConfig(
         ckpt=args.gptq_ckpt or args.model_path,
         wbits=args.gptq_wbits,
@@ -493,6 +498,11 @@ def create_model_worker():
         ckpt=args.awq_ckpt or args.model_path,
         wbits=args.awq_wbits,
         groupsize=args.awq_groupsize,
+    )
+
+    gptq_transformers_config = GPTQConfig(
+        bits=args.gptq_transformers_bits,
+        disable_exllama=args.gptq_transformers_disable_exllama
     )
 
     worker = ModelWorker(
@@ -509,6 +519,7 @@ def create_model_worker():
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,
+        gptq_transformers_config=gptq_transformers_config,
         awq_config=awq_config,
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
