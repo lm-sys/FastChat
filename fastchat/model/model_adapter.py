@@ -61,7 +61,7 @@ class BaseModelAdapter:
         self,
         model_path: str,
         from_pretrained_kwargs: dict,
-        gptq_transformers_config: Optional[GPTQConfig] = None
+        gptq_transformers_config: Optional[GPTQConfig] = None,
     ):
         revision = from_pretrained_kwargs.get("revision", "main")
         try:
@@ -293,9 +293,11 @@ def load_model(
 
     # Load model
     if gptq_transformers_config and gptq_transformers_config.bits < 16:
-        model, tokenizer = adapter.load_model(model_path, kwargs, gptq_transformers_config)
+        model, tokenizer = adapter.load_model(
+            model_path, kwargs, gptq_transformers_config
+        )
     else:
-         model, tokenizer = adapter.load_model(model_path, kwargs)
+        model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (
         device == "cpu"

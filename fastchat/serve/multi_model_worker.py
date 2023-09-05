@@ -32,7 +32,7 @@ try:
         AutoModelForCausalLM,
         LlamaTokenizer,
         AutoModel,
-        GPTQConfig
+        GPTQConfig,
     )
 except ImportError:
     from transformers import (
@@ -201,7 +201,7 @@ def create_multi_model_worker():
 
     gptq_transformers_config = GPTQConfig(
         bits=args.gptq_transformers_bits,
-        disable_exllama=args.gptq_transformers_disable_exllama
+        disable_exllama=args.gptq_transformers_disable_exllama,
     )
 
     if args.model_names is None:
@@ -224,7 +224,7 @@ def create_multi_model_worker():
             load_8bit=args.load_8bit,
             cpu_offloading=args.cpu_offloading,
             gptq_config=gptq_config,
-            gptq_transformers_config=gptq_transformers_config
+            gptq_transformers_config=gptq_transformers_config,
             stream_interval=args.stream_interval,
         )
         workers.append(w)
