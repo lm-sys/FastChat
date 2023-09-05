@@ -23,7 +23,7 @@ from transformers import (
     LlamaTokenizer,
     LlamaForCausalLM,
     T5Tokenizer,
-    GPTQConfig
+    GPTQConfig,
 )
 
 from fastchat.constants import CPU_ISA
@@ -57,7 +57,12 @@ class BaseModelAdapter:
     def match(self, model_path: str):
         return True
 
-    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+    def load_model(
+        self,
+        model_path: str,
+        gptq_transformers_config: GPTQConfig,
+        from_pretrained_kwargs: dict,
+    ):
         revision = from_pretrained_kwargs.get("revision", "main")
         try:
             tokenizer = AutoTokenizer.from_pretrained(
@@ -72,7 +77,10 @@ class BaseModelAdapter:
             )
         try:
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, quantization_config=gptq_transformers_config, **from_pretrained_kwargs
+                model_path,
+                low_cpu_mem_usage=True,
+                quantization_config=gptq_transformers_config,
+                **from_pretrained_kwargs,
             )
         except NameError:
             model = AutoModel.from_pretrained(

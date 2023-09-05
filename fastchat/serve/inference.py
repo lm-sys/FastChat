@@ -20,7 +20,7 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     T5Tokenizer,
     AutoConfig,
-    GPTQConfig
+    GPTQConfig,
 )
 from transformers.generation.logits_process import (
     LogitsProcessorList,

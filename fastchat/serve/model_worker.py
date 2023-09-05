@@ -24,7 +24,7 @@ try:
         AutoModelForCausalLM,
         LlamaTokenizer,
         AutoModel,
-        GPTQConfig
+        GPTQConfig,
     )
 except ImportError:
     from transformers import (
@@ -32,7 +32,7 @@ except ImportError:
         AutoModelForCausalLM,
         LLaMATokenizer,
         AutoModel,
-        GPTQConfig
+        GPTQConfig,
     )
 import torch
 import torch.nn.functional as F
@@ -502,7 +502,7 @@ def create_model_worker():
 
     gptq_transformers_config = GPTQConfig(
         bits=args.gptq_transformers_bits,
-        disable_exllama=args.gptq_transformers_disable_exllama
+        disable_exllama=args.gptq_transformers_disable_exllama,
     )
 
     worker = ModelWorker(

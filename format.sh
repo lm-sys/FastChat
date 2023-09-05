@@ -13,10 +13,10 @@ builtin cd "$ROOT" || exit 1
 BLACK_VERSION=$(black --version | head -n 1 | awk '{print $2}')
 PYLINT_VERSION=$(pylint --version | head -n 1 | awk '{print $2}')
 
-# # params: tool name, tool version, required version
+# params: tool name, tool version, required version
 tool_version_check() {
-    if [[ $2 != $3 ]]; then
-        echo "Wrong $1 version installed: $3 is required, not $2."
+    if [[ $(echo -e "$2\n$3" | sort -V | head -n1) != $3 ]]; then
+        echo "Wrong $1 version installed: $3 or greater is required, not $2."
         exit 1
     fi
 }
