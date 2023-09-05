@@ -55,7 +55,7 @@ controller_url = None
 enable_moderation = False
 
 acknowledgment_md = """
-**Acknowledgment:** We thank Kaggle, MBZUAI, and AnyScale for their sponsorship.
+**Acknowledgment:** We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [AnyScale](https://www.anyscale.com/), and [HuggingFace](https://huggingface.co/) for their sponsorship.
 """
 
 ip_expiration_dict = defaultdict(lambda: 0)
