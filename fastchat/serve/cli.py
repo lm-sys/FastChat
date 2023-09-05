@@ -224,9 +224,9 @@ def main(args):
                 groupsize=args.gptq_groupsize,
                 act_order=args.gptq_act_order,
             ),
-            gptq_transformers_config = GPTQConfig(
+            gptq_transformers_config=GPTQConfig(
                 bits=args.gptq_transformers_bits,
-                disable_exllama=args.gptq_transformers_disable_exllama
+                disable_exllama=args.gptq_transformers_disable_exllama,
             ),
             awq_config=AWQConfig(
                 ckpt=args.awq_ckpt or args.model_path,
