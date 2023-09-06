@@ -13,7 +13,7 @@ if __name__ == "__main__":
     launch_process("python3 -m fastchat.serve.openai_api_server")
 
     models = [
-        "lmsys/vicuna-7b-v1.3",
+        "lmsys/vicuna-7b-v1.5",
         "lmsys/fastchat-t5-3b-v1.0",
         "THUDM/chatglm-6b",
         "mosaicml/mpt-7b-chat",
