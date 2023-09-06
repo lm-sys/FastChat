@@ -18,6 +18,7 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
+from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.serve.model_worker import (
     BaseModelWorker,
     logger,
@@ -74,6 +75,9 @@ class VLLMWorker(BaseModelWorker):
         if self.tokenizer.eos_token_id is not None:
             stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
+        use_beam_search = params.get("use_beam_search", False)
+        best_of = params.get("best_of", None)
+        n = params.get("n", 1)
 
         # Handle stop_str
         stop = set()
@@ -90,27 +94,51 @@ class VLLMWorker(BaseModelWorker):
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
-        sampling_params = SamplingParams(
-            n=1,
-            temperature=temperature,
-            top_p=top_p,
-            use_beam_search=False,
-            stop=list(stop),
-            max_tokens=max_new_tokens,
-        )
-        results_generator = engine.generate(context, sampling_params, request_id)
+        try:
+            sampling_params = SamplingParams(
+                n=n,
+                temperature=temperature,
+                top_p=top_p,
+                use_beam_search=use_beam_search,
+                stop=list(stop),
+                max_tokens=max_new_tokens,
+                best_of=best_of,
+            )
 
-        async for request_output in results_generator:
-            prompt = request_output.prompt
-            if echo:
-                text_outputs = [
-                    prompt + output.text for output in request_output.outputs
-                ]
-            else:
-                text_outputs = [output.text for output in request_output.outputs]
-            text_outputs = " ".join(text_outputs)
-            # Note: usage is not supported yet
-            ret = {"text": text_outputs, "error_code": 0, "usage": {}}
+            results_generator = engine.generate(context, sampling_params, request_id)
+
+            async for request_output in results_generator:
+                prompt = request_output.prompt
+                prompt_tokens = len(request_output.prompt_token_ids)
+                output_usage = []
+                for out in request_output.outputs:
+                    completion_tokens = len(out.token_ids)
+                    total_tokens = prompt_tokens + completion_tokens
+                    output_usage.append(
+                        {
+                            "prompt_tokens": prompt_tokens,
+                            "completion_tokens": completion_tokens,
+                            "total_tokens": total_tokens,
+                        }
+                    )
+
+                if echo:
+                    text_outputs = [
+                        prompt + output.text for output in request_output.outputs
+                    ]
+                else:
+                    text_outputs = [output.text for output in request_output.outputs]
+
+                if sampling_params.best_of is None:
+                    text_outputs = [" ".join(text_outputs)]
+                ret = {"text": text_outputs, "error_code": 0, "usage": output_usage}
+                yield (json.dumps(ret) + "\0").encode()
+        except (ValueError, RuntimeError) as e:
+            ret = {
+                "text": f"{e}",
+                "error_code": ErrorCode.PARAM_OUT_OF_RANGE,
+                "usage": {},
+            }
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):

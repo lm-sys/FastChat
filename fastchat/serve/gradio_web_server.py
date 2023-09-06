@@ -55,7 +55,13 @@ controller_url = None
 enable_moderation = False
 
 acknowledgment_md = """
-**Acknowledgment:** We thank Kaggle, MBZUAI, and AnyScale for their sponsorship.
+<div class="image-container">
+    <p> <strong>Acknowledgment: </strong> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their sponsorship. </p>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
+    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
+    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="Image 4">
+</div>
 """
 
 ip_expiration_dict = defaultdict(lambda: 0)
@@ -496,6 +502,18 @@ block_css = """
 }
 footer {
     display:none !important
+}
+.image-container {
+    display: flex;
+    align-items: center;
+    padding: 1px;
+}
+.image-container img {
+    margin: 0 30px;
+    height: 20px;
+    max-height: 100%;
+    width: auto;
+    max-width: 20%;
 }
 """
 
