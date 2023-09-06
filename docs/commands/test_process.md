@@ -1,3 +1,6 @@
+## Location
+The scripts are under [FastChat/tests](../../tests).
+
 ### Test CLI Inference
 
 ```
