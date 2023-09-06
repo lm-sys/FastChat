@@ -63,35 +63,24 @@ class BaseModelAdapter:
         from_pretrained_kwargs: dict,
         gptq_transformers_config: Optional[GPTQConfig] = None,
     ):
-        revision = from_pretrained_kwargs.get("revision", "main")
+        """Load a model for causal LM."""
         try:
-            tokenizer = AutoTokenizer.from_pretrained(
+            model, tokenizer = get_model_for_causal_lm(
                 model_path,
-                use_fast=self.use_fast_tokenizer,
-                revision=revision,
+                from_pretrained_kwargs=from_pretrained_kwargs,
+                low_cpu_mem_usage=True,
                 trust_remote_code=True,
+                use_fast_tokenizer=self.use_fast_tokenizer,
+                gptq_transformers_config=gptq_transformers_config,
             )
-        except TypeError:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path, use_fast=False, revision=revision, trust_remote_code=True
-            )
-        try:
-            if gptq_transformers_config:
-                model = AutoModelForCausalLM.from_pretrained(
-                    model_path,
-                    low_cpu_mem_usage=True,
-                    quantization_config=gptq_transformers_config,
-                    **from_pretrained_kwargs,
-                )
-            else:
-                model = AutoModelForCausalLM.from_pretrained(
-                    model_path,
-                    low_cpu_mem_usage=True,
-                    **from_pretrained_kwargs,
-                )
-        except NameError:
-            model = AutoModel.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        except NameError or TypeError:
+            model, tokenizer = get_model_for_causal_lm(
+                model_path,
+                from_pretrained_kwargs=from_pretrained_kwargs,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+                use_fast_tokenizer=False,
+                gptq_transformers_config=gptq_transformers_config,
             )
         return model, tokenizer
 
@@ -160,6 +149,55 @@ def raise_warning_for_incompatible_cpu_offloading_configuration(
             )
             return False
     return cpu_offloading
+
+def get_model_for_causal_lm(
+    model_path: str,
+    from_pretrained_kwargs=dict,
+    low_cpu_mem_usage=False,
+    trust_remote_code=False,
+    eval=False,
+    use_fast_tokenizer=True,
+    max_seq_len: Optional[int] = None,
+    config: Optional[any] = None,
+    gptq_transformers_config: Optional[GPTQConfig] = None,
+):
+    """ Get model for causal language modeling. """
+    revision = from_pretrained_kwargs.get("revision", "main")
+
+    params = {
+        "low_cpu_mem_usage": low_cpu_mem_usage,
+        "trust_remote_code": trust_remote_code,
+        **from_pretrained_kwargs
+    }
+
+    if gptq_transformers_config is not None and gptq_transformers_config.bits < 16:
+        params["quantization_config"] = gptq_transformers_config
+
+    if max_seq_len is not None:
+        params["max_seq_len"] = max_seq_len
+
+    if config is not None:
+        params["config"] = config
+
+    if eval is not False:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            **params
+        ).eval()
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            **params
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path,
+        use_fast=use_fast_tokenizer,
+        trust_remote_code=trust_remote_code,
+        revision=revision
+    )
+
+    return model, tokenizer
 
 
 def load_model(
@@ -289,15 +327,11 @@ def load_model(
         else:
             model.to(device)
         return model, tokenizer
+
     kwargs["revision"] = revision
 
     # Load model
-    if gptq_transformers_config and gptq_transformers_config.bits < 16:
-        model, tokenizer = adapter.load_model(
-            model_path, kwargs, gptq_transformers_config
-        )
-    else:
-        model, tokenizer = adapter.load_model(model_path, kwargs)
+    model, tokenizer = adapter.load_model(model_path, from_pretrained_kwargs=kwargs, gptq_transformers_config=gptq_transformers_config)
 
     if (
         device == "cpu"
@@ -482,7 +516,7 @@ peft_model_cache = {}
 
 
 class PeftModelAdapter:
-    """Loads any "peft" model and it's base model."""
+    """Loads any "peft" model and its base model."""
 
     def match(self, model_path: str):
         """Accepts any model path with "peft" in the name"""
@@ -490,7 +524,7 @@ class PeftModelAdapter:
             return True
         return "peft" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         """Loads the base model then the (peft) adapter weights"""
         from peft import PeftConfig, PeftModel
 
@@ -561,15 +595,12 @@ class VicunaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "vicuna" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
-        )
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            use_fast_tokenizer=self.use_fast_tokenizer,
         )
         self.raise_warning_for_old_weights(model)
         return model, tokenizer
@@ -600,18 +631,18 @@ class AiroborosAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("airoboros_v1")
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         if "mpt" not in model_path.lower():
-            return super().load_model(model_path, from_pretrained_kwargs)
-        model = AutoModelForCausalLM.from_pretrained(
+            return super().load_model(model_path, from_pretrained_kwargs, gptq_transformers_config)
+
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
             max_seq_len=8192,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, use_fast=True
+            use_fast_tokenizer=True
         )
         return model, tokenizer
 
@@ -624,20 +655,19 @@ class LongChatAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "longchat" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
 
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
         config = AutoConfig.from_pretrained(model_path, revision=revision)
         replace_llama_with_condense(config.rope_scaling["factor"])
 
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
-        )
-        model = AutoModelForCausalLM.from_pretrained(
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            use_fast_tokenizer=self.use_fast_tokenizer,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -651,14 +681,13 @@ class CodeT5pAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "codet5p" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForSeq2SeqLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -669,11 +698,12 @@ class T5Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "t5" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = T5Tokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
+            model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            low_cpu_mem_usage=True,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -708,13 +738,12 @@ class ChatGLMAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "chatglm" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
-        model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, **from_pretrained_kwargs
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
+            model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            trust_remote_code=True,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -731,13 +760,12 @@ class DollyV2Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "dolly-v2" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            gptq_transformers_config=gptq_transformers_config,
         )
         # 50277 means "### End"
         tokenizer.eos_token_id = 50277
@@ -759,8 +787,8 @@ class OasstPythiaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("oasst_pythia")
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs, gptq_transformers_config)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
@@ -787,8 +815,8 @@ class PythiaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "pythia" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs, gptq_transformers_config)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
@@ -811,17 +839,14 @@ class MPTAdapter(BaseModelAdapter):
         model_path = model_path.lower()
         return "mpt" in model_path and not "airoboros" in model_path
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
             max_seq_len=8192,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
+            gptq_transformers_config=gptq_transformers_config,
         )
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
@@ -861,7 +886,7 @@ class RwkvAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "rwkv-4" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         from fastchat.model.rwkv_model import RwkvModel
 
         model = RwkvModel(model_path)
@@ -903,10 +928,12 @@ class ReaLMAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "ReaLM" in model_path
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
+            model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            low_cpu_mem_usage=True,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -920,7 +947,7 @@ class ChatGPTAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return model_path in ("gpt-3.5-turbo", "gpt-4")
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -933,7 +960,7 @@ class ClaudeAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return model_path in ["claude-2", "claude-instant-1"]
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -946,7 +973,7 @@ class BardAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return model_path == "bard"
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -959,7 +986,7 @@ class PaLM2Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return model_path == "palm-2"
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -982,13 +1009,12 @@ class RedPajamaINCITEAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "redpajama-incite" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -1071,13 +1097,13 @@ class GuanacoAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "guanaco" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
+            model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            low_cpu_mem_usage=True,
+            use_fast_tokenizer=self.use_fast_tokenizer,
+            gptq_transformers_config=gptq_transformers_config,
         )
         # Fix a bug in tokenizer config
         tokenizer.eos_token_id = model.config.eos_token_id
@@ -1128,15 +1154,14 @@ class FalconAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "falcon" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         # Strongly suggest using bf16, which is recommended by the author of Falcon
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForCausalLM.from_pretrained(
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
+            gptq_transformers_config=gptq_transformers_config,
         )
         # In Falcon tokenizer config and special config there is not any pad token
         # Setting `pad_token_id` to 9, which corresponds to special token '>>SUFFIX<<'
@@ -1153,18 +1178,13 @@ class TigerBotAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "tigerbot" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            trust_remote_code=True,
+            gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
 
@@ -1178,16 +1198,13 @@ class BaichuanAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "baichuan" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            trust_remote_code=True,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
+            trust_remote_code=True,
         )
         return model, tokenizer
 
@@ -1204,16 +1221,13 @@ class XGenAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "xgen" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
         )
         model.config.eos_token_id = 50256
         return model, tokenizer
@@ -1240,20 +1254,17 @@ class InternLMChatAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "internlm" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
+            eval=True,
         )
-        model = model.eval()
         if "8k" in model_path.lower():
             model.config.max_sequence_length = 8192
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1276,8 +1287,8 @@ class Llama2Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "llama-2" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs, gptq_transformers_config)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
@@ -1292,11 +1303,14 @@ class CuteGPTAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "cutegpt" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
-        )
+        model = get_model_for_causal_lm(
+            model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            low_cpu_mem_usage=True,
+        )[0]
         tokenizer.eos_token_id = tokenizer.convert_tokens_to_ids("<end>")
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.eos_token_id
@@ -1314,16 +1328,15 @@ class OpenOrcaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "openorca" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=self.use_fast_tokenizer, revision=revision
-        )
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        ).eval()
+            use_fast_tokenizer=True,
+            eval=True,
+            gptq_transformers_config=gptq_transformers_config,
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1365,7 +1378,7 @@ class QwenChatAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "qwen" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
         from transformers.generation import GenerationConfig
 
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1379,18 +1392,17 @@ class QwenChatAdapter(BaseModelAdapter):
         generation_config = GenerationConfig.from_pretrained(
             model_path, trust_remote_code=True
         )
-        model = AutoModelForCausalLM.from_pretrained(
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            config=config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
-        ).eval()
+            config=config,
+            eval=True,
+            gptq_transformers_config=gptq_transformers_config,
+        )
         if hasattr(model.config, "use_dynamic_ntk") and model.config.use_dynamic_ntk:
             model.config.max_sequence_length = 16384
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
         tokenizer.eos_token_id = config.eos_token_id
         tokenizer.bos_token_id = config.bos_token_id
         tokenizer.pad_token_id = generation_config.pad_token_id
@@ -1412,14 +1424,12 @@ class BGEAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "bge" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModel.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            trust_remote_code=True,
         )
         if hasattr(model.config, "max_position_embeddings") and hasattr(
             tokenizer, "model_max_length"
@@ -1441,14 +1451,12 @@ class E5Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "e5" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModel.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
+            trust_remote_code=True,
         )
         if hasattr(model.config, "max_position_embeddings") and hasattr(
             tokenizer, "model_max_length"
@@ -1468,17 +1476,13 @@ class AquilaChatAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "aquila" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModelForCausalLM.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            low_cpu_mem_usage=True,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
-            **from_pretrained_kwargs,
-        )
-        model = model.eval()
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
+            eval=True,
         )
         return model, tokenizer
 
@@ -1492,18 +1496,13 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "llama2-chinese" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
@@ -1519,20 +1518,16 @@ class VigogneInstructAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "vigogne" in model_path.lower() and "instruct" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            use_fast=self.use_fast_tokenizer,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        ).eval()
+            eval=True,
+            use_fast_tokenizer=self.use_fast_tokenizer,
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1547,20 +1542,16 @@ class VigogneChatAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "vigogne" in model_path.lower() and "chat" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            use_fast=self.use_fast_tokenizer,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        ).eval()
+            eval=True,
+            use_fast_tokenizer=self.use_fast_tokenizer,
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1577,20 +1568,16 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
             "open-llama" in model_path.lower() and "open-instruct" in model_path.lower()
         )
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = get_model_for_causal_lm(
             model_path,
-            use_fast=self.use_fast_tokenizer,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
+            gptq_transformers_config=gptq_transformers_config,
+            from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
             low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        ).eval()
+            eval=True,
+            use_fast_tokenizer=self.use_fast_tokenizer,
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1603,8 +1590,8 @@ class CodeLlamaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "codellama" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+    def load_model(self, model_path: str, gptq_transformers_config: GPTQConfig, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs, gptq_transformers_config)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
