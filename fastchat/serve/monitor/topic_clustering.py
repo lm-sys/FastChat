@@ -132,6 +132,7 @@ def run_agg_cluster(embeddings, num_clusters):
 
 def run_hdbscan_cluster(embeddings):
     import hdbscan
+
     np.random.seed(0)
     clusterer = hdbscan.HDBSCAN(min_cluster_size=10)
     labels = torch.from_numpy(clusterer.fit_predict(embeddings))
@@ -205,8 +206,10 @@ if __name__ == "__main__":
     parser.add_argument("--english-only", action="store_true")
     parser.add_argument("--num-clusters", type=int, default=20)
     parser.add_argument(
-        "--cluster-alg", type=str, choices=["kmeans", "aggcls", "HDBSCAN"],
-        default="kmeans"
+        "--cluster-alg",
+        type=str,
+        choices=["kmeans", "aggcls", "HDBSCAN"],
+        default="kmeans",
     )
     parser.add_argument("--show-top-k", type=int, default=200)
     parser.add_argument("--show-cut-off", type=int, default=512)
