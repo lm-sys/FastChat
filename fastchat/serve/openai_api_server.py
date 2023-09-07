@@ -241,6 +241,9 @@ async def get_gen_params(
     max_tokens: Optional[int],
     echo: Optional[bool],
     stop: Optional[Union[str, List[str]]],
+    best_of: Optional[int] = None,
+    n: Optional[int] = 1,
+    use_beam_search: Optional[bool] = None,
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
     conv = Conversation(
@@ -286,6 +289,11 @@ async def get_gen_params(
         "echo": echo,
         "stop_token_ids": conv.stop_token_ids,
     }
+
+    if best_of is not None:
+        gen_params.update({"n": n, "best_of": best_of})
+    if use_beam_search is not None:
+        gen_params.update({"use_beam_search": use_beam_search})
 
     new_stop = set()
     _add_to_set(stop, new_stop)
@@ -494,12 +502,18 @@ async def create_completion(request: CompletionRequest):
                 max_tokens=request.max_tokens,
                 echo=request.echo,
                 stop=request.stop,
+                best_of=request.best_of,
+                n=request.n,
+                use_beam_search=request.use_beam_search,
             )
             for i in range(request.n):
                 content = asyncio.create_task(
                     generate_completion(gen_params, worker_addr)
                 )
                 text_completions.append(content)
+                # when use with best_of, only need send one request
+                if request.best_of:
+                    break
 
         try:
             all_tasks = await asyncio.gather(*text_completions)
@@ -519,9 +533,18 @@ async def create_completion(request: CompletionRequest):
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
-            task_usage = UsageInfo.parse_obj(content["usage"])
-            for usage_key, usage_value in task_usage.dict().items():
-                setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+            idx = 0
+            while True:
+                info = content["usage"]
+                if isinstance(info, list):
+                    info = info[idx]
+
+                task_usage = UsageInfo.parse_obj(info)
+
+                for usage_key, usage_value in task_usage.dict().items():
+                    setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
+                idx += 1
+                break
 
         return CompletionResponse(
             model=request.model, choices=choices, usage=UsageInfo.parse_obj(usage)
