@@ -1405,7 +1405,7 @@ class E5Adapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "e5" in model_path.lower()
+        return "e5-" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
