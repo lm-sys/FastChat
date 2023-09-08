@@ -196,7 +196,7 @@ SAMPLING_WEIGHTS = {
     "chatglm-6b": 0.5,
 }
 
-SAMPLING_BOOST_MODELS = ["llama-2-70b-chat", "codellama-34b-instruct"]
+SAMPLING_BOOST_MODELS = ["wizardlm-70b"]
 
 model_pairs = []
 model_pairs_weights = []
@@ -420,12 +420,12 @@ Please scroll down and start chatting. The models include both closed-source mod
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter text and press ENTER",
+                placeholder="Enter your prompt here and press ENTER",
                 visible=False,
                 container=False,
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False)
+            send_btn = gr.Button(value="Battle", visible=False, variant="primary")
 
     with gr.Row() as button_row2:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
