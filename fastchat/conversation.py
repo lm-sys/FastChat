@@ -205,13 +205,17 @@ class Conversation:
             ret = ""
             for idx, (role, message) in enumerate(self.messages):
                 if role == "System":
-                    assert idx == 0, f"System message must be the first message, but got {idx}-th message."
+                    assert (
+                        idx == 0
+                    ), f"System message must be the first message, but got {idx}-th message."
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    assert idx == len(self.messages) - 1, f"Only the last message can be empty, but got {idx}-th message."
+                    assert (
+                        idx == len(self.messages) - 1
+                    ), f"Only the last message can be empty, but got {idx}-th message."
                     ret += role + ": "
-                
+
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
