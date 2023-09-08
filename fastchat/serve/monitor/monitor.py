@@ -243,6 +243,7 @@ Please note that you may see different orders from different ranking methods. Th
             plot_4 = gr.Plot(p4, show_label=False)
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
+
     gr.Markdown(acknowledgment_md)
 
     return [md_1, plot_1, plot_2, plot_3, plot_4]
