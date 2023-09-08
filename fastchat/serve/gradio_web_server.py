@@ -596,7 +596,7 @@ By using this service, users are required to agree to the following terms: The s
                 container=False,
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Battle", visible=False, variant="primary")
+            send_btn = gr.Button(value="Send", visible=False, variant="primary")
 
     with gr.Row(visible=False) as button_row:
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
