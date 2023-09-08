@@ -27,6 +27,7 @@ class SeparatorStyle(IntEnum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
+    FALCON_CHAT = auto()
 
 
 @dataclasses.dataclass
@@ -199,6 +200,18 @@ class Conversation:
                     ret += role + ":\n" + message + self.sep
                 else:
                     ret += role + ":\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.FALCON_CHAT:
+            ret = ""
+            for idx, (role, message) in enumerate(self.messages):
+                if role == "System":
+                    assert idx == 0, f"System message must be the first message, but got {idx}-th message."
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    assert idx == len(self.messages) - 1, f"Only the last message can be empty, but got {idx}-th message."
+                    ret += role + ": "
+                
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -688,33 +701,6 @@ register_conv_template(
     )
 )
 
-# Falcon default template
-register_conv_template(
-    Conversation(
-        name="falcon",
-        roles=("User", "Assistant"),
-        messages=[],
-        sep_style=SeparatorStyle.RWKV,
-        sep="\n",
-        sep2="<|endoftext|>",
-        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
-        stop_token_ids=[
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-        ],  # it better only put special tokens here, because tokenizer only remove special tokens
-    )
-)
-
 # ChagGPT default template
 register_conv_template(
     Conversation(
@@ -902,6 +888,19 @@ register_conv_template(
         sep="\n",
         sep2="</s>\n",
         stop_str="<|user|>",
+    )
+)
+
+# Falcon 180B chat template
+register_conv_template(
+    Conversation(
+        name="falcon",
+        roles=("User", "Falcon", "System"),
+        messages=[],
+        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep="\n",
+        sep2="<|endoftext|>",
+        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
