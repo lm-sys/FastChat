@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 import sys
 from typing import Dict, List, Optional
 import warnings
@@ -561,9 +562,13 @@ class AiroborosAdapter(BaseModelAdapter):
     """The model adapter for jondurbin/airoboros-*"""
 
     def match(self, model_path: str):
-        return "airoboros" in model_path.lower()
+        if re.search(r"airoboros|spicyboros", model_path, re.I):
+            return True
+        return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "spicyboros" in model_path or re.search(r"-(2\.[2-9]+)", model_path):
+            return get_conv_template("airoboros_v2")
         return get_conv_template("airoboros_v1")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
