@@ -74,7 +74,9 @@ def trainer_save_model_safe(trainer: transformers.Trainer):
     from torch.distributed.fsdp import StateDictType, FullStateDictConfig
 
     save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-    with FSDP.state_dict_type(trainer.model, StateDictType.FULL_STATE_DICT, save_policy):
+    with FSDP.state_dict_type(
+        trainer.model, StateDictType.FULL_STATE_DICT, save_policy
+    ):
         trainer.save_model()
 
 
