@@ -69,13 +69,15 @@ def rank0_print(*args):
         print(*args)
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-    """Collects the state dict and dump to disk."""
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
+def trainer_save_model_safe(trainer: transformers.Trainer):
+    from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+    from torch.distributed.fsdp import StateDictType, FullStateDictConfig
+
+    save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+    with FSDP.state_dict_type(
+        trainer.model, StateDictType.FULL_STATE_DICT, save_policy
+    ):
+        trainer.save_model()
 
 
 def preprocess(
@@ -279,9 +281,11 @@ def train():
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
+
+    # Save model
     model.config.use_cache = True
     trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+    trainer_save_model_safe(trainer)
 
 
 if __name__ == "__main__":
