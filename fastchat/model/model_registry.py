@@ -214,14 +214,24 @@ register_model_info(
 )
 register_model_info(
     [
-        "airoboros-7b-gpt4-1.4",
-        "airoboros-13b-gpt4-1.4",
-        "airoboros-33b-gpt4-1.4",
-        "airoboros-65b-gpt4-1.4",
+        "airoboros-l2-7b-2.1",
+        "airoboros-l2-13b-2.1",
+        "airoboros-c34b-2.1",
+        "airoboros-l2-70b-2.1",
     ],
     "airoboros",
-    "https://huggingface.co/jondurbin/airoboros-33b-gpt4-1.4",
+    "https://huggingface.co/jondurbin/airoboros-l2-70b-2.1",
     "an instruction-tuned LlaMa model tuned with 100% synthetic instruction-response pairs from GPT4",
+)
+register_model_info(
+    [
+        "spicyboros-7b-2.2",
+        "spicyboros-13b-2.2",
+        "spicyboros-70b-2.2",
+    ],
+    "spicyboros",
+    "https://huggingface.co/jondurbin/spicyboros-70b-2.2",
+    "de-aligned versions of the airoboros models",
 )
 register_model_info(
     ["Robin-7b-v2", "Robin-13b-v2", "Robin-33b-v2"],
