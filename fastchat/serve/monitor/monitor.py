@@ -53,7 +53,7 @@ def update_elo_components(max_num_files, elo_results_file):
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
-        battles = clean_battle_data(log_files)
+        battles = clean_battle_data(log_files, [])
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)

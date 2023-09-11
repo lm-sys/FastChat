@@ -234,7 +234,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
-    battles = clean_battle_data(log_files, args.exclude_model_names)
+    battles = clean_battle_data(log_files, args.exclude_model_names or [])
     last_updated_tstamp = battles[-1]["tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
