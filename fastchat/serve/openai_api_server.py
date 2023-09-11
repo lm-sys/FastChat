@@ -399,28 +399,15 @@ async def create_chat_completion(request: ChatCompletionRequest):
     for i, content in enumerate(all_tasks):
         if content["error_code"] != 0:
             return create_error_response(content["error_code"], content["text"])
-        if isinstance(content["text"], list):
-            for t in content["text"]:
-                choices.append(
-                    ChatCompletionResponseChoice(
-                        index=i,
-                        message=ChatMessage(role="assistant", content=t),
-                        finish_reason=content.get("finish_reason", "stop"),
-                    )
-                )
-        else:
-            choices.append(
-                ChatCompletionResponseChoice(
-                    index=i,
-                    message=ChatMessage(role="assistant", content=content["text"]),
-                    finish_reason=content.get("finish_reason", "stop"),
-                )
+        choices.append(
+            ChatCompletionResponseChoice(
+                index=i,
+                message=ChatMessage(role="assistant", content=content["text"]),
+                finish_reason=content.get("finish_reason", "stop"),
             )
+        )
         if "usage" in content:
-            if isinstance(content["usage"], list):
-                task_usage = UsageInfo.parse_obj(content["usage"][0])
-            else:
-                task_usage = UsageInfo.parse_obj(content["usage"])
+            task_usage = UsageInfo.parse_obj(content["usage"])
             for usage_key, usage_value in task_usage.dict().items():
                 setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
@@ -788,27 +775,14 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     for i, content in enumerate(all_tasks):
         if content["error_code"] != 0:
             return create_error_response(content["error_code"], content["text"])
-        if isinstance(content["text"], list):
-            for t in content["text"]:
-                choices.append(
-                    ChatCompletionResponseChoice(
-                        index=i,
-                        message=ChatMessage(role="assistant", content=t),
-                        finish_reason=content.get("finish_reason", "stop"),
-                    )
-                )
-        else:
-            choices.append(
-                ChatCompletionResponseChoice(
-                    index=i,
-                    message=ChatMessage(role="assistant", content=content["text"]),
-                    finish_reason=content.get("finish_reason", "stop"),
-                )
+        choices.append(
+            ChatCompletionResponseChoice(
+                index=i,
+                message=ChatMessage(role="assistant", content=content["text"]),
+                finish_reason=content.get("finish_reason", "stop"),
             )
-        if isinstance(content["usage"], list):
-            task_usage = UsageInfo.parse_obj(content["usage"][0])
-        else:
-            task_usage = UsageInfo.parse_obj(content["usage"])
+        )
+        task_usage = UsageInfo.parse_obj(content["usage"])
         for usage_key, usage_value in task_usage.dict().items():
             setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
