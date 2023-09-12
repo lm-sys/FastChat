@@ -1,5 +1,10 @@
-# sudo apt install pkg-config libicu-dev
-# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
+Live monitor of the website statistics and leaderboard.
+
+Dependency:
+sudo apt install pkg-config libicu-dev
+pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
 
 import argparse
 import ast
