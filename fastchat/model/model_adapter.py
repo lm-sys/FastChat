@@ -649,6 +649,13 @@ class T5Adapter(BaseModelAdapter):
         return model, tokenizer
 
 
+class FlanAdapter(T5Adapter):
+    """The model adapter for flan-t5-*, flan-ul2"""
+
+    def match(self, model_path: str):
+        return "flan" in model_path.lower()
+
+
 class KoalaAdapter(BaseModelAdapter):
     """The model adapter for koala"""
 
@@ -1592,6 +1599,7 @@ register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
 register_model_adapter(CodeT5pAdapter)
 register_model_adapter(T5Adapter)
+register_model_adapter(FlanAdapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
