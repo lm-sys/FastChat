@@ -124,7 +124,30 @@ def run_agg_cluster(embeddings, num_clusters):
 
     # Compute centers
     centers = []
-    for i in range(clustering_model.n_clusters_):
+    for i in range(len(classes)):
+        centers.append(embeddings[new_labels == i].mean(axis=0, keepdim=True))
+    centers = torch.cat(centers)
+    return centers, new_labels
+
+
+def run_hdbscan_cluster(embeddings):
+    import hdbscan
+
+    np.random.seed(0)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=10)
+    labels = torch.from_numpy(clusterer.fit_predict(embeddings))
+
+    # Sort labels
+    classes, counts = np.unique(labels, return_counts=True)
+    indices = np.argsort(counts)[::-1]
+    classes = [classes[i] for i in indices]
+    new_labels = torch.empty_like(labels)
+    for i, c in enumerate(classes):
+        new_labels[labels == c] = i
+
+    # Compute centers
+    centers = []
+    for i in range(len(classes)):
         centers.append(embeddings[new_labels == i].mean(axis=0, keepdim=True))
     centers = torch.cat(centers)
     return centers, new_labels
@@ -183,7 +206,10 @@ if __name__ == "__main__":
     parser.add_argument("--english-only", action="store_true")
     parser.add_argument("--num-clusters", type=int, default=20)
     parser.add_argument(
-        "--cluster-alg", type=str, choices=["kmeans", "aggcls"], default="kmeans"
+        "--cluster-alg",
+        type=str,
+        choices=["kmeans", "aggcls", "HDBSCAN"],
+        default="kmeans",
     )
     parser.add_argument("--show-top-k", type=int, default=200)
     parser.add_argument("--show-cut-off", type=int, default=512)
@@ -203,6 +229,8 @@ if __name__ == "__main__":
         centers, labels = run_k_means(embeddings, num_clusters)
     elif args.cluster_alg == "aggcls":
         centers, labels = run_agg_cluster(embeddings, num_clusters)
+    elif args.cluster_alg == "HDBSCAN":
+        centers, labels = run_hdbscan_cluster(embeddings)
     else:
         raise ValueError(f"Invalid clustering algorithm: {args.cluster_alg}")
 

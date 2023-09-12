@@ -6,10 +6,8 @@ python3 -m fastchat.serve.huggingface_api --model lmsys/vicuna-7b-v1.3
 python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 """
 import argparse
-import json
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from fastchat.model import load_model, get_conversation_template, add_model_args
 
@@ -34,8 +32,7 @@ def main(args):
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    inputs = tokenizer([prompt])
-    inputs = {k: torch.tensor(v).to(args.device) for k, v in inputs.items()}
+    inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
     output_ids = model.generate(
         **inputs,
         do_sample=True if args.temperature > 1e-5 else False,

@@ -357,6 +357,17 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="airoboros_v2",
+        system_message="A chat.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+    )
+)
+
 # Koala default template
 register_conv_template(
     Conversation(

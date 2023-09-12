@@ -174,17 +174,17 @@ SAMPLING_WEIGHTS = {
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
     "mpt-30b-chat": 1.5,
+    "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
     # tier 2
     "codellama-13b-instruct": 1.0,
-    "guanaco-33b": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
-    # tier 3
+    "chatglm2-6b": 1.0,
+    # deprecated
+    "guanaco-33b": 1.0,
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
-    "chatglm2-6b": 0.5,
-    # deprecated
     "mpt-7b-chat": 0.1,
     "oasst-pythia-12b": 0.1,
     "RWKV-4-Raven-14B": 0.1,
@@ -196,7 +196,7 @@ SAMPLING_WEIGHTS = {
     "chatglm-6b": 0.5,
 }
 
-SAMPLING_BOOST_MODELS = ["llama-2-70b-chat"]
+SAMPLING_BOOST_MODELS = ["wizardlm-70b"]
 
 model_pairs = []
 model_pairs_weights = []
@@ -420,12 +420,12 @@ Please scroll down and start chatting. The models include both closed-source mod
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter text and press ENTER",
+                placeholder="Enter your prompt here and press ENTER",
                 visible=False,
                 container=False,
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False)
+            send_btn = gr.Button(value="Battle", visible=False, variant="primary")
 
     with gr.Row() as button_row2:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
