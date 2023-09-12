@@ -9,18 +9,23 @@ import os
 from pytz import timezone
 import time
 
+import kaleido
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
 
+import plotly.io as pio   
+pio.kaleido.scope.mathjax = None
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--in-file", type=str, required=True)
+parser.add_argument("--scale", type=int, required=True)
 args = parser.parse_args()
-filename = args.in_file
 
-scale = 10
+filename = args.in_file
+scale = args.scale
 convs = json.load(open(filename))
 df = pd.DataFrame(convs)
 df
