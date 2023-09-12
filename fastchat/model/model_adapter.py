@@ -1172,6 +1172,8 @@ class BaichuanAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         # for Baichuan-13B-Chat
         if "chat" in model_path.lower():
+            if "baichuan2" in model_path.lower():
+                return get_conv_template("baichuan2-chat")
             return get_conv_template("baichuan-chat")
         return get_conv_template("zero_shot")
 
