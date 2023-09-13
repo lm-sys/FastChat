@@ -203,17 +203,12 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.FALCON_CHAT:
             ret = ""
-            for idx, (role, message) in enumerate(self.messages):
-                if role == "System":
-                    assert (
-                        idx == 0
-                    ), f"System message must be the first message, but got {idx}-th message."
+            if self.system_message:
+                ret += "System: " + self.system_message + self.sep
+            for role, message in self.messages:
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    assert (
-                        idx == len(self.messages) - 1
-                    ), f"Only the last message can be empty, but got {idx}-th message."
                     ret += role + ": "
 
             return ret
@@ -926,7 +921,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="falcon-chat",
-        roles=("User", "Falcon", "System"),
+        roles=("User", "Falcon"),
         messages=[],
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
