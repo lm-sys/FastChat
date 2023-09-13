@@ -619,7 +619,7 @@ class GoogleFlanAdapter(BaseModelAdapter):
     """The model adapter for google/Flan based models, such as Salesforce/codet5p-6b, lmsys/fastchat-t5-3b-v1.0, flan-t5-*, flan-ul2"""
 
     def match(self, model_path: str):
-        return any(model_path in model_str for model_str in ["flan", "t5", "codet5p"])
+        return any(model_path in model_str for model_str in ["flan-", "fastchat-t5", "codet5p"])
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
