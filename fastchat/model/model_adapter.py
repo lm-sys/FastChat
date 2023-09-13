@@ -23,7 +23,6 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
     LlamaForCausalLM,
-    T5Tokenizer,
 )
 
 from fastchat.constants import CPU_ISA
@@ -616,11 +615,11 @@ class LongChatAdapter(BaseModelAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
-class CodeT5pAdapter(BaseModelAdapter):
-    """The model adapter for Salesforce/codet5p-6b"""
+class GoogleFlanAdapter(BaseModelAdapter):
+    """The model adapter for google/Flan based models, such as Salesforce/codet5p-6b, lmsys/fastchat-t5-3b-v1.0, flan-t5-*, flan-ul2"""
 
     def match(self, model_path: str):
-        return "codet5p" in model_path.lower()
+        return any(model_path in model_str for model_str in ["flan", "t5", "codet5p"])
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -632,28 +631,6 @@ class CodeT5pAdapter(BaseModelAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
-
-
-class T5Adapter(BaseModelAdapter):
-    """The model adapter for lmsys/fastchat-t5-3b-v1.0"""
-
-    def match(self, model_path: str):
-        return "t5" in model_path.lower()
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = T5Tokenizer.from_pretrained(model_path, revision=revision)
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
-        )
-        return model, tokenizer
-
-
-class FlanAdapter(T5Adapter):
-    """The model adapter for flan-t5-*, flan-ul2"""
-
-    def match(self, model_path: str):
-        return "flan" in model_path.lower()
 
 
 class KoalaAdapter(BaseModelAdapter):
@@ -1597,9 +1574,7 @@ register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
-register_model_adapter(CodeT5pAdapter)
-register_model_adapter(T5Adapter)
-register_model_adapter(FlanAdapter)
+register_model_adapter(GoogleFlanAdapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
