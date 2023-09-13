@@ -67,7 +67,7 @@ chat_dates = [
     for x in df["tstamp"]
 ]
 chat_dates_counts = pd.value_counts(chat_dates) * scale
-print(f"Mean #chat: {np.mean(chat_dates_counts):.2f}")
+print(f"mean #chat per day: {np.mean(chat_dates_counts):.2f}")
 
 fig = px.bar(x=chat_dates_counts.index, y=chat_dates_counts)
 fig.update_layout(

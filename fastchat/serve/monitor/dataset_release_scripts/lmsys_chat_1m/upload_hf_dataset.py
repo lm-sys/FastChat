@@ -12,5 +12,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     objs = json.load(open(args.in_file))
+    print(f"#convs: {len(objs)}")
     data = Dataset.from_list(objs)
     data.push_to_hub("lmsys/chat-1m", private=True)
