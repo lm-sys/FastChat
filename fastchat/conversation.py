@@ -285,6 +285,17 @@ def get_conv_template(name: str) -> Conversation:
     return conv_templates[name].copy()
 
 
+# An empty template for raw conversation.
+register_conv_template(
+    Conversation(
+        name="raw",
+        system_message="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+    )
+)
+
 # A template with a one-shot conversation example
 register_conv_template(
     Conversation(
