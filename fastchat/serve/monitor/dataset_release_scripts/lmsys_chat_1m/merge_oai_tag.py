@@ -11,8 +11,8 @@ if __name__ == "__main__":
     parser.add_argument("--sample", type=int)
     args = parser.parse_args()
 
-    #tag_file = "clean_conv_20230809_1.5M_oai_filter_v2.json"
-    tag_file = "clean_conv_20230809_1.5M_oai_filter_v2_100k.json"
+    tag_file = "clean_conv_20230809_1.5M_oai_filter_v2.json"
+    #tag_file = "clean_conv_20230809_1.5M_oai_filter_v2_100k.json"
     in_file = args.in_file
     tic = time.time()
 
@@ -31,6 +31,8 @@ if __name__ == "__main__":
         cid = c["conversation_id"]
         if cid in tag_dict:
             c["openai_moderation"] = tag_dict[cid]
+        else:
+            print(f"missing tag for conv {cid}")
     print(f"elapsed: {time.time() - tic:.2f} s")
 
     # Write output
