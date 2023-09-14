@@ -15,11 +15,17 @@ if __name__ == "__main__":
     convs = json.load(open(args.in_file))
     print(f"#conv: {len(convs)}")
 
+    new_convs = []
     for c in convs:
         del c["tstamp"]
         del c["user_id"]
+        if len(c["conversation"]) == 0:
+            continue
 
-    np.random.seed(44)
+        new_convs.append(c)
+    convs = new_convs
+
+    np.random.seed(42)
     np.random.shuffle(convs)
 
     convs = convs[:args.number]
