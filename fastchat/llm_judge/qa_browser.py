@@ -66,16 +66,16 @@ def display_pairwise_answer(
         + get_pairwise_judge_explanation(gamekey, judgment_dict)
     )
 
-    judgment_dict_turn2 = resolve_pairwise_judgment_dict(
-        q,
-        model_judgments_normal_pairwise,
-        model_judgments_math_pairwise,
-        multi_turn=True,
-    )
+    # judgment_dict_turn2 = resolve_pairwise_judgment_dict(
+    #     q,
+    #     model_judgments_normal_pairwise,
+    #     model_judgments_math_pairwise,
+    #     multi_turn=True,
+    # )
 
     explanation_turn2 = (
         "##### Model Judgment (second turn)\n"
-        + get_pairwise_judge_explanation(gamekey, judgment_dict_turn2)
+        # + get_pairwise_judge_explanation(gamekey, judgment_dict_turn2)
     )
 
     return chat_mds + [explanation] + [explanation_turn2]
@@ -98,13 +98,14 @@ def display_single_answer(question_selector, model_selector1, request: gr.Reques
         gamekey, judgment_dict
     )
 
-    judgment_dict_turn2 = resolve_single_judgment_dict(
-        q, model_judgments_normal_single, model_judgments_math_single, multi_turn=True
-    )
+    # judgment_dict_turn2 = resolve_single_judgment_dict(
+    #     q, model_judgments_normal_single, model_judgments_math_single, multi_turn=True
+    # )
 
     explanation_turn2 = (
         "##### Model Judgment (second turn)\n"
-        + get_single_judge_explanation(gamekey, judgment_dict_turn2)
+        + "N/A"
+        # + get_single_judge_explanation(gamekey, judgment_dict_turn2)
     )
 
     return chat_mds + [explanation] + [explanation_turn2]
@@ -183,12 +184,16 @@ def single_to_gradio_chat_mds(question, ans, turn=None):
     return mds
 
 
-def build_question_selector_map():
+def build_question_selector_map(max_preview_len=128):
     global question_selector_map, category_selector_map
 
     # Build question selector map
     for q in questions:
-        preview = f"{q['question_id']}: " + q["turns"][0][:128] + "..."
+        first_q = q["turns"][0]
+        preview = f"{q['question_id']}: " + first_q[:max_preview_len]
+        if len(first_q) > max_preview_len:
+            preview += "..."
+
         question_selector_map[preview] = q
         category_selector_map[q["category"]].append(preview)
 
@@ -222,7 +227,8 @@ def build_pairwise_browser_tab():
                 if i == 0:
                     value = models[0]
                 else:
-                    value = "gpt-3.5-turbo"
+                    # value = "gpt-3.5-turbo"
+                    value = "gpt-4"
                 model_selectors[i] = gr.Dropdown(
                     choices=models,
                     value=value,
@@ -336,46 +342,57 @@ def build_single_answer_browser_tab():
     return (category_selector,)
 
 
+# block_css = """
+# #user_question_1 {
+#     background-color: #DEEBF7;
+# }
+# #user_question_2 {
+#     background-color: #E2F0D9;
+# }
+# #reference {
+#     background-color: #FFF2CC;
+# }
+# #model_explanation {
+#     background-color: #FBE5D6;
+# }
+# """
 block_css = """
 #user_question_1 {
-    background-color: #DEEBF7;
+    background-color: darkblue;
 }
 #user_question_2 {
-    background-color: #E2F0D9;
-}
-#reference {
-    background-color: #FFF2CC;
+    background-color: darkblue;
 }
 #model_explanation {
-    background-color: #FBE5D6;
+    background-color: cadetblue;
 }
 """
 
 
 def load_demo():
     dropdown_update = gr.Dropdown.update(value=list(category_selector_map.keys())[0])
-    return dropdown_update, dropdown_update
+    return dropdown_update
 
 
 def build_demo():
     build_question_selector_map()
 
     with gr.Blocks(
-        title="MT-Bench Browser",
+        title="Japanese MT-Bench Browser",
         theme=gr.themes.Base(text_size=gr.themes.sizes.text_lg),
         css=block_css,
     ) as demo:
         gr.Markdown(
             """
-# MT-Bench Browser
-The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
+# Japanese MT-Bench Browser
+The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/Stability-AI/FastChat/tree/jp-stable/fastchat/llm_judge).
 """
         )
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
-        with gr.Tab("Pairwise Comparison"):
-            (category_selector2,) = build_pairwise_browser_tab()
-        demo.load(load_demo, [], [category_selector, category_selector2])
+        # with gr.Tab("Pairwise Comparison"):
+        #     (category_selector2,) = build_pairwise_browser_tab()
+        demo.load(load_demo, [], [category_selector])
 
     return demo
 
@@ -385,7 +402,8 @@ if __name__ == "__main__":
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
-    parser.add_argument("--bench-name", type=str, default="mt_bench")
+    parser.add_argument("--bench-name", type=str, default="japanese_mt_bench")
+    parser.add_argument("--turns", type=int, default=1)  # TODO: (meng) enable multi-turn later
     args = parser.parse_args()
     print(args)
 
@@ -400,6 +418,8 @@ if __name__ == "__main__":
 
     # Load questions
     questions = load_questions(question_file, None, None)
+    for q in questions:
+        q['turns'] = q['turns'][:args.turns]
 
     # Load answers
     model_answers = load_model_answers(answer_dir)
