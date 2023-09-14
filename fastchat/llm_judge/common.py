@@ -87,7 +87,9 @@ def load_questions(question_file: str, begin: Optional[int], end: Optional[int])
     with open(question_file, "r") as ques_file:
         for line in ques_file:
             if line:
-                questions.append(json.loads(line))
+                q = json.loads(line)
+                q['question_id'] = int(q['question_id'])
+                questions.append(q)
     questions = questions[begin:end]
     return questions
 
@@ -108,7 +110,7 @@ def load_model_answers(answer_dir: str):
         with open(filename) as fin:
             for line in fin:
                 line = json.loads(line)
-                answer[line["question_id"]] = line
+                answer[int(line["question_id"])] = line
         model_answers[model_name] = answer
 
     return model_answers
@@ -500,6 +502,7 @@ def load_pairwise_model_judgments(filename: str):
 
     for line in open(filename):
         obj = json.loads(line)
+        obj["question_id"] = int(obj["question_id"])
         judge = tuple(obj["judge"])
         qid, model_1, model_2 = obj["question_id"], obj["model_1"], obj["model_2"]
 
@@ -543,6 +546,7 @@ def load_single_model_judgments(filename: str):
 
     for line in open(filename):
         obj = json.loads(line)
+        obj["question_id"] = int(obj["question_id"])
         judge = tuple(obj["judge"])
         qid, model = obj["question_id"], obj["model"]
 
