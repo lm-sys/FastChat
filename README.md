@@ -157,6 +157,18 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
+#### Ascend NPU (Huawei AI Processor)
+Install the [Ascend PyTorch Adapter](https://github.com/Ascend/pytorch). Set the CANN environment variables:
+```
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+```
+
+Use `--device npu` to enable NPU acceleration.
+```
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device npu
+```
+Vicuna-7B/13B can run on an Ascend 910B NPU 60GB.
+
 #### Not Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
@@ -300,6 +312,35 @@ Tips:
 - If you are using V100 which is not supported by FlashAttention, you can use the [memory-efficient attention](https://arxiv.org/abs/2112.05682) implemented in [xFormers](https://github.com/facebookresearch/xformers). Install xformers and replace `fastchat/train/train_mem.py` above with [fastchat/train/train_xformers.py](fastchat/train/train_xformers.py).
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
 - If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
+
+### Fine-tuning Vicuna-7B with Local NPUs
+
+You can use the following command to train Vicuna-7B with 8 x 910B (60GB). Use `--nproc_per_node` to specify the number of NPUs.
+```bash
+torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train.py \
+    --model_name_or_path ~/vicuna-7b-v1.5-16k  \
+    --data_path data/dummy_conversation.json \
+    --fp16 True \
+    --output_dir output_vicuna \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 8 \
+    --per_device_eval_batch_size 1 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 1200 \
+    --save_total_limit 10 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --model_max_length 2048 \
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+```
 
 ### Other models and LoRA support
 More instructions to train other models (e.g., FastChat-T5) and use LoRA are in [docs/training.md](docs/training.md).
