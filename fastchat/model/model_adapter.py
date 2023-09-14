@@ -1263,6 +1263,42 @@ class Llama2Adapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class JLlama2Adapter(BaseModelAdapter):
+    """
+    Model adapter for llama-2-based models developed internally in SAIJ
+    """
+    tokenizer_path: str = None
+
+    def match(self, model_path: str) -> bool:
+        model_path = model_path.lower()
+
+        if model_path == os.path.basename(model_path):
+            return False  # no full path available
+
+        gpt_prj_root = "/".join(os.path.abspath(model_path).split("/")[:3])
+
+        # TODO: (meng) note now we assume there is only 1 specific japanese friendly tokenizer
+        if "javocab" in model_path:  
+            self.tokenizer_path = os.path.join(gpt_prj_root, "tokenizers/llama2-ja-hf-lt/")
+        else:
+            self.tokenizer_path = "meta-llama/Llama-2-7b"
+
+        return True if "proj-jp-stablegpt/llama2" in model_path else False
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        print(f"{self.tokenizer_path=}")
+        tokenizer = LlamaTokenizer.from_pretrained(self.tokenizer_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,    
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs
+        )
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("jllama-2")
+    
+
 class CuteGPTAdapter(BaseModelAdapter):
     """The model adapter for llama-2"""
 
@@ -1429,6 +1465,7 @@ class AquilaChatAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(JLlama2Adapter)
 register_model_adapter(JSLMAlphaAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
@@ -1485,8 +1522,11 @@ register_model_adapter(BaseModelAdapter)
 
 if __name__ == "__main__":
     model, tokenizer = load_model(
-        model_path="stabilityai/japanese-stablelm-instruct-alpha-7b",
+        # model_path="stabilityai/japanese-stablelm-instruct-alpha-7b",
+        # model_path="/fsx/proj-jp-stablegpt/llama2/sft/hf/mixv3_5btok_7b.ja-orca-v2_llama2/ckpt_final",
+        model_path="/fsx/proj-jp-stablegpt/llama2/sft/hf/emb-only_mixv3_10btok_7b_javocab.mixv3_5btok.ja-orca-v2_llama2/ckpt_final",
         device="cuda",   
+        num_gpus=8,
     )
     model.eval()
     model.half()

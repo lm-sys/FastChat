@@ -20,6 +20,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     LLAMA2 = auto()
+    JLLAMA2 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -130,6 +131,18 @@ class Conversation:
                 if message:
                     if i == 0:
                         ret += system_prompt + message
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role
+            return ret
+        elif self.sep_style == SeparatorStyle.JLLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += system_prompt + message + seps[i % 2]
                     else:
                         ret += role + " " + message + seps[i % 2]
                 else:
@@ -891,6 +904,20 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="jllama-2",
+        system_template="<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JLLAMA2,
+        roles=("[INST]", "[/INST]"),
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="cutegpt",
         roles=("问：", "答：\n"),
         messages=(),
@@ -993,5 +1020,16 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("\n")
+
+    print("JLlama-2 template:")
+    conv = get_conv_template("jllama-2")
+    conv.set_system_message("あなたは役立つアシスタントです。")
+    conv.append_message(conv.roles[0], "こんにちは。")
+    conv.append_message(conv.roles[1], "こんにちは！")
+    conv.append_message(conv.roles[0], "日本で一番高い山は？")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
