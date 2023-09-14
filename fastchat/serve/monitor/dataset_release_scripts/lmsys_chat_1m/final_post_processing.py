@@ -19,7 +19,7 @@ if __name__ == "__main__":
         del c["tstamp"]
         del c["user_id"]
 
-    np.random.seed(42)
+    np.random.seed(44)
     np.random.shuffle(convs)
 
     convs = convs[:args.number]
