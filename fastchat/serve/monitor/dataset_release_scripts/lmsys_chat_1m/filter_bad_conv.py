@@ -1,9 +1,12 @@
 """
 Filter conversations for release.
 
+pip install opencc-python-reimplementedpip install opencc-python-reimplemented
+
 Usage: python3 filter_bad_conv_lmsys_chat_1m.py --in clean_battle_conv_20230630_tagged_v1_pii.json
 """
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 from collections import defaultdict
 from enum import Enum, auto
 import json
@@ -11,10 +14,13 @@ import os
 import random
 
 from tqdm import tqdm
+import opencc
 
 BLOCKED_WORDS_FILENAME = "blocked_words.json"
 blocked_words = []
 frequency = defaultdict(lambda: 0)
+
+cc_converter = opencc.OpenCC('t2s')
 
 
 class TypeCode(Enum):
@@ -43,7 +49,7 @@ def detect_type(conv):
         ]
 
         for msg in messages:
-            msg = msg.lower()
+            msg = cc_converter.convert(msg.lower())
             if "<anonymized>" in msg:
                 return TypeCode.ANONYMIZED
             if "<redacted>" in msg:
@@ -69,6 +75,7 @@ if __name__ == "__main__":
     # Read blocked words
     if os.path.exists(BLOCKED_WORDS_FILENAME):
         blocked_words = json.load(open(BLOCKED_WORDS_FILENAME))
+        blocked_words = [cc_converter.convert(w) for w in blocked_words]
 
     # Start filter
     ct_bad_format = 0
@@ -82,10 +89,15 @@ if __name__ == "__main__":
     ct_too_short = 0
     ct_too_frequent = 0
 
-    new_convs = []
-    for conv in tqdm(convs):
-        type_code = detect_type(conv)
+    type_codes = []
+    with ProcessPoolExecutor() as executor:
+        for result in tqdm(
+            executor.map(detect_type, convs), total=len(convs)
+        ):
+            type_codes.append(result)
 
+    new_convs = []
+    for conv, type_code in zip(convs, type_codes):
         if type_code == TypeCode.BAD_FORMAT:
             ct_bad_format += 1
             continue

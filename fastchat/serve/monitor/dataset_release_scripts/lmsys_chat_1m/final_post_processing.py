@@ -25,7 +25,7 @@ if __name__ == "__main__":
         new_convs.append(c)
     convs = new_convs
 
-    np.random.seed(42)
+    np.random.seed(43)
     np.random.shuffle(convs)
 
     convs = convs[:args.number]
