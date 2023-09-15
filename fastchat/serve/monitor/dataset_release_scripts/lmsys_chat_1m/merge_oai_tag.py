@@ -33,6 +33,7 @@ if __name__ == "__main__":
             c["openai_moderation"] = tag_dict[cid]
         else:
             print(f"missing tag for conv {cid}")
+            exit()
     print(f"elapsed: {time.time() - tic:.2f} s")
 
     # Write output

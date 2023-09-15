@@ -1,9 +1,11 @@
 """
 Filter conversations for release.
 
+Dependency:
 pip install opencc-python-reimplementedpip install opencc-python-reimplemented
 
-Usage: python3 filter_bad_conv_lmsys_chat_1m.py --in clean_battle_conv_20230630_tagged_v1_pii.json
+Usage:
+python3 filter_bad_conv_lmsys_chat_1m.py --in clean_battle_conv_20230630_tagged_v1_pii.json
 """
 import argparse
 from concurrent.futures import ProcessPoolExecutor
@@ -43,6 +45,9 @@ def detect_type(conv):
         for msg in messages:
             if not isinstance(msg, str):
                 return TypeCode.BAD_FORMAT
+
+        if len(messages) == 0:
+            return TypeCode.BAD_FORMAT
 
         user_prompts = [
             row["content"].lower().strip() for row in conv[key] if row["role"] == "user"
@@ -129,8 +134,8 @@ if __name__ == "__main__":
             new_convs.append(conv)
 
     if args.sample:
-        # random.seed(0)
-        # random.shuffle(new_convs)
+        random.seed(42)
+        random.shuffle(new_convs)
         new_convs = new_convs[: args.sample]
 
     print(f"ct_anonymized: {ct_anonymized}, ct_redacted: {ct_redacted}")
