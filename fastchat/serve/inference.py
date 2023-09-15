@@ -302,6 +302,7 @@ def chat_loop(
     judge_sent_end: bool = True,
     debug: bool = True,
     history: bool = True,
+    dtype=None,
 ):
     # Model
     model, tokenizer = load_model(
@@ -309,6 +310,7 @@ def chat_loop(
         device=device,
         num_gpus=num_gpus,
         max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
         load_8bit=load_8bit,
         cpu_offloading=cpu_offloading,
         gptq_config=gptq_config,

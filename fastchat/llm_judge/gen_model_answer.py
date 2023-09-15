@@ -29,6 +29,7 @@ def run_eval(
     num_gpus_per_model,
     num_gpus_total,
     max_gpu_memory,
+    dtype=None,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -58,6 +59,7 @@ def run_eval(
                 num_choices,
                 num_gpus_per_model,
                 max_gpu_memory,
+                dtype=dtype,
             )
         )
 
@@ -75,12 +77,14 @@ def get_model_answers(
     num_choices,
     num_gpus_per_model,
     max_gpu_memory,
+    dtype=None,
 ):
     model, tokenizer = load_model(
         model_path,
         device="cuda",
         num_gpus=num_gpus_per_model,
         max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
         load_8bit=False,
         cpu_offloading=False,
         debug=False,

@@ -17,6 +17,7 @@ import argparse
 import os
 import re
 import sys
+import torch
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -203,6 +204,14 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
+        dtype = None
+        if args.dtype == "fp32":
+            dtype = torch.float32
+        elif args.dtype == "fp16":
+            dtype = torch.float16
+        elif args.dtype == "bf16":
+            dtype = torch.bfloat16
+
         chat_loop(
             args.model_path,
             args.device,
@@ -231,6 +240,7 @@ def main(args):
             judge_sent_end=args.judge_sent_end,
             debug=args.debug,
             history=not args.no_history,
+            dtype=dtype,
         )
     except KeyboardInterrupt:
         print("exit...")

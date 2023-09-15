@@ -5,9 +5,12 @@ from asyncio import AbstractEventLoop
 import json
 import logging
 import logging.handlers
+import numpy as np
 import os
 import platform
+import random
 import sys
+import torch
 from typing import AsyncGenerator, Generator
 import warnings
 
@@ -302,3 +305,11 @@ def get_context_length(config):
         if val is not None:
             return int(rope_scaling_factor * val)
     return 2048
+
+
+def set_random_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

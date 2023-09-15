@@ -152,6 +152,7 @@ def load_model(
     device: str = "cuda",
     num_gpus: int = 1,
     max_gpu_memory: Optional[str] = None,
+    dtype=None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
     gptq_config: Optional[GptqConfig] = None,
@@ -275,6 +276,9 @@ def load_model(
         return model, tokenizer
     kwargs["revision"] = revision
 
+    if dtype is not None:
+        kwargs["torch_dtype"] = dtype
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
@@ -384,6 +388,11 @@ def add_model_args(parser):
         "--max-gpu-memory",
         type=str,
         help="The maximum memory per GPU for storing model weights. Use a string like '13Gib'",
+    )
+    parser.add_argument(
+        "--dtype",
+        choices=["fp32", "fp16", "bf16"],
+        default=None,
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
