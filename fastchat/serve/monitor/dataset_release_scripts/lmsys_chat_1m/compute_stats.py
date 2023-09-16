@@ -36,7 +36,7 @@ print(f"#language: {df['language'].nunique()}")
 print(f"#turns: {df['turn'].mean()}")
 
 model_counts = df["model"].value_counts() * scale
-print("model counts", model_counts)
+#print("model counts", model_counts)
 fig = px.bar(x=model_counts.index, y=model_counts)
 fig.update_layout(
     xaxis_title=None,
