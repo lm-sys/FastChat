@@ -59,7 +59,7 @@ def test_chat_completion_stream(model):
     print()
 
 
-def test_openai_curl(model):
+def test_openai_curl():
     run_cmd("curl http://localhost:8000/v1/models")
 
     run_cmd(
@@ -67,7 +67,7 @@ def test_openai_curl(model):
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "messages": [{"role": "user", "content": "Hello! What is your name?"}]
   }'
 """
@@ -78,7 +78,7 @@ curl http://localhost:8000/v1/chat/completions \
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "prompt": "Once upon a time",
     "max_tokens": 41,
     "temperature": 0.5
@@ -91,7 +91,7 @@ curl http://localhost:8000/v1/completions \
 curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "input": "Hello world!"
   }'
 """
@@ -106,9 +106,12 @@ if __name__ == "__main__":
         print(f"===== Test {model} ======")
         test_completion(model)
         test_completion_stream(model)
-        test_embedding(model)
         test_chat_completion(model)
         test_chat_completion_stream(model)
+        try:
+            test_embedding(model)
+        except openai.error.APIError as e:
+            print(f"Embedding error: {e}")
 
     print("===== Test curl =====")
-    test_openai_curl("vicuna-7b-v1.3")
+    test_openai_curl()

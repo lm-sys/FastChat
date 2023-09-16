@@ -357,6 +357,17 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="airoboros_v2",
+        system_message="A chat.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+    )
+)
+
 # Koala default template
 register_conv_template(
     Conversation(
@@ -787,6 +798,20 @@ register_conv_template(
     Conversation(
         name="baichuan-chat",
         roles=("<reserved_102>", "<reserved_103>"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+        stop_token_ids=[],
+    )
+)
+
+# Baichuan2-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/c6f8592a60b4ad73c210b28dd2ab3cca51abbf93/modeling_baichuan.py#L773
+    # https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/main/generation_config.json
+    # https://github.com/baichuan-inc/Baichuan2/issues/62
+    Conversation(
+        name="baichuan2-chat",
+        roles=("<reserved_106>", "<reserved_107>"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
         stop_token_ids=[],

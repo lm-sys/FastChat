@@ -109,6 +109,7 @@ def generate_stream(
 
     past_key_values = out = None
     sent_interrupt = False
+    finish_reason = None
     for i in range(max_new_tokens):
         if i == 0:  # prefill
             if model.config.is_encoder_decoder:
@@ -241,12 +242,11 @@ def generate_stream(
             break
 
     # Finish stream event, which contains finish reason
-    if i == max_new_tokens - 1:
-        finish_reason = "length"
-    elif stopped:
-        finish_reason = "stop"
     else:
-        finish_reason = None
+        finish_reason = "length"
+
+    if stopped:
+        finish_reason = "stop"
 
     yield {
         "text": output,
