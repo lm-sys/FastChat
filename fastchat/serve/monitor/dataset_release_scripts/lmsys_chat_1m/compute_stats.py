@@ -67,6 +67,15 @@ chat_dates = [
     )
     for x in df["tstamp"]
 ]
+
+def to_remove(x):
+  for d in ["08-09", "08-08", "08-07", "08-06", "08-05", "08-04"]:
+    if d in x:
+      return True
+  return False
+
+chat_dates = [x for x in chat_dates if not to_remove(x)]
+
 chat_dates_counts = pd.value_counts(chat_dates) * scale
 print(f"mean #chat per day: {np.mean(chat_dates_counts):.2f}")
 
