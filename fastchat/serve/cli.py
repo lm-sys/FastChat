@@ -205,11 +205,11 @@ def main(args):
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
         dtype = None
-        if args.dtype == "fp32":
+        if args.dtype == "float32":
             dtype = torch.float32
-        elif args.dtype == "fp16":
+        elif args.dtype == "float16":
             dtype = torch.float16
-        elif args.dtype == "bf16":
+        elif args.dtype == "bfloat16":
             dtype = torch.bfloat16
 
         chat_loop(

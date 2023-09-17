@@ -391,7 +391,7 @@ def add_model_args(parser):
     )
     parser.add_argument(
         "--dtype",
-        choices=["fp32", "fp16", "bf16"],
+        choices=["float32", "float16", "bfloat16"],
         default=None,
     )
     parser.add_argument(
