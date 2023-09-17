@@ -14,4 +14,4 @@ if __name__ == "__main__":
     objs = json.load(open(args.in_file))
     print(f"#convs: {len(objs)}")
     data = Dataset.from_list(objs)
-    data.push_to_hub("lmsys/chat-1m", private=True)
+    data.push_to_hub("lmsys/lmsys-chat-1m", private=True)
