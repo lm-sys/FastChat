@@ -500,6 +500,9 @@ block_css = """
 #leaderboard_dataframe td {
     line-height: 0.1em;
 }
+#input_box textarea {
+    background-color: white;
+}
 footer {
     display:none !important
 }
@@ -594,6 +597,7 @@ By using this service, users are required to agree to the following terms: The s
                 placeholder="Enter your prompt here and press ENTER",
                 visible=False,
                 container=False,
+                elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
             send_btn = gr.Button(value="Send", visible=False, variant="primary")
