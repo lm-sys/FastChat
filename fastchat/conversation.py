@@ -747,7 +747,6 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
         stop_token_ids=[50256],
-        stop_str="<|endoftext|>",
     )
 )
 
