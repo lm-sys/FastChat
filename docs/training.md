@@ -87,3 +87,32 @@ deepspeed fastchat/train/train_lora_t5.py \
         --deepspeed playground/deepspeed_config_s2.json
         
 ```
+
+### Fine-tuning Vicuna-7B with Local NPUs
+
+You can use the following command to train Vicuna-7B with 8 x 910B (60GB). Use `--nproc_per_node` to specify the number of NPUs.
+```bash
+torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train.py \
+    --model_name_or_path ~/vicuna-7b-v1.5-16k  \
+    --data_path data/dummy_conversation.json \
+    --fp16 True \
+    --output_dir output_vicuna \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 8 \
+    --per_device_eval_batch_size 1 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 1200 \
+    --save_total_limit 10 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --model_max_length 2048 \
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+```

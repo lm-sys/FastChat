@@ -500,6 +500,8 @@ block_css = """
 #leaderboard_dataframe td {
     line-height: 0.1em;
 }
+#input_box textarea {
+}
 footer {
     display:none !important
 }
@@ -550,9 +552,9 @@ def get_model_description_md(models):
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
         """
+- | [GitHub](https://github.com/lm-sys/FastChat) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 - Introducing Llama 2: The Next Generation Open Source Large Language Model. [[Website]](https://ai.meta.com/llama/)
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
-- | [GitHub](https://github.com/lm-sys/FastChat) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 """
         if add_promotion_links
         else ""
@@ -591,12 +593,13 @@ By using this service, users are required to agree to the following terms: The s
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter text and press ENTER",
+                placeholder="Enter your prompt here and press ENTER",
                 visible=False,
                 container=False,
+                elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False)
+            send_btn = gr.Button(value="Send", visible=False, variant="primary")
 
     with gr.Row(visible=False) as button_row:
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)

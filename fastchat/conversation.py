@@ -297,6 +297,17 @@ def get_conv_template(name: str) -> Conversation:
     return conv_templates[name].copy()
 
 
+# An empty template for raw conversation.
+register_conv_template(
+    Conversation(
+        name="raw",
+        system_message="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+    )
+)
+
 # A template with a one-shot conversation example
 register_conv_template(
     Conversation(
@@ -365,6 +376,17 @@ register_conv_template(
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep=" ",
+        sep2="</s>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="airoboros_v2",
+        system_message="A chat.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
         sep2="</s>",
     )
 )
@@ -755,11 +777,10 @@ register_conv_template(
     Conversation(
         name="xgen",
         system_message="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
-        roles=("### Human: ", "###"),
-        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        roles=("### Human", "### Assistant"),
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
-        stop_token_ids=[50256, 0, 1, 2],
-        stop_str="<|endoftext|>",
+        stop_token_ids=[50256],
     )
 )
 
@@ -799,6 +820,20 @@ register_conv_template(
     Conversation(
         name="baichuan-chat",
         roles=("<reserved_102>", "<reserved_103>"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+        stop_token_ids=[],
+    )
+)
+
+# Baichuan2-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/c6f8592a60b4ad73c210b28dd2ab3cca51abbf93/modeling_baichuan.py#L773
+    # https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/main/generation_config.json
+    # https://github.com/baichuan-inc/Baichuan2/issues/62
+    Conversation(
+        name="baichuan2-chat",
+        roles=("<reserved_106>", "<reserved_107>"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
         stop_token_ids=[],
@@ -927,6 +962,19 @@ register_conv_template(
         sep="\n",
         sep2="<|endoftext|>",
         stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+    )
+)
+
+# Phind template
+register_conv_template(
+    Conversation(
+        name="phind",
+        system_message="### System Prompt\nYou are an intelligent programming assistant.",
+        roles=("### User Message", "### Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n\n",
     )
 )
 

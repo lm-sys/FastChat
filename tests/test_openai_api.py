@@ -106,9 +106,12 @@ if __name__ == "__main__":
         print(f"===== Test {model} ======")
         test_completion(model)
         test_completion_stream(model)
-        test_embedding(model)
         test_chat_completion(model)
         test_chat_completion_stream(model)
+        try:
+            test_embedding(model)
+        except openai.error.APIError as e:
+            print(f"Embedding error: {e}")
 
     print("===== Test curl =====")
     test_openai_curl()

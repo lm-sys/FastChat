@@ -370,6 +370,8 @@ class ModelWorker(BaseModelWorker):
             torch.cuda.empty_cache()
             if self.device == "xpu":
                 torch.xpu.empty_cache()
+            if self.device == "npu":
+                torch.npu.empty_cache()
         except torch.cuda.OutOfMemoryError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",

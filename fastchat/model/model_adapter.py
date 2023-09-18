@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 import sys
 from typing import Dict, List, Optional
 import warnings
@@ -205,6 +206,13 @@ def load_model(
             warnings.warn(
                 "Intel Extension for PyTorch is not installed, but is required for xpu inference."
             )
+    elif device == "npu":
+        kwargs = {"torch_dtype": torch.float16}
+        # Try to load ipex, while it looks unused, it links into torch for xpu support
+        try:
+            import torch_npu
+        except ImportError:
+            warnings.warn("Ascend Extension for PyTorch is not installed.")
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -287,6 +295,7 @@ def load_model(
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
         "mps",
         "xpu",
+        "npu",
     ):
         model.to(device)
 
@@ -368,7 +377,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--device",
         type=str,
-        choices=["cpu", "cuda", "mps", "xpu"],
+        choices=["cpu", "cuda", "mps", "xpu", "npu"],
         default="cuda",
         help="The device type",
     )
@@ -561,9 +570,13 @@ class AiroborosAdapter(BaseModelAdapter):
     """The model adapter for jondurbin/airoboros-*"""
 
     def match(self, model_path: str):
-        return "airoboros" in model_path.lower()
+        if re.search(r"airoboros|spicyboros", model_path, re.I):
+            return True
+        return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "spicyboros" in model_path or re.search(r"-(2\.[2-9]+)", model_path):
+            return get_conv_template("airoboros_v2")
         return get_conv_template("airoboros_v1")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
@@ -642,6 +655,13 @@ class T5Adapter(BaseModelAdapter):
             model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
+
+
+class FlanAdapter(T5Adapter):
+    """The model adapter for flan-t5-*, flan-ul2"""
+
+    def match(self, model_path: str):
+        return "flan" in model_path.lower()
 
 
 class KoalaAdapter(BaseModelAdapter):
@@ -1168,6 +1188,8 @@ class BaichuanAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         # for Baichuan-13B-Chat
         if "chat" in model_path.lower():
+            if "baichuan2" in model_path.lower():
+                return get_conv_template("baichuan2-chat")
             return get_conv_template("baichuan-chat")
         return get_conv_template("zero_shot")
 
@@ -1587,6 +1609,16 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class PhindCodeLlamaAdapter(CodeLlamaAdapter):
+    """The model adapter for Phind Code Llama"""
+
+    def match(self, model_path: str):
+        return "phind-codellama-" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("phind")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1595,6 +1627,7 @@ register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
 register_model_adapter(CodeT5pAdapter)
 register_model_adapter(T5Adapter)
+register_model_adapter(FlanAdapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
@@ -1644,6 +1677,7 @@ register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
+register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 
 # After all adapters, try the default base adapter.
