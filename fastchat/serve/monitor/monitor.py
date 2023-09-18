@@ -1,5 +1,10 @@
-# sudo apt install pkg-config libicu-dev
-# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
+Live monitor of the website statistics and leaderboard.
+
+Dependency:
+sudo apt install pkg-config libicu-dev
+pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
 
 import argparse
 import ast
@@ -53,7 +58,7 @@ def update_elo_components(max_num_files, elo_results_file):
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
-        battles = clean_battle_data(log_files)
+        battles = clean_battle_data(log_files, [])
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
@@ -250,11 +255,14 @@ Please note that you may see different orders from different ranking methods. Th
 
 
 def build_demo(elo_results_file, leaderboard_table_file):
+    from fastchat.serve.gradio_web_server import block_css
+
     text_size = gr.themes.sizes.text_lg
 
     with gr.Blocks(
         title="Monitor",
         theme=gr.themes.Base(text_size=text_size),
+        css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
