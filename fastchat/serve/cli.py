@@ -205,12 +205,12 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
-        dtype = str_to_torch_dtype(args.dtype)
         chat_loop(
             args.model_path,
             args.device,
             args.num_gpus,
             args.max_gpu_memory,
+            str_to_torch_dtype(args.dtype),
             args.load_8bit,
             args.cpu_offloading,
             args.conv_template,
@@ -234,7 +234,6 @@ def main(args):
             judge_sent_end=args.judge_sent_end,
             debug=args.debug,
             history=not args.no_history,
-            dtype=dtype,
         )
     except KeyboardInterrupt:
         print("exit...")

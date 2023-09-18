@@ -34,6 +34,7 @@ except ImportError:
     )
 import torch
 import torch.nn.functional as F
+from transformers import set_seed
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
@@ -52,8 +53,6 @@ from fastchat.utils import (
     get_context_length,
     str_to_torch_dtype,
 )
-
-from transformers import set_seed
 
 
 worker_id = str(uuid.uuid4())[:8]
@@ -486,7 +485,12 @@ def create_model_worker():
     )
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
-    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Overwrite the random seed for each generation.",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 

@@ -7,13 +7,11 @@ import logging
 import logging.handlers
 import os
 import platform
-import random
 import sys
 from typing import AsyncGenerator, Generator
 import warnings
 
 import requests
-import torch
 
 from fastchat.constants import LOGDIR
 
@@ -307,6 +305,8 @@ def get_context_length(config):
 
 
 def str_to_torch_dtype(dtype: str):
+    import torch
+
     if dtype is None:
         return None
     elif dtype == "float32":
@@ -316,4 +316,4 @@ def str_to_torch_dtype(dtype: str):
     elif dtype == "bfloat16":
         return torch.bfloat16
     else:
-        raise Exception("Unrecognized dtype")
+        raise ValueError(f"Unrecognized dtype: {dtype}")

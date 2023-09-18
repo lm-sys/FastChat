@@ -288,6 +288,7 @@ def chat_loop(
     device: str,
     num_gpus: int,
     max_gpu_memory: str,
+    dtype: Optional[torch.dtype] = None,
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
@@ -302,7 +303,6 @@ def chat_loop(
     judge_sent_end: bool = True,
     debug: bool = True,
     history: bool = True,
-    dtype=None,
 ):
     # Model
     model, tokenizer = load_model(
