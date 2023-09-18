@@ -23,6 +23,7 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
     LlamaForCausalLM,
+    T5Tokenizer,
 )
 
 from fastchat.constants import CPU_ISA
@@ -632,7 +633,7 @@ class LongChatAdapter(BaseModelAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
-class GoogleFlanAdapter(BaseModelAdapter):
+class GoogleT5Adapter(BaseModelAdapter):
     """The model adapter for google/Flan based models, such as Salesforce/codet5p-6b, lmsys/fastchat-t5-3b-v1.0, flan-t5-*, flan-ul2"""
 
     def match(self, model_path: str):
@@ -643,7 +644,7 @@ class GoogleFlanAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        tokenizer = T5Tokenizer.from_pretrained(model_path, revision=revision)
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
@@ -1614,7 +1615,7 @@ register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
-register_model_adapter(GoogleFlanAdapter)
+register_model_adapter(GoogleT5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)

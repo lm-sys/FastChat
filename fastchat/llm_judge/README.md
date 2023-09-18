@@ -64,6 +64,7 @@ This mode asks GPT-4 to grade and give a score to model's answer directly withou
 For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 ```
+export OPENAI_API_KEY=XXXXXX  # set the OpenAI API key
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 ```
 
