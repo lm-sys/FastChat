@@ -48,8 +48,9 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 headers = {"User-Agent": "FastChat Client"}
 
 no_change_btn = gr.Button.update()
-enable_btn = gr.Button.update(interactive=True)
+enable_btn = gr.Button.update(interactive=True, visible=True)
 disable_btn = gr.Button.update(interactive=False)
+invisible_btn = gr.Button.update(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
