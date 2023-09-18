@@ -206,6 +206,13 @@ def load_model(
             warnings.warn(
                 "Intel Extension for PyTorch is not installed, but is required for xpu inference."
             )
+    elif device == "npu":
+        kwargs = {"torch_dtype": torch.float16}
+        # Try to load ipex, while it looks unused, it links into torch for xpu support
+        try:
+            import torch_npu
+        except ImportError:
+            warnings.warn("Ascend Extension for PyTorch is not installed.")
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -288,6 +295,7 @@ def load_model(
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
         "mps",
         "xpu",
+        "npu",
     ):
         model.to(device)
 
@@ -369,7 +377,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--device",
         type=str,
-        choices=["cpu", "cuda", "mps", "xpu"],
+        choices=["cpu", "cuda", "mps", "xpu", "npu"],
         default="cuda",
         help="The device type",
     )

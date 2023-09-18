@@ -193,6 +193,8 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             torch.cuda.empty_cache()
             if device == "xpu":
                 torch.xpu.empty_cache()
+            if device == "npu":
+                torch.npu.empty_cache()
 
     for name in model.state_dict():
         if name not in linear_weights:
