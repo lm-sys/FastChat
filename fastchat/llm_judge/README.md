@@ -1,5 +1,5 @@
 # LLM Judge
-| [Paper](https://arxiv.org/abs/2306.05685) | [Leaderboard](https://chat.lmsys.org/?leaderboard) |
+| [Paper](https://arxiv.org/abs/2306.05685) | [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) |
 
 In this package, you can use MT-bench questions and prompts to evaluate your models with LLM-as-a-judge.
 MT-bench is a set of challenging multi-turn open-ended questions for evaluating chat assistants.
