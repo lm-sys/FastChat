@@ -980,6 +980,17 @@ register_conv_template(
     )
 )
 
+# phi-1_5 template
+# source: https://huggingface.co/microsoft/phi-1_5
+register_conv_template(
+    Conversation(
+        name="phi-1_5",
+        roles=("User", "Assistant"),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n",
+    )
+)
 
 if __name__ == "__main__":
     print("Vicuna template:")
