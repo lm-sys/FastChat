@@ -1267,7 +1267,7 @@ class StarChatAdapter(BaseModelAdapter):
 
 
 class Llama2Adapter(BaseModelAdapter):
-    """The model adapter for llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
+    """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
 
     def match(self, model_path: str):
         return "llama-2" in model_path.lower()
@@ -1430,7 +1430,7 @@ class BGEAdapter(BaseModelAdapter):
 
 
 class E5Adapter(BaseModelAdapter):
-    """The model adapter for intfloat/e5-large-v2"""
+    """The model adapter for E5 (e.g., intfloat/e5-large-v2)"""
 
     use_fast_tokenizer = False
 
@@ -1508,7 +1508,7 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
 
 
 class VigogneInstructAdapter(BaseModelAdapter):
-    """The model adapter for bofenghuang/vigogne-2-7b-instruct"""
+    """The model adapter for Vigogne-Instruct (e.g., bofenghuang/vigogne-2-7b-instruct)"""
 
     use_fast_tokenizer = False
 
@@ -1536,7 +1536,7 @@ class VigogneInstructAdapter(BaseModelAdapter):
 
 
 class VigogneChatAdapter(BaseModelAdapter):
-    """The model adapter for bofenghuang/vigogne-7b-chat"""
+    """The model adapter for Vigogne-Chat (e.g., bofenghuang/vigogne-7b-chat)"""
 
     use_fast_tokenizer = False
 
@@ -1594,7 +1594,7 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
 
 
 class CodeLlamaAdapter(BaseModelAdapter):
-    """The model adapter for codellama/CodeLlama-34b-hf"""
+    """The model adapter for CodeLlama (e.g., codellama/CodeLlama-34b-hf)"""
 
     def match(self, model_path: str):
         return "codellama" in model_path.lower()
@@ -1610,7 +1610,7 @@ class CodeLlamaAdapter(BaseModelAdapter):
 
 
 class PhindCodeLlamaAdapter(CodeLlamaAdapter):
-    """The model adapter for Phind/Phind-CodeLlama-34B-v2"""
+    """The model adapter for Phind-CodeLlama (e.g., Phind/Phind-CodeLlama-34B-v2)"""
 
     def match(self, model_path: str):
         return "phind-codellama-" in model_path.lower()
