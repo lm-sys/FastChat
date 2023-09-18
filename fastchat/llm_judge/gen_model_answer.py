@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
+from fastchat.utils import str_to_torch_dtype
 
 
 def run_eval(
@@ -29,7 +30,7 @@ def run_eval(
     num_gpus_per_model,
     num_gpus_total,
     max_gpu_memory,
-    dtype=None,
+    dtype,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -46,7 +47,7 @@ def run_eval(
     else:
         get_answers_func = get_model_answers
 
-    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model) // 2
+    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
     for i in range(0, len(questions), chunk_size):
         ans_handles.append(
@@ -77,7 +78,7 @@ def get_model_answers(
     num_choices,
     num_gpus_per_model,
     max_gpu_memory,
-    dtype=None,
+    dtype,
 ):
     model, tokenizer = load_model(
         model_path,
@@ -196,7 +197,9 @@ if __name__ == "__main__":
         required=True,
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
-    parser.add_argument("--model-id", type=str, required=True)
+    parser.add_argument(
+        "--model-id", type=str, required=True, help="A custom name for the model."
+    )
     parser.add_argument(
         "--bench-name",
         type=str,
@@ -238,6 +241,13 @@ if __name__ == "__main__":
         type=str,
         help="Maxmum GPU memory used for model weights per GPU.",
     )
+    parser.add_argument(
+        "--dtype",
+        choices=["float32", "float16", "bfloat16"],
+        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
+        default=None,
+    )
+
     args = parser.parse_args()
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
@@ -265,6 +275,7 @@ if __name__ == "__main__":
         args.num_gpus_per_model,
         args.num_gpus_total,
         args.max_gpu_memory,
+        str_to_torch_dtype(args.dtype),
     )
 
     reorg_answer_file(answer_file)
