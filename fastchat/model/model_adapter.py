@@ -1601,6 +1601,16 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class PhindCodeLlamaAdapter(CodeLlamaAdapter):
+    """The model adapter for Phind Code Llama"""
+
+    def match(self, model_path: str):
+        return "phind-codellama-" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("phind")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1658,6 +1668,7 @@ register_model_adapter(VigogneInstructAdapter)
 register_model_adapter(VigogneChatAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
+register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 
 # After all adapters, try the default base adapter.

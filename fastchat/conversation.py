@@ -940,6 +940,19 @@ register_conv_template(
     )
 )
 
+# Phind template
+register_conv_template(
+    Conversation(
+        name="phind",
+        system_message="### System Prompt\nYou are an intelligent programming assistant.",
+        roles=("### User Message", "### Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n\n",
+    )
+)
+
 
 if __name__ == "__main__":
     print("Vicuna template:")
