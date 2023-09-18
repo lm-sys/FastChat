@@ -620,7 +620,7 @@ class GoogleFlanAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return any(
-            model_path in model_str for model_str in ["flan-", "fastchat-t5", "codet5p"]
+            model_str in model_path.lower() for model_str in ["flan-", "fastchat-t5", "codet5p"]
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
