@@ -203,9 +203,9 @@ class ModelWorker(BaseModelWorker):
         gptq_config: Optional[GptqConfig] = None,
         awq_config: Optional[AWQConfig] = None,
         stream_interval: int = 2,
-        conv_template: str = None,
+        conv_template: Optional[str] = None,
         embed_in_truncate: bool = False,
-        seed=None,
+        seed: Optional[int] = None,
         **kwargs,
     ):
         super().__init__(
