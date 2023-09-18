@@ -501,7 +501,6 @@ block_css = """
     line-height: 0.1em;
 }
 #input_box textarea {
-    background-color: white;
 }
 footer {
     display:none !important
