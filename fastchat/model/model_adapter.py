@@ -276,7 +276,7 @@ def load_model(
         return model, tokenizer
     kwargs["revision"] = revision
 
-    if dtype is not None:
+    if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
 
     # Load model
