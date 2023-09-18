@@ -513,7 +513,6 @@ def create_model_worker():
         groupsize=args.awq_groupsize,
     )
 
-    dtype = str_to_torch_dtype(args.dtype)
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,
@@ -525,7 +524,7 @@ def create_model_worker():
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,
-        dtype=dtype,
+        dtype=str_to_torch_dtype(args.dtype),
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,

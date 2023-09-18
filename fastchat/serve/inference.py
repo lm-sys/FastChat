@@ -288,7 +288,7 @@ def chat_loop(
     device: str,
     num_gpus: int,
     max_gpu_memory: str,
-    dtype: Optional[torch.dtype] = None,
+    dtype: Optional[torch.dtype],
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],

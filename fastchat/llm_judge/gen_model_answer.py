@@ -243,6 +243,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--dtype",
+        type=str,
         choices=["float32", "float16", "bfloat16"],
         help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
         default=None,
@@ -264,18 +265,18 @@ if __name__ == "__main__":
     print(f"Output to {answer_file}")
 
     run_eval(
-        args.model_path,
-        args.model_id,
-        question_file,
-        args.question_begin,
-        args.question_end,
-        answer_file,
-        args.max_new_token,
-        args.num_choices,
-        args.num_gpus_per_model,
-        args.num_gpus_total,
-        args.max_gpu_memory,
-        str_to_torch_dtype(args.dtype),
+        model_path=args.model_path,
+        model_id=args.model_id,
+        question_file=question_file,
+        question_begin=args.question_begin,
+        question_end=args.question_end,
+        answer_file=answer_file,
+        max_new_token=args.max_new_token,
+        num_choices=args.num_choices,
+        num_gpus_per_model=args.num_gpus_per_model,
+        num_gpus_total=args.num_gpus_total,
+        max_gpu_memory=args.max_gpu_memory,
+        dtype=str_to_torch_dtype(args.dtype),
     )
 
     reorg_answer_file(answer_file)
