@@ -1629,6 +1629,7 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phind")
 
+
 class PhiAdapter(BaseModelAdapter):
     """The model adapter for microsoft/phi-1_5"""
 
@@ -1639,6 +1640,7 @@ class PhiAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phi-1_5")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
