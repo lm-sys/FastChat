@@ -1564,7 +1564,7 @@ class VigogneChatAdapter(BaseModelAdapter):
 
 
 class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
-    """The model adapter for VMware/open-llama-7b-open-instruct"""
+    """The model adapter for OpenLLaMa-Open-Instruct (e.g., VMware/open-llama-7b-open-instruct)"""
 
     use_fast_tokenizer = False
 
