@@ -392,6 +392,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--dtype",
         choices=["float32", "float16", "bfloat16"],
+        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU."
         default=None,
     )
     parser.add_argument(
