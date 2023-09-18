@@ -2,7 +2,7 @@
 | [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
-- The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna).
+- The training and evaluation code for state-of-the-art models (e.g., Vicuna).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
@@ -313,36 +313,7 @@ Tips:
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
 - If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
-### Fine-tuning Vicuna-7B with Local NPUs
-
-You can use the following command to train Vicuna-7B with 8 x 910B (60GB). Use `--nproc_per_node` to specify the number of NPUs.
-```bash
-torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train.py \
-    --model_name_or_path ~/vicuna-7b-v1.5-16k  \
-    --data_path data/dummy_conversation.json \
-    --fp16 True \
-    --output_dir output_vicuna \
-    --num_train_epochs 3 \
-    --per_device_train_batch_size 8 \
-    --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 1 \
-    --evaluation_strategy "no" \
-    --save_strategy "steps" \
-    --save_steps 1200 \
-    --save_total_limit 10 \
-    --learning_rate 2e-5 \
-    --weight_decay 0. \
-    --warmup_ratio 0.03 \
-    --lr_scheduler_type "cosine" \
-    --logging_steps 1 \
-    --fsdp "full_shard auto_wrap" \
-    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
-    --model_max_length 2048 \
-    --gradient_checkpointing True \
-    --lazy_preprocess True
-```
-
-### Other models and LoRA support
+### Other models, platforms and LoRA support
 More instructions to train other models (e.g., FastChat-T5) and use LoRA are in [docs/training.md](docs/training.md).
 
 ### Fine-tuning on Any Cloud with SkyPilot
