@@ -17,7 +17,6 @@ import argparse
 import os
 import re
 import sys
-import torch
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -27,11 +26,13 @@ from prompt_toolkit.key_binding import KeyBindings
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
+import torch
 
 from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.serve.inference import ChatIO, chat_loop
+from fastchat.utils import str_to_torch_dtype
 
 
 class SimpleChatIO(ChatIO):
@@ -204,14 +205,7 @@ def main(args):
     else:
         raise ValueError(f"Invalid style for console: {args.style}")
     try:
-        dtype = None
-        if args.dtype == "float32":
-            dtype = torch.float32
-        elif args.dtype == "float16":
-            dtype = torch.float16
-        elif args.dtype == "bfloat16":
-            dtype = torch.bfloat16
-
+        dtype = str_to_torch_dtype(args.dtype)
         chat_loop(
             args.model_path,
             args.device,

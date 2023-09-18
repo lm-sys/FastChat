@@ -5,16 +5,15 @@ from asyncio import AbstractEventLoop
 import json
 import logging
 import logging.handlers
-import numpy as np
 import os
 import platform
 import random
 import sys
-import torch
 from typing import AsyncGenerator, Generator
 import warnings
 
 import requests
+import torch
 
 from fastchat.constants import LOGDIR
 
@@ -307,9 +306,14 @@ def get_context_length(config):
     return 2048
 
 
-def set_random_seed(seed: int) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+def str_to_torch_dtype(dtype: str):
+    if dtype is None:
+        return None
+    elif dtype == "float32":
+        return torch.float32
+    elif dtype == "float16":
+        return torch.float16
+    elif dtype == "bfloat16":
+        return torch.bfloat16
+    else:
+        raise Exception("Unrecognized dtype")

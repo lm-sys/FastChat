@@ -50,7 +50,7 @@ from fastchat.utils import (
     build_logger,
     pretty_print_semaphore,
     get_context_length,
-    set_random_seed,
+    str_to_torch_dtype,
 )
 
 from transformers import set_seed
@@ -197,7 +197,7 @@ class ModelWorker(BaseModelWorker):
         device: str,
         num_gpus: int,
         max_gpu_memory: str,
-        dtype=None,
+        dtype: Optional[torch.dtype] = None,
         load_8bit: bool = False,
         cpu_offloading: bool = False,
         gptq_config: Optional[GptqConfig] = None,
@@ -238,8 +238,6 @@ class ModelWorker(BaseModelWorker):
         self.stream_interval = stream_interval
         self.embed_in_truncate = embed_in_truncate
         self.seed = seed
-        if seed is not None:
-            set_random_seed(seed)
 
         if not no_register:
             self.init_heart_beat()
@@ -511,14 +509,7 @@ def create_model_worker():
         groupsize=args.awq_groupsize,
     )
 
-    dtype = None
-    if args.dtype == "float32":
-        dtype = torch.float32
-    elif args.dtype == "float16":
-        dtype = torch.float16
-    elif args.dtype == "bfloat16":
-        dtype = torch.bfloat16
-
+    dtype = str_to_torch_dtype(args.dtype)
     worker = ModelWorker(
         args.controller_address,
         args.worker_address,

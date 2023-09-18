@@ -152,7 +152,7 @@ def load_model(
     device: str = "cuda",
     num_gpus: int = 1,
     max_gpu_memory: Optional[str] = None,
-    dtype: Optional[torch.dtype]=None,
+    dtype: Optional[torch.dtype] = None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
     gptq_config: Optional[GptqConfig] = None,
@@ -392,7 +392,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--dtype",
         choices=["float32", "float16", "bfloat16"],
-        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU."
+        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
         default=None,
     )
     parser.add_argument(
