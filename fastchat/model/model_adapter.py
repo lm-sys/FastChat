@@ -1597,7 +1597,7 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
     """The model adapter for Phind Code Llama"""
 
     def match(self, model_path: str):
-        return "Phind" in model_path
+        return "phind-codellama-" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phind")
