@@ -27,6 +27,7 @@ class SeparatorStyle(IntEnum):
     RWKV = auto()
     PHOENIX = auto()
     ROBIN = auto()
+    FALCON_CHAT = auto()
 
 
 @dataclasses.dataclass
@@ -200,6 +201,17 @@ class Conversation:
                 else:
                     ret += role + ":\n"
             return ret
+        elif self.sep_style == SeparatorStyle.FALCON_CHAT:
+            ret = ""
+            if self.system_message:
+                ret += "System: " + self.system_message + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": "
+
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -284,6 +296,17 @@ def get_conv_template(name: str) -> Conversation:
     """Get a conversation template."""
     return conv_templates[name].copy()
 
+
+# An empty template for raw conversation.
+register_conv_template(
+    Conversation(
+        name="raw",
+        system_message="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+    )
+)
 
 # A template with a one-shot conversation example
 register_conv_template(
@@ -754,11 +777,10 @@ register_conv_template(
     Conversation(
         name="xgen",
         system_message="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
-        roles=("### Human: ", "###"),
-        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        roles=("### Human", "### Assistant"),
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
-        stop_token_ids=[50256, 0, 1, 2],
-        stop_str="<|endoftext|>",
+        stop_token_ids=[50256],
     )
 )
 
@@ -798,6 +820,20 @@ register_conv_template(
     Conversation(
         name="baichuan-chat",
         roles=("<reserved_102>", "<reserved_103>"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+        stop_token_ids=[],
+    )
+)
+
+# Baichuan2-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/c6f8592a60b4ad73c210b28dd2ab3cca51abbf93/modeling_baichuan.py#L773
+    # https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat/blob/main/generation_config.json
+    # https://github.com/baichuan-inc/Baichuan2/issues/62
+    Conversation(
+        name="baichuan2-chat",
+        roles=("<reserved_106>", "<reserved_107>"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
         stop_token_ids=[],
@@ -913,6 +949,34 @@ register_conv_template(
         sep="\n",
         sep2="</s>\n",
         stop_str="<|user|>",
+    )
+)
+
+# Falcon 180B chat template
+# source: https://huggingface.co/spaces/tiiuae/falcon-180b-demo/blob/d1590ee7fae9b6ce331ba7808e61a29dcce9239f/app.py#L28-L37
+register_conv_template(
+    Conversation(
+        name="falcon-chat",
+        roles=("User", "Falcon"),
+        messages=[],
+        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep="\n",
+        sep2="<|endoftext|>",
+        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+    )
+)
+
+# Phind template
+# source: https://huggingface.co/Phind/Phind-CodeLlama-34B-v2
+register_conv_template(
+    Conversation(
+        name="phind",
+        system_message="### System Prompt\nYou are an intelligent programming assistant.",
+        roles=("### User Message", "### Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n\n",
     )
 )
 

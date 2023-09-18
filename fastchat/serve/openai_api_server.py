@@ -435,7 +435,11 @@ async def chat_completion_stream_generator(
                 return
             decoded_unicode = content["text"].replace("\ufffd", "")
             delta_text = decoded_unicode[len(previous_text) :]
-            previous_text = decoded_unicode
+            previous_text = (
+                decoded_unicode
+                if len(decoded_unicode) > len(previous_text)
+                else previous_text
+            )
 
             if len(delta_text) == 0:
                 delta_text = None
@@ -554,7 +558,11 @@ async def generate_completion_stream_generator(
                     return
                 decoded_unicode = content["text"].replace("\ufffd", "")
                 delta_text = decoded_unicode[len(previous_text) :]
-                previous_text = decoded_unicode
+                previous_text = (
+                    decoded_unicode
+                    if len(decoded_unicode) > len(previous_text)
+                    else previous_text
+                )
                 # todo: index is not apparent
                 choice_data = CompletionResponseStreamChoice(
                     index=i,

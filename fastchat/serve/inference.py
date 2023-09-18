@@ -80,7 +80,8 @@ def generate_stream(
     echo = bool(params.get("echo", True))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
-    stop_token_ids.append(tokenizer.eos_token_id)
+    if tokenizer.eos_token_id not in stop_token_ids:
+        stop_token_ids.append(tokenizer.eos_token_id)
 
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
@@ -263,6 +264,8 @@ def generate_stream(
     torch.cuda.empty_cache()
     if device == "xpu":
         torch.xpu.empty_cache()
+    if device == "npu":
+        torch.npu.empty_cache()
 
 
 class ChatIO(abc.ABC):
@@ -288,6 +291,7 @@ def chat_loop(
     device: str,
     num_gpus: int,
     max_gpu_memory: str,
+    dtype: Optional[torch.dtype],
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
@@ -309,6 +313,7 @@ def chat_loop(
         device=device,
         num_gpus=num_gpus,
         max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
         load_8bit=load_8bit,
         cpu_offloading=cpu_offloading,
         gptq_config=gptq_config,

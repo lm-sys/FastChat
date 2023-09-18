@@ -1,8 +1,8 @@
 # FastChat
-| [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**Twitter**](https://twitter.com/lmsysorg) |
+| [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
-- The weights, training code, and evaluation code for state-of-the-art models (e.g., Vicuna).
+- The training and evaluation code for state-of-the-art models (e.g., Vicuna).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
@@ -157,6 +157,18 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
+#### Ascend NPU (Huawei AI Processor)
+Install the [Ascend PyTorch Adapter](https://github.com/Ascend/pytorch). Set the CANN environment variables:
+```
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+```
+
+Use `--device npu` to enable NPU acceleration.
+```
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device npu
+```
+Vicuna-7B/13B can run on an Ascend 910B NPU 60GB.
+
 #### Not Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
 This can reduce memory usage by around half with slightly degraded model quality.
@@ -301,7 +313,7 @@ Tips:
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
 - If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 
-### Other models and LoRA support
+### Other models, platforms and LoRA support
 More instructions to train other models (e.g., FastChat-T5) and use LoRA are in [docs/training.md](docs/training.md).
 
 ### Fine-tuning on Any Cloud with SkyPilot

@@ -1,5 +1,4 @@
 """
-
 Usage:
 python3 summarize_cluster.py --in results_c20_kmeans_cluster.pkl --model gpt-4
 """
