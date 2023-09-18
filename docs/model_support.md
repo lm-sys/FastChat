@@ -31,6 +31,7 @@
 - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
 - [OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5](https://huggingface.co/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5)
 - [VMware/open-llama-7b-v2-open-instruct](https://huggingface.co/VMware/open-llama-7b-v2-open-instruct)
+- [Phind/Phind-CodeLlama-34B-v2](https://huggingface.co/Phind/Phind-CodeLlama-34B-v2)
 - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
 - [Qwen/Qwen-7B-Chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
 - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
@@ -38,6 +39,7 @@
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
 - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
+- [tiiuae/falcon-180B-chat](https://huggingface.co/tiiuae/falcon-180B-chat)
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
 - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
 - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
@@ -71,7 +73,7 @@ You can add `--debug` to see the actual prompt sent to the model.
 
 FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
 
-1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one.
+1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one. Please also add a link to the official reference code if possible.
 2. Implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can follow existing examples and use `register_model_adapter` to add a new one.
 3. (Optional) add the model name to the "Supported models" [section](#supported-models) above and add more information in [fastchat/model/model_registry.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_registry.py).
 

@@ -953,6 +953,7 @@ register_conv_template(
 )
 
 # Falcon 180B chat template
+# source: https://huggingface.co/spaces/tiiuae/falcon-180b-demo/blob/d1590ee7fae9b6ce331ba7808e61a29dcce9239f/app.py#L28-L37
 register_conv_template(
     Conversation(
         name="falcon-chat",
@@ -966,6 +967,7 @@ register_conv_template(
 )
 
 # Phind template
+# source: https://huggingface.co/Phind/Phind-CodeLlama-34B-v2
 register_conv_template(
     Conversation(
         name="phind",

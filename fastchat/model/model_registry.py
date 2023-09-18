@@ -252,9 +252,16 @@ register_model_info(
     "A chatbot fine-tuned from RedPajama-INCITE-7B-Base by Together",
 )
 register_model_info(
-    ["falcon-7b", "falcon-7b-instruct", "falcon-40b", "falcon-40b-instruct"],
+    [
+        "falcon-7b",
+        "falcon-7b-instruct",
+        "falcon-40b",
+        "falcon-40b-instruct",
+        "falcon-180b",
+        "falcon-180b-chat",
+    ],
     "Falcon",
-    "https://huggingface.co/tiiuae/falcon-40b",
+    "https://huggingface.co/tiiuae/falcon-180B",
     "TII's flagship series of large language models",
 )
 register_model_info(
