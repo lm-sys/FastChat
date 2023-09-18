@@ -30,9 +30,7 @@ from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
-from fastchat.model.llama_condense_monkey_patch import (
-    replace_llama_with_condense,
-)
+from fastchat.model.llama_condense_monkey_patch import replace_llama_with_condense
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
@@ -620,7 +618,8 @@ class GoogleFlanAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return any(
-            model_str in model_path.lower() for model_str in ["flan-", "fastchat-t5", "codet5p"]
+            model_str in model_path.lower()
+            for model_str in ["flan-", "fastchat-t5", "codet5p"]
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
