@@ -12,7 +12,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     tag_file = "clean_conv_20230809_1.5M_oai_filter_v2.json"
-    #tag_file = "clean_conv_20230809_1.5M_oai_filter_v2_100k.json"
+    # tag_file = "clean_conv_20230809_1.5M_oai_filter_v2_100k.json"
     in_file = args.in_file
     tic = time.time()
 

@@ -16,7 +16,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
 
-import plotly.io as pio   
+import plotly.io as pio
+
 pio.kaleido.scope.mathjax = None
 
 parser = argparse.ArgumentParser()
@@ -36,14 +37,14 @@ print(f"#language: {df['language'].nunique()}")
 print(f"#turns: {df['turn'].mean()}")
 
 model_counts = df["model"].value_counts() * scale
-#print("model counts", model_counts)
+# print("model counts", model_counts)
 fig = px.bar(x=model_counts.index, y=model_counts)
 fig.update_layout(
     xaxis_title=None,
     yaxis_title="Count",
     height=200,
     width=950,
-    margin=dict(l=0, r=0, t=0, b=0)
+    margin=dict(l=0, r=0, t=0, b=0),
 )
 fig.show()
 fig.write_image("model_count.pdf")
@@ -56,23 +57,23 @@ fig.update_layout(
     yaxis_title="Count",
     height=200,
     width=950,
-    margin=dict(l=0, r=0, t=0, b=0)
+    margin=dict(l=0, r=0, t=0, b=0),
 )
 fig.show()
 fig.write_image("language_count.pdf")
 
 chat_dates = [
-    datetime.datetime.fromtimestamp(x, tz=timezone("US/Pacific")).strftime(
-        "%Y-%m-%d"
-    )
+    datetime.datetime.fromtimestamp(x, tz=timezone("US/Pacific")).strftime("%Y-%m-%d")
     for x in df["tstamp"]
 ]
 
+
 def to_remove(x):
-  for d in ["08-09", "08-08", "08-07", "08-06", "08-05", "08-04"]:
-    if d in x:
-      return True
-  return False
+    for d in ["08-09", "08-08", "08-07", "08-06", "08-05", "08-04"]:
+        if d in x:
+            return True
+    return False
+
 
 chat_dates = [x for x in chat_dates if not to_remove(x)]
 
@@ -85,22 +86,25 @@ fig.update_layout(
     yaxis_title="Count",
     height=200,
     width=950,
-    margin=dict(l=0, r=0, t=0, b=0)
+    margin=dict(l=0, r=0, t=0, b=0),
 )
 fig.show()
 fig.write_image("daily_conversation_count.pdf")
 
 import transformers
-tokenizer = transformers.AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5", use_fast=False)
+
+tokenizer = transformers.AutoTokenizer.from_pretrained(
+    "lmsys/vicuna-7b-v1.5", use_fast=False
+)
 
 prompts = []
 responses = []
 for conv in df["conversation"]:
-  for row in conv:
-    if row["role"] == "user":
-      prompts.append(row["content"])
-    else:
-      responses.append(row["content"])
+    for row in conv:
+        if row["role"] == "user":
+            prompts.append(row["content"])
+        else:
+            responses.append(row["content"])
 
 print(f"#prompts: {len(prompts)}")
 print(f"#responses: {len(responses)}")

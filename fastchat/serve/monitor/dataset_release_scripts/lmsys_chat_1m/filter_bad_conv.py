@@ -22,7 +22,7 @@ BLOCKED_WORDS_FILENAME = "blocked_words.json"
 blocked_words = []
 frequency = defaultdict(lambda: 0)
 
-cc_converter = opencc.OpenCC('t2s')
+cc_converter = opencc.OpenCC("t2s")
 
 
 class TypeCode(Enum):
@@ -96,9 +96,7 @@ if __name__ == "__main__":
 
     type_codes = []
     with ProcessPoolExecutor() as executor:
-        for result in tqdm(
-            executor.map(detect_type, convs), total=len(convs)
-        ):
+        for result in tqdm(executor.map(detect_type, convs), total=len(convs)):
             type_codes.append(result)
 
     new_convs = []
@@ -148,4 +146,3 @@ if __name__ == "__main__":
     print(f"Output to {out_file}")
     with open(out_file, "w") as fout:
         json.dump(new_convs, fout, indent=2, ensure_ascii=False)
-
