@@ -1112,7 +1112,7 @@ class FalconAdapter(BaseModelAdapter):
     """The model adapter for tiiuae/falcon-40b"""
 
     def match(self, model_path: str):
-        return "falcon" in model_path.lower()
+        return "falcon" in model_path.lower() and "chat" not in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1131,6 +1131,14 @@ class FalconAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("falcon")
+
+
+class FalconChatAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "falcon" in model_path.lower() and "chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("falcon-chat")
 
 
 class TigerBotAdapter(BaseModelAdapter):
@@ -1647,6 +1655,7 @@ register_model_adapter(GuanacoAdapter)
 register_model_adapter(CamelAdapter)
 register_model_adapter(ChangGPTAdapter)
 register_model_adapter(TuluAdapter)
+register_model_adapter(FalconChatAdapter)
 register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
