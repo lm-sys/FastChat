@@ -11,7 +11,13 @@ from torch import Tensor
 from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, AutoModel
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    AutoModel,
+    AutoModelForSeq2SeqLM,
+)
 
 
 @dataclasses.dataclass
@@ -123,7 +129,13 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         # some models are loaded by AutoModel but not AutoModelForCausalLM,
         # such as chatglm, chatglm2
         try:
-            model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
+            # google/flan-* models are based on an AutoModelForSeq2SeqLM.
+            if "T5Config" in str(type(config)):
+                model = AutoModelForSeq2SeqLM.from_config(
+                    config, trust_remote_code=True
+                )
+            else:
+                model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
         except NameError:
             model = AutoModel.from_config(config, trust_remote_code=True)
         linear_weights = get_compressed_list(model)

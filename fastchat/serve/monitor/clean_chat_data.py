@@ -48,7 +48,7 @@ def get_log_files(max_num_files=None):
     return filenames
 
 
-def clean_chat_data(log_files):
+def clean_chat_data(log_files, action_type):
     raw_data = []
     for filename in tqdm(log_files, desc="read files"):
         for retry in range(5):
@@ -60,7 +60,7 @@ def clean_chat_data(log_files):
 
         for l in lines:
             row = json.loads(l)
-            if row["type"] == "chat":
+            if row["type"] == action_type:
                 raw_data.append(row)
 
     all_models = set()
@@ -70,18 +70,26 @@ def clean_chat_data(log_files):
     ct_invalid = 0
     ct_network_error = 0
     for row in raw_data:
-        if "conv_id" not in row["state"]:
+        try:
+            if action_type in ["chat", "upvote", "downvote"]:
+                state = row["state"]
+                model = row["model"]
+            elif action_type == "leftvote":
+                state = row["states"][0]
+                model = row["states"][0]["model_name"]
+            elif action_type == "rightvote":
+                state = row["states"][1]
+                model = row["states"][1]["model_name"]
+            conversation_id = state["conv_id"]
+        except KeyError:
             ct_invalid_conv_id += 1
             continue
 
-        conversation_id = row["state"]["conv_id"]
         if conversation_id is None:
             ct_invalid_conv_id += 1
             continue
 
-        state = row["state"]
         conversation = to_openai_format(state["messages"][state["offset"] :])
-        model = row["model"]
         if not isinstance(model, str):
             ct_invalid += 1
             continue
@@ -150,17 +158,18 @@ def clean_chat_data(log_files):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--action-type", type=str, default="chat")
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
-    chats = clean_chat_data(log_files)
+    chats = clean_chat_data(log_files, args.action_type)
     last_updated_tstamp = chats[-1]["tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y%m%d")
 
-    output = f"clean_chat_conv_{cutoff_date}.json"
+    output = f"clean_{args.action_type}_conv_{cutoff_date}.json"
     with open(output, "w") as fout:
         json.dump(chats, fout, indent=2, ensure_ascii=False)
     print(f"Write cleaned data to {output}")

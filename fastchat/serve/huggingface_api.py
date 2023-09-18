@@ -6,16 +6,15 @@ python3 -m fastchat.serve.huggingface_api --model lmsys/vicuna-7b-v1.3
 python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 """
 import argparse
-import json
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from fastchat.model import load_model, get_conversation_template, add_model_args
 
 
 @torch.inference_mode()
 def main(args):
+    # Load model
     model, tokenizer = load_model(
         args.model_path,
         device=args.device,
@@ -27,15 +26,15 @@ def main(args):
         debug=args.debug,
     )
 
+    # Build the prompt with a conversation template
     msg = args.message
-
     conv = get_conversation_template(args.model_path)
     conv.append_message(conv.roles[0], msg)
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    inputs = tokenizer([prompt])
-    inputs = {k: torch.tensor(v).to(args.device) for k, v in inputs.items()}
+    # Run inference
+    inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
     output_ids = model.generate(
         **inputs,
         do_sample=True if args.temperature > 1e-5 else False,
@@ -52,6 +51,7 @@ def main(args):
         output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
     )
 
+    # Print results
     print(f"{conv.roles[0]}: {msg}")
     print(f"{conv.roles[1]}: {outputs}")
 
