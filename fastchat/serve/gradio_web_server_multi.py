@@ -100,7 +100,7 @@ def load_demo(url_params, request: gr.Request):
 def build_demo(models, elo_results_file, leaderboard_table_file):
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Base(),
+        theme=gr.themes.Default(),
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
@@ -112,7 +112,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     b_textbox,
                     b_send_btn,
                     b_button_row,
-                    b_button_row2,
                     b_parameter_row,
                 ) = build_side_by_side_ui_anony(models)
                 b_list = (
@@ -123,7 +122,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                         b_textbox,
                         b_send_btn,
                         b_button_row,
-                        b_button_row2,
                         b_parameter_row,
                     ]
                 )
@@ -136,7 +134,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     c_textbox,
                     c_send_btn,
                     c_button_row,
-                    c_button_row2,
                     c_parameter_row,
                 ) = build_side_by_side_ui_named(models)
                 c_list = (
@@ -147,7 +144,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                         c_textbox,
                         c_send_btn,
                         c_button_row,
-                        c_button_row2,
                         c_parameter_row,
                     ]
                 )

@@ -24,6 +24,7 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
+    invisible_btn,
     acknowledgment_md,
     get_model_description_md,
     ip_expiration_dict,
@@ -68,7 +69,6 @@ def load_demo_side_by_side_named(models, url_params):
         + (
             gr.Textbox.update(visible=True),
             gr.Box.update(visible=True),
-            gr.Row.update(visible=True),
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True),
         )
@@ -137,7 +137,13 @@ def regenerate(state0, state1, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history (named). ip: {request.client.host}")
-    return [None] * num_sides + [None] * num_sides + [""] + [disable_btn] * 6
+    return (
+        [None] * num_sides
+        + [None] * num_sides
+        + [""]
+        + [invisible_btn] * 4
+        + [disable_btn] * 2
+    )
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
@@ -342,12 +348,17 @@ By using this service, users are required to agree to the following terms: The s
                         label=label, elem_id=f"chatbot", visible=False, height=550
                     )
 
-        with gr.Box() as button_row:
-            with gr.Row():
-                leftvote_btn = gr.Button(value="👈  A is better", interactive=False)
-                rightvote_btn = gr.Button(value="👉  B is better", interactive=False)
-                tie_btn = gr.Button(value="🤝  Tie", interactive=False)
-                bothbad_btn = gr.Button(value="👎  Both are bad", interactive=False)
+        with gr.Row():
+            leftvote_btn = gr.Button(
+                value="👈  A is better", visible=False, interactive=False
+            )
+            rightvote_btn = gr.Button(
+                value="👉  B is better", visible=False, interactive=False
+            )
+            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+            bothbad_btn = gr.Button(
+                value="👎  Both are bad", visible=False, interactive=False
+            )
 
     with gr.Row():
         with gr.Column(scale=20):
@@ -359,9 +370,9 @@ By using this service, users are required to agree to the following terms: The s
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Battle", visible=False, variant="primary")
+            send_btn = gr.Button(value="Send", visible=False, variant="primary")
 
-    with gr.Row() as button_row2:
+    with gr.Row() as button_row:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
         share_btn = gr.Button(value="📷  Share")
@@ -491,6 +502,5 @@ function (a, b, c, d) {
         textbox,
         send_btn,
         button_row,
-        button_row2,
         parameter_row,
     )
