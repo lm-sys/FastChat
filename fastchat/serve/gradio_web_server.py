@@ -28,7 +28,7 @@ from fastchat.constants import (
     SESSION_EXPIRATION_TIME,
 )
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.model.model_registry import model_info
+from fastchat.model.model_registry import get_model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
     openai_api_stream_iter,
@@ -530,17 +530,11 @@ def get_model_description_md(models):
     ct = 0
     visited = set()
     for i, name in enumerate(models):
-        if name in model_info:
-            minfo = model_info[name]
-            if minfo.simple_name in visited:
-                continue
-            visited.add(minfo.simple_name)
-            one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
-        else:
-            visited.add(name)
-            one_model_md = (
-                f"[{name}](): Add the description at fastchat/model/model_registry.py"
-            )
+        minfo = get_model_info(name)
+        if minfo.simple_name in visited:
+            continue
+        visited.add(minfo.simple_name)
+        one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
 
         if ct % 3 == 0:
             model_description_md += "|"
