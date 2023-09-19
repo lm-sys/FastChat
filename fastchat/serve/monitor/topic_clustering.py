@@ -2,7 +2,7 @@
 
 Usage:
 python3 topic_clustering.py --in arena.json --english-only --min-length 32
-python3 topic_clustering.py --in clean_conv_20230809_100k.json --english-only --min-length 32 --max-length 1024
+python3 topic_clustering.py --in clean_conv_20230809_100k.json --english-only --min-length 32 --max-length 1536
 """
 import argparse
 import json
@@ -90,7 +90,7 @@ def get_embeddings(texts, model_name, batch_size):
 
 
 def run_k_means(embeddings, num_clusters):
-    np.random.seed(0)
+    np.random.seed(42)
     clustering_model = KMeans(n_clusters=num_clusters, n_init="auto")
     clustering_model.fit(embeddings.numpy())
     centers = torch.from_numpy(clustering_model.cluster_centers_)
@@ -109,7 +109,7 @@ def run_k_means(embeddings, num_clusters):
 
 
 def run_agg_cluster(embeddings, num_clusters):
-    np.random.seed(0)
+    np.random.seed(42)
     clustering_model = AgglomerativeClustering(n_clusters=num_clusters)
     clustering_model.fit(embeddings)
     labels = torch.from_numpy(clustering_model.labels_)
@@ -133,7 +133,7 @@ def run_agg_cluster(embeddings, num_clusters):
 def run_hdbscan_cluster(embeddings):
     import hdbscan
 
-    np.random.seed(0)
+    np.random.seed(42)
     clusterer = hdbscan.HDBSCAN(min_cluster_size=10)
     labels = torch.from_numpy(clusterer.fit_predict(embeddings))
 
@@ -183,13 +183,18 @@ def print_topk(texts, labels, topk_indices, show_cut_off):
 
 
 def get_cluster_info(texts, labels, topk_indices):
+    np.random.seed(42)
+
     cluster_info = []
     for k in range(len(topk_indices)):
         num_samples = torch.sum(labels == k).item()
-        prompts = []
+        topk_prompts = []
         for idx in topk_indices[k]:
-            prompts.append(texts[idx])
-        cluster_info.append((num_samples, prompts))
+            topk_prompts.append(texts[idx])
+        random_prompts = []
+        for idx in range(len(topk_indices)):
+            random_prompts.append(np.random.choice(texts))
+        cluster_info.append((num_samples, topk_prompts, random_prompts))
 
     return cluster_info
 
@@ -238,8 +243,6 @@ if __name__ == "__main__":
     topk_str = print_topk(texts, labels, topk_indices, args.show_cut_off)
     num_clusters = len(centers)
 
-    cluster_info = get_cluster_info(texts, labels, topk_indices)
-
     # Dump results
     filename_prefix = f"results_c{num_clusters}_{args.cluster_alg}"
     print(topk_str)
@@ -259,5 +262,6 @@ if __name__ == "__main__":
                 obj = {"cluster": i, "text": text, "sim": score.item()}
                 fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
+    cluster_info = get_cluster_info(texts, labels, topk_indices)
     with open(filename_prefix + "_cluster.pkl", "wb") as fout:
         pickle.dump(cluster_info, fout)

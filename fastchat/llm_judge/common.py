@@ -17,8 +17,8 @@ import anthropic
 from fastchat.model.model_adapter import get_conversation_template
 
 # API setting constants
-API_MAX_RETRY = 16
-API_RETRY_SLEEP = 10
+API_MAX_RETRY = 2
+API_RETRY_SLEEP = 20
 API_ERROR_OUTPUT = "$ERROR$"
 
 TIE_DELTA = 0.1
@@ -404,6 +404,35 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
             messages = conv.to_openai_api_messages()
             response = openai.ChatCompletion.create(
                 model=model,
+                messages=messages,
+                n=1,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            output = response["choices"][0]["message"]["content"]
+            break
+        except openai.error.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+
+    return output
+
+
+def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
+    openai.api_type = "azure"
+    openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+    openai.api_key = os.environ["AZURE_OPENAI_KEY"]
+    openai.api_version = "2023-05-15"
+
+    if "azure-" in model:
+        model = model[6:]
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            messages = conv.to_openai_api_messages()
+            response = openai.ChatCompletion.create(
+                engine=model,
                 messages=messages,
                 n=1,
                 temperature=temperature,
