@@ -6,7 +6,7 @@ The contents in supported_models.json :
         "model_path": "tiiuae/falcon-180B-chat",
         "api_base": "https://api-inference.huggingface.co/models",
         "token": "hf_xxx",
-        "context_length": "2048"
+        "context_length": 2048
     }
 }
 """
@@ -25,6 +25,7 @@ import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
+from huggingface_hub import InferenceClient
 import requests
 
 from fastchat.serve.model_worker import BaseModelWorker
@@ -70,6 +71,11 @@ worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
 app = FastAPI()
+
+
+def get_gen_kwargs():
+    # TODO
+    pass
 
 
 class HuggingfaceApiWorker(BaseModelWorker):
@@ -123,10 +129,19 @@ class HuggingfaceApiWorker(BaseModelWorker):
 
     def count_token(self, params):
         # No tokenizer here
-        return 0
+        ret = {
+            "count": 0,
+            "error_code": 0,
+        }
+        return ret
 
     def generate_stream_gate(self, params):
         self.call_ct += 1
+
+        url = f"{self.api_base}/{self.model_path}"
+        client = InferenceClient(url, token=self.token)
+        prompt = params["prompt"]
+
         raise NotImplementedError()
 
     def generate_gate(self, params):
@@ -222,6 +237,7 @@ def create_model_worker():
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
+        default="falcon-180b",
         help="Optional display comma separated names",
     )
     parser.add_argument(
