@@ -238,6 +238,7 @@ CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path lmsys
 ```bash
 python3 -m fastchat.serve.gradio_web_server_multi
 ```
+- The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput serving, you can try [vLLM integration](docs/vllm_integration.md).
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
