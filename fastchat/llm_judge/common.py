@@ -17,8 +17,8 @@ import anthropic
 from fastchat.model.model_adapter import get_conversation_template
 
 # API setting constants
-API_MAX_RETRY = 2
-API_RETRY_SLEEP = 20
+API_MAX_RETRY = 16
+API_RETRY_SLEEP = 10
 API_ERROR_OUTPUT = "$ERROR$"
 
 TIE_DELTA = 0.1
