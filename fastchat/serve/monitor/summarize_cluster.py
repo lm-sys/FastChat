@@ -42,8 +42,11 @@ if __name__ == "__main__":
         instruct = "Given a list of user messages, use less than 8 words to summarize a central topic for all messages in English. Your output should only include a single line. Try to be specific."
         split = int(args.num_prompts * 0.8)
         prompt = "\n".join(
-            [truncate_string(x, l=200) for x in topk_prompts[: split]] + 
-            [truncate_string(x, l=200) for x in random_prompts[: args.num_prompts - split]]
+            [truncate_string(x, l=200) for x in topk_prompts[:split]]
+            + [
+                truncate_string(x, l=200)
+                for x in random_prompts[: args.num_prompts - split]
+            ]
         )
         prompt = "BEGIN OF THE MESSAGE LIST\n" + prompt + "\nEND OF THE MESSAGE LIST."
 

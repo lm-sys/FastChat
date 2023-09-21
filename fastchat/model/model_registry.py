@@ -23,7 +23,9 @@ def get_model_info(name: str) -> ModelInfo:
         return model_info[name]
     else:
         # To fix this, please use `register_model_info` to register your model
-        return ModelInfo(name, "", "Register the description at fastchat/model/model_registry.py")
+        return ModelInfo(
+            name, "", "Register the description at fastchat/model/model_registry.py"
+        )
 
 
 register_model_info(

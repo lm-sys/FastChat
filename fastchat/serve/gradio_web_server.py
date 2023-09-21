@@ -655,7 +655,9 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot] + btn_list,
     )
     send_btn.click(
-        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list,
+        add_text,
+        [state, model_selector, textbox],
+        [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -690,7 +692,7 @@ def build_demo(models):
                 state,
                 model_selector,
             ],
-            _js=load_js
+            _js=load_js,
         )
 
     return demo
@@ -725,8 +727,9 @@ if __name__ == "__main__":
         help="Whether to load the model list once or reload the model list every time",
     )
     parser.add_argument(
-        "--moderate", action="store_true",
-        help="Enable content moderation to block unsafe inputs"
+        "--moderate",
+        action="store_true",
+        help="Enable content moderation to block unsafe inputs",
     )
     parser.add_argument(
         "--show-terms-of-use",

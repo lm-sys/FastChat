@@ -112,7 +112,9 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
             with gr.Tab("Single Model", id=2):
-                single_model_list = build_single_model_ui(models, add_promotion_links=True)
+                single_model_list = build_single_model_ui(
+                    models, add_promotion_links=True
+                )
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
@@ -131,7 +133,10 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
         demo.load(
             load_demo,
             [url_params],
-            [tabs] + single_model_list + side_by_side_anony_list + side_by_side_named_list,
+            [tabs]
+            + single_model_list
+            + side_by_side_anony_list
+            + side_by_side_named_list,
             _js=load_js,
         )
 
@@ -167,8 +172,9 @@ if __name__ == "__main__":
         help="Whether to load the model list once or reload the model list every time.",
     )
     parser.add_argument(
-        "--moderate", action="store_true",
-        help="Enable content moderation to block unsafe inputs"
+        "--moderate",
+        action="store_true",
+        help="Enable content moderation to block unsafe inputs",
     )
     parser.add_argument(
         "--show-terms-of-use",
@@ -206,8 +212,12 @@ if __name__ == "__main__":
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
-    parser.add_argument("--elo-results-file", type=str, help="Load leaderboard results and plots")
-    parser.add_argument("--leaderboard-table-file", type=str, help="Load leaderboard results and plots")
+    parser.add_argument(
+        "--elo-results-file", type=str, help="Load leaderboard results and plots"
+    )
+    parser.add_argument(
+        "--leaderboard-table-file", type=str, help="Load leaderboard results and plots"
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
