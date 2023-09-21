@@ -303,7 +303,10 @@ def build_side_by_side_ui_named(models):
 - You can do multiple turns of conversations before voting.
 - Click "Clear history" to start a new round.
 
-### Choose two models to chat with (view [leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard))
+### Leaderboard
+See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
+
+### Choose two models to chat with
 """
 
     states = [gr.State() for _ in range(num_sides)]

@@ -164,7 +164,7 @@ def load_demo_single(models, url_params):
     )
 
     state = None
-    return [state, dropdown_update]
+    return state, dropdown_update
 
 
 def load_demo(url_params, request: gr.Request):
