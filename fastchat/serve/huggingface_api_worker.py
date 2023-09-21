@@ -79,13 +79,20 @@ def get_gen_kwargs(
     params,
     seed: Optional[int] = None,
 ):
+    stop = params.get("stop", None)
+    if isinstance(stop, list):
+        stop_sequences = stop
+    elif isinstance(stop, str):
+        stop_sequences = [stop]
+    else:
+        stop_sequences = []
     gen_kwargs = {
         "do_sample": True,
         "return_full_text": bool(params.get("echo", False)),
         "max_new_tokens": int(params.get("max_new_tokens", 256)),
         "top_p": float(params.get("top_p", 1.0)),
         "temperature": float(params.get("temperature", 1.0)),
-        "stop_sequences": params.get("stop", None),
+        "stop_sequences": stop_sequences,
         "repetition_penalty": float(params.get("repetition_penalty", 1.0)),
         "top_k": params.get("top_k", None),
         "seed": seed,
