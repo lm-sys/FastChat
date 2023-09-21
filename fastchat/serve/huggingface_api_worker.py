@@ -2,7 +2,7 @@
 A model worker to call huggingface api.
 The contents in supported_models.json : 
 {
-    "falcon-180b": {
+    "falcon-180b-chat": {
         "model_path": "tiiuae/falcon-180B-chat",
         "api_base": "https://api-inference.huggingface.co/models",
         "token": "hf_xxx",
@@ -307,12 +307,15 @@ def create_model_worker():
         "--supported-models-file", type=str, default="supported_models.json"
     )
     parser.add_argument(
-        "--model", type=str, default="falcon-180b", help="The model name to be called."
+        "--model",
+        type=str,
+        default="falcon-180b-chat",
+        help="The model name to be called.",
     )
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
-        default="falcon-180b",
+        default="falcon-180b-chat",
         help="Optional display comma separated names",
     )
     parser.add_argument(
