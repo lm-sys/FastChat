@@ -54,6 +54,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.exllama import ExllamaConfig
 from fastchat.serve.inference import generate_stream
 from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
@@ -197,6 +198,13 @@ def create_multi_model_worker():
         groupsize=args.gptq_groupsize,
         act_order=args.gptq_act_order,
     )
+    if args.enable_exllama:
+        exllama_config = ExllamaConfig(
+            max_seq_len=args.exllama_max_seq_len,
+            gpu_split=args.exllama_gpu_split,
+        )
+    else:
+        exllama_config = None
 
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
@@ -218,6 +226,7 @@ def create_multi_model_worker():
             load_8bit=args.load_8bit,
             cpu_offloading=args.cpu_offloading,
             gptq_config=gptq_config,
+            exllama_config=exllama_config,
             stream_interval=args.stream_interval,
         )
         workers.append(w)

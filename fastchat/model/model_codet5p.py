@@ -17,6 +17,7 @@ def generate_stream_codet5p(
     params,
     device,
     context_len=2048,
+    cache=None,
     stream_interval=2,
     judge_sent_end=False,
 ):

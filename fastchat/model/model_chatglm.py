@@ -44,6 +44,7 @@ def generate_stream_chatglm(
     params,
     device,
     context_len=2048,
+    cache=None,
     stream_interval=2,
     judge_sent_end=False,
 ):

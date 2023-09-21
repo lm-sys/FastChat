@@ -30,6 +30,7 @@ from rich.markdown import Markdown
 from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
+from fastchat.modules.exllama import ExllamaConfig
 from fastchat.serve.inference import ChatIO, chat_loop
 
 
@@ -193,7 +194,13 @@ def main(args):
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
         os.environ["XPU_VISIBLE_DEVICES"] = args.gpus
-
+    if args.enable_exllama:
+        exllama_config = ExllamaConfig(
+            max_seq_len=args.exllama_max_seq_len,
+            gpu_split=args.exllama_gpu_split,
+        )
+    else:
+        exllama_config = None
     if args.style == "simple":
         chatio = SimpleChatIO(args.multiline)
     elif args.style == "rich":
@@ -227,6 +234,7 @@ def main(args):
                 wbits=args.awq_wbits,
                 groupsize=args.awq_groupsize,
             ),
+            exllama_config=exllama_config,
             revision=args.revision,
             judge_sent_end=args.judge_sent_end,
             debug=args.debug,
