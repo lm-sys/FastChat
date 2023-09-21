@@ -73,9 +73,38 @@ logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 app = FastAPI()
 
 
-def get_gen_kwargs():
-    # TODO
-    pass
+# reference to
+# https://github.com/philschmid/easyllm/blob/cbd908b3b3f44a97a22cb0fc2c93df3660bacdad/easyllm/clients/huggingface.py#L374-L392
+def get_gen_kwargs(
+    params,
+    seed: Optional[int] = None,
+):
+    gen_kwargs = {
+        "do_sample": True,
+        "return_full_text": bool(params.get("echo", False)),
+        "max_new_tokens": int(params.get("max_new_tokens", 256)),
+        "top_p": float(params.get("top_p", 1.0)),
+        "temperature": float(params.get("temperature", 1.0)),
+        "stop_sequences": params.get("stop", None),
+        "repetition_penalty": float(params.get("repetition_penalty", 1.0)),
+        "top_k": params.get("top_k", None),
+        "seed": seed,
+    }
+    if gen_kwargs["top_p"] == 1:
+        gen_kwargs["top_p"] = 0.9999999
+    if gen_kwargs["top_p"] == 0:
+        gen_kwargs.pop("top_p")
+    if gen_kwargs["temperature"] == 0:
+        gen_kwargs.pop("temperature")
+        gen_kwargs["do_sample"] = False
+    return gen_kwargs
+
+
+def could_be_stop(text, stop):
+    for s in stop:
+        if any(text.endswith(s[:i]) for i in range(1, len(s) + 1)):
+            return True
+    return False
 
 
 class HuggingfaceApiWorker(BaseModelWorker):
@@ -138,11 +167,57 @@ class HuggingfaceApiWorker(BaseModelWorker):
     def generate_stream_gate(self, params):
         self.call_ct += 1
 
-        url = f"{self.api_base}/{self.model_path}"
-        client = InferenceClient(url, token=self.token)
         prompt = params["prompt"]
+        gen_kwargs = get_gen_kwargs(params, seed=self.seed)
+        logger.info(f"prompt: {prompt}")
+        logger.info(f"gen_kwargs: {gen_kwargs}")
 
-        raise NotImplementedError()
+        stop = gen_kwargs["stop_sequences"]
+        if "falcon" in self.model_path:
+            stop.extend(["\nUser:", "<|endoftext|>", " User:", "###"])
+            stop = list(set(stop))
+            gen_kwargs["stop_sequences"] = stop
+
+        try:
+            url = f"{self.api_base}/{self.model_path}"
+            client = InferenceClient(url, token=self.token)
+            res = client.text_generation(
+                prompt, stream=True, details=True, **gen_kwargs
+            )
+
+            reason = None
+            text = ""
+            for chunk in res:
+                if chunk.token.special:
+                    continue
+                text += chunk.token.text
+
+                s = next((x for x in stop if text.endswith(x)), None)
+                if s is not None:
+                    text = text[: -len(s)]
+                    reason = "stop"
+                    break
+                if could_be_stop(text, stop):
+                    continue
+                if (
+                    chunk.details is not None
+                    and chunk.details.finish_reason is not None
+                ):
+                    reason = chunk.details.finish_reason
+                if reason not in ["stop", "length"]:
+                    reason = None
+                ret = {
+                    "text": text,
+                    "error_code": 0,
+                    "finish_reason": reason,
+                }
+                yield json.dumps(ret).encode() + b"\0"
+        except Exception as e:
+            ret = {
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+            yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
         for x in self.generate_stream_gate(params):
