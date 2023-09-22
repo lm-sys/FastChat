@@ -28,7 +28,7 @@ from fastchat.constants import (
     SESSION_EXPIRATION_TIME,
 )
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.model.model_registry import model_info
+from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
     openai_api_stream_iter,
@@ -39,6 +39,7 @@ from fastchat.utils import (
     build_logger,
     violates_moderation,
     get_window_url_params_js,
+    get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,
 )
 
@@ -163,15 +164,7 @@ def load_demo_single(models, url_params):
     )
 
     state = None
-    return (
-        state,
-        dropdown_update,
-        gr.Chatbot.update(visible=True),
-        gr.Textbox.update(visible=True),
-        gr.Button.update(visible=True),
-        gr.Row.update(visible=True),
-        gr.Accordion.update(visible=True),
-    )
+    return state, dropdown_update
 
 
 def load_demo(url_params, request: gr.Request):
@@ -530,17 +523,11 @@ def get_model_description_md(models):
     ct = 0
     visited = set()
     for i, name in enumerate(models):
-        if name in model_info:
-            minfo = model_info[name]
-            if minfo.simple_name in visited:
-                continue
-            visited.add(minfo.simple_name)
-            one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
-        else:
-            visited.add(name)
-            one_model_md = (
-                f"[{name}](): Add the description at fastchat/model/model_registry.py"
-            )
+        minfo = get_model_info(name)
+        if minfo.simple_name in visited:
+            continue
+        visited.add(minfo.simple_name)
+        one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
 
         if ct % 3 == 0:
             model_description_md += "|"
@@ -566,9 +553,6 @@ def build_single_model_ui(models, add_promotion_links=False):
 # 🏔️ Chat with Open Large Language Models
 {promotion}
 
-### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.**
-
 ### Choose a model to chat with
 """
 
@@ -588,7 +572,6 @@ By using this service, users are required to agree to the following terms: The s
     chatbot = gr.Chatbot(
         elem_id="chatbot",
         label="Scroll down and start chatting",
-        visible=False,
         height=550,
     )
     with gr.Row():
@@ -596,21 +579,20 @@ By using this service, users are required to agree to the following terms: The s
             textbox = gr.Textbox(
                 show_label=False,
                 placeholder="Enter your prompt here and press ENTER",
-                visible=False,
                 container=False,
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False, variant="primary")
+            send_btn = gr.Button(value="Send", variant="primary")
 
-    with gr.Row(visible=False) as button_row:
+    with gr.Row() as button_row:
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
         downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
         flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
-    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -673,49 +655,44 @@ By using this service, users are required to agree to the following terms: The s
         [state, chatbot] + btn_list,
     )
     send_btn.click(
-        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
+        add_text,
+        [state, model_selector, textbox],
+        [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
-    return state, model_selector, chatbot, textbox, send_btn, button_row, parameter_row
+    return [state, model_selector]
 
 
 def build_demo(models):
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Base(),
+        theme=gr.themes.Default(),
         css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
 
-        (
-            state,
-            model_selector,
-            chatbot,
-            textbox,
-            send_btn,
-            button_row,
-            parameter_row,
-        ) = build_single_model_ui(models)
+        state, model_selector = build_single_model_ui(models)
 
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
+
+        if args.show_terms_of_use:
+            load_js = get_window_url_params_with_tos_js
+        else:
+            load_js = get_window_url_params_js
+
         demo.load(
             load_demo,
             [url_params],
             [
                 state,
                 model_selector,
-                chatbot,
-                textbox,
-                send_btn,
-                button_row,
-                parameter_row,
             ],
-            _js=get_window_url_params_js,
+            _js=load_js,
         )
 
     return demo
@@ -728,29 +705,36 @@ if __name__ == "__main__":
     parser.add_argument(
         "--share",
         action="store_true",
-        help="Whether to generate a public, shareable link.",
+        help="Whether to generate a public, shareable link",
     )
     parser.add_argument(
         "--controller-url",
         type=str,
         default="http://localhost:21001",
-        help="The address of the controller.",
+        help="The address of the controller",
     )
     parser.add_argument(
         "--concurrency-count",
         type=int,
         default=10,
-        help="The concurrency count of the gradio queue.",
+        help="The concurrency count of the gradio queue",
     )
     parser.add_argument(
         "--model-list-mode",
         type=str,
         default="once",
         choices=["once", "reload"],
-        help="Whether to load the model list once or reload the model list every time.",
+        help="Whether to load the model list once or reload the model list every time",
     )
     parser.add_argument(
-        "--moderate", action="store_true", help="Enable content moderation"
+        "--moderate",
+        action="store_true",
+        help="Enable content moderation to block unsafe inputs",
+    )
+    parser.add_argument(
+        "--show-terms-of-use",
+        action="store_true",
+        help="Shows term of use before loading the demo",
     )
     parser.add_argument(
         "--add-chatgpt",
