@@ -300,9 +300,13 @@ class ModelWorker(BaseModelWorker):
                 data = model_output.hidden_states[-1].transpose(0, 1)
             else:
                 data = model_output.hidden_states[-1]
-        mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
-        masked_embeddings = data * mask
-        sum_embeddings = torch.sum(masked_embeddings, dim=1)
+
+        if hasattr(self.model, 'is_bge'):
+            sum_embeddings = data[:, 0]
+        else:
+            mask = attention_mask.unsqueeze(-1).expand(data.size()).float()
+            masked_embeddings = data * mask
+            sum_embeddings = torch.sum(masked_embeddings, dim=1)
         token_num = torch.sum(attention_mask).item()
 
         return sum_embeddings, token_num
@@ -350,7 +354,8 @@ class ModelWorker(BaseModelWorker):
                 chunk_embeddings, token_num = self.__process_embed_chunk(
                     input_ids, attention_mask, **model_type_dict
                 )
-                embedding = chunk_embeddings / token_num
+                if not hasattr(self.model, 'is_bge'):                    
+                    embedding = chunk_embeddings / token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
                 ret["token_num"] = token_num
             else:
@@ -367,7 +372,10 @@ class ModelWorker(BaseModelWorker):
                     all_token_num += token_num
 
                 all_embeddings_tensor = torch.stack(all_embeddings)
-                embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
+                if not hasattr(self.model, 'is_bge'): 
+                    embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
+                else:
+                    embedding = torch.mean(all_embeddings_tensor, dim=0)
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
 
                 ret["token_num"] = all_token_num
