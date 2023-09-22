@@ -19,6 +19,7 @@ import uuid
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 from huggingface_hub import InferenceClient
+import requests
 from fastchat.serve.model_worker import BaseModelWorker
 
 import uvicorn
@@ -30,6 +31,8 @@ from fastchat.utils import build_logger
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
+workers = []
+worker_map = {}
 app = FastAPI()
 
 
@@ -111,9 +114,6 @@ class HuggingfaceApiWorker(BaseModelWorker):
             f"Connecting with huggingface api {self.model_path} as {self.model_names} on worker {worker_id} ..."
         )
 
-        if not no_register:
-            self.init_heart_beat()
-
     def count_token(self, params):
         # No tokenizer here
         ret = {
@@ -186,71 +186,83 @@ class HuggingfaceApiWorker(BaseModelWorker):
         raise NotImplementedError()
 
 
-def release_worker_semaphore():
+def release_worker_semaphore(worker):
     worker.semaphore.release()
 
 
-def acquire_worker_semaphore():
+def acquire_worker_semaphore(worker):
     if worker.semaphore is None:
         worker.semaphore = asyncio.Semaphore(worker.limit_worker_concurrency)
     return worker.semaphore.acquire()
 
 
-def create_background_tasks():
+def create_background_tasks(worker):
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_worker_semaphore)
+    background_tasks.add_task(lambda: release_worker_semaphore(worker))
     return background_tasks
 
 
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    worker = worker_map[params["model"]]
+    await acquire_worker_semaphore(worker)
     generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
+    background_tasks = create_background_tasks(worker)
     return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    worker = worker_map[params["model"]]
+    await acquire_worker_semaphore(worker)
     output = worker.generate_gate(params)
-    release_worker_semaphore()
+    release_worker_semaphore(worker)
     return JSONResponse(output)
 
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    worker = worker_map[params["model"]]
+    await acquire_worker_semaphore(worker)
     embedding = worker.get_embeddings(params)
-    release_worker_semaphore()
+    release_worker_semaphore(worker)
     return JSONResponse(content=embedding)
 
 
 @app.post("/worker_get_status")
 async def api_get_status(request: Request):
-    return worker.get_status()
+    return {
+        "model_names": [m for w in workers for m in w.model_names],
+        "speed": 1,
+        "queue_length": sum([w.get_queue_length() for w in workers]),
+    }
 
 
 @app.post("/count_token")
 async def api_count_token(request: Request):
     params = await request.json()
+    worker = worker_map[params["model"]]
     return worker.count_token(params)
 
 
 @app.post("/worker_get_conv_template")
 async def api_get_conv(request: Request):
+    params = await request.json()
+    worker = worker_map[params["model"]]
     return worker.get_conv_template()
 
 
 @app.post("/model_details")
 async def api_model_details(request: Request):
+    params = await request.json()
+    worker = worker_map[params["model"]]
     return {"context_length": worker.context_len}
 
 
-def create_model_worker():
+def create_huggingface_api_worker():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
@@ -264,20 +276,27 @@ def create_model_worker():
         required=True,
         help="Huggingface API model's info file path",
     )
+
+    # support multi huggingface api models here
     parser.add_argument(
         "--model",
         type=str,
-        default="falcon-180b-chat",
-        help="The model name to be called.",
+        default=[],
+        action="append",
+        help="The models' names to be called.",
     )
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
-        default="falcon-180b-chat",
-        help="Optional display comma separated names",
+        action="append",
+        help="One or more model names.  Values must be aligned with `--model` values.",
     )
     parser.add_argument(
-        "--conv-template", type=str, default=None, help="Conversation prompt template."
+        "--conv-template",
+        type=str,
+        default=None,
+        action="append",
+        help="Conversation prompt template. Values must be aligned with `--model` values. If only one value is provided, it will be repeated for all models.",
     )
     parser.add_argument(
         "--limit-worker-concurrency",
@@ -293,38 +312,84 @@ def create_model_worker():
         help="Overwrite the random seed for each generation.",
     )
     args = parser.parse_args()
-    logger.info(f"args: {args}")
+
+    if args.model_names is None:
+        args.model_names = [[x.split("/")[-1]] for x in args.model]
+    if args.conv_template is None:
+        args.conv_template = [None] * len(args.model)
+    elif len(args.conv_template) == 1:  # Repeat the same template
+        args.conv_template = args.conv_template * len(args.model)
 
     with open(args.model_info_file, "r", encoding="UTF-8") as f:
         model_info = json.load(f)
 
-    if args.model not in model_info:
-        raise ValueError(
-            f"Model {args.model} not supported. Please add it to {args.model_info_file}."
-        )
+    logger.info(f"args: {args}")
 
-    model_path = model_info[args.model]["model_path"]
-    api_base = model_info[args.model]["api_base"]
-    token = model_info[args.model]["token"]
-    context_length = model_info[args.model]["context_length"]
+    model_path_list = []
+    api_base_list = []
+    token_list = []
+    context_length_list = []
 
-    worker = HuggingfaceApiWorker(
-        args.controller_address,
-        args.worker_address,
-        worker_id,
+    for m in args.model:
+        if m not in model_info:
+            raise ValueError(
+                f"Model {args.model} not supported. Please add it to {args.model_info_file}."
+            )
+        model_path_list.append(model_info[m]["model_path"])
+        api_base_list.append(model_info[m]["api_base"])
+        token_list.append(model_info[m]["token"])
+        context_length_list.append(model_info[m]["context_length"])
+
+    for (
+        model_names,
+        conv_template,
         model_path,
         api_base,
         token,
         context_length,
+    ) in zip(
         args.model_names,
-        args.limit_worker_concurrency,
-        no_register=args.no_register,
-        conv_template=args.conv_template,
-        seed=args.seed,
-    )
-    return args, worker
+        args.conv_template,
+        model_path_list,
+        api_base_list,
+        token_list,
+        context_length_list,
+    ):
+        m = HuggingfaceApiWorker(
+            args.controller_address,
+            args.worker_address,
+            worker_id,
+            model_path,
+            api_base,
+            token,
+            context_length,
+            model_names,
+            args.limit_worker_concurrency,
+            no_register=args.no_register,
+            conv_template=conv_template,
+            seed=args.seed,
+        )
+        workers.append(m)
+        for name in model_names:
+            worker_map[name] = m
+
+    # register all the models
+    url = args.controller_address + "/register_worker"
+    data = {
+        "worker_name": workers[0].worker_addr,
+        "check_heart_beat": not args.no_register,
+        "worker_status": {
+            "model_names": [m for w in workers for m in w.model_names],
+            "speed": 1,
+            "queue_length": sum([w.get_queue_length() for w in workers]),
+        },
+    }
+    r = requests.post(url, json=data)
+    assert r.status_code == 200
+
+    return args, workers
 
 
 if __name__ == "__main__":
-    args, worker = create_model_worker()
+    args, workers = create_huggingface_api_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
