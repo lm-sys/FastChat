@@ -87,9 +87,7 @@ class HuggingfaceApiWorker(BaseModelWorker):
         model_names: List[str],
         limit_worker_concurrency: int,
         no_register: bool,
-        stream_interval: int = 2,
         conv_template: Optional[str] = None,
-        embed_in_truncate: bool = False,
         seed: Optional[int] = None,
         **kwargs,
     ):
@@ -107,18 +105,11 @@ class HuggingfaceApiWorker(BaseModelWorker):
         self.api_base = api_base
         self.token = token
         self.context_len = context_length
+        self.seed = seed
 
         logger.info(
             f"Connecting with huggingface api {self.model_path} as {self.model_names} on worker {worker_id} ..."
         )
-
-        self.model = None
-        self.tokenizer = None
-        self.device = None
-        self.generate_stream_func = None
-        self.stream_interval = stream_interval
-        self.embed_in_truncate = embed_in_truncate
-        self.seed = seed
 
         if not no_register:
             self.init_heart_beat()
@@ -285,14 +276,12 @@ def create_model_worker():
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
-    parser.add_argument("--embed-in-truncate", action="store_true")
     parser.add_argument(
         "--limit-worker-concurrency",
         type=int,
         default=5,
         help="Limit the model concurrency to prevent OOM.",
     )
-    parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument(
         "--seed",
@@ -327,9 +316,7 @@ def create_model_worker():
         args.model_names,
         args.limit_worker_concurrency,
         no_register=args.no_register,
-        stream_interval=args.stream_interval,
         conv_template=args.conv_template,
-        embed_in_truncate=args.embed_in_truncate,
         seed=args.seed,
     )
     return args, worker
