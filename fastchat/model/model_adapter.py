@@ -1413,6 +1413,8 @@ class BGEAdapter(BaseModelAdapter):
             model.config.max_sequence_length = min(
                 model.config.max_position_embeddings, tokenizer.model_max_length
             )
+        model.is_bge = True
+        model.eval()
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
