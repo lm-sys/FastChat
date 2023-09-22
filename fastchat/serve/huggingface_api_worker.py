@@ -176,14 +176,14 @@ class HuggingfaceApiWorker(BaseModelWorker):
 
         prompt = params["prompt"]
         gen_kwargs = get_gen_kwargs(params, seed=self.seed)
-        logger.info(f"prompt: {prompt}")
-        logger.info(f"gen_kwargs: {gen_kwargs}")
-
         stop = gen_kwargs["stop_sequences"]
-        if "falcon" in self.model_path:
+        if "falcon" in self.model_path and "chat" in self.model_path:
             stop.extend(["\nUser:", "<|endoftext|>", " User:", "###"])
             stop = list(set(stop))
             gen_kwargs["stop_sequences"] = stop
+
+        logger.info(f"prompt: {prompt}")
+        logger.info(f"gen_kwargs: {gen_kwargs}")
 
         try:
             url = f"{self.api_base}/{self.model_path}"
