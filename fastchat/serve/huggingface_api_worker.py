@@ -12,59 +12,19 @@ The contents in supported_models.json :
 """
 import argparse
 import asyncio
-import base64
-import dataclasses
-import gc
-import logging
 import json
-import os
-import threading
-import time
 from typing import List, Optional
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 from huggingface_hub import InferenceClient
-import requests
-
 from fastchat.serve.model_worker import BaseModelWorker
 
-try:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LlamaTokenizer,
-        AutoModel,
-    )
-except ImportError:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LLaMATokenizer,
-        AutoModel,
-    )
-import torch
-import torch.nn.functional as F
-from transformers import set_seed
 import uvicorn
 
-from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
-from fastchat.conversation import get_conv_template
-from fastchat.model.model_adapter import (
-    load_model,
-    add_model_args,
-    get_conversation_template,
-    get_generate_stream_function,
-)
-from fastchat.modules.gptq import GptqConfig
-from fastchat.modules.awq import AWQConfig
-from fastchat.utils import (
-    build_logger,
-    pretty_print_semaphore,
-    get_context_length,
-    str_to_torch_dtype,
-)
+from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
+from fastchat.utils import build_logger
 
 
 worker_id = str(uuid.uuid4())[:8]
@@ -231,10 +191,7 @@ class HuggingfaceApiWorker(BaseModelWorker):
             pass
         return json.loads(x[:-1].decode())
 
-    @torch.inference_mode()
     def get_embeddings(self, params):
-        self.call_ct += 1
-
         raise NotImplementedError()
 
 
