@@ -57,17 +57,7 @@ def load_demo_side_by_side_anony(models_, url_params):
         gr.Markdown.update(visible=True),
     )
 
-    return (
-        states
-        + selector_updates
-        + (gr.Chatbot.update(visible=True),) * num_sides
-        + (
-            gr.Textbox.update(visible=True),
-            gr.Box.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True),
-        )
-    )
+    return states + selector_updates
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
@@ -388,9 +378,6 @@ def build_side_by_side_ui_anony(models):
 ### Leaderboard
 See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
 
-### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
-
 ### Battle
 Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Llama).
 """
@@ -407,7 +394,7 @@ Please scroll down and start chatting. The models include both closed-source mod
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", visible=False, height=550
+                        label=label, elem_id=f"chatbot", height=550
                     )
 
         with gr.Row():
@@ -432,19 +419,18 @@ Please scroll down and start chatting. The models include both closed-source mod
             textbox = gr.Textbox(
                 show_label=False,
                 placeholder="Enter your prompt here and press ENTER",
-                visible=False,
                 container=False,
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False, variant="primary")
+            send_btn = gr.Button(value="Send", variant="primary")
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False, visible=True) as parameter_row:
+    with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -560,12 +546,4 @@ function (a, b, c, d) {
         flash_buttons, [], btn_list
     )
 
-    return (
-        states,
-        model_selectors,
-        chatbots,
-        textbox,
-        send_btn,
-        button_row,
-        parameter_row,
-    )
+    return states + model_selectors
