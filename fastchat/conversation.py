@@ -204,12 +204,12 @@ class Conversation:
         elif self.sep_style == SeparatorStyle.FALCON_CHAT:
             ret = ""
             if self.system_message:
-                ret += "System: " + self.system_message + self.sep
+                ret += system_prompt + self.sep
             for role, message in self.messages:
                 if message:
                     ret += role + ": " + message + self.sep
                 else:
-                    ret += role + ": "
+                    ret += role + ":"
 
             return ret
         else:
@@ -958,8 +958,7 @@ register_conv_template(
     Conversation(
         name="falcon-chat",
         roles=("User", "Falcon"),
-        system_template="System: {system_message}\n",
-        system_message="\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.",
+        system_template="System: {system_message}",
         messages=[],
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",

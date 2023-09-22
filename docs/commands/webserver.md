@@ -27,7 +27,7 @@ cd fastchat_logs/server0
 export OPENAI_API_KEY=
 export ANTHROPIC_API_KEY=
 
-python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results_20230802.pkl --leaderboard-table-file ~/elo_results/leaderboard_table_20230802.csv --register ~/elo_results/register_oai_models.json
+python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results.pkl --leaderboard-table-file ~/elo_results/leaderboard_table.csv --register ~/elo_results/register_oai_models.json --show-terms
 
 python3 backup_logs.py
 ```
