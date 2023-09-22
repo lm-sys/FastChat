@@ -1,6 +1,6 @@
 """
 A model worker to call huggingface api.
-The contents in supported_models.json : 
+JSON file format:
 {
     "falcon-180b-chat": {
         "model_path": "tiiuae/falcon-180B-chat",
@@ -259,7 +259,10 @@ def create_model_worker():
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument(
-        "--supported-models-file", type=str, default="supported_models.json"
+        "--model-info-file",
+        type=str,
+        required=True,
+        help="Huggingface API model's info file path",
     )
     parser.add_argument(
         "--model",
@@ -292,18 +295,18 @@ def create_model_worker():
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    with open(args.supported_models_file, "r") as f:
-        supported_models = json.load(f)
+    with open(args.model_info_file, "r", encoding="UTF-8") as f:
+        model_info = json.load(f)
 
-    if args.model not in supported_models:
+    if args.model not in model_info:
         raise ValueError(
-            f"Model {args.model} not supported. Please add it to {args.supported_models_file}."
+            f"Model {args.model} not supported. Please add it to {args.model_info_file}."
         )
 
-    model_path = supported_models[args.model]["model_path"]
-    api_base = supported_models[args.model]["api_base"]
-    token = supported_models[args.model]["token"]
-    context_length = supported_models[args.model]["context_length"]
+    model_path = model_info[args.model]["model_path"]
+    api_base = model_info[args.model]["api_base"]
+    token = model_info[args.model]["token"]
+    context_length = model_info[args.model]["context_length"]
 
     worker = HuggingfaceApiWorker(
         args.controller_address,
