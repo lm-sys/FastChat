@@ -26,6 +26,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
+import torch
 
 from transformers import GPTQConfig
 
@@ -33,6 +34,7 @@ from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.serve.inference import ChatIO, chat_loop
+from fastchat.utils import str_to_torch_dtype
 
 
 class SimpleChatIO(ChatIO):
@@ -210,6 +212,7 @@ def main(args):
             args.device,
             args.num_gpus,
             args.max_gpu_memory,
+            str_to_torch_dtype(args.dtype),
             args.load_8bit,
             args.cpu_offloading,
             args.conv_template,

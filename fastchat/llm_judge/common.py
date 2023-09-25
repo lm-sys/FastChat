@@ -418,6 +418,35 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
     return output
 
 
+def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
+    openai.api_type = "azure"
+    openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+    openai.api_key = os.environ["AZURE_OPENAI_KEY"]
+    openai.api_version = "2023-05-15"
+
+    if "azure-" in model:
+        model = model[6:]
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            messages = conv.to_openai_api_messages()
+            response = openai.ChatCompletion.create(
+                engine=model,
+                messages=messages,
+                n=1,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            output = response["choices"][0]["message"]["content"]
+            break
+        except openai.error.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+
+    return output
+
+
 def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):

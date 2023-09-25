@@ -1,5 +1,10 @@
-# sudo apt install pkg-config libicu-dev
-# pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
+Live monitor of the website statistics and leaderboard.
+
+Dependency:
+sudo apt install pkg-config libicu-dev
+pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
+"""
 
 import argparse
 import ast
@@ -34,7 +39,7 @@ def make_leaderboard_md(elo_results):
 - [MT-Bench](https://arxiv.org/abs/2306.05685) - a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot) - a test to measure a model's multitask accuracy on 57 tasks.
 
-💻 Code: The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge). The MMLU scores are computed by [InstructEval](https://github.com/declare-lab/instruct-eval) and [Chain-of-Thought Hub](https://github.com/FranxYao/chain-of-thought-hub). Higher values are better for all benchmarks. Empty cells mean not available. Last updated: Sept, 2023.
+💻 Code: The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge). The MMLU scores are mostly computed by [InstructEval](https://github.com/declare-lab/instruct-eval). Higher values are better for all benchmarks. Empty cells mean not available. Last updated: Sept, 2023.
 """
     return leaderboard_md
 
@@ -53,7 +58,7 @@ def update_elo_components(max_num_files, elo_results_file):
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
-        battles = clean_battle_data(log_files)
+        battles = clean_battle_data(log_files, [])
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
@@ -250,11 +255,14 @@ Please note that you may see different orders from different ranking methods. Th
 
 
 def build_demo(elo_results_file, leaderboard_table_file):
+    from fastchat.serve.gradio_web_server import block_css
+
     text_size = gr.themes.sizes.text_lg
 
     with gr.Blocks(
         title="Monitor",
         theme=gr.themes.Base(text_size=text_size),
+        css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):

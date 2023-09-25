@@ -66,7 +66,7 @@ parser.add_argument(
 parser.add_argument(
     "--device",
     type=str,
-    choices=["cpu", "cuda", "mps", "xpu"],
+    choices=["cpu", "cuda", "mps", "xpu", "npu"],
     default="cuda",
     help="The device type",
 )

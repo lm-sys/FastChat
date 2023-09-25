@@ -201,6 +201,20 @@ function() {
 """
 
 
+get_window_url_params_with_tos_js = """
+function() {
+    const params = new URLSearchParams(window.location.search);
+    url_params = Object.fromEntries(params);
+    console.log("url_params", url_params);
+
+    msg = "Users of this website are required to agree to the following terms:\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nThe service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license."
+    alert(msg);
+
+    return url_params;
+    }
+"""
+
+
 def iter_over_async(
     async_gen: AsyncGenerator, event_loop: AbstractEventLoop
 ) -> Generator:
@@ -302,3 +316,18 @@ def get_context_length(config):
         if val is not None:
             return int(rope_scaling_factor * val)
     return 2048
+
+
+def str_to_torch_dtype(dtype: str):
+    import torch
+
+    if dtype is None:
+        return None
+    elif dtype == "float32":
+        return torch.float32
+    elif dtype == "float16":
+        return torch.float16
+    elif dtype == "bfloat16":
+        return torch.bfloat16
+    else:
+        raise ValueError(f"Unrecognized dtype: {dtype}")
