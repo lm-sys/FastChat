@@ -1272,7 +1272,7 @@ class Llama2Adapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 class UltraLMAdapter(BaseModelAdapter):
-    """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
+    """The model adapter for ultra-series model (e.g., ultralm, ultracm)"""
 
     def match(self, model_path: str):
         return "ultra" in model_path.lower()
@@ -1681,6 +1681,7 @@ register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
 register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
+register_model_adapter(UltraLMAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
