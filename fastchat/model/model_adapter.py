@@ -1271,7 +1271,21 @@ class Llama2Adapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
 
+class UltraLMAdapter(BaseModelAdapter):
+    """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
 
+    def match(self, model_path: str):
+        return "ultra" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ultralm")
+        
 class CuteGPTAdapter(BaseModelAdapter):
     """The model adapter for CuteGPT"""
 
