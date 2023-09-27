@@ -984,7 +984,7 @@ register_conv_template(
 # source: https://huggingface.co/Phind/Phind-CodeLlama-34B-v2
 register_conv_template(
     Conversation(
-        name="ultralm",
+        name="ultracm",
         system_message="You are now a helpful assistant, your answer should focus the question give reasonable solutions, self-consistent, of high-quality to make users satisfied. Please try to make the answer more informative, detailed, and polite.",
         roles=("User", "Assistant"),
         messages=(),
