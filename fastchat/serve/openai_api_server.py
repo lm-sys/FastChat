@@ -599,12 +599,14 @@ async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
             timeout=WORKER_API_TIMEOUT,
         ) as response:
             # content = await response.aread()
+            buffer = b""
             async for raw_chunk in response.aiter_raw():
-                for chunk in raw_chunk.split(delimiter):
+                buffer += raw_chunk
+                while (chunk_end := buffer.find(delimiter)) >= 0:
+                    chunk, buffer = buffer[:chunk_end], buffer[chunk_end + 1 :]
                     if not chunk:
                         continue
-                    data = json.loads(chunk.decode())
-                    yield data
+                    yield json.loads(chunk.decode())
 
 
 async def generate_completion(payload: Dict[str, Any], worker_addr: str):
