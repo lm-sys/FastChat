@@ -1260,8 +1260,7 @@ class MistralAdapter(BaseModelAdapter):
     """The model adapter for Mistral models"""
 
     def match(self, model_path: str):
-        mp = model_path.lower()
-        return "mistral" in mp
+        return "mistral" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
