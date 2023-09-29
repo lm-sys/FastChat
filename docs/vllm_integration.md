@@ -19,7 +19,7 @@ See the supported models [here](https://vllm.readthedocs.io/en/latest/models/sup
    python3 -m fastchat.serve.vllm_worker --model-path lmsys/vicuna-7b-v1.3 --tokenizer hf-internal-testing/llama-tokenizer
    ```
 
-   if you use a awq model, try
+   If you use an AWQ quantized model, try
    '''
    python3 -m fastchat.serve.vllm_worker --model-path TheBloke/vicuna-7B-v1.5-AWQ --quantization awq
    '''
