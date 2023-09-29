@@ -192,6 +192,7 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.3")
+    parser.add_argument("--quantization", type=str)
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
