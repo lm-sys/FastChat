@@ -17,20 +17,18 @@ Only "model_path", "api_base", and "token" are necessary, others are optional.
 import argparse
 import asyncio
 import json
-from typing import List, Optional
 import uuid
+from typing import List, Optional
 
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse, JSONResponse
-from huggingface_hub import InferenceClient
 import requests
-from fastchat.serve.model_worker import BaseModelWorker
-
 import uvicorn
+from fastapi import BackgroundTasks, FastAPI, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from huggingface_hub import InferenceClient
 
-from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
+from fastchat.constants import SERVER_ERROR_MSG, ErrorCode
+from fastchat.serve.model_worker import BaseModelWorker
 from fastchat.utils import build_logger
-
 
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
