@@ -192,7 +192,6 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.3")
-    parser.add_argument("--quantization", type=str)
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
@@ -211,8 +210,6 @@ if __name__ == "__main__":
         args.model = args.model_path
     if args.num_gpus > 1:
         args.tensor_parallel_size = args.num_gpus
-    if args.quantization:
-        args.quantization = args.quantization
 
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
