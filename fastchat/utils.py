@@ -207,7 +207,7 @@ function() {
     url_params = Object.fromEntries(params);
     console.log("url_params", url_params);
 
-    msg = "Users of this website are required to agree to the following terms:\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nThe service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license."
+    msg = "Users of this website are required to agree to the following terms:\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nThe service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license."
     alert(msg);
 
     return url_params;
