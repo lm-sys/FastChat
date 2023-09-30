@@ -130,12 +130,20 @@ def preprocess(
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
+            # "-2" is hardcoded for the Llama tokenizer to make the offset correct.
             instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+
+            if i != 0 and not tokenizer.legacy:
+                # The legacy and non-legacy modes handle special tokens differently
+                instruction_len -= 1
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
             cur_len += turn_len
+
+            if i != 0 and not tokenizer.legacy:
+                # The legacy and non-legacy modes handle special tokens differently
+                cur_len -= 1
 
         target[cur_len:] = IGNORE_TOKEN_ID
 
@@ -143,13 +151,14 @@ def preprocess(
             z = target.clone()
             z = torch.where(z == IGNORE_TOKEN_ID, tokenizer.unk_token_id, z)
             rank0_print(tokenizer.decode(z))
+            exit()
 
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_TOKEN_ID
                 rank0_print(
                     f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
-                    f" (ignored)"
+                    f" #turn = {len(turns) - 1}. (ignored)"
                 )
 
     return dict(
