@@ -24,3 +24,14 @@ scp atlas:/data/lmzheng/FastChat/fastchat/serve/monitor/elo_results_20230905.pkl
 ```
 wget https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard/raw/main/leaderboard_table_20230905.csv
 ```
+
+### Update files on webserver
+```
+DATE=20231002
+
+rm -rf elo_results.pkl leaderboard_table.csv
+wget https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard/resolve/main/elo_results_$DATE.pkl
+wget https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard/resolve/main/leaderboard_table_$DATE.csv
+ln -s leaderboard_table_$DATE.csv leaderboard_table.csv
+ln -s elo_results_$DATE.pkl elo_results.pkl
+```
