@@ -225,6 +225,8 @@ def report_elo_analysis_results(battles_json):
     model_order = list(elo_rating_median.keys())
     model_order.sort(key=lambda k: -elo_rating_median[k])
 
+    model_order = model_order[:25]
+
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_median)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
