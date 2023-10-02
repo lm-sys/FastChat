@@ -1,18 +1,19 @@
 """
-A model worker to call huggingface api.
-JSON file format:
+A model worker that calls huggingface inference endpoint.
+
+Register models in a JSON file with the following format:
 {
     "falcon-180b-chat": {
         "model_path": "tiiuae/falcon-180B-chat",
         "api_base": "https://api-inference.huggingface.co/models",
         "token": "hf_xxx",
-        "context_length": 2048
+        "context_length": 2048,
         "model_names": "falcon-180b-chat",
-        "conv_template": null,
+        "conv_template": null
     }
 }
 
-Only "model_path", "api_base", and "token" are necessary, others are optional.
+"model_path", "api_base", "token", and "context_length" are necessary, while others are optional.
 """
 import argparse
 import asyncio
@@ -115,6 +116,9 @@ class HuggingfaceApiWorker(BaseModelWorker):
         logger.info(
             f"Connecting with huggingface api {self.model_path} as {self.model_names} on worker {worker_id} ..."
         )
+
+        if not no_register:
+            self.init_heart_beat()
 
     def count_token(self, params):
         # No tokenizer here
@@ -312,7 +316,7 @@ def create_huggingface_api_worker():
         api_base_list.append(model_info[m]["api_base"])
         token_list.append(model_info[m]["token"])
 
-        context_length = model_info[m].get("context_length", 1024)
+        context_length = model_info[m]["context_length"]
         model_names = model_info[m].get("model_names", [m.split("/")[-1]])
         if isinstance(model_names, str):
             model_names = [model_names]
