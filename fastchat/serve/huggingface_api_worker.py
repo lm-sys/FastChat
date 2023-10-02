@@ -117,6 +117,9 @@ class HuggingfaceApiWorker(BaseModelWorker):
             f"Connecting with huggingface api {self.model_path} as {self.model_names} on worker {worker_id} ..."
         )
 
+        if not no_register:
+            self.init_heart_beat()
+
     def count_token(self, params):
         # No tokenizer here
         ret = {
