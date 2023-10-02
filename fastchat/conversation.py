@@ -840,6 +840,19 @@ register_conv_template(
     )
 )
 
+# Mistral template
+# source: https://docs.mistral.ai/llm/mistral-instruct-v0.1#chat-template
+register_conv_template(
+    Conversation(
+        name="mistral",
+        system_template="",
+        roles=("[INST] ", " [/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep="",
+        sep2=" </s>",
+    )
+)
+
 # llama2 template
 # reference: https://huggingface.co/blog/codellama#conversational-instructions
 # reference: https://github.com/facebookresearch/llama/blob/1a240688810f8036049e8da36b073f63d2ac552c/llama/generation.py#L212
