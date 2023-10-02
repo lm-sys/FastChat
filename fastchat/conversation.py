@@ -841,8 +841,8 @@ register_conv_template(
 )
 
 # Mistral template
+# source: https://docs.mistral.ai/llm/mistral-instruct-v0.1#chat-template
 register_conv_template(
-    # source: https://docs.mistral.ai/llm/mistral-instruct-v0.1#chat-template
     Conversation(
         name="mistral",
         system_template="",
