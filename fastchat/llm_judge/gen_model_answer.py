@@ -101,7 +101,7 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            conv = get_conversation_template(model_path)
             turns = []
             for j in range(len(question["turns"])):
                 if j == args.max_turns: 
@@ -171,6 +171,7 @@ def get_model_answers(
                 "choices": choices,
                 "tstamp": time.time(),
                 "generate_params": {
+                    "prompt": prompt,
                     "do_sample": do_sample,
                     "max_new_token": max_new_token,
                     "temperature": temperature,
