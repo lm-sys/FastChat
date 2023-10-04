@@ -8,12 +8,14 @@ import argparse
 import asyncio
 import json
 from typing import List
-
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import torch
 import uvicorn
-from vllm.engine.async_llm_engine import AsyncLLMEngine
+if packaging.version.parse(vllm.__version__) >= version.parse("0.2.0"):
+    from vllm.engine.async_llm_engine import AsyncLLMEngine
+else
+    from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
