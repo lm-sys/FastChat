@@ -1624,6 +1624,7 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phind")
 
+
 class Llama2ChangAdapter(Llama2Adapter):
     """The model adapter for Llama2-ko-chang"""
 
@@ -1632,6 +1633,7 @@ class Llama2ChangAdapter(Llama2Adapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("polyglot_changgpt")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
