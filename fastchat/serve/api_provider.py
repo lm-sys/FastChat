@@ -20,10 +20,10 @@ def openai_api_stream_iter(
     api_base=None,
     api_key=None,
 ):
-    import openai
+    import litellm 
 
-    openai.api_base = api_base or "https://api.openai.com/v1"
-    openai.api_key = api_key or os.environ["OPENAI_API_KEY"]
+    llm_api_base = api_base or "https://api.openai.com/v1"
+    llm_api_key = api_key or os.environ["OPENAI_API_KEY"]
 
     # Make requests
     gen_params = {
@@ -32,14 +32,18 @@ def openai_api_stream_iter(
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
+        "api_base": llm_api_base, 
+        "api_key": llm_api_key
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = openai.ChatCompletion.create(
+    res = litellm.completion(
         model=model_name,
         messages=messages,
         temperature=temperature,
         max_tokens=max_new_tokens,
+        api_base=api_base, 
+        api_key=api_key
         stream=True,
     )
     text = ""
