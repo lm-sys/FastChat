@@ -58,7 +58,7 @@ def get_median_elo_from_bootstrap(bootstrap_df):
     return median
 
 
-def compute_pairwise_win_fraction(battles, model_order):
+def compute_pairwise_win_fraction(battles, model_order, limit_show_number=None):
     # Times each model wins as Model A
     a_win_ptbl = pd.pivot_table(
         battles[battles["winner"] == "model_a"],
@@ -91,6 +91,9 @@ def compute_pairwise_win_fraction(battles, model_order):
     if model_order is None:
         prop_wins = row_beats_col_freq.mean(axis=1).sort_values(ascending=False)
         model_order = list(prop_wins.keys())
+
+    if limit_show_number is not None:
+        model_order = model_order[:limit_show_number]
 
     # Arrange ordering according to proprition of wins
     row_beats_col = row_beats_col_freq.loc[model_order, model_order]
@@ -166,8 +169,10 @@ def visualize_battle_count(battles, model_order):
     return fig
 
 
-def visualize_average_win_rate(battles):
-    row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
+def visualize_average_win_rate(battles, limit_show_number):
+    row_beats_col_freq = compute_pairwise_win_fraction(
+        battles, None, limit_show_number=limit_show_number
+    )
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
@@ -180,7 +185,7 @@ def visualize_average_win_rate(battles):
     return fig
 
 
-def visualize_bootstrap_elo_rating(df):
+def visualize_bootstrap_elo_rating(df, limit_show_number):
     bars = (
         pd.DataFrame(
             dict(
@@ -192,6 +197,7 @@ def visualize_bootstrap_elo_rating(df):
         .reset_index(names="model")
         .sort_values("rating", ascending=False)
     )
+    bars = bars[:limit_show_number]
     bars["error_y"] = bars["upper"] - bars["rating"]
     bars["error_y_minus"] = bars["rating"] - bars["lower"]
     bars["rating_rounded"] = np.round(bars["rating"], 2)
@@ -225,12 +231,19 @@ def report_elo_analysis_results(battles_json):
     model_order = list(elo_rating_median.keys())
     model_order.sort(key=lambda k: -elo_rating_median[k])
 
+    limit_show_number = 25  # limit show number to make plots smaller
+    model_order = model_order[:limit_show_number]
+
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_median)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
-    average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
-    bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
+    average_win_rate_bar = visualize_average_win_rate(
+        battles_no_ties, limit_show_number
+    )
+    bootstrap_elo_rating = visualize_bootstrap_elo_rating(
+        bootstrap_df, limit_show_number
+    )
 
     last_updated_tstamp = battles["tstamp"].max()
     last_updated_datetime = datetime.datetime.fromtimestamp(
