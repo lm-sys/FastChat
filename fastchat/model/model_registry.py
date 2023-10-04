@@ -312,3 +312,9 @@ register_model_info(
     "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
     "a large language model by Mistral AI team",
 )
+register_model_info(
+    ["deluxe-chat-v1"],
+    "DeluxeChat",
+    "",
+    "Deluxe Chat",
+)
