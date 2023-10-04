@@ -12,9 +12,11 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import torch
 import uvicorn
-if packaging.version.parse(vllm.__version__) >= version.parse("0.2.0"):
+import vllm
+from packaging import version
+if version.parse(vllm.__version__) >= version.parse("0.2.0"):
     from vllm.engine.async_llm_engine import AsyncLLMEngine
-else
+else:
     from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
