@@ -14,13 +14,14 @@ import torch
 import uvicorn
 import vllm
 from packaging import version
+from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.sampling_params import SamplingParams
+from vllm.utils import random_uuid
+
 if version.parse(vllm.__version__) >= version.parse("0.2.0"):
     from vllm.engine.async_llm_engine import AsyncLLMEngine
 else:
     from vllm import AsyncLLMEngine
-from vllm.engine.arg_utils import AsyncEngineArgs
-from vllm.sampling_params import SamplingParams
-from vllm.utils import random_uuid
 
 from fastchat.serve.model_worker import (
     BaseModelWorker,
