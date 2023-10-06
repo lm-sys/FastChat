@@ -199,8 +199,6 @@ SAMPLING_BOOST_MODELS = []
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    model_pairs = []
-    model_pairs_weights = []
     ip = request.client.host
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -209,6 +207,8 @@ def add_text(
     # Init states if necessary
     if states[0] is None:
         assert states[1] is None
+        model_pairs = []
+        model_pairs_weights = []
 
         # Pick two models
         if len(model_pairs) == 0:
