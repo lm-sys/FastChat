@@ -599,12 +599,14 @@ async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
             timeout=WORKER_API_TIMEOUT,
         ) as response:
             # content = await response.aread()
+            buffer = b""
             async for raw_chunk in response.aiter_raw():
-                for chunk in raw_chunk.split(delimiter):
+                buffer += raw_chunk
+                while (chunk_end := buffer.find(delimiter)) >= 0:
+                    chunk, buffer = buffer[:chunk_end], buffer[chunk_end + 1 :]
                     if not chunk:
                         continue
-                    data = json.loads(chunk.decode())
-                    yield data
+                    yield json.loads(chunk.decode())
 
 
 async def generate_completion(payload: Dict[str, Any], worker_addr: str):
@@ -803,6 +805,13 @@ def create_openai_api_server():
         type=lambda s: s.split(","),
         help="Optional list of comma separated API keys",
     )
+    parser.add_argument(
+        "--ssl",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
+    )
     args = parser.parse_args()
 
     app.add_middleware(
@@ -821,4 +830,14 @@ def create_openai_api_server():
 
 if __name__ == "__main__":
     args = create_openai_api_server()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    if args.ssl:
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            ssl_keyfile=os.environ["SSL_KEYFILE"],
+            ssl_certfile=os.environ["SSL_CERTFILE"],
+        )
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")

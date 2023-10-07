@@ -2,16 +2,16 @@
 | [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
-- The training and evaluation code for state-of-the-art models (e.g., Vicuna).
+- The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 ## News
-- [2023/08] 🔥 We released **Vicuna v1.5** based on Llama 2 with 4K and 16K context lengths. Download [weights](#vicuna-weights).
-- [2023/08] 🔥 We released **LongChat v1.5** based on Llama 2 with 32K context lengths. Download [weights](#longchat).
+- [2023/09] 🔥 We released **LMSYS-Chat-1M**, a large-scale real-world LLM conversation dataset. Read the [report](https://arxiv.org/abs/2309.11998).
+- [2023/08] We released **Vicuna v1.5** based on Llama 2 with 4K and 16K context lengths. Download [weights](#vicuna-weights).
 - [2023/07] We released **Chatbot Arena Conversations**, a dataset containing 33k conversations with human preferences. Download it [here](https://huggingface.co/datasets/lmsys/chatbot_arena_conversations).
 
 <details><summary>More</summary>
-
+- [2023/08] We released **LongChat v1.5** based on Llama 2 with 32K context lengths. Download [weights](#longchat).
 - [2023/06] We introduced **MT-bench**, a challenging multi-turn question set for evaluating chatbots. Check out the blog [post](https://lmsys.org/blog/2023-06-22-leaderboard/).
 - [2023/06] We introduced **LongChat**, our long-context chatbots and evaluation tools. Check out the blog [post](https://lmsys.org/blog/2023-06-29-longchat/).
 - [2023/05] We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena).
@@ -226,7 +226,7 @@ This is the user interface that users will interact with.
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 If the models do not show up, try to reboot the gradio web server.
 
-#### (Optional): Advanced Features
+#### (Optional): Advanced Features, Scalability
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
 # worker 0
@@ -238,7 +238,14 @@ CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path lmsys
 ```bash
 python3 -m fastchat.serve.gradio_web_server_multi
 ```
-- The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput serving, you can try [vLLM integration](docs/vllm_integration.md).
+- The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
+
+#### (Optional): Advanced Features, Third Party UI
+- if you want to host it on your own UI or third party UI. Launch the OpenAI compatible server, host with a hosting service like ngrok, and enter the credentials approriatly.
+    - https://github.com/WongSaang/chatgpt-ui
+    - https://github.com/mckaywrigley/chatbot-ui
+- Note some third party provider only offer the stand `gpt-3.5-turbo, gpt-4, etc`, so you will have to add your own custom model inside the code. [Here is an example of a modification of creating a UI with any custom model name](https://github.com/ztjhz/BetterChatGPT/pull/461)
+
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
@@ -284,7 +291,7 @@ pip3 install -e ".[train]"
 - You can use the following command to train Vicuna-7B with 4 x A100 (40GB). Update `--model_name_or_path` with the actual path to LLaMA weights and `--data_path` with the actual path to data.
 ```bash
 torchrun --nproc_per_node=4 --master_port=20001 fastchat/train/train_mem.py \
-    --model_name_or_path ~/model_weights/llama-7b  \
+    --model_name_or_path meta-llama/Llama-2-7b-hf \
     --data_path data/dummy_conversation.json \
     --bf16 True \
     --output_dir output_vicuna \

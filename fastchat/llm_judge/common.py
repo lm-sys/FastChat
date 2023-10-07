@@ -132,7 +132,8 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         user_prompt = judge.prompt_template["prompt_template"].format(
@@ -231,7 +232,8 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         system_prompt = judge.prompt_template["system_prompt"]

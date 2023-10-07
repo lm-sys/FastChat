@@ -840,6 +840,19 @@ register_conv_template(
     )
 )
 
+# Mistral template
+# source: https://docs.mistral.ai/llm/mistral-instruct-v0.1#chat-template
+register_conv_template(
+    Conversation(
+        name="mistral",
+        system_template="",
+        roles=("[INST] ", " [/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep="",
+        sep2=" </s>",
+    )
+)
+
 # llama2 template
 # reference: https://huggingface.co/blog/codellama#conversational-instructions
 # reference: https://github.com/facebookresearch/llama/blob/1a240688810f8036049e8da36b073f63d2ac552c/llama/generation.py#L212
@@ -978,6 +991,22 @@ register_conv_template(
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+# Metharme formatting for Pygmalion models
+# source: https://huggingface.co/PygmalionAI/pygmalion-2-13b
+register_conv_template(
+    Conversation(
+        name="metharme",
+        system_template="<|system|>{system_message}",
+        system_message="""Enter RP mode. You shall reply to the user while staying 
+        in character. Your responses must be detailed, creative, immersive, and drive the scenario
+        forward.""",
+        roles=("<|user|>", "<|model|>"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="",
+        stop_str="<|user|>",
     )
 )
 

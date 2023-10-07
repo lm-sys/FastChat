@@ -147,7 +147,7 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
         # We don't necessarily need to download the model' repo again if there is a cache.
         # So check the default huggingface cache first.
         model_path_temp = os.path.join(
-            os.getenv("HOME"),
+            os.path.expanduser("~"),
             ".cache/huggingface/hub",
             "models--" + model_path.replace("/", "--"),
             "snapshots/",
