@@ -29,9 +29,9 @@ from rich.markdown import Markdown
 import torch
 
 from fastchat.model.model_adapter import add_model_args
-from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.inference import ChatIO, chat_loop
 from fastchat.utils import str_to_torch_dtype
 

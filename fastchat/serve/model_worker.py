@@ -45,15 +45,15 @@ from fastchat.model.model_adapter import (
     get_conversation_template,
     get_generate_stream_function,
 )
-from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
+from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import (
     build_logger,
     pretty_print_semaphore,
     get_context_length,
     str_to_torch_dtype,
 )
-from fastchat.modules.exllama import ExllamaConfig
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 

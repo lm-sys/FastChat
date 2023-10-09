@@ -27,9 +27,6 @@ from transformers import (
 )
 
 from fastchat.constants import CPU_ISA
-from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
-from fastchat.modules.awq import AWQConfig, load_awq_quantized
-from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.llama_condense_monkey_patch import replace_llama_with_condense
@@ -40,6 +37,9 @@ from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
+from fastchat.modules.awq import AWQConfig, load_awq_quantized
+from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
+from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.utils import get_gpu_memory
 
 # Check an environment variable to check if we should be sharing Peft model
