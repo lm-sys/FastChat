@@ -1626,7 +1626,7 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
 
 
 class Llama2ChangAdapter(Llama2Adapter):
-    """The model adapter for Llama2-ko-chang"""
+    """The model adapter for Llama2-ko-chang (e.g., lcw99/llama2-ko-chang-instruct-chat)"""
 
     def match(self, model_path: str):
         return "llama2-ko-chang" in model_path.lower()
