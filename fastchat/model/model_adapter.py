@@ -1625,6 +1625,16 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
         return get_conv_template("phind")
 
 
+class Llama2ChangAdapter(Llama2Adapter):
+    """The model adapter for Llama2-ko-chang (e.g., lcw99/llama2-ko-chang-instruct-chat)"""
+
+    def match(self, model_path: str):
+        return "llama2-ko-chang" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("polyglot_changgpt")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1684,6 +1694,7 @@ register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
 register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
+register_model_adapter(Llama2ChangAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
