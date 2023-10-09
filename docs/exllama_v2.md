@@ -1,6 +1,6 @@
 # ExllamaV2 GPTQ Inference Franework
 
-Integrated [ExllamaV2] (https://github.com/turboderp/exllamav2) customized kernel into Fastchat to provide **Faster** GPTQ inference speed.
+Integrated [ExllamaV2](https://github.com/turboderp/exllamav2) customized kernel into Fastchat to provide **Faster** GPTQ inference speed.
 
 **Note: Exllama not yet support embedding REST API.**
 
