@@ -1012,6 +1012,8 @@ register_conv_template(
 
 
 if __name__ == "__main__":
+    from fastchat.conversation import get_conv_template
+
     print("-- Vicuna template --")
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
