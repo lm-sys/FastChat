@@ -46,7 +46,7 @@ from fastchat.utils import (
     get_context_length,
     str_to_torch_dtype,
 )
-from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
+from fastchat.utils import build_logger, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:8]

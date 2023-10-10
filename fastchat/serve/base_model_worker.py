@@ -1,14 +1,16 @@
-import time
 import asyncio
 import threading
-import requests
+import time
+from typing import List
 import uuid
+
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.responses import StreamingResponse, JSONResponse
+import requests
+
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.conversation import Conversation
 from fastchat.utils import pretty_print_semaphore, build_logger
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse, JSONResponse
-from typing import List
 
 
 worker_id = str(uuid.uuid4())[:8]
