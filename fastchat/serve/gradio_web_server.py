@@ -159,7 +159,9 @@ def load_demo_single(models, url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
+    dropdown_update = gr.Dropdown.update(
+        choices=models, value=selected_model, visible=True
+    )
 
     state = None
     return state, dropdown_update

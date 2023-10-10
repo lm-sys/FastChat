@@ -53,8 +53,8 @@ def load_demo_side_by_side_anony(models_, url_params):
 
     states = (None,) * num_sides
     selector_updates = (
-        gr.Markdown(visible=True),
-        gr.Markdown(visible=True),
+        gr.Markdown.update(visible=True),
+        gr.Markdown.update(visible=True),
     )
 
     return states + selector_updates
