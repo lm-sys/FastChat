@@ -1,6 +1,6 @@
 import requests
 
-headers = {"authorization" : "Bearer hf_XXX"}
+headers = {"authorization": "Bearer hf_XXX"}
 
 url = "https://huggingface.co/api/datasets/lmsys/lmsys-chat-1m/user-access-request/pending"
 a = requests.get(url, headers=headers)

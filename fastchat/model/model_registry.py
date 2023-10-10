@@ -84,7 +84,7 @@ register_model_info(
     ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
-    "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
+    "a chat assistant fine-tuned on user-shared conversations by LMSYS",
 )
 register_model_info(
     ["wizardlm-70b", "wizardlm-30b", "wizardlm-13b"],
