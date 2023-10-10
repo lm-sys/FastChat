@@ -45,14 +45,16 @@ from fastchat.model.model_adapter import (
     get_conversation_template,
     get_generate_stream_function,
 )
-from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
+from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.gptq import GptqConfig
 from fastchat.utils import (
     build_logger,
     pretty_print_semaphore,
     get_context_length,
     str_to_torch_dtype,
 )
+from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:8]
@@ -170,8 +172,12 @@ class BaseModelWorker:
 
     def count_token(self, params):
         prompt = params["prompt"]
-        input_ids = self.tokenizer(prompt).input_ids
-        input_echo_len = len(input_ids)
+
+        try:
+            input_ids = self.tokenizer(prompt).input_ids
+            input_echo_len = len(input_ids)
+        except TypeError:
+            input_echo_len = self.tokenizer.num_tokens(prompt)
 
         ret = {
             "count": input_echo_len,
@@ -201,6 +207,7 @@ class ModelWorker(BaseModelWorker):
         cpu_offloading: bool = False,
         gptq_config: Optional[GptqConfig] = None,
         awq_config: Optional[AWQConfig] = None,
+        exllama_config: Optional[ExllamaConfig] = None,
         stream_interval: int = 2,
         conv_template: Optional[str] = None,
         embed_in_truncate: bool = False,
@@ -228,6 +235,7 @@ class ModelWorker(BaseModelWorker):
             cpu_offloading=cpu_offloading,
             gptq_config=gptq_config,
             awq_config=awq_config,
+            exllama_config=exllama_config,
         )
         self.device = device
         if self.tokenizer.pad_token == None:
@@ -514,6 +522,13 @@ def create_model_worker():
         wbits=args.awq_wbits,
         groupsize=args.awq_groupsize,
     )
+    if args.enable_exllama:
+        exllama_config = ExllamaConfig(
+            max_seq_len=args.exllama_max_seq_len,
+            gpu_split=args.exllama_gpu_split,
+        )
+    else:
+        exllama_config = None
 
     worker = ModelWorker(
         args.controller_address,
@@ -531,6 +546,7 @@ def create_model_worker():
         cpu_offloading=args.cpu_offloading,
         gptq_config=gptq_config,
         awq_config=awq_config,
+        exllama_config=exllama_config,
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
         embed_in_truncate=args.embed_in_truncate,
