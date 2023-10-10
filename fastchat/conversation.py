@@ -1041,7 +1041,6 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[1], None)
     print(conv.to_openai_api_messages())
 
-
     print("\n")
 
     print("-- Claude template --")
