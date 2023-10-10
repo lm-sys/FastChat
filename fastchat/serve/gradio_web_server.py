@@ -146,6 +146,9 @@ def get_model_list(
         models += ["palm-2"]
     models = list(set(models))
 
+    if "deluxe-chat-v1" in models:
+        del models[models.index("deluxe-chat-v1")]
+
     priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")

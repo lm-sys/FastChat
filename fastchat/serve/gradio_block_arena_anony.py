@@ -221,6 +221,11 @@ def add_text(
                     w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
                     if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
                         w *= 10
+                    if a in {"gpt-4", "deluxe-chat-v1"} and b in {
+                        "gpt-4",
+                        "deluxe-chat-v1",
+                    }:
+                        w *= 8
                     model_pairs.append((a, b))
                     model_pairs_weights.append(w)
 
