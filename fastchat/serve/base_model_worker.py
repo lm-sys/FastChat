@@ -2,6 +2,7 @@ import time
 import asyncio
 import threading
 import requests
+import uuid
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.conversation import Conversation
 from fastchat.utils import pretty_print_semaphore, build_logger
@@ -10,7 +11,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from typing import List
 
 
-worker_id = None
+worker_id = str(uuid.uuid4())[:8]
 worker = None
 logger = None
 
@@ -34,6 +35,8 @@ class BaseModelWorker:
         limit_worker_concurrency: int,
         conv_template: str = None,
     ):
+        global logger
+
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
@@ -50,14 +53,17 @@ class BaseModelWorker:
 
         self.heart_beat_thread = None
 
+        if logger is None:
+            logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+
     def make_conv_template(
         self,
         conv_template: str = None,
         model_path: str = None,
-    )-> Conversation:
-        '''
+    ) -> Conversation:
+        """
         can be overrided to costomize the conversation template for different model workers.
-        '''
+        """
         from fastchat.conversation import get_conv_template
         from fastchat.model.model_adapter import get_conversation_template
 
@@ -140,8 +146,12 @@ class BaseModelWorker:
 
     def count_token(self, params):
         prompt = params["prompt"]
-        input_ids = self.tokenizer(prompt).input_ids
-        input_echo_len = len(input_ids)
+
+        try:
+            input_ids = self.tokenizer(prompt).input_ids
+            input_echo_len = len(input_ids)
+        except TypeError:
+            input_echo_len = self.tokenizer.num_tokens(prompt)
 
         ret = {
             "count": input_echo_len,
@@ -151,6 +161,15 @@ class BaseModelWorker:
 
     def get_conv_template(self):
         return {"conv": self.conv}
+
+    def generate_stream_gate(self, params):
+        raise NotImplementedError
+
+    def generate_gate(self, params):
+        raise NotImplementedError
+
+    def get_embeddings(self, params):
+        raise NotImplementedError
 
 
 def release_worker_semaphore():

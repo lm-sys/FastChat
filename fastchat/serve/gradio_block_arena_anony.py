@@ -161,6 +161,7 @@ SAMPLING_WEIGHTS = {
     "gpt-3.5-turbo": 2,
     "claude-2": 2,
     "claude-instant-1": 2,
+    "deluxe-chat-v1": 4,
     # tire 1
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
@@ -168,15 +169,16 @@ SAMPLING_WEIGHTS = {
     "codellama-34b-instruct": 1.5,
     "vicuna-33b": 1.5,
     "vicuna-13b": 1.5,
-    "mpt-30b-chat": 1.5,
     "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
     # tier 2
-    "codellama-13b-instruct": 1.0,
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
+    "mistral-7b-instruct": 1.0,
     # deprecated
+    "codellama-13b-instruct": 1.0,
+    "mpt-30b-chat": 1.5,
     "guanaco-33b": 1.0,
     "fastchat-t5-3b": 0.5,
     "alpaca-13b": 0.5,
@@ -193,9 +195,6 @@ SAMPLING_WEIGHTS = {
 
 SAMPLING_BOOST_MODELS = []
 
-model_pairs = []
-model_pairs_weights = []
-
 
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
@@ -208,7 +207,8 @@ def add_text(
     # Init states if necessary
     if states[0] is None:
         assert states[1] is None
-        global model_pairs, model_pairs_weights
+        model_pairs = []
+        model_pairs_weights = []
 
         # Pick two models
         if len(model_pairs) == 0:
@@ -226,9 +226,12 @@ def add_text(
 
             model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
             # for p, w in zip(model_pairs, model_pairs_weights):
-            #    print(p, w)
+            #   print(p, w)
 
         if len(model_pairs) >= 1:
+            # if len(model_pairs) != len(model_pairs_weights):
+            #    print("model pairs", model_pairs, model_pairs_weights)
+            #    print("#model pairs", len(model_pairs), len(model_pairs_weights))
             idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
             model_left, model_right = model_pairs[idx]
         else:
@@ -326,7 +329,7 @@ def bot_response_multi(
 ):
     logger.info(f"bot_response_multi (anony). ip: {request.client.host}")
 
-    if state0.skip_next:
+    if state0 is None or state0.skip_next:
         # This generate call is skipped due to invalid inputs
         yield (
             state0,
