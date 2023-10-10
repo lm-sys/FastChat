@@ -312,3 +312,9 @@ register_model_info(
     "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
     "a large language model by Mistral AI team",
 )
+register_model_info(
+    ["zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
