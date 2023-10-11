@@ -287,9 +287,9 @@ def flash_buttons():
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
     ]
-    for i in range(10):
+    for i in range(4):
         yield btn_updates[i % 2]
-        time.sleep(0.2)
+        time.sleep(0.5)
 
 
 def build_side_by_side_ui_named(models):
