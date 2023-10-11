@@ -318,3 +318,10 @@ register_model_info(
     "",
     "Deluxe Chat",
 )
+
+register_model_info(
+    ["zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)

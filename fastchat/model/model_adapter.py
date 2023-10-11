@@ -1662,6 +1662,16 @@ class Llama2ChangAdapter(Llama2Adapter):
         return get_conv_template("polyglot_changgpt")
 
 
+class ZephyrAdapter(BaseModelAdapter):
+    """The model adapter for Zephyr (e.g. HuggingFaceH4/zephyr-7b-alpha)"""
+
+    def match(self, model_path: str):
+        return "zephyr" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zephyr")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1722,6 +1732,7 @@ register_model_adapter(ReaLMAdapter)
 register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
+register_model_adapter(ZephyrAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
