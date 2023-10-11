@@ -400,12 +400,27 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
+def setup_openai_api(use_azure=True):
+    from functools import partial
+    if use_azure:
+        openai.api_type = "azure"
+        openai.api_key = os.environ['OPENAI_AZURE_API_KEY']
+        openai.api_base = os.environ['OPENAI_AZURE_API_BASE']
+        openai.api_version = "2023-05-15"  # subject to change
+        return partial(openai.ChatCompletion.create, deployment_id="eval-4")
+    else:
+        return openai.ChatCompletion.create
+    
+
 def chat_compeletion_openai(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
+    # TODO: allow additional params for toggling between azure api
+    openai_chat_completion_func = setup_openai_api()
+
     for _ in range(API_MAX_RETRY):
         try:
             messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
+            response = openai_chat_completion_func(
                 model=model,
                 messages=messages,
                 n=1,

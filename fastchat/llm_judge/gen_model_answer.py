@@ -155,6 +155,7 @@ def get_model_answers(
                 except RuntimeError as e:
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
+                    print(e)
 
                 turns.append(output)
                 conv.messages[-1][-1] = output
