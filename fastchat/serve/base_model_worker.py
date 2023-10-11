@@ -37,7 +37,7 @@ class BaseModelWorker:
         limit_worker_concurrency: int,
         conv_template: str = None,
     ):
-        global logger
+        global logger, worker
 
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -57,6 +57,8 @@ class BaseModelWorker:
 
         if logger is None:
             logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+        if worker is None:
+            worker = self
 
     def make_conv_template(
         self,
