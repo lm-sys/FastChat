@@ -1296,7 +1296,13 @@ class JLlama2Adapter(BaseModelAdapter):
         return model, tokenizer
     
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("jllama-2")
+        conv = get_conv_template("jllama-2")
+        if "sys-v" in model_path:
+            if "sys-v2" in model_path:
+                conv.set_system_message("あなたは役立つアシスタントです。ユーザーから特別な要求がない限り、あなたの回答言語は日本語でなければなりません。")
+            else:
+                raise NotImplementedError
+        return conv
     
 
 class CuteGPTAdapter(BaseModelAdapter):
