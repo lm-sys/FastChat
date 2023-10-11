@@ -84,7 +84,7 @@ register_model_info(
     ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
-    "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
+    "a chat assistant fine-tuned on user-shared conversations by LMSYS",
 )
 register_model_info(
     ["wizardlm-70b", "wizardlm-30b", "wizardlm-13b"],
@@ -311,4 +311,10 @@ register_model_info(
     "Mistral",
     "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
     "a large language model by Mistral AI team",
+)
+register_model_info(
+    ["deluxe-chat-v1"],
+    "DeluxeChat",
+    "",
+    "Deluxe Chat",
 )
