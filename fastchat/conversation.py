@@ -146,7 +146,7 @@ class Conversation:
                     else:
                         ret += role + " " + message + seps[i % 2]
                 else:
-                    ret += role
+                    ret += role + " "
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -906,6 +906,7 @@ register_conv_template(
     Conversation(
         name="jllama-2",
         system_template="<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="あなたは役立つアシスタントです。",
         messages=(),
         offset=0,
         sep_style=SeparatorStyle.JLLAMA2,
@@ -913,6 +914,7 @@ register_conv_template(
         sep=" ",
         sep2=" </s><s>",
         stop_token_ids=[2],
+        add_special_tokens=False,
     )
 )
 
