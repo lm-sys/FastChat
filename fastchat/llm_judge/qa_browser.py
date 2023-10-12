@@ -371,7 +371,6 @@ def build_demo():
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
 """
         )
-        build_question_selector_map()
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
         with gr.Tab("Pairwise Comparison"):
