@@ -28,7 +28,6 @@ class SeparatorStyle(IntEnum):
     PHOENIX = auto()
     ROBIN = auto()
     FALCON_CHAT = auto()
-    MISTRAL_INSTRUCT = auto()
 
 
 @dataclasses.dataclass
@@ -212,17 +211,6 @@ class Conversation:
                 else:
                     ret += role + ":"
 
-            return ret
-        elif self.sep_style == SeparatorStyle.MISTRAL_INSTRUCT:
-            ret = self.sep
-            for i, (role, message) in enumerate(self.messages):
-                if role == "user":
-                    if self.system_message and i == 0:
-                        ret += "[INST] " + system_prompt + " " + message + " [/INST]"
-                    else:
-                        ret += "[INST] " + message + " [/INST]"
-                elif role == "assistant" and message:
-                    ret += message + self.sep2 + " "
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -852,21 +840,16 @@ register_conv_template(
     )
 )
 
-# Mistral instruct template
+# Mistral template
 # source: https://docs.mistral.ai/llm/mistral-instruct-v0.1#chat-template
-# https://docs.mistral.ai/usage/guardrailing/
-# https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1/blob/main/tokenizer_config.json
 register_conv_template(
     Conversation(
-        name="mistral-instruct",
-        system_message="Always assist with care, respect, and truth. "
-        "Respond with utmost utility yet securely. "
-        "Avoid harmful, unethical, prejudiced, or negative content. "
-        "Ensure replies promote fairness and positivity.",
-        roles=("user", "assistant"),
-        sep_style=SeparatorStyle.MISTRAL_INSTRUCT,
-        sep="<s>",
-        sep2="</s>",
+        name="mistral",
+        system_template="",
+        roles=("[INST] ", " [/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep="",
+        sep2=" </s>",
     )
 )
 

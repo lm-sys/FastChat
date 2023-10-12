@@ -1283,11 +1283,11 @@ class StarChatAdapter(BaseModelAdapter):
         return get_conv_template("starchat")
 
 
-class MistralInstructAdapter(BaseModelAdapter):
-    """The model adapter for Mistral Instruct AI models"""
+class MistralAdapter(BaseModelAdapter):
+    """The model adapter for Mistral AI models"""
 
     def match(self, model_path: str):
-        return "mistral" in model_path.lower() and "instruct" in model_path.lower()
+        return "mistral" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1296,7 +1296,7 @@ class MistralInstructAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("mistral-instruct")
+        return get_conv_template("mistral")
 
 
 class Llama2Adapter(BaseModelAdapter):
@@ -1716,7 +1716,7 @@ register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
-register_model_adapter(MistralInstructAdapter)
+register_model_adapter(MistralAdapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(WizardCoderAdapter)
