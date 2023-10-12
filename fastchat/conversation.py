@@ -215,9 +215,12 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.MISTRAL_INSTRUCT:
             ret = self.sep
-            for role, message in self.messages:
+            for i, (role, message) in enumerate(self.messages):
                 if role == "user":
-                    ret += "[INST] " + message + " [/INST]"
+                    if self.system_message and i == 0:
+                        ret += "[INST] " + system_prompt + " " + message + " [/INST]"
+                    else:
+                        ret += "[INST] " + message + " [/INST]"
                 elif role == "assistant" and message:
                     ret += message + self.sep2 + " "
             return ret
