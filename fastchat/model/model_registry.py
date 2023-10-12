@@ -308,7 +308,7 @@ register_model_info(
 )
 register_model_info(
     ["mistral-7b-instruct"],
-    "Mistral",
+    "Mistral-Instruct",
     "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
     "a large language model by Mistral AI team",
 )
