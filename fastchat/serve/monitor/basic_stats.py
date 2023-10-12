@@ -6,22 +6,24 @@ import os
 from pytz import timezone
 import time
 
-import pandas as pd
+import pandas as pd  # pandas>=2.0.3
 import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
 
 
+NUM_SERVERS = 14
+
+
 def get_log_files(max_num_files=None):
     dates = []
-    for month in range(4, 8):
+    for month in range(4, 12):
         for day in range(1, 33):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 12
     filenames = []
     for d in dates:
-        for i in range(num_servers):
+        for i in range(NUM_SERVERS):
             name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)

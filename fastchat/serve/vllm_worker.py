@@ -40,6 +40,7 @@ class VLLMWorker(BaseModelWorker):
         limit_worker_concurrency: int,
         no_register: bool,
         llm_engine: AsyncLLMEngine,
+        conv_template: str,
     ):
         super().__init__(
             controller_addr,
@@ -48,6 +49,7 @@ class VLLMWorker(BaseModelWorker):
             model_path,
             model_names,
             limit_worker_concurrency,
+            conv_template,
         )
 
         logger.info(
@@ -69,16 +71,20 @@ class VLLMWorker(BaseModelWorker):
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
-        stop_token_ids.append(self.tokenizer.eos_token_id)
+        if self.tokenizer.eos_token_id is not None:
+            stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
 
         # Handle stop_str
-        if stop_str is None:
-            stop = []
-        else:
-            stop = [stop_str]
+        stop = set()
+        if isinstance(stop_str, str) and stop_str != "":
+            stop.add(stop_str)
+        elif isinstance(stop_str, list) and stop_str != []:
+            stop.update(stop_str)
+
         for tid in stop_token_ids:
-            stop.append(self.tokenizer.decode(tid))
+            if tid is not None:
+                stop.add(self.tokenizer.decode(tid))
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -89,7 +95,7 @@ class VLLMWorker(BaseModelWorker):
             temperature=temperature,
             top_p=top_p,
             use_beam_search=False,
-            stop=stop,
+            stop=list(stop),
             max_tokens=max_new_tokens,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
@@ -194,6 +200,9 @@ if __name__ == "__main__":
     parser.add_argument("--limit-worker-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument("--num-gpus", type=int, default=1)
+    parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
@@ -213,5 +222,6 @@ if __name__ == "__main__":
         args.limit_worker_concurrency,
         args.no_register,
         engine,
+        args.conv_template,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

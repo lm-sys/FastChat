@@ -54,6 +54,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.exllama import ExllamaConfig
 from fastchat.serve.inference import generate_stream
 from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
@@ -152,7 +153,7 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
-if __name__ == "__main__":
+def create_multi_model_worker():
     # Note: Ensure we resolve arg conflicts.  We let `add_model_args` add MOST
     # of the model args but we'll override one to have an append action that
     # supports multiple values.
@@ -178,6 +179,13 @@ if __name__ == "__main__":
         action="append",
         help="One or more model names.  Values must be aligned with `--model-path` values.",
     )
+    parser.add_argument(
+        "--conv-template",
+        type=str,
+        default=None,
+        action="append",
+        help="Conversation prompt template. Values must be aligned with `--model-path` values. If only one value is provided, it will be repeated for all models.",
+    )
     parser.add_argument("--limit-worker-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
@@ -197,13 +205,27 @@ if __name__ == "__main__":
         groupsize=args.gptq_groupsize,
         act_order=args.gptq_act_order,
     )
+    if args.enable_exllama:
+        exllama_config = ExllamaConfig(
+            max_seq_len=args.exllama_max_seq_len,
+            gpu_split=args.exllama_gpu_split,
+        )
+    else:
+        exllama_config = None
 
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
 
+    if args.conv_template is None:
+        args.conv_template = [None] * len(args.model_path)
+    elif len(args.conv_template) == 1:  # Repeat the same template
+        args.conv_template = args.conv_template * len(args.model_path)
+
     # Launch all workers
     workers = []
-    for model_path, model_names in zip(args.model_path, args.model_names):
+    for conv_template, model_path, model_names in zip(
+        args.conv_template, args.model_path, args.model_names
+    ):
         w = ModelWorker(
             args.controller_address,
             args.worker_address,
@@ -218,7 +240,9 @@ if __name__ == "__main__":
             load_8bit=args.load_8bit,
             cpu_offloading=args.cpu_offloading,
             gptq_config=gptq_config,
+            exllama_config=exllama_config,
             stream_interval=args.stream_interval,
+            conv_template=conv_template,
         )
         workers.append(w)
         for model_name in model_names:
@@ -238,4 +262,9 @@ if __name__ == "__main__":
     r = requests.post(url, json=data)
     assert r.status_code == 200
 
+    return args, workers
+
+
+if __name__ == "__main__":
+    args, workers = create_multi_model_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")

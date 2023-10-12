@@ -11,7 +11,13 @@ from torch import Tensor
 from torch.nn import functional as F
 import torch.nn as nn
 from tqdm import tqdm
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    AutoModel,
+    AutoModelForSeq2SeqLM,
+)
 
 
 @dataclasses.dataclass
@@ -102,46 +108,93 @@ def apply_compressed_weight(module, compressed_state_dict, target_device, prefix
 
 def load_compress_model(model_path, device, torch_dtype, use_fast, revision="main"):
     # partially load model
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path, use_fast=use_fast, revision=revision
-    )
-
+    # `use_fast=True`` is not supported for some models.
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=use_fast, revision=revision, trust_remote_code=True
+        )
+    except TypeError:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=~use_fast, revision=revision, trust_remote_code=True
+        )
     with init_empty_weights():
+        # `trust_remote_code` should be set as `True` for both AutoConfig and AutoModel
         config = AutoConfig.from_pretrained(
             model_path,
             low_cpu_mem_usage=True,
             torch_dtype=torch_dtype,
+            trust_remote_code=True,
             revision=revision,
         )
-        model = AutoModelForCausalLM.from_config(config)
+        # some models are loaded by AutoModel but not AutoModelForCausalLM,
+        # such as chatglm, chatglm2
+        try:
+            # google/flan-* models are based on an AutoModelForSeq2SeqLM.
+            if "T5Config" in str(type(config)):
+                model = AutoModelForSeq2SeqLM.from_config(
+                    config, trust_remote_code=True
+                )
+            else:
+                model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
+        except NameError:
+            model = AutoModel.from_config(config, trust_remote_code=True)
         linear_weights = get_compressed_list(model)
-
     if os.path.exists(model_path):
         # `model_path` is a local folder
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
     else:
         # `model_path` is a cached Hugging Face repo
-        model_path = snapshot_download(model_path, revision=revision)
+        # We don't necessarily need to download the model' repo again if there is a cache.
+        # So check the default huggingface cache first.
+        model_path_temp = os.path.join(
+            os.path.expanduser("~"),
+            ".cache/huggingface/hub",
+            "models--" + model_path.replace("/", "--"),
+            "snapshots/",
+        )
+        downloaded = False
+        if os.path.exists(model_path_temp):
+            temp_last_dir = os.listdir(model_path_temp)[-1]
+            model_path_temp = os.path.join(model_path_temp, temp_last_dir)
+            base_pattern = os.path.join(model_path_temp, "pytorch_model*.bin")
+            files = glob.glob(base_pattern)
+            if len(files) > 0:
+                downloaded = True
+
+        if downloaded:
+            model_path = model_path_temp
+        else:
+            model_path = snapshot_download(model_path, revision=revision)
         base_pattern = os.path.join(model_path, "pytorch_model*.bin")
 
     files = glob.glob(base_pattern)
+    if len(files) == 0:
+        raise ValueError(
+            f"Cannot find any model weight files. "
+            f"Please check your (cached) weight path: {model_path}"
+        )
 
     compressed_state_dict = {}
-
     for filename in tqdm(files):
-        tmp_state_dict = torch.load(filename)
+        tmp_state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
         for name in tmp_state_dict:
             if name in linear_weights:
-                tensor = tmp_state_dict[name].to(device).data.to(torch_dtype)
+                tensor = tmp_state_dict[name].to(device, dtype=torch_dtype)
                 compressed_state_dict[name] = compress(
                     tensor, default_compression_config
                 )
             else:
-                compressed_state_dict[name] = tmp_state_dict[name].to(device)
+                compressed_state_dict[name] = tmp_state_dict[name].to(
+                    device, dtype=torch_dtype
+                )
             tmp_state_dict[name] = None
             tensor = None
             gc.collect()
             torch.cuda.empty_cache()
+            if device == "xpu":
+                torch.xpu.empty_cache()
+            if device == "npu":
+                torch.npu.empty_cache()
 
     for name in model.state_dict():
         if name not in linear_weights:
@@ -150,7 +203,10 @@ def load_compress_model(model_path, device, torch_dtype, use_fast, revision="mai
             )
     apply_compressed_weight(model, compressed_state_dict, device)
 
+    if torch_dtype == torch.float16:
+        model.half()
     model.to(device)
+    model.eval()
 
     return model, tokenizer
 

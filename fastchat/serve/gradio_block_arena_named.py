@@ -24,7 +24,8 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    learn_more_md,
+    invisible_btn,
+    acknowledgment_md,
     get_model_description_md,
     ip_expiration_dict,
 )
@@ -50,7 +51,7 @@ def load_demo_side_by_side_named(models, url_params):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8, 4, 2, 1] + [1] * 32)[: len(models) - 1]
+        weights = ([8] * 4 + [4] * 8 + [1] * 32)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
@@ -61,18 +62,7 @@ def load_demo_side_by_side_named(models, url_params):
         gr.Dropdown.update(choices=models, value=model_right, visible=True),
     )
 
-    return (
-        states
-        + selector_updates
-        + (gr.Chatbot.update(visible=True),) * num_sides
-        + (
-            gr.Textbox.update(visible=True),
-            gr.Box.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True),
-        )
-    )
+    return states + selector_updates
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
@@ -137,7 +127,13 @@ def regenerate(state0, state1, request: gr.Request):
 
 def clear_history(request: gr.Request):
     logger.info(f"clear_history (named). ip: {request.client.host}")
-    return [None] * num_sides + [None] * num_sides + [""] + [disable_btn] * 6
+    return (
+        [None] * num_sides
+        + [None] * num_sides
+        + [""]
+        + [invisible_btn] * 4
+        + [disable_btn] * 2
+    )
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
@@ -291,25 +287,26 @@ def flash_buttons():
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
     ]
-    for i in range(10):
+    for i in range(4):
         yield btn_updates[i % 2]
-        time.sleep(0.2)
+        time.sleep(0.5)
 
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ 
+# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
+| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
-- You can do multiple rounds of conversations before voting.
+- You can do multiple turns of conversations before voting.
 - Click "Clear history" to start a new round.
-- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.** The demo works better on desktop devices with a wide screen.
+### Leaderboard
+See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
 
-### Choose two models to chat with (view [leaderboard](?leaderboard))
+### Choose two models to chat with
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -338,33 +335,38 @@ By using this service, users are required to agree to the following terms: The s
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", visible=False, height=550
+                        label=label, elem_id=f"chatbot", height=550
                     )
 
-        with gr.Box() as button_row:
-            with gr.Row():
-                leftvote_btn = gr.Button(value="👈  A is better", interactive=False)
-                rightvote_btn = gr.Button(value="👉  B is better", interactive=False)
-                tie_btn = gr.Button(value="🤝  Tie", interactive=False)
-                bothbad_btn = gr.Button(value="👎  Both are bad", interactive=False)
+        with gr.Row():
+            leftvote_btn = gr.Button(
+                value="👈  A is better", visible=False, interactive=False
+            )
+            rightvote_btn = gr.Button(
+                value="👉  B is better", visible=False, interactive=False
+            )
+            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+            bothbad_btn = gr.Button(
+                value="👎  Both are bad", visible=False, interactive=False
+            )
 
     with gr.Row():
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter text and press ENTER",
-                visible=False,
+                placeholder="Enter your prompt here and press ENTER",
                 container=False,
+                elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", visible=False)
+            send_btn = gr.Button(value="Send", variant="primary")
 
-    with gr.Row() as button_row2:
+    with gr.Row() as button_row:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False, visible=True) as parameter_row:
+    with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -390,7 +392,7 @@ By using this service, users are required to agree to the following terms: The s
             label="Max output tokens",
         )
 
-    gr.Markdown(learn_more_md)
+    gr.Markdown(acknowledgment_md)
 
     # Register listeners
     btn_list = [
@@ -482,13 +484,4 @@ function (a, b, c, d) {
         flash_buttons, [], btn_list
     )
 
-    return (
-        states,
-        model_selectors,
-        chatbots,
-        textbox,
-        send_btn,
-        button_row,
-        button_row2,
-        parameter_row,
-    )
+    return states + model_selectors

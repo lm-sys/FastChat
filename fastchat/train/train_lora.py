@@ -1,6 +1,6 @@
 # Usage: deepspeed train_lora.py --deepspeed <$PATH_TO_DEEPSPEED_CONFIG>
 
-# Adopted from tatsu-lab@stanford_alpaca. Below is the original copyright:
+# Adapted from tatsu-lab@stanford_alpaca. Below is the original copyright:
 #    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,6 @@ import torch
 from fastchat.train.train import (
     DataArguments,
     ModelArguments,
-    TrainingArguments,
     make_supervised_data_module,
 )
 
@@ -39,7 +38,18 @@ from fastchat.train.llama_flash_attn_monkey_patch import (
     replace_llama_attn_with_flash_attn,
 )
 
-replace_llama_attn_with_flash_attn()
+
+@dataclass
+class TrainingArguments(transformers.TrainingArguments):
+    cache_dir: typing.Optional[str] = field(default=None)
+    optim: str = field(default="adamw_torch")
+    model_max_length: int = field(
+        default=512,
+        metadata={
+            "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
+        },
+    )
+    flash_attn: bool = False
 
 
 @dataclass
@@ -102,6 +112,9 @@ def train():
         lora_args,
     ) = parser.parse_args_into_dataclasses()
 
+    if training_args.flash_attn:
+        replace_llama_attn_with_flash_attn()
+
     device_map = None
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
@@ -150,6 +163,13 @@ def train():
             model.model_parallel = True
 
     model = get_peft_model(model, lora_config)
+    if training_args.flash_attn:
+        for name, module in model.named_modules():
+            if "norm" in name:
+                module = module.to(compute_dtype)
+            if "lm_head" in name or "embed_tokens" in name:
+                if hasattr(module, "weight"):
+                    module = module.to(compute_dtype)
     if training_args.deepspeed is not None and training_args.local_rank == 0:
         model.print_trainable_parameters()
 

@@ -14,9 +14,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import copy
 from dataclasses import dataclass, field
 import json
+import math
 import pathlib
 from typing import Dict, Optional, Sequence
 
@@ -43,6 +43,9 @@ class DataArguments:
     data_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
     )
+    eval_data_path: str = field(
+        default=None, metadata={"help": "Path to the evaluation data."}
+    )
     lazy_preprocess: bool = False
 
 
@@ -66,13 +69,15 @@ def rank0_print(*args):
         print(*args)
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-    """Collects the state dict and dump to disk."""
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
+def trainer_save_model_safe(trainer: transformers.Trainer):
+    from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+    from torch.distributed.fsdp import StateDictType, FullStateDictConfig
+
+    save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+    with FSDP.state_dict_type(
+        trainer.model, StateDictType.FULL_STATE_DICT, save_policy
+    ):
+        trainer.save_model()
 
 
 def preprocess(
@@ -125,12 +130,20 @@ def preprocess(
             if len(parts) != 2:
                 break
             parts[0] += sep
-            # "-2" is hardcoded for the LLaMA tokenizer to make the offset correct.
+            # "-2" is hardcoded for the Llama tokenizer to make the offset correct.
             instruction_len = len(tokenizer(parts[0]).input_ids) - 2
+
+            if i != 0 and not tokenizer.legacy:
+                # The legacy and non-legacy modes handle special tokens differently
+                instruction_len -= 1
 
             # Ignore the user instructions
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
             cur_len += turn_len
+
+            if i != 0 and not tokenizer.legacy:
+                # The legacy and non-legacy modes handle special tokens differently
+                cur_len -= 1
 
         target[cur_len:] = IGNORE_TOKEN_ID
 
@@ -138,13 +151,14 @@ def preprocess(
             z = target.clone()
             z = torch.where(z == IGNORE_TOKEN_ID, tokenizer.unk_token_id, z)
             rank0_print(tokenizer.decode(z))
+            exit()
 
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_TOKEN_ID
                 rank0_print(
                     f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
-                    f" (ignored)"
+                    f" #turn = {len(turns) - 1}. (ignored)"
                 )
 
     return dict(
@@ -217,20 +231,16 @@ def make_supervised_data_module(
         LazySupervisedDataset if data_args.lazy_preprocess else SupervisedDataset
     )
     rank0_print("Loading data...")
-    raw_data = json.load(open(data_args.data_path, "r"))
 
-    # Split train/test
-    np.random.seed(0)
-    perm = np.random.permutation(len(raw_data))
-    split = int(len(perm) * 0.98)
-    train_indices = perm[:split]
-    eval_indices = perm[split:]
-    train_raw_data = [raw_data[i] for i in train_indices]
-    eval_raw_data = [raw_data[i] for i in eval_indices]
-    rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
+    train_json = json.load(open(data_args.data_path, "r"))
+    train_dataset = dataset_cls(train_json, tokenizer=tokenizer)
 
-    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
-    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
+    if data_args.eval_data_path:
+        eval_json = json.load(open(data_args.eval_data_path, "r"))
+        eval_dataset = dataset_cls(eval_json, tokenizer=tokenizer)
+    else:
+        eval_dataset = None
+
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
@@ -242,11 +252,24 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
-    model = transformers.AutoModelForCausalLM.from_pretrained(
+
+    # Set RoPE scaling factor
+    config = transformers.AutoConfig.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
     )
-    model.config.use_cache = False
+    orig_ctx_len = getattr(config, "max_position_embeddings", None)
+    if orig_ctx_len and training_args.model_max_length > orig_ctx_len:
+        scaling_factor = float(math.ceil(training_args.model_max_length / orig_ctx_len))
+        config.rope_scaling = {"type": "linear", "factor": scaling_factor}
+    config.use_cache = False
+
+    # Load model and tokenizer
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+        model_args.model_name_or_path,
+        config=config,
+        cache_dir=training_args.cache_dir,
+    )
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
@@ -256,17 +279,22 @@ def train():
     )
     tokenizer.pad_token = tokenizer.unk_token
 
+    # Load data
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+
+    # Start trainner
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
-
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
+
+    # Save model
+    model.config.use_cache = True
     trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+    trainer_save_model_safe(trainer)
 
 
 if __name__ == "__main__":

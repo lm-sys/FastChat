@@ -1,3 +1,7 @@
+"""
+Global constants.
+"""
+
 from enum import IntEnum
 import os
 
@@ -11,13 +15,15 @@ MODERATION_MSG = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE 
 CONVERSATION_LIMIT_MSG = "YOU HAVE REACHED THE CONVERSATION LENGTH LIMIT. PLEASE CLEAR HISTORY AND START A NEW CONVERSATION."
 INACTIVE_MSG = "THIS SESSION HAS BEEN INACTIVE FOR TOO LONG. PLEASE REFRESH THIS PAGE."
 # Maximum input length
-INPUT_CHAR_LEN_LIMIT = int(os.getenv("FASTCHAT_INPUT_CHAR_LEN_LIMIT", 2560))
+INPUT_CHAR_LEN_LIMIT = int(os.getenv("FASTCHAT_INPUT_CHAR_LEN_LIMIT", 3072))
 # Maximum conversation turns
 CONVERSATION_TURN_LIMIT = 50
 # Session expiration time
 SESSION_EXPIRATION_TIME = 3600
 # The output dir of log files
-LOGDIR = "."
+LOGDIR = os.getenv("LOGDIR", ".")
+# CPU Instruction Set Architecture
+CPU_ISA = os.getenv("CPU_ISA")
 
 
 ##### For the controller and workers (could be overwritten through ENV variables.)

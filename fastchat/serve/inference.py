@@ -1,7 +1,9 @@
 """Inference for FastChat models."""
 import abc
 import gc
+import json
 import math
+import os
 import sys
 import time
 from typing import Iterable, Optional, Dict
@@ -33,7 +35,9 @@ from fastchat.model.model_adapter import (
     get_conversation_template,
     get_generate_stream_function,
 )
+from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
+from fastchat.modules.exllama import ExllamaConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
@@ -63,6 +67,9 @@ def generate_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
+    if hasattr(model, "device"):
+        device = model.device
+
     # Read parameters
     prompt = params["prompt"]
     len_prompt = len(prompt)
@@ -74,21 +81,21 @@ def generate_stream(
     echo = bool(params.get("echo", True))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
-    stop_token_ids.append(tokenizer.eos_token_id)
+    if tokenizer.eos_token_id not in stop_token_ids:
+        stop_token_ids.append(tokenizer.eos_token_id)
 
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
     )
-
     input_ids = tokenizer(prompt).input_ids
-    output_ids = list(input_ids)
 
     if model.config.is_encoder_decoder:
         max_src_len = context_len
     else:  # truncate
-        max_src_len = context_len - max_new_tokens - 8
+        max_src_len = context_len - max_new_tokens - 1
 
     input_ids = input_ids[-max_src_len:]
+    output_ids = list(input_ids)
     input_echo_len = len(input_ids)
 
     if model.config.is_encoder_decoder:
@@ -103,6 +110,7 @@ def generate_stream(
 
     past_key_values = out = None
     sent_interrupt = False
+    finish_reason = None
     for i in range(max_new_tokens):
         if i == 0:  # prefill
             if model.config.is_encoder_decoder:
@@ -120,7 +128,8 @@ def generate_stream(
             if model.config.is_encoder_decoder:
                 out = model.decoder(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids], device=device
+                        [[token] if not sent_interrupt else output_ids],
+                        device=device,
                     ),
                     encoder_hidden_states=encoder_output,
                     use_cache=True,
@@ -132,7 +141,8 @@ def generate_stream(
             else:
                 out = model(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids], device=device
+                        [[token] if not sent_interrupt else output_ids],
+                        device=device,
                     ),
                     use_cache=True,
                     past_key_values=past_key_values if not sent_interrupt else None,
@@ -233,12 +243,11 @@ def generate_stream(
             break
 
     # Finish stream event, which contains finish reason
-    if i == max_new_tokens - 1:
-        finish_reason = "length"
-    elif stopped:
-        finish_reason = "stop"
     else:
-        finish_reason = None
+        finish_reason = "length"
+
+    if stopped:
+        finish_reason = "stop"
 
     yield {
         "text": output,
@@ -254,6 +263,10 @@ def generate_stream(
     del past_key_values, out
     gc.collect()
     torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()
+    if device == "npu":
+        torch.npu.empty_cache()
 
 
 class ChatIO(abc.ABC):
@@ -269,36 +282,47 @@ class ChatIO(abc.ABC):
     def stream_output(self, output_stream):
         """Stream output."""
 
+    @abc.abstractmethod
+    def print_output(self, text: str):
+        """Print output."""
+
 
 def chat_loop(
     model_path: str,
     device: str,
     num_gpus: int,
     max_gpu_memory: str,
+    dtype: Optional[torch.dtype],
     load_8bit: bool,
     cpu_offloading: bool,
     conv_template: Optional[str],
+    conv_system_msg: Optional[str],
     temperature: float,
     repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
-    gptq_config: GptqConfig,
-    revision: str,
-    judge_sent_end: bool,
-    debug: bool,
+    gptq_config: Optional[GptqConfig] = None,
+    awq_config: Optional[AWQConfig] = None,
+    exllama_config: Optional[ExllamaConfig] = None,
+    revision: str = "main",
+    judge_sent_end: bool = True,
+    debug: bool = True,
     history: bool = True,
 ):
     # Model
     model, tokenizer = load_model(
         model_path,
-        device,
-        num_gpus,
-        max_gpu_memory,
-        load_8bit,
-        cpu_offloading,
-        gptq_config,
-        revision,
-        debug,
+        device=device,
+        num_gpus=num_gpus,
+        max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
+        load_8bit=load_8bit,
+        cpu_offloading=cpu_offloading,
+        gptq_config=gptq_config,
+        awq_config=awq_config,
+        exllama_config=exllama_config,
+        revision=revision,
+        debug=debug,
     )
     generate_stream_func = get_generate_stream_function(model, model_path)
 
@@ -319,7 +343,17 @@ def chat_loop(
             conv = get_conv_template(conv_template)
         else:
             conv = get_conversation_template(model_path)
+        if conv_system_msg is not None:
+            conv.set_system_message(conv_system_msg)
         return conv
+
+    def reload_conv(conv):
+        """
+        Reprints the conversation from the start.
+        """
+        for message in conv.messages[conv.offset :]:
+            chatio.prompt_for_output(message[0])
+            chatio.print_output(message[1])
 
     conv = None
 
@@ -335,10 +369,85 @@ def chat_loop(
         if inp == "!!exit" or not inp:
             print("exit...")
             break
-
-        if inp == "!!reset":
+        elif inp == "!!reset":
             print("resetting...")
             conv = new_chat()
+            continue
+        elif inp == "!!remove":
+            print("removing last message...")
+            if len(conv.messages) > conv.offset:
+                # Assistant
+                if conv.messages[-1][0] == conv.roles[1]:
+                    conv.messages.pop()
+                # User
+                if conv.messages[-1][0] == conv.roles[0]:
+                    conv.messages.pop()
+                reload_conv(conv)
+            else:
+                print("No messages to remove.")
+            continue
+        elif inp == "!!regen":
+            print("regenerating last message...")
+            if len(conv.messages) > conv.offset:
+                # Assistant
+                if conv.messages[-1][0] == conv.roles[1]:
+                    conv.messages.pop()
+                # User
+                if conv.messages[-1][0] == conv.roles[0]:
+                    reload_conv(conv)
+                    # Set inp to previous message
+                    inp = conv.messages.pop()[1]
+                else:
+                    # Shouldn't happen in normal circumstances
+                    print("No user message to regenerate from.")
+                    continue
+            else:
+                print("No messages to regenerate.")
+                continue
+        elif inp.startswith("!!save"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!save <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            # Add .json if extension not present
+            if not "." in filename:
+                filename += ".json"
+
+            print("saving...", filename)
+            with open(filename, "w") as outfile:
+                json.dump(conv.dict(), outfile)
+            continue
+        elif inp.startswith("!!load"):
+            args = inp.split(" ", 1)
+
+            if len(args) != 2:
+                print("usage: !!load <filename>")
+                continue
+            else:
+                filename = args[1]
+
+            # Check if file exists and add .json if needed
+            if not os.path.exists(filename):
+                if (not filename.endswith(".json")) and os.path.exists(
+                    filename + ".json"
+                ):
+                    filename += ".json"
+                else:
+                    print("file not found:", filename)
+                    continue
+
+            print("loading...", filename)
+            with open(filename, "r") as infile:
+                new_conv = json.load(infile)
+
+            conv = get_conv_template(new_conv["template_name"])
+            conv.set_system_message(new_conv["system_message"])
+            conv.messages = new_conv["messages"]
+            reload_conv(conv)
             continue
 
         conv.append_message(conv.roles[0], inp)
@@ -359,26 +468,38 @@ def chat_loop(
             "echo": False,
         }
 
-        chatio.prompt_for_output(conv.roles[1])
-        output_stream = generate_stream_func(
-            model,
-            tokenizer,
-            gen_params,
-            device,
-            context_len=context_len,
-            judge_sent_end=judge_sent_end,
-        )
-        t = time.time()
-        outputs = chatio.stream_output(output_stream)
-        duration = time.time() - t
-        conv.update_last_message(outputs.strip())
+        try:
+            chatio.prompt_for_output(conv.roles[1])
+            output_stream = generate_stream_func(
+                model,
+                tokenizer,
+                gen_params,
+                device,
+                context_len=context_len,
+                judge_sent_end=judge_sent_end,
+            )
+            t = time.time()
+            outputs = chatio.stream_output(output_stream)
+            duration = time.time() - t
+            conv.update_last_message(outputs.strip())
 
-        if debug:
-            num_tokens = len(tokenizer.encode(outputs))
-            msg = {
-                "conv_template": conv.name,
-                "prompt": prompt,
-                "outputs": outputs,
-                "speed (token/s)": round(num_tokens / duration, 2),
-            }
-            print(f"\n{msg}\n")
+            if debug:
+                num_tokens = len(tokenizer.encode(outputs))
+                msg = {
+                    "conv_template": conv.name,
+                    "prompt": prompt,
+                    "outputs": outputs,
+                    "speed (token/s)": round(num_tokens / duration, 2),
+                }
+                print(f"\n{msg}\n")
+
+        except KeyboardInterrupt:
+            print("stopped generation.")
+            # If generation didn't finish
+            if conv.messages[-1][1] is None:
+                conv.messages.pop()
+                # Remove last user message, so there isn't a double up
+                if conv.messages[-1][0] == conv.roles[0]:
+                    conv.messages.pop()
+
+                reload_conv(conv)

@@ -132,7 +132,8 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         user_prompt = judge.prompt_template["prompt_template"].format(
@@ -153,7 +154,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
 
     system_prompt = judge.prompt_template["system_prompt"]
     conv = get_conversation_template(model)
-    conv.system = system_prompt
+    conv.set_system_message(system_prompt)
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
@@ -231,7 +232,8 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         system_prompt = judge.prompt_template["system_prompt"]
@@ -260,7 +262,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     conv.append_message(conv.roles[1], None)
 
     if model in ["gpt-3.5-turbo", "gpt-4"]:
-        conv.system = system_prompt
+        conv.set_system_message(system_prompt)
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ["claude-v1", "claude-instant-v1"]:
         if system_prompt != "You are a helpful assistant.":
@@ -404,6 +406,35 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
             messages = conv.to_openai_api_messages()
             response = openai.ChatCompletion.create(
                 model=model,
+                messages=messages,
+                n=1,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            output = response["choices"][0]["message"]["content"]
+            break
+        except openai.error.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+
+    return output
+
+
+def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
+    openai.api_type = "azure"
+    openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+    openai.api_key = os.environ["AZURE_OPENAI_KEY"]
+    openai.api_version = "2023-05-15"
+
+    if "azure-" in model:
+        model = model[6:]
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            messages = conv.to_openai_api_messages()
+            response = openai.ChatCompletion.create(
+                engine=model,
                 messages=messages,
                 n=1,
                 temperature=temperature,

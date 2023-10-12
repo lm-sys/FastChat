@@ -8,6 +8,7 @@ import dataclasses
 from enum import Enum, auto
 import json
 import logging
+import os
 import time
 from typing import List, Union
 import threading
@@ -56,7 +57,7 @@ class WorkerInfo:
 def heart_beat_controller(controller):
     while True:
         time.sleep(CONTROLLER_HEART_BEAT_EXPIRATION)
-        controller.remove_stable_workers_by_expiration()
+        controller.remove_stale_workers_by_expiration()
 
 
 class Controller:
@@ -189,7 +190,7 @@ class Controller:
         logger.info(f"Receive heart beat. {worker_name}")
         return True
 
-    def remove_stable_workers_by_expiration(self):
+    def remove_stale_workers_by_expiration(self):
         expire = time.time() - CONTROLLER_HEART_BEAT_EXPIRATION
         to_delete = []
         for worker_name, w_info in self.worker_info.items():
@@ -199,7 +200,7 @@ class Controller:
         for worker_name in to_delete:
             self.remove_worker(worker_name)
 
-    def handle_no_worker(params):
+    def handle_no_worker(self, params):
         logger.info(f"no worker: {params['model']}")
         ret = {
             "text": SERVER_ERROR_MSG,
@@ -207,7 +208,7 @@ class Controller:
         }
         return json.dumps(ret).encode() + b"\0"
 
-    def handle_worker_timeout(worker_address):
+    def handle_worker_timeout(self, worker_address):
         logger.info(f"worker timeout: {worker_address}")
         ret = {
             "text": SERVER_ERROR_MSG,
@@ -229,8 +230,9 @@ class Controller:
                 speed += worker_status["speed"]
                 queue_length += worker_status["queue_length"]
 
+        model_names = sorted(list(model_names))
         return {
-            "model_names": list(model_names),
+            "model_names": model_names,
             "speed": speed,
             "queue_length": queue_length,
         }
@@ -302,7 +304,12 @@ async def worker_api_get_status(request: Request):
     return controller.worker_api_get_status()
 
 
-if __name__ == "__main__":
+@app.get("/test_connection")
+async def worker_api_get_status(request: Request):
+    return "success"
+
+
+def create_controller():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
@@ -312,8 +319,30 @@ if __name__ == "__main__":
         choices=["lottery", "shortest_queue"],
         default="shortest_queue",
     )
+    parser.add_argument(
+        "--ssl",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     controller = Controller(args.dispatch_method)
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    return args, controller
+
+
+if __name__ == "__main__":
+    args, controller = create_controller()
+    if args.ssl:
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            ssl_keyfile=os.environ["SSL_KEYFILE"],
+            ssl_certfile=os.environ["SSL_CERTFILE"],
+        )
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")

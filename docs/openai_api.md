@@ -1,4 +1,4 @@
-# OpenAI-Compatible RESTful APIs & SDK
+# OpenAI-Compatible RESTful APIs
 
 FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
 The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
@@ -40,7 +40,9 @@ pip install --upgrade openai
 Then, interact with model vicuna:
 ```python
 import openai
-openai.api_key = "EMPTY" # Not support yet
+# to get proper authentication, make sure to use a valid key that's listed in
+# the --api-keys flag. if no flag value is provided, the `api_key` will be ignored.
+openai.api_key = "EMPTY"
 openai.api_base = "http://localhost:8000/v1"
 
 model = "vicuna-7b-v1.3"
@@ -60,7 +62,7 @@ completion = openai.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
-Streaming is also supported. See [test_openai_api.py](../tests/test_openai_api.py).
+Streaming is also supported. See [test_openai_api.py](../tests/test_openai_api.py).  If your api server is behind a proxy you'll need to turn off buffering, you can do so in Nginx by setting `proxy_buffering off;` in the location block for the proxy.
 
 ### cURL
 cURL is another good tool for observing the output of the api.
@@ -146,5 +148,4 @@ Some features to be implemented:
 - [ ] Support more parameters like `logprobs`, `logit_bias`, `user`, `presence_penalty` and `frequency_penalty`
 - [ ] Model details (permissions, owner and create time)
 - [ ] Edits API
-- [ ] Authentication and API key
 - [ ] Rate Limitation Settings

@@ -1,9 +1,12 @@
+"""
+Hardcoded question and answers.
+"""
 import json
 
 
 def identity_questions():
     """ "
-    Adopted from https://github.com/young-geng/koala_data_pipeline/blob/main/process_hard_coded_data.py
+    Adapted from https://github.com/young-geng/koala_data_pipeline/blob/main/process_hard_coded_data.py
     """
     content = []
 

@@ -9,6 +9,7 @@ import os
 import time
 import concurrent.futures
 
+import openai
 import shortuuid
 import tqdm
 
@@ -43,9 +44,7 @@ def get_answer(
             conv.append_message(conv.roles[0], question["turns"][j])
             conv.append_message(conv.roles[1], None)
 
-            if model in ["gpt-3.5-turbo", "gpt-4"]:
-                output = chat_compeletion_openai(model, conv, temperature, max_tokens)
-            elif model in ["claude-v1", "claude-instant-v1"]:
+            if model in ["claude-v1", "claude-instant-v1"]:
                 output = chat_compeletion_anthropic(
                     model, conv, temperature, max_tokens
                 )
@@ -54,7 +53,7 @@ def get_answer(
                     chat_state, model, conv, temperature, max_tokens
                 )
             else:
-                raise ValueError(f"Invalid judge model name: {model}")
+                output = chat_compeletion_openai(model, conv, temperature, max_tokens)
 
             conv.update_last_message(output)
             turns.append(output)
@@ -111,7 +110,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--parallel", type=int, default=1, help="The number of concurrent API calls."
     )
+    parser.add_argument("--openai-api-base", type=str, default=None)
     args = parser.parse_args()
+
+    if args.openai_api_base is not None:
+        openai.api_base = args.openai_api_base
 
     question_file = f"data/{args.bench_name}/question.jsonl"
     questions = load_questions(question_file, args.question_begin, args.question_end)
