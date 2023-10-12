@@ -846,10 +846,10 @@ register_conv_template(
     Conversation(
         name="mistral",
         system_template="",
-        roles=("[INST] ", " [/INST]"),
+        roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
-        sep="",
-        sep2=" </s>",
+        sep=" ",
+        sep2="</s>",
     )
 )
 
