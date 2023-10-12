@@ -110,7 +110,21 @@ class VLLMWorker(BaseModelWorker):
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
             # Note: usage is not supported yet
-            ret = {"text": text_outputs, "error_code": 0, "usage": {}}
+            ret = {
+                "text": text_outputs,
+                "error_code": 0,
+                "usage": {},
+                "cumulative_logprob": [
+                    output.cumulative_logprob for output in request_output.outputs
+                ],
+                "prompt_token_len": len(request_output.prompt_token_ids),
+                "output_token_len": [
+                    len(output.token_ids) for output in request_output.outputs
+                ],
+                "finish_reason": [
+                    output.finish_reason for output in request_output.outputs
+                ],
+            }
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):
