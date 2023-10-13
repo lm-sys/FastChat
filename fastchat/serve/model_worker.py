@@ -3,28 +3,12 @@ A model worker that executes the model.
 """
 import argparse
 import base64
-import dataclasses
 import gc
 import json
 import os
 from typing import List, Optional
 import uuid
 
-
-try:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LlamaTokenizer,
-        AutoModel,
-    )
-except ImportError:
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        LLaMATokenizer,
-        AutoModel,
-    )
 import torch
 import torch.nn.functional as F
 from transformers import set_seed
@@ -36,17 +20,15 @@ from fastchat.model.model_adapter import (
     add_model_args,
     get_generate_stream_function,
 )
-from fastchat.serve.base_model_worker import BaseModelWorker, app
-from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.gptq import GptqConfig
+from fastchat.serve.base_model_worker import BaseModelWorker, app
 from fastchat.utils import (
     build_logger,
     get_context_length,
     str_to_torch_dtype,
 )
-from fastchat.utils import build_logger, get_context_length
 
 
 worker_id = str(uuid.uuid4())[:8]
