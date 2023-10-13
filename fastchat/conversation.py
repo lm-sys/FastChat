@@ -54,8 +54,6 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
-    # Tags to be used in the template
-    tags: Tuple[str] = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -130,7 +128,7 @@ class Conversation:
             else:
                 ret = "[INST] "
             for i, (role, message) in enumerate(self.messages):
-                tag = self.tags[i % 2]
+                tag = self.roles[i % 2]
                 if message:
                     if i == 0:
                         ret += message + " "
@@ -269,7 +267,6 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
-            tags=self.tags,
         )
 
     def dict(self):
@@ -850,7 +847,7 @@ register_conv_template(
     Conversation(
         name="mistral",
         system_template="",
-        tags=("[INST]", "[/INST]"),
+        roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2="</s>",
@@ -864,7 +861,7 @@ register_conv_template(
     Conversation(
         name="llama-2",
         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
-        tags=("[INST]", "[/INST]"),
+        roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",

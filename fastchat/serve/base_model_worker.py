@@ -2,7 +2,6 @@ import asyncio
 import threading
 import time
 from typing import List
-import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -13,7 +12,6 @@ from fastchat.conversation import Conversation
 from fastchat.utils import pretty_print_semaphore, build_logger
 
 
-worker_id = str(uuid.uuid4())[:8]
 worker = None
 logger = None
 
@@ -56,7 +54,7 @@ class BaseModelWorker:
         self.heart_beat_thread = None
 
         if logger is None:
-            logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
+            logger = build_logger("model_worker", f"model_worker_{self.worker_id}.log")
         if worker is None:
             worker = self
 
