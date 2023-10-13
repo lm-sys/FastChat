@@ -121,9 +121,9 @@ class VLLMWorker(BaseModelWorker):
                 "output_token_len": [
                     len(output.token_ids) for output in request_output.outputs
                 ],
-                "finish_reason": [
-                    output.finish_reason for output in request_output.outputs
-                ],
+                "finish_reason": request_output.outputs[0].finish_reason
+                if len(request_output.outputs) == 1
+                else [output.finish_reason for output in request_output.outputs],
             }
             yield (json.dumps(ret) + "\0").encode()
 

@@ -104,7 +104,7 @@ class RichChatIO(ChatIO):
         return prompt_input
 
     def prompt_for_output(self, role: str):
-        self._console.print(f"[bold]{role}:")
+        self._console.print(f"[bold]{role.replace('/', '|')}:")
 
     def stream_output(self, output_stream):
         """Stream output from a role."""
