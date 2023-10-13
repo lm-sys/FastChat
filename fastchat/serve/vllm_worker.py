@@ -18,8 +18,8 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
+from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
-    BaseModelWorker,
     logger,
     worker_id,
 )
