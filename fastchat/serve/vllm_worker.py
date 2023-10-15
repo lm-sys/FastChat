@@ -74,6 +74,8 @@ class VLLMWorker(BaseModelWorker):
         if self.tokenizer.eos_token_id is not None:
             stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
+        use_beam_search = params.get("use_beam_search", False)
+        best_of = params.get("best_of", None)
 
         # Handle stop_str
         stop = set()
@@ -94,9 +96,10 @@ class VLLMWorker(BaseModelWorker):
             n=1,
             temperature=temperature,
             top_p=top_p,
-            use_beam_search=False,
+            use_beam_search=use_beam_search,
             stop=list(stop),
             max_tokens=max_new_tokens,
+            best_of=best_of,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
