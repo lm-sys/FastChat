@@ -1671,6 +1671,7 @@ class ZephyrAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zephyr")
 
+
 class XwinLMAdapter(BaseModelAdapter):
     """The model adapter for Xwin-LM V0.1 and V0.2 series of models(e.g., Xwin-LM/Xwin-LM-70B-V0.1)"""
 

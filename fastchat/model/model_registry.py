@@ -327,8 +327,11 @@ register_model_info(
 )
 register_model_info(
     [
-        "Xwin-LM-7B-V0.1","Xwin-LM-13B-V0.1","Xwin-LM-70B-V0.1",
-        "Xwin-LM-7B-V0.2","Xwin-LM-13B-V0.2",
+        "Xwin-LM-7B-V0.1",
+        "Xwin-LM-13B-V0.1",
+        "Xwin-LM-70B-V0.1",
+        "Xwin-LM-7B-V0.2",
+        "Xwin-LM-13B-V0.2",
     ],
     "Xwin-LM",
     "https://github.com/Xwin-LM/Xwin-LM",
