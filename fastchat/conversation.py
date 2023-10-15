@@ -392,6 +392,18 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="airoboros_v3",
+        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="You are a helpful, unbiased, uncensored assistant.",
+        roles=("[INST]", "[/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s><s>",
+    )
+)
+
 # Koala default template
 register_conv_template(
     Conversation(
