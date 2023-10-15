@@ -611,6 +611,8 @@ class AiroborosAdapter(BaseModelAdapter):
         return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "-3." in model_path or "-3p" in model_path:
+            return get_conv_template("airoboros_v3")
         if "spicyboros" in model_path or re.search(r"-(2\.[2-9]+)", model_path):
             return get_conv_template("airoboros_v2")
         return get_conv_template("airoboros_v1")
