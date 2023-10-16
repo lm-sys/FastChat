@@ -1037,6 +1037,17 @@ register_conv_template(
     )
 )
 
+# belle template
+# reference: https://github.com/LianjiaTech/BELLE/blob/main/train/src/sample_generator.py
+register_conv_template(
+    Conversation(
+        name="belle",
+        roles=["Human: \n", "\n\nAssistant: \n"],
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>"
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
