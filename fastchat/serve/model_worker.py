@@ -14,6 +14,10 @@ import torch.nn.functional as F
 from transformers import set_seed
 import uvicorn
 
+from transformers import (
+    GPTQConfig,
+)
+
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import (
     load_model,
@@ -315,7 +319,7 @@ def create_model_worker():
     else:
         exllama_config = None
 
-    if args.gptq_transformers_bits is 16:
+    if args.gptq_transformers_bits == 16:
         gptq_transformers_config = None
     else:
         gptq_transformers_config = GPTQConfig(
