@@ -28,17 +28,19 @@ from transformers import (
 )
 
 from fastchat.constants import CPU_ISA
-from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
-from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.conversation import Conversation, get_conv_template
 from fastchat.model.compression import load_compress_model
 from fastchat.model.llama_condense_monkey_patch import replace_llama_with_condense
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
+from fastchat.modules.awq import AWQConfig, load_awq_quantized
+from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
+from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.utils import get_gpu_memory
 
 # Check an environment variable to check if we should be sharing Peft model
@@ -205,6 +207,7 @@ def load_model(
     gptq_config: Optional[GptqConfig] = None,
     gptq_transformers_config: Optional[GPTQConfig] = None,
     awq_config: Optional[AWQConfig] = None,
+    exllama_config: Optional[ExllamaConfig] = None,
     revision: str = "main",
     debug: bool = False,
 ):
@@ -329,7 +332,9 @@ def load_model(
         else:
             model.to(device)
         return model, tokenizer
-
+    elif exllama_config:
+        model, tokenizer = load_exllama_model(model_path, exllama_config)
+        return model, tokenizer
     kwargs["revision"] = revision
 
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
@@ -380,6 +385,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
     is_peft = "peft" in model_type
+    is_exllama = "exllama" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -387,6 +393,9 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_falcon
     elif is_codet5p:
         return generate_stream_codet5p
+    elif is_exllama:
+        return generate_stream_exllama
+
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
@@ -519,6 +528,23 @@ def add_model_args(parser):
         type=int,
         default=-1,
         help="Used for AWQ. Groupsize to use for AWQ quantization; default uses full row.",
+    )
+    parser.add_argument(
+        "--enable-exllama",
+        action="store_true",
+        help="Used for exllamabv2. Enable exllamaV2 inference framework.",
+    )
+    parser.add_argument(
+        "--exllama-max-seq-len",
+        type=int,
+        default=4096,
+        help="Used for exllamabv2. Max sequence length to use for exllamav2 framework; default 4096 sequence length.",
+    )
+    parser.add_argument(
+        "--exllama-gpu-split",
+        type=str,
+        default=None,
+        help="Used for exllamabv2. Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7",
     )
 
 
@@ -658,6 +684,8 @@ class AiroborosAdapter(BaseModelAdapter):
         return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "-3." in model_path or "-3p" in model_path:
+            return get_conv_template("airoboros_v3")
         if "spicyboros" in model_path or re.search(r"-(2\.[2-9]+)", model_path):
             return get_conv_template("airoboros_v2")
         return get_conv_template("airoboros_v1")
@@ -1420,6 +1448,22 @@ class StarChatAdapter(BaseModelAdapter):
         return get_conv_template("starchat")
 
 
+class MistralAdapter(BaseModelAdapter):
+    """The model adapter for Mistral AI models"""
+
+    def match(self, model_path: str):
+        return "mistral" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("mistral")
+
+
 class Llama2Adapter(BaseModelAdapter):
     """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
 
@@ -1813,6 +1857,38 @@ class PhindCodeLlamaAdapter(CodeLlamaAdapter):
         return get_conv_template("phind")
 
 
+class Llama2ChangAdapter(Llama2Adapter):
+    """The model adapter for Llama2-ko-chang (e.g., lcw99/llama2-ko-chang-instruct-chat)"""
+
+    def match(self, model_path: str):
+        return "llama2-ko-chang" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("polyglot_changgpt")
+
+
+class ZephyrAdapter(BaseModelAdapter):
+    """The model adapter for Zephyr (e.g. HuggingFaceH4/zephyr-7b-alpha)"""
+
+    def match(self, model_path: str):
+        return "zephyr" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zephyr")
+
+
+class XwinLMAdapter(BaseModelAdapter):
+    """The model adapter for Xwin-LM V0.1 and V0.2 series of models(e.g., Xwin-LM/Xwin-LM-70B-V0.1)"""
+
+    # use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "xwin-lm" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("vicuna_v1.1")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1857,6 +1933,7 @@ register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
+register_model_adapter(MistralAdapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(WizardCoderAdapter)
@@ -1871,6 +1948,9 @@ register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
 register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
+register_model_adapter(Llama2ChangAdapter)
+register_model_adapter(ZephyrAdapter)
+register_model_adapter(XwinLMAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

@@ -287,15 +287,15 @@ def flash_buttons():
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
     ]
-    for i in range(10):
+    for i in range(4):
         yield btn_updates[i % 2]
-        time.sleep(0.2)
+        time.sleep(0.5)
 
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://huggingface.co/datasets/lmsys/chatbot_arena_conversations) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ### Rules
 - Chat with two models side-by-side and vote for which one is better!

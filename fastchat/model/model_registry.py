@@ -84,7 +84,7 @@ register_model_info(
     ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
-    "a chat assistant fine-tuned from LLaMA on user-shared conversations by LMSYS",
+    "a chat assistant fine-tuned on user-shared conversations by LMSYS",
 )
 register_model_info(
     ["wizardlm-70b", "wizardlm-30b", "wizardlm-13b"],
@@ -305,4 +305,35 @@ register_model_info(
     "Vigogne-Chat",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
     "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
+)
+register_model_info(
+    ["mistral-7b-instruct"],
+    "Mistral",
+    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
+    "a large language model by Mistral AI team",
+)
+register_model_info(
+    ["deluxe-chat-v1"],
+    "DeluxeChat",
+    "",
+    "Deluxe Chat",
+)
+
+register_model_info(
+    ["zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
+register_model_info(
+    [
+        "Xwin-LM-7B-V0.1",
+        "Xwin-LM-13B-V0.1",
+        "Xwin-LM-70B-V0.1",
+        "Xwin-LM-7B-V0.2",
+        "Xwin-LM-13B-V0.2",
+    ],
+    "Xwin-LM",
+    "https://github.com/Xwin-LM/Xwin-LM",
+    "Chat models developed by Xwin-LM team",
 )

@@ -72,7 +72,16 @@ vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/temp
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 ```
 
-2. Loading
+2. deprecation warnings
+```
+vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/deprecation.py
+```
+
+```
+def check_deprecated_parameters(
+```
+
+3. Loading
 ```
 vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/templates/frontend/assets/index-188ef5e8.js
 ```

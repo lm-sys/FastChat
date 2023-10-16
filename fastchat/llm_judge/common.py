@@ -24,7 +24,7 @@ API_ERROR_OUTPUT = "$ERROR$"
 TIE_DELTA = 0.1
 
 # Categories that need reference answers
-NEED_REF_CATS = ["math", "reasoning", "coding"]
+NEED_REF_CATS = ["math", "reasoning", "coding", "arena-hard-200"]
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -42,6 +42,7 @@ temperature_config = {
     "reasoning": 0.0,
     "stem": 0.1,
     "humanities": 0.1,
+    "arena-hard-200": 0.0,
 }
 
 reverse_model_map = {
@@ -132,7 +133,8 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         user_prompt = judge.prompt_template["prompt_template"].format(
@@ -231,7 +233,8 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     model = judge.model_name
     if ref_answer is not None:
         kwargs["ref_answer_1"] = ref_answer["choices"][0]["turns"][0]
-        kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
+        if multi_turn:
+            kwargs["ref_answer_2"] = ref_answer["choices"][0]["turns"][1]
 
     if multi_turn:
         system_prompt = judge.prompt_template["system_prompt"]
