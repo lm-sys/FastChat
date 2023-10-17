@@ -21,7 +21,7 @@ from fastchat.llm_judge.common import (
     chat_compeletion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
-from fastchat.model.model_adapter import get_conversation_template, CLAUDE_NAMES
+from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
 
 def get_answer(
@@ -44,7 +44,7 @@ def get_answer(
             conv.append_message(conv.roles[0], question["turns"][j])
             conv.append_message(conv.roles[1], None)
 
-            if model in CLAUDE_NAMES:
+            if model in ANTHROPIC_MODEL_LIST:
                 output = chat_compeletion_anthropic(
                     model, conv, temperature, max_tokens
                 )

@@ -49,10 +49,10 @@ peft_share_base_weights = (
 )
 
 
-CLAUDE_NAMES = (
-    "claude-v1",
-    "claude-v2",
-    "claude-instant-v1",
+ANTHROPIC_MODEL_LIST = (
+    "claude-1",
+    "claude-2",
+    "claude-instant-1",
 )
 
 
