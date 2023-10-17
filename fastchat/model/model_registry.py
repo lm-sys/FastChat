@@ -318,3 +318,22 @@ register_model_info(
     "",
     "Deluxe Chat",
 )
+
+register_model_info(
+    ["zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
+register_model_info(
+    [
+        "Xwin-LM-7B-V0.1",
+        "Xwin-LM-13B-V0.1",
+        "Xwin-LM-70B-V0.1",
+        "Xwin-LM-7B-V0.2",
+        "Xwin-LM-13B-V0.2",
+    ],
+    "Xwin-LM",
+    "https://github.com/Xwin-LM/Xwin-LM",
+    "Chat models developed by Xwin-LM team",
+)
