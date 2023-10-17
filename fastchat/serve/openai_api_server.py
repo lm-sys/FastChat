@@ -192,6 +192,11 @@ def check_requests(request) -> Optional[JSONResponse]:
             ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'",
         )
+    if request.top_k is not None and (request.top_k > -1 and request.top_k < 1):
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.top_k} is out of Range. Either set top_k to -1 or >=1.",
+        )
     if request.stop is not None and (
         not isinstance(request.stop, str) and not isinstance(request.stop, list)
     ):
@@ -233,6 +238,9 @@ async def get_gen_params(
     *,
     temperature: float,
     top_p: float,
+    top_k: Optional[int],
+    presence_penalty: Optional[float],
+    frequency_penalty: Optional[float],
     max_tokens: Optional[int],
     echo: Optional[bool],
     stop: Optional[Union[str, List[str]]],
@@ -275,6 +283,9 @@ async def get_gen_params(
         "prompt": prompt,
         "temperature": temperature,
         "top_p": top_p,
+        "top_k": top_k,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
         "max_new_tokens": max_tokens,
         "echo": echo,
         "stop_token_ids": conv.stop_token_ids,
@@ -351,7 +362,9 @@ async def create_chat_completion(request: ChatCompletionRequest):
         worker_addr,
         request.messages,
         temperature=request.temperature,
-        top_p=request.top_p,
+        top_k=request.top_k,
+        presence_penalty=request.presence_penalty,
+        frequency_penalty=request.frequency_penalty,        
         max_tokens=request.max_tokens,
         echo=False,
         stop=request.stop,
@@ -484,6 +497,9 @@ async def create_completion(request: CompletionRequest):
                 text,
                 temperature=request.temperature,
                 top_p=request.top_p,
+                top_k=request.top_k,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,              
                 max_tokens=request.max_tokens,
                 echo=request.echo,
                 stop=request.stop,
@@ -536,6 +552,9 @@ async def generate_completion_stream_generator(
                 text,
                 temperature=request.temperature,
                 top_p=request.top_p,
+                top_k = request.top_k,
+                presence_penalty = request.presence_penalty, 
+                frequency_penalty = request.frequency_penalty,
                 max_tokens=request.max_tokens,
                 echo=request.echo,
                 stop=request.stop,
@@ -715,6 +734,9 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         request.messages,
         temperature=request.temperature,
         top_p=request.top_p,
+        top_k = request.top_k,
+        presence_penalty = request.presence_penalty, 
+        frequency_penalty = request.frequency_penalty,
         max_tokens=request.max_tokens,
         echo=False,
         stop=request.stop,
