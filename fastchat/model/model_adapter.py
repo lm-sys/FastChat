@@ -943,7 +943,7 @@ class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
     def match(self, model_path: str):
-        return model_path in CLAUDE_NAMES
+        return model_path in ANTHROPIC_MODEL_LIST
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
