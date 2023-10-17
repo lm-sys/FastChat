@@ -49,6 +49,13 @@ peft_share_base_weights = (
 )
 
 
+ANTHROPIC_MODEL_LIST = (
+    "claude-1",
+    "claude-2",
+    "claude-instant-1",
+)
+
+
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
@@ -936,7 +943,7 @@ class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
     def match(self, model_path: str):
-        return model_path in ["claude-2", "claude-instant-1"]
+        return model_path in ANTHROPIC_MODEL_LIST
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
