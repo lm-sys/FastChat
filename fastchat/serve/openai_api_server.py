@@ -362,6 +362,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         worker_addr,
         request.messages,
         temperature=request.temperature,
+        top_p=request.top_p,
         top_k=request.top_k,
         presence_penalty=request.presence_penalty,
         frequency_penalty=request.frequency_penalty,        
