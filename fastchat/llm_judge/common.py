@@ -14,7 +14,7 @@ from typing import Optional
 import openai
 import anthropic
 
-from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
 # API setting constants
 API_MAX_RETRY = 16
@@ -24,7 +24,7 @@ API_ERROR_OUTPUT = "$ERROR$"
 TIE_DELTA = 0.1
 
 # Categories that need reference answers
-NEED_REF_CATS = ["math", "reasoning", "coding"]
+NEED_REF_CATS = ["math", "reasoning", "coding", "arena-hard-200"]
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -42,6 +42,7 @@ temperature_config = {
     "reasoning": 0.0,
     "stem": 0.1,
     "humanities": 0.1,
+    "arena-hard-200": 0.0,
 }
 
 reverse_model_map = {
@@ -160,7 +161,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
 
     if model in ["gpt-3.5-turbo", "gpt-4"]:
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ["claude-v1", "claude-instant-v1"]:
+    elif model in ANTHROPIC_MODEL_LIST:
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
@@ -264,7 +265,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     if model in ["gpt-3.5-turbo", "gpt-4"]:
         conv.set_system_message(system_prompt)
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ["claude-v1", "claude-instant-v1"]:
+    elif model in ANTHROPIC_MODEL_LIST:
         if system_prompt != "You are a helpful assistant.":
             user_prompt = "[Instruction]\n" + system_prompt + "\n\n" + user_prompt
             conv.messages[0][1] = user_prompt
