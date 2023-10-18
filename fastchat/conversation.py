@@ -982,7 +982,7 @@ register_conv_template(
 # Vigogne Chat default template
 register_conv_template(
     Conversation(
-        name="vigogne-chat",
+        name="vigogne_chat_v2",
         system_template="<|system|>: {system_message}",
         system_message=(
             "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"

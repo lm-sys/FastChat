@@ -1549,13 +1549,13 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
         return get_conv_template("llama2-chinese")
 
 
-class VigogneInstructAdapter(BaseModelAdapter):
-    """The model adapter for Vigogne-Instruct (e.g., bofenghuang/vigogne-2-7b-instruct)"""
+class VigogneAdapter(BaseModelAdapter):
+    """The model adapter for vigogne (e.g., bofenghuang/vigogne-2-7b-chat)"""
 
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "vigogne" in model_path.lower() and "instruct" in model_path.lower()
+        return bool(re.search(r"vigogne|vigostral", model_path, re.I))
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -1574,35 +1574,11 @@ class VigogneInstructAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("alpaca")
-
-
-class VigogneChatAdapter(BaseModelAdapter):
-    """The model adapter for Vigogne-Chat (e.g., bofenghuang/vigogne-7b-chat)"""
-
-    use_fast_tokenizer = False
-
-    def match(self, model_path: str):
-        return "vigogne" in model_path.lower() and "chat" in model_path.lower()
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            use_fast=self.use_fast_tokenizer,
-            trust_remote_code=True,
-            revision=revision,
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            low_cpu_mem_usage=True,
-            **from_pretrained_kwargs,
-        ).eval()
-        return model, tokenizer
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vigogne-chat")
+        if "chat" in model_path.lower():
+            if "vigostral" in model_path.lower():
+                return get_conv_template("vigogne_chat_v3")
+            return get_conv_template("vigogne_chat_v2")
+        return get_conv_template("vigogne_instruct")
 
 
 class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
@@ -1746,8 +1722,7 @@ register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)
 register_model_adapter(Lamma2ChineseAdapter)
-register_model_adapter(VigogneInstructAdapter)
-register_model_adapter(VigogneChatAdapter)
+register_model_adapter(VigogneAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
 register_model_adapter(PhindCodeLlamaAdapter)
