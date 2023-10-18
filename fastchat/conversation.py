@@ -980,6 +980,21 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="vigogne_chat_v3",
+        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message=(
+            "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"
+            " autant que vous le pouvez."
+        ),
+        roles=("[INST]", "[/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s>",
+    )
+)
+
 # Falcon 180B chat template
 # source: https://huggingface.co/spaces/tiiuae/falcon-180b-demo/blob/d1590ee7fae9b6ce331ba7808e61a29dcce9239f/app.py#L28-L37
 register_conv_template(
