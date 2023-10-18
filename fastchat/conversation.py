@@ -968,8 +968,10 @@ register_conv_template(
     Conversation(
         name="vigogne-chat",
         system_template="<|system|>: {system_message}",
-        system_message="Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). "
-        "Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.",
+        system_message=(
+            "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"
+            " autant que vous le pouvez."
+        ),
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n",
