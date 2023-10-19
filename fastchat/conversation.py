@@ -962,19 +962,52 @@ register_conv_template(
     )
 )
 
-# Vigogne Chat default template
+# Vigogne Instruct default template
 # source: https://github.com/bofenghuang/vigogne
 register_conv_template(
     Conversation(
-        name="vigogne-chat",
+        name="vigogne_instruct",
+        system_template="### System:\n{system_message}\n\n",
+        system_message=(
+            "Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière"
+            " précise à la demande."
+        ),
+        roles=("### Instruction", "### Response"),
+        sep_style=SeparatorStyle.DOLLY,
+        sep="\n\n",
+        sep2="</s>",
+    )
+)
+
+# Vigogne Chat default template
+register_conv_template(
+    Conversation(
+        name="vigogne_chat_v2",
         system_template="<|system|>: {system_message}",
-        system_message="Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). "
-        "Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.",
+        system_message=(
+            "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"
+            " autant que vous le pouvez."
+        ),
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n",
         sep2="</s>\n",
         stop_str="<|user|>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="vigogne_chat_v3",
+        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message=(
+            "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"
+            " autant que vous le pouvez."
+        ),
+        roles=("[INST]", "[/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s>",
     )
 )
 
