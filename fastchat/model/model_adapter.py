@@ -79,11 +79,11 @@ class BaseModelAdapter:
             )
         try:
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path, low_cpu_mem_usage=True, trust_remote_code=True, **from_pretrained_kwargs
             )
         except NameError:
             model = AutoModel.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path, low_cpu_mem_usage=True, trust_remote_code=True, **from_pretrained_kwargs
             )
         return model, tokenizer
 
