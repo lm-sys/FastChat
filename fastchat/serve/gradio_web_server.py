@@ -405,8 +405,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
     try:
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
-                if i % 8 != 0:  # reduce gradio's overhead
-                    continue
                 output = data["text"].strip()
                 conv.update_last_message(output + "▌")
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
