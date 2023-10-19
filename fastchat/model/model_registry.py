@@ -325,6 +325,7 @@ register_model_info(
     "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
     "a chatbot fine-tuned from Mistral by Hugging Face",
 )
+
 register_model_info(
     [
         "Xwin-LM-7B-V0.1",
@@ -336,4 +337,11 @@ register_model_info(
     "Xwin-LM",
     "https://github.com/Xwin-LM/Xwin-LM",
     "Chat models developed by Xwin-LM team",
+)
+
+register_model_info(
+    ["Mistral-7B-OpenOrca"],
+    "Open-Orca",
+    "https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca",
+    "A fine-tune of [Mistral 7B](https://huggingface.co/mistralai/Mistral-7B-v0.1) using [OpenOrca dataset](https://huggingface.co/datasets/Open-Orca/OpenOrca)",
 )
