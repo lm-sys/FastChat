@@ -4,7 +4,18 @@ Adapted from https://huggingface.co/THUDM/chatglm-6b/blob/main/modeling_chatglm.
 """
 import re
 
-import torch
+import torch.nn as nn
+
+# Load the model
+model = torch.jit.load(model_path)
+
+# Check if there are multiple GPUs available
+if torch.cuda.device_count() > 1:
+    print(f"Using {torch.cuda.device_count()} GPUs!")
+    model = nn.DataParallel(model)
+
+model = model.to(device)
+
 from transformers.generation.logits_process import LogitsProcessor
 
 
