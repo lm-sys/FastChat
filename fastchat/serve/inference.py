@@ -38,6 +38,7 @@ from fastchat.model.model_adapter import (
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
@@ -304,6 +305,7 @@ def chat_loop(
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     exllama_config: Optional[ExllamaConfig] = None,
+    xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
     debug: bool = True,
@@ -321,6 +323,7 @@ def chat_loop(
         gptq_config=gptq_config,
         awq_config=awq_config,
         exllama_config=exllama_config,
+        xft_config=xft_config,
         revision=revision,
         debug=debug,
     )
