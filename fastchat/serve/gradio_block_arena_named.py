@@ -170,19 +170,19 @@ def add_text(
             * 6
         )
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
-        for i in range(num_sides):
-            states[i].skip_next = True
-        return (
-            states
-            + [x.to_gradio_chatbot() for x in states]
-            + [INACTIVE_MSG]
-            + [
-                no_change_btn,
-            ]
-            * 6
-        )
+    # if ip_expiration_dict[ip] < time.time():
+    #     logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
+    #     for i in range(num_sides):
+    #         states[i].skip_next = True
+    #     return (
+    #         states
+    #         + [x.to_gradio_chatbot() for x in states]
+    #         + [INACTIVE_MSG]
+    #         + [
+    #             no_change_btn,
+    #         ]
+    #         * 6
+    #     )
 
     if enable_moderation:
         flagged = violates_moderation(text)
