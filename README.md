@@ -23,6 +23,9 @@ FastChat is an open platform for training, serving, and evaluating large languag
 
 <a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
 
+## Documentation
+Documentation can be found at https://fastchat.mintlify.app. 
+
 ## Contents
 - [Install](#install)
 - [Model Weights](#model-weights)
