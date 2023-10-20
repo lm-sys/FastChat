@@ -49,7 +49,7 @@ Arguments:
 
 e.g.,
 ```
-python gen_model_answer.py --model-path lmsys/vicuna-7b-v1.3 --model-id vicuna-7b-v1.3
+python gen_model_answer.py --model-path lmsys/vicuna-7b-v1.5 --model-id vicuna-7b-v1.5
 ```
 The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 

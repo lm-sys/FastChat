@@ -1,0 +1,3 @@
+run: |
+  conda activate chatbot
+  python3 -m fastchat.serve.gradio_web_server --share --model-list-mode reload
