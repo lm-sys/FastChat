@@ -94,7 +94,7 @@ def display_result_pairwise(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bench-name", type=str, default="mt_bench")
+    parser.add_argument("--bench-name", type=str, default="skycamp")
     parser.add_argument("--input-file", type=str)
     parser.add_argument("--judge-model", type=str, default="gpt-4")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
