@@ -239,10 +239,10 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive. ip: {request.client.host}. text: {text}")
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), INACTIVE_MSG) + (no_change_btn,) * 5
+    # if ip_expiration_dict[ip] < time.time():
+    #     logger.info(f"inactive. ip: {request.client.host}. text: {text}")
+    #     state.skip_next = True
+    #     return (state, state.to_gradio_chatbot(), INACTIVE_MSG) + (no_change_btn,) * 5
 
     if enable_moderation:
         flagged = violates_moderation(text)
