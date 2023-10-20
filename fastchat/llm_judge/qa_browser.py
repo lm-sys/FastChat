@@ -66,19 +66,20 @@ def display_pairwise_answer(
         + get_pairwise_judge_explanation(gamekey, judgment_dict)
     )
 
-    judgment_dict_turn2 = resolve_pairwise_judgment_dict(
-        q,
-        model_judgments_normal_pairwise,
-        model_judgments_math_pairwise,
-        multi_turn=True,
-    )
+    # judgment_dict_turn2 = resolve_pairwise_judgment_dict(
+    #     q,
+    #     model_judgments_normal_pairwise,
+    #     model_judgments_math_pairwise,
+    #     multi_turn=True,
+    # )
 
-    explanation_turn2 = (
-        "##### Model Judgment (second turn)\n"
-        + get_pairwise_judge_explanation(gamekey, judgment_dict_turn2)
-    )
+    # explanation_turn2 = (
+    #     "##### Model Judgment (second turn)\n"
+    #     + get_pairwise_judge_explanation(gamekey, judgment_dict_turn2)
+    # )
 
-    return chat_mds + [explanation] + [explanation_turn2]
+    # return chat_mds + [explanation] + [explanation_turn2]
+    return chat_mds + [explanation]
 
 
 def display_single_answer(question_selector, model_selector1, request: gr.Request):
@@ -203,6 +204,7 @@ def build_pairwise_browser_tab():
 
     question_selector_choices = list(question_selector_map.keys())
     category_selector_choices = list(category_selector_map.keys())
+    print(question_selector_choices, category_selector_choices)
 
     # Selectors
     with gr.Row():
@@ -246,21 +248,23 @@ def build_pairwise_browser_tab():
     chat_mds.append(reference)
 
     model_explanation = gr.Markdown(elem_id="model_explanation")
-    model_explanation2 = gr.Markdown(elem_id="model_explanation")
+    # model_explanation2 = gr.Markdown(elem_id="model_explanation")
 
     # Callbacks
     category_selector.change(display_question, [category_selector], [question_selector])
     question_selector.change(
         display_pairwise_answer,
         [question_selector] + model_selectors,
-        chat_mds + [model_explanation] + [model_explanation2],
+        chat_mds + [model_explanation],
+        # chat_mds + [model_explanation] + [model_explanation2],
     )
 
     for i in range(num_sides):
         model_selectors[i].change(
             display_pairwise_answer,
             [question_selector] + model_selectors,
-            chat_mds + [model_explanation] + [model_explanation2],
+            chat_mds + [model_explanation],
+            # chat_mds + [model_explanation] + [model_explanation2],
         )
 
     return (category_selector,)
@@ -371,11 +375,20 @@ def build_demo():
 The code to generate answers and judgments is at [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
 """
         )
-        with gr.Tab("Single Answer Grading"):
-            (category_selector,) = build_single_answer_browser_tab()
+        # with gr.Tab("Single Answer Grading"):
+        #     (category_selector,) = build_single_answer_browser_tab()
         with gr.Tab("Pairwise Comparison"):
             (category_selector2,) = build_pairwise_browser_tab()
-        demo.load(load_demo, [], [category_selector, category_selector2])
+        # demo.load(load_demo, [], [category_selector, category_selector2])
+        # demo.load(load_demo, [], [category_selector2])
+
+        demo.load(load_demo, [], [category_selector2], _js="""
+        () => {
+            document.body.classList.toggle('dark');
+            document.body.classList.toggle('light');
+            document.querySelector('gradio-app').style.backgroundColor = 'var(--color-background-primary)';
+        }
+        """,)
 
     return demo
 
