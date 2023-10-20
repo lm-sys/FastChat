@@ -150,7 +150,7 @@ def make_judge_pairwise(judge_model, judge_prompts):
     return judges
 
 
-def make_judge_single(judge_model, judge_prompts):
+def make_judge_single(judge_model, judge_prompts, few_shot):
     judges = {}
     judges["default"] = Judge(judge_model, judge_prompts["single-v1"])
     judges["math"] = Judge(judge_model, judge_prompts["single-math-v1"], ref_based=True)
@@ -194,6 +194,9 @@ if __name__ == "__main__":
             "`single` runs single answer grading."
         ),
     )
+    parser.add_argument("--few-shot", 
+                        action="store_true",
+                        help="To include few shot prompting, add few shot prompts to judge prompt file.")
     parser.add_argument(
         "--model-list",
         type=str,
