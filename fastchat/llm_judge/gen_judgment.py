@@ -171,7 +171,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--bench-name",
         type=str,
-        default="mt_bench",
+        default="skycamp",
         help="The name of the benchmark question set.",
     )
     parser.add_argument(
