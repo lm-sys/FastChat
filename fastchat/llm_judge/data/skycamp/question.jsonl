@@ -1,5 +1,5 @@
-{"question_id": 1, "category": "humanities", "turns": ["Who was the founding president of USA?"]}
-{"question_id": 2, "category": "stem", "turns": ["Please describe the concept of machine learning. Could you elaborate on the differences between supervised, unsupervised, and reinforcement learning? Provide real-world examples of each."]}
-{"question_id": 3, "category": "math", "turns": ["What is the probability of getting heads 10 times using a biased coin? The probability of getting a tail is 0.3."]}
-{"question_id": 4, "category": "writing", "turns": ["I'm a college student in Berkeley, CA. I'd like to plan a weekend road trip leaving from Berkeley. My preferences are sightseeing, national parks, and scenic drives. What do you recommend? Let's think step by step."]}
-{"question_id": 5, "category": "reasoning", "turns":["Puzzle: Why did my parents not invite me to their wedding? Give only the most likely reason."]}
+{"question_id": 1, "category": "generic", "turns": ["Who was the founding president of USA?"]}
+{"question_id": 2, "category": "generic", "turns": ["Please describe the concept of machine learning. Could you elaborate on the differences between supervised, unsupervised, and reinforcement learning? Provide real-world examples of each."]}
+{"question_id": 3, "category": "generic", "turns": ["What is the probability of getting heads 10 times using a biased coin? The probability of getting a tail is 0.3."]}
+{"question_id": 4, "category": "generic", "turns": ["I'm a college student in Berkeley, CA. I'd like to plan a weekend road trip leaving from Berkeley. My preferences are sightseeing, national parks, and scenic drives. What do you recommend? Let's think step by step."]}
+{"question_id": 5, "category": "generic", "turns":["Puzzle: Why did my parents not invite me to their wedding? Give only the most likely reason."]}
