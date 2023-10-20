@@ -32,7 +32,7 @@ def get_answer(
     elif question["category"] in temperature_config:
         temperature = temperature_config[question["category"]]
     else:
-        temperature = 0.7
+        temperature = 0
 
     choices = []
     chat_state = None  # for palm-2 model
