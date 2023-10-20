@@ -193,6 +193,9 @@ def pretty_print_semaphore(semaphore):
 """A javascript function to get url parameters for the gradio web server."""
 get_window_url_params_js = """
 function() {
+    document.body.classList.toggle('dark');
+    document.body.classList.toggle('light');
+    document.querySelector('gradio-app').style.backgroundColor = 'var(--color-background-primary)';
     const params = new URLSearchParams(window.location.search);
     url_params = Object.fromEntries(params);
     console.log("url_params", url_params);
