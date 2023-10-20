@@ -35,7 +35,9 @@ category_selector_map = defaultdict(list)
 
 
 def display_question(category_selector, request: gr.Request):
-    choices = category_selector_map[category_selector]
+    # choices = category_selector_map[category_selector]
+    cat = tuple(category_selector_map.keys())[0]
+    choices = category_selector_map[cat]
     return gr.Dropdown.update(
         value=choices[0],
         choices=choices,
@@ -224,7 +226,7 @@ def build_pairwise_browser_tab():
                 if i == 0:
                     value = models[0]
                 else:
-                    value = "gpt-3.5-turbo"
+                    value = models[1]
                 model_selectors[i] = gr.Dropdown(
                     choices=models,
                     value=value,
