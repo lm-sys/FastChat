@@ -113,7 +113,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
             with gr.Tab("Chatbot Arena (battle)", id=2):
                 side_by_side_anony_list = build_side_by_side_ui_anony(models)
-            
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
