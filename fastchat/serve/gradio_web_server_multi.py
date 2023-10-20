@@ -135,13 +135,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
             + single_model_list
             + side_by_side_anony_list
             + side_by_side_named_list,
-            _js="""
-        () => {
-            document.body.classList.toggle('dark');
-            document.body.classList.toggle('light');
-            document.querySelector('gradio-app').style.backgroundColor = 'var(--color-background-primary)';
-        }
-        """,
+            _js=load_js,
         )
 
     return demo
