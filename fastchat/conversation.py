@@ -912,6 +912,20 @@ register_conv_template(
     )
 )
 
+# Open-Orca/Mistral-7B-OpenOrca template
+# source: https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
+# reference: https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca#prompt-template
+register_conv_template(
+    Conversation(
+        name="mistral-7b-openorca",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are MistralOrca, a large language model trained by Alignment Lab AI. Write out your reasoning step-by-step to be sure you get the right answers!",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
 
 # Qwen-chat default template
 # source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
