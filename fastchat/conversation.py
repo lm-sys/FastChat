@@ -762,7 +762,7 @@ register_conv_template(
     )
 )
 
-# ChagGPT default template
+# ChangGPT default template
 register_conv_template(
     Conversation(
         name="polyglot_changgpt",
@@ -858,7 +858,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mistral",
-        system_template="",
+        system_template="[INST]{system_message}\n",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
