@@ -572,7 +572,7 @@ class PeftModelAdapter:
 
 
 class VicunaAdapter(BaseModelAdapter):
-    "Model adapater for Vicuna models (e.g., lmsys/vicuna-7b-v1.5)" ""
+    "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.5)" ""
 
     use_fast_tokenizer = False
 
