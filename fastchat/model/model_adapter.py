@@ -384,7 +384,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--model-path",
         type=str,
-        default="lmsys/vicuna-7b-v1.3",
+        default="lmsys/vicuna-7b-v1.5",
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
@@ -572,7 +572,7 @@ class PeftModelAdapter:
 
 
 class VicunaAdapter(BaseModelAdapter):
-    "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.3)" ""
+    "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.5)" ""
 
     use_fast_tokenizer = False
 

@@ -5,7 +5,7 @@
 - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
   - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf`
 - Vicuna, Alpaca, LLaMA, Koala
-  - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3`
+  - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5`
 - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
 - [BAAI/bge-large-en](https://huggingface.co/BAAI/bge-large-en#using-huggingface-transformers)
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
@@ -67,7 +67,7 @@ python3 -m fastchat.serve.cli --model [YOUR_MODEL_PATH]
 You can run this example command to learn the code logic.
 
 ```
-python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.5
 ```
 
 You can add `--debug` to see the actual prompt sent to the model.
