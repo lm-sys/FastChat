@@ -572,7 +572,7 @@ class PeftModelAdapter:
 
 
 class VicunaAdapter(BaseModelAdapter):
-    "Model adapater for Vicuna models (e.g., lmsys/vicuna-7b-v1.3)" ""
+    "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.3)" ""
 
     use_fast_tokenizer = False
 
@@ -641,7 +641,7 @@ class AiroborosAdapter(BaseModelAdapter):
 
 
 class LongChatAdapter(BaseModelAdapter):
-    "Model adapater for LongChat models (e.g., lmsys/longchat-7b-16k)."
+    "Model adapter for LongChat models (e.g., lmsys/longchat-7b-16k)."
 
     use_fast_tokenizer = False
 
@@ -1345,7 +1345,7 @@ class CuteGPTAdapter(BaseModelAdapter):
 
 
 class OpenOrcaAdapter(BaseModelAdapter):
-    """Model adapater for Open-Orca models wich may use different prompt templates
+    """Model adapter for Open-Orca models wich may use different prompt templates
     - (e.g. Open-Orca/OpenOrcaxOpenChat-Preview2-13B, Open-Orca/Mistral-7B-OpenOrca)
     - `OpenOrcaxOpenChat-Preview2-13B` uses their "OpenChat Llama2 V1" prompt template.
         - [Open-Orca/OpenOrcaxOpenChat-Preview2-13B #Prompt Template](https://huggingface.co/Open-Orca/OpenOrcaxOpenChat-Preview2-13B#prompt-template)
