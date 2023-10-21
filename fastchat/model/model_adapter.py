@@ -605,7 +605,7 @@ class VicunaAdapter(BaseModelAdapter):
                 "current fastchat.\nYou can try one of the following methods:\n"
                 "1. Upgrade your weights to the new Vicuna-v1.3: https://github.com/lm-sys/FastChat#vicuna-weights.\n"
                 "2. Use the old conversation template by `python3 -m fastchat.serve.cli --model-path /path/to/vicuna-v0 --conv-template one_shot`\n"
-                "3. Downgrade fschat to fschat==0.1.10 (Not recommonded).\n"
+                "3. Downgrade fschat to fschat==0.1.10 (Not recommended).\n"
             )
 
 
@@ -1345,7 +1345,7 @@ class CuteGPTAdapter(BaseModelAdapter):
 
 
 class OpenOrcaAdapter(BaseModelAdapter):
-    """Model adapter for Open-Orca models wich may use different prompt templates
+    """Model adapter for Open-Orca models which may use different prompt templates
     - (e.g. Open-Orca/OpenOrcaxOpenChat-Preview2-13B, Open-Orca/Mistral-7B-OpenOrca)
     - `OpenOrcaxOpenChat-Preview2-13B` uses their "OpenChat Llama2 V1" prompt template.
         - [Open-Orca/OpenOrcaxOpenChat-Preview2-13B #Prompt Template](https://huggingface.co/Open-Orca/OpenOrcaxOpenChat-Preview2-13B#prompt-template)
