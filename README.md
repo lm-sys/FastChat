@@ -2,7 +2,6 @@
 | [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
-
 - FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 4 million chat requests for 30+ LLMs.
 - Arena has collected over 80K human votes from side-by-side LLM battles to make online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
 
