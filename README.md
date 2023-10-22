@@ -4,7 +4,7 @@
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
 
 - FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 4 million chat requests for 30+ LLMs.
-- Online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) based on 80K+ human votes for side-by-side LLM battles.
+- Arena has collected over 80K human votes from side-by-side LLM battles to make online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
 
 FastChat's core features include:
 - The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
