@@ -332,6 +332,7 @@ def chat_loop(
     model_type = str(type(model)).lower()
     is_t5 = "t5" in model_type
     is_codet5p = "codet5p" in model_type
+    is_xft = "xft" in model_type
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:

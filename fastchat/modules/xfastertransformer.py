@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import sys
 
-
+Xft_loop_flag = True
 @dataclass
 class XftConfig:
     max_seq_len: int = 4096
@@ -17,7 +17,7 @@ class XftConfig:
 class XftModel:
     def __init__(self, xft_model, xft_config):
         self.model = xft_model
-        self.config = xft_config
+        self.config = xft_config      
 
 def load_xft_model(model_path, xft_config: XftConfig):
     try:
@@ -34,4 +34,7 @@ def load_xft_model(model_path, xft_config: XftConfig):
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, padding_side="left", trust_remote_code=True)
     xft_model = xfastertransformer.AutoModel.from_pretrained(model_path, dtype=data_type)
     model = XftModel(xft_model=xft_model, xft_config=xft_config)
+    if model.model.rank > 0 : 
+        while Xft_loop_flag:
+            model.model.generate()
     return model, tokenizer
