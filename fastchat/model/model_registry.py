@@ -68,6 +68,24 @@ register_model_info(
     "open foundation and fine-tuned chat models by Meta",
 )
 register_model_info(
+    ["zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
+register_model_info(
+    ["qwen-14b-chat"],
+    "Qwen",
+    "https://huggingface.co/Qwen/Qwen-14B-Chat",
+    "a large language model by Alibaba Cloud",
+)
+register_model_info(
+    ["mistral-7b-instruct"],
+    "Mistral",
+    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
+    "a large language model by Mistral AI team",
+)
+register_model_info(
     ["codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
     "Code Llama",
     "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
@@ -307,23 +325,10 @@ register_model_info(
     "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
 )
 register_model_info(
-    ["mistral-7b-instruct"],
-    "Mistral",
-    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
-    "a large language model by Mistral AI team",
-)
-register_model_info(
-    ["deluxe-chat-v1"],
+    ["deluxe-chat-v1", "deluxe-chat-v1.1"],
     "DeluxeChat",
     "",
     "Deluxe Chat",
-)
-
-register_model_info(
-    ["zephyr-7b-alpha"],
-    "Zephyr",
-    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
-    "a chatbot fine-tuned from Mistral by Hugging Face",
 )
 register_model_info(
     [

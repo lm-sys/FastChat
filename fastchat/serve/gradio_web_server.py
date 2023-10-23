@@ -148,6 +148,8 @@ def get_model_list(
 
     if "deluxe-chat-v1" in models:
         del models[models.index("deluxe-chat-v1")]
+    if "deluxe-chat-v1.1" in models:
+        del models[models.index("deluxe-chat-v1.1")]
 
     priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
@@ -338,7 +340,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "claude-2" or model_name == "claude-instant-1":
+    elif model_name in ["claude-2", "claude-1", "claude-instant-1"]:
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens

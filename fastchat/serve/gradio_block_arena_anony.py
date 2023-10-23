@@ -160,9 +160,10 @@ SAMPLING_WEIGHTS = {
     "gpt-4": 2,
     "gpt-3.5-turbo": 2,
     "claude-2": 2,
+    "claude-1": 2,
     "claude-instant-1": 2,
-    "deluxe-chat-v1": 4,
     # tire 1
+    "deluxe-chat-v1.1": 0.1,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
@@ -171,11 +172,13 @@ SAMPLING_WEIGHTS = {
     "vicuna-13b": 1.5,
     "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
+    "qwen-14b-chat": 1.5,
+    "zephyr-7b-alpha": 1.5,
+    "mistral-7b-instruct": 1.5,
     # tier 2
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
-    "mistral-7b-instruct": 1.0,
     # deprecated
     "codellama-13b-instruct": 1.0,
     "mpt-30b-chat": 1.5,
@@ -191,9 +194,77 @@ SAMPLING_WEIGHTS = {
     "dolly-v2-12b": 0.1,
     "llama-13b": 0.1,
     "chatglm-6b": 0.5,
+    "deluxe-chat-v1": 4,
 }
 
-SAMPLING_BOOST_MODELS = []
+SAMPLING_BOOST_MODELS = ["zephyr-7b-alpha", "mistral-7b-instruct", "claude-1"]
+OUTAGE_MODELS = ["deluxe-chat-v1.1", "falcon-180b-chat"]
+
+
+def get_sample_weight(model):
+    if model in OUTAGE_MODELS:
+        return 0
+    weight = SAMPLING_WEIGHTS.get(model, 1.0)
+    if model in SAMPLING_BOOST_MODELS:
+        weight *= 5
+    return weight
+
+
+def get_battle_pair():
+    if len(models) == 1:
+        return models[0], models[0]
+
+    targets = {
+        "gpt-4": {"claude-2"},
+        "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
+        "claude-2": {"gpt-4", "gpt-3.5-turbo"},
+        "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
+        "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
+        "deluxe-chat-v1.1": {"gpt-4"},
+        "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
+        "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
+        "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+        "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
+        "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
+        "mistral-7b-instruct": {"llama-2-7b-chat", "llama-2-13b-chat", "llama-2-70b-chat"},
+        "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
+        "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
+        "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
+        "wizardlm-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+        "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
+    }
+    model_weights = []
+    for model in models:
+        weight = get_sample_weight(model)
+        model_weights.append(weight)
+    total_weight = np.sum(model_weights)
+    model_weights = model_weights / total_weight
+    chosen_idx = np.random.choice(len(models), p=model_weights)
+    chosen_model = models[chosen_idx]
+
+    rival_models = []
+    rival_weights = []
+    for model in models:
+        if model == chosen_model:
+            continue
+        weight = get_sample_weight(model)
+        if (weight != 0 and chosen_model in targets and
+                model in targets[chosen_model]):
+            # boost to 66% chance
+            weight = 2*total_weight / len(targets[chosen_model])
+        rival_models.append(model)
+        rival_weights.append(weight)
+    # for p, w in zip(rival_models, rival_weights):
+    #     print(p, w)
+    rival_weights = rival_weights / np.sum(rival_weights)
+    rival_idx = np.random.choice(len(rival_models), p=rival_weights)
+    rival_model = rival_models[rival_idx]
+
+    swap = np.random.randint(2)
+    if swap == 0:
+        return chosen_model, rival_model
+    else:
+        return rival_model, chosen_model
 
 
 def add_text(
@@ -207,41 +278,8 @@ def add_text(
     # Init states if necessary
     if states[0] is None:
         assert states[1] is None
-        model_pairs = []
-        model_pairs_weights = []
 
-        # Pick two models
-        if len(model_pairs) == 0:
-            for i in range(len(models)):
-                for j in range(len(models)):
-                    if i == j:
-                        continue
-                    a = models[i]
-                    b = models[j]
-                    w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
-                    if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
-                        w *= 10
-                    if a in {"gpt-4", "deluxe-chat-v1"} and b in {
-                        "gpt-4",
-                        "deluxe-chat-v1",
-                    }:
-                        w *= 8
-                    model_pairs.append((a, b))
-                    model_pairs_weights.append(w)
-
-            model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
-            # for p, w in zip(model_pairs, model_pairs_weights):
-            #   print(p, w)
-
-        if len(model_pairs) >= 1:
-            # if len(model_pairs) != len(model_pairs_weights):
-            #    print("model pairs", model_pairs, model_pairs_weights)
-            #    print("#model pairs", len(model_pairs), len(model_pairs_weights))
-            idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
-            model_left, model_right = model_pairs[idx]
-        else:
-            model_left = model_right = models[0]
-
+        model_left, model_right = get_battle_pair()
         states = [
             State(model_left),
             State(model_right),
