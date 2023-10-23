@@ -344,6 +344,7 @@ register_model_info(
     "Lemur-Chat",
     "https://huggingface.co/OpenLemur/lemur-70b-chat-v1",
     "an openly accessible language model optimized for both natural language and coding capabilities ",
+)
 
 register_model_info(
     ["Mistral-7B-OpenOrca"],
