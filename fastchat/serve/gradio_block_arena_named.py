@@ -28,6 +28,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_model_description_md,
     ip_expiration_dict,
+    get_ip,
 )
 from fastchat.utils import (
     build_logger,
@@ -72,7 +73,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "type": vote_type,
             "models": [x for x in model_selectors],
             "states": [x.dict() for x in states],
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
@@ -80,7 +81,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 def leftvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"leftvote (named). ip: {request.client.host}")
+    logger.info(f"leftvote (named). ip: {get_ip(request)}")
     vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
     )
@@ -90,7 +91,7 @@ def leftvote_last_response(
 def rightvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"rightvote (named). ip: {request.client.host}")
+    logger.info(f"rightvote (named). ip: {get_ip(request)}")
     vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
     )
@@ -100,7 +101,7 @@ def rightvote_last_response(
 def tievote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"tievote (named). ip: {request.client.host}")
+    logger.info(f"tievote (named). ip: {get_ip(request)}")
     vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
     )
@@ -110,7 +111,7 @@ def tievote_last_response(
 def bothbad_vote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"bothbad_vote (named). ip: {request.client.host}")
+    logger.info(f"bothbad_vote (named). ip: {get_ip(request)}")
     vote_last_response(
         [state0, state1], "bothbad_vote", [model_selector0, model_selector1], request
     )
@@ -118,7 +119,7 @@ def bothbad_vote_last_response(
 
 
 def regenerate(state0, state1, request: gr.Request):
-    logger.info(f"regenerate (named). ip: {request.client.host}")
+    logger.info(f"regenerate (named). ip: {get_ip(request)}")
     states = [state0, state1]
     for i in range(num_sides):
         states[i].conv.update_last_message(None)
@@ -126,7 +127,7 @@ def regenerate(state0, state1, request: gr.Request):
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history (named). ip: {request.client.host}")
+    logger.info(f"clear_history (named). ip: {get_ip(request)}")
     return (
         [None] * num_sides
         + [None] * num_sides
@@ -137,7 +138,7 @@ def clear_history(request: gr.Request):
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
-    logger.info(f"share (named). ip: {request.client.host}")
+    logger.info(f"share (named). ip: {get_ip(request)}")
     if state0 is not None and state1 is not None:
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
@@ -147,7 +148,8 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    ip = request.client.host
+    is_cf = "cf-connecting-ip" in request.headers
+    ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
@@ -170,8 +172,8 @@ def add_text(
             * 6
         )
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive (named). ip: {request.client.host}. text: {text}")
+    if not is_cf and ip_expiration_dict[ip] < time.time():
+        logger.info(f"inactive (named). ip: {ip}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
         return (
@@ -188,7 +190,7 @@ def add_text(
         flagged = violates_moderation(text)
         if flagged:
             logger.info(
-                f"violate moderation (named). ip: {request.client.host}. text: {text}"
+                f"violate moderation (named). ip: {ip}. text: {text}"
             )
             for i in range(num_sides):
                 states[i].skip_next = True
@@ -204,7 +206,7 @@ def add_text(
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
+        logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
         return (
@@ -242,7 +244,7 @@ def bot_response_multi(
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"bot_response_multi (named). ip: {request.client.host}")
+    logger.info(f"bot_response_multi (named). ip: {get_ip(request)}")
 
     if state0.skip_next:
         # This generate call is skipped due to invalid inputs

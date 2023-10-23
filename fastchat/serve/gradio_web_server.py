@@ -175,7 +175,7 @@ def load_demo_single(models, url_params):
 def load_demo(url_params, request: gr.Request):
     global models
 
-    ip = request.client.host
+    ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
     ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
@@ -198,43 +198,57 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
             "type": vote_type,
             "model": model_selector,
             "state": state.dict(),
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"upvote. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"upvote. ip: {ip}")
     vote_last_response(state, "upvote", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"downvote. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"downvote. ip: {ip}")
     vote_last_response(state, "downvote", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"flag. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"flag. ip: {ip}")
     vote_last_response(state, "flag", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
-    logger.info(f"regenerate. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"regenerate. ip: {ip}")
     state.conv.update_last_message(None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"clear_history. ip: {ip}")
     state = None
     return (state, [], "") + (disable_btn,) * 5
 
 
+def get_ip(request: gr.Request):
+    if "cf-connecting-ip" in request.headers:
+        ip = request.headers['cf-connecting-ip']
+    else:
+        ip = request.client.host
+    return ip
+
+
 def add_text(state, model_selector, text, request: gr.Request):
-    ip = request.client.host
+    is_cf = "cf-connecting-ip" in request.headers
+    ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
@@ -244,15 +258,15 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive. ip: {request.client.host}. text: {text}")
+    if not is_cf and ip_expiration_dict[ip] < time.time():
+        logger.info(f"inactive. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), INACTIVE_MSG) + (no_change_btn,) * 5
 
     if enable_moderation:
         flagged = violates_moderation(text)
         if flagged:
-            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
+            logger.info(f"violate moderation. ip: {ip}. text: {text}")
             state.skip_next = True
             return (state, state.to_gradio_chatbot(), MODERATION_MSG) + (
                 no_change_btn,
@@ -260,7 +274,7 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     conv = state.conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
+        logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
             no_change_btn,
@@ -322,7 +336,8 @@ def model_worker_stream_iter(
 
 
 def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request):
-    logger.info(f"bot_response. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"bot_response. ip: {ip}")
     start_tstamp = time.time()
     temperature = float(temperature)
     top_p = float(top_p)
@@ -474,7 +489,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             "start": round(start_tstamp, 4),
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
