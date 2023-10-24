@@ -1,7 +1,11 @@
 # FastChat
 | [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
-FastChat is an open platform for training, serving, and evaluating large language model based chatbots. The core features include:
+FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
+- FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 4 million chat requests for 30+ LLMs.
+- Arena has collected over 80K human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
+
+FastChat's core features include:
 - The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
@@ -110,13 +114,13 @@ The command below requires around 14GB of GPU memory for Vicuna-7B and 28GB of G
 See the ["Not Enough Memory" section](#not-enough-memory) below if you do not have enough memory.
 `--model-path` can be a local folder or a Hugging Face repo name.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5
 ```
 
 #### Multiple GPUs
 You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine. 
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --num-gpus 2
 ```
 
 Tips:
@@ -125,25 +129,25 @@ You can use `--max-gpu-memory` to specify the maximum memory per GPU for storing
 This allows it to allocate more memory for activations, so you can use longer context lengths or larger batch sizes. For example,
 
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --num-gpus 2 --max-gpu-memory 8GiB
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --num-gpus 2 --max-gpu-memory 8GiB
 ```
 
 #### CPU Only
 This runs on the CPU only and does not require GPU. It requires around 30GB of CPU memory for Vicuna-7B and around 60GB of CPU memory for Vicuna-13B.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device cpu
 ```
 
 Use Intel AI Accelerator AVX512_BF16/AMX to accelerate CPU inference.
 ```
-CPU_ISA=amx python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device cpu
+CPU_ISA=amx python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device cpu
 ```
 
 #### Metal Backend (Mac Computers with Apple Silicon or AMD GPUs)
 Use `--device mps` to enable GPU acceleration on Mac computers (requires torch >= 2.0).
 Use `--load-8bit` to turn on 8-bit compression.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device mps --load-8bit
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device mps --load-8bit
 ```
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
@@ -155,7 +159,7 @@ source /opt/intel/oneapi/setvars.sh
 
 Use `--device xpu` to enable XPU/GPU acceleration.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device xpu
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
@@ -167,7 +171,7 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
 
 Use `--device npu` to enable NPU acceleration.
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --device npu
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device npu
 ```
 Vicuna-7B/13B can run on an Ascend 910B NPU 60GB.
 
@@ -179,7 +183,7 @@ It is compatible with the CPU, GPU, and Metal backend.
 Vicuna-13B with 8-bit compression can run on a single GPU with 16 GB of VRAM, like an Nvidia RTX 3090, RTX 4080, T4, V100 (16GB), or an AMD RX 6800 XT.
 
 ```
-python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.3 --load-8bit
+python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --load-8bit
 ```
 
 In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory.
@@ -209,13 +213,13 @@ This controller manages the distributed workers.
 
 #### Launch the model worker(s)
 ```bash
-python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.5
 ```
 Wait until the process finishes loading the model and you see "Uvicorn running on ...". The model worker will register itself to the controller .
 
 To ensure that your model worker is connected to your controller properly, send a test message using the following command:
 ```bash
-python3 -m fastchat.serve.test_message --model-name vicuna-7b-v1.3
+python3 -m fastchat.serve.test_message --model-name vicuna-7b-v1.5
 ```
 You will see a short output.
 
@@ -233,7 +237,7 @@ If the models do not show up, try to reboot the gradio web server.
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
 # worker 0
-CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
+CUDA_VISIBLE_DEVICES=0 python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.5 --controller http://localhost:21001 --port 31000 --worker http://localhost:31000
 # worker 1
 CUDA_VISIBLE_DEVICES=1 python3 -m fastchat.serve.model_worker --model-path lmsys/fastchat-t5-3b-v1.0 --controller http://localhost:21001 --port 31001 --worker http://localhost:31001
 ```

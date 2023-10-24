@@ -19,7 +19,7 @@ Here, we use Vicuna as an example and use it for three endpoints: chat completio
 See a full list of supported models [here](../README.md#supported-models).
 
 ```bash
-python3 -m fastchat.serve.model_worker --model-names "gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002" --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.model_worker --model-names "gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002" --model-path lmsys/vicuna-7b-v1.5
 ```
 
 Finally, launch the RESTful API server
