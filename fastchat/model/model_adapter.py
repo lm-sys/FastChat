@@ -1681,6 +1681,18 @@ class XwinLMAdapter(BaseModelAdapter):
         return get_conv_template("vicuna_v1.1")
 
 
+class LemurAdapter(BaseModelAdapter):
+    """The model adapter for OpenLemur/lemur-70b-chat-v1"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "lemur-70b-chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("lemur-70b-chat")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1742,6 +1754,7 @@ register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
 register_model_adapter(XwinLMAdapter)
+register_model_adapter(LemurAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
