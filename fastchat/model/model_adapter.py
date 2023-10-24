@@ -515,6 +515,7 @@ def add_model_args(parser):
         default=None,
     )
 
+
 def remove_parent_directory_name(model_path):
     """Remove parent directory name."""
     if model_path[-1] == "/":

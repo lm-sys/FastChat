@@ -319,7 +319,7 @@ def create_model_worker():
             max_seq_len=args.xft_max_seq_len,
             data_type=args.xft_dtype,
         )
-        if args.device != "cpu" :
+        if args.device != "cpu":
             print("xFasterTransformer now is only support CPUs. Reset device to CPU")
             args.device = "cpu"
     else:

@@ -30,15 +30,15 @@ import gc
 #         inputs = tokenizer(prompt, return_tensors="pt", padding=model.config.padding).input_ids
 #         input_echo_len = len(inputs[0])
 #         max_len = max_new_tokens + input_echo_len
-   
-#         model.model.config(max_length=max_len, 
+
+#         model.model.config(max_length=max_len,
 #                            num_beams=model.config.beam_width,
 #                            length_penalty = repetition_penalty,
 #                            num_return_sequences = model.config.num_return_sequences,
 #                            early_stopping = model.config.early_stopping,
 #                            eos_token_id = model.config.eos_token_id,
 #                            pad_token_id = model.config.pad_token_id)
-       
+
 #         model.model.input(inputs)
 
 #         if echo:
@@ -88,14 +88,16 @@ def generate_stream_xft(
     stream_interval=2,
     judge_sent_end=False,
 ):
-    prompt = params["prompt"]#.strip()
+    prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
     repetition_penalty = float(params.get("repetition_penalty", 1.0))
     top_p = float(params.get("top_p", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 4096))
     echo = params.get("echo", True)
 
-    inputs = tokenizer(prompt, return_tensors="pt", padding=model.config.padding).input_ids
+    inputs = tokenizer(
+        prompt, return_tensors="pt", padding=model.config.padding
+    ).input_ids
     input_echo_len = len(inputs[0])
     max_len = max_new_tokens + input_echo_len
 
@@ -116,7 +118,7 @@ def generate_stream_xft(
     thread = Thread(target=model.model.generate, kwargs=generation_kwargs)
     thread.start()
     if echo:
-    # means keep the prompt
+        # means keep the prompt
         output = prompt
     else:
         output = ""
@@ -134,7 +136,7 @@ def generate_stream_xft(
     output = output.strip()
     if i == max_new_tokens - 1:
         finish_reason = "length"
-    else :
+    else:
         finish_reason = "stop"
     yield {
         "text": output,
