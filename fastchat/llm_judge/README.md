@@ -57,6 +57,15 @@ To make sure FastChat loads the correct prompt template, see the supported model
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
+To enable advanced continuous batching and a much higher (~10x) throughput, you can use vllm with below script.
+```
+python gen_vllm_model_answer.py --model-path [MODEL-PATH] --model-id [MODEL-ID]
+```
+See the supported models [here](https://vllm.readthedocs.io/en/latest/models/supported_models.html). Please make sure you have installed vllm.
+```
+pip install vllm
+```
+
 #### Step 2. Generate GPT-4 judgments
 There are several options to use GPT-4 as a judge, such as pairwise winrate and single-answer grading.
 In MT-bench, we recommond single-answer grading as the default mode.

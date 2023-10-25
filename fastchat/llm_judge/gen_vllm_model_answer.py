@@ -1,21 +1,76 @@
 """Generate answers with local models.
 
 Usage:
-python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
+python3 gen_vllm_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 """
 import argparse
 import json
 import os
-import random
 import time
 
 import shortuuid
-import torch
 from tqdm import tqdm
 
+from transformers import AutoTokenizer
+from vllm import LLM, SamplingParams
+
 from fastchat.llm_judge.common import load_questions, temperature_config
-from fastchat.model import load_model, get_conversation_template
-from fastchat.utils import str_to_torch_dtype
+from fastchat.model import get_conversation_template
+
+
+def group_question_by_temperature(questions):
+    """ return temperature as key, questions list as value """
+    temperature2qs = {}
+    for question in tqdm(questions):
+        if question["category"] in temperature_config:
+            temperature = temperature_config[question["category"]]
+        else:
+            temperature = 0.7
+        if temperature not in temperature2qs:
+            temperature2qs[temperature] = []
+        temperature2qs[temperature].append(question)
+
+    return temperature2qs
+
+
+def get_max_num_turns(questions):
+    return max(
+        [len(question["turns"]) for question in questions]
+    )
+
+
+def gather_id_inputs(
+    cur_turn_id,
+    id2outputs,
+    model_id,
+    questions,
+    num_choices,
+):
+    id2inputs = {}
+    for question in questions:
+        turns = question["turns"]
+        if len(turns) < cur_turn_id:
+            continue
+        for i in range(num_choices):
+            key = (question["question_id"], i)
+            assistant_contents = id2outputs.get(key, [])
+            conv = get_conversation_template(model_id)
+
+            for j in range(len(turns[:cur_turn_id])):
+                qs = turns[j]
+                assistant_content = None
+                if len(assistant_contents) > j:
+                    assistant_content = assistant_contents[j]
+
+                conv.append_message(conv.roles[0], qs)
+                conv.append_message(conv.roles[1], assistant_content)
+
+            prompt = conv.get_prompt()
+            if key not in id2inputs:
+                id2inputs[key] = []
+            id2inputs[key].append(prompt)
+
+    return id2inputs
 
 
 def run_eval(
@@ -27,152 +82,122 @@ def run_eval(
     answer_file,
     max_new_token,
     num_choices,
-    num_gpus_per_model,
-    num_gpus_total,
-    max_gpu_memory,
-    dtype,
+    gpu_memory_utilization,
+    presence_penalty,
+    frequency_penalty,
 ):
     questions = load_questions(question_file, question_begin, question_end)
-    # random shuffle the questions to balance the loading
-    random.shuffle(questions)
-
-    # Split the question file into `num_gpus` files
-    assert num_gpus_total % num_gpus_per_model == 0
-    use_ray = num_gpus_total // num_gpus_per_model > 1
-
-    if use_ray:
-        get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers
-        ).remote
-    else:
-        get_answers_func = get_model_answers
-
-    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
-    ans_handles = []
-    for i in range(0, len(questions), chunk_size):
-        ans_handles.append(
-            get_answers_func(
-                model_path,
-                model_id,
-                questions[i : i + chunk_size],
-                answer_file,
-                max_new_token,
-                num_choices,
-                num_gpus_per_model,
-                max_gpu_memory,
-                dtype=dtype,
-            )
-        )
-
-    if use_ray:
-        ray.get(ans_handles)
+    get_vllm_model_answers(
+        model_path,
+        model_id,
+        questions,
+        answer_file,
+        max_new_token,
+        num_choices,
+        gpu_memory_utilization,
+        presence_penalty,
+        frequency_penalty,
+    )
 
 
-@torch.inference_mode()
-def get_model_answers(
+def get_vllm_model_answers(
     model_path,
     model_id,
     questions,
     answer_file,
     max_new_token,
     num_choices,
-    num_gpus_per_model,
-    max_gpu_memory,
-    dtype,
+    gpu_memory_utilization,
+    presence_penalty,
+    frequency_penalty,
 ):
-    model, tokenizer = load_model(
-        model_path,
-        device="cuda",
-        num_gpus=num_gpus_per_model,
-        max_gpu_memory=max_gpu_memory,
-        dtype=dtype,
-        load_8bit=False,
-        cpu_offloading=False,
-        debug=False,
+    llm = LLM(
+        model=model_path,
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_memory_utilization,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, use_fast=False, trust_remote_code=True
     )
 
-    for question in tqdm(questions):
-        if question["category"] in temperature_config:
-            temperature = temperature_config[question["category"]]
-        else:
-            temperature = 0.7
-
-        choices = []
-        for i in range(num_choices):
-            torch.manual_seed(i)
+    max_num_turns = get_max_num_turns(questions)
+    temperature2qs = group_question_by_temperature(questions)
+    id2outputs = {}
+    for cur_turn_id in range(1, max_num_turns + 1):
+        print(f"Process turn {cur_turn_id}")
+        for temperature, sub_questions in temperature2qs.items():
             conv = get_conversation_template(model_id)
-            turns = []
-            for j in range(len(question["turns"])):
-                qs = question["turns"][j]
-                conv.append_message(conv.roles[0], qs)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt]).input_ids
+            stop_token_ids = [tokenizer.eos_token_id, tokenizer.pad_token_id]
+            if conv.stop_token_ids:
+                stop_token_ids.extend(conv.stop_token_ids)
 
-                if temperature < 1e-4:
-                    do_sample = False
-                else:
-                    do_sample = True
+            inference_params = {
+                "temperature": temperature,
+                "max_tokens": max_new_token,
+                "stop_token_ids": stop_token_ids,
+                "presence_penalty": presence_penalty,
+                "frequency_penalty": frequency_penalty,
+            }
+            print(f"Process {len(sub_questions)} questions with temperature {temperature}")
+            sampling_params = SamplingParams(**inference_params)
+            id2inputs = gather_id_inputs(
+                cur_turn_id,
+                id2outputs,
+                model_id,
+                sub_questions,
+                num_choices,
+            )
 
-                # some models may error out when generating long outputs
-                try:
-                    output_ids = model.generate(
-                        torch.as_tensor(input_ids).cuda(),
-                        do_sample=do_sample,
-                        temperature=temperature,
-                        max_new_tokens=max_new_token,
-                    )
-                    if model.config.is_encoder_decoder:
-                        output_ids = output_ids[0]
-                    else:
-                        output_ids = output_ids[0][len(input_ids[0]) :]
+            batched_index = []
+            batched_inputs = []
+            for (quid, choice_index), inputs in id2inputs.items():
+                for each_input in inputs:
+                    batched_inputs.append(each_input)
+                    batched_index.append((quid, choice_index))
 
-                    # be consistent with the template's stop_token_ids
-                    if conv.stop_token_ids:
-                        stop_token_ids_index = [
-                            i
-                            for i, id in enumerate(output_ids)
-                            if id in conv.stop_token_ids
-                        ]
-                        if len(stop_token_ids_index) > 0:
-                            output_ids = output_ids[: stop_token_ids_index[0]]
+            batched_outputs = llm.generate(batched_inputs, sampling_params)
+            id2outputs = gather_outputs(id2outputs, batched_index, batched_outputs)
 
-                    output = tokenizer.decode(
-                        output_ids,
-                        spaces_between_special_tokens=False,
-                    )
-                    if conv.stop_str and output.find(conv.stop_str) > 0:
-                        output = output[: output.find(conv.stop_str)]
-                    for special_token in tokenizer.special_tokens_map.values():
-                        if isinstance(special_token, list):
-                            for special_tok in special_token:
-                                output = output.replace(special_tok, "")
-                        else:
-                            output = output.replace(special_token, "")
-                    output = output.strip()
+    quid2choices = gather_choices(id2outputs)
+    write_answers(quid2choices, questions, model_id, answer_file)
 
-                    if conv.name == "xgen" and output.startswith("Assistant:"):
-                        output = output.replace("Assistant:", "", 1).strip()
-                except RuntimeError as e:
-                    print("ERROR question ID: ", question["question_id"])
-                    output = "ERROR"
 
-                turns.append(output)
-                conv.messages[-1][-1] = output
+def gather_outputs(id2outputs, batched_index, batched_outputs):
+    for idx, output in enumerate(batched_outputs):
+        generated_text = output.outputs[0].text
+        (quid, choice_index) = batched_index[idx]
+        if (quid, choice_index) not in id2outputs:
+            id2outputs[(quid, choice_index)] = []
+        id2outputs[(quid, choice_index)].append(generated_text)
+    return id2outputs
 
-            choices.append({"index": i, "turns": turns})
 
-        # Dump answers
-        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-        with open(os.path.expanduser(answer_file), "a") as fout:
+def gather_choices(id2outputs):
+    quid2choices = {}
+    for (quid, choice_index) in id2outputs:
+        turns = id2outputs[(quid, choice_index)]
+        if quid not in quid2choices:
+            quid2choices[quid] = []
+        quid2choices[quid].append({"index": choice_index, "turns": turns})
+    return quid2choices
+
+
+def write_answers(quid2choices, questions, model_id, answer_file):
+    os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+    for question in questions:
+        question_id = question["question_id"]
+        choices = quid2choices[question_id]
+        with open(os.path.expanduser(answer_file), "a", encoding="utf-8") as fout:
             ans_json = {
                 "question_id": question["question_id"],
+                "category": question["category"],
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
                 "choices": choices,
                 "tstamp": time.time(),
             }
-            fout.write(json.dumps(ans_json) + "\n")
+            fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
+
 
 
 def reorg_answer_file(answer_file):
@@ -228,33 +253,32 @@ if __name__ == "__main__":
         help="How many completion choices to generate.",
     )
     parser.add_argument(
-        "--num-gpus-per-model",
-        type=int,
-        default=1,
-        help="The number of GPUs per model.",
+        "--gpu-memory-utilization",
+        type=float,
+        default=0.9,
+        help="The ratio (between 0 and 1) of GPU memory to"
+             "reserve for the model weights, activations, and KV cache.",
     )
     parser.add_argument(
-        "--num-gpus-total", type=int, default=1, help="The total number of GPUs."
+        "--presence_penalty",
+        type=float,
+        default=0,
+        help="""Float that penalizes new tokens based on whether they
+                appear in the generated text so far. Values > 0 encourage the llm
+                to use new tokens, while values < 0 encourage the llm to repeat
+                tokens.""",
     )
     parser.add_argument(
-        "--max-gpu-memory",
-        type=str,
-        help="Maxmum GPU memory used for model weights per GPU.",
-    )
-    parser.add_argument(
-        "--dtype",
-        type=str,
-        choices=["float32", "float16", "bfloat16"],
-        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
-        default=None,
+        "--frequency_penalty",
+        type=float,
+        default=0,
+        help="""Float that penalizes new tokens based on their
+                frequency in the generated text so far. Values > 0 encourage the
+                llm to use new tokens, while values < 0 encourage the llm to
+                repeat tokens.""",
     )
 
     args = parser.parse_args()
-
-    if args.num_gpus_total // args.num_gpus_per_model > 1:
-        import ray
-
-        ray.init()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
     if args.answer_file:
@@ -273,10 +297,9 @@ if __name__ == "__main__":
         answer_file=answer_file,
         max_new_token=args.max_new_token,
         num_choices=args.num_choices,
-        num_gpus_per_model=args.num_gpus_per_model,
-        num_gpus_total=args.num_gpus_total,
-        max_gpu_memory=args.max_gpu_memory,
-        dtype=str_to_torch_dtype(args.dtype),
+        gpu_memory_utilization=args.gpu_memory_utilization,
+        presence_penalty=args.presence_penalty,
+        frequency_penalty=args.frequency_penalty,
     )
 
     reorg_answer_file(answer_file)
