@@ -1,5 +1,5 @@
 deepspeed fastchat/train/train_lora.py \
-    --model_name_or_path lmsys/vicuna-7b-v1.3  \
+    --model_name_or_path lmsys/vicuna-7b-v1.5  \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \

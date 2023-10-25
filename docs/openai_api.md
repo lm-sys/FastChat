@@ -18,7 +18,7 @@ python3 -m fastchat.serve.controller
 Then, launch the model worker(s)
 
 ```bash
-python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.5
 ```
 
 Finally, launch the RESTful API server
@@ -45,7 +45,7 @@ import openai
 openai.api_key = "EMPTY"
 openai.api_base = "http://localhost:8000/v1"
 
-model = "vicuna-7b-v1.3"
+model = "vicuna-7b-v1.5"
 prompt = "Once upon a time"
 
 # create a completion
@@ -77,7 +77,7 @@ Chat Completions:
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "messages": [{"role": "user", "content": "Hello! What is your name?"}]
   }'
 ```
@@ -87,7 +87,7 @@ Text Completions:
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "prompt": "Once upon a time",
     "max_tokens": 41,
     "temperature": 0.5
@@ -99,7 +99,7 @@ Embeddings:
 curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "input": "Hello world!"
   }'
 ```
@@ -111,8 +111,8 @@ you can replace the `model_worker` step above with a multi model variant:
 
 ```bash
 python3 -m fastchat.serve.multi_model_worker \
-    --model-path lmsys/vicuna-7b-v1.3 \
-    --model-names vicuna-7b-v1.3 \
+    --model-path lmsys/vicuna-7b-v1.5 \
+    --model-names vicuna-7b-v1.5 \
     --model-path lmsys/longchat-7b-16k \
     --model-names longchat-7b-16k
 ```
