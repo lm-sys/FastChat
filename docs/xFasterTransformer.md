@@ -1,4 +1,4 @@
-# xFasterTransformer Inference Franework
+# xFasterTransformer Inference Framework
 
 Integrated [xFasterTransformer](https://github.com/intel/xFasterTransformer) customized framework into Fastchat to provide **Faster** inference speed on Intel CPU.
 
@@ -20,7 +20,7 @@ python ./tools/chatglm_convert.py -i ${HF_DATASET_DIR} -o  ${OUTPUT_DIR}
 ## Parameters of xFasterTransformer
 --enable-xft to enable xfastertransformer in Fastchat
 --xft-max-seq-len to set the max token length the model can process. max token length include input token length.
---xft-dtype to set datatype used in xFasterTransformer for computation. xFasterTransformer can support fp32, fp16, int8, bf16 and hybrid data types like : bf16_fp16, bf16_int8. (for bf16 related data type you need CPUs with Intel® Advanced Matrix Extensions (Intel® AMX) ) (please refer to [this link](https://github.com/intel/xFasterTransformer/wiki/How-to-run))
+--xft-dtype to set datatype used in xFasterTransformer for computation. xFasterTransformer can support fp32, fp16, int8, bf16 and hybrid data types like : bf16_fp16, bf16_int8. For datatype details please refer to [this link](https://github.com/intel/xFasterTransformer/wiki/Data-Type-Support-Platform)
     
 
 Chat with the CLI:
