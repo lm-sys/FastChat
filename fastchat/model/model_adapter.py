@@ -720,7 +720,7 @@ class AlpacaAdapter(BaseModelAdapter):
 
 
 class ChatGLMAdapter(BaseModelAdapter):
-    """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b , THUDM/chatglm3-6b"""
+    """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b, THUDM/chatglm3-6b"""
 
     def match(self, model_path: str):
         return "chatglm" in model_path.lower()
