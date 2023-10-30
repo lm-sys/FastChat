@@ -10,7 +10,7 @@ import openai
 from fastchat.utils import run_cmd
 
 openai.api_key = "EMPTY"  # Not support yet
-openai.api_base = "http://localhost:8000/v1"
+openai.api_base = "http://localhost:8050/v1"
 
 
 def test_list_models():
@@ -21,8 +21,11 @@ def test_list_models():
 
 def test_completion(model):
     prompt = "Once upon a time"
-    completion = openai.Completion.create(model=model, prompt=prompt, max_tokens=64)
-    print(prompt + completion.choices[0].text)
+    completion = openai.Completion.create(
+        model=model, prompt=prompt, logprobs=1, max_tokens=64
+    )
+    print(f"full text: {prompt + completion.choices[0].text}", flush=True)
+    print(f"logprobs: {completion.choices[0].logprobs.token_logprobs}", flush=True)
 
 
 def test_completion_stream(model):
@@ -30,7 +33,7 @@ def test_completion_stream(model):
     res = openai.Completion.create(
         model=model, prompt=prompt, max_tokens=64, stream=True
     )
-    print(prompt, end="")
+    print(prompt, end="", flush=True)
     for chunk in res:
         content = chunk["choices"][0]["text"]
         print(content, end="", flush=True)

@@ -49,6 +49,7 @@ from fastchat.protocol.openai_api_protocol import (
     EmbeddingsRequest,
     EmbeddingsResponse,
     ErrorResponse,
+    LogProbs,
     ModelCard,
     ModelList,
     ModelPermission,
@@ -222,6 +223,11 @@ def process_input(model_name, inp):
             inp = [decoding.decode(text) for text in inp]
 
     return inp
+
+
+def create_openai_logprobs(logprob_dict):
+    """Create OpenAI-style logprobs."""
+    return LogProbs(**logprob_dict) if logprob_dict is not None else None
 
 
 def _add_to_set(s, new_stop):
@@ -527,7 +533,7 @@ async def create_completion(request: CompletionRequest):
                 CompletionResponseChoice(
                     index=i,
                     text=content["text"],
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
@@ -556,6 +562,7 @@ async def generate_completion_stream_generator(
                 temperature=request.temperature,
                 top_p=request.top_p,
                 max_tokens=request.max_tokens,
+                logprobs=request.logprobs,
                 echo=request.echo,
                 stop=request.stop,
             )
@@ -575,7 +582,7 @@ async def generate_completion_stream_generator(
                 choice_data = CompletionResponseStreamChoice(
                     index=i,
                     text=delta_text,
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", None),
                 )
                 chunk = CompletionStreamResponse(
