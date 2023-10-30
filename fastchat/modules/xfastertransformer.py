@@ -1,7 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import sys
-
-Xft_loop_flag = True
 
 
 @dataclass
@@ -43,6 +41,6 @@ def load_xft_model(model_path, xft_config: XftConfig):
     )
     model = XftModel(xft_model=xft_model, xft_config=xft_config)
     if model.model.rank > 0:
-        while Xft_loop_flag:
+        while True:
             model.model.generate()
     return model, tokenizer
