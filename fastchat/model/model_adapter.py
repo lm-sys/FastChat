@@ -1382,6 +1382,8 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "mistral-7b-openorca" in model_path.lower():
+            return get_conv_template("mistral-7b-openorca")
         return get_conv_template("open-orca")
 
 
