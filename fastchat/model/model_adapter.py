@@ -741,9 +741,6 @@ class ChatGLMAdapter(BaseModelAdapter):
             return get_conv_template("chatglm2")
         if "chatglm3" in model_path.lower():
             return get_conv_template("chatglm3")
-        
-        
-        
         return get_conv_template("chatglm")
 
 
