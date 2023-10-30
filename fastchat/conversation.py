@@ -639,6 +639,21 @@ register_conv_template(
     )
 )
 
+# Lemur-70b-chat default template
+# reference: https://huggingface.co/OpenLemur/lemur-70b-chat-v1#generation
+register_conv_template(
+    Conversation(
+        name="lemur-70b-chat",
+        system_template="""<|im_start|>system
+{system_message}""",
+        system_message="""You are a helpful, respectful, and honest assistant.""",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32002, 0],
+    )
+)
+
 # MPT-30b-instruct default template
 # reference: https://huggingface.co/mosaicml/mpt-30b-instruct#formatting
 register_conv_template(

@@ -74,6 +74,8 @@ class VLLMWorker(BaseModelWorker):
         if self.tokenizer.eos_token_id is not None:
             stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
+        use_beam_search = params.get("use_beam_search", False)
+        best_of = params.get("best_of", None)
 
         # Handle stop_str
         stop = set()
@@ -94,9 +96,10 @@ class VLLMWorker(BaseModelWorker):
             n=1,
             temperature=temperature,
             top_p=top_p,
-            use_beam_search=False,
+            use_beam_search=use_beam_search,
             stop=list(stop),
             max_tokens=max_new_tokens,
+            best_of=best_of,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
@@ -110,16 +113,20 @@ class VLLMWorker(BaseModelWorker):
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
             # Note: usage is not supported yet
+            prompt_tokens = len(request_output.prompt_token_ids)
+            completion_tokens = sum(
+                len(output.token_ids) for output in request_output.outputs
+            )
             ret = {
                 "text": text_outputs,
                 "error_code": 0,
-                "usage": {},
+                "usage": {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": prompt_tokens + completion_tokens,
+                },
                 "cumulative_logprob": [
                     output.cumulative_logprob for output in request_output.outputs
-                ],
-                "prompt_token_len": len(request_output.prompt_token_ids),
-                "output_token_len": [
-                    len(output.token_ids) for output in request_output.outputs
                 ],
                 "finish_reason": request_output.outputs[0].finish_reason
                 if len(request_output.outputs) == 1
