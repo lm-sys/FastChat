@@ -13,6 +13,7 @@ def test_single_gpu():
         "meta-llama/Llama-2-7b-chat-hf",
         "THUDM/chatglm-6b",
         "THUDM/chatglm2-6b",
+        "THUDM/chatglm3-6b",
         "mosaicml/mpt-7b-chat",
         "tiiuae/falcon-7b-instruct",
         "~/model_weights/alpaca-7b",

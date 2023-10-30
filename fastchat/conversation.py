@@ -448,6 +448,16 @@ register_conv_template(
     )
 )
 
+# ChatGLM3 default template
+register_conv_template(
+    Conversation(
+        name="chatglm3",
+        roles=("问", "答"),
+        sep_style=SeparatorStyle.CHATGLM,
+        sep="\n\n",
+    )
+)
+
 # Dolly V2 default template
 register_conv_template(
     Conversation(
