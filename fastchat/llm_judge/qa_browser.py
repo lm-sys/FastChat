@@ -98,14 +98,14 @@ def display_single_answer(question_selector, model_selector1, request: gr.Reques
         gamekey, judgment_dict
     )
 
-    # judgment_dict_turn2 = resolve_single_judgment_dict(
-    #     q, model_judgments_normal_single, model_judgments_math_single, multi_turn=True
-    # )
+    judgment_dict_turn2 = resolve_single_judgment_dict(
+        q, model_judgments_normal_single, model_judgments_math_single, multi_turn=True
+    )
 
     explanation_turn2 = (
         "##### Model Judgment (second turn)\n"
         + "N/A"
-        # + get_single_judge_explanation(gamekey, judgment_dict_turn2)
+        + get_single_judge_explanation(gamekey, judgment_dict_turn2)
     )
 
     return chat_mds + [explanation] + [explanation_turn2]
@@ -202,6 +202,8 @@ def build_pairwise_browser_tab():
     global question_selector_map, category_selector_map
 
     models = list(model_answers.keys())
+    models = [m for m in models if not m in ["gpt-4"]]
+
     num_sides = 2
     num_turns = 2
     side_names = ["A", "B"]
@@ -342,20 +344,6 @@ def build_single_answer_browser_tab():
     return (category_selector,)
 
 
-# block_css = """
-# #user_question_1 {
-#     background-color: #DEEBF7;
-# }
-# #user_question_2 {
-#     background-color: #E2F0D9;
-# }
-# #reference {
-#     background-color: #FFF2CC;
-# }
-# #model_explanation {
-#     background-color: #FBE5D6;
-# }
-# """
 block_css = """
 #user_question_1 {
     background-color: darkblue;
@@ -390,8 +378,8 @@ The code to generate answers and judgments is at [fastchat.llm_judge](https://gi
         )
         with gr.Tab("Single Answer Grading"):
             (category_selector,) = build_single_answer_browser_tab()
-        # with gr.Tab("Pairwise Comparison"):
-        #     (category_selector2,) = build_pairwise_browser_tab()
+        with gr.Tab("Pairwise Comparison"):
+            (category_selector2,) = build_pairwise_browser_tab()
         demo.load(load_demo, [], [category_selector])
 
     return demo
@@ -403,7 +391,13 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int)
     parser.add_argument("--share", action="store_true")
     parser.add_argument("--bench-name", type=str, default="japanese_mt_bench")
-    parser.add_argument("--turns", type=int, default=1)  # TODO: (meng) enable multi-turn later
+    parser.add_argument("--turns", type=int, default=2)
+    parser.add_argument(
+        "--exclude_categories",
+        type=str,
+        nargs="+",
+        default="math coding"
+    )
     args = parser.parse_args()
     print(args)
 
@@ -420,6 +414,8 @@ if __name__ == "__main__":
     questions = load_questions(question_file, None, None)
     for q in questions:
         q['turns'] = q['turns'][:args.turns]
+
+    questions = [q for q in questions if q["category"] not in args.exclude_categories]
 
     # Load answers
     model_answers = load_model_answers(answer_dir)
