@@ -158,11 +158,12 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4": 2,
-    "gpt-3.5-turbo": 2,
-    "claude-2": 2,
+    "gpt-4": 4,
+    "gpt-3.5-turbo": 8,
+    "claude-2": 8,
     "claude-1": 2,
-    "claude-instant-1": 2,
+    "claude-instant-1": 8,
+    "zephyr-7b-beta": 4,
     # tire 1
     "deluxe-chat-v1.1": 0.1,
     "palm-2": 1.5,
@@ -198,8 +199,9 @@ SAMPLING_WEIGHTS = {
     "deluxe-chat-v1": 4,
 }
 
-SAMPLING_BOOST_MODELS = ["zephyr-7b-alpha", "mistral-7b-instruct", "claude-1"]
-OUTAGE_MODELS = ["deluxe-chat-v1.1", "falcon-180b-chat"]
+SAMPLING_BOOST_MODELS = ["zephyr-7b-beta"]
+# SAMPLING_BOOST_MODELS = ["claude-2"]
+OUTAGE_MODELS = ["deluxe-chat-v1.1", "claude-2", "claude-instant-1"]
 
 
 def get_sample_weight(model):
@@ -217,13 +219,16 @@ def get_battle_pair():
 
     targets = {
         "gpt-4": {"claude-2"},
+        # "gpt-4": {"llama-2-70b-chat"},
         "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
-        "claude-2": {"gpt-4", "gpt-3.5-turbo"},
+        # "gpt-3.5-turbo": {"llama-2-70b-chat"},
+        "claude-2": {"gpt-4", "gpt-3.5-turbo", "claude-1"},
         "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
         "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
         "deluxe-chat-v1.1": {"gpt-4"},
         "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
         "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
+        "zephyr-7b-beta": {"mistral-7b-instruct", "llama-2-13b-chat", "llama-2-7b-chat", "wizardlm-13b"},
         "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
         "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
         "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
@@ -251,8 +256,8 @@ def get_battle_pair():
         weight = get_sample_weight(model)
         if (weight != 0 and chosen_model in targets and
                 model in targets[chosen_model]):
-            # boost to 66% chance
-            weight = 2*total_weight / len(targets[chosen_model])
+            # boost to 50% chance
+            weight = total_weight / len(targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -417,17 +422,17 @@ def build_side_by_side_ui_anony(models):
 # ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-### Rules
-- Chat with two anonymous models side-by-side and vote for which one is better!
-- You can do multiple turns of conversations before voting.
-- The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
-- Click "Clear history" to start a new round.
+## 📜 Rules
+- Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
+- You can continue chatting until you identify a winner.
+- Vote won't be counted if model identity is revealed during conversation.
 
-### Leaderboard
-See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
+## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
+We use **100K** human votes to compile an Elo-based LLM leaderboard.
+Find out who is the 🥇LLM Champion!
 
-### Battle
-Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Llama).
+## 👇 Chat now!
+
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -466,7 +471,7 @@ Please scroll down and start chatting. The models include both closed-source mod
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="👉 Enter your prompt and press ENTER",
                 container=False,
                 elem_id="input_box",
             )
@@ -474,7 +479,7 @@ Please scroll down and start chatting. The models include both closed-source mod
             send_btn = gr.Button(value="Send", variant="primary")
 
     with gr.Row() as button_row:
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 

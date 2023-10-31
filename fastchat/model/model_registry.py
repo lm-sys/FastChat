@@ -62,16 +62,16 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
+    ["zephyr-7b-beta", "zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
+register_model_info(
     ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
     "Llama 2",
     "https://ai.meta.com/llama/",
     "open foundation and fine-tuned chat models by Meta",
-)
-register_model_info(
-    ["zephyr-7b-alpha"],
-    "Zephyr",
-    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
-    "a chatbot fine-tuned from Mistral by Hugging Face",
 )
 register_model_info(
     ["qwen-14b-chat"],

@@ -210,22 +210,18 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
             elem_id="leaderboard_dataframe",
         )
         gr.Markdown(
-            "If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).",
+            """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
+            If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
+            """,
             elem_id="leaderboard_markdown",
         )
     else:
         pass
 
-    gr.Markdown(
-        f"""## More Statistics for Chatbot Arena\n
-We added some additional figures to show more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
-Please note that you may see different orders from different ranking methods. This is expected for models that perform similarly, as demonstrated by the confidence interval in the bootstrap figure. Going forward, we prefer the classical Elo calculation because of its scalability and interpretability. You can find more discussions in this blog [post](https://lmsys.org/blog/2023-05-03-arena/).
-""",
-        elem_id="leaderboard_markdown",
-    )
 
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
+    """
     with gr.Row():
         with gr.Column():
             gr.Markdown(
@@ -248,13 +244,14 @@ Please note that you may see different orders from different ranking methods. Th
                 "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
             )
             plot_4 = gr.Plot(p4, show_label=False)
+    """
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
     gr.Markdown(acknowledgment_md)
 
-    return [md_1, plot_1, plot_2, plot_3, plot_4]
-
+    # return [md_1, plot_1, plot_2, plot_3, plot_4]
+    return [md_1]
 
 def build_demo(elo_results_file, leaderboard_table_file):
     from fastchat.serve.gradio_web_server import block_css

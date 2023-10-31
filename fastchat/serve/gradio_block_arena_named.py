@@ -299,16 +299,13 @@ def build_side_by_side_ui_named(models):
 # ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-### Rules
+## Rules
 - Chat with two models side-by-side and vote for which one is better!
 - You pick the models you want to chat with.
 - You can do multiple turns of conversations before voting.
 - Click "Clear history" to start a new round.
 
-### Leaderboard
-See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
-
-### Choose two models to chat with
+## Choose two models to compare
 """
 
     states = [gr.State() for _ in range(num_sides)]

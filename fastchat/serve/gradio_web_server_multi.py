@@ -26,6 +26,7 @@ from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
     build_single_model_ui,
+    build_about,
     get_model_list,
     load_demo_single,
     ip_expiration_dict,
@@ -101,26 +102,29 @@ def load_demo(url_params, request: gr.Request):
 
 
 def build_demo(models, elo_results_file, leaderboard_table_file):
+    text_size = gr.themes.sizes.text_md
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Default(),
+        theme=gr.themes.Default(text_size=text_size),
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Chatbot Arena (battle)", id=0):
+            with gr.Tab("Arena (battle)", id=0):
                 side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("Chatbot Arena (side-by-side)", id=1):
+            with gr.Tab("Arena (side-by-side)", id=1):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("Single Model", id=2):
+            with gr.Tab("Direct Chat", id=2):
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
-
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
                     build_leaderboard_tab(elo_results_file, leaderboard_table_file)
+            with gr.Tab("About Us", id=4):
+                about = build_about()
+
 
         url_params = gr.JSON(visible=False)
 
