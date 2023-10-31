@@ -212,13 +212,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--bench-name",
         type=str,
-        default="mt_bench",
+        default="japanese_mt_bench",
         help="The name of the benchmark question set.",
     )
     parser.add_argument(
         "--max-turns",
         type=int,
-        default=1,
+        default=2,
         help="Max number of turns to evaluate for each question.",
     )
     parser.add_argument(

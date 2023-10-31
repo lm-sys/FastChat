@@ -154,17 +154,15 @@ def make_judge_single(judge_model, judge_prompts):
     judges = {}
     judges["default"] = Judge(judge_model, judge_prompts["single-v1"])
     judges["math"] = Judge(judge_model, judge_prompts["single-math-v1"], ref_based=True)
-
-    # (meng) TODO: pass arguments to allow disabling MT eval instead of hard comment out
-    # judges["default-mt"] = Judge(
-    #     judge_model, judge_prompts["single-v1-multi-turn"], multi_turn=True
-    # )
-    # judges["math-mt"] = Judge(
-    #     judge_model,
-    #     judge_prompts["single-math-v1-multi-turn"],
-    #     ref_based=True,
-    #     multi_turn=True,
-    # )
+    judges["default-mt"] = Judge(
+        judge_model, judge_prompts["single-v1-multi-turn"], multi_turn=True
+    )
+    judges["math-mt"] = Judge(
+        judge_model,
+        judge_prompts["single-math-v1-multi-turn"],
+        ref_based=True,
+        multi_turn=True,
+    )
     return judges
 
 
@@ -173,13 +171,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--bench-name",
         type=str,
-        default="mt_bench",
+        default="japanese_mt_bench",
         help="The name of the benchmark question set.",
     )
     parser.add_argument(
         "--judge-file",
         type=str,
-        default="data/judge_prompts.jsonl",
+        default="data/judge_ja_prompts.jsonl",
         help="The file of judge prompts.",
     )
     parser.add_argument("--judge-model", type=str, default="gpt-4")
@@ -209,6 +207,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
     )
+    parser.add_argument(
+        "--turns-to-eval",
+        type=int,
+        nargs="+",
+        default=None,
+        help="turns to be included in evaluation. set to `1` to only evaluate single turn, `2` to only evaluate 2-turns",
+    )
     args = parser.parse_args()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
@@ -234,7 +239,7 @@ if __name__ == "__main__":
         models = args.model_list
 
     if args.mode == "single":
-        judges = make_judge_single(args.judge_model, judge_prompts)
+        judges = make_judge_single(args.judge_model, judge_prompts=judge_prompts)
         play_a_match_func = play_a_match_single
         output_file = (
             f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
@@ -261,36 +266,38 @@ if __name__ == "__main__":
 
     # Make matches
     matches = []
-    matches += make_match_func(
-        question_default, models, model_answers, judges["default"], baseline_model
-    )
-    matches += make_match_func(
-        question_math,
-        models,
-        model_answers,
-        judges["math"],
-        baseline_model,
-        ref_answers,
-    )
-    # (meng): by default, we disable multi-turn for japanese llm eval
-    # TODO: make this configurable with script arguments
-    # matches += make_match_func(
-    #     question_default,
-    #     models,
-    #     model_answers,
-    #     judges["default-mt"],
-    #     baseline_model,
-    #     multi_turn=True,
-    # )
-    # matches += make_match_func(
-    #     question_math,
-    #     models,
-    #     model_answers,
-    #     judges["math-mt"],
-    #     baseline_model,
-    #     ref_answers,
-    #     multi_turn=True,
-    # )
+    turns_to_eval = [1, 2] if not args.turns_to_eval else args.turns_to_eval
+
+    if 1 in turns_to_eval:
+        matches += make_match_func(
+            question_default, models, model_answers, judges["default"], baseline_model
+        )
+        matches += make_match_func(
+            question_math,
+            models,
+            model_answers,
+            judges["math"],
+            baseline_model,
+            ref_answers,
+        )
+    elif 2 in turns_to_eval:
+        matches += make_match_func(
+            question_default,
+            models,
+            model_answers,
+            judges["default-mt"],
+            baseline_model,
+            multi_turn=True,
+        )
+        matches += make_match_func(
+            question_math,
+            models,
+            model_answers,
+            judges["math-mt"],
+            baseline_model,
+            ref_answers,
+            multi_turn=True,
+        )
 
     match_stat = {}
     match_stat["bench_name"] = args.bench_name
