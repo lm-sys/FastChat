@@ -141,13 +141,13 @@ class Conversation:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
             # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
             if self.name == "chatglm3":
-                if  self.system_message and system_prompt:
+                if self.system_message and system_prompt:
                     ret = system_prompt
                 else:
                     ret = ""
                 for i, (role, message) in enumerate(self.messages):
                     if message:
-                        ret += f"{role}" + "\n" + f"{message}" + self.sep +  "\n"
+                        ret += f"{role}" + "\n" + f"{message}" + self.sep + "\n"
                     else:
                         ret += f"{role}" + "\n"
                 return ret
@@ -464,10 +464,10 @@ register_conv_template(
     Conversation(
         name="chatglm3",
         system_template="<|system|>{system_message}",
-        roles=("<|user|>","<|assistant|>"),
+        roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM,
         sep=None,
-        stop_token_ids = [2,64795,64797],
+        stop_token_ids=[2, 64795, 64797],
     )
 )
 
