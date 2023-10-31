@@ -147,7 +147,7 @@ class Conversation:
                     ret = ""
                 for i, (role, message) in enumerate(self.messages):
                     if message:
-                        ret += f"{role}" + "\n" + f"{message}" + self.sep + "\n"
+                        ret += f"{role}" + "\n" + f"{message}" + "\n"
                     else:
                         ret += f"{role}" + "\n"
                 return ret
