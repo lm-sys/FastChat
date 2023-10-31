@@ -1364,6 +1364,8 @@ class OpenOrcaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         if "mistral-7b-openorca" in model_path.lower():
             return get_conv_template("mistral-7b-openorca")
+        if "OpenHermes-2.5-Mistral-7B" in model_path.lower():
+            return get_conv_template("mistral-7b-openorca")
         elif "openorca" in model_path.lower():
             return get_conv_template("open-orca")
         else:
