@@ -222,6 +222,10 @@ def play_a_match_single(match: MatchPair, output_file: str):
         raise ValueError(f"invalid judge type: {judge['type']}")
 
     if output_file:
+        output_file = os.path.join(
+            output_file.replace(".jsonl", ""),
+            f"{model}__{turn}turn.jsonl"
+        )
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "a") as fout:
             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
@@ -393,21 +397,33 @@ def play_a_match_pair(match: MatchPair, output_file: str):
         raise ValueError(f"invalid judge type: {judge['type']}")
 
     if output_file:
+        output_file = os.path.join(
+            output_file.replace(".jsonl", ""),
+            f"{model_1}__{model_2}__{turn}turn.jsonl"
+        )
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "a") as fout:
-            fout.write(json.dumps(result) + "\n")
+            fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
 
 
-def setup_openai_api(use_azure=True):
+def setup_openai_api(model: str, use_azure=True):
     from functools import partial
+
+    if model == "gpt-3.5-turbo":
+        deployment_id = "misc-35"
+    elif model == "gpt-4":
+        deployment_id = "misc-4"
+    else:
+        raise NotImplementedError(f"{model=}")
+
     if use_azure:
         openai.api_type = "azure"
         openai.api_key = os.environ['OPENAI_AZURE_API_KEY']
         openai.api_base = os.environ['OPENAI_AZURE_API_BASE']
         openai.api_version = "2023-05-15"  # subject to change
-        return partial(openai.ChatCompletion.create, deployment_id="eval-4")
+        return partial(openai.ChatCompletion.create, deployment_id=deployment_id)
     else:
         return openai.ChatCompletion.create
     
@@ -415,7 +431,7 @@ def setup_openai_api(use_azure=True):
 def chat_compeletion_openai(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
     # TODO: allow additional params for toggling between azure api
-    openai_chat_completion_func = setup_openai_api()
+    openai_chat_completion_func = setup_openai_api(model)
 
     for _ in range(API_MAX_RETRY):
         try:
@@ -427,7 +443,12 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            output = response["choices"][0]["message"]["content"]
+            choice = response["choices"][0]
+            if choice["finish_reason"] == "content_filter":
+                print("[WARNING] no result due to OpenAI content filtering.")
+                output = ""
+            else:
+                output = choice["message"]["content"]
             break
         except openai.error.OpenAIError as e:
             print(type(e), e)
@@ -515,34 +536,40 @@ def load_pairwise_model_judgments(filename: str):
     """
     judge_dict = {}
 
-    for line in open(filename):
-        obj = json.loads(line)
-        obj["question_id"] = int(obj["question_id"])
-        judge = tuple(obj["judge"])
-        qid, model_1, model_2 = obj["question_id"], obj["model_1"], obj["model_2"]
+    if not os.path.exists(filename):
+        filenames = glob.glob(os.path.join(filename.replace(".jsonl", ""), "*.jsonl"))
+    else:
+        filenames = [filename]
 
-        if judge not in judge_dict:
-            judge_dict[judge] = {}
+    for filename in filenames:
+        for line in open(filename):
+            obj = json.loads(line)
+            obj["question_id"] = int(obj["question_id"])
+            judge = tuple(obj["judge"])
+            qid, model_1, model_2 = obj["question_id"], obj["model_1"], obj["model_2"]
 
-        if "winner" in obj:
-            winner = obj["winner"]
-        elif "g1_winner" in obj and "g2_winner" in obj:
-            g1_winner, g2_winner = obj["g1_winner"], obj["g2_winner"]
-            if g1_winner == g2_winner:
-                winner = g1_winner
+            if judge not in judge_dict:
+                judge_dict[judge] = {}
+
+            if "winner" in obj:
+                winner = obj["winner"]
+            elif "g1_winner" in obj and "g2_winner" in obj:
+                g1_winner, g2_winner = obj["g1_winner"], obj["g2_winner"]
+                if g1_winner == g2_winner:
+                    winner = g1_winner
+                else:
+                    winner = "inconsistent"
             else:
-                winner = "inconsistent"
-        else:
-            raise ValueError(f"Invalid keys: {list(obj.keys())}")
+                raise ValueError(f"Invalid keys: {list(obj.keys())}")
 
-        gamekey = (qid, model_1, model_2)
-        winners = (winner,)
+            gamekey = (qid, model_1, model_2)
+            winners = (winner,)
 
-        judge_dict[judge][gamekey] = {
-            "winners": winners,
-            "g1_judgment": obj["g1_judgment"],
-            "g2_judgment": obj["g2_judgment"],
-        }
+            judge_dict[judge][gamekey] = {
+                "winners": winners,
+                "g1_judgment": obj["g1_judgment"],
+                "g2_judgment": obj["g2_judgment"],
+            }
 
     # Make the model names sorted in the game keys
     normalized = {}
@@ -559,21 +586,27 @@ def load_single_model_judgments(filename: str):
     """
     judge_dict = {}
 
-    for line in open(filename):
-        obj = json.loads(line)
-        obj["question_id"] = int(obj["question_id"])
-        judge = tuple(obj["judge"])
-        qid, model = obj["question_id"], obj["model"]
+    if not os.path.exists(filename):
+        filenames = glob.glob(os.path.join(filename.replace(".jsonl", ""), "*.jsonl"))
+    else:
+        filenames = [filename]
 
-        if judge not in judge_dict:
-            judge_dict[judge] = {}
+    for filename in filenames:
+        for line in open(filename):
+            obj = json.loads(line)
+            obj["question_id"] = int(obj["question_id"])
+            judge = tuple(obj["judge"])
+            qid, model = obj["question_id"], obj["model"]
 
-        gamekey = (qid, model)
+            if judge not in judge_dict:
+                judge_dict[judge] = {}
 
-        judge_dict[judge][gamekey] = {
-            "score": obj["score"],
-            "judgment": obj["judgment"],
-        }
+            gamekey = (qid, model)
+
+            judge_dict[judge][gamekey] = {
+                "score": obj["score"],
+                "judgment": obj["judgment"],
+            }
     return judge_dict
 
 
