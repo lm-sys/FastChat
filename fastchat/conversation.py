@@ -142,14 +142,14 @@ class Conversation:
             # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
             if self.name == "chatglm3":
                 if self.system_message and system_prompt:
-                    ret = system_prompt
+                    ret = system_prompt + "\n"
                 else:
                     ret = ""
                 for i, (role, message) in enumerate(self.messages):
                     if message:
-                        ret += f"{role}" + "\n" + f"{message}" + "\n"
+                        ret += role + "\n" + message + "\n"
                     else:
-                        ret += f"{role}" + "\n"
+                        ret += role + "\n"
                 return ret
             round_add_n = 1 if self.name == "chatglm2" else 0
             if system_prompt:
@@ -463,7 +463,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="chatglm3",
-        system_template="<|system|>{system_message}",
+        system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM,
         sep=None,

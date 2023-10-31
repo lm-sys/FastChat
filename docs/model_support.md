@@ -39,6 +39,7 @@
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+- [THUDM/chatglm3-6b](https://huggingface.co/THUDM/chatglm3-6b)
 - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
 - [tiiuae/falcon-180B-chat](https://huggingface.co/tiiuae/falcon-180B-chat)
 - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
