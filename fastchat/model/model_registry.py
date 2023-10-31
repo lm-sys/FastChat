@@ -129,7 +129,7 @@ register_model_info(
     "an RNN with transformer-level LLM performance",
 )
 register_model_info(
-    ["chatglm-6b", "chatglm2-6b"],
+    ["chatglm-6b", "chatglm2-6b", "chatglm3-6b"],
     "ChatGLM",
     "https://chatglm.cn/blog",
     "an open bilingual dialogue language model by Tsinghua University",

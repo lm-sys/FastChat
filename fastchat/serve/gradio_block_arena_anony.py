@@ -175,6 +175,7 @@ SAMPLING_WEIGHTS = {
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
+    "chatglm3-6b": 1.0,
     "mistral-7b-instruct": 1.0,
     # deprecated
     "codellama-13b-instruct": 1.0,
