@@ -82,6 +82,7 @@ class ModelWorker(BaseModelWorker):
             gptq_config=gptq_config,
             awq_config=awq_config,
             exllama_config=exllama_config,
+            debug=kwargs["debug"]
         )
         self.device = device
         if self.tokenizer.pad_token == None:
@@ -283,6 +284,12 @@ def create_model_worker():
         default=None,
         help="Overwrite the random seed for each generation.",
     )
+    parser.add_argument(
+        "--debug",
+        type=bool,
+        default=False,
+        help="Print debugging messages"
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -333,6 +340,7 @@ def create_model_worker():
         conv_template=args.conv_template,
         embed_in_truncate=args.embed_in_truncate,
         seed=args.seed,
+        debug=args.debug
     )
     return args, worker
 
