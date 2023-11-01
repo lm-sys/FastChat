@@ -49,6 +49,7 @@ from fastchat.protocol.openai_api_protocol import (
     EmbeddingsRequest,
     EmbeddingsResponse,
     ErrorResponse,
+    LogProbs,
     ModelCard,
     ModelList,
     ModelPermission,
@@ -229,6 +230,11 @@ def process_input(model_name, inp):
     return inp
 
 
+def create_openai_logprobs(logprob_dict):
+    """Create OpenAI-style logprobs."""
+    return LogProbs(**logprob_dict) if logprob_dict is not None else None
+
+
 def _add_to_set(s, new_stop):
     if not s:
         return
@@ -250,6 +256,7 @@ async def get_gen_params(
     frequency_penalty: Optional[float],
     max_tokens: Optional[int],
     echo: Optional[bool],
+    logprobs: Optional[int] = None,
     stop: Optional[Union[str, List[str]]],
     best_of: Optional[int] = None,
     use_beam_search: Optional[bool] = None,
@@ -291,6 +298,7 @@ async def get_gen_params(
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "logprobs": logprobs,
         "top_p": top_p,
         "top_k": top_k,
         "presence_penalty": presence_penalty,
@@ -516,6 +524,7 @@ async def create_completion(request: CompletionRequest):
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
                 max_tokens=request.max_tokens,
+                logprobs=request.logprobs,
                 echo=request.echo,
                 stop=request.stop,
                 best_of=request.best_of,
@@ -541,7 +550,7 @@ async def create_completion(request: CompletionRequest):
                 CompletionResponseChoice(
                     index=i,
                     text=content["text"],
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
@@ -573,6 +582,7 @@ async def generate_completion_stream_generator(
                 presence_penalty=request.presence_penalty,
                 frequency_penalty=request.frequency_penalty,
                 max_tokens=request.max_tokens,
+                logprobs=request.logprobs,
                 echo=request.echo,
                 stop=request.stop,
             )
@@ -592,7 +602,7 @@ async def generate_completion_stream_generator(
                 choice_data = CompletionResponseStreamChoice(
                     index=i,
                     text=delta_text,
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", None),
                 )
                 chunk = CompletionStreamResponse(
