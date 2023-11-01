@@ -238,7 +238,7 @@ async def api_get_embeddings(request: Request):
     return JSONResponse(content=embedding)
 
 
-@app.post("/worker_get_status")
+@app.get("/worker_get_status")
 async def api_get_status(request: Request):
     return {
         "model_names": [m for w in workers for m in w.model_names],
@@ -261,7 +261,7 @@ async def api_get_conv(request: Request):
     return worker.get_conv_template()
 
 
-@app.post("/model_details")
+@app.get("/model_details")
 async def api_model_details(request: Request):
     params = await request.json()
     worker = worker_map[params["model"]]

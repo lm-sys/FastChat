@@ -15,12 +15,12 @@ def main():
     else:
         controller_addr = args.controller_address
         ret = requests.post(controller_addr + "/refresh_all_workers")
-        ret = requests.post(controller_addr + "/list_models")
+        ret = requests.get(controller_addr + "/list_models")
         models = ret.json()["models"]
         models.sort()
         print(f"Models: {models}")
 
-        ret = requests.post(
+        ret = requests.get(
             controller_addr + "/get_worker_address", json={"model": args.model_name}
         )
         worker_addr = ret.json()["address"]
@@ -48,7 +48,7 @@ def main():
 
     def send_request(results, i):
         if args.test_dispatch:
-            ret = requests.post(
+            ret = requests.get(
                 controller_addr + "/get_worker_address", json={"model": args.model_name}
             )
             thread_worker_addr = ret.json()["address"]

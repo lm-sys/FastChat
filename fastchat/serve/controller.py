@@ -97,7 +97,7 @@ class Controller:
 
     def get_worker_status(self, worker_name: str):
         try:
-            r = requests.post(worker_name + "/worker_get_status", timeout=5)
+            r = requests.get(worker_name + "/worker_get_status", timeout=5)
         except requests.exceptions.RequestException as e:
             logger.error(f"Get status fails: {worker_name}, {e}")
             return None
@@ -272,13 +272,13 @@ async def refresh_all_workers():
     models = controller.refresh_all_workers()
 
 
-@app.post("/list_models")
+@app.get("/list_models")
 async def list_models():
     models = controller.list_models()
     return {"models": models}
 
 
-@app.post("/get_worker_address")
+@app.get("/get_worker_address")
 async def get_worker_address(request: Request):
     data = await request.json()
     addr = controller.get_worker_address(data["model"])
@@ -299,7 +299,7 @@ async def worker_api_generate_stream(request: Request):
     return StreamingResponse(generator)
 
 
-@app.post("/worker_get_status")
+@app.get("/worker_get_status")
 async def worker_api_get_status(request: Request):
     return controller.worker_api_get_status()
 

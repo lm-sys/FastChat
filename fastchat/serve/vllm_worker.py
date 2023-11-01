@@ -190,7 +190,7 @@ async def api_generate(request: Request):
     return JSONResponse(output)
 
 
-@app.post("/worker_get_status")
+@app.get("/worker_get_status")
 async def api_get_status(request: Request):
     return worker.get_status()
 
@@ -206,7 +206,7 @@ async def api_get_conv(request: Request):
     return worker.get_conv_template()
 
 
-@app.post("/model_details")
+@app.get("/model_details")
 async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 

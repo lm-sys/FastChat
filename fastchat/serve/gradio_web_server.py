@@ -125,7 +125,7 @@ def get_model_list(
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
-        ret = requests.post(controller_url + "/list_models")
+        ret = requests.get(controller_url + "/list_models")
         models = ret.json()["models"]
     else:
         models = []
@@ -358,7 +358,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         )
     else:
         # Query worker address
-        ret = requests.post(
+        ret = requests.get(
             controller_url + "/get_worker_address", json={"model": model_name}
         )
         worker_addr = ret.json()["address"]

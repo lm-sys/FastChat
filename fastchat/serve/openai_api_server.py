@@ -69,7 +69,29 @@ conv_template_map = {}
 fetch_timeout = aiohttp.ClientTimeout(total=3 * 3600)
 
 
-async def fetch_remote(url, pload=None, name=None):
+async def fetch_remote_get(url, params=None, name=None):
+    async with aiohttp.ClientSession(timeout=fetch_timeout) as session:
+        async with session.get(url, params=params) as response:
+            if response.status != 200:
+                ret = {
+                    "text": f"{response.reason}",
+                    "error_code": ErrorCode.INTERNAL_ERROR,
+                }
+                return json.dumps(ret)
+            
+            output = await response.text()
+
+    if name is not None:
+        res = json.loads(output)
+        if name in res:
+            return res[name]
+        else:
+            raise KeyError(f"{name} not found in the response.")
+    
+    return output
+
+
+async def fetch_remote_post(url, pload=None, name=None):
     async with aiohttp.ClientSession(timeout=fetch_timeout) as session:
         async with session.post(url, json=pload) as response:
             chunks = []
@@ -142,7 +164,7 @@ async def check_model(request) -> Optional[JSONResponse]:
     controller_address = app_settings.controller_address
     ret = None
 
-    models = await fetch_remote(controller_address + "/list_models", None, "models")
+    models = await fetch_remote_get(controller_address + "/list_models", None, "models")
     if request.model not in models:
         ret = create_error_response(
             ErrorCode.INVALID_MODEL,
@@ -157,10 +179,10 @@ async def check_length(request, prompt, max_tokens, worker_addr):
     ):  # model worker not support max_tokens=None
         max_tokens = 1024 * 1024
 
-    context_len = await fetch_remote(
+    context_len = await fetch_remote_get(
         worker_addr + "/model_details", {"model": request.model}, "context_length"
     )
-    token_num = await fetch_remote(
+    token_num = await fetch_remote_post(
         worker_addr + "/count_token",
         {"model": request.model, "prompt": prompt},
         "count",
@@ -332,7 +354,7 @@ async def get_worker_address(model_name: str) -> str:
     :raises: :class:`ValueError`: No available worker for requested model
     """
     controller_address = app_settings.controller_address
-    worker_addr = await fetch_remote(
+    worker_addr = await fetch_remote_get(
         controller_address + "/get_worker_address", {"model": model_name}, "address"
     )
 
@@ -346,7 +368,7 @@ async def get_worker_address(model_name: str) -> str:
 async def get_conv(model_name: str, worker_addr: str):
     conv_template = conv_template_map.get((worker_addr, model_name))
     if conv_template is None:
-        conv_template = await fetch_remote(
+        conv_template = await fetch_remote_post(
             worker_addr + "/worker_get_conv_template", {"model": model_name}, "conv"
         )
         conv_template_map[(worker_addr, model_name)] = conv_template
@@ -356,8 +378,8 @@ async def get_conv(model_name: str, worker_addr: str):
 @app.get("/v1/models", dependencies=[Depends(check_api_key)])
 async def show_available_models():
     controller_address = app_settings.controller_address
-    ret = await fetch_remote(controller_address + "/refresh_all_workers")
-    models = await fetch_remote(controller_address + "/list_models", None, "models")
+    ret = await fetch_remote_post(controller_address + "/refresh_all_workers")
+    models = await fetch_remote_get(controller_address + "/list_models", None, "models")
 
     models.sort()
     # TODO: return real model permission details
@@ -645,7 +667,7 @@ async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
 
 
 async def generate_completion(payload: Dict[str, Any], worker_addr: str):
-    return await fetch_remote(worker_addr + "/worker_generate", payload, "")
+    return await fetch_remote_post(worker_addr + "/worker_generate", payload, "")
 
 
 @app.post("/v1/embeddings", dependencies=[Depends(check_api_key)])
@@ -701,7 +723,7 @@ async def get_embedding(payload: Dict[str, Any]):
     model_name = payload["model"]
     worker_addr = await get_worker_address(model_name)
 
-    embedding = await fetch_remote(worker_addr + "/worker_get_embeddings", payload)
+    embedding = await fetch_remote_post(worker_addr + "/worker_get_embeddings", payload)
     return json.loads(embedding)
 
 
@@ -718,13 +740,13 @@ async def count_tokens(request: APITokenCheckRequest):
     for item in request.prompts:
         worker_addr = await get_worker_address(item.model)
 
-        context_len = await fetch_remote(
+        context_len = await fetch_remote_get(
             worker_addr + "/model_details",
             {"prompt": item.prompt, "model": item.model},
             "context_length",
         )
 
-        token_num = await fetch_remote(
+        token_num = await fetch_remote_post(
             worker_addr + "/count_token",
             {"prompt": item.prompt, "model": item.model},
             "count",
