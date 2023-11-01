@@ -218,7 +218,7 @@ async def api_get_embeddings(request: Request):
 
 
 @app.get("/worker_get_status")
-async def api_get_status(request: Request):
+async def api_get_status():
     return worker.get_status()
 
 
@@ -229,10 +229,10 @@ async def api_count_token(request: Request):
 
 
 @app.get("/worker_get_conv_template")
-async def api_get_conv(request: Request):
+async def api_get_conv():
     return worker.get_conv_template()
 
 
 @app.get("/model_details")
-async def api_model_details(request: Request):
+async def api_model_details():
     return {"context_length": worker.context_len}

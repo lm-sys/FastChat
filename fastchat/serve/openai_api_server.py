@@ -78,7 +78,6 @@ async def fetch_remote_get(url, params=None, name=None):
                     "error_code": ErrorCode.INTERNAL_ERROR,
                 }
                 return json.dumps(ret)
-            
             output = await response.text()
 
     if name is not None:
@@ -87,7 +86,6 @@ async def fetch_remote_get(url, params=None, name=None):
             return res[name]
         else:
             raise KeyError(f"{name} not found in the response.")
-    
     return output
 
 
