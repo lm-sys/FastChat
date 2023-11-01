@@ -1532,7 +1532,13 @@ class E5Adapter(BaseModelAdapter):
 
 
 class AquilaChatAdapter(BaseModelAdapter):
-    """The model adapter for BAAI/AquilaChat-7B"""
+    """The model adapter for BAAI/Aquila
+
+    Now supports:
+    - BAAI/AquilaChat-7B
+    - BAAI/AquilaChat2-7B
+    - BAAI/AquilaChat2-34B
+    """
 
     def match(self, model_path: str):
         return "aquila" in model_path.lower()
@@ -1552,7 +1558,17 @@ class AquilaChatAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("aquila-chat")
+        model_path = model_path.lower()
+        # See: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L347
+        if "aquilachat2" in model_path:
+            if "16k" in model_path:
+                return get_conv_template("aquila")
+            elif "34b" in model_path:
+                return get_conv_template("aquila-legacy")
+            else:
+                return get_conv_template("aquila-v1")
+        else:
+            return get_conv_template("aquila-chat")
 
 
 class Lamma2ChineseAdapter(BaseModelAdapter):

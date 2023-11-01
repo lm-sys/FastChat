@@ -7,6 +7,8 @@
 - Vicuna, Alpaca, LLaMA, Koala
   - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5`
 - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
+- [BAAI/AquilaChat2-7B](https://huggingface.co/BAAI/AquilaChat2-7B)
+- [BAAI/AquilaChat2-34B](https://huggingface.co/BAAI/AquilaChat2-34B)
 - [BAAI/bge-large-en](https://huggingface.co/BAAI/bge-large-en#using-huggingface-transformers)
 - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
 - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
