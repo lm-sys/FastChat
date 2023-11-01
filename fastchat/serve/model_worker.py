@@ -293,7 +293,7 @@ def create_model_worker():
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
 
-    args_host_post = "http://"+str(args.host)+":"+str(args.port)
+    args_host_post = "http://" + str(args.host) + ":" + str(args.port)
     if args.worker_address != args_host_post:
         raise ValueError(
             f"Worker address {args.worker_address} does not match host and port {args_host_post}!"
