@@ -969,7 +969,7 @@ register_conv_template(
         name="aquila-chat",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the human's questions.",
-        roles=("Human", "Assistant", "System"),
+        roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="###",
         sep2="",
@@ -983,7 +983,7 @@ register_conv_template(
         name="aquila-legacy",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
-        roles=("### Human: ", "### Assistant: ", "System"),
+        roles=("### Human: ", "### Assistant: "),
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_TWO,
         sep="\n",
@@ -998,7 +998,7 @@ register_conv_template(
         name="aquila",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
         "The assistant gives helpful, detailed, and polite answers to the human's questions.",
-        roles=("Human", "Assistant", "System"),
+        roles=("Human", "Assistant"),
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="###",
@@ -1012,7 +1012,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="aquila-v1",
-        roles=("<|startofpiece|>", "<|endofpiece|>", ""),
+        roles=("<|startofpiece|>", "<|endofpiece|>"),
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_TWO,
         sep="",
