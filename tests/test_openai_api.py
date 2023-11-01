@@ -25,7 +25,8 @@ def test_completion(model):
         model=model, prompt=prompt, logprobs=1, max_tokens=64
     )
     print(f"full text: {prompt + completion.choices[0].text}", flush=True)
-    print(f"logprobs: {completion.choices[0].logprobs.token_logprobs}", flush=True)
+    if completion.choices[0].logprobs is not None:
+        print(f"logprobs: {completion.choices[0].logprobs.token_logprobs}", flush=True)
 
 
 def test_completion_stream(model):
