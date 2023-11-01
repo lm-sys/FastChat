@@ -53,6 +53,7 @@ class ChatCompletionRequest(BaseModel):
     messages: Union[str, List[Dict[str, str]]]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
+    top_k: Optional[int] = -1
     n: Optional[int] = 1
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, List[str]]] = None
@@ -146,6 +147,7 @@ class CompletionRequest(BaseModel):
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0
+    top_k: Optional[int] = -1
     logprobs: Optional[int] = None
     echo: Optional[bool] = False
     presence_penalty: Optional[float] = 0.0
