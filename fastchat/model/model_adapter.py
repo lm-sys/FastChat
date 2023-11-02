@@ -1362,12 +1362,10 @@ class OpenOrcaAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        if "mistral-7b-openorca" in model_path.lower():
-            return get_conv_template("mistral-7b-openorca")
-        elif "openorca" in model_path.lower():
-            return get_conv_template("open-orca")
-        else:
-            return False
+        return (
+            "mistral-7b-openorca" in model_path.lower()
+            or "openorca" in model_path.lower()
+        )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
