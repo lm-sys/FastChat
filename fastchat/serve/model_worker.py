@@ -58,6 +58,7 @@ class ModelWorker(BaseModelWorker):
         conv_template: Optional[str] = None,
         embed_in_truncate: bool = False,
         seed: Optional[int] = None,
+        debug: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -82,7 +83,7 @@ class ModelWorker(BaseModelWorker):
             gptq_config=gptq_config,
             awq_config=awq_config,
             exllama_config=exllama_config,
-            debug=kwargs["debug"],
+            debug=debug,
         )
         self.device = device
         if self.tokenizer.pad_token == None:
