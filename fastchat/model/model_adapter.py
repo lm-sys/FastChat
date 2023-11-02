@@ -40,7 +40,7 @@ from fastchat.model.monkey_patch_non_inplace import (
 )
 from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
-from fastchat.modules.xfastertransformer import XftConfig, load_xft_model
+from fastchat.modules.xfastertransformer import load_xft_model, XftConfig
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.utils import get_gpu_memory
 
