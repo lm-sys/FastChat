@@ -13,6 +13,7 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     INACTIVE_MSG,
+    SLOW_MODEL_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
@@ -145,6 +146,7 @@ def clear_history(request: gr.Request):
         + [""]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [""]
     )
 
 
@@ -163,14 +165,14 @@ SAMPLING_WEIGHTS = {
     "claude-2": 8,
     "claude-1": 2,
     "claude-instant-1": 8,
-    "zephyr-7b-beta": 4,
+    "zephyr-7b-beta": 2,
     # tire 1
-    "deluxe-chat-v1.1": 0.1,
+    "deluxe-chat-v1.1": 2,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
-    "vicuna-33b": 1.5,
+    "vicuna-33b": 8,
     "vicuna-13b": 1.5,
     "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
@@ -200,8 +202,7 @@ SAMPLING_WEIGHTS = {
 }
 
 SAMPLING_BOOST_MODELS = ["zephyr-7b-beta"]
-# SAMPLING_BOOST_MODELS = ["claude-2"]
-OUTAGE_MODELS = ["deluxe-chat-v1.1", "claude-2", "claude-instant-1"]
+OUTAGE_MODELS = ["claude-1", "claude-2", "claude-instant-1"]
 
 
 def get_sample_weight(model):
@@ -303,6 +304,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [""]
         )
 
     if not is_cf and ip_expiration_dict[ip] < time.time():
@@ -317,6 +319,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [""]
         )
 
     if enable_moderation:
@@ -335,6 +338,7 @@ def add_text(
                     no_change_btn,
                 ]
                 * 6
+                + [""]
             )
 
     conv = states[0].conv
@@ -350,6 +354,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [""]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -358,6 +363,10 @@ def add_text(
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
+    slow_model_msg = ""
+    for i in range(num_sides):
+        if "deluxe" in states[i].model_name:
+            slow_model_msg = SLOW_MODEL_MSG
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
@@ -366,6 +375,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [slow_model_msg]
     )
 
 
@@ -454,6 +464,8 @@ Find out who is the 🥇LLM Champion!
             for i in range(num_sides):
                 with gr.Column():
                     model_selectors[i] = gr.Markdown(anony_names[i])
+        with gr.Row():
+            slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
         with gr.Row():
             leftvote_btn = gr.Button(
@@ -550,7 +562,7 @@ Find out who is the 🥇LLM Champion!
         flash_buttons, [], btn_list
     )
     clear_btn.click(
-        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list
+        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning]
     )
 
     share_js = """
@@ -578,13 +590,13 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [], btn_list,
     )
 
     send_btn.click(

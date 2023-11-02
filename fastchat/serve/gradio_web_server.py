@@ -504,7 +504,7 @@ block_css = """
     padding-bottom: 6px;
 }
 #leaderboard_markdown {
-    font-size: 104%
+    font-size: 110%
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -577,7 +577,7 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 - LMSYS-Chat-1M [report](https://arxiv.org/abs/2309.11998)
 
 ## Core Members
-[Lianmin Zheng](https://lmzheng.net/), [Wei-Lin Chiang](https://infwinston.github.io/), [Ying Sheng](https://sites.google.com/view/yingsheng/home)
+[Lianmin Zheng](https://lmzheng.net/), [Wei-Lin Chiang](https://infwinston.github.io/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ)
 
 ## Advisors
 [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)

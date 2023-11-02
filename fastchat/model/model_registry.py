@@ -62,36 +62,6 @@ register_model_info(
     "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
-    ["zephyr-7b-beta", "zephyr-7b-alpha"],
-    "Zephyr",
-    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
-    "a chatbot fine-tuned from Mistral by Hugging Face",
-)
-register_model_info(
-    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
-    "Llama 2",
-    "https://ai.meta.com/llama/",
-    "open foundation and fine-tuned chat models by Meta",
-)
-register_model_info(
-    ["qwen-14b-chat"],
-    "Qwen",
-    "https://huggingface.co/Qwen/Qwen-14B-Chat",
-    "a large language model by Alibaba Cloud",
-)
-register_model_info(
-    ["mistral-7b-instruct"],
-    "Mistral",
-    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
-    "a large language model by Mistral AI team",
-)
-register_model_info(
-    ["codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
-    "Code Llama",
-    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
-    "open foundation models for code by Meta",
-)
-register_model_info(
     [
         "vicuna-33b",
         "vicuna-33b-v1.3",
@@ -103,6 +73,36 @@ register_model_info(
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "a chat assistant fine-tuned on user-shared conversations by LMSYS",
+)
+register_model_info(
+    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
+    "Llama 2",
+    "https://ai.meta.com/llama/",
+    "open foundation and fine-tuned chat models by Meta",
+)
+register_model_info(
+    ["mistral-7b-instruct"],
+    "Mistral",
+    "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1",
+    "a large language model by Mistral AI team",
+)
+register_model_info(
+    ["zephyr-7b-beta", "zephyr-7b-alpha"],
+    "Zephyr",
+    "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",
+    "a chatbot fine-tuned from Mistral by Hugging Face",
+)
+register_model_info(
+    ["qwen-14b-chat"],
+    "Qwen",
+    "https://huggingface.co/Qwen/Qwen-14B-Chat",
+    "a large language model by Alibaba Cloud",
+)
+register_model_info(
+    ["codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
+    "Code Llama",
+    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
+    "open foundation models for code by Meta",
 )
 register_model_info(
     ["wizardlm-70b", "wizardlm-30b", "wizardlm-13b"],
