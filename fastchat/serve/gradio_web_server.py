@@ -520,7 +520,7 @@ def get_model_description_md(models):
         if minfo.simple_name in visited:
             continue
         visited.add(minfo.simple_name)
-        one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
+        one_model_md = f"[{minfo.simple_name}]({minfo.link})"
 
         if ct % 3 == 0:
             model_description_md += "|"
