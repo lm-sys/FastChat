@@ -798,6 +798,16 @@ class OasstLLaMAAdapter(BaseModelAdapter):
         return get_conv_template("oasst_llama")
 
 
+class OpenChat35Adapter(BaseModelAdapter):
+    """The model adapter for OpenChat 3.5 (e.g. openchat/openchat_3.5)"""
+
+    def match(self, model_path: str):
+        return "openchat" in model_path.lower() and "3.5" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("openchat_3.5")
+
+
 class PythiaAdapter(BaseModelAdapter):
     """The model adapter for any EleutherAI/pythia model"""
 
@@ -1755,6 +1765,7 @@ register_model_adapter(ChatGLMAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
 register_model_adapter(OasstLLaMAAdapter)
+register_model_adapter(OpenChat35Adapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
