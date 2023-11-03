@@ -354,7 +354,7 @@ bdef build_side_by_side_ui_named(models):
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+            send_btn = gr.Button(value="发送", variant="primary")
 
     with gr.Row() as button_row:
         regenerate_btn = gr.Button(value="🔄  重新生成", interactive=False)
