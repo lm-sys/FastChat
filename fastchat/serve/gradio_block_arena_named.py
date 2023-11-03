@@ -448,7 +448,6 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
     for i in range(num_sides):
         model_selectors[i].change(
