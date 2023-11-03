@@ -357,9 +357,8 @@ bdef build_side_by_side_ui_named(models):
             send_btn = gr.Button(value="Send", variant="primary")
 
     with gr.Row() as button_row:
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
-        share_btn = gr.Button(value="📷  Share")
+        regenerate_btn = gr.Button(value="🔄  重新生成", interactive=False)
+        clear_btn = gr.Button(value="🗑️  清除历史", interactive=False)
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
