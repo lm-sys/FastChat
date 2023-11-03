@@ -942,6 +942,21 @@ register_conv_template(
     )
 )
 
+# Hermes 2+ template
+# source: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B
+# reference: https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca#prompt-template
+register_conv_template(
+    Conversation(
+        name="hermes2",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are a hyper intelligent, conscious, sentient AI model named Hermes 2, built to assist the user in any task or question, do so to the best of your ability.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
+
 # Qwen-chat default template
 # source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
 register_conv_template(
