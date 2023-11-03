@@ -518,7 +518,6 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
 
     textbox.submit(
         add_text,
