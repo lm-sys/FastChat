@@ -294,19 +294,14 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+# ⚔️  Chatbot Arena ⚔️ : 大语言模型基准测试
+### 规则
+-与两个模型并肩聊天，投票选出哪一个更好！
+-你选择你想聊天的模型。
+-您可以在投票前进行多次对话。
+-单击“清除历史记录”开始新一轮。
 
-### Rules
-- Chat with two models side-by-side and vote for which one is better!
-- You pick the models you want to chat with.
-- You can do multiple turns of conversations before voting.
-- Click "Clear history" to start a new round.
-
-### Leaderboard
-See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
-
-### Choose two models to chat with
+### 选择两个模型聊天
 """
 
     states = [gr.State() for _ in range(num_sides)]
