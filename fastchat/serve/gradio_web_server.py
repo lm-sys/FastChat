@@ -575,7 +575,7 @@ def build_single_model_ui(models, add_promotion_links=False):
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+            send_btn = gr.Button(value="发送", variant="primary")
 
     with gr.Row() as button_row:
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
