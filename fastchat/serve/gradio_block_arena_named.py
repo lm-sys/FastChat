@@ -292,11 +292,11 @@ def flash_buttons():
         time.sleep(0.5)
 
 
-def build_side_by_side_ui_named(models):
+bdef build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : 大语言模型基准测试
+# ⚔️  Chatbot Arena ⚔️ : 大语言模型并排测试
 ### 规则
--与两个模型并肩聊天，投票选出哪一个更好！
+-与两个大语言模型并排聊天，投票选出哪一个更好！
 -你选择你想聊天的模型。
 -您可以在投票前进行多次对话。
 -单击“清除历史记录”开始新一轮。
@@ -327,7 +327,7 @@ def build_side_by_side_ui_named(models):
 
         with gr.Row():
             for i in range(num_sides):
-                label = "Model A" if i == 0 else "Model B"
+                label = "模型 A" if i == 0 else "模型 B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
                         label=label, elem_id=f"chatbot", height=550
