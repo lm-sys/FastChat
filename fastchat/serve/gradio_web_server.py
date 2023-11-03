@@ -563,14 +563,14 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     chatbot = gr.Chatbot(
         elem_id="chatbot",
-        label="Scroll down and start chatting",
+        label="请向下滚动并开始聊天",
         height=550,
     )
     with gr.Row():
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="在这里输入您的提示，然后按Enter键",
                 container=False,
                 elem_id="input_box",
             )
