@@ -105,13 +105,13 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Chatbot Arena (battle)", id=0):
+            with gr.Tab("匿名模型比较", id=0):
                 side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("Chatbot Arena (side-by-side)", id=1):
+            with gr.Tab("模型并排比较", id=1):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("Single Model", id=2):
+            with gr.Tab("单一模型测试", id=2):
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
