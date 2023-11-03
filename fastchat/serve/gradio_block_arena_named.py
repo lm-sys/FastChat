@@ -310,7 +310,7 @@ def build_side_by_side_ui_named(models):
 
     model_description_md = get_model_description_md(models)
     notice = gr.Markdown(
-        notice_markdown + model_description_md, elem_id="notice_markdown"
+        notice_markdown, elem_id="notice_markdown"
     )
 
     with gr.Box(elem_id="share-region-named"):
