@@ -369,20 +369,16 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+# ⚔️  Chatbot Arena ⚔️ : 大语言模型基准测试
 
-### Rules
-- Chat with two anonymous models side-by-side and vote for which one is better!
-- You can do multiple turns of conversations before voting.
-- The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
-- Click "Clear history" to start a new round.
+### 规则
+-与两个匿名大语言并排聊天，投票选出哪一个更好！
+-您可以在投票前进行多次对话。
+-模特的名字将在您投票后公布。与身份关键词（例如ChatGPT、Bard、Vicuna）或姓名披露后的任何投票的对话将不计入排行榜。
+-单击“清除历史记录”开始新一轮。
 
-### Leaderboard
-See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
-
-### Battle
-Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Llama).
+### 测试
+请向下滚动并开始聊天。这些模型包括闭源模型（例如ChatGPT）和开源模型（例如Llama）。
 """
 
     states = [gr.State() for _ in range(num_sides)]
