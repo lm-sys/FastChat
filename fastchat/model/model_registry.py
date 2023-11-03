@@ -153,6 +153,12 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
+    ["openchat_3.5"],
+    "OpenChat 3.5",
+    "https://github.com/imoneoi/openchat",
+    "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
+)
+register_model_info(
     ["llama-7b", "llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
