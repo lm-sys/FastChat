@@ -1392,7 +1392,7 @@ class Hermes2Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return (
             "openhermes-2.5-mistral-7b" in model_path.lower()
-            or "openhermes-2-mistral-7b" in model_path.lower
+            or "openhermes-2-mistral-7b" in model_path.lower()
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
