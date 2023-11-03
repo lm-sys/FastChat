@@ -376,16 +376,13 @@ def build_side_by_side_ui_anony(models):
 -您可以在投票前进行多次对话。
 -模型的名字将在您投票后公布。与身份关键词（例如ChatGPT、Bard、Vicuna）或模型名称披露后的任何投票的对话将不计入排行榜。
 -单击“清除历史记录”开始新一轮。
-
-### 测试
-请向下滚动并开始聊天。
 """
 
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
 
-    gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.Markdown(notice_markdown , elem_id="notice_markdown")
 
     with gr.Box(elem_id="share-region-anony"):
         with gr.Row():
