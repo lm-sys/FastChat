@@ -369,16 +369,16 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : 大语言模型基准测试
+# ⚔️  Chatbot Arena ⚔️ : 大语言模型匿名测试
 
 ### 规则
--与两个匿名大语言并排聊天，投票选出哪一个更好！
+-与两个匿名的大语言模型并排聊天，投票选出哪一个更好！
 -您可以在投票前进行多次对话。
--模特的名字将在您投票后公布。与身份关键词（例如ChatGPT、Bard、Vicuna）或姓名披露后的任何投票的对话将不计入排行榜。
+-模型的名字将在您投票后公布。与身份关键词（例如ChatGPT、Bard、Vicuna）或模型名称披露后的任何投票的对话将不计入排行榜。
 -单击“清除历史记录”开始新一轮。
 
 ### 测试
-请向下滚动并开始聊天。这些模型包括闭源模型（例如ChatGPT）和开源模型（例如Llama）。
+请向下滚动并开始聊天。
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -390,7 +390,7 @@ def build_side_by_side_ui_anony(models):
     with gr.Box(elem_id="share-region-anony"):
         with gr.Row():
             for i in range(num_sides):
-                label = "Model A" if i == 0 else "Model B"
+                label = "模型 A" if i == 0 else "模型 B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
                         label=label, elem_id=f"chatbot", height=550
@@ -425,9 +425,8 @@ def build_side_by_side_ui_anony(models):
             send_btn = gr.Button(value="Send", variant="primary")
 
     with gr.Row() as button_row:
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        share_btn = gr.Button(value="📷  Share")
+        clear_btn = gr.Button(value="🗑️  清除历史", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  重新生成", interactive=False)
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
