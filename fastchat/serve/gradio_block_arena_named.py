@@ -292,7 +292,7 @@ def flash_buttons():
         time.sleep(0.5)
 
 
-bdef build_side_by_side_ui_named(models):
+def build_side_by_side_ui_named(models):
     notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ : 大语言模型并排测试
 ### 规则
