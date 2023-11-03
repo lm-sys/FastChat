@@ -1,7 +1,8 @@
+import gc
+from threading import Thread
+
 import torch
 from transformers import TextIteratorStreamer
-from threading import Thread
-import gc
 
 
 @torch.inference_mode()
