@@ -422,7 +422,7 @@ def build_side_by_side_ui_anony(models):
                 elem_id="input_box",
             )
         with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+            send_btn = gr.Button(value="发送", variant="primary")
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🗑️  清除历史", interactive=False)
