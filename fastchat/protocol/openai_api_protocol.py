@@ -48,11 +48,19 @@ class UsageInfo(BaseModel):
     completion_tokens: Optional[int] = 0
 
 
+class LogProbs(BaseModel):
+    text_offset: List[int] = Field(default_factory=list)
+    token_logprobs: List[Optional[float]] = Field(default_factory=list)
+    tokens: List[str] = Field(default_factory=list)
+    top_logprobs: List[Optional[Dict[str, float]]] = Field(default_factory=list)
+
+
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: Union[str, List[Dict[str, str]]]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
+    top_k: Optional[int] = -1
     n: Optional[int] = 1
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, List[str]]] = None
@@ -146,6 +154,7 @@ class CompletionRequest(BaseModel):
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0
+    top_k: Optional[int] = -1
     logprobs: Optional[int] = None
     echo: Optional[bool] = False
     presence_penalty: Optional[float] = 0.0
@@ -158,7 +167,7 @@ class CompletionRequest(BaseModel):
 class CompletionResponseChoice(BaseModel):
     index: int
     text: str
-    logprobs: Optional[int] = None
+    logprobs: Optional[LogProbs] = None
     finish_reason: Optional[Literal["stop", "length"]] = None
 
 
@@ -174,7 +183,7 @@ class CompletionResponse(BaseModel):
 class CompletionResponseStreamChoice(BaseModel):
     index: int
     text: str
-    logprobs: Optional[float] = None
+    logprobs: Optional[LogProbs] = None
     finish_reason: Optional[Literal["stop", "length"]] = None
 
 

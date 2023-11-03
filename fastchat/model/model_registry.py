@@ -352,3 +352,14 @@ register_model_info(
     "https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca",
     "A fine-tune of [Mistral 7B](https://huggingface.co/mistralai/Mistral-7B-v0.1) using [OpenOrca dataset](https://huggingface.co/datasets/Open-Orca/OpenOrca)",
 )
+
+register_model_info(
+    [
+        "AquilaChat-7B",
+        "AquilaChat2-7B",
+        "AquilaChat2-34B",
+    ],
+    "Aquila-Chat",
+    "https://huggingface.co/BAAI/AquilaChat2-34B",
+    "Chat models developed by BAAI team",
+)

@@ -78,6 +78,7 @@ def generate_stream(
     top_p = float(params.get("top_p", 1.0))
     top_k = int(params.get("top_k", -1))  # -1 means disable
     max_new_tokens = int(params.get("max_new_tokens", 256))
+    logprobs = params.get("logprobs", None)  # FIXME: Support logprobs>1.
     echo = bool(params.get("echo", True))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
@@ -99,6 +100,8 @@ def generate_stream(
     input_echo_len = len(input_ids)
 
     if model.config.is_encoder_decoder:
+        if logprobs is not None:  # FIXME: Support logprobs for encoder-decoder models.
+            raise NotImplementedError
         encoder_output = model.encoder(
             input_ids=torch.as_tensor([input_ids], device=device)
         )[0]
@@ -107,8 +110,11 @@ def generate_stream(
             dtype=torch.int64,
             device=device,
         )
+    else:
+        start_ids = torch.as_tensor([input_ids], device=device)
 
     past_key_values = out = None
+    token_logprobs = [None]  # The first token has no logprobs.
     sent_interrupt = False
     finish_reason = None
     for i in range(max_new_tokens):
@@ -121,9 +127,19 @@ def generate_stream(
                 )
                 logits = model.lm_head(out[0])
             else:
-                out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
+                out = model(input_ids=start_ids, use_cache=True)
                 logits = out.logits
             past_key_values = out.past_key_values
+
+            if logprobs is not None:
+                # Prefull logprobs for the prompt.
+                shift_input_ids = start_ids[..., 1:].contiguous()
+                shift_logits = logits[..., :-1, :].contiguous()
+                shift_logits = torch.log_softmax(shift_logits, dim=-1).tolist()
+                for label_id, logit in zip(
+                    shift_input_ids[0].tolist(), shift_logits[0]
+                ):
+                    token_logprobs.append(logit[label_id])
         else:  # decoding
             if model.config.is_encoder_decoder:
                 out = model.decoder(
@@ -173,6 +189,11 @@ def generate_stream(
             tokens = [int(token) for token in indices.tolist()]
         token = tokens[0]
         output_ids.append(token)
+        if logprobs is not None:
+            # Cannot use last_token_logits because logprobs is based on raw logits.
+            token_logprobs.append(
+                torch.log_softmax(logits[0, -1, :], dim=-1)[token].tolist()
+            )
 
         if token in stop_token_ids:
             stopped = True
@@ -194,6 +215,28 @@ def generate_stream(
                 spaces_between_special_tokens=False,
                 clean_up_tokenization_spaces=True,
             )
+            ret_logprobs = None
+            if logprobs is not None:
+                ret_logprobs = {
+                    "text_offset": [],
+                    "tokens": [
+                        tokenizer.decode(token)
+                        for token in (
+                            output_ids if echo else output_ids[input_echo_len:]
+                        )
+                    ],
+                    "token_logprobs": token_logprobs
+                    if echo
+                    else token_logprobs[input_echo_len:],
+                    "top_logprobs": [{}]
+                    * len(token_logprobs if echo else token_logprobs[input_echo_len:]),
+                }
+                # Compute text_offset
+                curr_pos = 0
+                for text in ret_logprobs["tokens"]:
+                    ret_logprobs["text_offset"].append(curr_pos)
+                    curr_pos += len(text)
+
             # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
             if judge_sent_end and stopped and not is_sentence_complete(output):
                 if len(tokens) > 1:
@@ -231,6 +274,7 @@ def generate_stream(
             if not partially_stopped:
                 yield {
                     "text": output,
+                    "logprobs": ret_logprobs,
                     "usage": {
                         "prompt_tokens": input_echo_len,
                         "completion_tokens": i,
@@ -251,6 +295,7 @@ def generate_stream(
 
     yield {
         "text": output,
+        "logprobs": ret_logprobs,
         "usage": {
             "prompt_tokens": input_echo_len,
             "completion_tokens": i,

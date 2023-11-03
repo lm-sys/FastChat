@@ -19,10 +19,14 @@ def test_list_models():
     return names
 
 
-def test_completion(model):
+def test_completion(model, logprob):
     prompt = "Once upon a time"
-    completion = openai.Completion.create(model=model, prompt=prompt, max_tokens=64)
-    print(prompt + completion.choices[0].text)
+    completion = openai.Completion.create(
+        model=model, prompt=prompt, logprobs=logprob, max_tokens=64
+    )
+    print(f"full text: {prompt + completion.choices[0].text}", flush=True)
+    if completion.choices[0].logprobs is not None:
+        print(f"logprobs: {completion.choices[0].logprobs.token_logprobs}", flush=True)
 
 
 def test_completion_stream(model):
@@ -104,7 +108,13 @@ if __name__ == "__main__":
 
     for model in models:
         print(f"===== Test {model} ======")
-        test_completion(model)
+
+        if model in ["fastchat-t5-3b-v1.0"]:
+            logprob = None
+        else:
+            logprob = 1
+
+        test_completion(model, logprob)
         test_completion_stream(model)
         test_chat_completion(model)
         test_chat_completion_stream(model)
