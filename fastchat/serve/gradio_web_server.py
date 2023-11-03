@@ -543,7 +543,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
 
     notice_markdown = f"""
-# 🏔️ 与大型语言模型聊天
+# 🏔️ 与大语言模型聊天
 
 ### 选择一个要聊天的模型
 """
@@ -581,8 +581,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
         downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
         flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  重新生成", interactive=False)
+        clear_btn = gr.Button(value="🗑️  清除历史", interactive=False)
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
