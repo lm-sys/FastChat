@@ -349,7 +349,7 @@ bdef build_side_by_side_ui_named(models):
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="在这里输入您的提示，然后按Enter键",
                 container=False,
                 elem_id="input_box",
             )
