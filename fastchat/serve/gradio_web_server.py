@@ -550,10 +550,9 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
 
     notice_markdown = f"""
-# 🏔️ Chat with Open Large Language Models
-{promotion}
+# 🏔️ 与大型语言模型聊天
 
-### Choose a model to chat with
+### 选择一个要聊天的模型
 """
 
     state = gr.State()
