@@ -1364,8 +1364,8 @@ class OpenOrcaAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return (
             "mistral-7b-openorca" in model_path.lower()
-            or "openorca" in model_path.lower()
             or "openhermes-2.5-mistral-7b" in model_path.lower()
+            or "openorca" in model_path.lower()
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
@@ -1381,7 +1381,7 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "mistral-7b-openorca" in model_path.lower():
+        if "mistral-7b-openorca" in model_path.lower() or "openhermes-2.5-mistral-7b" in model_path.lower():
             return get_conv_template("mistral-7b-openorca")
         return get_conv_template("open-orca")
 
