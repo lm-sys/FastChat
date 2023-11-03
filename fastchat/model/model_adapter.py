@@ -1385,6 +1385,32 @@ class OpenOrcaAdapter(BaseModelAdapter):
             return get_conv_template("mistral-7b-openorca")
         return get_conv_template("open-orca")
 
+class Hermes2Adapter(BaseModelAdapter):
+    """Model adapter for Hermes 2 models (e.g., teknium/OpenHermes-2.5-Mistral-7B)"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return (
+            "openhermes-2.5-mistral-7b" in model_path.lower()
+            or "openhermes-2-mistral-7b" in model_path.lower
+        )
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        ).eval()
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("hermes2")
+
 
 class WizardCoderAdapter(BaseModelAdapter):
     """The model adapter for WizardCoder (e.g., WizardLM/WizardCoder-Python-34B-V1.0)"""
