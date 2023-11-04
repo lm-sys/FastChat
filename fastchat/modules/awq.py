@@ -3,7 +3,8 @@ from pathlib import Path
 import sys
 
 import torch
-from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, modeling_utils
+from transformers import AutoTokenizer, AutoModelForCausalLM
+#from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, modeling_utils
 
 
 @dataclass
@@ -23,23 +24,32 @@ class AWQConfig:
 
 def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     print("Loading AWQ quantized model...")
+    find_awq_ckpt(awq_config)
+    
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+    model_name, 
+    torch_dtype=torch.float16, 
+    low_cpu_mem_usage=True,
+    fuse_layers=True,
+    device_map=device)
 
-    try:
-        from tinychat.utils import load_quant
-        from tinychat.modules import make_quant_norm, make_quant_attn, make_fused_mlp
-    except ImportError as e:
-        print(f"Error: Failed to import tinychat. {e}")
-        print("Please double check if you have successfully installed AWQ")
-        print("See https://github.com/lm-sys/FastChat/blob/main/docs/awq.md")
-        sys.exit(-1)
+    #try:
+    #    from tinychat.utils import load_quant
+    #    from tinychat.modules import make_quant_norm, make_quant_attn, make_fused_mlp
+    #except ImportError as e:
+    #    print(f"Error: Failed to import tinychat. {e}")
+    #    print("Please double check if you have successfully installed AWQ")
+    #    print("See https://github.com/lm-sys/FastChat/blob/main/docs/awq.md")
+    #    sys.exit(-1)
 
-    config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, use_fast=False, trust_remote_code=True
-    )
+    #config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+    #tokenizer = AutoTokenizer.from_pretrained(
+    #    model_name, use_fast=False, trust_remote_code=True
+    #)
 
-    def skip(*args, **kwargs):
-        pass
+    #def skip(*args, **kwargs):
+    #    pass
 
     torch.nn.init.kaiming_uniform_ = skip
     torch.nn.init.kaiming_normal_ = skip
@@ -48,27 +58,27 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     modeling_utils._init_weights = False
 
     torch.set_default_dtype(torch.half)
-    model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
+    #model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
 
-    if any(name in find_awq_ckpt(awq_config) for name in ["llama", "vicuna"]):
-        model = load_quant.load_awq_llama_fast(
-            model,
-            find_awq_ckpt(awq_config),
-            awq_config.wbits,
-            awq_config.groupsize,
-            device,
-        )
-        make_quant_attn(model, device)
-        make_quant_norm(model)
-        make_fused_mlp(model)
-    else:
-        model = load_quant.load_awq_model(
-            model,
-            find_awq_ckpt(awq_config),
-            awq_config.wbits,
-            awq_config.groupsize,
-            device,
-        )
+    #if any(name in find_awq_ckpt(awq_config) for name in ["llama", "vicuna"]):
+    #    model = load_quant.load_awq_llama_fast(
+    #        model,
+    #        find_awq_ckpt(awq_config),
+    #        awq_config.wbits,
+    #        awq_config.groupsize,
+    #        device,
+    #    )
+    #    make_quant_attn(model, device)
+    #    make_quant_norm(model)
+    #    make_fused_mlp(model)
+    #else:
+    #    model = load_quant.load_awq_model(
+    #        model,
+    #        find_awq_ckpt(awq_config),
+    #        awq_config.wbits,
+    #        awq_config.groupsize,
+    #        device,
+    #    )
     return model, tokenizer
 
 
