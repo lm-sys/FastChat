@@ -48,8 +48,8 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     #    model_name, use_fast=False, trust_remote_code=True
     #)
 
-    #def skip(*args, **kwargs):
-    #    pass
+    def skip(*args, **kwargs):
+        pass
 
     torch.nn.init.kaiming_uniform_ = skip
     torch.nn.init.kaiming_normal_ = skip
