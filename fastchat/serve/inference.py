@@ -535,14 +535,25 @@ def chat_loop(
 
         try:
             chatio.prompt_for_output(conv.roles[1])
-            output_stream = generate_stream_func(
-                model,
-                tokenizer,
-                gen_params,
-                device,
-                context_len=context_len,
-                judge_sent_end=judge_sent_end,
-            )
+            if is_multimodal:
+                output_stream = generate_stream_func(
+                    model,
+                    tokenizer,
+                    image_processor,
+                    gen_params,
+                    device,
+                    context_len=context_len,
+                    judge_sent_end=judge_sent_end,
+                )
+            else:
+                output_stream = generate_stream_func(
+                    model,
+                    tokenizer,
+                    gen_params,
+                    device,
+                    context_len=context_len,
+                    judge_sent_end=judge_sent_end,
+                )
             t = time.time()
             outputs = chatio.stream_output(output_stream)
             duration = time.time() - t

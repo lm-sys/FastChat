@@ -1165,6 +1165,7 @@ register_conv_template(
         sep_style=SeparatorStyle.LLAMA2,
         sep="<s>",
         sep2="</s>",
+        stop_str="</s>"
     )
 )
 

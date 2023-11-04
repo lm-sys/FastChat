@@ -106,14 +106,21 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         return False
 
 @torch.inference_mode()
-def generate_stream_llava(self, params):
-    tokenizer, model, image_processor = self.tokenizer, self.model, self.image_processor
+def generate_stream_llava(
+    model,
+    tokenizer,
+    image_processor,
+    params,
+    device,
+    context_len=2048,
+    stream_interval=2,
+    judge_sent_end=False,):
 
     prompt = params["prompt"]
     ori_prompt = prompt
     images = params.get("images", None)
     num_image_tokens = 0
-    if images is not None and len(images) > 0 and self.is_multimodal:
+    if images is not None and len(images) > 0: # NOTE(chris): removed multimodal check
         if len(images) > 0:
             if len(images) != prompt.count(DEFAULT_IMAGE_TOKEN):
                 raise ValueError("Number of images does not match number of <image> tokens in prompt")
@@ -122,12 +129,12 @@ def generate_stream_llava(self, params):
             images = process_images(images, image_processor, model.config)
 
             if type(images) is list:
-                images = [image.to(self.model.device, dtype=torch.float16) for image in images]
+                images = [image.to(model.device, dtype=torch.float16) for image in images]
             else:
-                images = images.to(self.model.device, dtype=torch.float16)
+                images = images.to(model.device, dtype=torch.float16)
 
             replace_token = DEFAULT_IMAGE_TOKEN
-            if getattr(self.model.config, 'mm_use_im_start_end', False):
+            if getattr(model.config, 'mm_use_im_start_end', False):
                 replace_token = DEFAULT_IM_START_TOKEN + replace_token + DEFAULT_IM_END_TOKEN
             prompt = prompt.replace(DEFAULT_IMAGE_TOKEN, replace_token)
 
@@ -144,6 +151,7 @@ def generate_stream_llava(self, params):
     max_context_length = getattr(model.config, 'max_position_embeddings', 2048)
     max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
     stop_str = params.get("stop", None)
+    echo = params.get("echo", False)
     do_sample = True if temperature > 0.001 else False
 
     input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
@@ -154,7 +162,7 @@ def generate_stream_llava(self, params):
     max_new_tokens = min(max_new_tokens, max_context_length - input_ids.shape[-1] - num_image_tokens)
 
     if max_new_tokens < 1:
-        yield json.dumps({"text": ori_prompt + "Exceeds max token length. Please start a new conversation, thanks.", "error_code": 0}).encode() + b"\0"
+        yield {"text": ori_prompt + "Exceeds max token length. Please start a new conversation, thanks.", "error_code": 0}
         return
 
     thread = Thread(target=model.generate, kwargs=dict(
@@ -170,9 +178,17 @@ def generate_stream_llava(self, params):
     ))
     thread.start()
 
-    generated_text = ori_prompt
+    if echo:
+        generated_text = ori_prompt
+    else:
+        generated_text = ""
+        
     for new_text in streamer:
         generated_text += new_text
         if generated_text.endswith(stop_str):
             generated_text = generated_text[:-len(stop_str)]
-        yield json.dumps({"text": generated_text, "error_code": 0}).encode() + b"\0"
+        yield {
+                "text": generated_text,
+                "error_code": 0
+            }
+        
