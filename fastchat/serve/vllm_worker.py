@@ -68,6 +68,9 @@ class VLLMWorker(BaseModelWorker):
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
+        top_k = params.get("top_k", -1.0)
+        presence_penalty = float(params.get("presence_penalty", 0.0))
+        frequency_penalty = float(params.get("frequency_penalty", 0.0))
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
@@ -92,6 +95,7 @@ class VLLMWorker(BaseModelWorker):
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
+
         sampling_params = SamplingParams(
             n=1,
             temperature=temperature,
@@ -99,6 +103,9 @@ class VLLMWorker(BaseModelWorker):
             use_beam_search=use_beam_search,
             stop=list(stop),
             max_tokens=max_new_tokens,
+            top_k=top_k,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
             best_of=best_of,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
