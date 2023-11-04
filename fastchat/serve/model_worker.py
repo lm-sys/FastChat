@@ -22,6 +22,7 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.base_model_worker import BaseModelWorker, app
 from fastchat.utils import (
@@ -54,6 +55,7 @@ class ModelWorker(BaseModelWorker):
         gptq_config: Optional[GptqConfig] = None,
         awq_config: Optional[AWQConfig] = None,
         exllama_config: Optional[ExllamaConfig] = None,
+        xft_config: Optional[XftConfig] = None,
         stream_interval: int = 2,
         conv_template: Optional[str] = None,
         embed_in_truncate: bool = False,
@@ -83,6 +85,7 @@ class ModelWorker(BaseModelWorker):
             gptq_config=gptq_config,
             awq_config=awq_config,
             exllama_config=exllama_config,
+            xft_config=xft_config,
             debug=debug,
         )
         self.device = device
@@ -316,6 +319,16 @@ def create_model_worker():
         )
     else:
         exllama_config = None
+    if args.enable_xft:
+        xft_config = XftConfig(
+            max_seq_len=args.xft_max_seq_len,
+            data_type=args.xft_dtype,
+        )
+        if args.device != "cpu":
+            print("xFasterTransformer now is only support CPUs. Reset device to CPU")
+            args.device = "cpu"
+    else:
+        xft_config = None
 
     worker = ModelWorker(
         args.controller_address,
@@ -334,6 +347,7 @@ def create_model_worker():
         gptq_config=gptq_config,
         awq_config=awq_config,
         exllama_config=exllama_config,
+        xft_config=xft_config,
         stream_interval=args.stream_interval,
         conv_template=args.conv_template,
         embed_in_truncate=args.embed_in_truncate,

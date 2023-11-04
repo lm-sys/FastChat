@@ -38,6 +38,7 @@ from fastchat.model.model_adapter import (
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
@@ -349,6 +350,7 @@ def chat_loop(
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     exllama_config: Optional[ExllamaConfig] = None,
+    xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
     debug: bool = True,
@@ -366,6 +368,7 @@ def chat_loop(
         gptq_config=gptq_config,
         awq_config=awq_config,
         exllama_config=exllama_config,
+        xft_config=xft_config,
         revision=revision,
         debug=debug,
     )
@@ -374,6 +377,7 @@ def chat_loop(
     model_type = str(type(model)).lower()
     is_t5 = "t5" in model_type
     is_codet5p = "codet5p" in model_type
+    is_xft = "xft" in model_type
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:
