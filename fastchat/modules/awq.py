@@ -3,8 +3,8 @@ from pathlib import Path
 import sys
 
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-#from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, modeling_utils
+from transformers import AutoTokenizer
+from awq import AutoAWQForCausalLM
 
 
 @dataclass
