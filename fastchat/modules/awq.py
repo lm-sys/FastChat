@@ -3,8 +3,7 @@ from pathlib import Path
 import sys
 
 import torch
-from transformers import AutoTokenizer
-from awq import AutoAWQForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 @dataclass
@@ -27,7 +26,7 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     find_awq_ckpt(awq_config)
     
     tokenizer = AutoTokenizer.from_pretrained(awq_config.ckpt, trust_remote_code=True)
-    model = AutoAWQForCausalLM.from_quantized(awq_config.ckpt, fuse_layers=True)
+    model = AutoModelForCausalLM.from_pretrained(awq_config.ckpt, torch_dtype=torch.float16, low_cpu_mem_usage=True,device_map=device)
 
     return model, tokenizer
 
