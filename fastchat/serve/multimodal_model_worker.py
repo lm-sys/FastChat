@@ -83,11 +83,21 @@ class MultimodalModelWorker(BaseModelWorker):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
+        self.is_multimodal = True
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
 
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_model(
-            model_path, model_base, self.model_names[0], load_8bit, load_4bit) # assumption only singular model
+        self.tokenizer, self.model, self.image_processor = load_model(
+            model_path,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            is_multimodal=self.is_multimodal,
+            debug=debug,
+        ) # assumption only singular model
         
         self.device = device
         if self.tokenizer.pad_token == None:
@@ -98,7 +108,6 @@ class MultimodalModelWorker(BaseModelWorker):
         self.stream_interval = stream_interval
         self.embed_in_truncate = embed_in_truncate
         self.seed = seed
-        self.is_multimodal = True
 
         if not no_register:
             self.init_heart_beat()

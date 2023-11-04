@@ -353,31 +353,47 @@ def chat_loop(
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
+    is_multimodal: bool = False,
     debug: bool = True,
     history: bool = True,
 ):
     # Model
-    model, tokenizer = load_model(
-        model_path,
-        device=device,
-        num_gpus=num_gpus,
-        max_gpu_memory=max_gpu_memory,
-        dtype=dtype,
-        load_8bit=load_8bit,
-        cpu_offloading=cpu_offloading,
-        gptq_config=gptq_config,
-        awq_config=awq_config,
-        exllama_config=exllama_config,
-        xft_config=xft_config,
-        revision=revision,
-        debug=debug,
-    )
+    if is_multimodal:
+        model, tokenizer, image_processor = load_model(
+            model_path,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            revision=revision,
+            is_multimodal=True,
+            debug=debug,
+        )
+    else:
+        model, tokenizer = load_model(
+            model_path,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            gptq_config=gptq_config,
+            awq_config=awq_config,
+            exllama_config=exllama_config,
+            xft_config=xft_config,
+            revision=revision,
+            debug=debug,
+        )
     generate_stream_func = get_generate_stream_function(model, model_path)
 
     model_type = str(type(model)).lower()
     is_t5 = "t5" in model_type
     is_codet5p = "codet5p" in model_type
     is_xft = "xft" in model_type
+    is_llava = "llava" in model_type
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:

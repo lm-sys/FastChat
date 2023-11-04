@@ -34,7 +34,8 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
-from fastchat.model.model_llava import generate_stream_llava
+from fastchat.model.llava.model_llava import generate_stream_llava, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_IMAGE_PATCH_TOKEN
+from fastchat.model.llava.language_model.llava_llama import LlavaLlamaForCausalLM
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
@@ -175,6 +176,7 @@ def load_model(
     exllama_config: Optional[ExllamaConfig] = None,
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
+    is_multimodal: bool = False,
     debug: bool = False,
 ):
     """Load a model from Hugging Face."""
@@ -310,7 +312,10 @@ def load_model(
         kwargs["torch_dtype"] = dtype
 
     # Load model
-    model, tokenizer = adapter.load_model(model_path, kwargs)
+    if is_multimodal:
+        model, tokenizer, image_processor = adapter.load_model(model_path, kwargs)
+    else:
+        model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (
         device == "cpu"
@@ -325,6 +330,9 @@ def load_model(
         "npu",
     ):
         model.to(device)
+        if is_multimodal:
+            # NOTE: A little hacky since this is only applicable to Llava possibly?
+            model.get_vision_tower().to(device)
 
     if device == "xpu":
         model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
@@ -332,6 +340,9 @@ def load_model(
     if debug:
         print(model)
 
+    if is_multimodal:
+        return model, tokenizer, image_processor
+    
     return model, tokenizer
 
 
@@ -1782,6 +1793,42 @@ class PygmalionAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metharme")
 
+class LlavaAdapter(BaseModelAdapter):
+    """The model adapter for liuhaotian/llava-v1.5 series of models"""
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = LlavaLlamaForCausalLM.from_pretrained(
+            model_path,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, 
+            use_fast=False,
+            trust_remote_code=True, 
+            revision=revision
+        )
+
+        mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
+        mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
+        if mm_use_im_patch_token:
+            tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
+        if mm_use_im_start_end:
+            tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
+        model.resize_token_embeddings(len(tokenizer))
+
+        vision_tower = model.get_vision_tower()
+        if not vision_tower.is_loaded:
+            vision_tower.load_model()
+        image_processor = vision_tower.image_processor
+
+        return model, tokenizer, image_processor
+
+    def match(self, model_path: str) :
+        return "llava" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llava")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -1847,7 +1894,7 @@ register_model_adapter(ZephyrAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
-
+register_model_adapter(LlavaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

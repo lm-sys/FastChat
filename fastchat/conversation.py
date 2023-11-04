@@ -1153,6 +1153,21 @@ register_conv_template(
     )
 )
 
+# Llava template
+# reference: conv_llava_llama_2 from https://github.com/haotian-liu/LLaVA/blob/main/llava/conversation.py
+register_conv_template(
+    Conversation(
+        name="llava",
+        system_template="You are a helpful language and vision assistant. "
+           "You are able to understand the visual content that the user provides, "
+           "and assist the user with a variety of tasks using natural language.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep="<s>",
+        sep2="</s>",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
