@@ -4,7 +4,7 @@ import sys
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
+from awq import AutoAWQForCausalLM
 
 @dataclass
 class AWQConfig:
@@ -24,11 +24,11 @@ class AWQConfig:
 def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     print("Loading AWQ quantized model...")
     find_awq_ckpt(awq_config)
-    
-    tokenizer = AutoTokenizer.from_pretrained(awq_config.ckpt, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(awq_config.ckpt, torch_dtype=torch.float16, low_cpu_mem_usage=True,device_map=device)
 
-    return model, tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(awq_config.ckpt, trust_remote_code=True)
+    model = AutoAWQForCausalLM.from_quantized(awq_config.ckpt, fuse_layers=True)
+
+    return model.model, tokenizer
 
 
 def find_awq_ckpt(awq_config: AWQConfig):
