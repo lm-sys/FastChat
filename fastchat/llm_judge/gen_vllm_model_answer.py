@@ -19,7 +19,7 @@ from fastchat.model import get_conversation_template
 
 
 def group_question_by_temperature(questions):
-    """ return temperature as key, questions list as value """
+    """return temperature as key, questions list as value"""
     temperature2qs = {}
     for question in tqdm(questions):
         if question["category"] in temperature_config:
@@ -34,9 +34,7 @@ def group_question_by_temperature(questions):
 
 
 def get_max_num_turns(questions):
-    return max(
-        [len(question["turns"]) for question in questions]
-    )
+    return max([len(question["turns"]) for question in questions])
 
 
 def gather_id_inputs(
@@ -138,7 +136,9 @@ def get_vllm_model_answers(
                 "presence_penalty": presence_penalty,
                 "frequency_penalty": frequency_penalty,
             }
-            print(f"Process {len(sub_questions)} questions with temperature {temperature}")
+            print(
+                f"Process {len(sub_questions)} questions with temperature {temperature}"
+            )
             sampling_params = SamplingParams(**inference_params)
             id2inputs = gather_id_inputs(
                 cur_turn_id,
@@ -174,7 +174,7 @@ def gather_outputs(id2outputs, batched_index, batched_outputs):
 
 def gather_choices(id2outputs):
     quid2choices = {}
-    for (quid, choice_index) in id2outputs:
+    for quid, choice_index in id2outputs:
         turns = id2outputs[(quid, choice_index)]
         if quid not in quid2choices:
             quid2choices[quid] = []
@@ -197,7 +197,6 @@ def write_answers(quid2choices, questions, model_id, answer_file):
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
-
 
 
 def reorg_answer_file(answer_file):
@@ -257,7 +256,7 @@ if __name__ == "__main__":
         type=float,
         default=0.9,
         help="The ratio (between 0 and 1) of GPU memory to"
-             "reserve for the model weights, activations, and KV cache.",
+        "reserve for the model weights, activations, and KV cache.",
     )
     parser.add_argument(
         "--presence_penalty",
