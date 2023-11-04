@@ -22,7 +22,6 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SERVER_ERROR_MSG,
-    INACTIVE_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
@@ -37,7 +36,7 @@ from fastchat.serve.api_provider import (
 )
 from fastchat.utils import (
     build_logger,
-    violates_moderation,
+    moderation_filter,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,
@@ -258,19 +257,13 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
 
-    if not is_cf and ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive. ip: {ip}. text: {text}")
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), INACTIVE_MSG) + (no_change_btn,) * 5
-
-    if enable_moderation:
-        flagged = violates_moderation(text)
-        if flagged:
-            logger.info(f"violate moderation. ip: {ip}. text: {text}")
-            state.skip_next = True
-            return (state, state.to_gradio_chatbot(), MODERATION_MSG) + (
-                no_change_btn,
-            ) * 5
+    flagged = moderation_filter(text, [state.model_name])
+    if flagged:
+        logger.info(
+            f"violate moderation. ip: {ip}. text: {text}"
+        )
+        # overwrite the original text
+        text = MODERATION_MSG
 
     conv = state.conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:

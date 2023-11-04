@@ -36,6 +36,7 @@ IDENTITY_WORDS = [
     "google",
     "llama",
     "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
+    "$MODERATION$",
 ]
 
 for i in range(len(IDENTITY_WORDS)):
