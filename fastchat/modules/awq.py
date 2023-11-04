@@ -55,7 +55,7 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     torch.nn.init.kaiming_normal_ = skip
     torch.nn.init.uniform_ = skip
     torch.nn.init.normal_ = skip
-    modeling_utils._init_weights = False
+    #modeling_utils._init_weights = False
 
     torch.set_default_dtype(torch.half)
     #model = AutoModelForCausalLM.from_config(config, trust_remote_code=True)
