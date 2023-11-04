@@ -26,13 +26,8 @@ def load_awq_quantized(model_name, awq_config: AWQConfig, device):
     print("Loading AWQ quantized model...")
     find_awq_ckpt(awq_config)
     
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-    model_name, 
-    torch_dtype=torch.float16, 
-    low_cpu_mem_usage=True,
-    fuse_layers=True,
-    device_map=device)
+    tokenizer = AutoTokenizer.from_pretrained(awq_config.ckpt, trust_remote_code=True)
+    model = AutoAWQForCausalLM.from_quantized(awq_config.ckpt, fuse_layers=True,device_map=device)
 
     return model, tokenizer
 
