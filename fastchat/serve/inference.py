@@ -4,6 +4,7 @@ import gc
 import json
 import math
 import os
+import requests
 import sys
 import time
 from typing import Iterable, Optional, Dict
@@ -11,6 +12,7 @@ import warnings
 
 import psutil
 import torch
+from io import BytesIO
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -35,6 +37,11 @@ from fastchat.model.model_adapter import (
     get_conversation_template,
     get_generate_stream_function,
 )
+from fastchat.model.llava.constants import (
+    DEFAULT_IMAGE_TOKEN,
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IM_END_TOKEN,
+)
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
@@ -57,6 +64,13 @@ def prepare_logits_processor(
         processor_list.append(TopKLogitsWarper(top_k))
     return processor_list
 
+def load_image(image_file):
+    if image_file.startswith('http://') or image_file.startswith('https://'):
+        response = requests.get(image_file)
+        image = Image.open(BytesIO(response.content)).convert('RGB')
+    else:
+        image = Image.open(image_file).convert('RGB')
+    return image
 
 @torch.inference_mode()
 def generate_stream(
@@ -514,6 +528,33 @@ def chat_loop(
             conv.messages = new_conv["messages"]
             reload_conv(conv)
             continue
+        elif inp.startswith("!!image-file"):
+            args = inp.split(" ") # !!image-file <filename> <prompt>
+
+            if len(args) < 3:
+                print("usage: !!image-file <filename> <prompt>")
+                continue
+            else:
+                from PIL import Image
+                def load_image(image_file):
+                    if image_file.startswith('http://') or image_file.startswith('https://'):
+                        response = requests.get(image_file)
+                        image = Image.open(BytesIO(response.content)).convert('RGB')
+                    else:
+                        image = Image.open(image_file).convert('RGB')
+                    return image
+                
+                filename = args[1]
+                image = load_image(filename)
+
+                text = " ".join(args[2:])
+                text = text + "\n<image>"
+
+            if not os.path.exists(filename):
+                print("file not found:", filename)
+                continue
+
+            inp = (text, image, "Default") # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)
@@ -532,6 +573,20 @@ def chat_loop(
             "stop_token_ids": conv.stop_token_ids,
             "echo": False,
         }
+
+        if is_llava:
+            images = conv.get_images()
+            gen_params = {
+                "model": model_path,
+                "prompt": prompt,
+                "images": images,
+                "temperature": temperature,
+                "repetition_penalty": repetition_penalty,
+                "max_new_tokens": max_new_tokens,
+                "stop": conv.stop_str,
+                "stop_token_ids": conv.stop_token_ids,
+                "echo": False,
+            }
 
         try:
             chatio.prompt_for_output(conv.roles[1])

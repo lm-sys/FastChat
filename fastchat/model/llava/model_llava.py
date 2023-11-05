@@ -17,7 +17,6 @@ from fastchat.model.llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFA
 def load_image_from_base64(image):
     return Image.open(BytesIO(base64.b64decode(image)))
 
-
 def expand2square(pil_img, background_color):
     width, height = pil_img.size
     if width == height:

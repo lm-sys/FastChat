@@ -31,7 +31,6 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.serve.base_model_worker import BaseModelWorker, app
 from fastchat.utils import build_logger, get_context_length, str_to_torch_dtype
-from peng_utils import get_model, get_device_name, generate_stream
 
 global_counter = 0
 model_semaphore = None

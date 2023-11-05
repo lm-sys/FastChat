@@ -28,6 +28,7 @@ class SeparatorStyle(IntEnum):
     PHOENIX = auto()
     ROBIN = auto()
     FALCON_CHAT = auto()
+    LLAVA_LLAMA2 = auto()
 
 
 @dataclasses.dataclass
@@ -213,8 +214,109 @@ class Conversation:
                     ret += role + ":"
 
             return ret
+        elif self.sep_style == SeparatorStyle.LLAVA_LLAMA2:
+            # messages = self.messages
+            # if len(messages) > 0 and type(messages[0][1]) is tuple:
+            #     messages = self.messages.copy()
+            #     init_role, init_msg = messages[0].copy()
+            #     init_msg = init_msg[0].replace("<image>", "").strip()
+            #     if 'mmtag' in self.version:
+            #         messages[0] = (init_role, init_msg)
+            #         messages.insert(0, (self.roles[0], "<Image><image></Image>"))
+            #         messages.insert(1, (self.roles[1], "Received."))
+            #     else:
+            #         messages[0] = (init_role, "<image>\n" + init_msg)
+            
+            # wrap_sys = lambda msg: f"<<SYS>>\n{msg}\n<</SYS>>\n\n"
+            # wrap_inst = lambda msg: f"[INST] {msg} [/INST]"
+            # ret = ""
+
+            # for i, (role, message) in enumerate(messages):
+            #     if i == 0:
+            #         assert message, "first message should not be none"
+            #         assert role == self.roles[0], "first message should come from user"
+            #     if message:
+            #         if type(message) is tuple:
+            #             message, _, _ = message
+            #         if i == 0: message = wrap_sys(system_prompt) + message
+            #         if i % 2 == 0:
+            #             message = wrap_inst(message)
+            #             ret += self.sep + message
+            #         else:
+            #             ret += " " + message + " " + self.sep2
+            #     else:
+            #         ret += ""
+            # ret = ret.lstrip(self.sep)
+            # return ret
+            seps = [self.sep, self.sep2]
+            if self.system_message:
+                ret = system_prompt
+            else:
+                ret = "[INST] "
+            for i, (role, message) in enumerate(self.messages):
+                tag = self.roles[i % 2]
+                if message:
+                    if type(message) is tuple:
+                        message, _, _ = message
+                    if i == 0:
+                        ret += message + " "
+                    else:
+                        ret += tag + " " + message + seps[i % 2]
+                else:
+                    ret += tag
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
+
+    def get_images(self, return_pil=False):
+        images = []
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    import base64
+                    from io import BytesIO
+                    from PIL import Image
+                    msg, image, image_process_mode = msg
+                    if image_process_mode == "Pad":
+                        def expand2square(pil_img, background_color=(122, 116, 104)):
+                            width, height = pil_img.size
+                            if width == height:
+                                return pil_img
+                            elif width > height:
+                                result = Image.new(pil_img.mode, (width, width), background_color)
+                                result.paste(pil_img, (0, (width - height) // 2))
+                                return result
+                            else:
+                                result = Image.new(pil_img.mode, (height, height), background_color)
+                                result.paste(pil_img, ((height - width) // 2, 0))
+                                return result
+                        image = expand2square(image)
+                    elif image_process_mode in ["Default", "Crop"]:
+                        pass
+                    elif image_process_mode == "Resize":
+                        image = image.resize((336, 336))
+                    else:
+                        raise ValueError(f"Invalid image_process_mode: {image_process_mode}")
+                    max_hw, min_hw = max(image.size), min(image.size)
+                    aspect_ratio = max_hw / min_hw
+                    max_len, min_len = 800, 400
+                    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+                    longest_edge = int(shortest_edge * aspect_ratio)
+                    W, H = image.size
+                    if longest_edge != max(image.size):
+                        if H > W:
+                            H, W = longest_edge, shortest_edge
+                        else:
+                            H, W = shortest_edge, longest_edge
+                        image = image.resize((W, H))
+                    if return_pil:
+                        images.append(image)
+                    else:
+                        buffered = BytesIO()
+                        image.save(buffered, format="PNG")
+                        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+                        images.append(img_b64_str)
+        return images
 
     def set_system_message(self, system_message: str):
         """Set the system message."""
@@ -235,9 +337,31 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
-                ret.append([msg, None])
+                if type(msg) is tuple:
+                    import base64
+                    from io import BytesIO
+                    msg, image, image_process_mode = msg
+                    max_hw, min_hw = max(image.size), min(image.size)
+                    aspect_ratio = max_hw / min_hw
+                    max_len, min_len = 800, 400
+                    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+                    longest_edge = int(shortest_edge * aspect_ratio)
+                    W, H = image.size
+                    if H > W:
+                        H, W = longest_edge, shortest_edge
+                    else:
+                        H, W = shortest_edge, longest_edge
+                    image = image.resize((W, H))
+                    buffered = BytesIO()
+                    image.save(buffered, format="JPEG")
+                    img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+                    img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
+                    msg = img_str + msg.replace('<image>', '').strip()
+                    ret.append([msg, None])
+                else:
+                    ret.append([msg, None])
             else:
                 ret[-1][-1] = msg
         return ret
@@ -270,12 +394,22 @@ class Conversation:
         )
 
     def dict(self):
+        if len(self.get_images()) > 0:
+            return {
+                "system": self.system,
+                "roles": self.roles,
+                "messages": [[x, y[0] if type(y) is tuple else y] for x, y in self.messages],
+                "offset": self.offset,
+                "sep": self.sep,
+                "sep2": self.sep2,
+            }
         return {
-            "template_name": self.name,
-            "system_message": self.system_message,
+            "system": self.system,
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,
+            "sep": self.sep,
+            "sep2": self.sep2,
         }
 
 
@@ -1162,7 +1296,7 @@ register_conv_template(
            "You are able to understand the visual content that the user provides, "
            "and assist the user with a variety of tasks using natural language.",
         roles=("USER", "ASSISTANT"),
-        sep_style=SeparatorStyle.LLAMA2,
+        sep_style=SeparatorStyle.LLAVA_LLAMA2,
         sep="<s>",
         sep2="</s>",
         stop_str="</s>"
