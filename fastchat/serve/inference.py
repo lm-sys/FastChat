@@ -37,11 +37,6 @@ from fastchat.model.model_adapter import (
     get_conversation_template,
     get_generate_stream_function,
 )
-from fastchat.model.llava.constants import (
-    DEFAULT_IMAGE_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
-)
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
@@ -63,14 +58,6 @@ def prepare_logits_processor(
     if top_k > 0:
         processor_list.append(TopKLogitsWarper(top_k))
     return processor_list
-
-def load_image(image_file):
-    if image_file.startswith('http://') or image_file.startswith('https://'):
-        response = requests.get(image_file)
-        image = Image.open(BytesIO(response.content)).convert('RGB')
-    else:
-        image = Image.open(image_file).convert('RGB')
-    return image
 
 @torch.inference_mode()
 def generate_stream(
@@ -548,12 +535,14 @@ def chat_loop(
                 image = load_image(filename)
 
                 text = " ".join(args[2:])
-                text = text + "\n<image>"
+                text = "<image>\n" + text
 
             if not os.path.exists(filename):
                 print("file not found:", filename)
                 continue
-
+            
+            # refresh for each new image
+            conv = new_chat()
             inp = (text, image, "Default") # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
 
         conv.append_message(conv.roles[0], inp)

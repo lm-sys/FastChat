@@ -131,6 +131,8 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 tag = self.roles[i % 2]
                 if message:
+                    if type(message) is tuple:
+                        message, _, _ = message
                     if i == 0:
                         ret += message + " "
                     else:
@@ -213,57 +215,6 @@ class Conversation:
                 else:
                     ret += role + ":"
 
-            return ret
-        elif self.sep_style == SeparatorStyle.LLAVA_LLAMA2:
-            # messages = self.messages
-            # if len(messages) > 0 and type(messages[0][1]) is tuple:
-            #     messages = self.messages.copy()
-            #     init_role, init_msg = messages[0].copy()
-            #     init_msg = init_msg[0].replace("<image>", "").strip()
-            #     if 'mmtag' in self.version:
-            #         messages[0] = (init_role, init_msg)
-            #         messages.insert(0, (self.roles[0], "<Image><image></Image>"))
-            #         messages.insert(1, (self.roles[1], "Received."))
-            #     else:
-            #         messages[0] = (init_role, "<image>\n" + init_msg)
-            
-            # wrap_sys = lambda msg: f"<<SYS>>\n{msg}\n<</SYS>>\n\n"
-            # wrap_inst = lambda msg: f"[INST] {msg} [/INST]"
-            # ret = ""
-
-            # for i, (role, message) in enumerate(messages):
-            #     if i == 0:
-            #         assert message, "first message should not be none"
-            #         assert role == self.roles[0], "first message should come from user"
-            #     if message:
-            #         if type(message) is tuple:
-            #             message, _, _ = message
-            #         if i == 0: message = wrap_sys(system_prompt) + message
-            #         if i % 2 == 0:
-            #             message = wrap_inst(message)
-            #             ret += self.sep + message
-            #         else:
-            #             ret += " " + message + " " + self.sep2
-            #     else:
-            #         ret += ""
-            # ret = ret.lstrip(self.sep)
-            # return ret
-            seps = [self.sep, self.sep2]
-            if self.system_message:
-                ret = system_prompt
-            else:
-                ret = "[INST] "
-            for i, (role, message) in enumerate(self.messages):
-                tag = self.roles[i % 2]
-                if message:
-                    if type(message) is tuple:
-                        message, _, _ = message
-                    if i == 0:
-                        ret += message + " "
-                    else:
-                        ret += tag + " " + message + seps[i % 2]
-                else:
-                    ret += tag
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1296,7 +1247,7 @@ register_conv_template(
            "You are able to understand the visual content that the user provides, "
            "and assist the user with a variety of tasks using natural language.",
         roles=("USER", "ASSISTANT"),
-        sep_style=SeparatorStyle.LLAVA_LLAMA2,
+        sep_style=SeparatorStyle.LLAMA2,
         sep="<s>",
         sep2="</s>",
         stop_str="</s>"
