@@ -532,15 +532,15 @@ def chat_loop(
                     return image
                 
                 filename = args[1]
+                if not os.path.exists(filename):
+                    print("file not found:", filename)
+                    continue
+
                 image = load_image(filename)
 
                 text = " ".join(args[2:])
                 text = "<image>\n" + text
 
-            if not os.path.exists(filename):
-                print("file not found:", filename)
-                continue
-            
             # refresh for each new image
             conv = new_chat()
             inp = (text, image, "Default") # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
