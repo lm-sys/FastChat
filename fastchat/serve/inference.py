@@ -354,12 +354,12 @@ def chat_loop(
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
-    is_multimodal: bool = False,
+    multimodal: bool = False,
     debug: bool = True,
     history: bool = True,
 ):
     # Model
-    if is_multimodal:
+    if multimodal:
         model, tokenizer, image_processor = load_model(
             model_path,
             device=device,
@@ -369,7 +369,7 @@ def chat_loop(
             load_8bit=load_8bit,
             cpu_offloading=cpu_offloading,
             revision=revision,
-            is_multimodal=True,
+            multimodal=True,
             debug=debug,
         )
     else:
@@ -579,7 +579,7 @@ def chat_loop(
 
         try:
             chatio.prompt_for_output(conv.roles[1])
-            if is_multimodal:
+            if multimodal:
                 output_stream = generate_stream_func(
                     model,
                     tokenizer,

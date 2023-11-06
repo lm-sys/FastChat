@@ -176,7 +176,7 @@ def load_model(
     exllama_config: Optional[ExllamaConfig] = None,
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
-    is_multimodal: bool = False,
+    multimodal: bool = False,
     debug: bool = False,
 ):
     """Load a model from Hugging Face."""
@@ -312,7 +312,7 @@ def load_model(
         kwargs["torch_dtype"] = dtype
 
     # Load model
-    if is_multimodal:
+    if multimodal:
         model, tokenizer, image_processor = adapter.load_model(model_path, kwargs)
     else:
         model, tokenizer = adapter.load_model(model_path, kwargs)
@@ -330,7 +330,7 @@ def load_model(
         "npu",
     ):
         model.to(device)
-        if is_multimodal:
+        if multimodal:
             # NOTE: A little hacky since this is only applicable to Llava possibly?
             model.get_vision_tower().to(device)
 
@@ -340,7 +340,7 @@ def load_model(
     if debug:
         print(model)
 
-    if is_multimodal:
+    if multimodal:
         return model, tokenizer, image_processor
     
     return model, tokenizer

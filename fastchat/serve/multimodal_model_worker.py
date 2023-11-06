@@ -20,6 +20,7 @@ import requests
 import numpy as np
 from PIL import Image
 import torch
+from transformers import set_seed
 import uvicorn
 
 from io import BytesIO
@@ -52,13 +53,13 @@ class MultimodalModelWorker(BaseModelWorker):
         worker_addr: str,
         worker_id: str,
         model_path: str,
-        model_base: str,
         model_names: List[str],
         limit_worker_concurrency: int,
         no_register: bool,
         device: str,
         num_gpus: int,
         max_gpu_memory: str,
+        multimodal: bool,
         dtype: Optional[torch.dtype] = None,
         load_8bit: bool = False,
         load_4bit: bool = False,
@@ -82,11 +83,11 @@ class MultimodalModelWorker(BaseModelWorker):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        self.is_multimodal = True
+        self.multimodal = multimodal
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
 
-        self.tokenizer, self.model, self.image_processor = load_model(
+        self.model, self.tokenizer, self.image_processor = load_model(
             model_path,
             device=device,
             num_gpus=num_gpus,
@@ -94,7 +95,7 @@ class MultimodalModelWorker(BaseModelWorker):
             dtype=dtype,
             load_8bit=load_8bit,
             cpu_offloading=cpu_offloading,
-            is_multimodal=self.is_multimodal,
+            multimodal=self.multimodal,
             debug=debug,
         ) # assumption only singular model
         
@@ -111,100 +112,49 @@ class MultimodalModelWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
-    def register_to_controller(self):
-        logger.info("Register to controller")
-
-        url = self.controller_addr + "/register_worker"
-        data = {
-            "worker_name": self.worker_addr,
-            "check_heart_beat": True,
-            "worker_status": self.get_status(),
-        }
-        r = requests.post(url, json=data)
-        assert r.status_code == 200
-
-    def get_queue_length(self):
-        if (
-            model_semaphore is None
-            or model_semaphore._value is None
-            or model_semaphore._waiters is None
-        ):
-            return 0
-        else:
-            return (
-                args.limit_model_concurrency
-                - model_semaphore._value
-                + len(model_semaphore._waiters)
-            )
-
-    def get_status(self):
-        return {
-            "model_names": [self.model_name],
-            "speed": 1,
-            "queue_length": self.get_queue_length(),
-        }
-
     def generate_stream_gate(self, params):
+        self.call_ct += 1
+
         try:
-            for x in self.generate_stream(params):
-                yield x
-        except ValueError as e:
-            print("Caught ValueError:", e)
+            if self.seed is not None:
+                set_seed(self.seed)
+            for output in self.generate_stream_func(
+                self.model,
+                self.tokenizer,
+                self.image_processor,
+                params,
+                self.device,
+                self.context_len,
+                self.stream_interval,
+            ):
+                ret = {
+                    "text": output["text"],
+                    "error_code": 0,
+                }
+                if "usage" in output:
+                    ret["usage"] = output["usage"]
+                if "finish_reason" in output:
+                    ret["finish_reason"] = output["finish_reason"]
+                if "logprobs" in output:
+                    ret["logprobs"] = output["logprobs"]
+                yield json.dumps(ret).encode() + b"\0"
+        except torch.cuda.OutOfMemoryError as e:
             ret = {
-                "text": SERVER_ERROR_MSG,
-                "error_code": 1,
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             yield json.dumps(ret).encode() + b"\0"
-        except torch.cuda.CudaError as e:
-            print("Caught torch.cuda.CudaError:", e)
+        except (ValueError, RuntimeError) as e:
             ret = {
-                "text": SERVER_ERROR_MSG,
-                "error_code": 1,
-            }
-            yield json.dumps(ret).encode() + b"\0"
-        except Exception as e:
-            print("Caught Unknown Error", e)
-            ret = {
-                "text": SERVER_ERROR_MSG,
-                "error_code": 1,
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
             }
             yield json.dumps(ret).encode() + b"\0"
 
-
-app = FastAPI()
-
-
-def release_model_semaphore():
-    model_semaphore.release()
-
-
-def acquire_model_semaphore():
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(args.limit_model_concurrency)
-    return model_semaphore.acquire()
-
-
-def create_background_tasks():
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
-    return background_tasks
-
-
-@app.post("/worker_generate_stream")
-async def api_generate_stream(request: Request):
-    params = await request.json()
-    await acquire_model_semaphore()
-    generator = worker.generate_stream_gate(params)
-    background_tasks = create_background_tasks()
-    return StreamingResponse(generator, background=background_tasks)
-
-
-@app.post("/worker_get_status")
-async def api_get_status(request: Request):
-    return worker.get_status()
-
+    def generate_gate(self, params):
+        for x in self.generate_stream_gate(params):
+            pass
+        return json.loads(x[:-1].decode())
 
 def create_multimodal_model_worker():
     parser = argparse.ArgumentParser()
@@ -212,29 +162,46 @@ def create_multimodal_model_worker():
     parser.add_argument("--port", type=int, default=21002)
     parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
     parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
-    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
-    parser.add_argument("--model-base", type=str, default=None)
-    parser.add_argument("--model-name", type=str)
-    parser.add_argument("--multi-modal", action="store_true", help="Multimodal mode is automatically detected with model name, please make sure `llava` is included in the model path.")
-    parser.add_argument("--limit-model-concurrency", type=int, default=5)
+    # FOR PEFT (not supported yet): parser.add_argument("--model-base", type=str, default=None) 
+    parser.add_argument("--embed-in-truncate", action="store_true")
+    parser.add_argument(
+        "--model-names",
+        type=lambda s: s.split(","),
+        help="Optional display comma separated names",
+    )
+    parser.add_argument("--multimodal", action="store_true", default=True)
+    parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
+    add_model_args(parser)
+
+    parser.add_argument("--limit-worker-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=1)
-    parser.add_argument("--no-register", action="store_true")
-    parser.add_argument("--load-8bit", action="store_true")
-    parser.add_argument("--load-4bit", action="store_true")
+    parser.add_argument("--no-register", action="store_true")    
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Overwrite the random seed for each generation.",
+    )
+    parser.add_argument(
+        "--debug", type=bool, default=False, help="Print debugging messages"
+    )
     args = parser.parse_args()
+    logger.info(f"args: {args}")
 
     worker = MultimodalModelWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.model_path,
-        args.model_base,
         args.model_names,
         args.limit_worker_concurrency,
         no_register=args.no_register,
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,
+        multimodal=args.multimodal,
         dtype=str_to_torch_dtype(args.dtype),
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
@@ -244,6 +211,7 @@ def create_multimodal_model_worker():
         seed=args.seed,
         debug=args.debug,
     )
+
     return args, worker
 
 if __name__ == "__main__":

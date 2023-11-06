@@ -119,7 +119,7 @@ def generate_stream_llava(
     ori_prompt = prompt
     images = params.get("images", None)
     num_image_tokens = 0
-    if images is not None and len(images) > 0: # NOTE(chris): removed multimodal check
+    if images is not None and len(images) > 0: # NOTE(chris): removed multimodal check because we essentially know we want multimodal on
         if len(images) > 0:
             if len(images) != prompt.count(DEFAULT_IMAGE_TOKEN):
                 raise ValueError("Number of images does not match number of <image> tokens in prompt")
@@ -182,12 +182,34 @@ def generate_stream_llava(
     else:
         generated_text = ""
         
+    generated_tokens = 0
+    finish_reason = None
     for new_text in streamer:
         generated_text += new_text
+        generated_tokens += len(tokenizer.encode(new_text))
         if generated_text.endswith(stop_str):
-            generated_text = generated_text[:-len(stop_str)]
+            finish_reason = "stop"
+            break
+        elif generated_tokens >= max_new_tokens:
+            finish_reason = "length"
+            break
+
         yield {
-                "text": generated_text,
-                "error_code": 0
-            }
-        
+            "text": generated_text,
+            "usage": {
+                "prompt_tokens": input_ids.shape[-1],
+                "completion_tokens": generated_tokens,
+                "total_tokens": input_ids.shape[-1] + generated_tokens
+            },
+            "finish_reason": None
+        }
+    
+    yield {
+        "text": generated_text,
+            "usage": {
+                "prompt_tokens": input_ids.shape[-1],
+                "completion_tokens": generated_tokens,
+                "total_tokens": input_ids.shape[-1] + generated_tokens
+            },
+            "finish_reason": finish_reason
+    }
