@@ -347,14 +347,14 @@ class Conversation:
         if len(self.get_images()) > 0:
             return {
                 "template_name": self.name,
-                "system_message": self.system,
+                "system_message": self.system_message,
                 "roles": self.roles,
                 "messages": [[x, y[0] if type(y) is tuple else y] for x, y in self.messages],
                 "offset": self.offset,
             }
         return {
             "template_name": self.name,
-            "system_message": self.system,
+            "system_message": self.system_message,
             "roles": self.roles,
             "messages": self.messages,
             "offset": self.offset,

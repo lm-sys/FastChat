@@ -26,6 +26,7 @@ from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
     build_single_model_ui,
+    build_single_vision_language_model_ui,
     get_model_list,
     load_demo_single,
     ip_expiration_dict,
@@ -116,8 +117,13 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     models, add_promotion_links=True
                 )
 
+            with gr.Tab("Single Vision-Language Model", id=3):
+                single_vision_language_model_list = build_single_vision_language_model_ui(
+                    models, add_promotion_links=True
+                )
+
             if elo_results_file:
-                with gr.Tab("Leaderboard", id=3):
+                with gr.Tab("Leaderboard", id=4):
                     build_leaderboard_tab(elo_results_file, leaderboard_table_file)
 
         url_params = gr.JSON(visible=False)
