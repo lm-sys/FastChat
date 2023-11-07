@@ -120,8 +120,10 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                 )
 
             with gr.Tab("Single Vision-Language Model", id=3):
-                single_vision_language_model_list = build_single_vision_language_model_ui(
-                    models, add_promotion_links=True
+                single_vision_language_model_list = (
+                    build_single_vision_language_model_ui(
+                        models, add_promotion_links=True
+                    )
                 )
 
             if elo_results_file:

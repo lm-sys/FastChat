@@ -304,7 +304,7 @@ if __name__ == "__main__":
         "--multimodal",
         action="store_true",
         default=False,
-        help="Store true if this model is multimodal and accepts images as input as well."
+        help="Store true if this model is multimodal and accepts images as input as well.",
     )
     args = parser.parse_args()
     main(args)

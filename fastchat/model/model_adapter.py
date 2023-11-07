@@ -34,7 +34,12 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
-from fastchat.model.llava.model_llava import generate_stream_llava, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_IMAGE_PATCH_TOKEN
+from fastchat.model.llava.model_llava import (
+    generate_stream_llava,
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IM_END_TOKEN,
+    DEFAULT_IMAGE_PATCH_TOKEN,
+)
 from fastchat.model.llava.language_model.llava_llama import LlavaLlamaForCausalLM
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
@@ -342,7 +347,7 @@ def load_model(
 
     if multimodal:
         return model, tokenizer, image_processor
-    
+
     return model, tokenizer
 
 
@@ -1793,6 +1798,7 @@ class PygmalionAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metharme")
 
+
 class LlavaAdapter(BaseModelAdapter):
     """The model adapter for liuhaotian/llava-v1.5 series of models"""
 
@@ -1803,10 +1809,7 @@ class LlavaAdapter(BaseModelAdapter):
             **from_pretrained_kwargs,
         )
         tokenizer = AutoTokenizer.from_pretrained(
-            model_path, 
-            use_fast=False,
-            trust_remote_code=True, 
-            revision=revision
+            model_path, use_fast=False, trust_remote_code=True, revision=revision
         )
 
         mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
@@ -1814,7 +1817,9 @@ class LlavaAdapter(BaseModelAdapter):
         if mm_use_im_patch_token:
             tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
         if mm_use_im_start_end:
-            tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
+            tokenizer.add_tokens(
+                [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True
+            )
         model.resize_token_embeddings(len(tokenizer))
 
         vision_tower = model.get_vision_tower()
@@ -1824,11 +1829,12 @@ class LlavaAdapter(BaseModelAdapter):
 
         return model, tokenizer, image_processor
 
-    def match(self, model_path: str) :
+    def match(self, model_path: str):
         return "llava" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llava")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.

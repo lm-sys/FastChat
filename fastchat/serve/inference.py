@@ -59,6 +59,7 @@ def prepare_logits_processor(
         processor_list.append(TopKLogitsWarper(top_k))
     return processor_list
 
+
 @torch.inference_mode()
 def generate_stream(
     model,
@@ -516,21 +517,24 @@ def chat_loop(
             reload_conv(conv)
             continue
         elif inp.startswith("!!image-file"):
-            args = inp.split(" ") # !!image-file <filename> <prompt>
+            args = inp.split(" ")  # !!image-file <filename> <prompt>
 
             if len(args) < 3:
                 print("usage: !!image-file <filename> <prompt>")
                 continue
             else:
                 from PIL import Image
+
                 def load_image(image_file):
-                    if image_file.startswith('http://') or image_file.startswith('https://'):
+                    if image_file.startswith("http://") or image_file.startswith(
+                        "https://"
+                    ):
                         response = requests.get(image_file)
-                        image = Image.open(BytesIO(response.content)).convert('RGB')
+                        image = Image.open(BytesIO(response.content)).convert("RGB")
                     else:
-                        image = Image.open(image_file).convert('RGB')
+                        image = Image.open(image_file).convert("RGB")
                     return image
-                
+
                 filename = args[1]
                 if not os.path.exists(filename):
                     print("file not found:", filename)
@@ -543,7 +547,11 @@ def chat_loop(
 
             # refresh for each new image
             conv = new_chat()
-            inp = (text, image, "Default") # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
+            inp = (
+                text,
+                image,
+                "Default",
+            )  # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)

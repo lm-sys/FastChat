@@ -38,13 +38,15 @@ model_semaphore = None
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
+
 def load_image(image_file):
-    if image_file.startswith('http://') or image_file.startswith('https://'):
+    if image_file.startswith("http://") or image_file.startswith("https://"):
         response = requests.get(image_file)
-        image = Image.open(BytesIO(response.content)).convert('RGB')
+        image = Image.open(BytesIO(response.content)).convert("RGB")
     else:
-        image = Image.open(image_file).convert('RGB')
+        image = Image.open(image_file).convert("RGB")
     return image
+
 
 class MultimodalModelWorker(BaseModelWorker):
     def __init__(
@@ -78,7 +80,7 @@ class MultimodalModelWorker(BaseModelWorker):
             model_path,
             model_names,
             limit_worker_concurrency,
-            conv_template=conv_template
+            conv_template=conv_template,
         )
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
@@ -97,8 +99,8 @@ class MultimodalModelWorker(BaseModelWorker):
             cpu_offloading=cpu_offloading,
             multimodal=self.multimodal,
             debug=debug,
-        ) # assumption only singular model
-        
+        )  # assumption only singular model
+
         self.device = device
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -156,13 +158,16 @@ class MultimodalModelWorker(BaseModelWorker):
             pass
         return json.loads(x[:-1].decode())
 
+
 def create_multimodal_model_worker():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
     parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
-    parser.add_argument("--controller-address", type=str, default="http://localhost:21001")
-    # FOR PEFT (not supported yet): parser.add_argument("--model-base", type=str, default=None) 
+    parser.add_argument(
+        "--controller-address", type=str, default="http://localhost:21001"
+    )
+    # FOR PEFT (not supported yet): parser.add_argument("--model-base", type=str, default=None)
     parser.add_argument("--embed-in-truncate", action="store_true")
     parser.add_argument(
         "--model-names",
@@ -177,7 +182,7 @@ def create_multimodal_model_worker():
 
     parser.add_argument("--limit-worker-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=1)
-    parser.add_argument("--no-register", action="store_true")    
+    parser.add_argument("--no-register", action="store_true")
     parser.add_argument(
         "--seed",
         type=int,
@@ -213,6 +218,7 @@ def create_multimodal_model_worker():
     )
 
     return args, worker
+
 
 if __name__ == "__main__":
     args, worker = create_multimodal_model_worker()

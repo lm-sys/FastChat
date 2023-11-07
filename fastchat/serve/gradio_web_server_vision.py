@@ -243,7 +243,9 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     if ip_expiration_dict[ip] < time.time():
         logger.info(f"inactive. ip: {request.client.host}. text: {text}")
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), INACTIVE_MSG, None) + (no_change_btn,) * 5
+        return (state, state.to_gradio_chatbot(), INACTIVE_MSG, None) + (
+            no_change_btn,
+        ) * 5
 
     if enable_moderation:
         flagged = violates_moderation(text)
@@ -270,9 +272,13 @@ def add_text(state, model_selector, text, image, request: gr.Request):
 
     if image is not None:
         text = text[:INPUT_CHAR_LEN_LIMIT_WITH_IMAGE]  # Hard cut-off for images
-        if '<image>' not in text:
-            text = text + '\n<image>'
-        text = (text, image, "Default") # TODO(chris): add button for preprocess mode later
+        if "<image>" not in text:
+            text = text + "\n<image>"
+        text = (
+            text,
+            image,
+            "Default",
+        )  # TODO(chris): add button for preprocess mode later
 
     conv.append_message(conv.roles[0], text)
     conv.append_message(conv.roles[1], None)
@@ -695,6 +701,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     return [state, model_selector]
 
+
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
     promotion = (
         """
@@ -725,24 +732,50 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                     value=models[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=False,
-                    container=False)
+                    container=False,
+                )
 
             imagebox = gr.Image(type="pil")
             image_process_mode = gr.Radio(
                 ["Crop", "Resize", "Pad", "Default"],
                 value="Default",
-                label="Preprocess for non-square image", visible=False)
+                label="Preprocess for non-square image",
+                visible=False,
+            )
 
             cur_dir = os.path.dirname(os.path.abspath(__file__))
 
             with gr.Accordion("Parameters", open=False) as parameter_row:
-                temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.2, step=0.1, interactive=True, label="Temperature",)
-                top_p = gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.1, interactive=True, label="Top P",)
-                max_output_tokens = gr.Slider(minimum=0, maximum=1024, value=512, step=64, interactive=True, label="Max output tokens",)
+                temperature = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.2,
+                    step=0.1,
+                    interactive=True,
+                    label="Temperature",
+                )
+                top_p = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    value=0.7,
+                    step=0.1,
+                    interactive=True,
+                    label="Top P",
+                )
+                max_output_tokens = gr.Slider(
+                    minimum=0,
+                    maximum=1024,
+                    value=512,
+                    step=64,
+                    interactive=True,
+                    label="Max output tokens",
+                )
 
         with gr.Column(scale=8):
-            chatbot = gr.Chatbot(elem_id="chatbot", label="Scroll down and start chatting", height=550)
-            
+            chatbot = gr.Chatbot(
+                elem_id="chatbot", label="Scroll down and start chatting", height=550
+            )
+
             with gr.Row():
                 with gr.Column(scale=8):
                     textbox = gr.Textbox(
@@ -757,14 +790,17 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
                 downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
                 flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-                #stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
+                # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
 
-            gr.Examples(examples=[
-                [f"{cur_dir}/examples/dog.jpeg", "What animal is in this photo?"],
-                [f"{cur_dir}/examples/sunset.jpg", "Where was this picture taken?"],
-            ], inputs=[imagebox, textbox])
+            gr.Examples(
+                examples=[
+                    [f"{cur_dir}/examples/dog.jpeg", "What animal is in this photo?"],
+                    [f"{cur_dir}/examples/sunset.jpg", "Where was this picture taken?"],
+                ],
+                inputs=[imagebox, textbox],
+            )
 
     if add_promotion_links:
         gr.Markdown(acknowledgment_md)
@@ -786,17 +822,23 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
         [state, model_selector],
         [textbox, upvote_btn, downvote_btn, flag_btn],
     )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox, imagebox] + btn_list).then(
+    regenerate_btn.click(
+        regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
+    ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
+    model_selector.change(
+        clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+    )
 
     textbox.submit(
-        add_text, [state, model_selector, textbox, imagebox], [state, chatbot, textbox, imagebox] + btn_list
+        add_text,
+        [state, model_selector, textbox, imagebox],
+        [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
