@@ -981,6 +981,19 @@ class ChatGPTAdapter(BaseModelAdapter):
         return get_conv_template("chatgpt")
 
 
+class AzureOpenAIAdapter(BaseModelAdapter):
+    """The model adapter for Azure OpenAI"""
+
+    def match(self, model_path: str):
+        return model_path in ("azure-gpt-35-turbo", "azure-gpt-4")
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("chatgpt")
+
+
 class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
 
@@ -1801,6 +1814,7 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
+register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
