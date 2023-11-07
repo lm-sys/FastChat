@@ -51,3 +51,9 @@ PEFT_SHARE_BASE_WEIGHTS=true python3 -m fastchat.serve.multi_model_worker \
   --model-path SurfaceData/dummy_pythia160m_lora16_peft_chat \
   --model-path SurfaceData/dummy_pythia160m_lora8_peft_chat
 ```
+
+### Test chat templates
+
+```
+python3 test_chat_templates.py
+```

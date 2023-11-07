@@ -28,6 +28,7 @@ class SeparatorStyle(IntEnum):
     PHOENIX = auto()
     ROBIN = auto()
     FALCON_CHAT = auto()
+    MISTRAL = auto()
 
 
 @dataclasses.dataclass
@@ -212,6 +213,17 @@ class Conversation:
                 else:
                     ret += role + ":"
 
+            return ret
+        elif self.sep_style == SeparatorStyle.MISTRAL:
+            ret = self.sep
+            for i, (role, message) in enumerate(self.messages):
+                if role == "user":
+                    if self.system_message and i == 0:
+                        ret += " [INST] " + system_prompt + " " + message + " [/INST]"
+                    else:
+                        ret += " [INST] " + message + " [/INST]"
+                elif role == "assistant" and message:
+                    ret += message + self.sep2 + " "
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -883,10 +895,10 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mistral",
-        system_template="[INST]{system_message}\n",
-        roles=("[INST]", "[/INST]"),
-        sep_style=SeparatorStyle.LLAMA2,
-        sep=" ",
+        system_template="{system_message}",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.MISTRAL,
+        sep="<s>",
         sep2="</s>",
     )
 )
@@ -1129,7 +1141,7 @@ register_conv_template(
     Conversation(
         name="metharme",
         system_template="<|system|>{system_message}",
-        system_message="""Enter RP mode. You shall reply to the user while staying 
+        system_message="""Enter RP mode. You shall reply to the user while staying
         in character. Your responses must be detailed, creative, immersive, and drive the scenario
         forward.""",
         roles=("<|user|>", "<|model|>"),
