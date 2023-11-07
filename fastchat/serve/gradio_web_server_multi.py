@@ -26,10 +26,12 @@ from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
     build_single_model_ui,
-    build_single_vision_language_model_ui,
     get_model_list,
     load_demo_single,
     ip_expiration_dict,
+)
+from fastchat.serve.gradio_web_server_vision import (
+    build_single_vision_language_model_ui,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import (
