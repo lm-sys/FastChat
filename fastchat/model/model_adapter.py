@@ -943,6 +943,7 @@ class ChatGPTAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("chatgpt")
 
+
 class AzureOpenAIAdapter(BaseModelAdapter):
     """The model adapter for Azure OpenAI"""
 
@@ -954,6 +955,7 @@ class AzureOpenAIAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("chatgpt")
+
 
 class ClaudeAdapter(BaseModelAdapter):
     """The model adapter for Claude"""
