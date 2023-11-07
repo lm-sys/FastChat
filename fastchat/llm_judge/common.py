@@ -453,6 +453,12 @@ def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
+        except openai.error.InvalidRequestError as e:
+            print(type(e), e)
+            break
+        except KeyError:
+            print(response)
+            break
 
     return output
 
