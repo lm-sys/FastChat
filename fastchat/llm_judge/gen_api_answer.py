@@ -27,7 +27,9 @@ from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MO
 def get_answer(
     question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
 ):
-    assert (args.force_temperature is not None and "required_temperature" in question.keys()) == False
+    assert (
+        args.force_temperature is not None and "required_temperature" in question.keys()
+    ) == False
     if args.force_temperature is not None:
         temperature = args.force_temperature
     elif "required_temperature" in question.keys():
