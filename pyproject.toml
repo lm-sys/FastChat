@@ -22,7 +22,7 @@ dependencies = [
 model_worker = ["accelerate>=0.21", "peft", "sentencepiece", "torch", "transformers>=4.31.0", "protobuf"]
 webui = ["gradio"]
 train = ["einops", "flash-attn>=2.0", "wandb"]
-llm_judge = ["openai", "anthropic>=0.3", "ray"]
+llm_judge = ["openai<1", "anthropic>=0.3", "ray"]
 dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
