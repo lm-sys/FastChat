@@ -29,6 +29,8 @@ def get_answer(
 ):
     if args.force_temperature is not None:
         temperature = args.force_temperature
+    elif question["required_temp"] is not None:
+        temperature = question["required_temp"]
     elif question["category"] in temperature_config:
         temperature = temperature_config[question["category"]]
     else:
