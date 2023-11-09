@@ -448,6 +448,17 @@ register_conv_template(
     )
 )
 
+# CodeGeex(2) Template
+register_conv_template(
+    Conversation(
+        name="codegeex",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n\n",
+        stop_token_ids=[0, 2],
+    )
+)
+
 # Dolly V2 default template
 register_conv_template(
     Conversation(

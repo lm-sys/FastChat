@@ -769,6 +769,26 @@ class ChatGLMAdapter(BaseModelAdapter):
         return get_conv_template("chatglm")
 
 
+class CodeGeexAdapter(BaseModelAdapter):
+    """The model adapter for THUDM/codegeex-6b, THUDM/codegeex2-6b"""
+
+    def match(self, model_path: str):
+        return "codegeex" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("codegeex")
+
+
 class DollyV2Adapter(BaseModelAdapter):
     """The model adapter for databricks/dolly-v2-12b"""
 
@@ -1802,6 +1822,7 @@ register_model_adapter(GoogleT5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
+register_model_adapter(CodeGeexAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
 register_model_adapter(OasstLLaMAAdapter)
