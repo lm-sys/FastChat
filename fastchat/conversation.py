@@ -168,7 +168,7 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt
             for role, message in self.messages:
                 if message:
-                    ret += role + "\n" + message
+                    ret += role + "\n" + " " + message
                 else:
                     ret += role
             return ret
@@ -461,7 +461,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="chatglm3",
-        system_template="<|system|>\n{system_message}",
+        system_template="<|system|>\n {system_message}",
         system_message="You are ChatGLM3, a large language model trained by Zhipu.AI. Follow the user's instructions carefully. Respond using markdown.",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
