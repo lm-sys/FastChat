@@ -13,10 +13,8 @@ from threading import Thread
 import torch
 from transformers import StoppingCriteria, TextIteratorStreamer
 from fastchat.model.llava.constants import (
-    IGNORE_INDEX,
     IMAGE_TOKEN_INDEX,
     LLAVA_IMAGE_TOKEN,
-    LLAVA_IMAGE_PATCH_TOKEN,
     LLAVA_IM_START_TOKEN,
     LLAVA_IM_END_TOKEN,
 )
