@@ -756,7 +756,10 @@ class ChatGLMAdapter(BaseModelAdapter):
         revision = from_pretrained_kwargs.get("revision", "main")
         if "chatglm3" in model_path.lower():
             tokenizer = AutoTokenizer.from_pretrained(
-                model_path, encode_special_tokens=True, trust_remote_code=True, revision=revision
+                model_path,
+                encode_special_tokens=True,
+                trust_remote_code=True,
+                revision=revision,
             )
         else:
             tokenizer = AutoTokenizer.from_pretrained(
