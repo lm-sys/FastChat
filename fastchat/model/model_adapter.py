@@ -754,9 +754,15 @@ class ChatGLMAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
+        if "chatglm3" in model_path.lower():
+            # source: https://huggingface.co/THUDM/chatglm3-6b/commit/e46a14881eae613281abbd266ee918e93a56018f
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, encode_special_tokens=True, trust_remote_code=True, revision=revision
+            )
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, trust_remote_code=True, revision=revision
+            )
         model = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
@@ -766,6 +772,8 @@ class ChatGLMAdapter(BaseModelAdapter):
         model_path = model_path.lower()
         if "chatglm2" in model_path.lower():
             return get_conv_template("chatglm2")
+        if "chatglm3" in model_path.lower():
+            return get_conv_template("chatglm3")
         return get_conv_template("chatglm")
 
 
