@@ -165,7 +165,9 @@ class Conversation:
                     ret += role + "\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM3:
-            ret = "" if system_prompt == "" else system_prompt
+            ret = ""
+            if self.system_message:
+                ret += system_prompt
             for role, message in self.messages:
                 if message:
                     ret += role + "\n" + " " + message
@@ -462,10 +464,8 @@ register_conv_template(
     Conversation(
         name="chatglm3",
         system_template="<|system|>\n {system_message}",
-        system_message="You are ChatGLM3, a large language model trained by Zhipu.AI. Follow the user's instructions carefully. Respond using markdown.",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
-        sep="",
         stop_token_ids=[
             64795,
             64797,
