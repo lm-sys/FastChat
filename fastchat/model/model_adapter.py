@@ -755,7 +755,6 @@ class ChatGLMAdapter(BaseModelAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
         if "chatglm3" in model_path.lower():
-            # source: https://huggingface.co/THUDM/chatglm3-6b/commit/e46a14881eae613281abbd266ee918e93a56018f
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path, encode_special_tokens=True, trust_remote_code=True, revision=revision
             )
