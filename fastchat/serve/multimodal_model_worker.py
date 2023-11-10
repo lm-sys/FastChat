@@ -37,16 +37,6 @@ model_semaphore = None
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
-
-def load_image(image_file):
-    if image_file.startswith("http://") or image_file.startswith("https://"):
-        response = requests.get(image_file)
-        image = Image.open(BytesIO(response.content)).convert("RGB")
-    else:
-        image = Image.open(image_file).convert("RGB")
-    return image
-
-
 class MultimodalModelWorker(BaseModelWorker):
     def __init__(
         self,
