@@ -55,6 +55,7 @@ from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.serve.inference import generate_stream
 from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
@@ -212,6 +213,16 @@ def create_multi_model_worker():
         )
     else:
         exllama_config = None
+    if args.enable_xft:
+        xft_config = XftConfig(
+            max_seq_len=args.xft_max_seq_len,
+            data_type=args.xft_dtype,
+        )
+        if args.device != "cpu":
+            print("xFasterTransformer now is only support CPUs. Reset device to CPU")
+            args.device = "cpu"
+    else:
+        xft_config = None
 
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
@@ -241,6 +252,7 @@ def create_multi_model_worker():
             cpu_offloading=args.cpu_offloading,
             gptq_config=gptq_config,
             exllama_config=exllama_config,
+            xft_config=xft_config,
             stream_interval=args.stream_interval,
             conv_template=conv_template,
         )

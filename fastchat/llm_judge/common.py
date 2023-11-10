@@ -400,7 +400,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
-def chat_compeletion_openai(model, conv, temperature, max_tokens):
+def chat_compeletion_openai(model, conv, temperature, max_tokens, api_dict=None):
+    if api_dict is not None:
+        openai.api_base = api_dict["api_base"]
+        openai.api_key = api_dict["api_key"]
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
@@ -421,11 +424,15 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
     return output
 
 
-def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
+def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
     openai.api_type = "azure"
-    openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
-    openai.api_key = os.environ["AZURE_OPENAI_KEY"]
-    openai.api_version = "2023-05-15"
+    openai.api_version = "2023-07-01-preview"
+    if api_dict is not None:
+        openai.api_base = api_dict["api_base"]
+        openai.api_key = api_dict["api_key"]
+    else:
+        openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+        openai.api_key = os.environ["AZURE_OPENAI_KEY"]
 
     if "azure-" in model:
         model = model[6:]
@@ -446,6 +453,12 @@ def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
+        except openai.error.InvalidRequestError as e:
+            print(type(e), e)
+            break
+        except KeyError:
+            print(response)
+            break
 
     return output
 
