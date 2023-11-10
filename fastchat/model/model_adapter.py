@@ -36,9 +36,9 @@ from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.llava.model_llava import (
     generate_stream_llava,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
-    DEFAULT_IMAGE_PATCH_TOKEN,
+    LLAVA_IM_START_TOKEN,
+    LLAVA_IM_END_TOKEN,
+    LLAVA_IMAGE_PATCH_TOKEN,
 )
 from fastchat.model.llava.language_model.llava_llama import LlavaLlamaForCausalLM
 from fastchat.model.model_xfastertransformer import generate_stream_xft
@@ -335,7 +335,7 @@ def load_model(
         "npu",
     ):
         model.to(device)
-        if multimodal:
+        if multimodal and "llava" in model_path:
             # NOTE: A little hacky since this is only applicable to Llava possibly?
             model.get_vision_tower().to(device)
 
@@ -1815,10 +1815,10 @@ class LlavaAdapter(BaseModelAdapter):
         mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
         mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
         if mm_use_im_patch_token:
-            tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
+            tokenizer.add_tokens([LLAVA_IMAGE_PATCH_TOKEN], special_tokens=True)
         if mm_use_im_start_end:
             tokenizer.add_tokens(
-                [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True
+                [LLAVA_IM_START_TOKEN, LLAVA_IM_END_TOKEN], special_tokens=True
             )
         model.resize_token_embeddings(len(tokenizer))
 

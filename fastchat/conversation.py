@@ -43,6 +43,7 @@ class Conversation:
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
     # All messages. Each item is (role, message).
+    # Each message is either a string or a tuple of (string, PIL.Image).
     messages: List[List[str]] = ()
     # The number of few shot examples
     offset: int = 0
@@ -131,7 +132,7 @@ class Conversation:
                 tag = self.roles[i % 2]
                 if message:
                     if type(message) is tuple:
-                        message, _, _ = message
+                        message, _ = message
                     if i == 0:
                         ret += message + " "
                     else:
@@ -227,35 +228,7 @@ class Conversation:
                     from io import BytesIO
                     from PIL import Image
 
-                    msg, image, image_process_mode = msg
-                    if image_process_mode == "Pad":
-
-                        def expand2square(pil_img, background_color=(122, 116, 104)):
-                            width, height = pil_img.size
-                            if width == height:
-                                return pil_img
-                            elif width > height:
-                                result = Image.new(
-                                    pil_img.mode, (width, width), background_color
-                                )
-                                result.paste(pil_img, (0, (width - height) // 2))
-                                return result
-                            else:
-                                result = Image.new(
-                                    pil_img.mode, (height, height), background_color
-                                )
-                                result.paste(pil_img, ((height - width) // 2, 0))
-                                return result
-
-                        image = expand2square(image)
-                    elif image_process_mode in ["Default", "Crop"]:
-                        pass
-                    elif image_process_mode == "Resize":
-                        image = image.resize((336, 336))
-                    else:
-                        raise ValueError(
-                            f"Invalid image_process_mode: {image_process_mode}"
-                        )
+                    msg, image = msg
                     max_hw, min_hw = max(image.size), min(image.size)
                     aspect_ratio = max_hw / min_hw
                     max_len, min_len = 800, 400
@@ -302,7 +275,7 @@ class Conversation:
                     import base64
                     from io import BytesIO
 
-                    msg, image, image_process_mode = msg
+                    msg, image = msg
                     max_hw, min_hw = max(image.size), min(image.size)
                     aspect_ratio = max_hw / min_hw
                     max_len, min_len = 800, 400

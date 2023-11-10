@@ -6,6 +6,7 @@ A multimodal model worker executes the model.
 import argparse
 import asyncio
 import gc
+from io import BytesIO
 import json
 import time
 import threading
@@ -16,14 +17,12 @@ import torch
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import requests
-
 import numpy as np
 from PIL import Image
 import torch
 from transformers import set_seed
 import uvicorn
 
-from io import BytesIO
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import (
     load_model,

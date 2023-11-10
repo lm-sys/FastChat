@@ -15,10 +15,10 @@ from transformers import StoppingCriteria, TextIteratorStreamer
 from fastchat.model.llava.constants import (
     IGNORE_INDEX,
     IMAGE_TOKEN_INDEX,
-    DEFAULT_IMAGE_TOKEN,
-    DEFAULT_IMAGE_PATCH_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
+    LLAVA_IMAGE_TOKEN,
+    LLAVA_IMAGE_PATCH_TOKEN,
+    LLAVA_IM_START_TOKEN,
+    LLAVA_IM_END_TOKEN,
 )
 
 
@@ -153,7 +153,7 @@ def generate_stream_llava(
         images is not None and len(images) > 0
     ):  # NOTE(chris): removed multimodal check because we essentially know we want multimodal on
         if len(images) > 0:
-            if len(images) != prompt.count(DEFAULT_IMAGE_TOKEN):
+            if len(images) != prompt.count(LLAVA_IMAGE_TOKEN):
                 raise ValueError(
                     "Number of images does not match number of <image> tokens in prompt"
                 )
@@ -168,12 +168,12 @@ def generate_stream_llava(
             else:
                 images = images.to(model.device, dtype=torch.float16)
 
-            replace_token = DEFAULT_IMAGE_TOKEN
+            replace_token = LLAVA_IMAGE_TOKEN
             if getattr(model.config, "mm_use_im_start_end", False):
                 replace_token = (
-                    DEFAULT_IM_START_TOKEN + replace_token + DEFAULT_IM_END_TOKEN
+                    LLAVA_IM_START_TOKEN + replace_token + LLAVA_IM_END_TOKEN
                 )
-            prompt = prompt.replace(DEFAULT_IMAGE_TOKEN, replace_token)
+            prompt = prompt.replace(LLAVA_IMAGE_TOKEN, replace_token)
 
             num_image_tokens = (
                 prompt.count(replace_token) * model.get_vision_tower().num_patches

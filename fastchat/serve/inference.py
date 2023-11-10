@@ -4,15 +4,14 @@ import gc
 import json
 import math
 import os
-import requests
 import sys
 import time
 from typing import Iterable, Optional, Dict
 import warnings
 
 import psutil
+import requests
 import torch
-from io import BytesIO
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -32,6 +31,9 @@ from transformers.generation.logits_process import (
 )
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
+from fastchat.model.llava.constants import (
+    LLAVA_IMAGE_TOKEN,
+)
 from fastchat.model.model_adapter import (
     load_model,
     get_conversation_template,
@@ -41,7 +43,12 @@ from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
-from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
+from fastchat.utils import (
+    is_partial_stop,
+    is_sentence_complete,
+    get_context_length,
+    load_image,
+)
 
 
 def prepare_logits_processor(
@@ -523,18 +530,6 @@ def chat_loop(
                 print("usage: !!image-file <filename> <prompt>")
                 continue
             else:
-                from PIL import Image
-
-                def load_image(image_file):
-                    if image_file.startswith("http://") or image_file.startswith(
-                        "https://"
-                    ):
-                        response = requests.get(image_file)
-                        image = Image.open(BytesIO(response.content)).convert("RGB")
-                    else:
-                        image = Image.open(image_file).convert("RGB")
-                    return image
-
                 filename = args[1]
                 if not os.path.exists(filename):
                     print("file not found:", filename)
@@ -543,15 +538,15 @@ def chat_loop(
                 image = load_image(filename)
 
                 text = " ".join(args[2:])
-                text = "<image>\n" + text
+                if is_llava:
+                    text = LLAVA_IMAGE_TOKEN + "\n" + text
 
             # refresh for each new image
             conv = new_chat()
             inp = (
                 text,
                 image,
-                "Default",
-            )  # TODO(chris): change to have choice for image_process_mode -- message, image, image_process_mode
+            )
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)

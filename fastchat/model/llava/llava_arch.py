@@ -24,9 +24,9 @@ from .multimodal_projector.builder import build_vision_projector
 from fastchat.model.llava.constants import (
     IGNORE_INDEX,
     IMAGE_TOKEN_INDEX,
-    DEFAULT_IMAGE_PATCH_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
+    LLAVA_IMAGE_PATCH_TOKEN,
+    LLAVA_IM_START_TOKEN,
+    LLAVA_IM_END_TOKEN,
 )
 
 
@@ -342,12 +342,12 @@ class LlavaMetaForCausalLM(ABC):
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
         if model_args.mm_use_im_patch_token:
-            tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
+            tokenizer.add_tokens([LLAVA_IMAGE_PATCH_TOKEN], special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))
 
         if model_args.mm_use_im_start_end:
             num_new_tokens = tokenizer.add_tokens(
-                [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True
+                [LLAVA_IM_START_TOKEN, LLAVA_IM_END_TOKEN], special_tokens=True
             )
             self.resize_token_embeddings(len(tokenizer))
 

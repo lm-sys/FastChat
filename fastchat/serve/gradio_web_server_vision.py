@@ -24,17 +24,27 @@ from fastchat.constants import (
     SERVER_ERROR_MSG,
     INACTIVE_MSG,
     INPUT_CHAR_LEN_LIMIT,
-    INPUT_CHAR_LEN_LIMIT_WITH_IMAGE,
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
 )
+from fastchat.serve.gradio_web_server import (
+    State,
+    set_global_vars,
+    get_conv_log_filename,
+    get_model_list,
+    load_demo_single,
+    load_demo,
+    upvote_last_response,
+    downvote_last_response,
+    flag_last_response,
+    post_process_code,
+    get_model_description_md,
+)
+from fastchat.model.llava.constants import LLAVA_IMAGE_TOKEN
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import (
-    anthropic_api_stream_iter,
     openai_api_stream_iter,
-    palm_api_stream_iter,
-    init_palm_chat,
 )
 from fastchat.utils import (
     build_logger,
@@ -82,139 +92,10 @@ ip_expiration_dict = defaultdict(lambda: 0)
 openai_compatible_models_info = {}
 
 
-class State:
-    def __init__(self, model_name):
-        self.conv = get_conversation_template(model_name)
-        self.conv_id = uuid.uuid4().hex
-        self.skip_next = False
-        self.model_name = model_name
-
-        if model_name == "palm-2":
-            # According to release note, "chat-bison@001" is PaLM 2 for chat.
-            # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
-            self.palm_chat = init_palm_chat("chat-bison@001")
-
-    def to_gradio_chatbot(self):
-        return self.conv.to_gradio_chatbot()
-
-    def dict(self):
-        base = self.conv.dict()
-        base.update(
-            {
-                "conv_id": self.conv_id,
-                "model_name": self.model_name,
-            }
-        )
-        return base
-
-
 def set_global_vars(controller_url_, enable_moderation_):
     global controller_url, enable_moderation
     controller_url = controller_url_
     enable_moderation = enable_moderation_
-
-
-def get_conv_log_filename():
-    t = datetime.datetime.now()
-    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
-    return name
-
-
-def get_model_list(
-    controller_url, register_openai_compatible_models, add_chatgpt, add_claude, add_palm
-):
-    if controller_url:
-        ret = requests.post(controller_url + "/refresh_all_workers")
-        assert ret.status_code == 200
-        ret = requests.post(controller_url + "/list_models")
-        models = ret.json()["models"]
-    else:
-        models = []
-
-    # Add API providers
-    if register_openai_compatible_models:
-        global openai_compatible_models_info
-        openai_compatible_models_info = json.load(
-            open(register_openai_compatible_models)
-        )
-        models += list(openai_compatible_models_info.keys())
-
-    if add_chatgpt:
-        models += ["gpt-3.5-turbo", "gpt-4"]
-    if add_claude:
-        models += ["claude-2", "claude-instant-1"]
-    if add_palm:
-        models += ["palm-2"]
-    models = list(set(models))
-
-    priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
-    models.sort(key=lambda x: priority.get(x, x))
-    logger.info(f"Models: {models}")
-    return models
-
-
-def load_demo_single(models, url_params):
-    selected_model = models[0] if len(models) > 0 else ""
-    if "model" in url_params:
-        model = url_params["model"]
-        if model in models:
-            selected_model = model
-
-    dropdown_update = gr.Dropdown.update(
-        choices=models, value=selected_model, visible=True
-    )
-
-    state = None
-    return state, dropdown_update
-
-
-def load_demo(url_params, request: gr.Request):
-    global models
-
-    ip = request.client.host
-    logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
-
-    if args.model_list_mode == "reload":
-        models = get_model_list(
-            controller_url,
-            args.register_openai_compatible_models,
-            args.add_chatgpt,
-            args.add_claude,
-            args.add_palm,
-        )
-
-    return load_demo_single(models, url_params)
-
-
-def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    with open(get_conv_log_filename(), "a") as fout:
-        data = {
-            "tstamp": round(time.time(), 4),
-            "type": vote_type,
-            "model": model_selector,
-            "state": state.dict(),
-            "ip": request.client.host,
-        }
-        fout.write(json.dumps(data) + "\n")
-
-
-def upvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"upvote. ip: {request.client.host}")
-    vote_last_response(state, "upvote", model_selector, request)
-    return ("",) + (disable_btn,) * 3
-
-
-def downvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"downvote. ip: {request.client.host}")
-    vote_last_response(state, "downvote", model_selector, request)
-    return ("",) + (disable_btn,) * 3
-
-
-def flag_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"flag. ip: {request.client.host}")
-    vote_last_response(state, "flag", model_selector, request)
-    return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
@@ -271,29 +152,35 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
 
     if image is not None:
-        text = text[:INPUT_CHAR_LEN_LIMIT_WITH_IMAGE]  # Hard cut-off for images
-        if "<image>" not in text:
-            text = text + "\n<image>"
+        if LLAVA_IMAGE_TOKEN not in text:
+            text = text + "\n" + LLAVA_IMAGE_TOKEN
         text = (
             text,
             image,
-            "Default",
-        )  # TODO(chris): add button for preprocess mode later
+        )
 
     conv.append_message(conv.roles[0], text)
     conv.append_message(conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
-def post_process_code(code):
-    sep = "\n```"
-    if sep in code:
-        blocks = code.split(sep)
-        if len(blocks) % 2 == 1:
-            for i in range(1, len(blocks), 2):
-                blocks[i] = blocks[i].replace("\\_", "_")
-        code = sep.join(blocks)
-    return code
+def load_demo(url_params, request: gr.Request):
+    global models
+
+    ip = request.client.host
+    logger.info(f"load_demo. ip: {ip}. params: {url_params}")
+    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
+
+    if args.model_list_mode == "reload":
+        models = get_model_list(
+            controller_url,
+            args.register_openai_compatible_models,
+            args.add_chatgpt,
+            args.add_claude,
+            args.add_palm,
+        )
+
+    return load_demo_single(models, url_params)
 
 
 def model_worker_stream_iter(
@@ -363,21 +250,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         return
 
     conv, model_name = state.conv, state.model_name
-    if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name == "claude-2" or model_name == "claude-instant-1":
-        prompt = conv.get_prompt()
-        stream_iter = anthropic_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name == "palm-2":
-        stream_iter = palm_api_stream_iter(
-            state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
-        )
-    elif model_name in openai_compatible_models_info:
+    if model_name in openai_compatible_models_info:
         model_info = openai_compatible_models_info[model_name]
         prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
@@ -417,10 +290,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         images = conv.get_images()
 
         # Set repetition_penalty
-        if "t5" in model_name:
-            repetition_penalty = 1.2
-        else:
-            repetition_penalty = 1.0
+        repetition_penalty = 1.0
 
         stream_iter = model_worker_stream_iter(
             conv,
@@ -550,158 +420,6 @@ footer {
 """
 
 
-def get_model_description_md(models):
-    model_description_md = """
-| | | |
-| ---- | ---- | ---- |
-"""
-    ct = 0
-    visited = set()
-    for i, name in enumerate(models):
-        minfo = get_model_info(name)
-        if minfo.simple_name in visited:
-            continue
-        visited.add(minfo.simple_name)
-        one_model_md = f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
-
-        if ct % 3 == 0:
-            model_description_md += "|"
-        model_description_md += f" {one_model_md} |"
-        if ct % 3 == 2:
-            model_description_md += "\n"
-        ct += 1
-    return model_description_md
-
-
-def build_single_model_ui(models, add_promotion_links=False):
-    promotion = (
-        """
-- | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
-- Introducing Llama 2: The Next Generation Open Source Large Language Model. [[Website]](https://ai.meta.com/llama/)
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
-"""
-        if add_promotion_links
-        else ""
-    )
-
-    notice_markdown = f"""
-# 🏔️ Chat with Open Large Language Models
-{promotion}
-
-### Choose a model to chat with
-"""
-
-    state = gr.State()
-    model_description_md = get_model_description_md(models)
-    gr.Markdown(notice_markdown + model_description_md, elem_id="notice_markdown")
-
-    with gr.Row(elem_id="model_selector_row"):
-        model_selector = gr.Dropdown(
-            choices=models,
-            value=models[0] if len(models) > 0 else "",
-            interactive=True,
-            show_label=False,
-            container=False,
-        )
-
-    chatbot = gr.Chatbot(
-        elem_id="chatbot",
-        label="Scroll down and start chatting",
-        height=550,
-    )
-    with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
-
-    with gr.Row() as button_row:
-        upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-        downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-        flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
-
-    with gr.Accordion("Parameters", open=False) as parameter_row:
-        temperature = gr.Slider(
-            minimum=0.0,
-            maximum=1.0,
-            value=0.7,
-            step=0.1,
-            interactive=True,
-            label="Temperature",
-        )
-        top_p = gr.Slider(
-            minimum=0.0,
-            maximum=1.0,
-            value=1.0,
-            step=0.1,
-            interactive=True,
-            label="Top P",
-        )
-        max_output_tokens = gr.Slider(
-            minimum=16,
-            maximum=1024,
-            value=512,
-            step=64,
-            interactive=True,
-            label="Max output tokens",
-        )
-
-    if add_promotion_links:
-        gr.Markdown(acknowledgment_md)
-
-    # Register listeners
-    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
-    upvote_btn.click(
-        upvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    downvote_btn.click(
-        downvote_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    flag_btn.click(
-        flag_last_response,
-        [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
-    )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
-
-    textbox.submit(
-        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
-    ).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-    send_btn.click(
-        add_text,
-        [state, model_selector, textbox],
-        [state, chatbot, textbox] + btn_list,
-    ).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-
-    return [state, model_selector]
-
-
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
     promotion = (
         """
@@ -736,12 +454,6 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 )
 
             imagebox = gr.Image(type="pil")
-            image_process_mode = gr.Radio(
-                ["Crop", "Resize", "Pad", "Default"],
-                value="Default",
-                label="Preprocess for non-square image",
-                visible=False,
-            )
 
             cur_dir = os.path.dirname(os.path.abspath(__file__))
 

@@ -2,6 +2,7 @@
 Common utilities.
 """
 from asyncio import AbstractEventLoop
+from io import BytesIO
 import json
 import logging
 import logging.handlers
@@ -12,6 +13,7 @@ from typing import AsyncGenerator, Generator
 import warnings
 
 import requests
+from PIL import Image
 
 from fastchat.constants import LOGDIR
 
@@ -331,3 +333,12 @@ def str_to_torch_dtype(dtype: str):
         return torch.bfloat16
     else:
         raise ValueError(f"Unrecognized dtype: {dtype}")
+
+
+def load_image(image_file):
+    if image_file.startswith("http://") or image_file.startswith("https://"):
+        response = requests.get(image_file)
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+    else:
+        image = Image.open(image_file).convert("RGB")
+    return image
