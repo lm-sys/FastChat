@@ -239,7 +239,7 @@ def clear_history(request: gr.Request):
 
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
-        ip = request.headers['cf-connecting-ip']
+        ip = request.headers["cf-connecting-ip"]
     else:
         ip = request.client.host
     return ip
@@ -259,9 +259,7 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     flagged = moderation_filter(text, [state.model_name])
     if flagged:
-        logger.info(
-            f"violate moderation. ip: {ip}. text: {text}"
-        )
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
         text = MODERATION_MSG
 
@@ -559,8 +557,8 @@ def get_model_description_md(models):
         ct += 1
     return model_description_md
 
-def build_about():
 
+def build_about():
     about_markdown = f"""
 # About Us
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our code at [GitHub](https://github.com/lm-sys/FastChat) and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
@@ -592,10 +590,11 @@ Learn more about partnership [here](https://lmsys.org/donations/).
 </div>
 """
 
-    #state = gr.State()
+    # state = gr.State()
     gr.Markdown(about_markdown, elem_id="about_markdown")
 
-    #return [state]
+    # return [state]
+
 
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (

@@ -174,9 +174,7 @@ def add_text(
     model_list = [states[i].model_name for i in range(num_sides)]
     flagged = moderation_filter(text, model_list)
     if flagged:
-        logger.info(
-            f"violate moderation (named). ip: {ip}. text: {text}"
-        )
+        logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
         # overwrite the original text
         text = MODERATION_MSG
 

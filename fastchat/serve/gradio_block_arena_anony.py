@@ -204,7 +204,14 @@ SAMPLING_WEIGHTS = {
 }
 
 SAMPLING_BOOST_MODELS = ["openchat-3.5", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
-OUTAGE_MODELS = ["claude-1", "claude-2", "claude-instant-1", "zephyr-7b-alpha", "wizardlm-70b", "falcon-180b-chat"]
+OUTAGE_MODELS = [
+    "claude-1",
+    "claude-2",
+    "claude-instant-1",
+    "zephyr-7b-alpha",
+    "wizardlm-70b",
+    "falcon-180b-chat",
+]
 
 
 def get_sample_weight(model):
@@ -233,11 +240,20 @@ def get_battle_pair():
         "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
         "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
         "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
-        "zephyr-7b-beta": {"mistral-7b-instruct", "llama-2-13b-chat", "llama-2-7b-chat", "wizardlm-13b"},
+        "zephyr-7b-beta": {
+            "mistral-7b-instruct",
+            "llama-2-13b-chat",
+            "llama-2-7b-chat",
+            "wizardlm-13b",
+        },
         "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
         "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
         "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
-        "mistral-7b-instruct": {"llama-2-7b-chat", "llama-2-13b-chat", "llama-2-70b-chat"},
+        "mistral-7b-instruct": {
+            "llama-2-7b-chat",
+            "llama-2-13b-chat",
+            "llama-2-70b-chat",
+        },
         "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
         "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
         "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
@@ -259,8 +275,7 @@ def get_battle_pair():
         if model == chosen_model:
             continue
         weight = get_sample_weight(model)
-        if (weight != 0 and chosen_model in targets and
-                model in targets[chosen_model]):
+        if weight != 0 and chosen_model in targets and model in targets[chosen_model]:
             # boost to 50% chance
             weight = total_weight / len(targets[chosen_model])
         rival_models.append(model)
@@ -314,9 +329,7 @@ def add_text(
     model_list = [states[i].model_name for i in range(num_sides)]
     flagged = moderation_filter(text, model_list)
     if flagged:
-        logger.info(
-            f"violate moderation (anony). ip: {ip}. text: {text}"
-        )
+        logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
         text = MODERATION_MSG
 
@@ -541,7 +554,9 @@ Find out who is the 🥇LLM Champion!
         flash_buttons, [], btn_list
     )
     clear_btn.click(
-        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning]
+        clear_history,
+        None,
+        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
     )
 
     share_js = """
@@ -575,7 +590,9 @@ function (a, b, c, d) {
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list,
+        flash_buttons,
+        [],
+        btn_list,
     )
 
     send_btn.click(

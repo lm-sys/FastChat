@@ -84,7 +84,12 @@ def load_demo(url_params, request: gr.Request):
     if args.anony_only_for_proprietary_model:
         # Only enable these models in anony battles.
         if args.add_chatgpt:
-            models_anony += ["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
+            models_anony += [
+                "gpt-4",
+                "gpt-3.5-turbo",
+                "gpt-4-turbo",
+                "gpt-3.5-turbo-1106",
+            ]
         if args.add_claude:
             models_anony += ["claude-2", "claude-1", "claude-instant-1"]
         if args.add_palm:
@@ -126,7 +131,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
                     build_leaderboard_tab(elo_results_file, leaderboard_table_file)
             with gr.Tab("About Us", id=4):
                 about = build_about()
-
 
         url_params = gr.JSON(visible=False)
 

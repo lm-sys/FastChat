@@ -44,7 +44,10 @@ register_model_info(
     ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
 )
 register_model_info(
-    ["gpt-4-turbo"], "GPT-4-Turbo", "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo", "GPT-4-Turbo by OpenAI"
+    ["gpt-4-turbo"],
+    "GPT-4-Turbo",
+    "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
+    "GPT-4-Turbo by OpenAI",
 )
 register_model_info(
     ["claude-2"],

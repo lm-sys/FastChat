@@ -148,6 +148,7 @@ def oai_moderation(text):
     Check whether the text violates OpenAI moderation API.
     """
     import openai
+
     openai.api_base = "https://api.openai.com/v1"
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
