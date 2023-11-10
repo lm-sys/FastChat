@@ -754,9 +754,17 @@ class ChatGLMAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
+        if "chatglm3" in model_path.lower():
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                encode_special_tokens=True,
+                trust_remote_code=True,
+                revision=revision,
+            )
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, trust_remote_code=True, revision=revision
+            )
         model = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
@@ -766,7 +774,29 @@ class ChatGLMAdapter(BaseModelAdapter):
         model_path = model_path.lower()
         if "chatglm2" in model_path.lower():
             return get_conv_template("chatglm2")
+        if "chatglm3" in model_path.lower():
+            return get_conv_template("chatglm3")
         return get_conv_template("chatglm")
+
+
+class CodeGeexAdapter(BaseModelAdapter):
+    """The model adapter for THUDM/codegeex-6b, THUDM/codegeex2-6b"""
+
+    def match(self, model_path: str):
+        return "codegeex" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        model = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("codegeex")
 
 
 class DollyV2Adapter(BaseModelAdapter):
@@ -973,6 +1003,19 @@ class ChatGPTAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return model_path in ("gpt-3.5-turbo", "gpt-4")
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("chatgpt")
+
+
+class AzureOpenAIAdapter(BaseModelAdapter):
+    """The model adapter for Azure OpenAI"""
+
+    def match(self, model_path: str):
+        return model_path in ("azure-gpt-35-turbo", "azure-gpt-4")
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1789,6 +1832,7 @@ register_model_adapter(GoogleT5Adapter)
 register_model_adapter(KoalaAdapter)
 register_model_adapter(AlpacaAdapter)
 register_model_adapter(ChatGLMAdapter)
+register_model_adapter(CodeGeexAdapter)
 register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
 register_model_adapter(OasstLLaMAAdapter)
@@ -1801,6 +1845,7 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
+register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
