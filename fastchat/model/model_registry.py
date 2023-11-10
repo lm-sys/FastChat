@@ -29,13 +29,22 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    ["gpt-4"], "ChatGPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
+    ["gpt-3.5-turbo"],
+    "GPT-3.5",
+    "https://openai.com/blog/chatgpt",
+    "GPT-3.5 by OpenAI",
 )
 register_model_info(
-    ["gpt-3.5-turbo"],
-    "ChatGPT-3.5",
-    "https://openai.com/blog/chatgpt",
-    "ChatGPT-3.5 by OpenAI",
+    ["gpt-3.5-turbo-1106"],
+    "GPT-3.5-Turbo-1106",
+    "https://platform.openai.com/docs/models/gpt-3-5",
+    "GPT-3.5-Turbo-1106 by OpenAI",
+)
+register_model_info(
+    ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
+)
+register_model_info(
+    ["gpt-4-turbo"], "GPT-4-Turbo", "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo", "GPT-4-Turbo by OpenAI"
 )
 register_model_info(
     ["claude-2"],
@@ -171,7 +180,7 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
-    ["openchat_3.5"],
+    ["openchat-3.5"],
     "OpenChat 3.5",
     "https://github.com/imoneoi/openchat",
     "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",

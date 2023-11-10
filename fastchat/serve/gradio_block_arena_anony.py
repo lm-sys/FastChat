@@ -160,12 +160,15 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
-    "gpt-3.5-turbo": 8,
+    "gpt-4-turbo": 4,
+    "gpt-3.5-turbo": 2,
+    "gpt-3.5-turbo-1106": 2,
     "claude-2": 8,
     "claude-1": 2,
     "claude-instant-1": 8,
     "zephyr-7b-beta": 2,
-    # tire 1
+    "openchat-3.5": 2,
+    # tier 1
     "deluxe-chat-v1.1": 2,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
@@ -176,13 +179,13 @@ SAMPLING_WEIGHTS = {
     "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
     "qwen-14b-chat": 1.5,
-    "zephyr-7b-alpha": 1.5,
     "mistral-7b-instruct": 1.5,
     # tier 2
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
     # deprecated
+    "zephyr-7b-alpha": 1.5,
     "codellama-13b-instruct": 1.0,
     "mpt-30b-chat": 1.5,
     "guanaco-33b": 1.0,
@@ -200,8 +203,8 @@ SAMPLING_WEIGHTS = {
     "deluxe-chat-v1": 4,
 }
 
-SAMPLING_BOOST_MODELS = ["zephyr-7b-beta"]
-OUTAGE_MODELS = ["claude-1", "claude-2", "claude-instant-1"]
+SAMPLING_BOOST_MODELS = ["openchat-3.5", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
+OUTAGE_MODELS = ["claude-1", "claude-2", "claude-instant-1", "zephyr-7b-alpha", "wizardlm-70b", "falcon-180b-chat"]
 
 
 def get_sample_weight(model):
@@ -219,6 +222,7 @@ def get_battle_pair():
 
     targets = {
         "gpt-4": {"claude-2"},
+        "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo"},
         # "gpt-4": {"llama-2-70b-chat"},
         "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
         # "gpt-3.5-turbo": {"llama-2-70b-chat"},
@@ -226,6 +230,7 @@ def get_battle_pair():
         "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
         "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
         "deluxe-chat-v1.1": {"gpt-4"},
+        "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
         "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
         "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
         "zephyr-7b-beta": {"mistral-7b-instruct", "llama-2-13b-chat", "llama-2-7b-chat", "wizardlm-13b"},

@@ -138,7 +138,7 @@ def get_model_list(
         models += list(openai_compatible_models_info.keys())
 
     if add_chatgpt:
-        models += ["gpt-3.5-turbo", "gpt-4"]
+        models += ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
     if add_claude:
         models += ["claude-2", "claude-instant-1"]
     if add_palm:
@@ -343,7 +343,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         return
 
     conv, model_name = state.conv, state.model_name
-    if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
+    if model_name in ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]:
         prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
@@ -612,7 +612,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 # 🏔️ Chat with Open Large Language Models
 {promotion}
 
-### Choose a model to chat with
+## 👉 Choose any model to chat
 """
 
     state = gr.State()
