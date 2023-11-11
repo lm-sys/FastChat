@@ -203,15 +203,43 @@ SAMPLING_WEIGHTS = {
     "deluxe-chat-v1": 4,
 }
 
+# target model sampling weights will be boosted.
+BATTLE_TARGETS = {
+    "gpt-4": {"claude-2"},
+    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo"},
+    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
+    "claude-2": {"gpt-4", "gpt-3.5-turbo", "claude-1"},
+    "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
+    "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
+    "deluxe-chat-v1.1": {"gpt-4"},
+    "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
+    "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
+    "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
+    "zephyr-7b-beta": {
+        "mistral-7b-instruct",
+        "llama-2-13b-chat",
+        "llama-2-7b-chat",
+        "wizardlm-13b",
+    },
+    "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
+    "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
+    "mistral-7b-instruct": {
+        "llama-2-7b-chat",
+        "llama-2-13b-chat",
+        "llama-2-70b-chat",
+    },
+    "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
+    "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
+    "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
+    "wizardlm-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
+}
+
 SAMPLING_BOOST_MODELS = ["openchat-3.5", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
-OUTAGE_MODELS = [
-    "claude-1",
-    "claude-2",
-    "claude-instant-1",
-    "zephyr-7b-alpha",
-    "wizardlm-70b",
-    "falcon-180b-chat",
-]
+
+# outage models won't be sampled.
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model):
@@ -227,39 +255,6 @@ def get_battle_pair():
     if len(models) == 1:
         return models[0], models[0]
 
-    targets = {
-        "gpt-4": {"claude-2"},
-        "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo"},
-        # "gpt-4": {"llama-2-70b-chat"},
-        "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
-        # "gpt-3.5-turbo": {"llama-2-70b-chat"},
-        "claude-2": {"gpt-4", "gpt-3.5-turbo", "claude-1"},
-        "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
-        "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
-        "deluxe-chat-v1.1": {"gpt-4"},
-        "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
-        "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
-        "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
-        "zephyr-7b-beta": {
-            "mistral-7b-instruct",
-            "llama-2-13b-chat",
-            "llama-2-7b-chat",
-            "wizardlm-13b",
-        },
-        "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
-        "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
-        "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
-        "mistral-7b-instruct": {
-            "llama-2-7b-chat",
-            "llama-2-13b-chat",
-            "llama-2-70b-chat",
-        },
-        "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
-        "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
-        "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
-        "wizardlm-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
-        "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
-    }
     model_weights = []
     for model in models:
         weight = get_sample_weight(model)
@@ -275,9 +270,13 @@ def get_battle_pair():
         if model == chosen_model:
             continue
         weight = get_sample_weight(model)
-        if weight != 0 and chosen_model in targets and model in targets[chosen_model]:
+        if (
+            weight != 0
+            and chosen_model in BATTLE_TARGETS
+            and model in BATTLE_TARGETS[chosen_model]
+        ):
             # boost to 50% chance
-            weight = total_weight / len(targets[chosen_model])
+            weight = total_weight / len(BATTLE_TARGETS[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -296,7 +295,6 @@ def get_battle_pair():
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    is_cf = "cf-connecting-ip" in request.headers
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]

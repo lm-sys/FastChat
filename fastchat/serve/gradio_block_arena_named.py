@@ -147,7 +147,6 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    is_cf = "cf-connecting-ip" in request.headers
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]

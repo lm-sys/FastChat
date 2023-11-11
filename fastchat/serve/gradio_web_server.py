@@ -246,7 +246,6 @@ def get_ip(request: gr.Request):
 
 
 def add_text(state, model_selector, text, request: gr.Request):
-    is_cf = "cf-connecting-ip" in request.headers
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
