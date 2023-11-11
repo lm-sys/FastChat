@@ -39,6 +39,15 @@ from fastchat.serve.gradio_web_server import (
     flag_last_response,
     post_process_code,
     get_model_description_md,
+    headers,
+    no_change_btn,
+    enable_btn,
+    disable_btn,
+    invisible_btn,
+    enable_moderation,
+    acknowledgment_md,
+    block_css,
+    controller_url
 )
 from fastchat.model.llava.constants import LLAVA_IMAGE_TOKEN
 from fastchat.model.model_adapter import get_conversation_template
@@ -56,28 +65,6 @@ from fastchat.utils import (
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
-
-headers = {"User-Agent": "FastChat Client"}
-
-no_change_btn = gr.Button.update()
-enable_btn = gr.Button.update(interactive=True, visible=True)
-disable_btn = gr.Button.update(interactive=False)
-invisible_btn = gr.Button.update(interactive=False, visible=False)
-
-controller_url = None
-enable_moderation = False
-
-acknowledgment_md = """
-### Acknowledgment
-<div class="image-container">
-    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="Image 4">
-</div>
-"""
-
 ip_expiration_dict = defaultdict(lambda: 0)
 
 # Information about custom OpenAI compatible API models.
@@ -378,48 +365,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         }
         fout.write(json.dumps(data) + "\n")
 
-
-block_css = """
-#notice_markdown {
-    font-size: 104%
-}
-#notice_markdown th {
-    display: none;
-}
-#notice_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_markdown {
-    font-size: 104%
-}
-#leaderboard_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_dataframe td {
-    line-height: 0.1em;
-}
-#input_box textarea {
-}
-footer {
-    display:none !important
-}
-.image-container {
-    display: flex;
-    align-items: center;
-    padding: 1px;
-}
-.image-container img {
-    margin: 0 30px;
-    height: 20px;
-    max-height: 100%;
-    width: auto;
-    max-width: 20%;
-}
-"""
-
-
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
     promotion = (
         """
@@ -508,8 +453,8 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
 
             gr.Examples(
                 examples=[
-                    [f"{cur_dir}/examples/dog.jpeg", "What animal is in this photo?"],
-                    [f"{cur_dir}/examples/sunset.jpg", "Where was this picture taken?"],
+                    [f"{cur_dir}/example_images/dog.jpeg", "What animal is in this photo?"],
+                    [f"{cur_dir}/example_images/sunset.jpg", "Where was this picture taken?"],
                 ],
                 inputs=[imagebox, textbox],
             )
@@ -571,7 +516,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
 
 def build_demo(models):
     with gr.Blocks(
-        title="Chat with Open Large Language Models",
+        title="Chat with Open Large Vision-Language Models",
         theme=gr.themes.Default(),
         css=block_css,
     ) as demo:
