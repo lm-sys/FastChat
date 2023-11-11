@@ -13,7 +13,6 @@ from typing import AsyncGenerator, Generator
 import warnings
 
 import requests
-from PIL import Image
 
 from fastchat.constants import LOGDIR
 
@@ -336,6 +335,8 @@ def str_to_torch_dtype(dtype: str):
 
 
 def load_image(image_file):
+    from PIL import Image
+
     if image_file.startswith("http://") or image_file.startswith("https://"):
         response = requests.get(image_file)
         image = Image.open(BytesIO(response.content)).convert("RGB")

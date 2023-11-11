@@ -124,7 +124,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
                 no_change_btn,
             ) * 5
 
-    if image is not None and len(state.conv.get_images(return_pil=True)) > 0:
+    if image is not None and len(state.conv.get_images()) > 0:
         # reset convo with new image
         state.conv = get_conversation_template(state.model_name)
 

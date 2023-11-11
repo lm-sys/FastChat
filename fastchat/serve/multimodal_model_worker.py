@@ -51,7 +51,6 @@ class MultimodalModelWorker(BaseModelWorker):
         device: str,
         num_gpus: int,
         max_gpu_memory: str,
-        multimodal: bool,
         dtype: Optional[torch.dtype] = None,
         load_8bit: bool = False,
         load_4bit: bool = False,
@@ -75,7 +74,7 @@ class MultimodalModelWorker(BaseModelWorker):
         self.controller_addr = controller_addr
         self.worker_addr = worker_addr
         self.worker_id = worker_id
-        self.multimodal = multimodal
+        self.multimodal = True
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
 
@@ -157,14 +156,11 @@ def create_multimodal_model_worker():
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
-    # FOR PEFT (not supported yet): parser.add_argument("--model-base", type=str, default=None)
-    parser.add_argument("--embed-in-truncate", action="store_true")
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
-    parser.add_argument("--multimodal", action="store_true", default=True)
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
@@ -196,7 +192,6 @@ def create_multimodal_model_worker():
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,
-        multimodal=args.multimodal,
         dtype=str_to_torch_dtype(args.dtype),
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,

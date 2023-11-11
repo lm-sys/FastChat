@@ -219,35 +219,39 @@ class Conversation:
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
-    def get_images(self, return_pil=False):
+    def extract_base64encoded_image_from_message(self, message):
+        """Given a message with an input tuple of (str, PIL.image), we return the base64 encoded image string."""
+        import base64
+        from io import BytesIO
+        from PIL import Image
+
+        msg, image = msg
+        max_hw, min_hw = max(image.size), min(image.size)
+        aspect_ratio = max_hw / min_hw
+        max_len, min_len = 800, 400
+        shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+        longest_edge = int(shortest_edge * aspect_ratio)
+        W, H = image.size
+        if longest_edge != max(image.size):
+            if H > W:
+                H, W = longest_edge, shortest_edge
+            else:
+                H, W = shortest_edge, longest_edge
+            image = image.resize((W, H))
+
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return img_b64_str
+
+    def get_images(self):
         images = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    import base64
-                    from io import BytesIO
-                    from PIL import Image
+                    images.append(self.extract_base64encoded_image_from_message(msg))
 
-                    msg, image = msg
-                    max_hw, min_hw = max(image.size), min(image.size)
-                    aspect_ratio = max_hw / min_hw
-                    max_len, min_len = 800, 400
-                    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
-                    longest_edge = int(shortest_edge * aspect_ratio)
-                    W, H = image.size
-                    if longest_edge != max(image.size):
-                        if H > W:
-                            H, W = longest_edge, shortest_edge
-                        else:
-                            H, W = shortest_edge, longest_edge
-                        image = image.resize((W, H))
-                    if return_pil:
-                        images.append(image)
-                    else:
-                        buffered = BytesIO()
-                        image.save(buffered, format="PNG")
-                        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
-                        images.append(img_b64_str)
         return images
 
     def set_system_message(self, system_message: str):
@@ -272,24 +276,8 @@ class Conversation:
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    import base64
-                    from io import BytesIO
-
                     msg, image = msg
-                    max_hw, min_hw = max(image.size), min(image.size)
-                    aspect_ratio = max_hw / min_hw
-                    max_len, min_len = 800, 400
-                    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
-                    longest_edge = int(shortest_edge * aspect_ratio)
-                    W, H = image.size
-                    if H > W:
-                        H, W = longest_edge, shortest_edge
-                    else:
-                        H, W = shortest_edge, longest_edge
-                    image = image.resize((W, H))
-                    buffered = BytesIO()
-                    image.save(buffered, format="JPEG")
-                    img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+                    img_b64_str = self.extract_base64encoded_image_from_message(msg)
                     img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>", "").strip()
                     ret.append([msg, None])
