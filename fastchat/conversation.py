@@ -42,7 +42,7 @@ class Conversation:
     system_message: str = ""
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
-    # A flag that is set to True if the model is multimodal and False if it is a language model
+    # A flag that is set to True if the model is multimodal and False if it is a language model used to set the correct conversation format
     multimodal: bool = False
     # All messages. Each item is (role, message).
     # Each message is either a string or a tuple of (string, PIL.Image).
@@ -245,18 +245,20 @@ class Conversation:
         img_b64_str = base64.b64encode(buffered.getvalue()).decode()
 
         return img_b64_str
-    
+
     def to_openai_image_format(self, image_url):
         if image_url.startswith("http://") or image_url.startswith("https://"):
             return image_url
         else:
-            if image_url.lower().endswith(('png', 'jpg', 'jpeg', 'webp', 'gif')):
+            if image_url.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
                 img_b64_str = self.extract_base64encoded_image_from_message(image_url)
                 filetype = image_url.split(".")[-1].lower()
                 return f"data:image/{filetype};base64,{img_b64_str}"
             else:
-                raise ValueError(f"This file is not valid or not currently supported by the OpenAI API: {image_url}")
-                    
+                raise ValueError(
+                    f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
+                )
+
     def get_images(self):
         images = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
@@ -301,36 +303,40 @@ class Conversation:
 
     def to_openai_vision_api_messages(self):
         """Convert the conversation to OpenAI chat completion format for vision models."""
-        ret = [{"role": "system", "content": [{
-                        "type" : "text",
-                        "text" : self.system_message
-                    }]}]
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
+        ]
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     image_url = self.to_openai_image_format(msg[1])
-                    ret.append({"role": "user", "content": [{
-                        "type" : "image_url",
-                        "image_url" : {
-                            "url" : image_url
-                        } 
-                    }]})
+                    ret.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "image_url", "image_url": {"url": image_url}}
+                            ],
+                        }
+                    )
 
-                    ret.append({"role": "user", "content": [{
-                        "type" : "text",
-                        "text" : msg[0]
-                    }]})
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg[0]}]}
+                    )
                 else:
-                    ret.append({"role": "user", "content": [{
-                        "type" : "text",
-                        "text" : msg
-                    }]})
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
             else:
                 if msg is not None:
-                    ret.append({"role": "assistant", "content": [{
-                        "type" : "text",
-                        "text" : msg
-                    }]})
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
         return ret
 
     def to_openai_api_messages(self):
@@ -1331,7 +1337,13 @@ if __name__ == "__main__":
     print("-- GPT-4-Vision template --")
     conv = get_conv_template("gpt-4-vision-preview")
     print(conv)
-    conv.append_message(conv.roles[0], ("What’s in this image?", "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"))
+    conv.append_message(
+        conv.roles[0],
+        (
+            "What’s in this image?",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+        ),
+    )
     conv.append_message(conv.roles[1], "A green field with a path in the middle.")
     conv.append_message(conv.roles[0], "How are you?")
     conv.append_message(conv.roles[1], None)
