@@ -46,7 +46,7 @@ class Conversation:
     # A flag that is set to True if the model is multimodal and False if it is a language model used to set the correct conversation format
     multimodal: bool = False
     # All messages. Each item is (role, message).
-    # Each message is either a string or a tuple of (string, PIL.Image).
+    # Each message is either a string or a tuple of (string, image url).
     messages: List[List[str]] = ()
     # The number of few shot examples
     offset: int = 0
