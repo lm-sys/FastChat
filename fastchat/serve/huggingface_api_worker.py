@@ -143,7 +143,10 @@ class HuggingfaceApiWorker(BaseModelWorker):
         logger.info(f"gen_kwargs: {gen_kwargs}")
 
         try:
-            url = f"{self.api_base}/{self.model_path}"
+            if self.model_path == "":
+                url = f"{self.api_base}"
+            else:
+                url = f"{self.api_base}/{self.model_path}"
             client = InferenceClient(url, token=self.token)
             res = client.text_generation(
                 prompt, stream=True, details=True, **gen_kwargs

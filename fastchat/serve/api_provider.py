@@ -24,6 +24,8 @@ def openai_api_stream_iter(
 
     openai.api_base = api_base or "https://api.openai.com/v1"
     openai.api_key = api_key or os.environ["OPENAI_API_KEY"]
+    if model_name == "gpt-4-turbo":
+        model_name = "gpt-4-1106-preview"
 
     # Make requests
     gen_params = {
