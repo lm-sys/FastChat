@@ -11,7 +11,6 @@ from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
-import torch
 import uvicorn
 from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
@@ -230,6 +229,23 @@ if __name__ == "__main__":
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
+    parser.add_argument(
+        "--trust_remote_code",
+        action="store_false",
+        default=True,
+        help="Trust remote code (e.g., from HuggingFace) when"
+        "downloading the model and tokenizer.",
+    )
+    parser.add_argument(
+        "--gpu_memory_utilization",
+        type=float,
+        default=0.9,
+        help="The ratio (between 0 and 1) of GPU memory to"
+        "reserve for the model weights, activations, and KV cache. Higher"
+        "values will increase the KV cache size and thus improve the model's"
+        "throughput. However, if the value is too high, it may cause out-of-"
+        "memory (OOM) errors.",
     )
 
     parser = AsyncEngineArgs.add_cli_args(parser)

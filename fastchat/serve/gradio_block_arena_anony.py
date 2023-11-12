@@ -12,7 +12,7 @@ import numpy as np
 from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
-    INACTIVE_MSG,
+    SLOW_MODEL_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
@@ -28,10 +28,11 @@ from fastchat.serve.gradio_web_server import (
     invisible_btn,
     acknowledgment_md,
     ip_expiration_dict,
+    get_ip,
 )
 from fastchat.utils import (
     build_logger,
-    violates_moderation,
+    moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -67,7 +68,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "type": vote_type,
             "models": [x for x in model_selectors],
             "states": [x.dict() for x in states],
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
@@ -90,7 +91,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 def leftvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"leftvote (anony). ip: {request.client.host}")
+    logger.info(f"leftvote (anony). ip: {get_ip(request)}")
     for x in vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
     ):
@@ -100,7 +101,7 @@ def leftvote_last_response(
 def rightvote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"rightvote (anony). ip: {request.client.host}")
+    logger.info(f"rightvote (anony). ip: {get_ip(request)}")
     for x in vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
     ):
@@ -110,7 +111,7 @@ def rightvote_last_response(
 def tievote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"tievote (anony). ip: {request.client.host}")
+    logger.info(f"tievote (anony). ip: {get_ip(request)}")
     for x in vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
     ):
@@ -120,7 +121,7 @@ def tievote_last_response(
 def bothbad_vote_last_response(
     state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
-    logger.info(f"bothbad_vote (anony). ip: {request.client.host}")
+    logger.info(f"bothbad_vote (anony). ip: {get_ip(request)}")
     for x in vote_last_response(
         [state0, state1], "bothbad_vote", [model_selector0, model_selector1], request
     ):
@@ -128,7 +129,7 @@ def bothbad_vote_last_response(
 
 
 def regenerate(state0, state1, request: gr.Request):
-    logger.info(f"regenerate (anony). ip: {request.client.host}")
+    logger.info(f"regenerate (anony). ip: {get_ip(request)}")
     states = [state0, state1]
     for i in range(num_sides):
         states[i].conv.update_last_message(None)
@@ -136,7 +137,7 @@ def regenerate(state0, state1, request: gr.Request):
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history (anony). ip: {request.client.host}")
+    logger.info(f"clear_history (anony). ip: {get_ip(request)}")
     return (
         [None] * num_sides
         + [None] * num_sides
@@ -144,11 +145,12 @@ def clear_history(request: gr.Request):
         + [""]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [""]
     )
 
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
-    logger.info(f"share (anony). ip: {request.client.host}")
+    logger.info(f"share (anony). ip: {get_ip(request)}")
     if state0 is not None and state1 is not None:
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
@@ -157,26 +159,33 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4": 2,
+    "gpt-4": 4,
+    "gpt-4-turbo": 4,
     "gpt-3.5-turbo": 2,
-    "claude-2": 2,
-    "claude-instant-1": 2,
-    "deluxe-chat-v1": 4,
-    # tire 1
+    "gpt-3.5-turbo-1106": 2,
+    "claude-2": 8,
+    "claude-1": 2,
+    "claude-instant-1": 8,
+    "zephyr-7b-beta": 2,
+    "openchat-3.5": 2,
+    # tier 1
+    "deluxe-chat-v1.1": 2,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
-    "vicuna-33b": 1.5,
+    "vicuna-33b": 8,
     "vicuna-13b": 1.5,
     "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
+    "qwen-14b-chat": 1.5,
+    "mistral-7b-instruct": 1.5,
     # tier 2
     "vicuna-7b": 1.0,
     "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
-    "mistral-7b-instruct": 1.0,
     # deprecated
+    "zephyr-7b-alpha": 1.5,
     "codellama-13b-instruct": 1.0,
     "mpt-30b-chat": 1.5,
     "guanaco-33b": 1.0,
@@ -191,15 +200,102 @@ SAMPLING_WEIGHTS = {
     "dolly-v2-12b": 0.1,
     "llama-13b": 0.1,
     "chatglm-6b": 0.5,
+    "deluxe-chat-v1": 4,
 }
 
-SAMPLING_BOOST_MODELS = []
+# target model sampling weights will be boosted.
+BATTLE_TARGETS = {
+    "gpt-4": {"claude-2"},
+    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo"},
+    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
+    "claude-2": {"gpt-4", "gpt-3.5-turbo", "claude-1"},
+    "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
+    "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
+    "deluxe-chat-v1.1": {"gpt-4"},
+    "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
+    "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
+    "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
+    "zephyr-7b-beta": {
+        "mistral-7b-instruct",
+        "llama-2-13b-chat",
+        "llama-2-7b-chat",
+        "wizardlm-13b",
+    },
+    "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
+    "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
+    "mistral-7b-instruct": {
+        "llama-2-7b-chat",
+        "llama-2-13b-chat",
+        "llama-2-70b-chat",
+    },
+    "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
+    "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
+    "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
+    "wizardlm-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
+}
+
+SAMPLING_BOOST_MODELS = ["openchat-3.5", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
+
+# outage models won't be sampled.
+OUTAGE_MODELS = []
+
+
+def get_sample_weight(model):
+    if model in OUTAGE_MODELS:
+        return 0
+    weight = SAMPLING_WEIGHTS.get(model, 1.0)
+    if model in SAMPLING_BOOST_MODELS:
+        weight *= 5
+    return weight
+
+
+def get_battle_pair():
+    if len(models) == 1:
+        return models[0], models[0]
+
+    model_weights = []
+    for model in models:
+        weight = get_sample_weight(model)
+        model_weights.append(weight)
+    total_weight = np.sum(model_weights)
+    model_weights = model_weights / total_weight
+    chosen_idx = np.random.choice(len(models), p=model_weights)
+    chosen_model = models[chosen_idx]
+
+    rival_models = []
+    rival_weights = []
+    for model in models:
+        if model == chosen_model:
+            continue
+        weight = get_sample_weight(model)
+        if (
+            weight != 0
+            and chosen_model in BATTLE_TARGETS
+            and model in BATTLE_TARGETS[chosen_model]
+        ):
+            # boost to 50% chance
+            weight = total_weight / len(BATTLE_TARGETS[chosen_model])
+        rival_models.append(model)
+        rival_weights.append(weight)
+    # for p, w in zip(rival_models, rival_weights):
+    #     print(p, w)
+    rival_weights = rival_weights / np.sum(rival_weights)
+    rival_idx = np.random.choice(len(rival_models), p=rival_weights)
+    rival_model = rival_models[rival_idx]
+
+    swap = np.random.randint(2)
+    if swap == 0:
+        return chosen_model, rival_model
+    else:
+        return rival_model, chosen_model
 
 
 def add_text(
     state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
-    ip = request.client.host
+    ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
@@ -207,36 +303,8 @@ def add_text(
     # Init states if necessary
     if states[0] is None:
         assert states[1] is None
-        model_pairs = []
-        model_pairs_weights = []
 
-        # Pick two models
-        if len(model_pairs) == 0:
-            for i in range(len(models)):
-                for j in range(len(models)):
-                    if i == j:
-                        continue
-                    a = models[i]
-                    b = models[j]
-                    w = SAMPLING_WEIGHTS.get(a, 1.0) * SAMPLING_WEIGHTS.get(b, 1.0)
-                    if a in SAMPLING_BOOST_MODELS or b in SAMPLING_BOOST_MODELS:
-                        w *= 10
-                    model_pairs.append((a, b))
-                    model_pairs_weights.append(w)
-
-            model_pairs_weights = model_pairs_weights / np.sum(model_pairs_weights)
-            # for p, w in zip(model_pairs, model_pairs_weights):
-            #   print(p, w)
-
-        if len(model_pairs) >= 1:
-            # if len(model_pairs) != len(model_pairs_weights):
-            #    print("model pairs", model_pairs, model_pairs_weights)
-            #    print("#model pairs", len(model_pairs), len(model_pairs_weights))
-            idx = np.random.choice(len(model_pairs), p=model_pairs_weights)
-            model_left, model_right = model_pairs[idx]
-        else:
-            model_left = model_right = models[0]
-
+        model_left, model_right = get_battle_pair()
         states = [
             State(model_left),
             State(model_right),
@@ -253,43 +321,19 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [""]
         )
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive (anony). ip: {request.client.host}. text: {text}")
-        for i in range(num_sides):
-            states[i].skip_next = True
-        return (
-            states
-            + [x.to_gradio_chatbot() for x in states]
-            + [INACTIVE_MSG]
-            + [
-                no_change_btn,
-            ]
-            * 6
-        )
-
-    if enable_moderation:
-        flagged = violates_moderation(text)
-        if flagged:
-            logger.info(
-                f"violate moderation (anony). ip: {request.client.host}. text: {text}"
-            )
-            for i in range(num_sides):
-                states[i].skip_next = True
-            return (
-                states
-                + [x.to_gradio_chatbot() for x in states]
-                + [MODERATION_MSG]
-                + [
-                    no_change_btn,
-                ]
-                * 6
-            )
+    model_list = [states[i].model_name for i in range(num_sides)]
+    flagged = moderation_filter(text, model_list)
+    if flagged:
+        logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
+        # overwrite the original text
+        text = MODERATION_MSG
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
+        logger.info(f"conversation turn limit. ip: {get_ip(request)}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
         return (
@@ -300,6 +344,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [""]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -308,6 +353,10 @@ def add_text(
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
+    slow_model_msg = ""
+    for i in range(num_sides):
+        if "deluxe" in states[i].model_name:
+            slow_model_msg = SLOW_MODEL_MSG
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
@@ -316,6 +365,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [slow_model_msg]
     )
 
 
@@ -327,7 +377,7 @@ def bot_response_multi(
     max_new_tokens,
     request: gr.Request,
 ):
-    logger.info(f"bot_response_multi (anony). ip: {request.client.host}")
+    logger.info(f"bot_response_multi (anony). ip: {get_ip(request)}")
 
     if state0 is None or state0.skip_next:
         # This generate call is skipped due to invalid inputs
@@ -372,17 +422,17 @@ def build_side_by_side_ui_anony(models):
 # ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-### Rules
-- Chat with two anonymous models side-by-side and vote for which one is better!
-- You can do multiple turns of conversations before voting.
-- The names of the models will be revealed after your vote. Conversations with identity keywords (e.g., ChatGPT, Bard, Vicuna) or any votes after the names are revealed will not count towards the leaderboard.
-- Click "Clear history" to start a new round.
+## 📜 Rules
+- Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
+- You can continue chatting until you identify a winner.
+- Vote won't be counted if model identity is revealed during conversation.
 
-### Leaderboard
-See [lmsys/chatbot-arena-leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) or the 4th tab above on this page.
+## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
+We use **100K** human votes to compile an Elo-based LLM leaderboard.
+Find out who is the 🥇LLM Champion!
 
-### Battle
-Please scroll down and start chatting. The models include both closed-source models (e.g., ChatGPT) and open-source models (e.g., Llama).
+## 👇 Chat now!
+
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -404,6 +454,8 @@ Please scroll down and start chatting. The models include both closed-source mod
             for i in range(num_sides):
                 with gr.Column():
                     model_selectors[i] = gr.Markdown(anony_names[i])
+        with gr.Row():
+            slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
         with gr.Row():
             leftvote_btn = gr.Button(
@@ -421,7 +473,7 @@ Please scroll down and start chatting. The models include both closed-source mod
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="👉 Enter your prompt and press ENTER",
                 container=False,
                 elem_id="input_box",
             )
@@ -429,7 +481,7 @@ Please scroll down and start chatting. The models include both closed-source mod
             send_btn = gr.Button(value="Send", variant="primary")
 
     with gr.Row() as button_row:
-        clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
@@ -500,7 +552,9 @@ Please scroll down and start chatting. The models include both closed-source mod
         flash_buttons, [], btn_list
     )
     clear_btn.click(
-        clear_history, None, states + chatbots + model_selectors + [textbox] + btn_list
+        clear_history,
+        None,
+        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
     )
 
     share_js = """
@@ -528,13 +582,15 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons,
+        [],
+        btn_list,
     )
 
     send_btn.click(

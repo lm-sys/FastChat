@@ -157,8 +157,8 @@ def get_model_answers(
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
 
+                conv.update_last_message(output)
                 turns.append(output)
-                conv.messages[-1][-1] = output
 
             choices.append({"index": i, "turns": turns})
 
