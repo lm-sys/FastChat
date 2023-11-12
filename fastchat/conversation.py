@@ -232,12 +232,11 @@ class Conversation:
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
-    def extract_base64encoded_image_from_message(self, message):
-        """Given a message with an input tuple of (str, PIL.image), we return the base64 encoded image string."""
+    def convert_image_to_base64(self, image):
+        """Given an image, return the base64 encoded image string."""
         import base64
         from io import BytesIO
 
-        _, image = message
         max_hw, min_hw = max(image.size), min(image.size)
         aspect_ratio = max_hw / min_hw
         max_len, min_len = 800, 400
@@ -262,7 +261,7 @@ class Conversation:
             return image_url
         else:
             if image_url.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
-                img_b64_str = self.extract_base64encoded_image_from_message(image_url)
+                img_b64_str = self.convert_image_to_base64(image_url)
                 filetype = image_url.split(".")[-1].lower()
                 return f"data:image/{filetype};base64,{img_b64_str}"
             else:
@@ -275,7 +274,7 @@ class Conversation:
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    images.append(self.extract_base64encoded_image_from_message(msg))
+                    images.append(self.convert_image_to_base64(msg[1]))
 
         return images
 
@@ -302,7 +301,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
-                    img_b64_str = self.extract_base64encoded_image_from_message(msg)
+                    img_b64_str = self.convert_image_to_base64(image)
                     img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>", "").strip()
                     ret.append([msg, None])
@@ -1373,7 +1372,6 @@ if __name__ == "__main__":
 
     print("-- GPT-4-Vision template --")
     conv = get_conv_template("gpt-4-vision-preview")
-    print(conv)
     conv.append_message(
         conv.roles[0],
         (

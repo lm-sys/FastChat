@@ -43,7 +43,6 @@ from fastchat.serve.gradio_web_server import (
     no_change_btn,
     enable_btn,
     disable_btn,
-    invisible_btn,
     enable_moderation,
     acknowledgment_md,
     block_css,
@@ -57,7 +56,7 @@ from fastchat.serve.api_provider import (
 )
 from fastchat.utils import (
     build_logger,
-    violates_moderation,
+    oai_moderation,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,
@@ -116,7 +115,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         ) * 5
 
     if enable_moderation:
-        flagged = violates_moderation(text)
+        flagged = oai_moderation(text)
         if flagged:
             logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
             state.skip_next = True
@@ -139,8 +138,10 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
 
     if image is not None:
-        if LLAVA_IMAGE_TOKEN not in text:
-            text = text + "\n" + LLAVA_IMAGE_TOKEN
+        if "llava" in state.model_name.lower():
+            if LLAVA_IMAGE_TOKEN not in text:
+                text = text + "\n" + LLAVA_IMAGE_TOKEN
+
         text = (
             text,
             image,
@@ -444,11 +445,10 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                     )
                 with gr.Column(scale=1, min_width=50):
                     send_btn = gr.Button(value="Send", variant="primary")
-            with gr.Row(elem_id="buttons") as button_row:
+            with gr.Row(elem_id="buttons"):
                 upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
                 downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
                 flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-                # stop_btn = gr.Button(value="⏹️  Stop Generation", interactive=False)
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
 

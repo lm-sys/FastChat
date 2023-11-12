@@ -151,6 +151,7 @@ def create_multimodal_model_worker():
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
+    parser.add_argument("--embed-in-truncate", action="store_true")
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
