@@ -1002,7 +1002,12 @@ class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
-        return model_path in ("gpt-3.5-turbo", "gpt-4")
+        return model_path in (
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-1106",
+            "gpt-4",
+            "gpt-4-turbo",
+        )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
