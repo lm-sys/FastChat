@@ -4,7 +4,6 @@ Adapted from https://huggingface.co/spaces/badayvedat/LLaVA/blob/main/llava/serv
 https://github.com/haotian-liu/LLaVA/blob/5da97161b9e2c3ae19b1d4a39eeb43148091d728/llava/mm_utils.py
 """
 
-from PIL import Image
 from io import BytesIO
 import base64
 import json
@@ -21,10 +20,14 @@ from fastchat.model.llava.constants import (
 
 
 def load_image_from_base64(image):
+    from PIL import Image
+
     return Image.open(BytesIO(base64.b64decode(image)))
 
 
 def expand2square(pil_img, background_color):
+    from PIL import Image
+
     width, height = pil_img.size
     if width == height:
         return pil_img

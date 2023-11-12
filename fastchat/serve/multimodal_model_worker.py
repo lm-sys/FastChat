@@ -4,21 +4,11 @@ A multimodal model worker executes the model.
 """
 
 import argparse
-import asyncio
-import gc
-from io import BytesIO
 import json
-import time
-import threading
 from typing import List, Optional
 import uuid
 import torch
 
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.responses import StreamingResponse
-import requests
-import numpy as np
-from PIL import Image
 import torch
 from transformers import set_seed
 import uvicorn

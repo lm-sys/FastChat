@@ -47,7 +47,7 @@ from fastchat.serve.gradio_web_server import (
     enable_moderation,
     acknowledgment_md,
     block_css,
-    controller_url
+    controller_url,
 )
 from fastchat.model.llava.constants import LLAVA_IMAGE_TOKEN
 from fastchat.model.model_adapter import get_conversation_template
@@ -365,6 +365,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         }
         fout.write(json.dumps(data) + "\n")
 
+
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
     promotion = (
         """
@@ -453,8 +454,14 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
 
             gr.Examples(
                 examples=[
-                    [f"{cur_dir}/example_images/dog.jpeg", "What animal is in this photo?"],
-                    [f"{cur_dir}/example_images/sunset.jpg", "Where was this picture taken?"],
+                    [
+                        f"{cur_dir}/example_images/dog.jpeg",
+                        "What animal is in this photo?",
+                    ],
+                    [
+                        f"{cur_dir}/example_images/sunset.jpg",
+                        "Where was this picture taken?",
+                    ],
                 ],
                 inputs=[imagebox, textbox],
             )

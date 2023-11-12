@@ -42,6 +42,8 @@ class Conversation:
     system_message: str = ""
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
+    # A flag that is set to True if the model is multimodal and False if it is a language model
+    multimodal: bool = False
     # All messages. Each item is (role, message).
     # Each message is either a string or a tuple of (string, PIL.Image).
     messages: List[List[str]] = ()
@@ -223,9 +225,8 @@ class Conversation:
         """Given a message with an input tuple of (str, PIL.image), we return the base64 encoded image string."""
         import base64
         from io import BytesIO
-        from PIL import Image
 
-        msg, image = msg
+        _, image = message
         max_hw, min_hw = max(image.size), min(image.size)
         aspect_ratio = max_hw / min_hw
         max_len, min_len = 800, 400
@@ -244,7 +245,18 @@ class Conversation:
         img_b64_str = base64.b64encode(buffered.getvalue()).decode()
 
         return img_b64_str
-
+    
+    def to_openai_image_format(self, image_url):
+        if image_url.startswith("http://") or image_url.startswith("https://"):
+            return image_url
+        else:
+            if image_url.lower().endswith(('png', 'jpg', 'jpeg', 'webp', 'gif')):
+                img_b64_str = self.extract_base64encoded_image_from_message(image_url)
+                filetype = image_url.split(".")[-1].lower()
+                return f"data:image/{filetype};base64,{img_b64_str}"
+            else:
+                raise ValueError(f"This file is not valid or not currently supported by the OpenAI API: {image_url}")
+                    
     def get_images(self):
         images = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
@@ -287,8 +299,44 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
+    def to_openai_vision_api_messages(self):
+        """Convert the conversation to OpenAI chat completion format for vision models."""
+        ret = [{"role": "system", "content": [{
+                        "type" : "text",
+                        "text" : self.system_message
+                    }]}]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    image_url = self.to_openai_image_format(msg[1])
+                    ret.append({"role": "user", "content": [{
+                        "type" : "image_url",
+                        "image_url" : {
+                            "url" : image_url
+                        } 
+                    }]})
+
+                    ret.append({"role": "user", "content": [{
+                        "type" : "text",
+                        "text" : msg[0]
+                    }]})
+                else:
+                    ret.append({"role": "user", "content": [{
+                        "type" : "text",
+                        "text" : msg
+                    }]})
+            else:
+                if msg is not None:
+                    ret.append({"role": "assistant", "content": [{
+                        "type" : "text",
+                        "text" : msg
+                    }]})
+        return ret
+
     def to_openai_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
+        if self.multimodal:
+            return self.to_openai_vision_api_messages()
         ret = [{"role": "system", "content": self.system_message}]
 
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
@@ -305,6 +353,7 @@ class Conversation:
             system_template=self.system_template,
             system_message=self.system_message,
             roles=self.roles,
+            multimodal=self.multimodal,
             messages=[[x, y] for x, y in self.messages],
             offset=self.offset,
             sep_style=self.sep_style,
@@ -1208,6 +1257,17 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="gpt-4-vision-preview",
+        system_message="You are a helpful assistant.",
+        roles=("user", "assistant"),
+        multimodal=True,
+        sep_style=None,
+        sep=None,
+    )
+)
+
 # Llava template
 # reference: conv_llava_llama_2 from https://github.com/haotian-liu/LLaVA/blob/main/llava/conversation.py
 register_conv_template(
@@ -1217,6 +1277,7 @@ register_conv_template(
         "You are able to understand the visual content that the user provides, "
         "and assist the user with a variety of tasks using natural language.",
         roles=("USER", "ASSISTANT"),
+        multimodal=True,
         sep_style=SeparatorStyle.LLAMA2,
         sep="<s>",
         sep2="</s>",
@@ -1266,3 +1327,12 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "How are you?")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
+
+    print("-- GPT-4-Vision template --")
+    conv = get_conv_template("gpt-4-vision-preview")
+    print(conv)
+    conv.append_message(conv.roles[0], ("What’s in this image?", "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"))
+    conv.append_message(conv.roles[1], "A green field with a path in the middle.")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.to_openai_api_messages())

@@ -34,7 +34,11 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
-from fastchat.model.llava.constants import LLAVA_IM_START_TOKEN, LLAVA_IM_END_TOKEN, LLAVA_IMAGE_PATCH_TOKEN
+from fastchat.model.llava.constants import (
+    LLAVA_IM_START_TOKEN,
+    LLAVA_IM_END_TOKEN,
+    LLAVA_IMAGE_PATCH_TOKEN,
+)
 from fastchat.model.llava.model_llava import generate_stream_llava
 from fastchat.model.llava.language_model.llava_llama import LlavaLlamaForCausalLM
 from fastchat.model.model_xfastertransformer import generate_stream_xft
