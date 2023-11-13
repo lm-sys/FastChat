@@ -17,6 +17,7 @@ from vllm import LLM, SamplingParams
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import make_conv_template
 
+
 def group_question_by_temperature(questions):
     """return temperature as key, questions list as value"""
     temperature2qs = {}
