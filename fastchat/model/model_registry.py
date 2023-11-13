@@ -41,13 +41,13 @@ register_model_info(
     "GPT-3.5-Turbo-1106 by OpenAI",
 )
 register_model_info(
-    ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
-)
-register_model_info(
     ["gpt-4-turbo"],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
+)
+register_model_info(
+    ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
 )
 register_model_info(
     ["claude-2"],
@@ -68,12 +68,6 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
-    ["palm-2"],
-    "PaLM 2 Chat",
-    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
-    "PaLM 2 for Chat (chat-bison@001) by Google",
-)
-register_model_info(
     [
         "vicuna-33b",
         "vicuna-33b-v1.3",
@@ -91,6 +85,18 @@ register_model_info(
     "Llama 2",
     "https://ai.meta.com/llama/",
     "open foundation and fine-tuned chat models by Meta",
+)
+register_model_info(
+    ["chatglm3-6b", "chatglm2-6b", "chatglm-6b"],
+    "ChatGLM",
+    "https://chatglm.cn/blog",
+    "an open bilingual dialogue language model by Tsinghua University",
+)
+register_model_info(
+    ["openchat-3.5"],
+    "OpenChat 3.5",
+    "https://github.com/imoneoi/openchat",
+    "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
 )
 register_model_info(
     ["mistral-7b-instruct"],
@@ -159,12 +165,6 @@ register_model_info(
     "an RNN with transformer-level LLM performance",
 )
 register_model_info(
-    ["chatglm-6b", "chatglm2-6b"],
-    "ChatGLM",
-    "https://chatglm.cn/blog",
-    "an open bilingual dialogue language model by Tsinghua University",
-)
-register_model_info(
     ["alpaca-13b"],
     "Alpaca",
     "https://crfm.stanford.edu/2023/03/13/alpaca.html",
@@ -183,10 +183,10 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
-    ["openchat-3.5"],
-    "OpenChat 3.5",
-    "https://github.com/imoneoi/openchat",
-    "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
+    ["palm-2"],
+    "PaLM 2 Chat",
+    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
+    "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
     ["llama-7b", "llama-13b"],

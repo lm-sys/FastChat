@@ -94,6 +94,7 @@ def load_demo(url_params, request: gr.Request):
             models_anony += ["claude-2", "claude-1", "claude-instant-1"]
         if args.add_palm:
             models_anony += ["palm-2"]
+    models_anony.append("deluxe-chat-v1.1")
     models_anony = list(set(models_anony))
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
