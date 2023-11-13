@@ -142,15 +142,15 @@ def get_model_answers(
                         spaces_between_special_tokens=False,
                     )
                     if conv.stop_str and isinstance(conv.stop_str, list):
-                        stop_str_indice = sorted(
+                        stop_str_indices = sorted(
                             [
                                 output.find(stop_str)
                                 for stop_str in conv.stop_str
                                 if output.find(stop_str) > 0
                             ]
                         )
-                        if len(stop_str_indice) > 0:
-                            output = output[: stop_str_indice[0]]
+                        if len(stop_str_indices) > 0:
+                            output = output[: stop_str_indices[0]]
                     elif conv.stop_str and output.find(conv.stop_str) > 0:
                         output = output[: output.find(conv.stop_str)]
 
