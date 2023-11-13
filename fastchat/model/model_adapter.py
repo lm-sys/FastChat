@@ -334,6 +334,17 @@ def get_conversation_template(model_path: str) -> Conversation:
     return adapter.get_default_conv_template(model_path)
 
 
+def make_conv_template(conv_template: str = None, model_path: str = None) -> Conversation:
+    """
+    can be overrided to costomize the conversation template for different model workers.
+    """
+    if conv_template:
+        conv = get_conv_template(conv_template)
+    else:
+        conv = get_conversation_template(model_path)
+    return conv
+
+
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     """Get the generate_stream function for inference."""
     from fastchat.serve.inference import generate_stream

@@ -15,8 +15,7 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
 from fastchat.llm_judge.common import load_questions, temperature_config
-from fastchat.model import get_conversation_template
-
+from fastchat.model import make_conv_template
 
 def group_question_by_temperature(questions):
     """return temperature as key, questions list as value"""
@@ -40,7 +39,8 @@ def get_max_num_turns(questions):
 def gather_id_inputs(
     cur_turn_id,
     id2outputs,
-    model_id,
+    conv_template,
+    model_path,
     questions,
     num_choices,
 ):
@@ -52,7 +52,7 @@ def gather_id_inputs(
         for i in range(num_choices):
             key = (question["question_id"], i)
             assistant_contents = id2outputs.get(key, [])
-            conv = get_conversation_template(model_id)
+            conv = make_conv_template(conv_template, model_path)
 
             for j in range(len(turns[:cur_turn_id])):
                 qs = turns[j]
@@ -74,6 +74,7 @@ def gather_id_inputs(
 def run_eval(
     model_path,
     model_id,
+    conv_template,
     question_file,
     question_begin,
     question_end,
@@ -81,57 +82,70 @@ def run_eval(
     max_new_token,
     num_choices,
     gpu_memory_utilization,
+    tensor_parallel_size,
+    temperature,
     presence_penalty,
     frequency_penalty,
+    stop,
+    stop_token_ids,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     get_vllm_model_answers(
         model_path,
         model_id,
+        conv_template,
         questions,
         answer_file,
         max_new_token,
         num_choices,
         gpu_memory_utilization,
+        tensor_parallel_size,
+        temperature,
         presence_penalty,
         frequency_penalty,
+        stop,
+        stop_token_ids,
     )
 
 
 def get_vllm_model_answers(
     model_path,
     model_id,
+    conv_template,
     questions,
     answer_file,
     max_new_token,
     num_choices,
     gpu_memory_utilization,
+    tensor_parallel_size,
+    temperature,
     presence_penalty,
     frequency_penalty,
+    stop,
+    stop_token_ids,
 ):
     llm = LLM(
         model=model_path,
         trust_remote_code=True,
         gpu_memory_utilization=gpu_memory_utilization,
+        tensor_parallel_size=tensor_parallel_size,
     )
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path, use_fast=False, trust_remote_code=True
-    )
-
+    tokenizer = llm.get_tokenizer()
+    stop_token_ids.extend([tokenizer.eos_token_id, tokenizer.pad_token_id])
+    conv = make_conv_template(conv_template, model_path)
+    if conv.stop_token_ids:
+        stop_token_ids.extend(conv.stop_token_ids)
     max_num_turns = get_max_num_turns(questions)
     temperature2qs = group_question_by_temperature(questions)
     id2outputs = {}
     for cur_turn_id in range(1, max_num_turns + 1):
         print(f"Process turn {cur_turn_id}")
-        for temperature, sub_questions in temperature2qs.items():
-            conv = get_conversation_template(model_id)
-            stop_token_ids = [tokenizer.eos_token_id, tokenizer.pad_token_id]
-            if conv.stop_token_ids:
-                stop_token_ids.extend(conv.stop_token_ids)
-
+        for _temperature, sub_questions in temperature2qs.items():
+            temperature = temperature if temperature else _temperature
             inference_params = {
                 "temperature": temperature,
                 "max_tokens": max_new_token,
+                "stop": stop,
                 "stop_token_ids": stop_token_ids,
                 "presence_penalty": presence_penalty,
                 "frequency_penalty": frequency_penalty,
@@ -143,7 +157,8 @@ def get_vllm_model_answers(
             id2inputs = gather_id_inputs(
                 cur_turn_id,
                 id2outputs,
-                model_id,
+                conv_template,
+                model_path,
                 sub_questions,
                 num_choices,
             )
@@ -225,6 +240,9 @@ if __name__ == "__main__":
         "--model-id", type=str, required=True, help="A custom name for the model."
     )
     parser.add_argument(
+        "--conv-template", type=str, default=None, help="Conversation prompt template."
+    )
+    parser.add_argument(
         "--bench-name",
         type=str,
         default="mt_bench",
@@ -259,6 +277,28 @@ if __name__ == "__main__":
         "reserve for the model weights, activations, and KV cache.",
     )
     parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="The number of GPUs to use for distributed"
+        "execution with tensor parallelism.",
+    )
+    parser.add_argument(
+        "--stop",
+        nargs="+",
+        default=[],
+        help="List of strings that stop the generation when they are generated."
+        "The returned output will not contain the stop strings.",
+    )
+    parser.add_argument(
+        "--stop_token_ids",
+        nargs="+",
+        default=[],
+        help="List of tokens that stop the generation when they are"
+        "generated. The returned output will contain the stop tokens unless"
+        "the stop tokens are sepcial tokens.",
+    )
+    parser.add_argument(
         "--presence_penalty",
         type=float,
         default=0,
@@ -276,6 +316,14 @@ if __name__ == "__main__":
                 llm to use new tokens, while values < 0 encourage the llm to
                 repeat tokens.""",
     )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0,
+        help="Float that controls the randomness of the sampling. Lower"
+        "values make the model more deterministic, while higher values make"
+        "the model more random. Zero means greedy sampling.",
+    )
 
     args = parser.parse_args()
 
@@ -290,6 +338,7 @@ if __name__ == "__main__":
     run_eval(
         model_path=args.model_path,
         model_id=args.model_id,
+        conv_template=args.conv_template,
         question_file=question_file,
         question_begin=args.question_begin,
         question_end=args.question_end,
@@ -297,8 +346,12 @@ if __name__ == "__main__":
         max_new_token=args.max_new_token,
         num_choices=args.num_choices,
         gpu_memory_utilization=args.gpu_memory_utilization,
+        tensor_parallel_size=args.tensor_parallel_size,
+        temperature=args.temperature,
         presence_penalty=args.presence_penalty,
         frequency_penalty=args.frequency_penalty,
+        stop=args.stop,
+        stop_token_ids=args.stop_token_ids,
     )
 
     reorg_answer_file(answer_file)
