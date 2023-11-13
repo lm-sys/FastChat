@@ -483,15 +483,13 @@ Find out who is the 🥇LLM Champion!
             )
 
     with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="👉 Enter your prompt and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            container=True,
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)

@@ -632,15 +632,12 @@ def build_single_model_ui(models, add_promotion_links=False):
         height=550,
     )
     with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="Enter your prompt here and press ENTER",
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
         upvote_btn = gr.Button(value="👍  Upvote", interactive=False)

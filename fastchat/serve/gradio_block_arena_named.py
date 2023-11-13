@@ -322,15 +322,12 @@ def build_side_by_side_ui_named(models):
             )
 
     with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="Enter your prompt here and press ENTER",
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
