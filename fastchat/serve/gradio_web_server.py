@@ -138,7 +138,7 @@ def get_model_list(
         models += list(openai_compatible_models_info.keys())
 
     if add_chatgpt:
-        models += ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
+        models += ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
     if add_claude:
         models += ["claude-2", "claude-instant-1"]
     if add_palm:
@@ -340,7 +340,21 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         return
 
     conv, model_name = state.conv, state.model_name
-    if model_name in ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]:
+    if model_name in openai_compatible_models_info:
+        model_info = openai_compatible_models_info[model_name]
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_info["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_info["api_base"],
+            api_key=model_info["api_key"],
+        )
+    elif model_name in ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]:
+        # avoid conflict with Azure OpenAI
+        assert model_name not in openai_compatible_models_info
         prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
@@ -353,18 +367,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
     elif model_name == "palm-2":
         stream_iter = palm_api_stream_iter(
             state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
-        )
-    elif model_name in openai_compatible_models_info:
-        model_info = openai_compatible_models_info[model_name]
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_info["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_info["api_base"],
-            api_key=model_info["api_key"],
         )
     else:
         # Query worker address

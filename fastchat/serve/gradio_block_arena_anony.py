@@ -164,7 +164,7 @@ SAMPLING_WEIGHTS = {
     "gpt-3.5-turbo": 2,
     "gpt-3.5-turbo-1106": 4,
     "claude-2": 4,
-    "claude-1": 2,
+    "claude-1": 4,
     "claude-instant-1": 4,
     "zephyr-7b-beta": 2,
     "openchat-3.5": 2,
@@ -242,9 +242,10 @@ BATTLE_TARGETS = {
 SAMPLING_BOOST_MODELS = [
     "openchat-3.5",
     "gpt-4-turbo",
-    "gpt-3.5-turbo-1106",
+    # "gpt-3.5-turbo-1106",
     "chatglm3-6b",
     "claude-2",
+    "claude-1",
 ]
 
 # outage models won't be sampled.
@@ -252,6 +253,8 @@ OUTAGE_MODELS = [
     "zephyr-7b-alpha",
     "wizardlm-70b",
     "falcon-180b-chat",
+    "gpt-3.5-turbo-1106",
+    "chatglm3-6b",
 ]
 
 
