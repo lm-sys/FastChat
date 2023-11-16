@@ -46,7 +46,7 @@ class Conversation:
     # A flag that is set to True if the model is multimodal and False if it is a language model used to set the correct conversation format
     multimodal: bool = False
     # All messages. Each item is (role, message).
-    # Each message is either a string or a tuple of (string, image url).
+    # Each message is either a string or a tuple of (string, List[image_url]).
     messages: List[List[str]] = ()
     # The number of few shot examples
     offset: int = 0
@@ -236,6 +236,16 @@ class Conversation:
         """Given an image, return the base64 encoded image string."""
         import base64
         from io import BytesIO
+        from PIL import Image
+        import requests
+
+        # Load image if it has not been loaded in yet
+        if type(image) == str:
+            if image.startswith("http://") or image.startswith("https://"):
+                response = requests.get(image)
+                image = Image.open(BytesIO(response.content)).convert("RGB")
+            else:
+                image = Image.open(image).convert("RGB")
 
         max_hw, min_hw = max(image.size), min(image.size)
         aspect_ratio = max_hw / min_hw
@@ -256,18 +266,30 @@ class Conversation:
 
         return img_b64_str
 
-    def to_openai_image_format(self, image_url):
-        if image_url.startswith("http://") or image_url.startswith("https://"):
-            return image_url
-        else:
-            if image_url.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
+    def to_openai_image_format(self, image_urls):
+        import base64
+
+        openai_images = []
+        for image_url in image_urls:
+            if image_url.startswith("http://") or image_url.startswith(
+                "https://"
+            ):  # input is a url
+                openai_images.append(image_url)
+            elif image_url.lower().endswith(
+                ("png", "jpg", "jpeg", "webp", "gif")
+            ):  # input is a local image
                 img_b64_str = self.convert_image_to_base64(image_url)
                 filetype = image_url.split(".")[-1].lower()
-                return f"data:image/{filetype};base64,{img_b64_str}"
+                openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
+            elif (
+                base64.b64encode(base64.b64decode(image_url)) == image_url.encode()
+            ):  # input is a base64-encoded image
+                openai_images.append(f"data:image/jpeg;base64,{image_url}")
             else:
                 raise ValueError(
                     f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
                 )
+        return openai_images
 
     def get_images(self):
         images = []
@@ -322,15 +344,14 @@ class Conversation:
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    image_url = self.to_openai_image_format(msg[1])
-                    ret.append(
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "image_url", "image_url": {"url": image_url}}
-                            ],
-                        }
-                    )
+                    image_urls = self.to_openai_image_format(msg[1])
+                    for image_url in image_urls:
+                        ret.append(
+                            {
+                                "role": "user",
+                                "content": {"type": "image", "image": image_url},
+                            }
+                        )
 
                     ret.append(
                         {"role": "user", "content": [{"type": "text", "text": msg[0]}]}
@@ -1376,7 +1397,12 @@ if __name__ == "__main__":
         conv.roles[0],
         (
             "What’s in this image?",
-            "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+            [
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                conv.convert_image_to_base64(
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+                ),
+            ],
         ),
     )
     conv.append_message(conv.roles[1], "A green field with a path in the middle.")
