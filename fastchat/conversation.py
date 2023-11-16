@@ -296,7 +296,11 @@ class Conversation:
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    images.append(self.convert_image_to_base64(msg[1]))
+                    if type(msg[1]) == list:
+                        for image in msg[1]:
+                            images.append(self.convert_image_to_base64(image))
+                    else:
+                        images.append(self.convert_image_to_base64(msg[1]))
 
         return images
 
