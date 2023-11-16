@@ -190,6 +190,13 @@ def create_multi_model_worker():
     parser.add_argument("--limit-worker-concurrency", type=int, default=5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument(
+        "--ssl",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -279,4 +286,14 @@ def create_multi_model_worker():
 
 if __name__ == "__main__":
     args, workers = create_multi_model_worker()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    if args.ssl:
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            ssl_keyfile=os.environ["SSL_KEYFILE"],
+            ssl_certfile=os.environ["SSL_CERTFILE"],
+        )
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
