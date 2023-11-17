@@ -170,11 +170,10 @@ async def check_length(request, prompt, max_tokens, worker_addr):
     if length <= 0:
         return None, create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
-            f"This model's maximum context length is {context_len} tokens. However, your messages resulted in {token_num} tokens. Please reduce the length of the messages."
+            f"This model's maximum context length is {context_len} tokens. However, your messages resulted in {token_num} tokens. Please reduce the length of the messages.",
         )
 
     return length, None
-
 
 
 def check_requests(request) -> Optional[JSONResponse]:
@@ -517,7 +516,9 @@ async def create_completion(request: CompletionRequest):
 
     worker_addr = await get_worker_address(request.model)
     for text in request.prompt:
-        max_tokens, error_check_ret = await check_length(request, text, request.max_tokens, worker_addr)
+        max_tokens, error_check_ret = await check_length(
+            request, text, request.max_tokens, worker_addr
+        )
         if error_check_ret is not None:
             return error_check_ret
 
