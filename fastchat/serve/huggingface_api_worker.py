@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import uuid
+import os
 from typing import List, Optional
 
 import requests
