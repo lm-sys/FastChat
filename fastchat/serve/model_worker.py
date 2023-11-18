@@ -291,6 +291,13 @@ def create_model_worker():
     parser.add_argument(
         "--debug", type=bool, default=False, help="Print debugging messages"
     )
+    parser.add_argument(
+        "--ssl",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -359,4 +366,14 @@ def create_model_worker():
 
 if __name__ == "__main__":
     args, worker = create_model_worker()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    if args.ssl:
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            ssl_keyfile=os.environ["SSL_KEYFILE"],
+            ssl_certfile=os.environ["SSL_CERTFILE"],
+        )
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
