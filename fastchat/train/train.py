@@ -294,7 +294,10 @@ def train():
     # Save model
     model.config.use_cache = True
     trainer.save_state()
-    trainer_save_model_safe(trainer)
+    if trainer.is_deepspeed_enabled:
+        trainer.save_model()
+    else:
+        trainer_save_model_safe(trainer)
 
 
 if __name__ == "__main__":
