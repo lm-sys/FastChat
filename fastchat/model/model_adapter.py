@@ -1827,6 +1827,17 @@ class PygmalionAdapter(BaseModelAdapter):
         return get_conv_template("metharme")
 
 
+class YiAdapter(BaseModelAdapter):
+    """The model adapter for Yi-34B (e.g. 01-ai/Yi-34B)"""
+    # use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+       return "Yi-34B" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("Yi-34B")
+    
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1893,6 +1904,7 @@ register_model_adapter(ZephyrAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
+register_model_adapter(YiAdapter)
 
 
 # After all adapters, try the default base adapter.

@@ -1190,6 +1190,19 @@ register_conv_template(
     )
 )
 
+# Yi template
+# reference: https://huggingface.co/01-ai/Yi-34B
+register_conv_template(
+    Conversation(
+        name = "Yi-34B",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep="\n\n",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
