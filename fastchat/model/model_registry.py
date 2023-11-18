@@ -293,3 +293,9 @@ register_model_info(
     "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
     "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
 )
+register_model_info(
+    ["stable-vicuna-13B-HF"],
+    "stable-vicuna",
+    "https://huggingface.co/TheBloke/stable-vicuna-13B-HF",
+    "StableVicuna is a Vicuna model fine-tuned using RLHF via PPO on various conversational and instructional datasets.",
+)
