@@ -417,7 +417,7 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens, api_dict=None)
             )
             output = response["choices"][0]["message"]["content"]
             break
-        except openai.error.OpenAIError as e:
+        except openai.APIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
 
