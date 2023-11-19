@@ -242,7 +242,7 @@ BATTLE_TARGETS = {
 SAMPLING_BOOST_MODELS = [
     "openchat-3.5",
     "gpt-4-turbo",
-    # "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo-1106",
     "chatglm3-6b",
     "claude-2",
     "claude-1",
@@ -253,8 +253,6 @@ OUTAGE_MODELS = [
     "zephyr-7b-alpha",
     "wizardlm-70b",
     "falcon-180b-chat",
-    "gpt-3.5-turbo-1106",
-    "chatglm3-6b",
 ]
 
 
@@ -525,7 +523,7 @@ Find out who is the 🥇LLM Champion!
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md)
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [

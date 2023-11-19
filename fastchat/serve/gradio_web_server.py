@@ -57,8 +57,12 @@ enable_moderation = False
 
 acknowledgment_md = """
 ### Acknowledgment
+<div>
+    <p> This platform is powered by open-source projects: <a href="https://github.com/lm-sys/FastChat">FastChat</a>, <a href="https://github.com/vllm-project/vllm">vLLM</a>, and <a href="https://github.com/skypilot-org/skypilot">SkyPilot</a>. We also thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
+</div>
+<br />
+
 <div class="image-container">
-    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
     <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
     <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
@@ -508,6 +512,9 @@ block_css = """
 #about_markdown {
     font-size: 110%
 }
+#ack_markdown {
+    font-size: 110%
+}
 #input_box textarea {
 }
 footer {
@@ -520,10 +527,10 @@ footer {
 }
 .image-container img {
     margin: 0 30px;
-    height: 20px;
+    height: 30px;
     max-height: 100%;
     width: auto;
-    max-width: 20%;
+    max-width: 30%;
 }
 .image-about img {
     margin: 0 30px;
@@ -612,7 +619,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 # 🏔️ Chat with Open Large Language Models
 {promotion}
 
-## 👉 Choose any model to chat
+## 🤖 Choose any model to chat
 """
 
     state = gr.State()
@@ -636,7 +643,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
-            placeholder="Enter your prompt here and press ENTER",
+            placeholder="👉 Enter your prompt and press ENTER",
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -675,7 +682,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         )
 
     if add_promotion_links:
-        gr.Markdown(acknowledgment_md)
+        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]

@@ -324,14 +324,14 @@ def build_side_by_side_ui_named(models):
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
-            placeholder="Enter your prompt here and press ENTER",
+            placeholder="👉 Enter your prompt and press ENTER",
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
@@ -360,7 +360,7 @@ def build_side_by_side_ui_named(models):
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md)
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [
