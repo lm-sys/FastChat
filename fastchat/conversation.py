@@ -1194,12 +1194,25 @@ register_conv_template(
 # reference: https://huggingface.co/01-ai/Yi-34B
 register_conv_template(
     Conversation(
-        name = "Yi-34B",
+        name = "yi-34b",
         system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n",
-        sep="\n\n",
+        sep2="\n\n",
+    )
+)
+
+# Yi template
+# reference: https://huggingface.co/01-ai/Yi-6B
+register_conv_template(
+    Conversation(
+        name = "yi-6b",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="\n\n",
     )
 )
 

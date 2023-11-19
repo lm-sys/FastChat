@@ -387,7 +387,10 @@ register_model_info(
 )
 
 register_model_info(
-    ["Yi-34B"],
+    [
+        "Yi-34B",
+        "YI-6B",
+        ],
     "Yi",
     "https://huggingface.co/01-ai/Yi-34B",
     "The Yi series models are large language models trained from scratch by developers at 01.AI.",

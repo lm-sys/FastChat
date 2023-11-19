@@ -1828,14 +1828,20 @@ class PygmalionAdapter(BaseModelAdapter):
 
 
 class YiAdapter(BaseModelAdapter):
-    """The model adapter for Yi-34B (e.g. 01-ai/Yi-34B)"""
+    """The model adapter for Yi models (e.g. 01-ai/Yi-34B, 01-ai/Yi-6B)"""
+
     # use_fast_tokenizer = False
 
     def match(self, model_path: str):
-       return "Yi-34B" in model_path.lower()
+       return "yi" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("Yi-34B")
+        model_path = model_path.lower()
+        if "yi" in model_path:
+            if "34b" in model_path:
+                return get_conv_template("yi-34b")
+            else:
+                return get_conv_template("yi-6b")
     
 
 # Note: the registration order matters.
