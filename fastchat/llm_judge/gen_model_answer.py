@@ -66,7 +66,6 @@ def get_model_answers(
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
-        print(model_id, conv)
         for j in range(len(question["turns"])):
             qs = question["turns"][j]
             conv.append_message(conv.roles[0], qs)
@@ -80,7 +79,7 @@ def get_model_answers(
     for idx, (question, output) in enumerate(zip(questions, outputs)):
         prompt = output.prompt
         generated_text = output.outputs[0].text
-        # print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
+        print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
         
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
