@@ -9,6 +9,9 @@ import random
 import time
 from types import SimpleNamespace
 
+import hashlib
+import datetime
+
 import shortuuid
 import torch
 from tqdm import tqdm
@@ -47,8 +50,14 @@ default_config  = SimpleNamespace(
 
 def evaluate(run_id=None, config=default_config):
 
+    # create hash and append it to the model_id in order to avoid duplicated id
+    mnaum_data = str(datetime.datetime.now())
+    encoded_data = mnaum_data.encode()
+    hash_object = hashlib.sha256(encoded_data)
+    hashed_string = hash_object.hexdigest()
+    
     if default_config.model_id == None:
-        default_config.model_id = default_config.model_path.replace("/", "--")
+        default_config.model_id = f'{default_config.model_path.replace("/", "--")}_hash_{hashed_string}'
 
 
     # initialize wandb run
@@ -248,6 +257,8 @@ def evaluate(run_id=None, config=default_config):
     df_judge = pd.read_json(output_file, lines=True)
     df_judge = df_judge[df_judge.model == config.model_id]
     df_judge.model = df_judge.model.str.replace("--", "/")
+    df_judge['hash'] = df_judge.model.apply(lambda x: x.split('_hash_')[-1])
+    df_judge['model'] = df_judge.model.apply(lambda x: x.split('_hash_')[0])
     df_judge = df_judge.sort_values(['question_id', 'turn'])
 
     ## merge tables
@@ -277,7 +288,7 @@ def evaluate(run_id=None, config=default_config):
     
     ## table for LB
     columns = ['model_name'] + df_summary.category.values.tolist()
-    data = [[config.model_id.replace("--", "/")] + df_summary.score.values.tolist()]
+    data = [[config.model_id.replace("--", "/").split('_hash_')[0]] + df_summary.score.values.tolist()]
     table_metric = wandb.Table(data=data, columns=columns)
 
     run.log({
