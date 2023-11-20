@@ -72,21 +72,21 @@ def run_script_generate():
             return "暂无空闲GPU..."
     print(f"use GPU {GPU}")
     identifier = generate_random_identifier()
-    command = f"../../scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{identifier}\""
+    command = f"/home/workspace/FastChat/scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{identifier}\""
     
     try:
         start_time = get_start_time()
         subprocess.check_call(command, shell=True)
         end_time = get_end_time()
         
-        output_file = f'../../llm_judge/data/moral_bench/model_answer/{model_id}.jsonl'
+        output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/{model_id}.jsonl'
         result = {"outputfile": output_file,
                   "model_name": model_name,
                   "model_id": model_id,
                   "data_id": data_id,
                   "time_start": start_time,
                   "time_end": end_time}
-        append_dict_to_jsonl("../../llm_judge/data/moral_bench/model_answer/app_output.jsonl", {identifier: result})
+        append_dict_to_jsonl("/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/app_output.jsonl", {identifier: result})
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500

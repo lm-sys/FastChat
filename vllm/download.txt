@@ -1,0 +1,2 @@
+https://huggingface.co/datasets/theblackcat102/sharegpt-english
+https://huggingface.co/datasets/tatsu-lab/alpaca
