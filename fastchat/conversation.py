@@ -996,7 +996,7 @@ register_conv_template(
         name="qwen-7b-chat",
         system_template="<|im_start|>system\n{system_message}",
         system_message="You are a helpful assistant. Please read the following statement and choose the most appropriate option from the given choices:",
-        roles=("1212121<|im_start|>user", "<|im_start|>assistant"),
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
         sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
         stop_token_ids=[
