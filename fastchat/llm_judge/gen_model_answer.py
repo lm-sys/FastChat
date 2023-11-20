@@ -83,19 +83,19 @@ def get_model_answers(
 ):
     llm = LLM(model=model_path, trust_remote_code=True)
     prompts = []
-    conv = get_conversation_template(model_id)
     for question in tqdm(questions):
+        conv = get_conversation_template(model_id)
         for j in range(len(question["turns"])):
             qs = question["turns"][j]
             conv.append_message(conv.roles[0], qs)
             conv.append_message(conv.roles[1], None)
             prompt = conv.get_prompt()
             prompts.append(prompt)
-    print("prompts: ", len(prompts))
     
     sampling_params = SamplingParams(temperature=0.7)
     outputs = llm.generate(prompts, sampling_params)
-    for i, output in enumerate(outputs):
+    print("Prompts: ", len(prompts), len(outputs))
+    for idx, (question, output) in enumerate(zip(questions, outputs)):
         prompt = output.prompt
         generated_text = output.outputs[0].text
         print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
@@ -106,7 +106,7 @@ def get_model_answers(
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
-                "choices": [{"index": i, "turns": [generated_text]}],
+                "choices": [{"index": idx, "turns": [generated_text]}],
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
