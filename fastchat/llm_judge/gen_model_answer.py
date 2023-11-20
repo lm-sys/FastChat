@@ -17,6 +17,8 @@ from vllm import LLM, SamplingParams
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
+from modelscope import AutoModelForCausalLM, AutoTokenizer, snapshot_download
+from modelscope import GenerationConfig
 
 
 def run_eval(
@@ -62,7 +64,9 @@ def get_model_answers(
         max_gpu_memory,
         dtype,
 ):
-    llm = LLM(model=model_path, trust_remote_code=True)
+    model_dir = snapshot_download(model_path)
+    print(model_dir)
+    llm = LLM(model=model_dir, trust_remote_code=True)
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
