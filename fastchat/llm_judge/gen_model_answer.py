@@ -20,66 +20,47 @@ from fastchat.utils import str_to_torch_dtype
 
 
 def run_eval(
-    model_path,
-    model_id,
-    question_file,
-    question_begin,
-    question_end,
-    answer_file,
-    max_new_token,
-    num_choices,
-    num_gpus_per_model,
-    num_gpus_total,
-    max_gpu_memory,
-    dtype,
+        model_path,
+        model_id,
+        question_file,
+        question_begin,
+        question_end,
+        answer_file,
+        max_new_token,
+        num_choices,
+        num_gpus_per_model,
+        num_gpus_total,
+        max_gpu_memory,
+        dtype,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
     random.shuffle(questions)
-
+    
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
-    use_ray = num_gpus_total // num_gpus_per_model > 1
-
-    if use_ray:
-        get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers
-        ).remote
-    else:
-        get_answers_func = get_model_answers
-
-    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
-    ans_handles = []
-    for i in range(0, len(questions), chunk_size):
-        ans_handles.append(
-            get_answers_func(
-                model_path,
-                model_id,
-                questions[i : i + chunk_size],
-                answer_file,
-                max_new_token,
-                num_choices,
-                num_gpus_per_model,
-                max_gpu_memory,
-                dtype=dtype,
-            )
-        )
-
-    if use_ray:
-        ray.get(ans_handles)
+    get_model_answers(model_path,
+                      model_id,
+                      questions,
+                      answer_file,
+                      max_new_token,
+                      num_choices,
+                      num_gpus_per_model,
+                      max_gpu_memory,
+                      dtype=dtype)
 
 
 @torch.inference_mode()
 def get_model_answers(
-    model_path,
-    model_id,
-    questions,
-    answer_file,
-    max_new_token,
-    num_choices,
-    num_gpus_per_model,
-    max_gpu_memory,
-    dtype,
+        model_path,
+        model_id,
+        questions,
+        answer_file,
+        max_new_token,
+        num_choices,
+        num_gpus_per_model,
+        max_gpu_memory,
+        dtype,
 ):
     llm = LLM(model=model_path, trust_remote_code=True)
     prompts = []
@@ -99,14 +80,15 @@ def get_model_answers(
         prompt = output.prompt
         generated_text = output.outputs[0].text
         print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-    
+        
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             ans_json = {
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
-                "choices": [{"index": idx, "turns": [generated_text]}],
+                "choices": [{"index": 0, "turns": [generated_text]}],
+                "prompt": prompt,
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
@@ -119,7 +101,7 @@ def reorg_answer_file(answer_file):
         for l in fin:
             qid = json.loads(l)["question_id"]
             answers[qid] = l
-
+    
     qids = sorted(list(answers.keys()))
     with open(answer_file, "w") as fout:
         for qid in qids:
@@ -185,22 +167,22 @@ if __name__ == "__main__":
         help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
         default=None,
     )
-
+    
     args = parser.parse_args()
-
+    
     if args.num_gpus_total // args.num_gpus_per_model > 1:
         import ray
-
+        
         ray.init()
-
+    
     question_file = f"data/{args.bench_name}/question.jsonl"
     if args.answer_file:
         answer_file = args.answer_file
     else:
         answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
-
+    
     print(f"Output to {answer_file}")
-
+    
     run_eval(
         model_path=args.model_path,
         model_id=args.model_id,
@@ -215,5 +197,5 @@ if __name__ == "__main__":
         max_gpu_memory=args.max_gpu_memory,
         dtype=str_to_torch_dtype(args.dtype),
     )
-
+    
     reorg_answer_file(answer_file)
