@@ -1,0 +1,80 @@
+{"question_id": 1, "category": "generic", "turns": ["How can I improve my time management skills?"]}
+{"question_id": 2, "category": "generic", "turns": ["What are the most effective ways to deal with stress?"]}
+{"question_id": 3, "category": "generic", "turns": ["What are the main differences between Python and JavaScript programming languages?"]}
+{"question_id": 4, "category": "generic", "turns": ["How can I increase my productivity while working from home?"]}
+{"question_id": 5, "category": "generic", "turns": ["Can you explain the basics of quantum computing?"]}
+{"question_id": 6, "category": "generic", "turns": ["What are the differences between plant-based and animal-based protein sources?"]}
+{"question_id": 7, "category": "generic", "turns": ["How can I develop my critical thinking skills?"]}
+{"question_id": 8, "category": "generic", "turns": ["What are the major challenges faced by the education sector today?"]}
+{"question_id": 9, "category": "generic", "turns": ["What are the primary factors that influence consumer behavior?"]}
+{"question_id": 10, "category": "generic", "turns": ["What are the most effective strategies for conflict resolution in the workplace?"]}
+{"question_id": 11, "category": "knowledge", "turns": ["What are some potential implications of using a single-use plastic bottle versus a reusable bottle on both the environment and human health?"]}
+{"question_id": 12, "category": "knowledge", "turns": ["What factors would you consider when designing an inclusive and accessible public transportation system?"]}
+{"question_id": 13, "category": "knowledge", "turns": ["How can governments utilize fiscal and monetary policies to combat economic recessions?"]}
+{"question_id": 14, "category": "knowledge", "turns": ["How do language and cultural barriers affect the way people communicate and form relationships in multicultural societies?"]}
+{"question_id": 15, "category": "knowledge", "turns": ["Describe a scenario where artificial intelligence could be used to improve the quality and efficiency of healthcare delivery."]}
+{"question_id": 16, "category": "knowledge", "turns": ["Explain the process of gene editing using CRISPR-Cas9 technology, and discuss its potential applications and ethical implications."]}
+{"question_id": 17, "category": "knowledge", "turns": ["How do vaccinations work to protect individuals and communities from infectious diseases, and what is herd immunity?"]}
+{"question_id": 18, "category": "knowledge", "turns": ["How do social media platforms influence the way people consume and share news, and what are the potential implications for the spread of misinformation?"]}
+{"question_id": 19, "category": "knowledge", "turns": ["How do cultural, social, and economic factors influence people's food choices, and how can this knowledge be used to promote healthier diets?"]}
+{"question_id": 20, "category": "knowledge", "turns": ["Explain the process of natural selection and how it contributes to the evolution and adaptation of species."]}
+{"question_id": 21, "category": "roleplay", "turns": ["How would you introduce yourself as a medieval knight at a royal banquet?"]}
+{"question_id": 22, "category": "roleplay", "turns": ["As a pirate captain, what would you say to your crew to motivate them to search for hidden treasure?"]}
+{"question_id": 23, "category": "roleplay", "turns": ["If you were a Shakespearean character, how would you declare your love for someone in a soliloquy?"]}
+{"question_id": 24, "category": "roleplay", "turns": ["As a superhero, how would you explain your origin story to a curious child?"]}
+{"question_id": 25, "category": "roleplay", "turns": ["Imagine you are a time traveler from the year 3000. What technological advancements would you tell people about?"]}
+{"question_id": 26, "category": "roleplay", "turns": ["As a sports commentator, describe the winning play in the final seconds of a championship game."]}
+{"question_id": 27, "category": "roleplay", "turns": ["Pretend to be a world-famous chef. How would you describe your signature dish to a panel of judges?"]}
+{"question_id": 28, "category": "roleplay", "turns": ["You are a mountain climber reaching the summit of Mount Everest. Describe your emotions and the view from the top."]}
+{"question_id": 29, "category": "roleplay", "turns": ["As a space colonist on Mars, describe your daily life and the challenges you face living on another planet."]}
+{"question_id": 30, "category": "roleplay", "turns": ["Pretend to be a character in a post-apocalyptic world. Describe how you survive and the allies you encounter."]}
+{"question_id": 31, "category": "common-sense", "turns": ["How can you determine if a restaurant is popular among locals or mainly attracts tourists, and why might this information be useful?"]}
+{"question_id": 32, "category": "common-sense", "turns": ["What are some subtle clues that suggest someone is pretending to understand a topic or conversation when they are actually confused or uninformed?"]}
+{"question_id": 33, "category": "common-sense", "turns": ["Why might someone choose to use a paper map or ask for directions instead of relying on a GPS device or smartphone app?"]}
+{"question_id": 34, "category": "common-sense", "turns": ["How can you determine if a person is genuinely interested in a conversation or simply being polite?"]}
+{"question_id": 35, "category": "common-sense", "turns": ["Why might someone prefer to shop at a small, locally-owned business instead of a large chain store, even if the prices are higher?"]}
+{"question_id": 36, "category": "common-sense", "turns": ["How can you assess the credibility of a source of information, such as a news article or blog post, without relying solely on the reputation of the author or publisher?"]}
+{"question_id": 37, "category": "common-sense", "turns": ["Why do some people enjoy the sensation of being scared, such as by watching horror movies or going on roller coasters, while others avoid these experiences?"]}
+{"question_id": 38, "category": "common-sense", "turns": ["How can observing the behavior of other people in a social situation provide clues about cultural norms and expectations?"]}
+{"question_id": 39, "category": "common-sense", "turns": ["Do we have a moral obligation to explore space, or should we focus on solving Earth's problems first?"]}
+{"question_id": 40, "category": "common-sense", "turns": ["In a world where automation is becoming increasingly prevalent, is it more important to prioritize job creation or technological progress?"]}
+{"question_id": 41, "category": "fermi", "turns": ["How many times does the average human blink in a lifetime? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 42, "category": "fermi", "turns": ["How many atoms are in a grain of salt? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 43, "category": "fermi", "turns": ["How many lightning strikes occur on Earth each day? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 44, "category": "fermi", "turns": ["How many balloons would it take to lift a house like in the movie \"Up\"? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 45, "category": "fermi", "turns": ["How many text messages are sent globally in a minute? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 46, "category": "fermi", "turns": ["How many words are spoken daily on Earth? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 47, "category": "fermi", "turns": ["How many snowflakes fall during a typical winter? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 48, "category": "fermi", "turns": ["How many pages are in all the books ever written? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 49, "category": "fermi", "turns": ["How many times has the Earth orbited the Sun since the beginning of life? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 50, "category": "fermi", "turns": ["How many songs have been recorded throughout history? Try to explain your answer. Your explanation should take the reader through your reasoning step-by-step."]}
+{"question_id": 51, "category": "counterfactual", "turns": ["What if the Internet had been invented during the Renaissance period?"]}
+{"question_id": 52, "category": "counterfactual", "turns": ["What if the Aztecs had successfully repelled the Spanish conquistadors?"]}
+{"question_id": 53, "category": "counterfactual", "turns": ["What if the Black Death had not occurred in the 14th century?"]}
+{"question_id": 54, "category": "counterfactual", "turns": ["What if Isaac Newton had focused on biology instead of physics?"]}
+{"question_id": 55, "category": "counterfactual", "turns": ["What if the Beatles had never formed as a band?"]}
+{"question_id": 56, "category": "counterfactual", "turns": ["What if Alan Turing had not cracked the Enigma code during World War II?"]}
+{"question_id": 57, "category": "counterfactual", "turns": ["What if the Suez Canal had never been constructed?"]}
+{"question_id": 58, "category": "counterfactual", "turns": ["What if the Maya civilization had never mysteriously collapsed?"]}
+{"question_id": 59, "category": "counterfactual", "turns": ["What if Christopher Columbus had not discovered the Americas?"]}
+{"question_id": 60, "category": "counterfactual", "turns": ["What if Vincent van Gogh had been a successful artist during his lifetime?"]}
+{"question_id": 61, "category": "coding", "turns": ["Develop a C++ program that reads a text file line by line and counts the number of occurrences of a specific word in the file."]}
+{"question_id": 62, "category": "coding", "turns": ["Implement a Python function to find the longest common subsequence of two input strings using dynamic programming."]}
+{"question_id": 63, "category": "coding", "turns": ["Implement a regular expression in Python to validate an email address."]}
+{"question_id": 64, "category": "coding", "turns": ["Write a program to find the nth Fibonacci number using dynamic programming."]}
+{"question_id": 65, "category": "coding", "turns": ["Implement a binary search algorithm to find a specific element in a sorted array."]}
+{"question_id": 66, "category": "coding", "turns": ["Implement a queue data structure using two stacks in Python."]}
+{"question_id": 67, "category": "coding", "turns": ["Implement a program to find the common elements in two arrays without using any extra data structures."]}
+{"question_id": 68, "category": "math", "turns": ["Given that f(x) = 5x^3 - 2x + 3, find the value of f(2)."]}
+{"question_id": 69, "category": "math", "turns": ["Solve for x in the equation 3x + 10 = 5(x - 2)."]}
+{"question_id": 70, "category": "math", "turns": ["If the endpoints of a line segment are (2, -2) and (10, 4), what is the length of the segment?"]}
+{"question_id": 71, "category": "writing", "turns": ["Can you help me write a formal email to a potential business partner proposing a joint venture?"]}
+{"question_id": 72, "category": "writing", "turns": ["Can you help me write a resignation letter to my current employer, while leaving on good terms and expressing gratitude for the opportunities provided?"]}
+{"question_id": 73, "category": "writing", "turns": ["Use an appropriate format to structure a formal letter of recommendation for a student applying to a prestigious graduate program in computer science."]}
+{"question_id": 74, "category": "writing", "turns": ["Write a compelling product launch announcement email to inform our customers of our new software solution."]}
+{"question_id": 75, "category": "writing", "turns": ["Draft an apology email to a customer who experienced a delay in their order, and provide reassurance that the issue has been resolved."]}
+{"question_id": 76, "category": "writing", "turns": ["Write a script for a YouTube video exploring the history and cultural significance of jazz."]}
+{"question_id": 77, "category": "writing", "turns": ["Compose an engaging travel blog post about a recent trip to Hawaii, highlighting cultural experiences and must-see attractions."]}
+{"question_id": 78, "category": "writing", "turns": ["Write a captivating movie review for a recently released science fiction film, discussing its plot, characters, and special effects."]}
+{"question_id": 79, "category": "writing", "turns": ["Structure a podcast script for an episode discussing the influence of streaming platforms on the music industry."]}
+{"question_id": 80, "category": "writing", "turns": ["Write a symphony concert review, discussing the orchestra's performance and overall audience experience."]}
