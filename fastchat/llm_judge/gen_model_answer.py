@@ -90,6 +90,7 @@ def get_model_answers(
                 "model_id": model_id,
                 "choices": [{"index": 0, "turns": [generated_text]}],
                 "reference_answer": question["reference_answer"],
+                "question_type": question["question_type"],
                 "prompt": prompt,
                 "tstamp": time.time(),
             }

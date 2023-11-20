@@ -79,7 +79,7 @@ def run_script_generate():
         subprocess.check_call(command, shell=True)
         end_time = get_end_time()
         
-        output_file = f'/home/Userlist/madehua/code/fc/fastchat/llm_judge/data/single_turn/model_answer/{identifier}.jsonl'
+        output_file = f'/model_answer/{identifier}.jsonl'
         result = {"outputfile": output_file,
                   "model_name": model_name,
                   "model_id": model_id,
