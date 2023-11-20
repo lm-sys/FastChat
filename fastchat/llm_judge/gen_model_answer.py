@@ -106,7 +106,7 @@ def get_model_answers(
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
-                "choices": [{"index": i, "turns": [output]}],
+                "choices": [{"index": i, "turns": [generated_text]}],
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
