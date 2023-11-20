@@ -89,6 +89,7 @@ def get_model_answers(
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
                 "choices": [{"index": 0, "turns": [generated_text]}],
+                "reference_answer": question["reference_answer"],
                 "prompt": prompt,
                 "tstamp": time.time(),
             }
