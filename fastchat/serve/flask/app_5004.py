@@ -86,7 +86,7 @@ def run_script_generate():
                   "data_id": data_id,
                   "time_start": start_time,
                   "time_end": end_time}
-        append_dict_to_jsonl(output_file, {identifier: result})
+        append_dict_to_jsonl("/root/autodl-tmp/software/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/app_output.jsonl", {identifier: result})
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
