@@ -12,6 +12,7 @@ import time
 import shortuuid
 import torch
 from tqdm import tqdm
+from vllm import LLM, SamplingParams
 
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
@@ -80,110 +81,35 @@ def get_model_answers(
     max_gpu_memory,
     dtype,
 ):
-    model, tokenizer = load_model(
-        model_path,
-        device="cuda",
-        num_gpus=num_gpus_per_model,
-        max_gpu_memory=max_gpu_memory,
-        dtype=dtype,
-        load_8bit=False,
-        cpu_offloading=False,
-        debug=False,
-    )
-
+    llm = LLM(model=model_path, trust_remote_code=True)
+    prompts = []
+    conv = get_conversation_template(model_id)
     for question in tqdm(questions):
-        if question["category"] in temperature_config:
-            temperature = temperature_config[question["category"]]
-        else:
-            temperature = 0.7
-
-        choices = []
-        for i in range(num_choices):
-            torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
-            turns = []
-            for j in range(len(question["turns"])):
-                qs = question["turns"][j]
-                conv.append_message(conv.roles[0], qs)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt]).input_ids
-
-                if temperature < 1e-4:
-                    do_sample = False
-                else:
-                    do_sample = True
-
-                # some models may error out when generating long outputs
-                try:
-                    output_ids = model.generate(
-                        torch.as_tensor(input_ids).cuda(),
-                        do_sample=do_sample,
-                        temperature=temperature,
-                        max_new_tokens=max_new_token,
-                    )
-                    if model.config.is_encoder_decoder:
-                        output_ids = output_ids[0]
-                    else:
-                        output_ids = output_ids[0][len(input_ids[0]) :]
-
-                    # be consistent with the template's stop_token_ids
-                    if conv.stop_token_ids:
-                        stop_token_ids_index = [
-                            i
-                            for i, id in enumerate(output_ids)
-                            if id in conv.stop_token_ids
-                        ]
-                        if len(stop_token_ids_index) > 0:
-                            output_ids = output_ids[: stop_token_ids_index[0]]
-
-                    output = tokenizer.decode(
-                        output_ids,
-                        spaces_between_special_tokens=False,
-                    )
-                    if conv.stop_str and isinstance(conv.stop_str, list):
-                        stop_str_indices = sorted(
-                            [
-                                output.find(stop_str)
-                                for stop_str in conv.stop_str
-                                if output.find(stop_str) > 0
-                            ]
-                        )
-                        if len(stop_str_indices) > 0:
-                            output = output[: stop_str_indices[0]]
-                    elif conv.stop_str and output.find(conv.stop_str) > 0:
-                        output = output[: output.find(conv.stop_str)]
-
-                    for special_token in tokenizer.special_tokens_map.values():
-                        if isinstance(special_token, list):
-                            for special_tok in special_token:
-                                output = output.replace(special_tok, "")
-                        else:
-                            output = output.replace(special_token, "")
-                    output = output.strip()
-
-                    if conv.name == "xgen" and output.startswith("Assistant:"):
-                        output = output.replace("Assistant:", "", 1).strip()
-                except RuntimeError as e:
-                    print("ERROR question ID: ", question["question_id"])
-                    output = "ERROR"
-
-                conv.update_last_message(output)
-                turns.append(output)
-
-            choices.append({"index": i, "turns": turns})
-
-        # Dump answers
+        for j in range(len(question["turns"])):
+            qs = question["turns"][j]
+            conv.append_message(conv.roles[0], qs)
+            conv.append_message(conv.roles[1], None)
+            prompt = conv.get_prompt()
+            prompts.append(prompt)
+    print("prompts: ", len(prompts))
+    
+    sampling_params = SamplingParams(temperature=0.7)
+    outputs = llm.generate(prompts, sampling_params)
+    for i, output in enumerate(outputs):
+        prompt = output.prompt
+        generated_text = output.outputs[0].text
+        print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
+    
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             ans_json = {
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
-                "choices": choices,
+                "choices": [{"index": i, "turns": [output]}],
                 "tstamp": time.time(),
             }
-            fout.write(json.dumps(ans_json) + "\n")
+            fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
 
 
 def reorg_answer_file(answer_file):
