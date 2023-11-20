@@ -1,5 +1,9 @@
 #!/bin/bash
 
-export PYTHONPATH="/root/autodl-tmp/software/FastChat/fastchat/llm_judge:$PYTHONPATH"
+cd /root/autodl-tmp/software/FastChat/fastchat/llm_judge
 
-python fastchat/llm_judge/gen_model_answer.py --model-path /root/autodl-tmp/model/qwen/Qwen-7B-Chat --model-id qwen-7b-chat --bench-name moral_bench
+model_name=$1
+model_id=$2
+data_id=$3
+
+python gen_model_answer.py --model-path $model_name --model-id $model_id --bench-name $data_id
