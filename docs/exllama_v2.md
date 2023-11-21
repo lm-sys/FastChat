@@ -41,6 +41,8 @@ python3 -m fastchat.serve.model_worker \
     --exllama-gpu-split 18,24
 ```
 
+`--exllama-cache-8bit` can be used to enable 8-bit caching with exllama and save some VRAM.
+
 ## Performance 
 
 Reference: https://github.com/turboderp/exllamav2#performance
