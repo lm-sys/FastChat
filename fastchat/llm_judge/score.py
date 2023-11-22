@@ -47,7 +47,7 @@ for model in result_dict:
         counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
         print(counts)
         # 检查是否包含所有四个选项，且每个不超过两次
-        if all(counts[option] == 1 for option in ['A', 'B', 'C', 'D']):
+        if sum(counts[option] == 1 for option in ['A', 'B', 'C', 'D']) == 1:
             valid = True
         else:
             valid = False
