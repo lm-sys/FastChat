@@ -54,7 +54,7 @@ parser.add_argument("--worker-port", type=int, default=21002)
 parser.add_argument(
     "--model-path",
     type=str,
-    default="lmsys/vicuna-7b-v1.3",
+    default="lmsys/vicuna-7b-v1.5",
     help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
 )
 parser.add_argument(
@@ -66,7 +66,7 @@ parser.add_argument(
 parser.add_argument(
     "--device",
     type=str,
-    choices=["cpu", "cuda", "mps", "xpu"],
+    choices=["cpu", "cuda", "mps", "xpu", "npu"],
     default="cuda",
     help="The device type",
 )

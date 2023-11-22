@@ -143,20 +143,36 @@ def get_gpu_memory(max_gpus=None):
     return gpu_memory
 
 
-def violates_moderation(text):
+def oai_moderation(text):
     """
     Check whether the text violates OpenAI moderation API.
     """
     import openai
 
-    try:
-        flagged = openai.Moderation.create(input=text)["results"][0]["flagged"]
-    except openai.error.OpenAIError as e:
-        flagged = False
-    except (KeyError, IndexError) as e:
-        flagged = False
+    openai.api_base = "https://api.openai.com/v1"
+    openai.api_key = os.environ["OPENAI_API_KEY"]
 
+    MAX_RETRY = 3
+    for i in range(MAX_RETRY):
+        try:
+            res = openai.Moderation.create(input=text)
+            flagged = res["results"][0]["flagged"]
+            break
+        except (openai.error.OpenAIError, KeyError, IndexError) as e:
+            # flag true to be conservative
+            flagged = True
+            print(f"MODERATION ERROR: {e}\nInput: {text}")
     return flagged
+
+
+def moderation_filter(text, model_list):
+    MODEL_KEYWORDS = ["claude"]
+
+    for keyword in MODEL_KEYWORDS:
+        for model in model_list:
+            if keyword in model and oai_moderation(text):
+                return True
+    return False
 
 
 def clean_flant5_ckpt(ckpt_path):
@@ -196,6 +212,20 @@ function() {
     const params = new URLSearchParams(window.location.search);
     url_params = Object.fromEntries(params);
     console.log("url_params", url_params);
+    return url_params;
+    }
+"""
+
+
+get_window_url_params_with_tos_js = """
+function() {
+    const params = new URLSearchParams(window.location.search);
+    url_params = Object.fromEntries(params);
+    console.log("url_params", url_params);
+
+    msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nThe service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license."
+    alert(msg);
+
     return url_params;
     }
 """
@@ -302,3 +332,18 @@ def get_context_length(config):
         if val is not None:
             return int(rope_scaling_factor * val)
     return 2048
+
+
+def str_to_torch_dtype(dtype: str):
+    import torch
+
+    if dtype is None:
+        return None
+    elif dtype == "float32":
+        return torch.float32
+    elif dtype == "float16":
+        return torch.float16
+    elif dtype == "bfloat16":
+        return torch.bfloat16
+    else:
+        raise ValueError(f"Unrecognized dtype: {dtype}")

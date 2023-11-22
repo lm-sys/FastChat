@@ -49,6 +49,7 @@ from fastchat.protocol.openai_api_protocol import (
     EmbeddingsRequest,
     EmbeddingsResponse,
     ErrorResponse,
+    LogProbs,
     ModelCard,
     ModelList,
     ModelPermission,
@@ -72,6 +73,13 @@ async def fetch_remote(url, pload=None, name=None):
     async with aiohttp.ClientSession(timeout=fetch_timeout) as session:
         async with session.post(url, json=pload) as response:
             chunks = []
+            if response.status != 200:
+                ret = {
+                    "text": f"{response.reason}",
+                    "error_code": ErrorCode.INTERNAL_ERROR,
+                }
+                return json.dumps(ret)
+
             async for chunk, _ in response.content.iter_chunks():
                 chunks.append(chunk)
         output = b"".join(chunks)
@@ -144,6 +152,11 @@ async def check_model(request) -> Optional[JSONResponse]:
 
 
 async def check_length(request, prompt, max_tokens, worker_addr):
+    if (
+        not isinstance(max_tokens, int) or max_tokens <= 0
+    ):  # model worker not support max_tokens=None
+        max_tokens = 1024 * 1024
+
     context_len = await fetch_remote(
         worker_addr + "/model_details", {"model": request.model}, "context_length"
     )
@@ -152,17 +165,15 @@ async def check_length(request, prompt, max_tokens, worker_addr):
         {"model": request.model, "prompt": prompt},
         "count",
     )
-    if token_num + max_tokens > context_len:
-        return create_error_response(
+    length = min(max_tokens, context_len - token_num)
+
+    if length <= 0:
+        return None, create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
-            f"This model's maximum context length is {context_len} tokens. "
-            f"However, you requested {max_tokens + token_num} tokens "
-            f"({token_num} in the messages, "
-            f"{max_tokens} in the completion). "
-            f"Please reduce the length of the messages or completion.",
+            f"This model's maximum context length is {context_len} tokens. However, your messages resulted in {token_num} tokens. Please reduce the length of the messages.",
         )
-    else:
-        return None
+
+    return length, None
 
 
 def check_requests(request) -> Optional[JSONResponse]:
@@ -197,6 +208,11 @@ def check_requests(request) -> Optional[JSONResponse]:
             ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'",
         )
+    if request.top_k is not None and (request.top_k > -1 and request.top_k < 1):
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.top_k} is out of Range. Either set top_k to -1 or >=1.",
+        )
     if request.stop is not None and (
         not isinstance(request.stop, str) and not isinstance(request.stop, list)
     ):
@@ -222,6 +238,11 @@ def process_input(model_name, inp):
     return inp
 
 
+def create_openai_logprobs(logprob_dict):
+    """Create OpenAI-style logprobs."""
+    return LogProbs(**logprob_dict) if logprob_dict is not None else None
+
+
 def _add_to_set(s, new_stop):
     if not s:
         return
@@ -238,9 +259,15 @@ async def get_gen_params(
     *,
     temperature: float,
     top_p: float,
+    top_k: Optional[int],
+    presence_penalty: Optional[float],
+    frequency_penalty: Optional[float],
     max_tokens: Optional[int],
     echo: Optional[bool],
+    logprobs: Optional[int] = None,
     stop: Optional[Union[str, List[str]]],
+    best_of: Optional[int] = None,
+    use_beam_search: Optional[bool] = None,
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
     conv = Conversation(
@@ -275,17 +302,24 @@ async def get_gen_params(
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
 
-    if max_tokens is None:
-        max_tokens = 512
     gen_params = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
+        "logprobs": logprobs,
         "top_p": top_p,
+        "top_k": top_k,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
         "max_new_tokens": max_tokens,
         "echo": echo,
         "stop_token_ids": conv.stop_token_ids,
     }
+
+    if best_of is not None:
+        gen_params.update({"best_of": best_of})
+    if use_beam_search is not None:
+        gen_params.update({"use_beam_search": use_beam_search})
 
     new_stop = set()
     _add_to_set(stop, new_stop)
@@ -359,18 +393,25 @@ async def create_chat_completion(request: ChatCompletionRequest):
         request.messages,
         temperature=request.temperature,
         top_p=request.top_p,
+        top_k=request.top_k,
+        presence_penalty=request.presence_penalty,
+        frequency_penalty=request.frequency_penalty,
         max_tokens=request.max_tokens,
         echo=False,
         stop=request.stop,
     )
-    error_check_ret = await check_length(
+
+    max_new_tokens, error_check_ret = await check_length(
         request,
         gen_params["prompt"],
         gen_params["max_new_tokens"],
         worker_addr,
     )
+
     if error_check_ret is not None:
         return error_check_ret
+
+    gen_params["max_new_tokens"] = max_new_tokens
 
     if request.stream:
         generator = chat_completion_stream_generator(
@@ -435,7 +476,11 @@ async def chat_completion_stream_generator(
                 return
             decoded_unicode = content["text"].replace("\ufffd", "")
             delta_text = decoded_unicode[len(previous_text) :]
-            previous_text = decoded_unicode
+            previous_text = (
+                decoded_unicode
+                if len(decoded_unicode) > len(previous_text)
+                else previous_text
+            )
 
             if len(delta_text) == 0:
                 delta_text = None
@@ -471,11 +516,14 @@ async def create_completion(request: CompletionRequest):
 
     worker_addr = await get_worker_address(request.model)
     for text in request.prompt:
-        error_check_ret = await check_length(
+        max_tokens, error_check_ret = await check_length(
             request, text, request.max_tokens, worker_addr
         )
         if error_check_ret is not None:
             return error_check_ret
+
+        if isinstance(max_tokens, int) and max_tokens < request.max_tokens:
+            request.max_tokens = max_tokens
 
     if request.stream:
         generator = generate_completion_stream_generator(
@@ -491,9 +539,15 @@ async def create_completion(request: CompletionRequest):
                 text,
                 temperature=request.temperature,
                 top_p=request.top_p,
+                top_k=request.top_k,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
                 max_tokens=request.max_tokens,
+                logprobs=request.logprobs,
                 echo=request.echo,
                 stop=request.stop,
+                best_of=request.best_of,
+                use_beam_search=request.use_beam_search,
             )
             for i in range(request.n):
                 content = asyncio.create_task(
@@ -515,7 +569,7 @@ async def create_completion(request: CompletionRequest):
                 CompletionResponseChoice(
                     index=i,
                     text=content["text"],
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
@@ -543,7 +597,11 @@ async def generate_completion_stream_generator(
                 text,
                 temperature=request.temperature,
                 top_p=request.top_p,
+                top_k=request.top_k,
+                presence_penalty=request.presence_penalty,
+                frequency_penalty=request.frequency_penalty,
                 max_tokens=request.max_tokens,
+                logprobs=request.logprobs,
                 echo=request.echo,
                 stop=request.stop,
             )
@@ -554,12 +612,16 @@ async def generate_completion_stream_generator(
                     return
                 decoded_unicode = content["text"].replace("\ufffd", "")
                 delta_text = decoded_unicode[len(previous_text) :]
-                previous_text = decoded_unicode
+                previous_text = (
+                    decoded_unicode
+                    if len(decoded_unicode) > len(previous_text)
+                    else previous_text
+                )
                 # todo: index is not apparent
                 choice_data = CompletionResponseStreamChoice(
                     index=i,
                     text=delta_text,
-                    logprobs=content.get("logprobs", None),
+                    logprobs=create_openai_logprobs(content.get("logprobs", None)),
                     finish_reason=content.get("finish_reason", None),
                 )
                 chunk = CompletionStreamResponse(
@@ -591,12 +653,14 @@ async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
             timeout=WORKER_API_TIMEOUT,
         ) as response:
             # content = await response.aread()
+            buffer = b""
             async for raw_chunk in response.aiter_raw():
-                for chunk in raw_chunk.split(delimiter):
+                buffer += raw_chunk
+                while (chunk_end := buffer.find(delimiter)) >= 0:
+                    chunk, buffer = buffer[:chunk_end], buffer[chunk_end + 1 :]
                     if not chunk:
                         continue
-                    data = json.loads(chunk.decode())
-                    yield data
+                    yield json.loads(chunk.decode())
 
 
 async def generate_completion(payload: Dict[str, Any], worker_addr: str):
@@ -716,6 +780,9 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         request.messages,
         temperature=request.temperature,
         top_p=request.top_p,
+        top_k=request.top_k,
+        presence_penalty=request.presence_penalty,
+        frequency_penalty=request.frequency_penalty,
         max_tokens=request.max_tokens,
         echo=False,
         stop=request.stop,
@@ -724,14 +791,17 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     if request.repetition_penalty is not None:
         gen_params["repetition_penalty"] = request.repetition_penalty
 
-    error_check_ret = await check_length(
+    max_new_tokens, error_check_ret = await check_length(
         request,
         gen_params["prompt"],
         gen_params["max_new_tokens"],
         worker_addr,
     )
+
     if error_check_ret is not None:
         return error_check_ret
+
+    gen_params["max_new_tokens"] = max_new_tokens
 
     if request.stream:
         generator = chat_completion_stream_generator(
@@ -795,6 +865,13 @@ def create_openai_api_server():
         type=lambda s: s.split(","),
         help="Optional list of comma separated API keys",
     )
+    parser.add_argument(
+        "--ssl",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
+    )
     args = parser.parse_args()
 
     app.add_middleware(
@@ -813,4 +890,14 @@ def create_openai_api_server():
 
 if __name__ == "__main__":
     args = create_openai_api_server()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    if args.ssl:
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            ssl_keyfile=os.environ["SSL_KEYFILE"],
+            ssl_certfile=os.environ["SSL_CERTFILE"],
+        )
+    else:
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")

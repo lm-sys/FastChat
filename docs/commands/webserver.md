@@ -27,7 +27,7 @@ cd fastchat_logs/server0
 export OPENAI_API_KEY=
 export ANTHROPIC_API_KEY=
 
-python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results_20230802.pkl --leaderboard-table-file ~/elo_results/leaderboard_table_20230802.csv --register ~/elo_results/register_oai_models.json
+python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results.pkl --leaderboard-table-file ~/elo_results/leaderboard_table.csv --register ~/elo_results/register_oai_models.json --show-terms
 
 python3 backup_logs.py
 ```
@@ -72,7 +72,16 @@ vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/temp
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 ```
 
-2. Loading
+2. deprecation warnings
+```
+vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/deprecation.py
+```
+
+```
+def check_deprecated_parameters(
+```
+
+3. Loading
 ```
 vim /home/vicuna/anaconda3/envs/fastchat/lib/python3.9/site-packages/gradio/templates/frontend/assets/index-188ef5e8.js
 ```

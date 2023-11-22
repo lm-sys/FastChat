@@ -69,7 +69,7 @@ def test_8bit():
 
 def test_hf_api():
     models = [
-        "lmsys/vicuna-7b-v1.3",
+        "lmsys/vicuna-7b-v1.5",
         "lmsys/fastchat-t5-3b-v1.0",
     ]
 
