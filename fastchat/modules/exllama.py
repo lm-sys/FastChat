@@ -43,9 +43,7 @@ def load_exllama_model(model_path, exllama_config: ExllamaConfig):
         split = [float(alloc) for alloc in exllama_config.gpu_split.split(",")]
     exllama_model.load(split)
 
-    cache_class = (
-        ExLlamaV2Cache_8bit if exllamav2_config.cache_8bit else ExLlamaV2Cache
-    )
+    cache_class = ExLlamaV2Cache_8bit if exllamav2_config.cache_8bit else ExLlamaV2Cache
     exllama_cache = cache_class(exllama_model)
     model = ExllamaModel(exllama_model=exllama_model, exllama_cache=exllama_cache)
 
