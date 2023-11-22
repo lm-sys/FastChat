@@ -51,6 +51,6 @@ for model in result_dict:
             score += 1
         if count != 0:
             zeroCount += 1
-    score_result.update({model: [score, zeroCount]})
+    score_result.update({model: [score, zeroCount, ".4f" % (score / zeroCount)]})
 
 print(score_result)
