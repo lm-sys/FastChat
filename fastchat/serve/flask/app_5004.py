@@ -79,14 +79,15 @@ def run_script_generate():
         subprocess.check_call(command, shell=True)
         end_time = get_end_time()
         
-        output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/{model_id}.jsonl'
+        model_name1 = model_name.split('/')[-1]
+        output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/{model_name1}.jsonl'
         result = {"outputfile": output_file,
                   "model_name": model_name,
                   "model_id": model_id,
                   "data_id": data_id,
                   "time_start": start_time,
                   "time_end": end_time}
-        append_dict_to_jsonl("/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/model_answer/app_output.jsonl", {identifier: result})
+        append_dict_to_jsonl("/home/workspace/FastChat/fastchat/llm_judge/data/moral_bench/app_output.jsonl", {identifier: result})
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
