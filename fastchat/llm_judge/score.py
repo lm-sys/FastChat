@@ -57,6 +57,9 @@ for model in result_dict:
         dd0[category].append(status)
     for k, v in dd0.items():
         dd1[k] = (sum(v) / len(v), sum(v), len(v))
-    score_result.update({model: (sum([v[1] for v in dd1.values()]) / sum([v[2] for v in dd1.values()]), dd1)})
+        
+    s0 = sum([v[1] for v in dd1.values()])
+    s1 = sum([v[2] for v in dd1.values()])
+    score_result.update({model: ((s0, s1, s0/s1), dd1)})
 
 print(score_result)
