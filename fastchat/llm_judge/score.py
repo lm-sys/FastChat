@@ -37,7 +37,7 @@ result_dict = read_jsonl_files(directory_path)
 score_result = {}
 for model in result_dict:
     score = 0.
-    total = 0.
+    total_valid = 0.
     dd0 = defaultdict(list)
     dd1 = {}
     model_result = result_dict[model]
@@ -48,6 +48,7 @@ for model in result_dict:
         # 检查是否包含所有四个选项，且每个不超过两次
         if sum(counts[option] == 1 for option in ['A', 'B', 'C', 'D']) == 1:
             valid = True
+            total_valid += 1
         else:
             valid = False
         if valid and answer["reference_answer"] in pred:
@@ -57,9 +58,9 @@ for model in result_dict:
         dd0[category].append(status)
     for k, v in dd0.items():
         dd1[k] = (sum(v) / len(v), sum(v), len(v))
-        
+
     s0 = sum([v[1] for v in dd1.values()])
     s1 = sum([v[2] for v in dd1.values()])
-    score_result.update({model: ((s0, s1, s0/s1), dd1)})
+    score_result.update({model: ((s0, total_valid, s0/total_valid), dd1)})
 
 print(score_result)
