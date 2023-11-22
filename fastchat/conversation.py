@@ -535,7 +535,7 @@ register_conv_template(
         roles=("### Instruction:", "### Response:"),
         sep="\n",
         stop_str="<|EOT|>",
-        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
     )
 )
 
