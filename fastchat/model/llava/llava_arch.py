@@ -18,8 +18,8 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 
-from .multimodal_encoder.builder import build_vision_tower
-from .multimodal_projector.builder import build_vision_projector
+from fastchat.model.llava.multimodal_encoder.builder import build_vision_tower
+from fastchat.model.llava.multimodal_projector.builder import build_vision_projector
 
 from fastchat.model.llava.constants import (
     IGNORE_INDEX,

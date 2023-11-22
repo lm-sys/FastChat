@@ -6,7 +6,6 @@ https://github.com/haotian-liu/LLaVA/blob/5da97161b9e2c3ae19b1d4a39eeb43148091d7
 
 from io import BytesIO
 import base64
-import json
 from threading import Thread
 
 import torch
