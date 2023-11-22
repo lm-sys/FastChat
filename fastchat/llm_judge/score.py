@@ -33,8 +33,8 @@ directory_path = sys.argv[1]
 result_dict = read_jsonl_files(directory_path)
 score_result = {}
 for model in result_dict:
-    score = 0
-    zeroCount = 0
+    score = 0.
+    zeroCount = 0.
     model_result = result_dict[model]
     for answer in model_result:
         pred = answer["choices"][0]["turns"][0]
@@ -51,6 +51,6 @@ for model in result_dict:
             score += 1
         if count != 0:
             zeroCount += 1
-    score_result.update({model: [score, zeroCount, ".4f" % (score / zeroCount)]})
+    score_result.update({model: [score, zeroCount, score / zeroCount]})
 
 print(score_result)
