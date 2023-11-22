@@ -3,6 +3,9 @@ import json
 
 
 # 定义一个函数来读取目录下的所有.jsonl文件并存储到字典中
+from collections import defaultdict
+
+
 def read_jsonl_files(directory):
     file_dict = {}  # 用于存储文件内容的字典
     
@@ -34,23 +37,25 @@ result_dict = read_jsonl_files(directory_path)
 score_result = {}
 for model in result_dict:
     score = 0.
-    zeroCount = 0.
+    total = 0.
+    dd0 = defaultdict(list)
     model_result = result_dict[model]
     for answer in model_result:
+        category = answer["category"]
         pred = answer["choices"][0]["turns"][0]
-        count = 0
-        if "A" in pred:
-            count += 1
-        if "B" in pred:
-            count += 1
-        if "C" in pred:
-            count += 1
-        if "D" in pred:
-            count += 1
-        if answer["reference_answer"] in pred and count == 1:
-            score += 1
-        if count != 0:
-            zeroCount += 1
-    score_result.update({model: [score, zeroCount, score / zeroCount]})
+        counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+
+        # 检查是否包含所有四个选项，且每个不超过两次
+        if all(counts[option] == 1 for option in ['A', 'B', 'C', 'D']):
+            valid = True
+        else:
+            valid = False
+        if valid and answer["reference_answer"] in pred:
+            status = True
+        else:
+            status = False
+        total += 1
+        dd0[category].append(status)
+    score_result.update({model: dd0})
 
 print(score_result)
