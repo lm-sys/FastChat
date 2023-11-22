@@ -163,7 +163,8 @@ SAMPLING_WEIGHTS = {
     "gpt-4-turbo": 4,
     "gpt-3.5-turbo": 2,
     "gpt-3.5-turbo-1106": 4,
-    "claude-2": 4,
+    "claude-2.1": 4,
+    "claude-2.0": 4,
     "claude-1": 4,
     "claude-instant-1": 4,
     "zephyr-7b-beta": 2,
@@ -206,14 +207,15 @@ SAMPLING_WEIGHTS = {
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4": {"claude-2", "gpt-4-turbo"},
-    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "claude-2"},
-    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
+    "gpt-4": {"claude-2.1", "gpt-4-turbo"},
+    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "claude-2.1"},
+    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"claude-instant-1", "gpt-3.5-turbo"},
-    "claude-2": {"gpt-4-turbo", "gpt-4", "claude-1"},
-    "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
-    "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
-    "deluxe-chat-v1.1": {"gpt-4"},
+    "claude-2.1": {"gpt-4-turbo", "gpt-4", "claude-1"},
+    "claude-2.0": {"gpt-4-turbo", "gpt-4", "claude-1"},
+    "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
+    "claude-instant-1": {"gpt-3.5-turbo", "claude-2.1"},
+    "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
     "chatglm3-6b": {"chatglm2-6b", "qwen-14b-chat", "gpt-3.5-turbo"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
@@ -242,10 +244,8 @@ BATTLE_TARGETS = {
 SAMPLING_BOOST_MODELS = [
     "openchat-3.5",
     "gpt-4-turbo",
-    "gpt-3.5-turbo-1106",
-    "chatglm3-6b",
-    "claude-2",
-    "claude-1",
+    "claude-2.1",
+    #"claude-1",
 ]
 
 # outage models won't be sampled.
@@ -253,6 +253,8 @@ OUTAGE_MODELS = [
     "zephyr-7b-alpha",
     "wizardlm-70b",
     "falcon-180b-chat",
+    "deluxe-chat-v1.1",
+    "gpt-3.5-turbo-1106",
 ]
 
 

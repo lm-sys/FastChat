@@ -26,7 +26,10 @@ from fastchat.constants import (
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
 )
-from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_adapter import (
+    get_conversation_template,
+    ANTHROPIC_MODEL_LIST,
+)
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
@@ -140,7 +143,7 @@ def get_model_list(
     if add_chatgpt:
         models += ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
     if add_claude:
-        models += ["claude-2", "claude-instant-1"]
+        models += ["claude-2.0", "claude-2.1", "claude-instant-1"]
     if add_palm:
         models += ["palm-2"]
     models = list(set(models))
@@ -359,7 +362,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name in ["claude-2", "claude-1", "claude-instant-1"]:
+    elif model_name in ANTHROPIC_MODEL_LIST:
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens

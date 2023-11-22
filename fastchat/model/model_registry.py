@@ -50,7 +50,7 @@ register_model_info(
     ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
 )
 register_model_info(
-    ["claude-2"],
+    ["claude-2.1", "claude-2.0"],
     "Claude",
     "https://www.anthropic.com/index/claude-2",
     "Claude 2 by Anthropic",
@@ -62,7 +62,7 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
-    ["claude-instant-1"],
+    ["claude-instant-1", "claude-instant-1.2"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
