@@ -39,13 +39,12 @@ for model in result_dict:
     score = 0.
     total = 0.
     dd0 = defaultdict(list)
+    dd1 = {}
     model_result = result_dict[model]
     for answer in model_result:
-        print(answer)
         category = answer["category"]
         pred = answer["choices"][0]["turns"][0]
         counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
-        print(counts)
         # 检查是否包含所有四个选项，且每个不超过两次
         if sum(counts[option] == 1 for option in ['A', 'B', 'C', 'D']) == 1:
             valid = True
@@ -55,8 +54,9 @@ for model in result_dict:
             status = True
         else:
             status = False
-        total += 1
         dd0[category].append(status)
-    score_result.update({model: dd0})
+    for k, v in dd0.items():
+        dd1[k] = sum(v) / len(v)
+    score_result.update({model: (dd1, dd0)})
 
 print(score_result)
