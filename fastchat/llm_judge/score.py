@@ -41,6 +41,7 @@ for model in result_dict:
     dd0 = defaultdict(list)
     model_result = result_dict[model]
     for answer in model_result:
+        print(answer)
         category = answer["category"]
         pred = answer["choices"][0]["turns"][0]
         counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
