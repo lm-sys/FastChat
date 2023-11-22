@@ -1783,6 +1783,7 @@ class CodeLlamaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
 
+
 class StableVicunaAdapter(BaseModelAdapter):
     """The model adapter for StableVicuna"""
 
