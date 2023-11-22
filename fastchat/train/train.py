@@ -277,7 +277,8 @@ def train():
         padding_side="right",
         use_fast=False,
     )
-    if tokenizer.pad_token and tokenizer.pad_token != tokenizer.unk_token:
+
+    if tokenizer.pad_token != tokenizer.unk_token:
         tokenizer.pad_token = tokenizer.unk_token
 
     # Load data
