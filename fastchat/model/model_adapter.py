@@ -1827,6 +1827,18 @@ class PygmalionAdapter(BaseModelAdapter):
         return get_conv_template("metharme")
 
 
+class MicrosoftOrcaAdapter(BaseModelAdapter):
+    """The model adapter for Microsoft/Orca-2 series of models (e.g. Microsoft/Orca-2-7b, Microsoft/Orca-2-13b)"""
+
+    use_fast_tokenizer = False  # Flag neeeded since tokenizers>=0.13.3 is required for a normal functioning of this module
+
+    def match(self, model_path: str):
+        return "orca-2" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("orca-2")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -1893,7 +1905,7 @@ register_model_adapter(ZephyrAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
-
+register_model_adapter(MicrosoftOrcaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
