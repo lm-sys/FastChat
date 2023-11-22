@@ -1022,7 +1022,12 @@ class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
-        return model_path in ("gpt-3.5-turbo", "gpt-4")
+        return model_path in (
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-1106",
+            "gpt-4",
+            "gpt-4-turbo",
+        )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1696,6 +1701,31 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
         return get_conv_template("llama2-chinese")
 
 
+class Lamma2ChineseAlpacaAdapter(BaseModelAdapter):
+    """The model adapter for ymcui/Chinese-LLaMA-Alpaca sft"""
+
+    def match(self, model_path: str):
+        return "chinese-alpaca" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            revision=revision,
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama2-chinese")
+
+
 class VigogneAdapter(BaseModelAdapter):
     """The model adapter for vigogne (e.g., bofenghuang/vigogne-2-7b-chat)"""
 
@@ -1877,6 +1907,16 @@ class LlavaAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llava")
+class MicrosoftOrcaAdapter(BaseModelAdapter):
+    """The model adapter for Microsoft/Orca-2 series of models (e.g. Microsoft/Orca-2-7b, Microsoft/Orca-2-13b)"""
+
+    use_fast_tokenizer = False  # Flag neeeded since tokenizers>=0.13.3 is required for a normal functioning of this module
+
+    def match(self, model_path: str):
+        return "orca-2" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("orca-2")
 
 
 # Note: the registration order matters.
@@ -1935,6 +1975,7 @@ register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)
 register_model_adapter(Lamma2ChineseAdapter)
+register_model_adapter(Lamma2ChineseAlpacaAdapter)
 register_model_adapter(VigogneAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
@@ -1946,6 +1987,7 @@ register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(LlavaAdapter)
+register_model_adapter(MicrosoftOrcaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

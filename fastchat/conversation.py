@@ -661,6 +661,19 @@ register_conv_template(
     )
 )
 
+# Deepseek code default template
+register_conv_template(
+    Conversation(
+        name="deepseek",
+        system_template="You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.",
+        roles=("### Instruction:", "### Response:"),
+        sep="\n",
+        stop_str="<|EOT|>",
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE
+    )
+)
+
+
 # Tulu default template
 register_conv_template(
     Conversation(
@@ -1352,6 +1365,19 @@ register_conv_template(
     )
 )
 
+# Orca-2 template
+# reference: https://huggingface.co/microsoft/Orca-2-7b
+register_conv_template(
+    Conversation(
+        name="orca-2",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are Orca, an AI language model created by Microsoft. You are a cautious assistant. You carefully follow instructions. You are helpful and harmless and you follow ethical guidelines and promote positive behavior.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_str="<|im_end|>",
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

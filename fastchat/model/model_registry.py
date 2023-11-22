@@ -331,6 +331,12 @@ register_model_info(
     "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
 )
 register_model_info(
+    ["Chinese-Alpaca-2-7B", "Chinese-Alpaca-2-13B"],
+    "Chinese-Alpaca",
+    "https://huggingface.co/hfl/chinese-alpaca-2-13b",
+    "New extended Chinese vocabulary beyond Llama-2, open-sourcing the Chinese LLaMA-2 and Alpaca-2 LLMs.",
+)
+register_model_info(
     ["Vigogne-2-7B-Instruct", "Vigogne-2-13B-Instruct"],
     "Vigogne-Instruct",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-instruct",
