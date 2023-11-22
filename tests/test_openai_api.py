@@ -22,17 +22,28 @@ def test_list_models():
 def test_completion(model, logprob):
     prompt = "Once upon a time"
     completion = openai.Completion.create(
-        model=model, prompt=prompt, logprobs=logprob, max_tokens=64
+        model=model,
+        prompt=prompt,
+        logprobs=logprob,
+        max_tokens=64,
+        temperature=0,
     )
     print(f"full text: {prompt + completion.choices[0].text}", flush=True)
     if completion.choices[0].logprobs is not None:
-        print(f"logprobs: {completion.choices[0].logprobs.token_logprobs}", flush=True)
+        print(
+            f"logprobs: {completion.choices[0].logprobs.token_logprobs[:10]}",
+            flush=True,
+        )
 
 
 def test_completion_stream(model):
     prompt = "Once upon a time"
     res = openai.Completion.create(
-        model=model, prompt=prompt, max_tokens=64, stream=True
+        model=model,
+        prompt=prompt,
+        max_tokens=64,
+        stream=True,
+        temperature=0,
     )
     print(prompt, end="")
     for chunk in res:
@@ -49,14 +60,18 @@ def test_embedding(model):
 
 def test_chat_completion(model):
     completion = openai.ChatCompletion.create(
-        model=model, messages=[{"role": "user", "content": "Hello! What is your name?"}]
+        model=model,
+        messages=[{"role": "user", "content": "Hello! What is your name?"}],
+        temperature=0,
     )
     print(completion.choices[0].message.content)
 
 
 def test_chat_completion_stream(model):
     messages = [{"role": "user", "content": "Hello! What is your name?"}]
-    res = openai.ChatCompletion.create(model=model, messages=messages, stream=True)
+    res = openai.ChatCompletion.create(
+        model=model, messages=messages, stream=True, temperature=0
+    )
     for chunk in res:
         content = chunk["choices"][0]["delta"].get("content", "")
         print(content, end="", flush=True)

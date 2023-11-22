@@ -610,7 +610,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 # 🏔️ Chat with Open Large Language Models
 {promotion}
 
-## 👉 Choose any model to chat
+## Choose any model to chat
 """
 
     state = gr.State()
@@ -635,7 +635,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="👉 Enter your prompt and press ENTER",
                 container=False,
                 elem_id="input_box",
             )
