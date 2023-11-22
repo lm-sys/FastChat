@@ -527,6 +527,19 @@ register_conv_template(
     )
 )
 
+# Deepseek code default template
+register_conv_template(
+    Conversation(
+        name="deepseek",
+        system_template="You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.",
+        roles=("### Instruction:", "### Response:"),
+        sep="\n",
+        stop_str="<|EOT|>",
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE
+    )
+)
+
+
 # Tulu default template
 register_conv_template(
     Conversation(
