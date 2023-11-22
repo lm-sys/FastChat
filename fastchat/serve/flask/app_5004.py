@@ -72,15 +72,14 @@ def run_script_generate():
             return "暂无空闲GPU..."
     print(f"use GPU {GPU}")
     identifier = generate_random_identifier()
-    command = f"/home/workspace/FastChat/scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{identifier}\""
+    model_name1 = model_name.split('/')[-1]
+    output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/model_answer/{model_name1}.jsonl'
+    command = f"/home/workspace/FastChat/scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{output_file}\""
     
     try:
         start_time = get_start_time()
         subprocess.check_call(command, shell=True)
         end_time = get_end_time()
-        
-        model_name1 = model_name.split('/')[-1]
-        output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/model_answer/{model_name1}.jsonl'
         result = {"outputfile": output_file,
                   "model_name": model_name,
                   "model_id": model_id,
