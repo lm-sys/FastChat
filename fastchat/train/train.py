@@ -37,7 +37,7 @@ IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
     padding_side: str = field(
-        default="right", metadata={"help": "The padding side in tokneizer"})
+        default="right", metadata={"help": "The padding side in tokenizer"})
 
 
 @dataclass
