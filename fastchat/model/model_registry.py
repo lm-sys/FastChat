@@ -68,6 +68,12 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
+    ["tulu-2-dpo-70b"],
+    "Tulu 2",
+    "https://huggingface.co/allenai/tulu-2-dpo-70b",
+    "Tulu 2 by UW/AllenAI",
+)
+register_model_info(
     [
         "vicuna-33b",
         "vicuna-33b-v1.3",
@@ -96,7 +102,7 @@ register_model_info(
     ["openchat-3.5"],
     "OpenChat 3.5",
     "https://github.com/imoneoi/openchat",
-    "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
+    "an open model fine-tuned on Mistral-7B using C-RLFT",
 )
 register_model_info(
     ["mistral-7b-instruct"],

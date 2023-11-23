@@ -160,13 +160,14 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
-    "gpt-4-turbo": 4,
+    "gpt-4-turbo": 8,
     "gpt-3.5-turbo": 2,
     "gpt-3.5-turbo-1106": 4,
     "claude-2.1": 4,
     "claude-2.0": 4,
     "claude-1": 4,
     "claude-instant-1": 4,
+    "tulu-2-dpo-70b": 2,
     "zephyr-7b-beta": 2,
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
@@ -216,6 +217,7 @@ BATTLE_TARGETS = {
     "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
     "claude-instant-1": {"gpt-3.5-turbo", "claude-2.1"},
     "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
+    "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
     "chatglm3-6b": {"chatglm2-6b", "qwen-14b-chat", "gpt-3.5-turbo"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
@@ -242,8 +244,9 @@ BATTLE_TARGETS = {
 }
 
 SAMPLING_BOOST_MODELS = [
+    "tulu-2-dpo-70b",
     "openchat-3.5",
-    "gpt-4-turbo",
+    #"gpt-4-turbo",
     "claude-2.1",
     #"claude-1",
 ]
