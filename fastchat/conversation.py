@@ -1021,14 +1021,19 @@ register_conv_template(
     )
 )
 
-
+# source: https://huggingface.co/01-ai/Yi-34B-Chat/blob/main/tokenizer_config.json#L60
 register_conv_template(
     Conversation(
         name="Yi-34b-chat",
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
-        stop_token_ids=[2, 6, 7, 8],  # "<|endoftext|>", "<|im_start|>", "<|im_end|>", "<|im_sep|>"
+        stop_token_ids=[
+            2,
+            6,
+            7,
+            8,
+        ],  # "<|endoftext|>", "<|im_start|>", "<|im_end|>", "<|im_sep|>"
         stop_str="<|endoftext|>",
     )
 )
