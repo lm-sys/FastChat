@@ -1889,10 +1889,10 @@ class YiAdapter(BaseModelAdapter):
     """The model adapter for Yi models"""
 
     def match(self, model_path: str):
-       return "yi" in model_path.lower()
+       return "yi-34b-chat" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return et_conv_template("Yi-34b-chat")
+        return get_conv_template("Yi-34b-chat")
 
 
 # Note: the registration order matters.
