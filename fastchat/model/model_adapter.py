@@ -179,9 +179,6 @@ def load_model(
     """Load a model from Hugging Face."""
     # get model adapter
     adapter = get_model_adapter(model_path)
-    print(
-        f"Using model adapter: {adapter.__class__.__name__} for {model_path=} and {revision=}"
-    )
 
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
