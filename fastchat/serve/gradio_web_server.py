@@ -296,6 +296,7 @@ def model_worker_stream_iter(
     repetition_penalty,
     top_p,
     max_new_tokens,
+    images=None,
 ):
     # Make requests
     gen_params = {
@@ -309,6 +310,10 @@ def model_worker_stream_iter(
         "stop_token_ids": conv.stop_token_ids,
         "echo": False,
     }
+
+    if images is not None:
+        gen_params["images"] = images
+
     logger.info(f"==== request ====\n{gen_params}")
 
     # Stream output
@@ -391,6 +396,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
+        images = conv.get_images()
 
         # Set repetition_penalty
         if "t5" in model_name:
@@ -407,6 +413,7 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             repetition_penalty,
             top_p,
             max_new_tokens,
+            images,
         )
 
     conv.update_last_message("▌")

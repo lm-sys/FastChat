@@ -32,7 +32,7 @@ from fastchat.serve.gradio_web_server import (
     ip_expiration_dict,
     get_ip,
 )
-from fastchat.serve.gradio_web_server_vision import (
+from fastchat.serve.gradio_block_arena_vision import (
     build_single_vision_language_model_ui,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
