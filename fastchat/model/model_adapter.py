@@ -505,6 +505,11 @@ def add_model_args(parser):
         help="Used for exllamabv2. Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7",
     )
     parser.add_argument(
+        "--exllama-cache-8bit",
+        action="store_true",
+        help="Used for exllamabv2. Use 8-bit cache to save VRAM.",
+    )
+    parser.add_argument(
         "--enable-xft",
         action="store_true",
         help="Used for xFasterTransformer Enable xFasterTransformer inference framework.",
@@ -1684,6 +1689,31 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
         return get_conv_template("llama2-chinese")
 
 
+class Lamma2ChineseAlpacaAdapter(BaseModelAdapter):
+    """The model adapter for ymcui/Chinese-LLaMA-Alpaca sft"""
+
+    def match(self, model_path: str):
+        return "chinese-alpaca" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            revision=revision,
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama2-chinese")
+
+
 class VigogneAdapter(BaseModelAdapter):
     """The model adapter for vigogne (e.g., bofenghuang/vigogne-2-7b-chat)"""
 
@@ -1762,6 +1792,22 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class StableVicunaAdapter(BaseModelAdapter):
+    """The model adapter for StableVicuna"""
+
+    def match(self, model_path: str):
+        return "stable-vicuna" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("stable-vicuna")
+
+
 class PhindCodeLlamaAdapter(CodeLlamaAdapter):
     """The model adapter for Phind-CodeLlama (e.g., Phind/Phind-CodeLlama-34B-v2)"""
 
@@ -1830,9 +1876,32 @@ class PygmalionAdapter(BaseModelAdapter):
         return get_conv_template("metharme")
 
 
+class MicrosoftOrcaAdapter(BaseModelAdapter):
+    """The model adapter for Microsoft/Orca-2 series of models (e.g. Microsoft/Orca-2-7b, Microsoft/Orca-2-13b)"""
+
+    use_fast_tokenizer = False  # Flag neeeded since tokenizers>=0.13.3 is required for a normal functioning of this module
+
+    def match(self, model_path: str):
+        return "orca-2" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("orca-2")
+
+
+class YiAdapter(BaseModelAdapter):
+    """The model adapter for Yi models"""
+
+    def match(self, model_path: str):
+        return "yi-34b-chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("Yi-34b-chat")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
+register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
@@ -1886,6 +1955,7 @@ register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)
 register_model_adapter(Lamma2ChineseAdapter)
+register_model_adapter(Lamma2ChineseAlpacaAdapter)
 register_model_adapter(VigogneAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
@@ -1896,7 +1966,8 @@ register_model_adapter(ZephyrAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
-
+register_model_adapter(MicrosoftOrcaAdapter)
+register_model_adapter(YiAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

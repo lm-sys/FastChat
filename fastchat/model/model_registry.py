@@ -337,6 +337,12 @@ register_model_info(
     "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
 )
 register_model_info(
+    ["Chinese-Alpaca-2-7B", "Chinese-Alpaca-2-13B"],
+    "Chinese-Alpaca",
+    "https://huggingface.co/hfl/chinese-alpaca-2-13b",
+    "New extended Chinese vocabulary beyond Llama-2, open-sourcing the Chinese LLaMA-2 and Alpaca-2 LLMs.",
+)
+register_model_info(
     ["Vigogne-2-7B-Instruct", "Vigogne-2-13B-Instruct"],
     "Vigogne-Instruct",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-instruct",
@@ -347,6 +353,12 @@ register_model_info(
     "Vigogne-Chat",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
     "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
+)
+register_model_info(
+    ["stable-vicuna-13B-HF"],
+    "stable-vicuna",
+    "https://huggingface.co/TheBloke/stable-vicuna-13B-HF",
+    "StableVicuna is a Vicuna model fine-tuned using RLHF via PPO on various conversational and instructional datasets.",
 )
 register_model_info(
     ["deluxe-chat-v1", "deluxe-chat-v1.1"],
@@ -390,4 +402,11 @@ register_model_info(
     "Aquila-Chat",
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
+)
+
+register_model_info(
+    ["Yi-34B-Chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai",
+    "A large language model by 01.AI.",
 )
