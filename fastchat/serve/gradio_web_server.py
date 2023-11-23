@@ -7,14 +7,12 @@ from collections import defaultdict
 import datetime
 import json
 import os
-import random
 import time
 import uuid
 
 import gradio as gr
 import requests
 
-from fastchat.conversation import SeparatorStyle
 from fastchat.constants import (
     LOGDIR,
     WORKER_API_TIMEOUT,
@@ -26,6 +24,7 @@ from fastchat.constants import (
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
 )
+from fastchat.model.llava.constants import LLAVA_IMAGE_TOKEN
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import (
@@ -227,14 +226,14 @@ def regenerate(state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"regenerate. ip: {ip}")
     state.conv.update_last_message(None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], "") + (disable_btn,) * 5
+    return (state, [], "", None) + (disable_btn,) * 5
 
 
 def get_ip(request: gr.Request):
@@ -245,7 +244,25 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def add_text(state, model_selector, text, request: gr.Request):
+def _prepare_text_with_image(state, text, image):
+    if image is not None:
+        if len(state.conv.get_images()) > 0:
+            # reset convo with new image
+            state.conv = get_conversation_template(state.model_name)
+
+        if "llava" in state.model_name.lower():
+            if LLAVA_IMAGE_TOKEN not in text:
+                text = text + "\n" + LLAVA_IMAGE_TOKEN
+
+        text = (
+            text,
+            image,
+        )
+
+    return text
+
+
+def add_text(state, model_selector, text, image, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -262,8 +279,7 @@ def add_text(state, model_selector, text, request: gr.Request):
         # overwrite the original text
         text = MODERATION_MSG
 
-    conv = state.conv
-    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
+    if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
@@ -271,9 +287,10 @@ def add_text(state, model_selector, text, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    conv.append_message(conv.roles[0], text)
-    conv.append_message(conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    text = _prepare_text_with_image(state, text, image)
+    state.conv.append_message(state.conv.roles[0], text)
+    state.conv.append_message(state.conv.roles[1], None)
+    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
 def post_process_code(code):
@@ -686,6 +703,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         gr.Markdown(acknowledgment_md)
 
     # Register listeners
+    imagebox = gr.State(None)  # always None for text models
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
@@ -702,17 +720,23 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, model_selector],
         [textbox, upvote_btn, downvote_btn, flag_btn],
     )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
+    regenerate_btn.click(
+        regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
+    ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+    clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+    model_selector.change(
+        clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+    )
 
     textbox.submit(
-        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
+        add_text,
+        [state, model_selector, textbox, imagebox],
+        [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -720,8 +744,8 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
     send_btn.click(
         add_text,
-        [state, model_selector, textbox],
-        [state, chatbot, textbox] + btn_list,
+        [state, model_selector, textbox, imagebox],
+        [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
