@@ -502,6 +502,11 @@ def add_model_args(parser):
         help="Used for exllamabv2. Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7",
     )
     parser.add_argument(
+        "--exllama-cache-8bit",
+        action="store_true",
+        help="Used for exllamabv2. Use 8-bit cache to save VRAM.",
+    )
+    parser.add_argument(
         "--enable-xft",
         action="store_true",
         help="Used for xFasterTransformer Enable xFasterTransformer inference framework.",
