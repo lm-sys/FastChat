@@ -77,6 +77,9 @@ def generate_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
+    if type(model) == dict:
+        model = model["language_model"]
+
     if hasattr(model, "device"):
         device = model.device
 
@@ -362,54 +365,45 @@ def chat_loop(
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     judge_sent_end: bool = True,
-    multimodal: bool = False,
     debug: bool = True,
     history: bool = True,
 ):
     # Model
-    if multimodal:
-        model, tokenizer, image_processor = load_model(
-            model_path,
-            device=device,
-            num_gpus=num_gpus,
-            max_gpu_memory=max_gpu_memory,
-            dtype=dtype,
-            load_8bit=load_8bit,
-            cpu_offloading=cpu_offloading,
-            revision=revision,
-            multimodal=True,
-            debug=debug,
-        )
-    else:
-        model, tokenizer = load_model(
-            model_path,
-            device=device,
-            num_gpus=num_gpus,
-            max_gpu_memory=max_gpu_memory,
-            dtype=dtype,
-            load_8bit=load_8bit,
-            cpu_offloading=cpu_offloading,
-            gptq_config=gptq_config,
-            awq_config=awq_config,
-            exllama_config=exllama_config,
-            xft_config=xft_config,
-            revision=revision,
-            debug=debug,
-        )
+    model, tokenizer = load_model(
+        model_path,
+        device=device,
+        num_gpus=num_gpus,
+        max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
+        load_8bit=load_8bit,
+        cpu_offloading=cpu_offloading,
+        gptq_config=gptq_config,
+        awq_config=awq_config,
+        exllama_config=exllama_config,
+        xft_config=xft_config,
+        revision=revision,
+        debug=debug,
+    )
+
     generate_stream_func = get_generate_stream_function(model, model_path)
 
     model_type = str(type(model)).lower()
     is_t5 = "t5" in model_type
     is_codet5p = "codet5p" in model_type
     is_xft = "xft" in model_type
-    is_llava = "llava" in model_type
+    is_llava = (
+        type(model) == dict and "llava" in str(type(model["language_model"])).lower()
+    )
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:
         repetition_penalty = 1.2
 
     # Set context length
-    context_len = get_context_length(model.config)
+    if type(model) == dict:
+        context_len = get_context_length(model["language_model"].config)
+    else:
+        context_len = get_context_length(model.config)
 
     # Chat
     def new_chat():
@@ -566,41 +560,20 @@ def chat_loop(
             "echo": False,
         }
 
-        if is_llava:
-            images = conv.get_images()
-            gen_params = {
-                "model": model_path,
-                "prompt": prompt,
-                "images": images,
-                "temperature": temperature,
-                "repetition_penalty": repetition_penalty,
-                "max_new_tokens": max_new_tokens,
-                "stop": conv.stop_str,
-                "stop_token_ids": conv.stop_token_ids,
-                "echo": False,
-            }
+        images = conv.get_images()
+        if len(images) > 0:
+            gen_params["images"] = images
 
         try:
             chatio.prompt_for_output(conv.roles[1])
-            if multimodal:
-                output_stream = generate_stream_func(
-                    model,
-                    tokenizer,
-                    image_processor,
-                    gen_params,
-                    device,
-                    context_len=context_len,
-                    judge_sent_end=judge_sent_end,
-                )
-            else:
-                output_stream = generate_stream_func(
-                    model,
-                    tokenizer,
-                    gen_params,
-                    device,
-                    context_len=context_len,
-                    judge_sent_end=judge_sent_end,
-                )
+            output_stream = generate_stream_func(
+                model,
+                tokenizer,
+                gen_params,
+                device,
+                context_len=context_len,
+                judge_sent_end=judge_sent_end,
+            )
             t = time.time()
             outputs = chatio.stream_output(output_stream)
             duration = time.time() - t

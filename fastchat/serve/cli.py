@@ -252,7 +252,6 @@ def main(args):
             xft_config=xft_config,
             revision=args.revision,
             judge_sent_end=args.judge_sent_end,
-            multimodal=args.multimodal,
             debug=args.debug,
             history=not args.no_history,
         )
@@ -299,12 +298,6 @@ if __name__ == "__main__":
         "--debug",
         action="store_true",
         help="Print useful debug information (e.g., prompts)",
-    )
-    parser.add_argument(
-        "--multimodal",
-        action="store_true",
-        default=False,
-        help="Store true if this model is multimodal and accepts images as input as well.",
     )
     args = parser.parse_args()
     main(args)

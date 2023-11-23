@@ -138,7 +138,6 @@ class KeywordsStoppingCriteria(StoppingCriteria):
 def generate_stream_llava(
     model,
     tokenizer,
-    image_processor,
     params,
     device,
     context_len=2048,
@@ -148,7 +147,10 @@ def generate_stream_llava(
     prompt = params["prompt"]
     ori_prompt = prompt
     images = params.get("images", None)
+    image_processor = model["vision_processor"]
+    model = model["language_model"]
     num_image_tokens = 0
+
     if (
         images is not None and len(images) > 0
     ):  # NOTE(chris): removed multimodal check because we essentially know we want multimodal on

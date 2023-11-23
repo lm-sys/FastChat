@@ -317,10 +317,7 @@ def load_model(
         kwargs["torch_dtype"] = dtype
 
     # Load model
-    if multimodal:
-        model, tokenizer, image_processor = adapter.load_model(model_path, kwargs)
-    else:
-        model, tokenizer = adapter.load_model(model_path, kwargs)
+    model, tokenizer = adapter.load_model(model_path, kwargs)
 
     if (
         device == "cpu"
@@ -335,18 +332,12 @@ def load_model(
         "npu",
     ):
         model.to(device)
-        if multimodal and "llava" in model_path:
-            # NOTE: A little hacky since this is only applicable to Llava possibly?
-            model.get_vision_tower().to(device)
 
     if device == "xpu":
         model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
-
-    if multimodal:
-        return model, tokenizer, image_processor
 
     return model, tokenizer
 
@@ -360,6 +351,9 @@ def get_conversation_template(model_path: str) -> Conversation:
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     """Get the generate_stream function for inference."""
     from fastchat.serve.inference import generate_stream
+
+    if type(model) == dict:
+        model = model["language_model"]
 
     model_type = str(type(model)).lower()
     is_chatglm = "chatglm" in model_type
@@ -1900,7 +1894,13 @@ class LlavaAdapter(BaseModelAdapter):
             vision_tower.load_model()
         image_processor = vision_tower.image_processor
 
-        return model, tokenizer, image_processor
+        return (
+            {
+                "language_model": model,
+                "vision_processor": image_processor,
+            },
+            tokenizer,
+        )
 
     def match(self, model_path: str):
         return "llava" in model_path.lower()

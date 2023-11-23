@@ -57,7 +57,7 @@ enable_moderation = False
 
 acknowledgment_md = """
 ### Acknowledgment
-<div class="image-container">
+<div class="sponsor-image-container">
     <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
     <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
@@ -511,19 +511,19 @@ block_css = """
 footer {
     display:none !important
 }
-.image-container {
+.sponsor-image-container {
     display: flex;
     align-items: center;
     padding: 1px;
 }
-.image-container img {
+.sponsor-image-container img {
     margin: 0 30px;
     height: 20px;
     max-height: 100%;
     width: auto;
     max-width: 20%;
 }
-.image-about img {
+.sponsor-image-about img {
     margin: 0 30px;
     margin-top:  30px;
     height: 60px;
@@ -581,7 +581,7 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
 Learn more about partnership [here](https://lmsys.org/donations/).
 
-<div class="image-about">
+<div class="sponsor-image-about">
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
     <img src="https://upload.wikimedia.org/wikipedia/en/5/55/Mohamed_bin_Zayed_University_of_Artificial_Intelligence_logo.png" alt="Image 2">
     <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
