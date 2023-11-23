@@ -397,3 +397,10 @@ register_model_info(
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
 )
+
+register_model_info(
+    ["Yi-34B-Chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai",
+    "A large language model by 01.AI.",
+)

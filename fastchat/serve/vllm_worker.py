@@ -101,6 +101,7 @@ class VLLMWorker(BaseModelWorker):
             top_p=top_p,
             use_beam_search=use_beam_search,
             stop=list(stop),
+            stop_token_ids=stop_token_ids,
             max_tokens=max_new_tokens,
             top_k=top_k,
             presence_penalty=presence_penalty,
