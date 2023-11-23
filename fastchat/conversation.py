@@ -1129,6 +1129,20 @@ register_conv_template(
     )
 )
 
+# Stable Vicuna default template
+# source: https://huggingface.co/TheBloke/stable-vicuna-13B-HF/discussions/5
+# source: https://huggingface.co/spaces/CarperAI/StableVicuna/blob/main/app.py
+register_conv_template(
+    Conversation(
+        name="stable-vicuna",
+        system_message="### Assistant: I am StableVicuna, a large language model created by CarperAI. I am here to chat!\n",
+        roles=("### Human", "### Assistant"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n",
+        sep2="\n\n",
+    )
+)
+
 register_conv_template(
     Conversation(
         name="vigogne_chat_v3",
