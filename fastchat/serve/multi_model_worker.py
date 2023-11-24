@@ -277,6 +277,7 @@ def create_multi_model_worker():
             "speed": 1,
             "queue_length": sum([w.get_queue_length() for w in workers]),
         },
+        "multimodal": workers[0].multimodal,
     }
     r = requests.post(url, json=data)
     assert r.status_code == 200

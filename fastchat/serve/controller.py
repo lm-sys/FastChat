@@ -52,6 +52,7 @@ class WorkerInfo:
     queue_length: int
     check_heart_beat: bool
     last_heart_beat: str
+    multimodal: bool
 
 
 def heart_beat_controller(controller):
@@ -72,7 +73,11 @@ class Controller:
         self.heart_beat_thread.start()
 
     def register_worker(
-        self, worker_name: str, check_heart_beat: bool, worker_status: dict
+        self,
+        worker_name: str,
+        check_heart_beat: bool,
+        worker_status: dict,
+        multimodal: bool,
     ):
         if worker_name not in self.worker_info:
             logger.info(f"Register a new worker: {worker_name}")
@@ -90,6 +95,7 @@ class Controller:
             worker_status["queue_length"],
             check_heart_beat,
             time.time(),
+            multimodal,
         )
 
         logger.info(f"Register done: {worker_name}, {worker_status}")
@@ -116,14 +122,19 @@ class Controller:
         self.worker_info = {}
 
         for w_name, w_info in old_info.items():
-            if not self.register_worker(w_name, w_info.check_heart_beat, None):
+            if not self.register_worker(
+                w_name, w_info.check_heart_beat, None, w_info.multimodal
+            ):
                 logger.info(f"Remove stale worker: {w_name}")
 
-    def list_models(self):
+    def list_models(self, multimodal: bool = False):
         model_names = set()
 
         for w_name, w_info in self.worker_info.items():
-            model_names.update(w_info.model_names)
+            if multimodal and w_info.multimodal:
+                model_names.update(w_info.model_names)
+            elif not multimodal and not w_info.multimodal:
+                model_names.update(w_info.model_names)
 
         return list(model_names)
 
@@ -263,7 +274,10 @@ app = FastAPI()
 async def register_worker(request: Request):
     data = await request.json()
     controller.register_worker(
-        data["worker_name"], data["check_heart_beat"], data.get("worker_status", None)
+        data["worker_name"],
+        data["check_heart_beat"],
+        data.get("worker_status", None),
+        data.get("multimodal", False),
     )
 
 
@@ -275,6 +289,12 @@ async def refresh_all_workers():
 @app.post("/list_models")
 async def list_models():
     models = controller.list_models()
+    return {"models": models}
+
+
+@app.post("/list_multimodal_models")
+async def list_multimodal_models():
+    models = controller.list_models(multimodal=True)
     return {"models": models}
 
 

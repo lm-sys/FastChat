@@ -47,7 +47,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models
+    global models, vision_language_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -60,14 +60,17 @@ def load_demo(url_params, request: gr.Request):
         selected = 1
     elif "single" in url_params:
         selected = 2
-    elif "leaderboard" in url_params:
+    elif "vision" in url_params:
         selected = 3
+    elif "leaderboard" in url_params:
+        selected = 4
 
     if args.model_list_mode == "reload":
         if args.anony_only_for_proprietary_model:
             models = get_model_list(
                 args.controller_url,
                 args.register_openai_compatible_models,
+                False,
                 False,
                 False,
                 False,
@@ -79,7 +82,17 @@ def load_demo(url_params, request: gr.Request):
                 args.add_chatgpt,
                 args.add_claude,
                 args.add_palm,
+                False,
             )
+
+        vision_language_models = get_model_list(
+            args.controller_url,
+            args.register_openai_compatible_models,
+            False,
+            False,
+            False,
+            True,
+        )
 
     single_updates = load_demo_single(models, url_params)
 
@@ -101,15 +114,19 @@ def load_demo(url_params, request: gr.Request):
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
+    vision_language_updates = load_demo_single(vision_language_models, url_params)
     return (
         (gr.Tabs.update(selected=selected),)
         + single_updates
         + side_by_side_anony_updates
         + side_by_side_named_updates
+        + vision_language_updates
     )
 
 
-def build_demo(models, elo_results_file, leaderboard_table_file):
+def build_demo(
+    models, vision_language_models, elo_results_file, leaderboard_table_file
+):
     text_size = gr.themes.sizes.text_md
     with gr.Blocks(
         title="Chat with Open Large Language Models",
@@ -131,7 +148,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
             with gr.Tab("Single Vision-Language Model", id=3):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
-                        models, add_promotion_links=True
+                        vision_language_models, add_promotion_links=True
                     )
                 )
 
@@ -157,7 +174,8 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
             [tabs]
             + single_model_list
             + side_by_side_anony_list
-            + side_by_side_named_list,
+            + side_by_side_named_list
+            + single_vision_language_model_list,
             _js=load_js,
         )
 
@@ -253,6 +271,7 @@ if __name__ == "__main__":
             False,
             False,
             False,
+            False,
         )
     else:
         models = get_model_list(
@@ -261,7 +280,17 @@ if __name__ == "__main__":
             args.add_chatgpt,
             args.add_claude,
             args.add_palm,
+            False,
         )
+
+    vision_language_models = get_model_list(
+        args.controller_url,
+        args.register_openai_compatible_models,
+        False,
+        False,
+        False,
+        True,
+    )
 
     # Set authorization credentials
     auth = None
@@ -269,7 +298,12 @@ if __name__ == "__main__":
         auth = parse_gradio_auth_creds(args.gradio_auth_path)
 
     # Launch the demo
-    demo = build_demo(models, args.elo_results_file, args.leaderboard_table_file)
+    demo = build_demo(
+        models,
+        vision_language_models,
+        args.elo_results_file,
+        args.leaderboard_table_file,
+    )
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(

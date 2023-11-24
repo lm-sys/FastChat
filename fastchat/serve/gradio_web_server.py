@@ -118,12 +118,20 @@ def get_conv_log_filename():
 
 
 def get_model_list(
-    controller_url, register_openai_compatible_models, add_chatgpt, add_claude, add_palm
+    controller_url,
+    register_openai_compatible_models,
+    add_chatgpt,
+    add_claude,
+    add_palm,
+    multimodal,
 ):
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
-        ret = requests.post(controller_url + "/list_models")
+        if multimodal:
+            ret = requests.post(controller_url + "/list_multimodal_models")
+        else:
+            ret = requests.post(controller_url + "/list_models")
         models = ret.json()["models"]
     else:
         models = []
@@ -184,6 +192,7 @@ def load_demo(url_params, request: gr.Request):
             args.add_chatgpt,
             args.add_claude,
             args.add_palm,
+            False,
         )
 
     return load_demo_single(models, url_params)
@@ -860,6 +869,7 @@ if __name__ == "__main__":
         args.add_chatgpt,
         args.add_claude,
         args.add_palm,
+        False,
     )
 
     # Set authorization credentials

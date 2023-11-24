@@ -61,6 +61,7 @@ class ModelWorker(BaseModelWorker):
         embed_in_truncate: bool = False,
         seed: Optional[int] = None,
         debug: bool = False,
+        multimodal: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -71,6 +72,7 @@ class ModelWorker(BaseModelWorker):
             model_names,
             limit_worker_concurrency,
             conv_template=conv_template,
+            multimodal=multimodal,
         )
 
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
@@ -308,6 +310,13 @@ def create_model_worker():
         default=False,
         help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
     )
+    parser.add_argument(
+        "--multimodal",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Register this worker as serving a multimodal model.",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -370,6 +379,7 @@ def create_model_worker():
         embed_in_truncate=args.embed_in_truncate,
         seed=args.seed,
         debug=args.debug,
+        multimodal=args.multimodal,
     )
     return args, worker
 
