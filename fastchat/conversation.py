@@ -1237,6 +1237,7 @@ register_conv_template(
     )
 )
 # xDAN default template
+# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1
 register_conv_template(
     Conversation(
         name="xdan-v1",
