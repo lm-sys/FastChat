@@ -399,7 +399,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["Yi-34B-Chat"],
+    ["Yi-34B-Chat", "Yi-6B-Chat"],
     "Yi-Chat",
     "https://huggingface.co/01-ai",
     "A large language model by 01.AI.",

@@ -1916,7 +1916,8 @@ class YiAdapter(BaseModelAdapter):
     """The model adapter for Yi models"""
 
     def match(self, model_path: str):
-        return "yi-34b-chat" in model_path.lower()
+        # use "yi-" instead of "yi" to support Yi Series Models, because "yi" is usually a sub-string of certain words.
+        return "yi-" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("Yi-34b-chat")
