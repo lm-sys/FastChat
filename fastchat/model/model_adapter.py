@@ -1899,11 +1899,11 @@ class PygmalionAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metharme")
 
-class xDANAdapter(BaseModelAdapter):
+class XDANAdapter(BaseModelAdapter):
     """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-v0.1)"""
 
     def match(self, model_path: str):
-        return "xdan-l1-chat" in model_path.lower()
+        return "xdan" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("xdan-v1")
@@ -2000,7 +2000,7 @@ register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
-register_model_adapter(xDANAdapter)
+register_model_adapter(XDANAdapter)
 register_model_adapter(YiAdapter)
 
 # After all adapters, try the default base adapter.
