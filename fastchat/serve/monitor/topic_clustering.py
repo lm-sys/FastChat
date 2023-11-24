@@ -80,30 +80,27 @@ def read_texts(input_file, min_length, max_length, english_only):
 
 
 def get_embeddings(texts, model_name, batch_size):
-    model = SentenceTransformer(model_name)
-    embeddings = model.encode(
-        texts,
-        batch_size=batch_size,
-        show_progress_bar=True,
-        device="cuda",
-        convert_to_tensor=True,
-    )
+    if model_name == "text-embedding-ada-002":
+        client = OpenAI()
+        texts = texts.tolist()
+
+        embeddings = []
+        for i in tqdm(range(0, len(texts), batch_size)):
+            text = texts[i : i + batch_size]
+            responses = client.embeddings.create(input=text, model=model_name).data
+            embeddings.extend([data.embedding for data in responses])
+        embeddings = torch.tensor(embeddings)
+    else:
+        model = SentenceTransformer(model_name)
+        embeddings = model.encode(
+            texts,
+            batch_size=batch_size,
+            show_progress_bar=True,
+            device="cuda",
+            convert_to_tensor=True,
+        )
+
     embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-    return embeddings.cpu()
-
-
-# Support OpenAI Embedding
-def get_openai_embeddings(texts, model_name, batch_size):
-    client = OpenAI()
-    texts = texts.tolist()
-
-    embeddings = []
-    for i in tqdm(range(0, len(texts), batch_size)):
-        text = texts[i : i + batch_size]
-        responses = client.embeddings.create(input=text, model=model_name).data
-        embeddings.extend([data.embedding for data in responses])
-
-    embeddings = torch.nn.functional.normalize(torch.tensor(embeddings), p=2, dim=1)
     return embeddings.cpu()
 
 
@@ -245,21 +242,12 @@ if __name__ == "__main__":
     show_cut_off = args.show_cut_off
 
     if args.embeddings_file is None:
-        if args.model == "text-embedding-ada-002":
-            texts = read_texts(
-                args.input_file, args.min_length, args.max_length, args.english_only
-            )
-            print(f"#text: {len(texts)}")
-            embeddings = get_openai_embeddings(texts, args.model, args.batch_size)
-            print(f"embeddings shape: {embeddings.shape}")
-        else:
-            texts = read_texts(
-                args.input_file, args.min_length, args.max_length, args.english_only
-            )
-            print(f"#text: {len(texts)}")
-            embeddings = get_embeddings(texts, args.model, args.batch_size)
-            print(f"embeddings shape: {embeddings.shape}")
-
+        texts = read_texts(
+            args.input_file, args.min_length, args.max_length, args.english_only
+        )
+        print(f"#text: {len(texts)}")
+        embeddings = get_embeddings(texts, args.model, args.batch_size)
+        print(f"embeddings shape: {embeddings.shape}")
         if args.save_embeddings:
             # allow saving embedding to save time
             torch.save(embeddings, "embeddings.pt")
