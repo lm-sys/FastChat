@@ -88,7 +88,7 @@ class BaseModelAdapter:
                 use_fast=False,
                 revision=revision,
                 trust_remote_code=True,
-                gptq_transformers_config=gptq_transformers_config
+                gptq_transformers_config=gptq_transformers_config,
             )
         try:
             model = AutoModelForCausalLM.from_pretrained(
@@ -96,7 +96,7 @@ class BaseModelAdapter:
                 from_pretrained_kwargs=from_pretrained_kwargs,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                gptq_transformers_config=gptq_transformers_config
+                gptq_transformers_config=gptq_transformers_config,
             )
         except NameError:
             model = AutoModel.from_pretrained(
@@ -104,7 +104,7 @@ class BaseModelAdapter:
                 from_pretrained_kwargs=from_pretrained_kwargs,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                gptq_transformers_config=gptq_transformers_config
+                gptq_transformers_config=gptq_transformers_config,
             )
         return model, tokenizer
 
@@ -868,7 +868,7 @@ class ChatGLMAdapter(BaseModelAdapter):
             model_path,
             from_pretrained_kwargs=from_pretrained_kwargs,
             trust_remote_code=True,
-            add_special_tokens=add_special_tokens
+            add_special_tokens=add_special_tokens,
             gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
@@ -1937,7 +1937,7 @@ class LLaMA2ChineseAlpacaAdapter(BaseModelAdapter):
             trust_remote_code=True,
             low_cpu_mem_usage=True,
         )
-        
+
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
