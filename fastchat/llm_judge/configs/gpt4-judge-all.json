@@ -1,0 +1,28 @@
+{
+    "output_dir": "outputs/single_gpt4-judge-all",
+    "model_judgment_fn": "data/mt_bench/model_judgment/gpt-4_single.jsonl",
+    "target_models": [
+        "llama-13b",
+        "alpaca-13b",
+        "vicuna-13b-v1.3",
+        "vicuna-33b-v1.3",
+        "Llama-2-70b-chat",
+        "palm-2-chat-bison-001",
+        "gpt-3.5-turbo",
+        "claude-v1",
+        "gpt-4",
+        "gpt-4-1106-preview"
+    ],
+    "rename_map": {
+        "llama-13b": "LLaMA-13B",
+        "alpaca-13b": "Alpaca-13B",
+        "vicuna-33b-v1.3": "Vicuna-33B",
+        "vicuna-13b-v1.3": "Vicuna-13B",
+        "Llama-2-70b-chat": "LLaMA-2-70B Chat",
+        "palm-2-chat-bison-001": "PaLM-2 Chat Bison",
+        "gpt-3.5-turbo": "GPT-3.5-turbo",
+        "claude-v1": "Claude-v1",
+        "gpt-4": "GPT-4",
+        "gpt-4-1106-preview": "GPT-4-turbo"
+    }
+}

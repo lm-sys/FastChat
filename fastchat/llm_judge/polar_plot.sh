@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python polar_plot.py \
-    --output_dir outputs/single_gpt4-turbo-judge \
-    --model_judgment_fn data/mt_bench/model_judgment/gpt-4-1106-preview_single.jsonl
+python polar_plot.py --cfg_fn ./configs/gpt4-judge-all.json
+python polar_plot.py --cfg_fn ./configs/gpt4-judge-gpt.json
+python polar_plot.py --cfg_fn ./configs/gpt4-turbo-judge.json
