@@ -1,8 +1,9 @@
 import json
+import argparse
+
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
-import fire
 
 CATEGORIES = [
     "Writing",
@@ -98,4 +99,9 @@ def make_polar_plot(cfg_fn: str):
 
 
 if __name__ == "__main__":
-    fire.Fire(make_polar_plot)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cfg_fn", type=str, required=True)
+    args = parser.parse_args()
+    print(args)
+
+    make_polar_plot(args.cfg_fn)
