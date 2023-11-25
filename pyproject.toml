@@ -24,6 +24,7 @@ webui = ["gradio"]
 train = ["einops", "flash-attn>=2.0", "wandb"]
 llm_judge = ["openai<1", "anthropic>=0.3", "ray"]
 dev = ["black==23.3.0", "pylint==2.8.2"]
+vision = ["pillow"]
 
 [project.urls]
 "Homepage" = "https://github.com/lm-sys/fastchat"
