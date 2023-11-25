@@ -22,7 +22,6 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SERVER_ERROR_MSG,
-    INACTIVE_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
@@ -37,7 +36,7 @@ from fastchat.serve.api_provider import (
 )
 from fastchat.utils import (
     build_logger,
-    violates_moderation,
+    moderation_filter,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,
@@ -139,12 +138,17 @@ def get_model_list(
         models += list(openai_compatible_models_info.keys())
 
     if add_chatgpt:
-        models += ["gpt-3.5-turbo", "gpt-4"]
+        models += ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
     if add_claude:
         models += ["claude-2", "claude-instant-1"]
     if add_palm:
         models += ["palm-2"]
     models = list(set(models))
+
+    if "deluxe-chat-v1" in models:
+        del models[models.index("deluxe-chat-v1")]
+    if "deluxe-chat-v1.1" in models:
+        del models[models.index("deluxe-chat-v1.1")]
 
     priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
@@ -170,7 +174,7 @@ def load_demo_single(models, url_params):
 def load_demo(url_params, request: gr.Request):
     global models
 
-    ip = request.client.host
+    ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
     ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
@@ -193,43 +197,56 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
             "type": vote_type,
             "model": model_selector,
             "state": state.dict(),
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"upvote. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"upvote. ip: {ip}")
     vote_last_response(state, "upvote", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def downvote_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"downvote. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"downvote. ip: {ip}")
     vote_last_response(state, "downvote", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def flag_last_response(state, model_selector, request: gr.Request):
-    logger.info(f"flag. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"flag. ip: {ip}")
     vote_last_response(state, "flag", model_selector, request)
     return ("",) + (disable_btn,) * 3
 
 
 def regenerate(state, request: gr.Request):
-    logger.info(f"regenerate. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"regenerate. ip: {ip}")
     state.conv.update_last_message(None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
-    logger.info(f"clear_history. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"clear_history. ip: {ip}")
     state = None
     return (state, [], "") + (disable_btn,) * 5
 
 
+def get_ip(request: gr.Request):
+    if "cf-connecting-ip" in request.headers:
+        ip = request.headers["cf-connecting-ip"]
+    else:
+        ip = request.client.host
+    return ip
+
+
 def add_text(state, model_selector, text, request: gr.Request):
-    ip = request.client.host
+    ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
@@ -239,23 +256,15 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
 
-    if ip_expiration_dict[ip] < time.time():
-        logger.info(f"inactive. ip: {request.client.host}. text: {text}")
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), INACTIVE_MSG) + (no_change_btn,) * 5
-
-    if enable_moderation:
-        flagged = violates_moderation(text)
-        if flagged:
-            logger.info(f"violate moderation. ip: {request.client.host}. text: {text}")
-            state.skip_next = True
-            return (state, state.to_gradio_chatbot(), MODERATION_MSG) + (
-                no_change_btn,
-            ) * 5
+    flagged = moderation_filter(text, [state.model_name])
+    if flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        # overwrite the original text
+        text = MODERATION_MSG
 
     conv = state.conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(f"conversation turn limit. ip: {request.client.host}. text: {text}")
+        logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
             no_change_btn,
@@ -317,7 +326,8 @@ def model_worker_stream_iter(
 
 
 def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request):
-    logger.info(f"bot_response. ip: {request.client.host}")
+    ip = get_ip(request)
+    logger.info(f"bot_response. ip: {ip}")
     start_tstamp = time.time()
     temperature = float(temperature)
     top_p = float(top_p)
@@ -330,12 +340,12 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         return
 
     conv, model_name = state.conv, state.model_name
-    if model_name == "gpt-3.5-turbo" or model_name == "gpt-4":
+    if model_name in ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]:
         prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "claude-2" or model_name == "claude-instant-1":
+    elif model_name in ["claude-2", "claude-1", "claude-instant-1"]:
         prompt = conv.get_prompt()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
@@ -405,8 +415,6 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
     try:
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
-                if i % 8 != 0:  # reduce gradio's overhead
-                    continue
                 output = data["text"].strip()
                 conv.update_last_message(output + "▌")
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -469,14 +477,14 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             "start": round(start_tstamp, 4),
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
-            "ip": request.client.host,
+            "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
 
 
 block_css = """
 #notice_markdown {
-    font-size: 104%
+    font-size: 110%
 }
 #notice_markdown th {
     display: none;
@@ -486,7 +494,7 @@ block_css = """
     padding-bottom: 6px;
 }
 #leaderboard_markdown {
-    font-size: 104%
+    font-size: 110%
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -494,6 +502,9 @@ block_css = """
 }
 #leaderboard_dataframe td {
     line-height: 0.1em;
+}
+#about_markdown {
+    font-size: 110%
 }
 #input_box textarea {
 }
@@ -511,6 +522,14 @@ footer {
     max-height: 100%;
     width: auto;
     max-width: 20%;
+}
+.image-about img {
+    margin: 0 30px;
+    margin-top:  30px;
+    height: 60px;
+    max-height: 100%;
+    width: auto;
+    float: left;
 }
 """
 
@@ -538,6 +557,44 @@ def get_model_description_md(models):
     return model_description_md
 
 
+def build_about():
+    about_markdown = f"""
+# About Us
+Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our code at [GitHub](https://github.com/lm-sys/FastChat) and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
+
+## Read More
+- Chatbot Arena [launch post](https://lmsys.org/blog/2023-05-03-arena/), [data release](https://lmsys.org/blog/2023-07-20-dataset/)
+- LMSYS-Chat-1M [report](https://arxiv.org/abs/2309.11998)
+
+## Core Members
+[Lianmin Zheng](https://lmzheng.net/), [Wei-Lin Chiang](https://infwinston.github.io/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ)
+
+## Advisors
+[Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
+
+## Contact Us
+- Follow our [Twitter](https://twitter.com/lmsysorg), [Discord](https://discord.gg/HSWAKCrnFx) or email us at lmsys.org@gmail.com
+- File issues on [GitHub](https://github.com/lm-sys/FastChat)
+- Download our datasets and models on [HuggingFace](https://huggingface.co/lmsys)
+
+## Sponsors
+We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
+Learn more about partnership [here](https://lmsys.org/donations/).
+
+<div class="image-about">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
+    <img src="https://upload.wikimedia.org/wikipedia/en/5/55/Mohamed_bin_Zayed_University_of_Artificial_Intelligence_logo.png" alt="Image 2">
+    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="Image 4">
+</div>
+"""
+
+    # state = gr.State()
+    gr.Markdown(about_markdown, elem_id="about_markdown")
+
+    # return [state]
+
+
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
         """
@@ -553,7 +610,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 # 🏔️ Chat with Open Large Language Models
 {promotion}
 
-### Choose a model to chat with
+## Choose any model to chat
 """
 
     state = gr.State()
@@ -578,7 +635,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         with gr.Column(scale=20):
             textbox = gr.Textbox(
                 show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
+                placeholder="👉 Enter your prompt and press ENTER",
                 container=False,
                 elem_id="input_box",
             )

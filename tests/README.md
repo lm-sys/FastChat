@@ -1,5 +1,4 @@
 ## Unit tests for FastChat
-The scripts are under [FastChat/tests](../../tests).
 
 ### Test CLI Inference
 

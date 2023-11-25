@@ -14,7 +14,7 @@ from typing import Optional
 import openai
 import anthropic
 
-from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
 # API setting constants
 API_MAX_RETRY = 16
@@ -161,7 +161,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
 
     if model in ["gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"]:
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ["claude-v1", "claude-instant-v1"]:
+    elif model in ANTHROPIC_MODEL_LIST:
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
@@ -265,7 +265,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     if model in ["gpt-3.5-turbo", "gpt-4"]:
         conv.set_system_message(system_prompt)
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ["claude-v1", "claude-instant-v1"]:
+    elif model in ANTHROPIC_MODEL_LIST:
         if system_prompt != "You are a helpful assistant.":
             user_prompt = "[Instruction]\n" + system_prompt + "\n\n" + user_prompt
             conv.messages[0][1] = user_prompt
@@ -400,7 +400,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
-def chat_compeletion_openai(model, conv, temperature, max_tokens):
+def chat_compeletion_openai(model, conv, temperature, max_tokens, api_dict=None):
+    if api_dict is not None:
+        openai.api_base = api_dict["api_base"]
+        openai.api_key = api_dict["api_key"]
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
@@ -421,11 +424,15 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
     return output
 
 
-def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
+def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
     openai.api_type = "azure"
-    openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
-    openai.api_key = os.environ["AZURE_OPENAI_KEY"]
-    openai.api_version = "2023-05-15"
+    openai.api_version = "2023-07-01-preview"
+    if api_dict is not None:
+        openai.api_base = api_dict["api_base"]
+        openai.api_key = api_dict["api_key"]
+    else:
+        openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
+        openai.api_key = os.environ["AZURE_OPENAI_KEY"]
 
     if "azure-" in model:
         model = model[6:]
@@ -446,6 +453,12 @@ def chat_compeletion_openai_azure(model, conv, temperature, max_tokens):
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
+        except openai.error.InvalidRequestError as e:
+            print(type(e), e)
+            break
+        except KeyError:
+            print(response)
+            break
 
     return output
 
