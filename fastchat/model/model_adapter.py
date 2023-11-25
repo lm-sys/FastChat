@@ -61,8 +61,6 @@ ANTHROPIC_MODEL_LIST = (
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
-    use_fast_tokenizer = True
-
     def match(self, model_path: str):
         return True
 
@@ -73,37 +71,23 @@ class BaseModelAdapter:
         gptq_transformers_config: Optional[GPTQConfig] = None,
     ):
         """Load a model for causal LM."""
+        revision = from_pretrained_kwargs.get("revision", "main")
         try:
             model, tokenizer = get_model_for_causal_lm(
                 model_path,
                 from_pretrained_kwargs=from_pretrained_kwargs,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                use_fast_tokenizer=self.use_fast_tokenizer,
+                use_fast_tokenizer=True,
                 gptq_transformers_config=gptq_transformers_config,
             )
-        except TypeError:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=False,
-                revision=revision,
-                trust_remote_code=True,
-                gptq_transformers_config=gptq_transformers_config,
-            )
-        try:
-            model = AutoModelForCausalLM.from_pretrained(
+        except NameError or TypeError:
+            model, tokenizer = get_model_for_causal_lm(
                 model_path,
                 from_pretrained_kwargs=from_pretrained_kwargs,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                gptq_transformers_config=gptq_transformers_config,
-            )
-        except NameError:
-            model = AutoModel.from_pretrained(
-                model_path,
-                from_pretrained_kwargs=from_pretrained_kwargs,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True,
+                use_fast_tokenizer=False,
                 gptq_transformers_config=gptq_transformers_config,
             )
         return model, tokenizer
@@ -691,8 +675,6 @@ class PeftModelAdapter:
 class VicunaAdapter(BaseModelAdapter):
     "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.5)" ""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return "vicuna" in model_path.lower()
 
@@ -706,7 +688,7 @@ class VicunaAdapter(BaseModelAdapter):
             model_path,
             from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            use_fast_tokenizer=self.use_fast_tokenizer,
+            use_fast_tokenizer=False,
         )
         self.raise_warning_for_old_weights(model)
         return model, tokenizer
@@ -769,8 +751,6 @@ class AiroborosAdapter(BaseModelAdapter):
 class LongChatAdapter(BaseModelAdapter):
     "Model adapter for LongChat models (e.g., lmsys/longchat-7b-16k)."
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return "longchat" in model_path.lower()
 
@@ -790,7 +770,7 @@ class LongChatAdapter(BaseModelAdapter):
             model_path,
             from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            use_fast_tokenizer=self.use_fast_tokenizer,
+            use_fast_tokenizer=False,
             gptq_transformers_config=gptq_transformers_config,
         )
         return model, tokenizer
@@ -1331,8 +1311,6 @@ class ManticoreAdapter(BaseModelAdapter):
 class GuanacoAdapter(BaseModelAdapter):
     """The model adapter for timdettmers/guanaco-33b-merged"""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return "guanaco" in model_path.lower()
 
@@ -1346,7 +1324,7 @@ class GuanacoAdapter(BaseModelAdapter):
             model_path,
             from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            use_fast_tokenizer=self.use_fast_tokenizer,
+            use_fast_tokenizer=False,
             gptq_transformers_config=gptq_transformers_config,
         )
         # Fix a bug in tokenizer config
@@ -1637,8 +1615,6 @@ class OpenOrcaAdapter(BaseModelAdapter):
         - [Open-Orca/Mistral-7B-OpenOrca #Prompt Template](https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca#prompt-template)
     """
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return (
             "mistral-7b-openorca" in model_path.lower()
@@ -1655,7 +1631,7 @@ class OpenOrcaAdapter(BaseModelAdapter):
             model_path,
             from_pretrained_kwargs=from_pretrained_kwargs,
             low_cpu_mem_usage=True,
-            use_fast_tokenizer=True,
+            use_fast_tokenizer=False,
             eval=True,
             gptq_transformers_config=gptq_transformers_config,
         )
@@ -1791,8 +1767,6 @@ class QwenChatAdapter(BaseModelAdapter):
 class BGEAdapter(BaseModelAdapter):
     """The model adapter for BGE (e.g., BAAI/bge-large-en-v1.5)"""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return "bge" in model_path.lower()
 
@@ -1806,6 +1780,7 @@ class BGEAdapter(BaseModelAdapter):
             model_path,
             gptq_transformers_config=gptq_transformers_config,
             from_pretrained_kwargs=from_pretrained_kwargs,
+            use_fast_tokenizer=False,
             trust_remote_code=True,
         )
         if hasattr(model.config, "max_position_embeddings") and hasattr(
@@ -1823,8 +1798,6 @@ class BGEAdapter(BaseModelAdapter):
 class E5Adapter(BaseModelAdapter):
     """The model adapter for E5 (e.g., intfloat/e5-large-v2)"""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return "e5-" in model_path.lower()
 
@@ -1838,6 +1811,7 @@ class E5Adapter(BaseModelAdapter):
             model_path,
             gptq_transformers_config=gptq_transformers_config,
             from_pretrained_kwargs=from_pretrained_kwargs,
+            use_fast_tokenizer=False,
             trust_remote_code=True,
         )
         if hasattr(model.config, "max_position_embeddings") and hasattr(
@@ -1947,8 +1921,6 @@ class LLaMA2ChineseAlpacaAdapter(BaseModelAdapter):
 class VigogneAdapter(BaseModelAdapter):
     """The model adapter for vigogne (e.g., bofenghuang/vigogne-2-7b-chat)"""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return bool(re.search(r"vigogne|vigostral", model_path, re.I))
 
@@ -1965,7 +1937,7 @@ class VigogneAdapter(BaseModelAdapter):
             trust_remote_code=True,
             low_cpu_mem_usage=True,
             eval=True,
-            use_fast_tokenizer=self.use_fast_tokenizer,
+            use_fast_tokenizer=False,
         )
         return model, tokenizer
 
@@ -2007,8 +1979,6 @@ class VigogneChatAdapter(BaseModelAdapter):
 class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
     """The model adapter for OpenLLaMa-Open-Instruct (e.g., VMware/open-llama-7b-open-instruct)"""
 
-    use_fast_tokenizer = False
-
     def match(self, model_path: str):
         return (
             "open-llama" in model_path.lower() and "open-instruct" in model_path.lower()
@@ -2027,7 +1997,7 @@ class OpenLLaMaOpenInstructAdapter(BaseModelAdapter):
             trust_remote_code=True,
             low_cpu_mem_usage=True,
             eval=True,
-            use_fast_tokenizer=self.use_fast_tokenizer,
+            use_fast_tokenizer=False,
         )
         return model, tokenizer
 
