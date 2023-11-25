@@ -516,6 +516,11 @@ def add_model_args(parser):
         help="Used for exllamabv2. Comma-separated list of VRAM (in GB) to use per GPU. Example: 20,7,7",
     )
     parser.add_argument(
+        "--exllama-cache-8bit",
+        action="store_true",
+        help="Used for exllamabv2. Use 8-bit cache to save VRAM.",
+    )
+    parser.add_argument(
         "--enable-xft",
         action="store_true",
         help="Used for xFasterTransformer Enable xFasterTransformer inference framework.",
@@ -1484,6 +1489,33 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return get_conv_template("open-orca")
 
 
+class Hermes2Adapter(BaseModelAdapter):
+    """Model adapter for teknium/OpenHermes-2.5-Mistral-7B and teknium/OpenHermes-2-Mistral-7B models"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return (
+            "openhermes-2.5-mistral-7b"
+            or "openhermes-2-mistral-7b" in model_path.lower()
+        )
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=self.use_fast_tokenizer, revision=revision
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        ).eval()
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("OpenHermes-2.5-Mistral-7B")
+
+
 class WizardCoderAdapter(BaseModelAdapter):
     """The model adapter for WizardCoder (e.g., WizardLM/WizardCoder-Python-34B-V1.0)"""
 
@@ -1798,6 +1830,22 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class StableVicunaAdapter(BaseModelAdapter):
+    """The model adapter for StableVicuna"""
+
+    def match(self, model_path: str):
+        return "stable-vicuna" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("stable-vicuna")
+
+
 class PhindCodeLlamaAdapter(CodeLlamaAdapter):
     """The model adapter for Phind-CodeLlama (e.g., Phind/Phind-CodeLlama-34B-v2)"""
 
@@ -1921,9 +1969,20 @@ class MicrosoftOrcaAdapter(BaseModelAdapter):
         return get_conv_template("orca-2")
 
 
+class YiAdapter(BaseModelAdapter):
+    """The model adapter for Yi models"""
+
+    def match(self, model_path: str):
+        return "yi-34b-chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("Yi-34b-chat")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
+register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
@@ -1970,6 +2029,7 @@ register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
+register_model_adapter(Hermes2Adapter)
 register_model_adapter(MistralAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
@@ -1990,6 +2050,7 @@ register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
+register_model_adapter(YiAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
