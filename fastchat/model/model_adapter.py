@@ -1893,7 +1893,7 @@ class AquilaChatAdapter(BaseModelAdapter):
             return get_conv_template("aquila-chat")
 
 
-class Lamma2ChineseAdapter(BaseModelAdapter):
+class LLaMA2ChineseAdapter(BaseModelAdapter):
     """The model adapter for FlagAlpha/LLama2-Chinese sft"""
 
     def match(self, model_path: str):
@@ -1918,7 +1918,7 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
         return get_conv_template("llama2-chinese")
 
 
-class Lamma2ChineseAlpacaAdapter(BaseModelAdapter):
+class LLaMA2ChineseAlpacaAdapter(BaseModelAdapter):
     """The model adapter for ymcui/Chinese-LLaMA-Alpaca sft"""
 
     def match(self, model_path: str):
@@ -2221,8 +2221,8 @@ register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)
-register_model_adapter(Lamma2ChineseAdapter)
-register_model_adapter(Lamma2ChineseAlpacaAdapter)
+register_model_adapter(LLaMA2ChineseAdapter)
+register_model_adapter(LLaMA2ChineseAlpacaAdapter)
 register_model_adapter(VigogneAdapter)
 register_model_adapter(OpenLLaMaOpenInstructAdapter)
 register_model_adapter(ReaLMAdapter)
