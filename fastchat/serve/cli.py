@@ -2,7 +2,7 @@
 Chat with a model with command line interface.
 
 Usage:
-python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.5
 python3 -m fastchat.serve.cli --model lmsys/fastchat-t5-3b-v1.0
 
 Other commands:
@@ -33,6 +33,7 @@ from transformers import GPTQConfig
 from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.awq import AWQConfig
 from fastchat.modules.exllama import ExllamaConfig
+from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.inference import ChatIO, chat_loop
 from fastchat.utils import str_to_torch_dtype
@@ -202,9 +203,20 @@ def main(args):
         exllama_config = ExllamaConfig(
             max_seq_len=args.exllama_max_seq_len,
             gpu_split=args.exllama_gpu_split,
+            cache_8bit=args.exllama_cache_8bit,
         )
     else:
         exllama_config = None
+    if args.enable_xft:
+        xft_config = XftConfig(
+            max_seq_len=args.xft_max_seq_len,
+            data_type=args.xft_dtype,
+        )
+        if args.device != "cpu":
+            print("xFasterTransformer now is only support CPUs. Reset device to CPU")
+            args.device = "cpu"
+    else:
+        xft_config = None
     if args.style == "simple":
         chatio = SimpleChatIO(args.multiline)
     elif args.style == "rich":
@@ -244,6 +256,7 @@ def main(args):
                 groupsize=args.awq_groupsize,
             ),
             exllama_config=exllama_config,
+            xft_config=xft_config,
             revision=args.revision,
             judge_sent_end=args.judge_sent_end,
             debug=args.debug,

@@ -1,4 +1,4 @@
-# ExllamaV2 GPTQ Inference Franework
+# ExllamaV2 GPTQ Inference Framework
 
 Integrated [ExllamaV2](https://github.com/turboderp/exllamav2) customized kernel into Fastchat to provide **Faster** GPTQ inference speed.
 
@@ -40,6 +40,8 @@ python3 -m fastchat.serve.model_worker \
     --exllama-max-seq-len 2048 \
     --exllama-gpu-split 18,24
 ```
+
+`--exllama-cache-8bit` can be used to enable 8-bit caching with exllama and save some VRAM.
 
 ## Performance 
 
