@@ -3,14 +3,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
+import fire
 
 CATEGORIES = ["Writing", "Roleplay", "Reasoning", "Math", "Coding", "Extraction", "STEM", "Humanities"]
 
 
-def get_model_df():
+def get_model_df(model_judgment_fn):
     cnt = 0
     q2result = []
-    fin = open("data/mt_bench/model_judgment/gpt-4_single-download.jsonl", "r")
+    fin = open(model_judgment_fn, "r")
     for line in fin:
         obj = json.loads(line)
         obj["category"] = CATEGORIES[(obj["question_id"]-81)//10]
@@ -25,13 +26,13 @@ def toggle(res_str):
         return "win"
     return "tie"
 
-if __name__ == "__main__":
+def make_polar_plot(output_dir: str, model_judgment_fn: str):
     # Output directory
-    output_dir = Path("outputs") / "single_2"
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Open the jsonl file
-    df = get_model_df()
+    df = get_model_df(model_judgment_fn)
     all_models = df["model"].unique()
     print(all_models)
     scores_all = []
@@ -88,3 +89,6 @@ if __name__ == "__main__":
         ),
     )
     fig.write_image(output_dir / "polar_plot.png", width=800, height=600, scale=2)
+
+if __name__ == "__main__":
+    fire.Fire(make_polar_plot)
