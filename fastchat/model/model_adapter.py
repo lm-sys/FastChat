@@ -1481,9 +1481,9 @@ class Hermes2Adapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return (
-            "openhermes-2.5-mistral-7b"
-            or "openhermes-2-mistral-7b" in model_path.lower()
+        return any(
+            model_str in model_path.lower()
+            for model_str in ["openhermes-2.5-mistral-7b", "openhermes-2-mistral-7b"]
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
