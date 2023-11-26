@@ -216,7 +216,7 @@ def load_model(
 
         version = tuple(int(v) for v in transformers.__version__.split("."))
         if version < (4, 35, 0):
-            # NOTE: Recent transformers library seems has fix the mps issue, also
+            # NOTE: Recent transformers library seems to fix the mps issue, also
             # it has made some changes causing compatibility issues with our
             # original patch. So we only apply the patch for older versions.
 
