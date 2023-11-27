@@ -872,7 +872,11 @@ class OpenChat35Adapter(BaseModelAdapter):
     """The model adapter for OpenChat 3.5 (e.g. openchat/openchat_3.5)"""
 
     def match(self, model_path: str):
-        return "openchat" in model_path.lower() and "3.5" in model_path.lower()
+        if "openchat" in model_path.lower() and "3.5" in model_path.lower():
+            return True
+        elif "starling-lm" in model_path.lower():
+            return True
+        return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("openchat_3.5")
