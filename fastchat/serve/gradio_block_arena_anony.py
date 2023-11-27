@@ -29,6 +29,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     ip_expiration_dict,
     get_ip,
+    get_model_description_md,
 )
 from fastchat.utils import (
     build_logger,
@@ -160,14 +161,16 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
-    "gpt-4-turbo": 8,
+    "gpt-4-turbo": 4,
     "gpt-3.5-turbo": 2,
     "gpt-3.5-turbo-1106": 4,
     "claude-2.1": 4,
-    "claude-2.0": 4,
-    "claude-1": 4,
+    "claude-2.0": 2,
+    "claude-1": 2,
     "claude-instant-1": 4,
+    "wizardlm-70b": 4,
     "tulu-2-dpo-70b": 2,
+    "yi-34b-chat": 2,
     "zephyr-7b-beta": 2,
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
@@ -179,7 +182,6 @@ SAMPLING_WEIGHTS = {
     "codellama-34b-instruct": 1.5,
     "vicuna-33b": 4,
     "vicuna-13b": 1.5,
-    "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
     "qwen-14b-chat": 1.5,
     "mistral-7b-instruct": 1.5,
@@ -218,6 +220,7 @@ BATTLE_TARGETS = {
     "claude-instant-1": {"gpt-3.5-turbo", "claude-2.1"},
     "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
     "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "yi-34b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
     "chatglm3-6b": {"chatglm2-6b", "qwen-14b-chat", "gpt-3.5-turbo"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
@@ -245,16 +248,17 @@ BATTLE_TARGETS = {
 
 SAMPLING_BOOST_MODELS = [
     "tulu-2-dpo-70b",
-    "openchat-3.5",
-    #"gpt-4-turbo",
+    "yi-34b-chat",
     "claude-2.1",
+    "wizardlm-70b",
+    #"openchat-3.5",
+    #"gpt-4-turbo",
     #"claude-1",
 ]
 
 # outage models won't be sampled.
 OUTAGE_MODELS = [
     "zephyr-7b-alpha",
-    "wizardlm-70b",
     "falcon-180b-chat",
     "deluxe-chat-v1.1",
     "gpt-3.5-turbo-1106",
@@ -527,6 +531,10 @@ Find out who is the 🥇LLM Champion!
             interactive=True,
             label="Max output tokens",
         )
+
+    with gr.Accordion("Expand to see all model candidates", open=False):
+        model_description_md = get_model_description_md(models)
+        gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 

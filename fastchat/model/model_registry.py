@@ -74,6 +74,12 @@ register_model_info(
     "Tulu 2 by UW/AllenAI",
 )
 register_model_info(
+    ["yi-34b-chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai/Yi-34B-Chat",
+    "A large language model by 01 AI",
+)
+register_model_info(
     [
         "vicuna-33b",
         "vicuna-33b-v1.3",
@@ -404,9 +410,3 @@ register_model_info(
     "Chat models developed by BAAI team",
 )
 
-register_model_info(
-    ["Yi-34B-Chat"],
-    "Yi-Chat",
-    "https://huggingface.co/01-ai",
-    "A large language model by 01.AI.",
-)
