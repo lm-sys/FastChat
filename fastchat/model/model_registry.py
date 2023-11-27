@@ -74,7 +74,7 @@ register_model_info(
     "Tulu 2 by UW/AllenAI",
 )
 register_model_info(
-    ["yi-34b-chat"],
+    ["yi-34b-chat", "yi-6b-chat"],
     "Yi-Chat",
     "https://huggingface.co/01-ai/Yi-34B-Chat",
     "A large language model by 01 AI",
@@ -199,6 +199,12 @@ register_model_info(
     "PaLM 2 Chat",
     "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
     "PaLM 2 for Chat (chat-bison@001) by Google",
+)
+register_model_info(
+    ["starling-lm-7b-alpha"],
+    "Starling-LM-7B-alpha",
+    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
+    "an open model trained using RLAIF by Berkeley",
 )
 register_model_info(
     ["llama-7b", "llama-13b"],
