@@ -192,7 +192,7 @@ register_model_info(
     ["starling-lm-7b-alpha"],
     "Starling-LM-7B-alpha",
     "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
-    "an open model trained by RLAIF",
+    "an open model trained using RLAIF by Berkeley",
 )
 register_model_info(
     ["llama-7b", "llama-13b"],
