@@ -108,7 +108,8 @@ class VLLMWorker(BaseModelWorker):
             frequency_penalty=frequency_penalty,
             best_of=best_of,
         )
-        results_generator = engine.generate(context, sampling_params, request_id)
+        token_ids = self.tokenizer(context).input_ids
+        results_generator = engine.generate(context, sampling_params, request_id, token_ids)
 
         async for request_output in results_generator:
             prompt = request_output.prompt
