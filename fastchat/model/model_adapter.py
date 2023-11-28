@@ -1934,6 +1934,16 @@ class YiAdapter(BaseModelAdapter):
         return get_conv_template("Yi-34b-chat")
 
 
+class MetaMathAdapter(BaseModelAdapter):
+    """The model adapter for MetaMath models"""
+
+    def match(self, model_path: str):
+        return "metamath" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("metamath")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2005,6 +2015,7 @@ register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
 register_model_adapter(YiAdapter)
+register_model_adapter(MetaMathAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
