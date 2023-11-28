@@ -102,6 +102,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cfg_fn", type=str, required=True)
     args = parser.parse_args()
-    print(args)
 
+    print(f"Make polar plot with {args.cfg_fn}...")
     make_polar_plot(args.cfg_fn)
