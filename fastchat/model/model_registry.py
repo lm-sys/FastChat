@@ -410,3 +410,10 @@ register_model_info(
     "https://huggingface.co/01-ai",
     "A large language model by 01.AI.",
 )
+
+register_model_info(
+    ["MetaMath-70B-V1.0", "MetaMath-7B-V1.0"],
+    "MetaMath",
+    "https://huggingface.co/meta-math",
+    "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)
