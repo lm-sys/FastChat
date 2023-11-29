@@ -638,7 +638,7 @@ def build_single_model_ui(models, add_promotion_links=False):
                 container=False,
             )
         with gr.Row():
-            with gr.Accordion("Expand to see model descriptions", open=False):
+            with gr.Accordion("🔍 Expand to see 20+ model descriptions", open=False, elem_id="model_description_accordion"):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
 

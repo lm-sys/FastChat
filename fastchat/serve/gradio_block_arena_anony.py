@@ -168,7 +168,8 @@ SAMPLING_WEIGHTS = {
     "claude-2.0": 2,
     "claude-1": 2,
     "claude-instant-1": 4,
-    "wizardlm-70b": 4,
+    "wizardlm-70b": 2,
+    "starling-lm-7b-alpha": 2,
     "tulu-2-dpo-70b": 2,
     "yi-34b-chat": 2,
     "zephyr-7b-beta": 2,
@@ -219,6 +220,7 @@ BATTLE_TARGETS = {
     "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
     "claude-instant-1": {"gpt-3.5-turbo", "claude-2.1"},
     "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
+    "starling-lm-7b-alpha": {"gpt-3.5-turbo", "openchat-3.5", "tulu-2-dpo-70b"},
     "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "yi-34b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
@@ -251,6 +253,7 @@ SAMPLING_BOOST_MODELS = [
     "yi-34b-chat",
     "claude-2.1",
     "wizardlm-70b",
+    "starling-lm-7b-alpha",
     #"openchat-3.5",
     #"gpt-4-turbo",
     #"claude-1",
@@ -465,6 +468,9 @@ Find out who is the 🥇LLM Champion!
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Box(elem_id="share-region-anony"):
+        with gr.Accordion("🔍 Expand to see 20+ Arena players", open=False):
+            model_description_md = get_model_description_md(models)
+            gr.Markdown(model_description_md, elem_id="model_description_markdown")
         with gr.Row():
             for i in range(num_sides):
                 label = "Model A" if i == 0 else "Model B"
@@ -532,9 +538,6 @@ Find out who is the 🥇LLM Champion!
             label="Max output tokens",
         )
 
-    with gr.Accordion("Expand to see all model candidates", open=False):
-        model_description_md = get_model_description_md(models)
-        gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 

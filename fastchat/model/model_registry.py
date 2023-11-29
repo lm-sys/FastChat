@@ -68,6 +68,12 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
+    ["starling-lm-7b-alpha"],
+    "Starling-LM-7B-alpha",
+    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
+    "an open model trained using RLAIF by Berkeley",
+)
+register_model_info(
     ["tulu-2-dpo-70b"],
     "Tulu 2",
     "https://huggingface.co/allenai/tulu-2-dpo-70b",
@@ -199,12 +205,6 @@ register_model_info(
     "PaLM 2 Chat",
     "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
     "PaLM 2 for Chat (chat-bison@001) by Google",
-)
-register_model_info(
-    ["starling-lm-7b-alpha"],
-    "Starling-LM-7B-alpha",
-    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
-    "an open model trained using RLAIF by Berkeley",
 )
 register_model_info(
     ["llama-7b", "llama-13b"],
