@@ -1933,6 +1933,7 @@ class YiAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("Yi-34b-chat")
 
+
 class DeepseekCoderAdapter(BaseModelAdapter):
     """The model adapter for deepseek-ai's coder models"""
 
@@ -1941,6 +1942,7 @@ class DeepseekCoderAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("deepseek-coder")
+
 
 class DeepseekChatAdapter(BaseModelAdapter):
     """The model adapter for deepseek-ai's chat models"""

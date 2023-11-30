@@ -1280,7 +1280,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="deepseek-chat",
-        system_message="<｜begin▁of▁sentence｜>", # must add a bos token before first message
+        system_message="<｜begin▁of▁sentence｜>",  # must add a bos token before first message
         roles=("User", "Assistant"),
         sep_style=SeparatorStyle.DEEPSEEK_CHAT,
         sep="\n\n",
