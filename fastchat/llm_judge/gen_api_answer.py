@@ -18,10 +18,11 @@ from fastchat.llm_judge.common import (
     temperature_config,
     chat_compeletion_openai,
     chat_compeletion_anthropic,
+    chat_completion_cohere,
     chat_compeletion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
-from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
+from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST, COHERE_MODEL_LIST
 
 
 def get_answer(
@@ -51,6 +52,10 @@ def get_answer(
 
             if model in ANTHROPIC_MODEL_LIST:
                 output = chat_compeletion_anthropic(
+                    model, conv, temperature, max_tokens
+                )
+            elif model in COHERE_MODEL_LIST:
+                output = chat_completion_cohere(
                     model, conv, temperature, max_tokens
                 )
             elif model == "palm-2-chat-bison-001":
