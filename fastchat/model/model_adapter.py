@@ -56,6 +56,13 @@ ANTHROPIC_MODEL_LIST = (
     "claude-instant-1",
 )
 
+COHERE_MODEL_LIST = (
+    "command",
+    "command-light",
+    "command-nightly",
+    "command-nightly-light",
+    "command-52b-v15-6-qa9cubq7-op-from-r2v6ya5f-p",
+)
 
 class BaseModelAdapter:
     """The base and the default model adapter."""
@@ -1057,6 +1064,19 @@ class ClaudeAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("claude")
+    
+
+class CohereAdapter(BaseModelAdapter):
+    """The model adapter for Cohere"""
+
+    def match(self, model_path: str):
+        return model_path in COHERE_MODEL_LIST
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cohere")
 
 
 class BardAdapter(BaseModelAdapter):
@@ -1960,6 +1980,7 @@ register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
+register_model_adapter(CohereAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)

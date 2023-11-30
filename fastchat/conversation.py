@@ -29,6 +29,7 @@ class SeparatorStyle(IntEnum):
     ROBIN = auto()
     FALCON_CHAT = auto()
     CHATGLM3 = auto()
+    COHERE = auto()
 
 
 @dataclasses.dataclass
@@ -214,6 +215,17 @@ class Conversation:
                     ret += role + ":\n"
             return ret
         elif self.sep_style == SeparatorStyle.FALCON_CHAT:
+            ret = ""
+            if self.system_message:
+                ret += system_prompt + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ":"
+
+            return ret
+        elif self.sep_style == SeparatorStyle.COHERE:
             ret = ""
             if self.system_message:
                 ret += system_prompt + self.sep
@@ -665,6 +677,18 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+# Cohere default template
+register_conv_template(
+    Conversation(
+        name="cohere",
+        roles=("User", "Chatbot"),
+        system_template="System: {system_message}",
+        sep_style=SeparatorStyle.COHERE,
+        sep="\n",
+        stop_str="\nUser:",
     )
 )
 
