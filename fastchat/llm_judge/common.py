@@ -15,7 +15,11 @@ import openai
 import anthropic
 import cohere
 
-from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST, COHERE_MODEL_LIST
+from fastchat.model.model_adapter import (
+    get_conversation_template,
+    ANTHROPIC_MODEL_LIST,
+    COHERE_MODEL_LIST,
+)
 
 # API setting constants
 API_MAX_RETRY = 16
@@ -167,9 +171,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
             model, conv, temperature=0, max_tokens=1024
         )
     elif model in COHERE_MODEL_LIST:
-        judgment = chat_completion_cohere(
-            model, conv, temperature=0, max_tokens=1024
-        )
+        judgment = chat_completion_cohere(model, conv, temperature=0, max_tokens=1024)
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
@@ -498,7 +500,10 @@ def chat_completion_cohere(model, conv, temperature, max_tokens):
             # Convert to Cohere chat_history format (see https://docs.cohere.com/docs/cochat-beta)
             chat_history = [{"user_name": m[0], "text": m[1]} for m in conv.messages]
             # The last message is ['Chatbot', None], which is not needed
-            if chat_history[-1]["user_name"] == conv.roles[1] and chat_history[-1]["text"] is None:
+            if (
+                chat_history[-1]["user_name"] == conv.roles[1]
+                and chat_history[-1]["text"] is None
+            ):
                 chat_history = chat_history[:-1]
             else:
                 raise ValueError("The last message is not ['Chatbot', None]")
