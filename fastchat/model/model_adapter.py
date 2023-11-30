@@ -1933,6 +1933,26 @@ class YiAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("Yi-34b-chat")
 
+class DeepseekCoderAdapter(BaseModelAdapter):
+    """The model adapter for deepseek-ai's coder models"""
+
+    def match(self, model_path: str):
+        return "deepseek-coder" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("deepseek-coder")
+
+class DeepseekChatAdapter(BaseModelAdapter):
+    """The model adapter for deepseek-ai's chat models"""
+
+    # Note: that this model will require tokenizer version >= 0.13.3 because the tokenizer class is LlamaTokenizerFast
+
+    def match(self, model_path: str):
+        return "deepseek-llm" in model_path.lower() and "chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("deepseek-chat")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -2005,6 +2025,8 @@ register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
 register_model_adapter(YiAdapter)
+register_model_adapter(DeepseekCoderAdapter)
+register_model_adapter(DeepseekChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
