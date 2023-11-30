@@ -67,6 +67,7 @@ COHERE_MODEL_LIST = (
     "command-52b-v15-6-qa9cubq7-op-from-r2v6ya5f-p",
 )
 
+
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
@@ -1067,7 +1068,7 @@ class ClaudeAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("claude")
-    
+
 
 class CohereAdapter(BaseModelAdapter):
     """The model adapter for Cohere"""
