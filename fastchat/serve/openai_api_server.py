@@ -10,7 +10,6 @@ python3 -m fastchat.serve.openai_api_server
 import asyncio
 import argparse
 import json
-import logging
 import os
 from typing import Generator, Optional, Union, Dict, List, Any
 
