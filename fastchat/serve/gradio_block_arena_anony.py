@@ -163,11 +163,12 @@ SAMPLING_WEIGHTS = {
     "gpt-4": 4,
     "gpt-4-turbo": 4,
     "gpt-3.5-turbo": 2,
-    "gpt-3.5-turbo-1106": 4,
+    "gpt-3.5-turbo-1106": 2,
     "claude-2.1": 4,
     "claude-2.0": 2,
     "claude-1": 2,
     "claude-instant-1": 4,
+    "openhermes-2.5-mistral-7b": 2,
     "wizardlm-70b": 2,
     "starling-lm-7b-alpha": 2,
     "tulu-2-dpo-70b": 2,
@@ -176,7 +177,7 @@ SAMPLING_WEIGHTS = {
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.1": 2,
+    "deluxe-chat-v1.1": 4,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
@@ -212,19 +213,20 @@ SAMPLING_WEIGHTS = {
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
     "gpt-4": {"claude-2.1", "gpt-4-turbo"},
-    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "claude-2.1"},
+    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-1106", "claude-2.1"},
     "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"claude-instant-1", "gpt-3.5-turbo"},
     "claude-2.1": {"gpt-4-turbo", "gpt-4", "claude-1"},
     "claude-2.0": {"gpt-4-turbo", "gpt-4", "claude-1"},
     "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
-    "claude-instant-1": {"gpt-3.5-turbo", "claude-2.1"},
+    "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
     "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
-    "starling-lm-7b-alpha": {"gpt-3.5-turbo", "openchat-3.5", "tulu-2-dpo-70b"},
+    "openhermes-2.5-mistral-7b": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
+    "starling-lm-7b-alpha": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
     "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "yi-34b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
-    "chatglm3-6b": {"chatglm2-6b", "qwen-14b-chat", "gpt-3.5-turbo"},
+    "chatglm3-6b": {"yi-34b-chat", "qwen-14b-chat"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
     "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
     "zephyr-7b-beta": {
@@ -254,6 +256,8 @@ SAMPLING_BOOST_MODELS = [
     "claude-2.1",
     "wizardlm-70b",
     "starling-lm-7b-alpha",
+    "openhermes-2.5-mistral-7b",
+    "gpt-3.5-turbo-1106",
     #"openchat-3.5",
     #"gpt-4-turbo",
     #"claude-1",
@@ -263,8 +267,6 @@ SAMPLING_BOOST_MODELS = [
 OUTAGE_MODELS = [
     "zephyr-7b-alpha",
     "falcon-180b-chat",
-    "deluxe-chat-v1.1",
-    "gpt-3.5-turbo-1106",
 ]
 
 

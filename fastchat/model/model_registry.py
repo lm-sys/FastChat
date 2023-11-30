@@ -68,6 +68,12 @@ register_model_info(
     "Claude Instant by Anthropic",
 )
 register_model_info(
+    ["openhermes-2.5-mistral-7b"],
+    "OpenHermes-2.5-Mistral-7B",
+    "https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B",
+    "a mistral-based model fine-tuned on 1M GPT-4 outputs",
+)
+register_model_info(
     ["starling-lm-7b-alpha"],
     "Starling-LM-7B-alpha",
     "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
