@@ -39,24 +39,30 @@ pip install --upgrade openai
 
 Then, interact with model vicuna:
 ```python
-import openai
+from openai import OpenAI
 # to get proper authentication, make sure to use a valid key that's listed in
 # the --api-keys flag. if no flag value is provided, the `api_key` will be ignored.
-openai.api_key = "EMPTY"
-openai.api_base = "http://localhost:8000/v1"
+client = OpenAI(api_key="EMPTY", base_url="http://localhost:8000/v1", default_headers={"x-foo": "true"})
 
 model = "vicuna-7b-v1.5"
 prompt = "Once upon a time"
 
-# create a completion
-completion = openai.Completion.create(model=model, prompt=prompt, max_tokens=64)
+# create a completion (legacy)
+completion = client.completions.create(
+  model=model,
+  prompt=prompt
+)
 # print the completion
 print(prompt + completion.choices[0].text)
 
 # create a chat completion
-completion = openai.ChatCompletion.create(
-  model=model,
-  messages=[{"role": "user", "content": "Hello! What is your name?"}]
+completion = client.chat.completions.create(
+  model="vicuna-7b-v1.5",
+  response_format={ "type": "json_object" },
+  messages=[
+    {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
+    {"role": "user", "content": "Who won the world series in 2020?"}
+  ]
 )
 # print the completion
 print(completion.choices[0].message.content)
