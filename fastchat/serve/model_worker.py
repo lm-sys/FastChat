@@ -14,6 +14,8 @@ import torch.nn.functional as F
 from transformers import set_seed
 import uvicorn
 
+from functools import partial
+
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import (
     load_model,
@@ -61,6 +63,7 @@ class ModelWorker(BaseModelWorker):
         embed_in_truncate: bool = False,
         seed: Optional[int] = None,
         debug: bool = False,
+        lazy: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -73,32 +76,45 @@ class ModelWorker(BaseModelWorker):
             conv_template=conv_template,
         )
 
-        logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
-        self.model, self.tokenizer = load_model(
-            model_path,
-            device=device,
-            num_gpus=num_gpus,
-            max_gpu_memory=max_gpu_memory,
-            dtype=dtype,
-            load_8bit=load_8bit,
-            cpu_offloading=cpu_offloading,
-            gptq_config=gptq_config,
-            awq_config=awq_config,
-            exllama_config=exllama_config,
-            xft_config=xft_config,
-            debug=debug,
-        )
+        self.lazy_load_model = partial(_lazy_load_model,
+                                       self,
+                                       model_path,
+                                       device=device,
+                                       num_gpus=num_gpus,
+                                       max_gpu_memory=max_gpu_memory,
+                                       dtype=dtype,
+                                       load_8bit=load_8bit,
+                                       cpu_offloading=cpu_offloading,
+                                       gptq_config=gptq_config,
+                                       awq_config=awq_config,
+                                       exllama_config=exllama_config,
+                                       xft_config=xft_config,
+                                       debug=debug,
+                                       )
+        self.model = self.tokenizer = None
+        if not lazy:
+            # Load the model now.
+            self.lazy_load_model()
+
         self.device = device
-        if self.tokenizer.pad_token == None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.context_len = get_context_length(self.model.config)
-        self.generate_stream_func = get_generate_stream_function(self.model, model_path)
         self.stream_interval = stream_interval
         self.embed_in_truncate = embed_in_truncate
         self.seed = seed
 
         if not no_register:
             self.init_heart_beat()
+
+    def is_model_loaded(self):
+        return bool(self.model or self.tokenizer)
+
+    def unload_model(self):
+        logger.info(f"Unloading the model {self.model_names} on worker {self.worker_id} ...")
+        del self.model
+        del self.tokenizer
+        self.model = None
+        self.tokenizer = None
+        gc.collect()
+        torch.cuda.empty_cache()
 
     def generate_stream_gate(self, params):
         self.call_ct += 1
@@ -254,6 +270,45 @@ class ModelWorker(BaseModelWorker):
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
         return ret
+
+
+def _lazy_load_model(
+        _self,
+        model_path: str,
+        device: str = "cuda",
+        num_gpus: int = 1,
+        max_gpu_memory: Optional[str] = None,
+        dtype: Optional[torch.dtype] = None,
+        load_8bit: bool = False,
+        cpu_offloading: bool = False,
+        gptq_config: Optional[GptqConfig] = None,
+        awq_config: Optional[AWQConfig] = None,
+        exllama_config: Optional[ExllamaConfig] = None,
+        xft_config: Optional[XftConfig] = None,
+        revision: str = "main",
+        debug: bool = False,
+):
+    if not _self.model:
+        logger.info(f"Loading the model {_self.model_names} on worker {_self.worker_id} ...")
+        _self.model, _self.tokenizer = load_model(
+            model_path,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            gptq_config=gptq_config,
+            awq_config=awq_config,
+            exllama_config=exllama_config,
+            xft_config=xft_config,
+            debug=debug,
+        )
+        if _self.tokenizer.pad_token is None:
+            _self.tokenizer.pad_token = _self.tokenizer.eos_token
+        _self.context_len = get_context_length(_self.model.config)
+        _self.generate_stream_func = get_generate_stream_function(_self.model,
+                                                                  model_path)
 
 
 def create_model_worker():

@@ -17,6 +17,7 @@ import dataclasses
 import logging
 import json
 import os
+import sys
 import time
 from typing import List, Union
 import threading
@@ -44,6 +45,8 @@ import torch
 import torch.nn.functional as F
 import uvicorn
 
+from collections import deque
+
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import (
     load_model,
@@ -61,31 +64,60 @@ from fastchat.serve.model_worker import ModelWorker, worker_id, logger
 from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
+lazy_loading_enabled = False
+
 # We store both the underlying workers and a mapping from their model names to
 # the worker instance.  This makes it easy to fetch the appropriate worker for
 # each API call.
 workers = []
 worker_map = {}
+# The active_workers queue is used with lazy loading
+active_workers = deque([])
 app = FastAPI()
 
 
-def release_worker_semaphore():
-    workers[0].semaphore.release()
+def release_worker_semaphore(model_name: str = ""):
+    if lazy_loading_enabled and model_name:
+        worker = worker_map[model_name]
+        if worker.is_model_loaded():
+            worker.unload_model()
+            worker.semaphore.release()
+    else:                       # Not using lazy-loading
+        workers[0].semaphore.release()
 
 
-def acquire_worker_semaphore():
+async def acquire_worker_semaphore(model_name: str = ""):
     if workers[0].semaphore is None:
         # Share the same semaphore for all workers because
         # all workers share the same GPU.
-        semaphore = asyncio.Semaphore(workers[0].limit_worker_concurrency)
+        semaphore = asyncio.BoundedSemaphore(
+            workers[0].limit_worker_concurrency)
         for w in workers:
             w.semaphore = semaphore
-    return workers[0].semaphore.acquire()
+    if lazy_loading_enabled and model_name:
+        worker = worker_map[model_name]
+
+        # Make sure this worker is at the front of the queue because it's the
+        # most recently accessed. If this worker was not originally in the
+        # queue, this may push a worker off the back of the queue.
+        if worker in active_workers:
+            active_workers.remove(worker)
+        active_workers.appendleft(worker)
+
+        if not worker.is_model_loaded():  # We don't have the semaphore
+            for mn, w in worker_map.items():
+                if w not in active_workers:
+                    release_worker_semaphore(mn)
+            await worker.semaphore.acquire()
+            worker.lazy_load_model()
+    else:                       # Not using lazy-loading
+        await workers[0].semaphore.acquire()
 
 
 def create_background_tasks():
     background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_worker_semaphore)
+    if not lazy_loading_enabled:
+        background_tasks.add_task(release_worker_semaphore)
     return background_tasks
 
 
@@ -97,9 +129,19 @@ def create_background_tasks():
 @app.post("/worker_generate_stream")
 async def api_generate_stream(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
-    generator = worker.generate_stream_gate(params)
+    generator = None
+    if lazy_loading_enabled:
+        # Streaming doesn't work with lazy-loading because the generator keeps
+        # a reference to the model and prevents it from being unloaded. In
+        # order to preserve compatibility with the streaming interface, we copy
+        # the whole output from the stream and use an iterator on the copy
+        # instead.
+        stream_copy = [r for r in worker.generate_stream_gate(params)]
+        generator = iter(stream_copy)
+    else:
+        generator = worker.generate_stream_gate(params)
     background_tasks = create_background_tasks()
     return StreamingResponse(generator, background=background_tasks)
 
@@ -107,17 +149,18 @@ async def api_generate_stream(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
     output = worker.generate_gate(params)
-    release_worker_semaphore()
+    if not lazy_loading_enabled:
+        release_worker_semaphore()
     return JSONResponse(output)
 
 
 @app.post("/worker_get_embeddings")
 async def api_get_embeddings(request: Request):
     params = await request.json()
-    await acquire_worker_semaphore()
+    await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
     embedding = worker.get_embeddings(params)
     background_tasks = create_background_tasks()
@@ -187,7 +230,10 @@ def create_multi_model_worker():
         action="append",
         help="Conversation prompt template. Values must be aligned with `--model-path` values. If only one value is provided, it will be repeated for all models.",
     )
-    parser.add_argument("--limit-worker-concurrency", type=int, default=5)
+    parser.add_argument("--lazy", action="store_true", required=False,
+                        default=False, help="Enable lazy-loading of models.")
+    parser.add_argument("--limit-worker-concurrency", type=int,
+                        default=1 if "--lazy" in sys.argv else 5)
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument(
@@ -263,6 +309,7 @@ def create_multi_model_worker():
             xft_config=xft_config,
             stream_interval=args.stream_interval,
             conv_template=conv_template,
+            lazy=args.lazy,
         )
         workers.append(w)
         for model_name in model_names:
@@ -287,6 +334,16 @@ def create_multi_model_worker():
 
 if __name__ == "__main__":
     args, workers = create_multi_model_worker()
+
+    lazy_loading_enabled = args.lazy
+    if lazy_loading_enabled:
+        # args.limit_worker_concurrency controls how many models at a time will
+        # be loaded into VRAM.
+        active_workers = deque([], args.limit_worker_concurrency)
+        # Preload up to n=limit_worker_concurrency models into VRAM.
+        for w in workers[:args.limit_worker_concurrency]:
+            asyncio.run(acquire_worker_semaphore(w.model_names[0]))
+
     if args.ssl:
         uvicorn.run(
             app,
