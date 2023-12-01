@@ -8,6 +8,7 @@ from distutils.version import LooseVersion
 import warnings
 
 import openai
+
 try:
     from openai import OpenAI, AsyncOpenAI
 except ImportError:
