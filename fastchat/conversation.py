@@ -29,6 +29,7 @@ class SeparatorStyle(IntEnum):
     ROBIN = auto()
     FALCON_CHAT = auto()
     CHATGLM3 = auto()
+    DEEPSEEK_CHAT = auto()
 
 
 @dataclasses.dataclass
@@ -223,6 +224,15 @@ class Conversation:
                 else:
                     ret += role + ":"
 
+            return ret
+        elif self.sep_style == SeparatorStyle.DEEPSEEK_CHAT:
+            seps = [self.sep, self.sep2]
+            ret = system_prompt
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -530,7 +540,7 @@ register_conv_template(
 # Deepseek code default template
 register_conv_template(
     Conversation(
-        name="deepseek",
+        name="deepseek-coder",
         system_template="You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you only answer questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will refuse to answer.",
         roles=("### Instruction:", "### Response:"),
         sep="\n",
@@ -1262,6 +1272,20 @@ register_conv_template(
         sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
         stop_str="<|im_end|>",
+    )
+)
+
+# Deepseek-chat template
+# reference: https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat/blob/main/tokenizer_config.json
+register_conv_template(
+    Conversation(
+        name="deepseek-chat",
+        system_message="<｜begin▁of▁sentence｜>",  # must add a bos token before first message
+        roles=("User", "Assistant"),
+        sep_style=SeparatorStyle.DEEPSEEK_CHAT,
+        sep="\n\n",
+        sep2="<｜end▁of▁sentence｜>",
+        stop_str="<｜end▁of▁sentence｜>",
     )
 )
 
