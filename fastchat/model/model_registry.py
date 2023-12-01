@@ -189,6 +189,12 @@ register_model_info(
     "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
 )
 register_model_info(
+    ["starling-lm-7b-alpha"],
+    "Starling-LM-7B-alpha",
+    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
+    "an open model trained using RLAIF by Berkeley",
+)
+register_model_info(
     ["llama-7b", "llama-13b"],
     "LLaMA",
     "https://arxiv.org/abs/2302.13971",
@@ -407,6 +413,7 @@ register_model_info(
 
 register_model_info(
     ["Yi-34B-Chat"],
+    ["Yi-34B-Chat", "Yi-6B-Chat"],
     "Yi-Chat",
     "https://huggingface.co/01-ai",
     "A large language model by 01.AI.",
