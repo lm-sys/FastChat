@@ -258,9 +258,9 @@ SAMPLING_BOOST_MODELS = [
     "starling-lm-7b-alpha",
     "openhermes-2.5-mistral-7b",
     "gpt-3.5-turbo-1106",
-    #"openchat-3.5",
-    #"gpt-4-turbo",
-    #"claude-1",
+    # "openchat-3.5",
+    # "gpt-4-turbo",
+    # "claude-1",
 ]
 
 # outage models won't be sampled.
@@ -539,7 +539,6 @@ Find out who is the 🥇LLM Champion!
             interactive=True,
             label="Max output tokens",
         )
-
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 

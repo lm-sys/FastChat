@@ -421,4 +421,3 @@ register_model_info(
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
 )
-
