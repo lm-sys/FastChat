@@ -37,6 +37,22 @@ def process_response(response):
     return response
 
 
+def apply_stopping_string(reply, stop_strings):
+    if isinstance(stop_strings, str):
+        stop_strings = [stop_strings]
+
+    stop_found = False
+
+    for string in stop_strings[:4]:
+        if isinstance(string, str):
+            idx = reply.find(string)
+            if idx != -1:
+                reply = reply[:idx]
+                stop_found = True
+
+    return stop_found, reply
+
+
 @torch.inference_mode()
 def generate_stream_chatglm(
     model,
@@ -53,6 +69,7 @@ def generate_stream_chatglm(
     top_p = float(params.get("top_p", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     echo = params.get("echo", True)
+    stop = params.get("stop", [])
 
     inputs = tokenizer([prompt], return_tensors="pt").to(model.device)
     input_echo_len = len(inputs["input_ids"][0])
@@ -78,6 +95,10 @@ def generate_stream_chatglm(
         response = tokenizer.decode(output_ids)
         response = process_response(response)
 
+        stop_found, response = (
+            apply_stopping_string(response, stop) if response else (False, response)
+        )
+
         yield {
             "text": response,
             "usage": {
@@ -87,6 +108,9 @@ def generate_stream_chatglm(
             },
             "finish_reason": None,
         }
+
+        if stop_found:
+            break
 
     # TODO: ChatGLM stop when it reach max length
     # Only last stream result contains finish_reason, we set finish_reason as stop
