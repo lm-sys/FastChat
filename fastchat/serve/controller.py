@@ -127,13 +127,28 @@ class Controller:
             ):
                 logger.info(f"Remove stale worker: {w_name}")
 
-    def list_models(self, multimodal: bool = False):
+    def list_models(self):
         model_names = set()
 
         for w_name, w_info in self.worker_info.items():
-            if multimodal and w_info.multimodal:
+            model_names.update(w_info.model_names)
+
+        return list(model_names)
+
+    def list_multimodal_models(self):
+        model_names = set()
+
+        for w_name, w_info in self.worker_info.items():
+            if w_info.multimodal:
                 model_names.update(w_info.model_names)
-            elif not multimodal and not w_info.multimodal:
+
+        return list(model_names)
+
+    def list_language_models(self):
+        model_names = set()
+
+        for w_name, w_info in self.worker_info.items():
+            if not w_info.multimodal:
                 model_names.update(w_info.model_names)
 
         return list(model_names)
@@ -294,7 +309,13 @@ async def list_models():
 
 @app.post("/list_multimodal_models")
 async def list_multimodal_models():
-    models = controller.list_models(multimodal=True)
+    models = controller.list_multimodal_models()
+    return {"models": models}
+
+
+@app.post("/list_language_models")
+async def list_language_models():
+    models = controller.list_language_models()
     return {"models": models}
 
 

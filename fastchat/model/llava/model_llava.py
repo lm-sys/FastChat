@@ -192,6 +192,9 @@ def generate_stream_llava(
     max_context_length = getattr(model.config, "max_position_embeddings", 2048)
     max_new_tokens = min(int(params.get("max_new_tokens", 256)), 1024)
     stop_str = params.get("stop", None)
+    if type(stop_str) is list:
+        stop_str = stop_str[0]
+
     echo = params.get("echo", False)
     do_sample = True if temperature > 0.001 else False
 

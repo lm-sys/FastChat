@@ -131,7 +131,7 @@ def get_model_list(
         if multimodal:
             ret = requests.post(controller_url + "/list_multimodal_models")
         else:
-            ret = requests.post(controller_url + "/list_models")
+            ret = requests.post(controller_url + "/list_language_models")
         models = ret.json()["models"]
     else:
         models = []

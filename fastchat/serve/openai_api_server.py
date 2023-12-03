@@ -286,13 +286,34 @@ async def get_gen_params(
 
     if isinstance(messages, str):
         prompt = messages
+        images = []
     else:
         for message in messages:
             msg_role = message["role"]
             if msg_role == "system":
                 conv.set_system_message(message["content"])
             elif msg_role == "user":
-                conv.append_message(conv.roles[0], message["content"])
+                if type(message["content"]) == list:
+                    image_list = [
+                        item["image_url"]["url"]
+                        for item in message["content"]
+                        if item["type"] == "image_url"
+                    ]
+                    text_list = [
+                        item["text"]
+                        for item in message["content"]
+                        if item["type"] == "text"
+                    ]
+                    if len(image_list) > 1 or len(text_list) > 1:
+                        raise ValueError(
+                            "Only one image_url or text is allowed in one message"
+                        )
+
+                    image = image_list[0]
+                    text = "<image>" + "\n" + text_list[0]
+                    conv.append_message(conv.roles[0], (text, image))
+                else:
+                    conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
                 conv.append_message(conv.roles[1], message["content"])
             else:
@@ -301,10 +322,12 @@ async def get_gen_params(
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+        images = conv.get_images()
 
     gen_params = {
         "model": model_name,
         "prompt": prompt,
+        "images": images,
         "temperature": temperature,
         "logprobs": logprobs,
         "top_p": top_p,
@@ -315,6 +338,9 @@ async def get_gen_params(
         "echo": echo,
         "stop_token_ids": conv.stop_token_ids,
     }
+
+    if len(images) > 0:
+        gen_params["images"] = images
 
     if best_of is not None:
         gen_params.update({"best_of": best_of})

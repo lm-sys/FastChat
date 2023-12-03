@@ -244,6 +244,9 @@ class Conversation:
             if image.startswith("http://") or image.startswith("https://"):
                 response = requests.get(image)
                 image = Image.open(BytesIO(response.content)).convert("RGB")
+            elif "base64" in image:
+                # OpenAI format is: data:image/jpeg;base64,{base64_encoded_image_str}
+                return image.split(",")[1]
             else:
                 image = Image.open(image).convert("RGB")
 
@@ -348,18 +351,15 @@ class Conversation:
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
                     image_urls = self.to_openai_image_format(msg[1])
                     for image_url in image_urls:
-                        ret.append(
-                            {
-                                "role": "user",
-                                "content": {"type": "image", "image": image_url},
-                            }
+                        content_list.append(
+                            {"type": "image_url", "image_url": image_url}
                         )
 
-                    ret.append(
-                        {"role": "user", "content": [{"type": "text", "text": msg[0]}]}
-                    )
+                    ret.append({"role": "user", "content": content_list})
                 else:
                     ret.append(
                         {"role": "user", "content": [{"type": "text", "text": msg}]}
