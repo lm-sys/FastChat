@@ -32,10 +32,12 @@ def encode_image(image):
 
     return img_b64_str
 
+
 def test_list_models():
     model_list = openai.Model.list()
     names = [x["id"] for x in model_list["data"]]
     return names
+
 
 def test_chat_completion(model):
     image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -44,21 +46,13 @@ def test_chat_completion(model):
     completion = openai.ChatCompletion.create(
         model=model,
         messages=[
-        {
-            "role": "user",
-            "content": [
             {
-                "type": "text",
-                "text": "What’s in this image?"
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                "url": image_url
-                }
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What’s in this image?"},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
             }
-            ]
-        }
         ],
         temperature=0,
     )
@@ -67,21 +61,13 @@ def test_chat_completion(model):
     completion = openai.ChatCompletion.create(
         model=model,
         messages=[
-        {
-            "role": "user",
-            "content": [
             {
-                "type": "text",
-                "text": "What’s in this image?"
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                "url": base64_image_url
-                }
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What’s in this image?"},
+                    {"type": "image_url", "image_url": {"url": base64_image_url}},
+                ],
             }
-            ]
-        }
         ],
         temperature=0,
     )
@@ -95,19 +81,11 @@ def test_chat_completion_stream(model):
         {
             "role": "user",
             "content": [
-            {
-                "type": "text",
-                "text": "What’s in this image?"
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                "url": image_url
-                }
-            }
-            ]
+                {"type": "text", "text": "What’s in this image?"},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ],
         }
-        ]
+    ]
     res = openai.ChatCompletion.create(
         model=model, messages=messages, stream=True, temperature=0
     )
@@ -120,7 +98,8 @@ def test_chat_completion_stream(model):
 def test_openai_curl():
     run_cmd("curl http://localhost:8000/v1/models")
 
-    run_cmd("""
+    run_cmd(
+        """
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -144,7 +123,8 @@ curl http://localhost:8000/v1/chat/completions \
     ],
     "max_tokens": 300
   }'
-            """)
+            """
+    )
 
 
 if __name__ == "__main__":
