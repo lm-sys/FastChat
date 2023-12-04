@@ -259,13 +259,9 @@ def _prepare_text_with_image(state, text, image):
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
 
-        if "llava" in state.model_name.lower():
-            if LLAVA_IMAGE_TOKEN not in text:
-                text = text + "\n" + LLAVA_IMAGE_TOKEN
-
         text = (
             text,
-            image,
+            [image],
         )
 
     return text

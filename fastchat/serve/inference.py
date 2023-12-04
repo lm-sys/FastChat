@@ -31,9 +31,6 @@ from transformers.generation.logits_process import (
 )
 
 from fastchat.conversation import get_conv_template, SeparatorStyle
-from fastchat.model.llava.constants import (
-    LLAVA_IMAGE_TOKEN,
-)
 from fastchat.model.model_adapter import (
     load_model,
     get_conversation_template,
@@ -533,14 +530,12 @@ def chat_loop(
                 image = load_image(filename)
 
                 text = " ".join(args[2:])
-                if is_llava:
-                    text = LLAVA_IMAGE_TOKEN + "\n" + text
 
             # refresh for each new image
             conv = new_chat()
             inp = (
                 text,
-                image,
+                [image],
             )
 
         conv.append_message(conv.roles[0], inp)

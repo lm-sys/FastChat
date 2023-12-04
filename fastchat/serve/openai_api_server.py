@@ -282,6 +282,7 @@ async def get_gen_params(
         sep2=conv["sep2"],
         stop_str=conv["stop_str"],
         stop_token_ids=conv["stop_token_ids"],
+        image_token_str=conv["image_token_str"],
     )
 
     if isinstance(messages, str):
@@ -304,14 +305,9 @@ async def get_gen_params(
                         for item in message["content"]
                         if item["type"] == "text"
                     ]
-                    if len(image_list) > 1 or len(text_list) > 1:
-                        raise ValueError(
-                            "Only one image_url or text is allowed in one message"
-                        )
 
-                    image = image_list[0]
-                    text = "<image>" + "\n" + text_list[0]
-                    conv.append_message(conv.roles[0], (text, image))
+                    text = "\n".join(text_list)
+                    conv.append_message(conv.roles[0], (text, image_list))
                 else:
                     conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
@@ -327,7 +323,6 @@ async def get_gen_params(
     gen_params = {
         "model": model_name,
         "prompt": prompt,
-        "images": images,
         "temperature": temperature,
         "logprobs": logprobs,
         "top_p": top_p,

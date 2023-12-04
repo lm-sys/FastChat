@@ -40,7 +40,7 @@ def test_list_models():
 
 
 def test_chat_completion(model):
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://picsum.photos/seed/picsum/1024/1024"
     base64_image_url = f'"data:image/jpeg;base64,{encode_image(image_url)}"'
 
     completion = openai.ChatCompletion.create(
@@ -73,9 +73,26 @@ def test_chat_completion(model):
     )
     print(completion.choices[0].message.content)
 
+    # Multiple images
+    completion = openai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What’s in this image?"},
+                    {"type": "image_url", "image_url": {"url": base64_image_url}},
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            }
+        ],
+        temperature=0,
+    )
+    print(completion.choices[0].message.content)
+
 
 def test_chat_completion_stream(model):
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://picsum.photos/seed/picsum/1024/1024"
 
     messages = [
         {
@@ -115,7 +132,7 @@ curl http://localhost:8000/v1/chat/completions \
           {
             "type": "image_url",
             "image_url": {
-              "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+              "url": "https://picsum.photos/seed/picsum/1024/1024"
             }
           }
         ]

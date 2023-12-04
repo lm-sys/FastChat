@@ -58,6 +58,8 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
+    # Special token used to represent images used for multimodal generation
+    image_token_str: str = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -135,7 +137,12 @@ class Conversation:
                 tag = self.roles[i % 2]
                 if message:
                     if type(message) is tuple:
-                        message, _ = message
+                        # Add image token for each image used
+                        message, images = message
+                        if self.image_token_str is not None:
+                            message = (
+                                self.image_token_str * len(images) + "\n" + message
+                            )
                     if i == 0:
                         ret += message + " "
                     else:
@@ -299,11 +306,8 @@ class Conversation:
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    if type(msg[1]) == list:
-                        for image in msg[1]:
-                            images.append(self.convert_image_to_base64(image))
-                    else:
-                        images.append(self.convert_image_to_base64(msg[1]))
+                    for image in msg[1]:
+                        images.append(self.convert_image_to_base64(image))
 
         return images
 
@@ -330,9 +334,11 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
-                    img_b64_str = self.convert_image_to_base64(image)
+                    img_b64_str = self.convert_image_to_base64(
+                        image[0]
+                    )  # Only one image on gradio at one time
                     img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace("<image>", "").strip()
+                    msg = img_str + msg.replace(self.image_token_str, "").strip()
                     ret.append([msg, None])
                 else:
                     ret.append([msg, None])
@@ -402,6 +408,7 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
+            image_token_str=self.image_token_str,
         )
 
     def dict(self):
@@ -1410,6 +1417,7 @@ register_conv_template(
         sep="<s>",
         sep2="</s>",
         stop_str="</s>",
+        image_token_str="<image>",
     )
 )
 
