@@ -251,7 +251,7 @@ def evaluate(run_id=None, config=default_config):
     # load answers
     df_answer = pd.read_json(f"fastchat/llm_judge/data/{config.bench_name}/model_answer/{config.model_id}.jsonl", lines=True)
     df_answer = df_answer[df_answer.model_id == config.model_id]
-
+    df_answer = df_answer.sort_values(['question_id'])
 
     # load judge results
     df_judge = pd.read_json(output_file, lines=True)
