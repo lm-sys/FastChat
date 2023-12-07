@@ -1,4 +1,3 @@
-
 import numpy as np
 import wandb
 
@@ -15,13 +14,6 @@ import datetime
 import shortuuid
 import torch
 from tqdm import tqdm
-
-from fastchat.llm_judge.common import load_questions, temperature_config
-from fastchat.model import load_model, get_conversation_template
-from fastchat.utils import str_to_torch_dtype
-
-from fastchat.llm_judge.gen_model_answer import *
-from fastchat.llm_judge.gen_judgment import *
 
 # default configs
 default_config  = SimpleNamespace(
@@ -66,17 +58,24 @@ def evaluate(run_id=None, config=default_config):
     hash_object = hashlib.sha256(encoded_data)
     hashed_string = hash_object.hexdigest()
     
-    if default_config.model_id == None:
-        default_config.model_id = f'{default_config.model_path.replace("/", "--")}_hash_{hashed_string}'
+    if config.model_id == None:
+        config.model_id = f'{config.model_path.replace("/", "--")}_hash_{hashed_string}'
 
 
     # initialize wandb run
     if run_id==None:
-        run = wandb.init(project='yuya-test-llm', config=default_config)
+        run = wandb.init(project='yuya-test-llm', config=config)
         config = run.config
     else:
         run = wandb.init(project='yuya-test-llm', id=run_id, resume="allow")
         config = run.config
+        
+    from fastchat.llm_judge.common import load_questions, temperature_config
+    from fastchat.model import load_model, get_conversation_template
+    from fastchat.utils import str_to_torch_dtype
+
+    from fastchat.llm_judge.gen_model_answer import get_conversation_template, get_model_answers, load_model, load_questions, reorg_answer_file, run_eval, str_to_torch_dtype
+    from fastchat.llm_judge.gen_judgment import check_data, get_model_list, load_judge_prompts, load_model_answers, load_questions, make_judge_pairwise, make_judge_single, make_match, make_match_all_pairs, make_match_single, play_a_match_pair, play_a_match_single
     
 
     if config.num_gpus_total // config.num_gpus_per_model > 1:
