@@ -44,6 +44,8 @@ from fastchat.modules.xfastertransformer import load_xft_model, XftConfig
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.utils import get_gpu_memory
 
+import wandb
+
 # Check an environment variable to check if we should be sharing Peft model
 # weights.  When false we treat all Peft models as separate.
 peft_share_base_weights = (
@@ -1826,9 +1828,22 @@ class PygmalionAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metharme")
 
+class CustomAdapter(BaseModelAdapter):  # ←追加
+    """
+    Custom Model adapter
+    """
+    model_variation = None
+
+    def match(self, model_path: str):
+        return wandb.config.custom_conv_template
+
+    def get_default_conv_template(self, model_path:str):
+        return get_conv_template(wandb.config.conv_name)
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(CustomAdapter)  # ←追加
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)

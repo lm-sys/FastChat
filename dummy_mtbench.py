@@ -46,6 +46,16 @@ default_config  = SimpleNamespace(
     model_list=None,
     parallel=1,
     first_n=None,
+    # for conv template # added
+    custom_conv_template=False,
+    conv_name="custom",
+    conv_system_message="以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。",
+    conv_roles="('指示', '応答')",
+    conv_sep="\n\n### ",
+    conv_stop_token_ids="[2]",
+    conv_stop_str="###",
+    conv_role_message_separator=": \n",
+    conv_role_only_separator=": \n",
 )
 
 def evaluate(run_id=None, config=default_config):
