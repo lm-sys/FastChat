@@ -226,7 +226,7 @@ class Conversation:
                     ret += role + ":"
 
             return ret
-        elif self.sep_style == SeparatorStyle.AUTO:  # ←追加
+        elif self.sep_style == SeparatorStyle.CUSTOM:  # ←追加
             ret = self.system_message + self.sep
             for role, message in self.messages:
                 if message:
