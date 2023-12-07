@@ -179,6 +179,8 @@ async def api_get_status(request: Request):
 @app.post("/count_token")
 async def api_count_token(request: Request):
     params = await request.json()
+    if lazy_loading_enabled:
+        await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
     return worker.count_token(params)
 
@@ -186,6 +188,8 @@ async def api_count_token(request: Request):
 @app.post("/worker_get_conv_template")
 async def api_get_conv(request: Request):
     params = await request.json()
+    if lazy_loading_enabled:
+        await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
     return worker.get_conv_template()
 
@@ -193,6 +197,8 @@ async def api_get_conv(request: Request):
 @app.post("/model_details")
 async def api_model_details(request: Request):
     params = await request.json()
+    if lazy_loading_enabled:
+        await acquire_worker_semaphore(model_name=params["model"])
     worker = worker_map[params["model"]]
     return {"context_length": worker.context_len}
 
