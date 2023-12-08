@@ -50,6 +50,18 @@ def apply_stopping_string(reply, stop_strings):
                 reply = reply[:idx]
                 stop_found = True
 
+    if not stop_found:
+        # If something like "\nYo" is generated just before "\nYou: is completed, trim it
+        for string in stop_strings[:4]:
+            for j in range(len(string) - 1, 0, -1):
+                if reply[-j:] == string[:j]:
+                    reply = reply[:-j]
+                    break
+            else:
+                continue
+
+            break
+
     return stop_found, reply
 
 
