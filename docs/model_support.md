@@ -56,6 +56,7 @@
 - [Microsoft/Orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
 - [deepseek-ai/deepseek-llm-67b-chat](https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat)
 - [deepseek-ai/deepseek-coder-33b-instruct](https://huggingface.co/deepseek-ai/deepseek-coder-33b-instruct)
+- [meta-math/MetaMath-7B-V1.0](https://huggingface.co/meta-math/MetaMath-7B-V1.0)
 - Any [EleutherAI](https://huggingface.co/EleutherAI) pythia model such as [pythia-6.9b](https://huggingface.co/EleutherAI/pythia-6.9b)
 - Any [Peft](https://github.com/huggingface/peft) adapter trained on top of a
   model above.  To activate, must have `peft` in the model path.  Note: If

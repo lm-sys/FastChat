@@ -421,3 +421,10 @@ register_model_info(
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
 )
+
+register_model_info(
+    ["MetaMath-70B-V1.0", "MetaMath-7B-V1.0"],
+    "MetaMath",
+    "https://huggingface.co/meta-math",
+    "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)

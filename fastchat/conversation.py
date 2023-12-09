@@ -30,6 +30,7 @@ class SeparatorStyle(IntEnum):
     FALCON_CHAT = auto()
     CHATGLM3 = auto()
     DEEPSEEK_CHAT = auto()
+    METAMATH = auto()
 
 
 @dataclasses.dataclass
@@ -223,7 +224,17 @@ class Conversation:
                     ret += role + ": " + message + self.sep
                 else:
                     ret += role + ":"
-
+            return ret
+        elif self.sep_style == SeparatorStyle.METAMATH:
+            ret = "" if system_prompt == "" else system_prompt + self.sep
+            for i, (role, message) in enumerate(self.messages):
+                # For MetaMath, sep2 is used to prefix the message.
+                starting_sep = ":\n" if i % 2 == 0 else ": " + self.sep2
+                ending_sep = self.sep if i % 2 == 0 else ""
+                if message:
+                    ret += role + starting_sep + message + ending_sep
+                else:
+                    ret += role + starting_sep
             return ret
         elif self.sep_style == SeparatorStyle.DEEPSEEK_CHAT:
             seps = [self.sep, self.sep2]
@@ -675,6 +686,20 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+# MetaMath default template
+# reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58
+register_conv_template(
+    Conversation(
+        name="metamath",
+        system_template="{system_message}",
+        system_message="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        roles=("### Instruction", "### Response"),
+        sep_style=SeparatorStyle.METAMATH,
+        sep="\n\n",
+        sep2="Let's think step by step.",
     )
 )
 
