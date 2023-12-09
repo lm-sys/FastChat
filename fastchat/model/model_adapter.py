@@ -1915,6 +1915,16 @@ class PygmalionAdapter(BaseModelAdapter):
         return get_conv_template("metharme")
 
 
+class XdanAdapter(BaseModelAdapter):
+    """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-v0.1)"""
+
+    def match(self, model_path: str):
+        return "xdan" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("xdan-v1")
+
+
 class MicrosoftOrcaAdapter(BaseModelAdapter):
     """The model adapter for Microsoft/Orca-2 series of models (e.g. Microsoft/Orca-2-7b, Microsoft/Orca-2-13b)"""
 
@@ -2039,6 +2049,7 @@ register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
+register_model_adapter(XdanAdapter)
 register_model_adapter(YiAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)

@@ -421,6 +421,12 @@ register_model_info(
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
 )
+register_model_info(
+    ["xDAN-L1-Chat-v0.1"],
+    "xDAN-L1-Chat",
+    "https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1",
+    "A large language chat model created by xDAN-AI.",
+)
 
 register_model_info(
     ["MetaMath-70B-V1.0", "MetaMath-7B-V1.0"],

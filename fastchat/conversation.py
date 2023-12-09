@@ -1271,6 +1271,18 @@ register_conv_template(
         stop_str="<|user|>",
     )
 )
+# xDAN default template
+# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1
+register_conv_template(
+    Conversation(
+        name="xdan-v1",
+        system_message="You are a helpful  and harmless assistant named xDAN and created by xDAN-AI.Please response and work on questions thinking step by step.",
+        roles=("### Human", "### Assistant"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+        stop_str="</s>",
+    )
+)
 
 # Zephyr template
 # reference: https://huggingface.co/spaces/HuggingFaceH4/zephyr-playground/blob/main/dialogues.py
