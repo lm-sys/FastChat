@@ -1494,10 +1494,7 @@ class DolphinAdapter(OpenOrcaAdapter):
     """Model adapter for ehartford/dolphin-2.2.1-mistral-7b"""
 
     def match(self, model_path: str):
-        return (
-            "dolphin" in model_path.lower()
-            and "mistral" in model_path.lower()
-        )
+        return "dolphin" in model_path.lower() and "mistral" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("dolphin-2.2.1-mistral-7b")
