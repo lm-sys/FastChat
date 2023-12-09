@@ -6,30 +6,12 @@ If you have any changes in mind, please contribute back so the community can ben
 """
 
 import dataclasses
-from enum import auto, IntEnum
-from typing import List, Any, Dict, Union, Tuple
 
+from fastchat.prompt_generator import PromptGeneratorManager, SeparatorStyle
 
-class SeparatorStyle(IntEnum):
-    """Separator styles."""
+from typing import List, Dict, Tuple, Union
 
-    ADD_COLON_SINGLE = auto()
-    ADD_COLON_TWO = auto()
-    ADD_COLON_SPACE_SINGLE = auto()
-    NO_COLON_SINGLE = auto()
-    NO_COLON_TWO = auto()
-    ADD_NEW_LINE_SINGLE = auto()
-    LLAMA2 = auto()
-    CHATGLM = auto()
-    CHATML = auto()
-    CHATINTERN = auto()
-    DOLLY = auto()
-    RWKV = auto()
-    PHOENIX = auto()
-    ROBIN = auto()
-    FALCON_CHAT = auto()
-    CHATGLM3 = auto()
-    DEEPSEEK_CHAT = auto()
+import transformers
 
 
 @dataclasses.dataclass
@@ -57,189 +39,88 @@ class Conversation:
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
 
-    def get_prompt(self) -> str:
+    def __post_init__(self):
+        self._system_prompt = (
+            self.system_template.format(system_message=self.system_message)
+            if self.system_message
+            else ""
+        )
+        generator = PromptGeneratorManager().get_generator(self.sep_style)
+        self.generator_instance = None
+        if generator:
+            self.generator_instance = generator(
+                system_prompt=self._system_prompt,
+                roles=self.roles,
+                sep=self.sep,
+                sep2=self.sep2,
+            )
+
+    def get_prompt(self, **kwargs) -> str:
         """Get the prompt for generation."""
-        system_prompt = self.system_template.format(system_message=self.system_message)
-        if self.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
-            ret = system_prompt + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + ": " + message + self.sep
-                else:
-                    ret += role + ":"
-            return ret
-        elif self.sep_style == SeparatorStyle.ADD_COLON_TWO:
-            seps = [self.sep, self.sep2]
-            ret = system_prompt + seps[0]
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    ret += role + ": " + message + seps[i % 2]
-                else:
-                    ret += role + ":"
-            return ret
-        elif self.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
-            ret = system_prompt + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + ": " + message + self.sep
-                else:
-                    ret += role + ": "  # must be end with a space
-            return ret
-        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_SINGLE:
-            ret = "" if system_prompt == "" else system_prompt + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep
-                else:
-                    ret += role + "\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
-            ret = system_prompt
-            for role, message in self.messages:
-                if message:
-                    ret += role + message + self.sep
-                else:
-                    ret += role
-            return ret
-        elif self.sep_style == SeparatorStyle.NO_COLON_TWO:
-            seps = [self.sep, self.sep2]
-            ret = system_prompt
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    ret += role + message + seps[i % 2]
-                else:
-                    ret += role
-            return ret
-        elif self.sep_style == SeparatorStyle.RWKV:
-            ret = system_prompt
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    ret += (
-                        role
-                        + ": "
-                        + message.replace("\r\n", "\n").replace("\n\n", "\n")
-                    )
-                    ret += "\n\n"
-                else:
-                    ret += role + ":"
-            return ret
-        elif self.sep_style == SeparatorStyle.LLAMA2:
-            seps = [self.sep, self.sep2]
-            if self.system_message:
-                ret = system_prompt
-            else:
-                ret = "[INST] "
-            for i, (role, message) in enumerate(self.messages):
-                tag = self.roles[i % 2]
-                if message:
-                    if i == 0:
-                        ret += message + " "
-                    else:
-                        ret += tag + " " + message + seps[i % 2]
-                else:
-                    ret += tag
-            return ret
-        elif self.sep_style == SeparatorStyle.CHATGLM:
-            # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
-            # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
-            round_add_n = 1 if self.name == "chatglm2" else 0
-            if system_prompt:
-                ret = system_prompt + self.sep
-            else:
-                ret = ""
-
-            for i, (role, message) in enumerate(self.messages):
-                if i % 2 == 0:
-                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
-
-                if message:
-                    ret += f"{role}：{message}{self.sep}"
-                else:
-                    ret += f"{role}："
-            return ret
-        elif self.sep_style == SeparatorStyle.CHATML:
-            ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep + "\n"
-                else:
-                    ret += role + "\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.CHATGLM3:
-            ret = ""
-            if self.system_message:
-                ret += system_prompt
-            for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + " " + message
-                else:
-                    ret += role
-            return ret
-        elif self.sep_style == SeparatorStyle.CHATINTERN:
-            # source: https://huggingface.co/internlm/internlm-chat-7b-8k/blob/bd546fa984b4b0b86958f56bf37f94aa75ab8831/modeling_internlm.py#L771
-            seps = [self.sep, self.sep2]
-            ret = system_prompt
-            for i, (role, message) in enumerate(self.messages):
-                if i % 2 == 0:
-                    ret += "<s>"
-                if message:
-                    ret += role + ":" + message + seps[i % 2] + "\n"
-                else:
-                    ret += role + ":"
-            return ret
-        elif self.sep_style == SeparatorStyle.DOLLY:
-            seps = [self.sep, self.sep2]
-            ret = system_prompt
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    ret += role + ":\n" + message + seps[i % 2]
-                    if i % 2 == 1:
-                        ret += "\n\n"
-                else:
-                    ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.PHOENIX:
-            ret = system_prompt
-            for role, message in self.messages:
-                if message:
-                    ret += role + ": " + "<s>" + message + "</s>"
-                else:
-                    ret += role + ": " + "<s>"
-            return ret
-        elif self.sep_style == SeparatorStyle.ROBIN:
-            ret = system_prompt + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + ":\n" + message + self.sep
-                else:
-                    ret += role + ":\n"
-            return ret
-        elif self.sep_style == SeparatorStyle.FALCON_CHAT:
-            ret = ""
-            if self.system_message:
-                ret += system_prompt + self.sep
-            for role, message in self.messages:
-                if message:
-                    ret += role + ": " + message + self.sep
-                else:
-                    ret += role + ":"
-
-            return ret
-        elif self.sep_style == SeparatorStyle.DEEPSEEK_CHAT:
-            seps = [self.sep, self.sep2]
-            ret = system_prompt
-            for i, (role, message) in enumerate(self.messages):
-                if message:
-                    ret += role + ": " + message + seps[i % 2]
-                else:
-                    ret += role + ":"
-            return ret
-        else:
+        if not self.generator_instance:
             raise ValueError(f"Invalid style: {self.sep_style}")
+
+        return self.generator_instance.get_prompt(
+            self.messages, name=self.name, **kwargs
+        )
+
+    def get_prompt_token_ids(
+        self, tokenizer: transformers.PreTrainedTokenizer, **kwargs
+    ) -> Tuple[List[int]]:
+        if not self.generator_instance:
+            raise ValueError(f"Invalid style: {self.sep_style}")
+        return self.generator_instance.get_prompt_token_ids(
+            tokenizer, self.messages, name=self.name, **kwargs
+        )
 
     def set_system_message(self, system_message: str):
         """Set the system message."""
         self.system_message = system_message
+        self._system_prompt = (
+            self.system_template.format(system_message=self.system_message)
+            if self.system_message
+            else ""
+        )
+        if self.generator_instance:
+            self.generator_instance.update_sys_prompt(self._system_prompt)
+
+    @property
+    def system_prompt(
+        self,
+    ):
+        return self._system_prompt
+
+    @property
+    def role_sep(
+        self,
+    ):
+        if not self.generator_instance:
+            raise ValueError(f"Invalid style: {self.sep_style}")
+        return self.generator_instance.role_sep
+
+    @property
+    def gen_role_sep(
+        self,
+    ):
+        if not self.generator_instance:
+            raise ValueError(f"Invalid style: {self.sep_style}")
+        return self.generator_instance.gen_role_sep
+
+    @property
+    def sys_sep(
+        self,
+    ):
+        if not self.generator_instance:
+            raise ValueError(f"Invalid style: {self.sep_style}")
+        return self.generator_instance.sys_sep
+
+    @property
+    def im_start(
+        self,
+    ):
+        if not self.generator_instance:
+            raise ValueError(f"Invalid style: {self.sep_style}")
+        return self.generator_instance.im_start
 
     def append_message(self, role: str, message: str):
         """Append a new message."""
@@ -270,9 +151,8 @@ class Conversation:
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
-            else:
-                if msg is not None:
-                    ret.append({"role": "assistant", "content": msg})
+            elif msg is not None:
+                ret.append({"role": "assistant", "content": msg})
         return ret
 
     def copy(self):
@@ -310,7 +190,6 @@ def register_conv_template(template: Conversation, override: bool = False):
         assert (
             template.name not in conv_templates
         ), f"{template.name} has been registered."
-
     conv_templates[template.name] = template
 
 
@@ -416,12 +295,12 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="airoboros_v3",
-        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_template="<<SYS>>\n{system_message}\n<</SYS>>",
         system_message="You are a helpful, unbiased, uncensored assistant.",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
-        sep2=" </s><s>",
+        sep2=" </s>",
     )
 )
 
@@ -532,7 +411,7 @@ register_conv_template(
     Conversation(
         name="openchat_3.5",
         roles=("GPT4 Correct User", "GPT4 Correct Assistant"),
-        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="<|end_of_turn|>",
     )
 )
@@ -609,7 +488,7 @@ register_conv_template(
         ),
         offset=2,
         sep_style=SeparatorStyle.RWKV,
-        sep="",
+        sep="\n\n",
         stop_str="\n\n",
     )
 )
@@ -791,6 +670,7 @@ register_conv_template(
         sep_style=SeparatorStyle.ROBIN,
         sep="\n",
         stop_token_ids=[2, 396],
+        # stop_token_ids=[396],
         stop_str="###",
     )
 )
@@ -870,7 +750,6 @@ register_conv_template(
     )
 )
 
-# ref: https://huggingface.co/Salesforce/xgen-7b-8k-inst
 register_conv_template(
     Conversation(
         name="xgen",
@@ -943,11 +822,11 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mistral",
-        system_template="[INST]{system_message}\n",
+        system_template="{system_message}",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
-        sep2="</s>",
+        sep2=" </s>",
     )
 )
 
@@ -957,11 +836,13 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="llama-2",
-        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_template="<<SYS>>\n{system_message}\n<</SYS>>",
         roles=("[INST]", "[/INST]"),
+        messages=(),
+        offset=0,
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
-        sep2=" </s><s>",
+        sep2=" </s>",
     )
 )
 
@@ -1131,7 +1012,7 @@ register_conv_template(
     Conversation(
         name="llama2-chinese",
         system_template="<s>{system_message}</s>",
-        roles=("Human", "Assistant", "System"),
+        roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n",
         sep2="\n</s><s>",
@@ -1190,7 +1071,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="vigogne_chat_v3",
-        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_template="<<SYS>>\n{system_message}\n<</SYS>>",
         system_message=(
             "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez"
             " autant que vous le pouvez."
@@ -1207,10 +1088,10 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="falcon-chat",
-        roles=("User", "Falcon"),
         system_template="System: {system_message}",
+        roles=("User", "Falcon"),
         messages=[],
-        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n",
         sep2="<|endoftext|>",
         stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
@@ -1282,7 +1163,7 @@ register_conv_template(
         name="deepseek-chat",
         system_message="<｜begin▁of▁sentence｜>",  # must add a bos token before first message
         roles=("User", "Assistant"),
-        sep_style=SeparatorStyle.DEEPSEEK_CHAT,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep="\n\n",
         sep2="<｜end▁of▁sentence｜>",
         stop_str="<｜end▁of▁sentence｜>",
