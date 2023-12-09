@@ -78,7 +78,7 @@ def rank0_print(*args):
         print(*args)
 
 
-def trainer_save_model_safe(trainer: transformers.Trainer):
+def trainer_save_model_safe(trainer: transformers.Trainer, output_dir=None):
     from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
     from torch.distributed.fsdp import StateDictType, FullStateDictConfig
 
@@ -86,7 +86,7 @@ def trainer_save_model_safe(trainer: transformers.Trainer):
     with FSDP.state_dict_type(
         trainer.model, StateDictType.FULL_STATE_DICT, save_policy
     ):
-        trainer.save_model()
+        trainer.save_model(output_dir=output_dir)
 
 
 def preprocess(
@@ -123,7 +123,7 @@ def preprocess(
     assert conv.sep_style == SeparatorStyle.ADD_COLON_TWO
 
     # Mask targets. Only compute loss on the assistant outputs.
-    sep = conv.sep + conv.roles[1] + ": "
+    sep = conv.sep + conv.roles[1] + conv.role_sep
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
 
