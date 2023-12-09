@@ -260,11 +260,11 @@ def generate_stream(
             partially_stopped = False
             if stop_pattern:
                 out_len = len(output)
-                rfind_start = max(rfind_start, out_len - 2 * max_stop_len)
-                output_tocheck = output[rfind_start:]
+                check_lend = max(rfind_start, out_len - 2 * max_stop_len)
+                output_tocheck = output[check_lend:]
                 match = stop_pattern.search(output_tocheck)
                 if match:
-                    output = output[: rfind_start + match.start()]
+                    output = output[: check_lend + match.start()]
                     stopped = True
                 else:
                     for stop_sign in stop_str:
