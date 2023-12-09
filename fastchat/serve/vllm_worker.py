@@ -22,7 +22,7 @@ from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length
+from fastchat.utils import get_context_length, is_partial_stop
 
 
 app = FastAPI()
@@ -119,7 +119,12 @@ class VLLMWorker(BaseModelWorker):
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
-            # Note: usage is not supported yet
+
+            partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
+            # prevent yielding partial stop sequence
+            if partial_stop:
+                continue
+
             prompt_tokens = len(request_output.prompt_token_ids)
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
@@ -139,6 +144,10 @@ class VLLMWorker(BaseModelWorker):
                 if len(request_output.outputs) == 1
                 else [output.finish_reason for output in request_output.outputs],
             }
+            # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
+            # This aligns with the behavior of model_worker.
+            if request_output.finished:
+                yield (json.dumps(ret | {"finish_reason": None}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):
