@@ -53,7 +53,10 @@ peft_share_base_weights = (
 ANTHROPIC_MODEL_LIST = (
     "claude-1",
     "claude-2",
+    "claude-2.0",
+    "claude-2.1",
     "claude-instant-1",
+    "claude-instant-1.2",
 )
 
 

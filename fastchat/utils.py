@@ -151,6 +151,8 @@ def oai_moderation(text):
 
     openai.api_base = "https://api.openai.com/v1"
     openai.api_key = os.environ["OPENAI_API_KEY"]
+    openai.api_type = "open_ai"
+    openai.api_version = None
 
     MAX_RETRY = 3
     for i in range(MAX_RETRY):
