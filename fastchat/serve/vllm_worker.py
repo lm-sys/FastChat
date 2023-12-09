@@ -35,6 +35,7 @@ class VLLMWorker(BaseModelWorker):
         worker_addr: str,
         worker_id: str,
         model_path: str,
+        model_id: str,
         model_names: List[str],
         limit_worker_concurrency: int,
         no_register: bool,
@@ -46,6 +47,7 @@ class VLLMWorker(BaseModelWorker):
             worker_addr,
             worker_id,
             model_path,
+            model_id,
             model_names,
             limit_worker_concurrency,
             conv_template,
@@ -221,6 +223,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.5")
     parser.add_argument(
+        "--model-id",
+        type=str,
+        default="vicuna",
+        help="Unique model ID, used to determine the adapter.",
+    )
+    parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
@@ -263,6 +271,7 @@ if __name__ == "__main__":
         args.worker_address,
         worker_id,
         args.model_path,
+        args.model_id,
         args.model_names,
         args.limit_worker_concurrency,
         args.no_register,

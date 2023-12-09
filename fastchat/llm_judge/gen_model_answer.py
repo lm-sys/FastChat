@@ -21,6 +21,7 @@ from fastchat.utils import str_to_torch_dtype
 def run_eval(
     model_path,
     model_id,
+    model_alias,
     question_file,
     question_begin,
     question_end,
@@ -55,6 +56,7 @@ def run_eval(
             get_answers_func(
                 model_path,
                 model_id,
+                model_alias,
                 questions[i : i + chunk_size],
                 answer_file,
                 max_new_token,
@@ -74,6 +76,7 @@ def run_eval(
 def get_model_answers(
     model_path,
     model_id,
+    model_alias,
     questions,
     answer_file,
     max_new_token,
@@ -85,6 +88,7 @@ def get_model_answers(
 ):
     model, tokenizer = load_model(
         model_path,
+        model_id,
         revision=revision,
         device="cuda",
         num_gpus=num_gpus_per_model,
@@ -104,7 +108,7 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            conv = get_conversation_template(model_path, model_id)
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
@@ -183,7 +187,7 @@ def get_model_answers(
             ans_json = {
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
-                "model_id": model_id,
+                "model_id": model_alias,
                 "choices": choices,
                 "tstamp": time.time(),
             }
@@ -213,7 +217,10 @@ if __name__ == "__main__":
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
-        "--model-id", type=str, required=True, help="A custom name for the model."
+        "--model-id", type=str, required=True, help="A uniq id for model adapter."
+    )
+    parser.add_argument(
+        "--model-alias", type=str, required=True, help="A custom name for the model."
     )
     parser.add_argument(
         "--bench-name",
@@ -281,13 +288,14 @@ if __name__ == "__main__":
     if args.answer_file:
         answer_file = args.answer_file
     else:
-        answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
+        answer_file = f"data/{args.bench_name}/model_answer/{args.model_alias}.jsonl"
 
     print(f"Output to {answer_file}")
 
     run_eval(
         model_path=args.model_path,
         model_id=args.model_id,
+        model_alias=args.model_alias,
         question_file=question_file,
         question_begin=args.question_begin,
         question_end=args.question_end,

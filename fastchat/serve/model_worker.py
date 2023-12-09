@@ -49,6 +49,7 @@ class ModelWorker(BaseModelWorker):
         device: str,
         num_gpus: int,
         max_gpu_memory: str,
+        model_id: str = None,
         dtype: Optional[torch.dtype] = None,
         load_8bit: bool = False,
         cpu_offloading: bool = False,
@@ -68,6 +69,7 @@ class ModelWorker(BaseModelWorker):
             worker_addr,
             worker_id,
             model_path,
+            model_id,
             model_names,
             limit_worker_concurrency,
             conv_template=conv_template,
@@ -76,6 +78,7 @@ class ModelWorker(BaseModelWorker):
         logger.info(f"Loading the model {self.model_names} on worker {worker_id} ...")
         self.model, self.tokenizer = load_model(
             model_path,
+            model_id,
             device=device,
             num_gpus=num_gpus,
             max_gpu_memory=max_gpu_memory,
@@ -349,6 +352,7 @@ def create_model_worker():
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,
+        model_id=args.model_id,
         dtype=str_to_torch_dtype(args.dtype),
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
