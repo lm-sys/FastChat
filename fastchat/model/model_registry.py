@@ -423,13 +423,6 @@ register_model_info(
 )
 
 register_model_info(
-    ["Yi-34B-Chat", "Yi-6B-Chat"],
-    "Yi-Chat",
-    "https://huggingface.co/01-ai",
-    "A large language model by 01.AI.",
-)
-
-register_model_info(
     ["MetaMath-70B-V1.0", "MetaMath-7B-V1.0"],
     "MetaMath",
     "https://huggingface.co/meta-math",
