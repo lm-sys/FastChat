@@ -412,6 +412,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["dolphin-2.2.1-mistral-7b"],
+    "dolphin-mistral",
+    "https://huggingface.co/ehartford/dolphin-2.2.1-mistral-7b",
+    "An uncensored fine-tuned [Mistral 7B](https://huggingface.co/mistralai/Mistral-7B-v0.1)",
+)
+
+register_model_info(
     [
         "AquilaChat-7B",
         "AquilaChat2-7B",

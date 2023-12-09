@@ -1490,6 +1490,16 @@ class OpenOrcaAdapter(BaseModelAdapter):
         return get_conv_template("open-orca")
 
 
+class DolphinAdapter(OpenOrcaAdapter):
+    """Model adapter for ehartford/dolphin-2.2.1-mistral-7b"""
+
+    def match(self, model_path: str):
+        return "dolphin" in model_path.lower() and "mistral" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("dolphin-2.2.1-mistral-7b")
+
+
 class Hermes2Adapter(BaseModelAdapter):
     """Model adapter for teknium/OpenHermes-2.5-Mistral-7B and teknium/OpenHermes-2-Mistral-7B models"""
 
@@ -2029,6 +2039,7 @@ register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
+register_model_adapter(DolphinAdapter)
 register_model_adapter(Hermes2Adapter)
 register_model_adapter(MistralAdapter)
 register_model_adapter(WizardCoderAdapter)

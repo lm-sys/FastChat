@@ -1038,6 +1038,21 @@ register_conv_template(
 )
 
 
+# ehartford/dolphin-2.2.1-mistral-7b template
+# reference: https://huggingface.co/ehartford/dolphin-2.2.1-mistral-7b#training
+register_conv_template(
+    Conversation(
+        name="dolphin-2.2.1-mistral-7b",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are Dolphin, a helpful AI assistant.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
+
+
 # teknium/OpenHermes-2.5-Mistral-7B template
 # source: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B
 # reference: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B#prompt-template
