@@ -348,6 +348,7 @@ def chat_loop(
     repetition_penalty: float,
     max_new_tokens: int,
     chatio: ChatIO,
+    model_id: str = None,
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     exllama_config: Optional[ExllamaConfig] = None,
@@ -360,6 +361,7 @@ def chat_loop(
     # Model
     model, tokenizer = load_model(
         model_path,
+        model_id,
         device=device,
         num_gpus=num_gpus,
         max_gpu_memory=max_gpu_memory,
@@ -392,7 +394,7 @@ def chat_loop(
         if conv_template:
             conv = get_conv_template(conv_template)
         else:
-            conv = get_conversation_template(model_path)
+            conv = get_conversation_template(model_path, model_id)
         if conv_system_msg is not None:
             conv.set_system_message(conv_system_msg)
         return conv

@@ -17,6 +17,7 @@ def main(args):
     # Load model
     model, tokenizer = load_model(
         args.model_path,
+        args.model_id,
         device=args.device,
         num_gpus=args.num_gpus,
         max_gpu_memory=args.max_gpu_memory,

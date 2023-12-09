@@ -175,6 +175,13 @@ def create_multi_model_worker():
         help="One or more paths to model weights to load. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
+        "--model-id",
+        type=str,
+        default=[],
+        action="append",
+        help="One or more model ids. Values must be aligned with `--model-path` values.",
+    )
+    parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
         action="append",
@@ -234,6 +241,8 @@ def create_multi_model_worker():
 
     if args.model_names is None:
         args.model_names = [[x.split("/")[-1]] for x in args.model_path]
+    if not args.model_id:
+        args.model_id = [None for _ in args.model_path]
 
     if args.conv_template is None:
         args.conv_template = [None] * len(args.model_path)
@@ -242,8 +251,8 @@ def create_multi_model_worker():
 
     # Launch all workers
     workers = []
-    for conv_template, model_path, model_names in zip(
-        args.conv_template, args.model_path, args.model_names
+    for conv_template, model_path, model_names, model_id in zip(
+        args.conv_template, args.model_path, args.model_names, args.model_id
     ):
         w = ModelWorker(
             args.controller_address,
@@ -256,6 +265,7 @@ def create_multi_model_worker():
             device=args.device,
             num_gpus=args.num_gpus,
             max_gpu_memory=args.max_gpu_memory,
+            model_id=model_id,
             load_8bit=args.load_8bit,
             cpu_offloading=args.cpu_offloading,
             gptq_config=gptq_config,
@@ -263,6 +273,7 @@ def create_multi_model_worker():
             xft_config=xft_config,
             stream_interval=args.stream_interval,
             conv_template=conv_template,
+            embed_in_truncate=args.embed_in_truncate,
         )
         workers.append(w)
         for model_name in model_names:

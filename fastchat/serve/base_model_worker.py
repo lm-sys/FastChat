@@ -31,6 +31,7 @@ class BaseModelWorker:
         worker_addr: str,
         worker_id: str,
         model_path: str,
+        model_id: str,
         model_names: List[str],
         limit_worker_concurrency: int,
         conv_template: str = None,
@@ -44,7 +45,7 @@ class BaseModelWorker:
             model_path = model_path[:-1]
         self.model_names = model_names or [model_path.split("/")[-1]]
         self.limit_worker_concurrency = limit_worker_concurrency
-        self.conv = self.make_conv_template(conv_template, model_path)
+        self.conv = self.make_conv_template(conv_template, model_path, model_id)
         self.conv.sep_style = int(self.conv.sep_style)
         self.tokenizer = None
         self.context_len = None
@@ -62,6 +63,7 @@ class BaseModelWorker:
         self,
         conv_template: str = None,
         model_path: str = None,
+        model_id: str = None,
     ) -> Conversation:
         """
         can be overrided to costomize the conversation template for different model workers.
@@ -72,7 +74,7 @@ class BaseModelWorker:
         if conv_template:
             conv = get_conv_template(conv_template)
         else:
-            conv = get_conversation_template(model_path)
+            conv = get_conversation_template(model_path, model_id)
         return conv
 
     def init_heart_beat(self):
