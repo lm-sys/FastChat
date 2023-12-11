@@ -64,7 +64,6 @@ COHERE_MODEL_LIST = (
     "command-light",
     "command-nightly",
     "command-nightly-light",
-    "command-52b-v15-6-qa9cubq7-op-from-r2v6ya5f-p",
 )
 
 
