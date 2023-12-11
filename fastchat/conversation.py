@@ -257,6 +257,17 @@ class Conversation:
                     ret += role + ":"
 
             return ret
+        elif self.sep_style == SeparatorStyle.COHERE:
+            ret = ""
+            if self.system_message:
+                ret += system_prompt + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ":"
+
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -710,20 +721,6 @@ register_conv_template(
         sep_style=SeparatorStyle.COHERE,
         sep="\n",
         stop_str="\nUser:",
-    )
-)
-
-# MetaMath default template
-# reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58
-register_conv_template(
-    Conversation(
-        name="metamath",
-        system_template="{system_message}",
-        system_message="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
-        roles=("### Instruction", "### Response"),
-        sep_style=SeparatorStyle.METAMATH,
-        sep="\n\n",
-        sep2="Let's think step by step.",
     )
 )
 
