@@ -59,6 +59,7 @@ ANTHROPIC_MODEL_LIST = (
     "claude-instant-1.2",
 )
 
+# See available Cohere models at https://docs.cohere.com/docs/models
 COHERE_MODEL_LIST = (
     "command",
     "command-light",
