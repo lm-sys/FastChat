@@ -4,6 +4,7 @@ import json
 
 # 定义一个函数来读取目录下的所有.jsonl文件并存储到字典中
 from collections import defaultdict
+from pprint import pprint
 
 
 def read_jsonl_files(directory):
@@ -63,4 +64,4 @@ for model in result_dict:
     s1 = sum([v[2] for v in dd1.values()])
     score_result.update({model: ((s0, total_valid, s0/total_valid), dd1)})
 
-print(score_result)
+pprint(score_result)
