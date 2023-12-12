@@ -835,6 +835,11 @@ if __name__ == "__main__":
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
     )
+    parser.add_argument(
+        "--gradio-root-path",
+        type=str,
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix"
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -863,4 +868,5 @@ if __name__ == "__main__":
         share=args.share,
         max_threads=200,
         auth=auth,
+        root_path=args.gradio_root_path
     )
