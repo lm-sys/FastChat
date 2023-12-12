@@ -31,8 +31,8 @@ def read_jsonl_files(directory):
 
 # 指定目录的路径
 import sys
-directory_path = sys.argv[1]
-
+# directory_path = sys.argv[1]
+directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/"+sys.argv[1]+"/model_answer"
 # 调用函数来读取.jsonl文件并存储到字典中
 result_dict = read_jsonl_files(directory_path)
 score_result = {}
