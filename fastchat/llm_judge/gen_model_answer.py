@@ -79,7 +79,7 @@ def get_model_answers(
             prompt = conv.get_prompt()
             prompts.append(prompt)
     
-    print(prompts)
+    print(prompts[0])
     sampling_params = SamplingParams(temperature=0.7)
     outputs = llm.generate(prompts, sampling_params)
     print("Prompts: ", len(prompts), len(outputs))
