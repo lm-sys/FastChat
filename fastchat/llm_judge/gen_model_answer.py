@@ -64,6 +64,7 @@ def get_model_answers(
         max_gpu_memory,
         dtype,
 ):
+    print("model_path:", model_path)
     model_dir = snapshot_download(model_path, cache_dir="/root/autodl-tmp/model")
     print("model_dir:", model_dir)
     llm = LLM(model=model_dir, trust_remote_code=True)
