@@ -66,7 +66,8 @@ def get_model_answers(
 ):
     model_dir = snapshot_download(model_path, cache_dir="/root/autodl-tmp/model")
     print(model_dir)
-    llm = LLM(model=model_dir, trust_remote_code=True)
+    # llm = LLM(model=model_dir, trust_remote_code=True)
+    llm = LLM(model="/root/autodl-tmp/model/" + model_path, trust_remote_code=True)
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
