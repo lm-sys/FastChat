@@ -43,7 +43,7 @@ for model in result_dict:
     dd1 = {}
     model_result = result_dict[model]
     for answer in model_result:
-        category = answer["category"]
+        category = answer["category"].split('|||')[0]
         pred = answer["choices"][0]["turns"][0]
         counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
         # 检查是否包含所有四个选项，且每个不超过两次
