@@ -70,7 +70,6 @@ def get_model_answers(
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
-        print(model_id, conv)
         for j in range(len(question["turns"])):
             qs = question["turns"][j]
             conv.append_message(conv.roles[0], qs)
@@ -78,6 +77,7 @@ def get_model_answers(
             prompt = conv.get_prompt()
             prompts.append(prompt)
     
+    print(prompts)
     sampling_params = SamplingParams(temperature=0.7)
     outputs = llm.generate(prompts, sampling_params)
     print("Prompts: ", len(prompts), len(outputs))
