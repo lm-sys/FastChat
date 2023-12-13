@@ -72,7 +72,6 @@ def get_model_answers(
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
-        # for j in range(len(question["turns"])):
         qs = '\n'.join(question["turns"])
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
