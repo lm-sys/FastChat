@@ -51,13 +51,13 @@ for model in result_dict:
         print("refer_counts:", answer["reference_answer"], refer_counts)
         if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
             status = True
-            total_valid += 1
         else:
             status = False
         dd0[category].append(status)
     for k, v in dd0.items():
         dd1[k] = (sum(v) / len(v), sum(v), len(v))
-
+    
+    print(dd1)
     s0 = sum([v[1] for v in dd1.values()])
     s1 = sum([v[2] for v in dd1.values()])
     score_result.update({model: ((s0, total_valid, s0/total_valid), dd1)})
