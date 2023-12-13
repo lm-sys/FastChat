@@ -34,7 +34,7 @@ def read_jsonl_files(directory):
             file_path = os.path.join(directory, filename)
             with open(file_path, "r", encoding="utf-8") as file:
                 content = [json.loads(line) for line in file.readlines()]
-                file_dict[filename] = content
+                file_dict[filename.split('.jsonl')[0]] = content
     
     return file_dict
 
