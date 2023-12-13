@@ -45,7 +45,7 @@ app = Flask(__name__)
 def run_script_judgement():
     data = request.json
     # Validate input data
-    if not all(key in data for key in ['judgement_model', 'mode', 'answer_list']):
+    if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     
     DATA_ID = data.get('data_id')
