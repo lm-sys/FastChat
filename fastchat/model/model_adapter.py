@@ -1988,8 +1988,10 @@ class MetaMathAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metamath")
 
+
 class BagelAdapter(BaseModelAdapter):
     """Model adapter for jondurbin/bagel-* models"""
+
     def match(self, model_path: str):
         return "bagel" in model_path.lower()
 
