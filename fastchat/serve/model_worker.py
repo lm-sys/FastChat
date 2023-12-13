@@ -76,21 +76,22 @@ class ModelWorker(BaseModelWorker):
             conv_template=conv_template,
         )
 
-        self.lazy_load_model = partial(_lazy_load_model,
-                                       self,
-                                       model_path,
-                                       device=device,
-                                       num_gpus=num_gpus,
-                                       max_gpu_memory=max_gpu_memory,
-                                       dtype=dtype,
-                                       load_8bit=load_8bit,
-                                       cpu_offloading=cpu_offloading,
-                                       gptq_config=gptq_config,
-                                       awq_config=awq_config,
-                                       exllama_config=exllama_config,
-                                       xft_config=xft_config,
-                                       debug=debug,
-                                       )
+        self.lazy_load_model = partial(
+            _lazy_load_model,
+            self,
+            model_path,
+            device=device,
+            num_gpus=num_gpus,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
+            load_8bit=load_8bit,
+            cpu_offloading=cpu_offloading,
+            gptq_config=gptq_config,
+            awq_config=awq_config,
+            exllama_config=exllama_config,
+            xft_config=xft_config,
+            debug=debug,
+        )
         self.model = self.tokenizer = None
         if not lazy:
             # Load the model now.
@@ -108,7 +109,9 @@ class ModelWorker(BaseModelWorker):
         return bool(self.model or self.tokenizer)
 
     def unload_model(self):
-        logger.info(f"Unloading the model {self.model_names} on worker {self.worker_id} ...")
+        logger.info(
+            f"Unloading the model {self.model_names} on worker {self.worker_id} ..."
+        )
         del self.model
         del self.tokenizer
         self.model = None
@@ -273,24 +276,26 @@ class ModelWorker(BaseModelWorker):
 
 
 def _lazy_load_model(
-        _self,
-        model_path: str,
-        device: str = "cuda",
-        num_gpus: int = 1,
-        max_gpu_memory: Optional[str] = None,
-        dtype: Optional[torch.dtype] = None,
-        load_8bit: bool = False,
-        cpu_offloading: bool = False,
-        gptq_config: Optional[GptqConfig] = None,
-        awq_config: Optional[AWQConfig] = None,
-        exllama_config: Optional[ExllamaConfig] = None,
-        xft_config: Optional[XftConfig] = None,
-        revision: str = "main",
-        debug: bool = False,
+    self_,
+    model_path: str,
+    device: str = "cuda",
+    num_gpus: int = 1,
+    max_gpu_memory: Optional[str] = None,
+    dtype: Optional[torch.dtype] = None,
+    load_8bit: bool = False,
+    cpu_offloading: bool = False,
+    gptq_config: Optional[GptqConfig] = None,
+    awq_config: Optional[AWQConfig] = None,
+    exllama_config: Optional[ExllamaConfig] = None,
+    xft_config: Optional[XftConfig] = None,
+    revision: str = "main",
+    debug: bool = False,
 ):
-    if not _self.model:
-        logger.info(f"Loading the model {_self.model_names} on worker {_self.worker_id} ...")
-        _self.model, _self.tokenizer = load_model(
+    if not self_.model:
+        logger.info(
+            f"Loading the model {self_.model_names}" " on worker {self_.worker_id} ..."
+        )
+        self_.model, self_.tokenizer = load_model(
             model_path,
             device=device,
             num_gpus=num_gpus,
@@ -304,11 +309,12 @@ def _lazy_load_model(
             xft_config=xft_config,
             debug=debug,
         )
-        if _self.tokenizer.pad_token is None:
-            _self.tokenizer.pad_token = _self.tokenizer.eos_token
-        _self.context_len = get_context_length(_self.model.config)
-        _self.generate_stream_func = get_generate_stream_function(_self.model,
-                                                                  model_path)
+        if self_.tokenizer.pad_token is None:
+            self_.tokenizer.pad_token = self_.tokenizer.eos_token
+        self_.context_len = get_context_length(self_.model.config)
+        self_.generate_stream_func = get_generate_stream_function(
+            self_.model, model_path
+        )
 
 
 def create_model_worker():

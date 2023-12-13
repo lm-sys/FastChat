@@ -82,7 +82,7 @@ def release_worker_semaphore(model_name: str = ""):
         if worker.is_model_loaded():
             worker.unload_model()
             worker.semaphore.release()
-    else:                       # Not using lazy-loading
+    else:  # Not using lazy-loading
         workers[0].semaphore.release()
 
 
@@ -90,8 +90,7 @@ async def acquire_worker_semaphore(model_name: str = ""):
     if workers[0].semaphore is None:
         # Share the same semaphore for all workers because
         # all workers share the same GPU.
-        semaphore = asyncio.BoundedSemaphore(
-            workers[0].limit_worker_concurrency)
+        semaphore = asyncio.BoundedSemaphore(workers[0].limit_worker_concurrency)
         for w in workers:
             w.semaphore = semaphore
     if lazy_loading_enabled and model_name:
@@ -110,7 +109,7 @@ async def acquire_worker_semaphore(model_name: str = ""):
                     release_worker_semaphore(mn)
             await worker.semaphore.acquire()
             worker.lazy_load_model()
-    else:                       # Not using lazy-loading
+    else:  # Not using lazy-loading
         await workers[0].semaphore.acquire()
 
 
@@ -138,7 +137,7 @@ async def api_generate_stream(request: Request):
         # order to preserve compatibility with the streaming interface, we copy
         # the whole output from the stream and use an iterator on the copy
         # instead.
-        stream_copy = [r for r in worker.generate_stream_gate(params)]
+        stream_copy = list(worker.generate_stream_gate(params))
         generator = iter(stream_copy)
     else:
         generator = worker.generate_stream_gate(params)
@@ -236,10 +235,16 @@ def create_multi_model_worker():
         action="append",
         help="Conversation prompt template. Values must be aligned with `--model-path` values. If only one value is provided, it will be repeated for all models.",
     )
-    parser.add_argument("--lazy", action="store_true", required=False,
-                        default=False, help="Enable lazy-loading of models.")
-    parser.add_argument("--limit-worker-concurrency", type=int,
-                        default=1 if "--lazy" in sys.argv else 5)
+    parser.add_argument(
+        "--lazy",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable lazy-loading of models.",
+    )
+    parser.add_argument(
+        "--limit-worker-concurrency", type=int, default=1 if "--lazy" in sys.argv else 5
+    )
     parser.add_argument("--stream-interval", type=int, default=2)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument(
@@ -347,8 +352,8 @@ if __name__ == "__main__":
         # be loaded into VRAM.
         active_workers = deque([], args.limit_worker_concurrency)
         # Preload up to n=limit_worker_concurrency models into VRAM.
-        for w in workers[:args.limit_worker_concurrency]:
-            asyncio.run(acquire_worker_semaphore(w.model_names[0]))
+        for wkr in workers[: args.limit_worker_concurrency]:
+            asyncio.run(acquire_worker_semaphore(wkr.model_names[0]))
 
     if args.ssl:
         uvicorn.run(
