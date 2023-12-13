@@ -87,7 +87,7 @@ def get_model_answers(
         prompt = output.prompt
         generated_text = output.outputs[0].text
         # print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-        
+
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             ans_json = {

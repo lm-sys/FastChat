@@ -32,7 +32,7 @@ def read_jsonl_files(directory):
 # 指定目录的路径
 import sys
 # directory_path = sys.argv[1]
-directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/"+sys.argv[1]+"/model_answer"
+directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + sys.argv[1] + "/model_answer"
 # 调用函数来读取.jsonl文件并存储到字典中
 result_dict = read_jsonl_files(directory_path)
 score_result = {}
@@ -45,14 +45,11 @@ for model in result_dict:
     for answer in model_result:
         category = answer["category"].split('|||')[0]
         pred = answer["choices"][0]["turns"][0]
-        counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
-        # 检查是否包含所有四个选项，且每个不超过两次
-        if sum(counts[option] == 1 for option in ['A', 'B', 'C', 'D']) == 1:
-            valid = True
-            total_valid += 1
-        else:
-            valid = False
-        if valid and answer["reference_answer"] in pred:
+        pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+        refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
+        print("pred_counts:", pred_counts)
+        print("refer_counts:", refer_counts)
+        if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
             status = True
         else:
             status = False
