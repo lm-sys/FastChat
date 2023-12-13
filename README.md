@@ -118,7 +118,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5
 ```
 
 #### Multiple GPUs
-You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine. 
+You can use model parallelism to aggregate GPU memory from multiple GPUs on the same machine.
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --num-gpus 2
 ```
@@ -188,6 +188,8 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --load-8bit
 
 In addition to that, you can add `--cpu-offloading` to commands above to offload weights that don't fit on your GPU onto the CPU memory.
 This requires 8-bit compression to be enabled and the bitsandbytes package to be installed, which is only available on linux operating systems.
+
+If you want to run multiple models but you only have enough VRAM for one, see `multi_model_worker`'s [lazy-loading mode](docs/model_lazy_loading.md).
 
 #### More Platforms and Quantization
 - For AMD GPU users, please install ROCm and [the ROCm version of PyTorch](https://pytorch.org/get-started/locally/) before you install FastChat. See also this [post](https://github.com/lm-sys/FastChat/issues/104#issuecomment-1613791563).
@@ -267,7 +269,7 @@ See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 See [docs/langchain_integration](docs/langchain_integration.md).
 
 ## Evaluation
-We use MT-bench, a set of challenging multi-turn open-ended questions to evaluate models. 
+We use MT-bench, a set of challenging multi-turn open-ended questions to evaluate models.
 To automate the evaluation process, we prompt strong LLMs like GPT-4 to act as judges and assess the quality of the models' responses.
 See instructions for running MT-bench at [fastchat/llm_judge](fastchat/llm_judge).
 
