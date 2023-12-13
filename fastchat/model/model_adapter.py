@@ -1994,7 +1994,7 @@ class BagelAdapter(BaseModelAdapter):
         return "bagel" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("bagel_v0")
+        return get_conv_template("airoboros_v3")
 
 
 # Note: the registration order matters.
