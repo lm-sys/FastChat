@@ -1,6 +1,8 @@
 import json
 import os
 from collections import defaultdict
+import pandas as pd
+from io import StringIO
 
 from flask import Flask, request, jsonify
 import subprocess
@@ -15,6 +17,26 @@ from flask_utils import get_free_gpus, generate_random_identifier, append_dict_t
 def generate_random_identifier():
     chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
     return ''.join(random.choice(chars) for _ in range(16))
+
+
+def read_report_files(directory):
+    markdown_table = """
+        | 模型名称 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
+        |:--------:|:------:|:--------:|:--------:|:--------:|
+        | GPT-4 | 87.43 | 88.76 | 86.09 | -2.67 |
+        | BlueLM | 85.17 | 84.80 | 85.55 | 0.75 |
+        ...
+        """
+    file_dict = {}
+    files = os.listdir(directory)
+    for filename in files:
+        if filename.endswith(".jsonl"):  # 或者根据实际文件后缀修改
+            file_path = os.path.join(directory, filename)
+            with open(file_path, "r", encoding="utf-8") as f:
+                # 读取整个文件内容作为一个字符串
+                # file_content = f.read()
+                file_dict[filename.split('.jsonl')[0]] = markdown_table
+    return file_dict
 
 
 def read_jsonl_files(directory):
@@ -34,22 +56,48 @@ def read_jsonl_files(directory):
             file_path = os.path.join(directory, filename)
             with open(file_path, "r", encoding="utf-8") as file:
                 content = [json.loads(line) for line in file.readlines()]
-                file_dict[filename.split('.jsonl')[0]] = content
+                file_dict[filename.split('.jsonl')[0]] = "content"
     
     return file_dict
+
 
 app = Flask(__name__)
 
 
-@app.route('/judge', methods=['POST'])
-def run_script_judgement():
+@app.route('/report', methods=['POST'])
+def report():
     data = request.json
     # Validate input data
     if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     
     DATA_ID = data.get('data_id')
+    
+    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
+    result_dict = read_report_files(directory_path)
+    try:
+        start_time = get_start_time()
+        end_time = get_end_time()
+        result = {
+            "output": result_dict,
+            "data_id": DATA_ID,
+            "time_start": start_time,
+            "time_end": end_time
+        }
+        return jsonify(result)
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Script execution failed"}), 500
 
+
+@app.route('/judge', methods=['POST'])
+def judge():
+    data = request.json
+    # Validate input data
+    if not all(key in data for key in ['data_id']):
+        return jsonify({"error": "Missing required fields in the request"}), 400
+    
+    DATA_ID = data.get('data_id')
+    
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
@@ -69,12 +117,12 @@ def run_script_judgement():
             dd0[category].append(status)
         for k, v in dd0.items():
             dd1[k] = (sum(v) / len(v), sum(v), len(v))
-    
+        
         print(model, dd1)
         s0 = sum([v[1] for v in dd1.values()])
         s1 = sum([v[2] for v in dd1.values()])
         score_result.update({model: (s0, s1, s0 / s1)})
-
+    
     try:
         start_time = get_start_time()
         end_time = get_end_time()
@@ -85,10 +133,10 @@ def run_script_judgement():
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
-    
+
 
 @app.route('/generate', methods=['POST'])
-def run_script_generate():
+def generate():
     data = request.json
     # Validate input data
     if not all(key in data for key in ['model_name', 'model_id', 'data_id']):
@@ -127,7 +175,8 @@ def run_script_generate():
                   "data_id": data_id,
                   "time_start": start_time,
                   "time_end": end_time}
-        append_dict_to_jsonl(f"/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/app_output.jsonl", {identifier: result})
+        append_dict_to_jsonl(f"/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/app_output.jsonl",
+                             {identifier: result})
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
