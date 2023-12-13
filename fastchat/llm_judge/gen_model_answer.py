@@ -72,17 +72,17 @@ def get_model_answers(
     prompts = []
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
-        for j in range(len(question["turns"])):
-            qs = question["turns"][j]
-            conv.append_message(conv.roles[0], qs)
-            conv.append_message(conv.roles[1], None)
-            prompt = conv.get_prompt()
-            prompts.append(prompt)
-    
-    print(prompts[0])
+        # for j in range(len(question["turns"])):
+        qs = '\n'.join(question["turns"])
+        conv.append_message(conv.roles[0], qs)
+        conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt()
+        prompts.append(prompt)
+        print(prompt)
+
     sampling_params = SamplingParams(temperature=0.7)
     outputs = llm.generate(prompts, sampling_params)
-    print("Prompts: ", len(prompts), len(outputs))
+    print("len of prompts: ", len(prompts), len(outputs))
     for idx, (question, output) in enumerate(zip(questions, outputs)):
         prompt = output.prompt
         generated_text = output.outputs[0].text
