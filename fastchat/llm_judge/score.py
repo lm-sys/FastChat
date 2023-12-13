@@ -47,10 +47,11 @@ for model in result_dict:
         pred = answer["choices"][0]["turns"][0]
         pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
         refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
-        print("pred_counts:", pred_counts)
-        print("refer_counts:", refer_counts)
+        print("pred_counts:", pred, pred_counts)
+        print("refer_counts:", answer["reference_answer"], refer_counts)
         if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
             status = True
+            total_valid += 1
         else:
             status = False
         dd0[category].append(status)
