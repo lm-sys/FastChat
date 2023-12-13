@@ -47,8 +47,8 @@ for model in result_dict:
         pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
         pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
         refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
-        print("pred_counts:", pred, pred_counts)
-        print("refer_counts:", answer["reference_answer"], refer_counts)
+        # print("pred_counts:", pred, pred_counts)
+        # print("refer_counts:", answer["reference_answer"], refer_counts)
         if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
             status = True
         else:
@@ -57,7 +57,7 @@ for model in result_dict:
     for k, v in dd0.items():
         dd1[k] = (sum(v) / len(v), sum(v), len(v))
     
-    print(dd1)
+    print(model, dd1)
     s0 = sum([v[1] for v in dd1.values()])
     s1 = sum([v[2] for v in dd1.values()])
     score_result.update({model: (s0, s1, s0/s1)})
