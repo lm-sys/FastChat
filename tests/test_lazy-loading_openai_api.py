@@ -125,7 +125,7 @@ def model_test_suite(model):
     except client.error.APIError as e:
         print(f"Embedding error: {e}")
 
-    print("===== Test curl with {model} =====")
+    print(f"===== Test curl with {model} =====")
     test_openai_curl(model)
 
 
