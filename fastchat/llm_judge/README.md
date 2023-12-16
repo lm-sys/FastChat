@@ -56,7 +56,7 @@ python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 
 2. Generate the answers
 ```
-python gen_api_answer.py --model [MODEL-NAME] --openai-api-base https://localhost:8000/v1 --parallel 50
+python gen_api_answer.py --model [MODEL-NAME] --openai-api-base http://localhost:8000/v1 --parallel 50
 ```
   - Arguments:
     - `[MODEL-NAME]` is the name of the model from Step 1.
