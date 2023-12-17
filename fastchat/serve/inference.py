@@ -502,7 +502,10 @@ def chat_loop(
 
         conv.append_message(conv.roles[0], inp)
         conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        # if tokenizer.chat_template is None:
+        #     prompt = conv.get_prompt()
+        # else:
+        prompt = tokenizer.apply_chat_template(conv.to_openai_api_messages(), tokenize=False, add_generation_prompt=True)
 
         if is_codet5p:  # codet5p is a code completion model.
             prompt = inp
