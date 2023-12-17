@@ -10,7 +10,6 @@ python3 -m fastchat.serve.openai_api_server
 import asyncio
 import argparse
 import json
-import logging
 import os
 from typing import Generator, Optional, Union, Dict, List, Any
 
@@ -61,8 +60,9 @@ from fastchat.protocol.api_protocol import (
     APITokenCheckResponse,
     APITokenCheckResponseItem,
 )
+from fastchat.utils import build_logger
 
-logger = logging.getLogger(__name__)
+logger = build_logger("openai_api_server", "openai_api_server.log")
 
 conv_template_map = {}
 
