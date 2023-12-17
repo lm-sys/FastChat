@@ -178,6 +178,7 @@ def load_model(
     xft_config: Optional[XftConfig] = None,
     revision: str = "main",
     debug: bool = False,
+    load_4bit: bool = False,
 ):
     """Load a model from Hugging Face."""
     # get model adapter
@@ -256,6 +257,19 @@ def load_model(
             load_in_8bit_fp32_cpu_offload=cpu_offloading
         )
         kwargs["load_in_8bit"] = load_8bit
+    elif load_4bit:
+        # raises an error on incompatible platforms
+        from transformers import BitsAndBytesConfig
+
+        kwargs["load_in_4bit"] = True
+        kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=dtype,
+        )
+        kwargs["load_in_8bit"] = False
+
     elif load_8bit:
         if num_gpus != 1:
             warnings.warn(
@@ -329,7 +343,7 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading and not load_4bit) or device in (
         "mps",
         "xpu",
         "npu",
@@ -447,6 +461,11 @@ def add_model_args(parser):
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
     )
+
+    parser.add_argument(
+        "--load-4bit", action="store_true", help="Use 8-bit quantization"
+    )
+
     parser.add_argument(
         "--cpu-offloading",
         action="store_true",

@@ -61,6 +61,7 @@ class ModelWorker(BaseModelWorker):
         embed_in_truncate: bool = False,
         seed: Optional[int] = None,
         debug: bool = False,
+        load_4bit: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -81,6 +82,7 @@ class ModelWorker(BaseModelWorker):
             max_gpu_memory=max_gpu_memory,
             dtype=dtype,
             load_8bit=load_8bit,
+            load_4bit=load_4bit,
             cpu_offloading=cpu_offloading,
             gptq_config=gptq_config,
             awq_config=awq_config,
@@ -361,6 +363,7 @@ def create_model_worker():
         embed_in_truncate=args.embed_in_truncate,
         seed=args.seed,
         debug=args.debug,
+        load_4bit=args.load_4bit,
     )
     return args, worker
 
