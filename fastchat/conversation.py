@@ -1341,6 +1341,19 @@ register_conv_template(
     )
 )
 
+# Solar-10.7B Chat Template
+# Reference: https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0/blob/main/tokenizer_config.json
+register_conv_template(
+    Conversation(
+        name="solar",
+        system_message="",
+        roles=("### User", "### Assistant"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n\n",
+        stop_str="</s>",
+    )
+)
+
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
 
