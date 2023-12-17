@@ -262,6 +262,14 @@ def load_model(
         from transformers import BitsAndBytesConfig
 
         kwargs["load_in_4bit"] = True
+        
+        # with 4-bit quantization, we use float16 for optimization
+        if dtype is None:
+            kwargs["torch_dtype"] = torch.float16
+            warnings.warn(
+                "Set dtype to float16. 4-bit quantization is more efficient with float16. Use explicitly --dtype to override."
+            )
+
         kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
