@@ -441,3 +441,10 @@ register_model_info(
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
 )
+
+register_model_info(
+    ["upstage/SOLAR-10.7B-Instruct-v1.0"],
+    "SOLAR-10.7B-Instruct",
+    "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
+    "A Llama2 fine-tune developed by upstage.ai that incorporates depth up-scaling.",
+)
