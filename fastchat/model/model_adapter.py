@@ -139,14 +139,13 @@ def get_model_adapter(model_path: str) -> BaseModelAdapter:
 
 
 def raise_warning_for_incompatible_cpu_offloading_configuration(
-    device: str, load_8bit: bool, cpu_offloading: bool, load_4bit: bool
+    device: str, load_8bit: bool, cpu_offloading: bool
 ):
     if cpu_offloading:
-        if not load_8bit and not load_4bit:
+        if not load_8bit:
             warnings.warn(
-                "The cpu-offloading feature can only be used while also using 8-bit or 4-bit quantization.\n"
+                "The cpu-offloading feature can only be used while also using 8-bit quantization.\n"
                 "Use '--load-8bit' to enable 8-bit-quantization\n"
-                "Use '--load-4bit' to enable 4-bit-quantization\n"
                 "Continuing without cpu-offloading enabled\n"
             )
             return False
@@ -187,7 +186,7 @@ def load_model(
 
     # Handle device mapping
     cpu_offloading = raise_warning_for_incompatible_cpu_offloading_configuration(
-        device, load_8bit, cpu_offloading, load_4bit
+        device, load_8bit, cpu_offloading
     )
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
