@@ -159,7 +159,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if model in ["gpt-3.5-turbo", "gpt-4"]:
+    if model in ["gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"]:
         judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
         judgment = chat_compeletion_anthropic(
