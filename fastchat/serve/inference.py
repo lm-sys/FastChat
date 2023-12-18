@@ -13,6 +13,7 @@ import psutil
 import requests
 import torch
 from transformers import (
+    AutoProcessor,
     AutoTokenizer,
     AutoModelForCausalLM,
     LlamaTokenizer,
@@ -74,8 +75,6 @@ def generate_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
-    if type(model) == dict:
-        model = model["language_model"]
 
     if hasattr(model, "device"):
         device = model.device
@@ -389,19 +388,13 @@ def chat_loop(
     is_t5 = "t5" in model_type
     is_codet5p = "codet5p" in model_type
     is_xft = "xft" in model_type
-    is_llava = (
-        type(model) == dict and "llava" in str(type(model["language_model"])).lower()
-    )
 
     # Hardcode T5's default repetition penalty to be 1.2
     if is_t5 and repetition_penalty == 1.0:
         repetition_penalty = 1.2
 
     # Set context length
-    if type(model) == dict:
-        context_len = get_context_length(model["language_model"].config)
-    else:
-        context_len = get_context_length(model.config)
+    context_len = get_context_length(model.config)
 
     # Chat
     def new_chat():
@@ -576,7 +569,10 @@ def chat_loop(
             conv.update_last_message(outputs.strip())
 
             if debug:
-                num_tokens = len(tokenizer.encode(outputs))
+                if hasattr(tokenizer, "image_processor"): # for multimodal models, a process holds a tokenizer class
+                    num_tokens = len(tokenizer.tokenizer.encode(outputs))
+                else:
+                    num_tokens = len(tokenizer.encode(outputs))
                 msg = {
                     "conv_template": conv.name,
                     "prompt": prompt,

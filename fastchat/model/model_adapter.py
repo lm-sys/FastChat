@@ -20,9 +20,11 @@ from transformers import (
     AutoModel,
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
+    AutoProcessor,
     AutoTokenizer,
     LlamaTokenizer,
     LlamaForCausalLM,
+    LlavaForConditionalGeneration,
     T5Tokenizer,
 )
 
@@ -34,13 +36,6 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
-from fastchat.model.llava.constants import (
-    LLAVA_IM_START_TOKEN,
-    LLAVA_IM_END_TOKEN,
-    LLAVA_IMAGE_PATCH_TOKEN,
-)
-from fastchat.model.llava.model_llava import generate_stream_llava
-from fastchat.model.llava.language_model.llava_llama import LlavaLlamaForCausalLM
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
@@ -362,9 +357,6 @@ def get_conversation_template(model_path: str) -> Conversation:
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     """Get the generate_stream function for inference."""
     from fastchat.serve.inference import generate_stream
-
-    if type(model) == dict:
-        model = model["language_model"]
 
     model_type = str(type(model)).lower()
     is_chatglm = "chatglm" in model_type
@@ -1944,36 +1936,10 @@ class LlavaAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        model = LlavaLlamaForCausalLM.from_pretrained(
-            model_path,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=False, trust_remote_code=True, revision=revision
-        )
+        model = LlavaForConditionalGeneration.from_pretrained(model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True,)
+        processor = AutoProcessor.from_pretrained(model_path)
 
-        mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
-        mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
-        if mm_use_im_patch_token:
-            tokenizer.add_tokens([LLAVA_IMAGE_PATCH_TOKEN], special_tokens=True)
-        if mm_use_im_start_end:
-            tokenizer.add_tokens(
-                [LLAVA_IM_START_TOKEN, LLAVA_IM_END_TOKEN], special_tokens=True
-            )
-        model.resize_token_embeddings(len(tokenizer))
-
-        vision_tower = model.get_vision_tower()
-        if not vision_tower.is_loaded:
-            vision_tower.load_model()
-        image_processor = vision_tower.image_processor
-
-        return (
-            {
-                "language_model": model,
-                "vision_processor": image_processor,
-            },
-            tokenizer,
-        )
+        return model, processor
 
     def match(self, model_path: str):
         return "llava" in model_path.lower()

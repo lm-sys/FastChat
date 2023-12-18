@@ -94,17 +94,11 @@ class ModelWorker(BaseModelWorker):
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        if type(self.model) == dict:
-            language_model = self.model["language_model"]
-            self.context_len = get_context_length(language_model.config)
-            self.generate_stream_func = get_generate_stream_function(
-                language_model, model_path
-            )
-        else:
-            self.context_len = get_context_length(self.model.config)
-            self.generate_stream_func = get_generate_stream_function(
-                self.model, model_path
-            )
+
+        self.context_len = get_context_length(self.model.config)
+        self.generate_stream_func = get_generate_stream_function(
+            self.model, model_path
+        )
         self.stream_interval = stream_interval
         self.embed_in_truncate = embed_in_truncate
         self.seed = seed
