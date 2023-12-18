@@ -1997,6 +1997,15 @@ class BagelAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("jondurbin/bagel-dpo-7b-v0.1")
+        
+class SolarAdapter(BaseModelAdapter):
+    """The model adapter for upstage/SOLAR-10.7B-Instruct-v1.0"""
+
+    def match(self, model_path: str):
+        return "solar-" in model_path.lower() and "instruct" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("solar")
 
 
 # Note: the registration order matters.
@@ -2075,7 +2084,11 @@ register_model_adapter(YiAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
+<<<<<<< HEAD
 register_model_adapter(BagelAdapter)
+=======
+register_model_adapter(SolarAdapter)
+>>>>>>> main
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
