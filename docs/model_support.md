@@ -85,9 +85,12 @@ You can add `--debug` to see the actual prompt sent to the model.
 
 FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
 
-First, check if the model has a chat template in its tokenizer's config. It will look something like [this](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/tokenizer_config.json#L42).
+<b>If the model has a chat template in its tokenizer's config:</b>
 
-If the model does not have a chat template in its tokenizer's config, follow these steps to add a new model:
+It will look something like [this](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/tokenizer_config.json#L42). Then, implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can do so by checking existing examples like "jondurbin/bagel-dpo-7b-v0.1" and using `register_model_adapter`.
+
+
+<b>If the model does not have a chat template in its tokenizer's config:</b>
 1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one. Please also add a link to the official reference code if possible.
 2. Implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can follow existing examples and use `register_model_adapter` to add a new one.
 3. (Optional) add the model name to the "Supported models" [section](#supported-models) above and add more information in [fastchat/model/model_registry.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_registry.py).

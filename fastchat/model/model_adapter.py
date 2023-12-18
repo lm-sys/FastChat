@@ -1989,6 +1989,16 @@ class MetaMathAdapter(BaseModelAdapter):
         return get_conv_template("metamath")
 
 
+class BagelAdapter(BaseModelAdapter):
+    """The model adapter for Notus models"""
+
+    def match(self, model_path: str):
+        return "bagel" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("jondurbin/bagel-dpo-7b-v0.1")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2065,6 +2075,7 @@ register_model_adapter(YiAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
+register_model_adapter(BagelAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
