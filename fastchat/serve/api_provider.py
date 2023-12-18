@@ -148,20 +148,21 @@ def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
         }
         yield data
 
-def ai2_api_stream_iter(model_name,
-                        messages,
-                        temperature,
-                        top_p,
-                        max_new_tokens,
-                        api_key=None,
-                        api_base=None,
-                        ):
-                        
+
+def ai2_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key=None,
+    api_base=None,
+):
     from requests import post
     from json import loads
 
     # get keys and needed values
-    ai2_key = api_key or os.environ.get('AI2_API_KEY')
+    ai2_key = api_key or os.environ.get("AI2_API_KEY")
     api_base = api_base or "https://inferd.allen.ai/api/v1/infer"
     model_id = "mov_01hhndc7e8k2s9x379ge8sm8xs"
 
@@ -174,11 +175,10 @@ def ai2_api_stream_iter(model_name,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
-    res = post(api_base,
+    res = post(
+        api_base,
         stream=True,
-        headers={
-            "Authorization": f"Bearer {ai2_key}"
-        },
+        headers={"Authorization": f"Bearer {ai2_key}"},
         json={
             "model_version_id": model_id,
             # This input format is specific to the Tulu2 model. Other models
@@ -190,10 +190,11 @@ def ai2_api_stream_iter(model_name,
                     "max_tokens": max_new_tokens,
                     "temperature": temperature,
                     "top_p": top_p,
-                    "logprobs": 1, # increase for more choices
-                }
-            }
-        })
+                    "logprobs": 1,  # increase for more choices
+                },
+            },
+        },
+    )
 
     if res.status_code != 200:
         logger.error(f"unexpected response ({res.status_code}): {res.text}")
@@ -211,7 +212,7 @@ def ai2_api_stream_iter(model_name,
                 raise ValueError("empty result in InferD response")
 
             data = {
-                    "text": text,
-                    "error_code": 0,
+                "text": text,
+                "error_code": 0,
             }
             yield data
