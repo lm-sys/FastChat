@@ -262,7 +262,7 @@ def load_model(
         from transformers import BitsAndBytesConfig
 
         kwargs["load_in_4bit"] = True
-        
+
         # with 4-bit quantization, we use float16 for optimization
         if dtype is None:
             kwargs["torch_dtype"] = torch.float16
@@ -351,7 +351,9 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading and not load_4bit) or device in (
+    if (
+        device == "cuda" and num_gpus == 1 and not cpu_offloading and not load_4bit
+    ) or device in (
         "mps",
         "xpu",
         "npu",
@@ -360,6 +362,14 @@ def load_model(
 
     if device == "xpu":
         model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
+    else:
+        try:
+            from optimum.bettertransformer import BetterTransformer
+
+            model = BetterTransformer.transform(model, keep_original_model=True)
+
+        except:
+            pass
 
     if debug:
         print(model)
