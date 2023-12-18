@@ -331,7 +331,7 @@ def load_model(
                 "Use model from www.modelscope.cn need pip install modelscope"
             )
             raise e
-    
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
