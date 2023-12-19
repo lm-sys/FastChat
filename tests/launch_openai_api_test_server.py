@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     if args.multimodal:
         models = [
-            ("liuhaotian/llava-v1.5-7b", "model_worker"),
+            ("llava-hf/llava-1.5-7b-hf", "model_worker"),
         ]
     else:
         models = [

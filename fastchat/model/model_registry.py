@@ -438,7 +438,7 @@ register_model_info(
 register_model_info(
     ["llava-v1.5-7b", "llava-v1.5-13b"],
     "Llava",
-    "https://huggingface.co/liuhaotian/llava-v1.5-7b",
+    "https://huggingface.co/llava-hf/llava-1.5-7b-hf",
     "LLaVA is an open-source chatbot trained by fine-tuning LLaMA/Vicuna on GPT-generated multimodal instruction-following data.",
 )
 

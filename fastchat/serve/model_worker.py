@@ -91,14 +91,15 @@ class ModelWorker(BaseModelWorker):
             debug=debug,
         )
         self.device = device
-        if self.tokenizer.pad_token == None:
+
+        if (
+            not hasattr(self.tokenizer, "image_processor")
+            and self.tokenizer.pad_token == None
+        ):
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-
         self.context_len = get_context_length(self.model.config)
-        self.generate_stream_func = get_generate_stream_function(
-            self.model, model_path
-        )
+        self.generate_stream_func = get_generate_stream_function(self.model, model_path)
         self.stream_interval = stream_interval
         self.embed_in_truncate = embed_in_truncate
         self.seed = seed

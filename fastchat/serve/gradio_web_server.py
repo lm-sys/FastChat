@@ -24,7 +24,6 @@ from fastchat.constants import (
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
 )
-from fastchat.model.llava.constants import LLAVA_IMAGE_TOKEN
 from fastchat.model.model_adapter import (
     get_conversation_template,
     ANTHROPIC_MODEL_LIST,
@@ -59,7 +58,7 @@ enable_moderation = False
 
 acknowledgment_md = """
 ### Acknowledgment
-<div class="image-container">
+<div class="sponsor-image-container">
     <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
     <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
@@ -261,6 +260,10 @@ def _prepare_text_with_image(state, text, image):
         if len(state.conv.get_images()) > 0:
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
+
+        image = state.conv.convert_image_to_base64(
+            image
+        )  # PIL type is not JSON serializable
 
         text = (
             text,

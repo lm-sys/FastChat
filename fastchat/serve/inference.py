@@ -75,7 +75,6 @@ def generate_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
-
     if hasattr(model, "device"):
         device = model.device
 
@@ -515,12 +514,12 @@ def chat_loop(
                 print("usage: !!image-file <filename> <prompt>")
                 continue
             else:
-                filename = args[1]
-                if not os.path.exists(filename):
-                    print("file not found:", filename)
-                    continue
+                image = args[1]
 
-                image = load_image(filename)
+                if not image.lower().endswith(
+                    ("png", "jpg", "jpeg", "webp", "gif")
+                ) and not image.lower().startswith(("https://", "http://")):
+                    continue
 
                 text = " ".join(args[2:])
 
@@ -569,7 +568,9 @@ def chat_loop(
             conv.update_last_message(outputs.strip())
 
             if debug:
-                if hasattr(tokenizer, "image_processor"): # for multimodal models, a process holds a tokenizer class
+                if hasattr(
+                    tokenizer, "image_processor"
+                ):  # for multimodal models, a process holds a tokenizer class
                     num_tokens = len(tokenizer.tokenizer.encode(outputs))
                 else:
                     num_tokens = len(tokenizer.encode(outputs))

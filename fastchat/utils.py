@@ -354,10 +354,19 @@ def str_to_torch_dtype(dtype: str):
 
 def load_image(image_file):
     from PIL import Image
+    import base64
+
+    image = None
 
     if image_file.startswith("http://") or image_file.startswith("https://"):
         response = requests.get(image_file)
         image = Image.open(BytesIO(response.content)).convert("RGB")
-    else:
+    elif base64.b64encode(base64.b64decode(image_file)) == image_file.encode():
+        image = Image.open(BytesIO(base64.b64decode(image_file)))
+    elif image_file.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
+        if not os.path.exists(image_file):
+            return None
+
         image = Image.open(image_file).convert("RGB")
+
     return image

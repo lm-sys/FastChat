@@ -120,7 +120,7 @@ def test_openai_curl():
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "llava-v1.5-7b",
+    "model": "llava-v1.5-7b-hf",
     "messages": [
       {
         "role": "user",

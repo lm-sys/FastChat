@@ -6,39 +6,14 @@ https://github.com/haotian-liu/LLaVA/blob/5da97161b9e2c3ae19b1d4a39eeb43148091d7
 
 from io import BytesIO
 import base64
+import os
 import requests
 from threading import Thread
 
 import torch
 from transformers import TextIteratorStreamer
 
-
-def load_image(image):
-    from PIL import Image
-
-    if image.startswith("http://") or image.startswith("https://"):
-        response = requests.get(image)
-        image = Image.open(BytesIO(response.content)).convert("RGB")
-    else:
-        image = Image.open(BytesIO(base64.b64decode(image)))
-    
-    return image
-
-
-def expand2square(pil_img, background_color):
-    from PIL import Image
-
-    width, height = pil_img.size
-    if width == height:
-        return pil_img
-    elif width > height:
-        result = Image.new(pil_img.mode, (width, width), background_color)
-        result.paste(pil_img, (0, (width - height) // 2))
-        return result
-    else:
-        result = Image.new(pil_img.mode, (height, height), background_color)
-        result.paste(pil_img, ((height - width) // 2, 0))
-        return result
+from fastchat.utils import load_image
 
 @torch.inference_mode()
 def generate_stream_llava(

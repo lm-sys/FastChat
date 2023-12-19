@@ -328,7 +328,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     for image in msg[1]:
-                        images.append(self.convert_image_to_base64(image))
+                        images.append(image)
 
         return images
 
@@ -355,9 +355,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
-                    img_b64_str = self.convert_image_to_base64(
-                        image[0]
-                    )  # Only one image on gradio at one time
+                    img_b64_str = image[0]  # Only one image on gradio at one time
                     img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace(self.image_token_str, "").strip()
                     ret.append([msg, None])

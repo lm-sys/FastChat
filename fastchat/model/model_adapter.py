@@ -36,6 +36,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
+from fastchat.model.model_llava import generate_stream_llava
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
@@ -1936,7 +1937,11 @@ class LlavaAdapter(BaseModelAdapter):
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        model = LlavaForConditionalGeneration.from_pretrained(model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True,)
+        model = LlavaForConditionalGeneration.from_pretrained(
+            model_path,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+        )
         processor = AutoProcessor.from_pretrained(model_path)
 
         return model, processor
