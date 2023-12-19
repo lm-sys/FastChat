@@ -1,17 +1,26 @@
 import json
 
 cnt = 1
-with open('temp_v10.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
+with open('temp_v10a.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
     for idx, line in enumerate(f):
         js = json.loads(line)
-        tt = js['turns']
-        rr = js['reference_answer']
-        if len(tt) == len(rr):
-            for t, r in zip(tt, rr):
-                js['question_id'] = cnt
-                cnt += 1
-                js['turns'] = [t]
-                js['reference_answer'] = [r]
-                g.write(json.dumps(js, ensure_ascii=False) + '\n')
+        topic = js['topic']
+        policy = js['policy']
+        for result in js['results']:
+            q = result['question']
+            id0 = result['id']
+            options = '\n'.join(['%s:%s' % (k, v) for k, v in result['options'].items()])
+            question_type = result['question_type']
+            question_level = result['question_level']
+            dd = {
+                "question_id": cnt,
+                "category": "%s|||%s" % (topic, policy),
+                "turns": ["%s\n%s" % (q, options)],
+                "reference_answers": result['reference_answer'],
+                "question_type": result['question_type'],
+                "question_level": result['question_level']
+            }
+            g.write(json.dumps(dd, ensure_ascii=False) + '\n')
+            cnt += 1
         else:
             print(idx, line)
