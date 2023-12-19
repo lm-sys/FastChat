@@ -34,6 +34,7 @@ def run_eval(
         num_gpus_total,
         max_gpu_memory,
         dtype,
+        revision,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -41,15 +42,36 @@ def run_eval(
     
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
-    get_model_answers(model_path,
-                      model_id,
-                      questions,
-                      answer_file,
-                      max_new_token,
-                      num_choices,
-                      num_gpus_per_model,
-                      max_gpu_memory,
-                      dtype=dtype)
+
+    use_ray = num_gpus_total // num_gpus_per_model > 1
+
+    if use_ray:
+        get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
+            get_model_answers
+        ).remote
+    else:
+        get_answers_func = get_model_answers
+
+    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
+    ans_handles = []
+    for i in range(0, len(questions), chunk_size):
+        ans_handles.append(
+            get_answers_func(
+                model_path,
+                model_id,
+                questions[i : i + chunk_size],
+                answer_file,
+                max_new_token,
+                num_choices,
+                num_gpus_per_model,
+                max_gpu_memory,
+                dtype=dtype,
+                revision=revision,
+            )
+        )
+
+    if use_ray:
+        ray.get(ans_handles)
 
 
 @torch.inference_mode()
@@ -70,6 +92,7 @@ def get_model_answers(
     # llm = LLM(model=model_dir, trust_remote_code=True)
     llm = LLM(model="/root/autodl-tmp/model/" + model_path, trust_remote_code=True)
     prompts = []
+    
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
         qs = '\n'.join(question["turns"])
@@ -176,6 +199,12 @@ if __name__ == "__main__":
         help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
         default=None,
     )
+    parser.add_argument(
+        "--revision",
+        type=str,
+        default="main",
+        help="The model revision to load.",
+    )
     
     args = parser.parse_args()
     
@@ -205,6 +234,7 @@ if __name__ == "__main__":
         num_gpus_total=args.num_gpus_total,
         max_gpu_memory=args.max_gpu_memory,
         dtype=str_to_torch_dtype(args.dtype),
+        revision=args.revision,
     )
     
     reorg_answer_file(answer_file)

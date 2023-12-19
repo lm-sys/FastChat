@@ -29,6 +29,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     ip_expiration_dict,
     get_ip,
+    get_model_description_md,
 )
 from fastchat.utils import (
     build_logger,
@@ -163,20 +164,26 @@ SAMPLING_WEIGHTS = {
     "gpt-4-turbo": 4,
     "gpt-3.5-turbo": 2,
     "gpt-3.5-turbo-1106": 2,
-    "claude-2": 8,
+    "claude-2.1": 4,
+    "claude-2.0": 2,
     "claude-1": 2,
-    "claude-instant-1": 8,
+    "claude-instant-1": 4,
+    "openhermes-2.5-mistral-7b": 2,
+    "wizardlm-70b": 2,
+    "starling-lm-7b-alpha": 2,
+    "tulu-2-dpo-70b": 2,
+    "yi-34b-chat": 2,
     "zephyr-7b-beta": 2,
     "openchat-3.5": 2,
+    "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.1": 2,
+    "deluxe-chat-v1.1": 4,
     "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
-    "vicuna-33b": 8,
+    "vicuna-33b": 4,
     "vicuna-13b": 1.5,
-    "wizardlm-70b": 1.5,
     "wizardlm-13b": 1.5,
     "qwen-14b-chat": 1.5,
     "mistral-7b-instruct": 1.5,
@@ -205,14 +212,21 @@ SAMPLING_WEIGHTS = {
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4": {"claude-2"},
-    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo"},
-    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2"},
-    "claude-2": {"gpt-4", "gpt-3.5-turbo", "claude-1"},
-    "claude-1": {"claude-2", "gpt-4", "gpt-3.5-turbo"},
-    "claude-instant-1": {"gpt-3.5-turbo", "claude-2"},
-    "deluxe-chat-v1.1": {"gpt-4"},
+    "gpt-4": {"claude-2.1", "gpt-4-turbo"},
+    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-1106", "claude-2.1"},
+    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2.1"},
+    "gpt-3.5-turbo-1106": {"claude-instant-1", "gpt-3.5-turbo"},
+    "claude-2.1": {"gpt-4-turbo", "gpt-4", "claude-1"},
+    "claude-2.0": {"gpt-4-turbo", "gpt-4", "claude-1"},
+    "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
+    "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
+    "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
+    "openhermes-2.5-mistral-7b": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
+    "starling-lm-7b-alpha": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
+    "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "yi-34b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
     "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
+    "chatglm3-6b": {"yi-34b-chat", "qwen-14b-chat"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
     "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
     "zephyr-7b-beta": {
@@ -236,10 +250,24 @@ BATTLE_TARGETS = {
     "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
 }
 
-SAMPLING_BOOST_MODELS = ["openchat-3.5", "gpt-4-turbo", "gpt-3.5-turbo-1106"]
+SAMPLING_BOOST_MODELS = [
+    "tulu-2-dpo-70b",
+    "yi-34b-chat",
+    "claude-2.1",
+    "wizardlm-70b",
+    "starling-lm-7b-alpha",
+    "openhermes-2.5-mistral-7b",
+    "gpt-3.5-turbo-1106",
+    # "openchat-3.5",
+    # "gpt-4-turbo",
+    # "claude-1",
+]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = [
+    "zephyr-7b-alpha",
+    "falcon-180b-chat",
+]
 
 
 def get_sample_weight(model):
@@ -442,6 +470,9 @@ Find out who is the 🥇LLM Champion!
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Box(elem_id="share-region-anony"):
+        with gr.Accordion("🔍 Expand to see 20+ Arena players", open=False):
+            model_description_md = get_model_description_md(models)
+            gr.Markdown(model_description_md, elem_id="model_description_markdown")
         with gr.Row():
             for i in range(num_sides):
                 label = "Model A" if i == 0 else "Model B"
@@ -470,15 +501,13 @@ Find out who is the 🥇LLM Champion!
             )
 
     with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="👉 Enter your prompt and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            container=True,
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
@@ -511,7 +540,7 @@ Find out who is the 🥇LLM Champion!
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md)
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [
