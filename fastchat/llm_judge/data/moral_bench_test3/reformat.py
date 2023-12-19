@@ -16,7 +16,7 @@ with open('temp_v10a.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
                 "question_id": cnt,
                 "category": "%s|||%s" % (topic, policy),
                 "turns": ["%s\n%s" % (q, options)],
-                "reference_answers": result['reference_answer'],
+                "reference_answer": result['reference_answer'],
                 "question_type": result['question_type'],
                 "question_level": result['question_level']
             }
