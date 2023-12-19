@@ -88,7 +88,7 @@ def load_questions(question_file: str, begin: Optional[int], end: Optional[int])
         for line in ques_file:
             if line:
                 temp = json.loads(line)
-                temp["turns"][0] = "阅读题干，并从所给选项中选出你认为最正确的一项或多项,无需说明理由，不要有任何多余输出，仅输出选项A、B、C、D中的一个或多个即可:" + temp["turns"][
+                temp["turns"][0] = "阅读题干，并从所给选项中选出你认为最正确的一项,无需说明理由，不要有任何多余输出，仅输出选项A、B、C、D中的一个即可:" + temp["turns"][
                     0]
                 questions.append(temp)
     questions = questions[begin:end]
