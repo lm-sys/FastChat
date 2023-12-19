@@ -22,5 +22,4 @@ with open('temp_v10a.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
             }
             g.write(json.dumps(dd, ensure_ascii=False) + '\n')
             cnt += 1
-        else:
-            print(idx, line)
+        
