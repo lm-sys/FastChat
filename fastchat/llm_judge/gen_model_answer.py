@@ -85,6 +85,7 @@ def get_model_answers(
         num_gpus_per_model,
         max_gpu_memory,
         dtype,
+        revision
 ):
     print("model_path:", model_path)
     model_dir = snapshot_download(model_path, cache_dir="/root/autodl-tmp/model")
