@@ -157,7 +157,7 @@ def generate():
     max_gpu_memory = data.get('max_gpu_memory', 16)
     dtype = str_to_torch_dtype(data.get('dtype', None))
 
-    GPUs = get_free_gpus()
+    # GPUs = get_free_gpus()
     # if "13b" in model_name or "13B" in model_name or "20b" in model_name or "20B" in model_name:
     #     if len(GPUs) >= 2:
     #         GPU = GPUs[:2]
@@ -171,7 +171,7 @@ def generate():
     #         tensor_parallel_size = 1
     #     else:
     #         return "暂无空闲GPU..."
-    print(f"use GPU {GPU}")
+    # print(f"use GPU {GPU}")
     identifier = generate_random_identifier()
     model_name1 = model_name.split('/')[-1]
     output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/model_answer/{model_name1}.jsonl'
