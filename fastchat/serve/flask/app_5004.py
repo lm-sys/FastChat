@@ -13,6 +13,7 @@ import datetime
 import pytz
 
 from fastchat.llm_judge.gen_model_answer import run_eval
+from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, generate_random_identifier, append_dict_to_jsonl, get_end_time, get_start_time
 
 
@@ -147,6 +148,15 @@ def generate():
     model_id = data.get('model_id')
     data_id = data.get('data_id')
     revision = data.get('revision')
+    question_begin = data.get('question_begin', None)
+    question_end = data.get('question_end', None)
+    max_new_token = data.get('max_new_token', 1024)
+    num_choices = data.get('num_choices', 1)
+    num_gpus_per_model = data.get('num_gpus_per_model', 1)
+    num_gpus_total = data.get('num_gpus_total', 1)
+    max_gpu_memory = data.get('max_gpu_memory', 16)
+    dtype = str_to_torch_dtype(data.get('dtype', None))
+
     GPUs = get_free_gpus()
     if "13b" in model_name or "13B" in model_name or "20b" in model_name or "20B" in model_name:
         if len(GPUs) >= 2:
@@ -174,7 +184,15 @@ def generate():
             model_path=model_name,
             model_id=model_id,
             question_file=question_file,
+            question_begin=question_begin,
+            question_end=question_end,
             answer_file=output_file,
+            max_new_token=max_new_token,
+            num_choices=num_choices,
+            num_gpus_per_model=num_gpus_per_model,
+            num_gpus_total=num_gpus_total,
+            max_gpu_memory=max_gpu_memory,
+            dtype=dtype,
             revision=revision
         )
         end_time = get_end_time()
