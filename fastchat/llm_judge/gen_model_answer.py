@@ -22,20 +22,20 @@ from modelscope import GenerationConfig
 
 
 def run_eval(
-        model_path,
-        model_id,
-        question_file,
-        question_begin,
-        question_end,
-        answer_file,
-        max_new_token,
-        num_choices,
-        num_gpus_per_model,
-        num_gpus_total,
-        max_gpu_memory,
-        dtype,
-        revision,
-):
+        model_path: object,
+        model_id: object,
+        question_file: object,
+        question_begin: object,
+        question_end: object,
+        answer_file: object,
+        max_new_token: object,
+        num_choices: object,
+        num_gpus_per_model: object,
+        num_gpus_total: object,
+        max_gpu_memory: object,
+        dtype: object,
+        revision: object,
+) -> object:
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
     random.shuffle(questions)
