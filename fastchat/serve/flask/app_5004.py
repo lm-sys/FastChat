@@ -11,6 +11,8 @@ import string
 import time
 import datetime
 import pytz
+
+from fastchat.llm_judge.gen_model_answer import run_eval
 from flask_utils import get_free_gpus, generate_random_identifier, append_dict_to_jsonl, get_end_time, get_start_time
 
 
@@ -144,12 +146,12 @@ def generate():
     model_name = data.get('model_name')
     model_id = data.get('model_id')
     data_id = data.get('data_id')
+    revision = data.get('revision')
     GPUs = get_free_gpus()
     if "13b" in model_name or "13B" in model_name or "20b" in model_name or "20B" in model_name:
         if len(GPUs) >= 2:
             GPU = GPUs[:2]
             GPU = ', '.join(map(str, GPU))
-            
             tensor_parallel_size = 2
         else:
             return "暂无空闲GPU..."
@@ -163,11 +165,18 @@ def generate():
     identifier = generate_random_identifier()
     model_name1 = model_name.split('/')[-1]
     output_file = f'/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/model_answer/{model_name1}.jsonl'
-    command = f"/home/workspace/FastChat/scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{output_file}\""
+    # command = f"/home/workspace/FastChat/scripts/infer_answer_vllm.sh \"{model_name}\" \"{model_id}\" \"{data_id}\" \"{GPU}\" \"{tensor_parallel_size}\" \"{output_file}\" \"{revision}\""
+    question_file = f"/home/workspace/FastChat/fastchat/llm_judge/data/{data_id}/question.jsonl"
     
     try:
         start_time = get_start_time()
-        subprocess.check_call(command, shell=True)
+        run_eval(
+            model_path=model_name,
+            model_id=model_id,
+            question_file=question_file,
+            answer_file=output_file,
+            revision=revision
+        )
         end_time = get_end_time()
         result = {"outputfile": output_file,
                   "model_name": model_name,
