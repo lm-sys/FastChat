@@ -88,7 +88,7 @@ def get_model_answers(
         revision
 ):
     print("model_path:", model_path, "model_id:", model_id, "revision:", revision)
-    model_dir = snapshot_download(model_path, cache_dir="/root/autodl-tmp/model", revision=revision)
+    model_dir = snapshot_download(model_path, cache_dir="/root/autodl-tmp/model", revision=revision, local_files_only=True)
     print("model_dir:", model_dir)
     # llm = LLM(model=model_dir, trust_remote_code=True)
     llm = LLM(model="/root/autodl-tmp/model/" + model_path, trust_remote_code=True)
