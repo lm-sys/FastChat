@@ -1,7 +1,7 @@
 import json
 
 cnt = 1
-with open('temp_v11.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
+with open('temp_v2.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
     for idx, line in enumerate(f):
         js = json.loads(line)
         topic = js['topic']
@@ -9,8 +9,8 @@ with open('temp_v11.jsonl', 'r') as f, open('question.jsonl', 'w') as g:
         for result in js['results']:
             q = result['question']
             id0 = result['id']
-            options = '\n'.join(['%s:%s' % (k, v) for k, v in result['options'].items()])
             try:
+                options = '\n'.join(['%s:%s' % (k, v) for k, v in result['options'].items()])
                 question_type = result['question_type']
             except KeyError as e:
                 print(e, result)
