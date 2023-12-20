@@ -8,11 +8,13 @@ import json
 import os
 import random
 import time
+import gc
 
 import shortuuid
 import torch
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
+from vllm.model_executor.parallel_utils.parallel_state import destroy_model_parallel
 
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
@@ -129,6 +131,11 @@ def get_model_answers(
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
+
+    destroy_model_parallel()
+    del llm
+    gc.collect()
+    torch.cuda.empty_cache()
 
 
 def reorg_answer_file(answer_file):
