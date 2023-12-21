@@ -135,6 +135,12 @@ register_model_info(
     "a chatbot fine-tuned from Mistral by Hugging Face",
 )
 register_model_info(
+    ["catppt"],
+    "CatPPT",
+    "https://huggingface.co/rishiraj/CatPPT",
+    "a chatbot fine-tuned from a SLERP merged model by Rishiraj Acharya",
+)
+register_model_info(
     ["qwen-14b-chat"],
     "Qwen",
     "https://huggingface.co/Qwen/Qwen-14B-Chat",

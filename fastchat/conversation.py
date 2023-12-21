@@ -1313,6 +1313,20 @@ register_conv_template(
     )
 )
 
+# CatPPT template
+# reference: https://huggingface.co/rishiraj/CatPPT
+register_conv_template(
+    Conversation(
+        name="catppt",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
 # Orca-2 template
 # reference: https://huggingface.co/microsoft/Orca-2-7b
 register_conv_template(
