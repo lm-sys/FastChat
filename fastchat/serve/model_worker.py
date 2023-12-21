@@ -102,6 +102,7 @@ class ModelWorker(BaseModelWorker):
     def generate_stream_gate(self, params):
         if self.device == "npu":
             import torch_npu
+
             torch_npu.npu.set_device("npu:0")
         self.call_ct += 1
 
@@ -218,8 +219,8 @@ class ModelWorker(BaseModelWorker):
                 all_embeddings = []
                 all_token_num = 0
                 for i in range(0, input_ids.size(1), self.context_len):
-                    chunk_input_ids = input_ids[:, i: i + self.context_len]
-                    chunk_attention_mask = attention_mask[:, i: i + self.context_len]
+                    chunk_input_ids = input_ids[:, i : i + self.context_len]
+                    chunk_attention_mask = attention_mask[:, i : i + self.context_len]
 
                     chunk_embeddings, token_num = self.__process_embed_chunk(
                         chunk_input_ids, chunk_attention_mask, **model_type_dict
