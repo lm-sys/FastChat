@@ -38,6 +38,7 @@ IDENTITY_WORDS = [
     "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
     "$MODERATION$ YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES.",
     "API REQUEST ERROR. Please increase the number of max tokens.",
+    "**API REQUEST ERROR** Reason: The response was blocked.",
 ]
 
 for i in range(len(IDENTITY_WORDS)):
