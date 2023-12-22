@@ -22,26 +22,6 @@ def generate_random_identifier():
     return ''.join(random.choice(chars) for _ in range(16))
 
 
-def read_report_files(directory):
-    markdown_table = """
-        | 模型名称 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
-        |:--------:|:------:|:--------:|:--------:|:--------:|
-        | GPT-4 | 87.43 | 88.76 | 86.09 | -2.67 |
-        | BlueLM | 85.17 | 84.80 | 85.55 | 0.75 |
-        ...
-        """
-    file_dict = {}
-    files = os.listdir(directory)
-    for filename in files:
-        if filename.endswith(".jsonl"):  # 或者根据实际文件后缀修改
-            file_path = os.path.join(directory, filename)
-            with open(file_path, "r", encoding="utf-8") as f:
-                # 读取整个文件内容作为一个字符串
-                # file_content = f.read()
-                file_dict[filename.split('.jsonl')[0]] = markdown_table
-    return file_dict
-
-
 def read_jsonl_files(directory):
     file_dict = {}  # 用于存储文件内容的字典
     
@@ -69,15 +49,49 @@ app = Flask(__name__)
 
 @app.route('/report', methods=['POST'])
 def report():
+    def read_report_files(directory, model_list=None):
+        if model_list is None:
+            model_list = []
+        markdown_table = """
+            | 模型名称 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
+            |:--------:|:------:|:--------:|:--------:|:--------:|
+            | GPT-4 | 87.43 | 88.76 | 86.09 | -2.67 |
+            | BlueLM | 85.17 | 84.80 | 85.55 | 0.75 |
+            ...
+            """
+        file_dict = {}
+        files = os.listdir(directory)
+        for filename in files:
+            if filename.endswith(".jsonl"):
+                if filename.split('.jsonl')[0] not in model_list:
+                    continue
+                file_path = os.path.join(directory, filename)
+                with open(file_path, "r", encoding="utf-8") as f:
+                    # 读取整个文件内容作为一个字符串
+                    # file_content = f.read()
+                    file_dict[filename.split('.jsonl')[0]] = markdown_table
+        return file_dict
+    
+    MODEL_TABLE = [
+        "chatglm3-6b",
+        "chatglm2-6b",
+        "Baichuan2-7B-Chat",
+        "Qwen-7B-Chat",
+        "internlm-chat-7b",
+        "Yi-6B-Chat"
+    ]
+    
     data = request.json
     # Validate input data
     if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     
     DATA_ID = data.get('data_id')
-    
+    MODEL_LIST = data.get('model_list', [])
+    MODEL_LIST1 = [MODEL_TABLE[int(item)] for item in MODEL_LIST]
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
-    result_dict = read_report_files(directory_path)
+
+    result_dict = read_report_files(directory_path, model_list=MODEL_LIST1)
     try:
         start_time = get_start_time()
         end_time = get_end_time()
