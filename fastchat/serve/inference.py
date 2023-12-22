@@ -45,6 +45,7 @@ from fastchat.utils import (
     is_partial_stop,
     is_sentence_complete,
     get_context_length,
+    get_num_image_tokens,
     load_image,
 )
 
@@ -90,6 +91,14 @@ def generate_stream(
     echo = bool(params.get("echo", True))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
+    images = params.get("images", None)
+
+    if (
+        model.config.is_multimodal
+    ):  # renaming because multimodal models pass in processors that hold both image processor and tokenizer
+        processor = tokenizer
+        tokenizer = processor.tokenizer
+
     if tokenizer.eos_token_id not in stop_token_ids:
         stop_token_ids.append(tokenizer.eos_token_id)
 
@@ -100,6 +109,9 @@ def generate_stream(
 
     if model.config.is_encoder_decoder:
         max_src_len = context_len
+    elif model.config.is_multimodal and images is not None:
+        num_image_tokens = get_num_image_tokens(model.config.vision_config, len(images))
+        max_src_len = context_len - max_new_tokens - num_image_tokens - 1
     else:  # truncate
         max_src_len = context_len - max_new_tokens - 1
 
@@ -118,6 +130,9 @@ def generate_stream(
             dtype=torch.int64,
             device=device,
         )
+    elif model.config.is_multimodal and images is not None:
+        images = [load_image(image) for image in images]
+        inputs = processor(text=prompt, images=images, return_tensors="pt").to(device)
     else:
         start_ids = torch.as_tensor([input_ids], device=device)
 
@@ -135,6 +150,9 @@ def generate_stream(
                     use_cache=True,
                 )
                 logits = model.lm_head(out[0])
+            elif model.config.is_multimodal and images is not None:
+                out = model(**inputs)
+                logits = out.logits
             else:
                 out = model(input_ids=start_ids, use_cache=True)
                 logits = out.logits

@@ -36,7 +36,6 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_exllama import generate_stream_exllama
-from fastchat.model.model_llava import generate_stream_llava
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
@@ -378,9 +377,6 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_exllama
     elif is_xft:
         return generate_stream_xft
-    elif is_llava:
-        return generate_stream_llava
-
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
@@ -1944,6 +1940,7 @@ class LlavaAdapter(BaseModelAdapter):
         )
         processor = AutoProcessor.from_pretrained(model_path)
 
+        model.config.is_multimodal = True
         return model, processor
 
     def match(self, model_path: str):

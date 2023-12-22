@@ -370,3 +370,10 @@ def load_image(image_file):
         image = Image.open(image_file).convert("RGB")
 
     return image
+
+
+def get_num_image_tokens(vision_config, num_images):
+    image_size = vision_config.image_size
+    patch_size = vision_config.patch_size
+
+    return (image_size // patch_size) ** 2
