@@ -50,9 +50,7 @@ def get_answer(
             conv.append_message(conv.roles[1], None)
 
             if model in ANTHROPIC_MODEL_LIST:
-                output = chat_completion_anthropic(
-                    model, conv, temperature, max_tokens
-                )
+                output = chat_completion_anthropic(model, conv, temperature, max_tokens)
             elif model == "palm-2-chat-bison-001":
                 chat_state, output = chat_completion_palm(
                     chat_state, model, conv, temperature, max_tokens
