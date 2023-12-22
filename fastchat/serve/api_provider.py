@@ -163,7 +163,7 @@ def ai2_api_stream_iter(model_name,
     # get keys and needed values
     ai2_key = api_key or os.environ.get('AI2_API_KEY')
     api_base = api_base or "https://inferd.allen.ai/api/v1/infer"
-    model_id = "mov_01hhndc7e8k2s9x379ge8sm8xs"
+    model_id = "mod_01hhgcga70c91402r9ssyxekan"
 
     # Make requests
     gen_params = {
@@ -174,13 +174,19 @@ def ai2_api_stream_iter(model_name,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
+
+    # AI2 uses vLLM, which requires that `top_p` be 1.0 for greedy sampling:
+    # https://github.com/vllm-project/vllm/blob/v0.1.7/vllm/sampling_params.py#L156-L157
+    if temperature == 0.0 and top_p < 1.0:
+        raise ValueError("top_p must be 1 when temperature is 0.0")
+
     res = post(api_base,
         stream=True,
         headers={
             "Authorization": f"Bearer {ai2_key}"
         },
         json={
-            "model_version_id": model_id,
+            "model_id": model_id,
             # This input format is specific to the Tulu2 model. Other models
             # may require different input formats. See the model's schema
             # documentation on InferD for more information.
