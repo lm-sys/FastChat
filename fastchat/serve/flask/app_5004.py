@@ -59,8 +59,6 @@ app = Flask(__name__)
 @app.route('/report', methods=['POST'])
 def report():
     def read_report_files(directory, model_list=None):
-        if model_list is None:
-            model_list = []
         markdown_table = """
             | 模型名称 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
             |:--------:|:------:|:--------:|:--------:|:--------:|
@@ -87,7 +85,7 @@ def report():
         return jsonify({"error": "Missing required fields in the request"}), 400
     
     DATA_ID = data.get('data_id')
-    MODEL_LIST = data.get('model_list', [])
+    MODEL_LIST = data.get('model_list', range(len(MODEL_TABLE)))
     MODEL_LIST1 = [MODEL_TABLE[int(item)] for item in MODEL_LIST]
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
 
