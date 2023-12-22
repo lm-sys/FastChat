@@ -181,7 +181,8 @@ def ai2_api_stream_iter(
     if temperature == 0.0 and top_p < 1.0:
         raise ValueError("top_p must be 1 when temperature is 0.0")
 
-    res = post(api_base,
+    res = post(
+        api_base,
         stream=True,
         headers={"Authorization": f"Bearer {ai2_key}"},
         json={
