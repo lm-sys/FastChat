@@ -16,6 +16,15 @@ from fastchat.llm_judge.gen_model_answer import run_eval
 from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, generate_random_identifier, append_dict_to_jsonl, get_end_time, get_start_time
 
+MODEL_TABLE = [
+    "chatglm3-6b",
+    "chatglm2-6b",
+    "Baichuan2-7B-Chat",
+    "Qwen-7B-Chat",
+    "internlm-chat-7b",
+    "Yi-6B-Chat"
+]
+
 
 def generate_random_identifier():
     chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -71,15 +80,6 @@ def report():
                     # file_content = f.read()
                     file_dict[filename.split('.jsonl')[0]] = markdown_table
         return file_dict
-    
-    MODEL_TABLE = [
-        "chatglm3-6b",
-        "chatglm2-6b",
-        "Baichuan2-7B-Chat",
-        "Qwen-7B-Chat",
-        "internlm-chat-7b",
-        "Yi-6B-Chat"
-    ]
     
     data = request.json
     # Validate input data
