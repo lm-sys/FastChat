@@ -1325,15 +1325,18 @@ register_conv_template(
 
 # conv template for Custom
 # source: hogehoge
+from omegaconf import OmegaConf
+cfg = OmegaConf.load("configs/config.yaml")
+
 register_conv_template(
     Conversation(
-        name=wandb.config.conv_name,
-        system_message=wandb.config.conv_system_message,
-        roles=eval(wandb.config.conv_roles),
+        name=cfg.mtbench.conv_name,
+        system_message=cfg.mtbench.conv_system_message,
+        roles=eval(cfg.mtbench.conv_roles),
         sep_style=SeparatorStyle.CUSTOM,
-        sep=wandb.config.conv_sep,
-        stop_token_ids=eval(wandb.config.conv_stop_token_ids),
-        stop_str=wandb.config.conv_stop_str,
+        sep=cfg.mtbench.conv_sep,
+        stop_token_ids=eval(cfg.mtbench.conv_stop_token_ids),
+        stop_str=cfg.mtbench.conv_stop_str,
     )
 )
 
