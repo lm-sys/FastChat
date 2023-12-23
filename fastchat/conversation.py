@@ -9,6 +9,7 @@ import dataclasses
 from enum import auto, IntEnum
 from typing import List, Any, Dict, Union, Tuple
 
+import wandb
 
 class SeparatorStyle(IntEnum):
     """Separator styles."""
@@ -29,6 +30,7 @@ class SeparatorStyle(IntEnum):
     ROBIN = auto()
     FALCON_CHAT = auto()
     CHATGLM3 = auto()
+    CUSTOM = auto() # added
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
 
@@ -244,6 +246,14 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.CUSTOM:  # ←追加
+            ret = self.system_message + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + wandb.config.conv_role_message_separator + message + self.sep
+                else:
+                    ret += role + wandb.config.conv_role_only_separator
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1310,6 +1320,20 @@ register_conv_template(
         sep="</s>",
         stop_token_ids=[2],
         stop_str="</s>",
+    )
+)
+
+# conv template for Custom
+# source: hogehoge
+register_conv_template(
+    Conversation(
+        name=wandb.config.conv_name,
+        system_message=wandb.config.conv_system_message,
+        roles=eval(wandb.config.conv_roles),
+        sep_style=SeparatorStyle.CUSTOM,
+        sep=wandb.config.conv_sep,
+        stop_token_ids=eval(wandb.config.conv_stop_token_ids),
+        stop_str=wandb.config.conv_stop_str,
     )
 )
 
