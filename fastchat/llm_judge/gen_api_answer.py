@@ -19,6 +19,7 @@ from fastchat.llm_judge.common import (
     temperature_config,
     chat_compeletion_openai,
     chat_compeletion_anthropic,
+    chat_compeletion_cohere,
     chat_compeletion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
@@ -47,6 +48,7 @@ def get_api_answer(question_file, answer_file):
 
     reorg_answer_file(answer_file)
 
+
 def get_answer(
     question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
 ):
@@ -71,6 +73,10 @@ def get_answer(
                 chat_state, output = chat_compeletion_palm(
                     chat_state, model, conv, temperature, max_tokens
                 )
+            elif cfg_mtbench.api == "cohere":
+                output = chat_compeletion_cohere(
+                model, conv, temperature, max_tokens
+                )       
             else:
                 output = chat_compeletion_openai(model, conv, temperature, max_tokens)
 

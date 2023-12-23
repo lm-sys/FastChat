@@ -13,6 +13,7 @@ from typing import Optional
 
 import openai
 import anthropic
+import cohere
 
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
@@ -477,6 +478,26 @@ def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
                 temperature=temperature,
             )
             output = response.completion
+            break
+        except anthropic.APIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return output.strip()
+
+
+def chat_compeletion_cohere(model, conv, temperature, max_tokens):
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            co = cohere.Client(api_key=os.environ["COHERE_API_KEY"])
+            prompt = conv.get_prompt()
+            response = co.chat(
+                prompt, 
+                model=model, 
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
+            output = response.text
             break
         except anthropic.APIError as e:
             print(type(e), e)

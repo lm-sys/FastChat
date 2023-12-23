@@ -1064,6 +1064,19 @@ class ClaudeAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("claude")
 
+cfg_mtbench = OmegaConf.load("configs/config.yaml")
+class CohereAdapter(BaseModelAdapter):
+    """The model adapter for Cohere"""
+
+    def match(self, model_path: str):
+        return cfg_mtbench.api == "cohere"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cohere")
+
 
 class BardAdapter(BaseModelAdapter):
     """The model adapter for Bard"""
@@ -2041,6 +2054,7 @@ register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
+register_model_adapter(CohereAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)

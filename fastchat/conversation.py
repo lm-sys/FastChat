@@ -699,6 +699,16 @@ register_conv_template(
     )
 )
 
+# Cohere default template
+register_conv_template(
+    Conversation(
+        name="cohere",
+        roles=("USER", "CHATBOT"),
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n\n",
+    )
+)
+
 # MetaMath default template
 # reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58
 register_conv_template(
