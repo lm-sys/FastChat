@@ -284,10 +284,7 @@ def build_side_by_side_ui_named(models):
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
 
-    model_description_md = get_model_description_md(models)
-    notice = gr.Markdown(
-        notice_markdown + model_description_md, elem_id="notice_markdown"
-    )
+    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Box(elem_id="share-region-named"):
         with gr.Row():
@@ -300,6 +297,10 @@ def build_side_by_side_ui_named(models):
                         show_label=False,
                         container=False,
                     )
+        with gr.Row():
+            with gr.Accordion("🔍 Expand to see 20+ model descriptions", open=False):
+                model_description_md = get_model_description_md(models)
+                gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
         with gr.Row():
             for i in range(num_sides):
@@ -322,19 +323,16 @@ def build_side_by_side_ui_named(models):
             )
 
     with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter your prompt here and press ENTER",
-                container=False,
-                elem_id="input_box",
-            )
-        with gr.Column(scale=1, min_width=50):
-            send_btn = gr.Button(value="Send", variant="primary")
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
@@ -363,7 +361,7 @@ def build_side_by_side_ui_named(models):
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md)
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [

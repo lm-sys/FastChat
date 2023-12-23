@@ -323,6 +323,7 @@ def create_model_worker():
         exllama_config = ExllamaConfig(
             max_seq_len=args.exllama_max_seq_len,
             gpu_split=args.exllama_gpu_split,
+            cache_8bit=args.exllama_cache_8bit,
         )
     else:
         exllama_config = None

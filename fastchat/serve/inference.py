@@ -118,6 +118,7 @@ def generate_stream(
     token_logprobs = [None]  # The first token has no logprobs.
     sent_interrupt = False
     finish_reason = None
+    stopped = False
     for i in range(max_new_tokens):
         if i == 0:  # prefill
             if model.config.is_encoder_decoder:

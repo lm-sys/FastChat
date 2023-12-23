@@ -91,7 +91,7 @@ def load_demo(url_params, request: gr.Request):
                 "gpt-3.5-turbo-1106",
             ]
         if args.add_claude:
-            models_anony += ["claude-2", "claude-1", "claude-instant-1"]
+            models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
         if args.add_palm:
             models_anony += ["palm-2"]
     models_anony = list(set(models_anony))

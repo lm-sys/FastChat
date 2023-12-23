@@ -41,16 +41,16 @@ register_model_info(
     "GPT-3.5-Turbo-1106 by OpenAI",
 )
 register_model_info(
-    ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
-)
-register_model_info(
     ["gpt-4-turbo"],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
 )
 register_model_info(
-    ["claude-2"],
+    ["gpt-4"], "GPT-4", "https://openai.com/research/gpt-4", "ChatGPT-4 by OpenAI"
+)
+register_model_info(
+    ["claude-2.1", "claude-2.0"],
     "Claude",
     "https://www.anthropic.com/index/claude-2",
     "Claude 2 by Anthropic",
@@ -62,16 +62,34 @@ register_model_info(
     "Claude by Anthropic",
 )
 register_model_info(
-    ["claude-instant-1"],
+    ["claude-instant-1", "claude-instant-1.2"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
 )
 register_model_info(
-    ["palm-2"],
-    "PaLM 2 Chat",
-    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
-    "PaLM 2 for Chat (chat-bison@001) by Google",
+    ["openhermes-2.5-mistral-7b"],
+    "OpenHermes-2.5-Mistral-7B",
+    "https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B",
+    "a mistral-based model fine-tuned on 1M GPT-4 outputs",
+)
+register_model_info(
+    ["starling-lm-7b-alpha"],
+    "Starling-LM-7B-alpha",
+    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
+    "an open model trained using RLAIF by Berkeley",
+)
+register_model_info(
+    ["tulu-2-dpo-70b"],
+    "Tulu 2",
+    "https://huggingface.co/allenai/tulu-2-dpo-70b",
+    "Tulu 2 by UW/AllenAI",
+)
+register_model_info(
+    ["yi-34b-chat", "yi-6b-chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai/Yi-34B-Chat",
+    "A large language model by 01 AI",
 )
 register_model_info(
     [
@@ -91,6 +109,18 @@ register_model_info(
     "Llama 2",
     "https://ai.meta.com/llama/",
     "open foundation and fine-tuned chat models by Meta",
+)
+register_model_info(
+    ["chatglm3-6b", "chatglm2-6b", "chatglm-6b"],
+    "ChatGLM",
+    "https://chatglm.cn/blog",
+    "an open bilingual dialogue language model by Tsinghua University",
+)
+register_model_info(
+    ["openchat-3.5"],
+    "OpenChat 3.5",
+    "https://github.com/imoneoi/openchat",
+    "an open model fine-tuned on Mistral-7B using C-RLFT",
 )
 register_model_info(
     ["mistral-7b-instruct"],
@@ -159,12 +189,6 @@ register_model_info(
     "an RNN with transformer-level LLM performance",
 )
 register_model_info(
-    ["chatglm-6b", "chatglm2-6b"],
-    "ChatGLM",
-    "https://chatglm.cn/blog",
-    "an open bilingual dialogue language model by Tsinghua University",
-)
-register_model_info(
     ["alpaca-13b"],
     "Alpaca",
     "https://crfm.stanford.edu/2023/03/13/alpaca.html",
@@ -183,10 +207,10 @@ register_model_info(
     "an Open Assistant for everyone by LAION",
 )
 register_model_info(
-    ["openchat-3.5"],
-    "OpenChat 3.5",
-    "https://github.com/imoneoi/openchat",
-    "OpenChat 3.5 is a versatile, open-source language model fine-tuned using C-RLFT",
+    ["palm-2"],
+    "PaLM 2 Chat",
+    "https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023",
+    "PaLM 2 for Chat (chat-bison@001) by Google",
 )
 register_model_info(
     ["llama-7b", "llama-13b"],
@@ -331,6 +355,12 @@ register_model_info(
     "Llama2-Chinese is a multi-language large-scale language model (LLM), developed by FlagAlpha.",
 )
 register_model_info(
+    ["Chinese-Alpaca-2-7B", "Chinese-Alpaca-2-13B"],
+    "Chinese-Alpaca",
+    "https://huggingface.co/hfl/chinese-alpaca-2-13b",
+    "New extended Chinese vocabulary beyond Llama-2, open-sourcing the Chinese LLaMA-2 and Alpaca-2 LLMs.",
+)
+register_model_info(
     ["Vigogne-2-7B-Instruct", "Vigogne-2-13B-Instruct"],
     "Vigogne-Instruct",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-instruct",
@@ -341,6 +371,12 @@ register_model_info(
     "Vigogne-Chat",
     "https://huggingface.co/bofenghuang/vigogne-2-7b-chat",
     "Vigogne-Chat is a French large language model (LLM) optimized for instruction-following and multi-turn dialogues, developed by Bofeng Huang",
+)
+register_model_info(
+    ["stable-vicuna-13B-HF"],
+    "stable-vicuna",
+    "https://huggingface.co/TheBloke/stable-vicuna-13B-HF",
+    "StableVicuna is a Vicuna model fine-tuned using RLHF via PPO on various conversational and instructional datasets.",
 )
 register_model_info(
     ["deluxe-chat-v1", "deluxe-chat-v1.1"],
@@ -376,6 +412,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["dolphin-2.2.1-mistral-7b"],
+    "dolphin-mistral",
+    "https://huggingface.co/ehartford/dolphin-2.2.1-mistral-7b",
+    "An uncensored fine-tuned [Mistral 7B](https://huggingface.co/mistralai/Mistral-7B-v0.1)",
+)
+
+register_model_info(
     [
         "AquilaChat-7B",
         "AquilaChat2-7B",
@@ -384,4 +427,24 @@ register_model_info(
     "Aquila-Chat",
     "https://huggingface.co/BAAI/AquilaChat2-34B",
     "Chat models developed by BAAI team",
+)
+register_model_info(
+    ["xDAN-L1-Chat-v0.1"],
+    "xDAN-L1-Chat",
+    "https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1",
+    "A large language chat model created by xDAN-AI.",
+)
+
+register_model_info(
+    ["MetaMath-70B-V1.0", "MetaMath-7B-V1.0"],
+    "MetaMath",
+    "https://huggingface.co/meta-math",
+    "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)
+
+register_model_info(
+    ["upstage/SOLAR-10.7B-Instruct-v1.0"],
+    "SOLAR-10.7B-Instruct",
+    "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
+    "A Llama2 fine-tune developed by upstage.ai that incorporates depth up-scaling.",
 )
