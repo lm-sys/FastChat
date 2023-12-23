@@ -8,6 +8,7 @@ import json
 import os
 import time
 import concurrent.futures
+from omegaconf import OmegaConf
 
 import openai
 import shortuuid
@@ -23,7 +24,76 @@ from fastchat.llm_judge.common import (
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
+cfg_mtbench = OmegaConf.load("configs/config.yaml")
+def get_api_answer(question_file, answer_file):
+    questions = load_questions(question_file, None, None)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        futures = []
+        for question in questions:
+            future = executor.submit(
+                    get_answer,
+                    question,
+                    cfg_mtbench.model.pretrained_model_name_or_path,
+                    cfg_mtbench.mtbench.num_choices,
+                    cfg_mtbench.mtbench.max_new_token,
+                    answer_file,
+                )
+            futures.append(future)
 
+        for future in tqdm.tqdm(
+            concurrent.futures.as_completed(futures), total=len(futures)
+        ):
+            future.result()
+
+    reorg_answer_file(answer_file)
+
+def get_answer(
+    question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
+):
+
+    temperature = cfg_mtbench.generator.temperature
+
+    choices = []
+    chat_state = None  # for palm-2 model
+    for i in range(num_choices):
+        conv = get_conversation_template(model)
+
+        turns = []
+        for j in range(len(question["turns"])):
+            conv.append_message(conv.roles[0], question["turns"][j])
+            conv.append_message(conv.roles[1], None)
+
+            if model in ANTHROPIC_MODEL_LIST:
+                output = chat_compeletion_anthropic(
+                    model, conv, temperature, max_tokens
+                )
+            elif model == "palm-2-chat-bison-001":
+                chat_state, output = chat_compeletion_palm(
+                    chat_state, model, conv, temperature, max_tokens
+                )
+            else:
+                output = chat_compeletion_openai(model, conv, temperature, max_tokens)
+
+            conv.update_last_message(output)
+            turns.append(output)
+
+        choices.append({"index": i, "turns": turns})
+
+    # Dump answers
+    ans = {
+        "question_id": question["question_id"],
+        "answer_id": shortuuid.uuid(),
+        "model_id": model,
+        "choices": choices,
+        "tstamp": time.time(),
+    }
+
+    os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+    with open(answer_file, "a") as fout:
+        fout.write(json.dumps(ans) + "\n")
+
+
+"""        
 def get_answer(
     question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
 ):
@@ -149,3 +219,4 @@ if __name__ == "__main__":
             future.result()
 
     reorg_answer_file(answer_file)
+"""
