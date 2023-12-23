@@ -111,7 +111,7 @@ def get_model_answers(
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
                 prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt]).input_ids
+                input_ids = tokenizer([prompt], add_special_tokens=False).input_ids # 'add_special_tokens=False' is necessary for running llm-jp models
 
                 if temperature < 1e-4:
                     do_sample = False
