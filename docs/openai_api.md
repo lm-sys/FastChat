@@ -32,37 +32,30 @@ Now, let us test the API server.
 ### OpenAI Official SDK
 The goal of `openai_api_server.py` is to implement a fully OpenAI-compatible API server, so the models can be used directly with [openai-python](https://github.com/openai/openai-python) library.
 
-First, install openai-python:
+First, install OpenAI python package >= 1.0:
 ```bash
 pip install --upgrade openai
 ```
 
-Then, interact with model vicuna:
+Then, interact with the Vicuna model:
 ```python
-from openai import OpenAI
-# to get proper authentication, make sure to use a valid key that's listed in
-# the --api-keys flag. if no flag value is provided, the `api_key` will be ignored.
-client = OpenAI(api_key="EMPTY", base_url="http://localhost:8000/v1", default_headers={"x-foo": "true"})
+import openai
+
+openai.api_key = "EMPTY"
+openai.base_url = "http://localhost:8000/v1/"
 
 model = "vicuna-7b-v1.5"
 prompt = "Once upon a time"
 
-# create a completion (legacy)
-completion = client.completions.create(
-  model=model,
-  prompt=prompt
-)
+# create a completion
+completion = openai.completions.create(model=model, prompt=prompt, max_tokens=64)
 # print the completion
 print(prompt + completion.choices[0].text)
 
 # create a chat completion
-completion = client.chat.completions.create(
-  model="vicuna-7b-v1.5",
-  response_format={ "type": "json_object" },
-  messages=[
-    {"role": "system", "content": "You are a helpful assistant designed to output JSON."},
-    {"role": "user", "content": "Who won the world series in 2020?"}
-  ]
+completion = openai.chat.completions.create(
+  model=model,
+  messages=[{"role": "user", "content": "Hello! What is your name?"}]
 )
 # print the completion
 print(completion.choices[0].message.content)

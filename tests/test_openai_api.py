@@ -4,52 +4,31 @@ Test the OpenAI compatible server
 Launch:
 python3 launch_openai_api_test_server.py
 """
-from distutils.version import LooseVersion
 import warnings
 
 import openai
-
-try:
-    from openai import OpenAI, AsyncOpenAI
-except ImportError:
-    warnings.warn("openai<1.0 is deprecated")
-
 from fastchat.utils import run_cmd
 
+
 openai.api_key = "EMPTY"  # Not support yet
-openai.api_base = "http://localhost:8000/v1"
+openai.base_url = "http://localhost:8000/v1/"
 
 
 def test_list_models():
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        model_list = openai.Model.list()
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        model_list = client.models.list()
+    model_list = openai.models.list()
     names = [x.id for x in model_list.data]
     return names
 
 
 def test_completion(model, logprob):
     prompt = "Once upon a time"
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        completion = openai.Completion.create(
-            model=model,
-            prompt=prompt,
-            logprobs=logprob,
-            max_tokens=64,
-            temperature=0,
-        )
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        # legacy
-        completion = client.completions.create(
-            model=model,
-            prompt=prompt,
-            logprobs=logprob,
-            max_tokens=64,
-            temperature=0,
-        )
+    completion = openai.completions.create(
+        model=model,
+        prompt=prompt,
+        logprobs=logprob,
+        max_tokens=64,
+        temperature=0,
+    )
 
     print(f"full text: {prompt + completion.choices[0].text}", flush=True)
     if completion.choices[0].logprobs is not None:
@@ -61,24 +40,13 @@ def test_completion(model, logprob):
 
 def test_completion_stream(model):
     prompt = "Once upon a time"
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        res = openai.Completion.create(
-            model=model,
-            prompt=prompt,
-            max_tokens=64,
-            stream=True,
-            temperature=0,
-        )
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        # legacy
-        res = client.completions.create(
-            model=model,
-            prompt=prompt,
-            max_tokens=64,
-            stream=True,
-            temperature=0,
-        )
+    res = openai.completions.create(
+        model=model,
+        prompt=prompt,
+        max_tokens=64,
+        stream=True,
+        temperature=0,
+    )
     print(prompt, end="")
     for chunk in res:
         content = chunk.choices[0].text
@@ -87,43 +55,25 @@ def test_completion_stream(model):
 
 
 def test_embedding(model):
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        embedding = openai.Embedding.create(model=model, input="Hello world!")
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        embedding = client.embeddings.create(model=model, input="Hello world!")
+    embedding = openai.embeddings.create(model=model, input="Hello world!")
     print(f"embedding len: {len(embedding.data[0].embedding)}")
     print(f"embedding value[:5]: {embedding.data[0].embedding[:5]}")
 
 
 def test_chat_completion(model):
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        completion = openai.ChatCompletion.create(
-            model=model,
-            messages=[{"role": "user", "content": "Hello! What is your name?"}],
-            temperature=0,
-        )
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": "Hello! What is your name?"}],
-            temperature=0,
-        )
+    completion = openai.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": "Hello! What is your name?"}],
+        temperature=0,
+    )
     print(completion.choices[0].message.content)
 
 
 def test_chat_completion_stream(model):
     messages = [{"role": "user", "content": "Hello! What is your name?"}]
-    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
-        res = openai.ChatCompletion.create(
-            model=model, messages=messages, stream=True, temperature=0
-        )
-    else:
-        client = OpenAI(api_key=openai.api_key, base_url=openai.api_base)
-        res = client.chat.completions.create(
-            model=model, messages=messages, stream=True, temperature=0
-        )
+    res = openai.chat.completions.create(
+        model=model, messages=messages, stream=True, temperature=0
+    )
     for chunk in res:
         try:
             content = chunk.choices[0].delta.content
@@ -192,7 +142,7 @@ if __name__ == "__main__":
         test_chat_completion_stream(model)
         try:
             test_embedding(model)
-        except openai.error.APIError as e:
+        except openai.APIError as e:
             print(f"Embedding error: {e}")
 
     print("===== Test curl =====")
