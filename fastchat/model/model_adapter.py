@@ -1773,7 +1773,7 @@ class Lamma2ChineseAlpacaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("llama2-chinese")
+        return get_conv_template("chinese-alpaca2")
 
 
 class VigogneAdapter(BaseModelAdapter):
