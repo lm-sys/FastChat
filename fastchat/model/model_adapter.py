@@ -12,7 +12,6 @@ if sys.version_info >= (3, 9):
 else:
     from functools import lru_cache as cache
 
-import accelerate
 import psutil
 import torch
 from transformers import (
@@ -180,6 +179,8 @@ def load_model(
     debug: bool = False,
 ):
     """Load a model from Hugging Face."""
+    import accelerate
+    
     # get model adapter
     adapter = get_model_adapter(model_path)
 
