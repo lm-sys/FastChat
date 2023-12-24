@@ -319,6 +319,19 @@ def load_model(
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
 
+    if os.environ.get("FASTCHAT_USE_MODELSCOPE", "False").lower() == "true":
+        # download model from ModelScope hub,
+        # lazy import so that modelscope is not required for normal use.
+        try:
+            from modelscope.hub.snapshot_download import snapshot_download
+
+            model_path = snapshot_download(model_id=model_path, revision=revision)
+        except ImportError as e:
+            warnings.warn(
+                "Use model from www.modelscope.cn need pip install modelscope"
+            )
+            raise e
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
