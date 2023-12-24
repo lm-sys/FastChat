@@ -332,19 +332,6 @@ def model_worker_stream_iter(
             yield data
 
 
-def is_limit_reached(model_name, ip):
-    monitor_url = "http://localhost:9090"
-    try:
-        ret = requests.get(
-            f"{monitor_url}/is_limit_reached?model={model_name}&user_id={ip}", timeout=1
-        )
-        obj = ret.json()
-        return obj
-    except Exception as e:
-        logger.info(f"monitor error: {e}")
-        return None
-
-
 def bot_response(
     state,
     temperature,
@@ -365,15 +352,6 @@ def bot_response(
         state.skip_next = False
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
-
-    if apply_rate_limit:
-        ret = is_limit_reached(state.model_name, ip)
-        if ret is not None and ret["is_limit_reached"]:
-            error_msg = RATE_LIMIT_MSG + "\n\n" + ret["reason"]
-            logger.info(f"rate limit reached. ip: {ip}. error_msg: {ret['reason']}")
-            state.conv.update_last_message(error_msg)
-            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-            return
 
     conv, model_name = state.conv, state.model_name
     if model_name in openai_compatible_models_info:
