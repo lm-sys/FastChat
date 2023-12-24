@@ -2012,6 +2012,16 @@ class MetaMathAdapter(BaseModelAdapter):
         return get_conv_template("metamath")
 
 
+class BagelAdapter(BaseModelAdapter):
+    """Model adapter for jondurbin/bagel-* models"""
+
+    def match(self, model_path: str):
+        return "bagel" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("airoboros_v3")
+
+
 class SolarAdapter(BaseModelAdapter):
     """The model adapter for upstage/SOLAR-10.7B-Instruct-v1.0"""
 
@@ -2099,6 +2109,7 @@ register_model_adapter(YiAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
+register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
 
 # After all adapters, try the default base adapter.
