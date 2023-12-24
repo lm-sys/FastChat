@@ -37,6 +37,8 @@ IDENTITY_WORDS = [
     "llama",
     "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
     "$MODERATION$ YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES.",
+    "API REQUEST ERROR. Please increase the number of max tokens.",
+    "**API REQUEST ERROR** Reason: The response was blocked.",
 ]
 
 for i in range(len(IDENTITY_WORDS)):
@@ -45,7 +47,7 @@ for i in range(len(IDENTITY_WORDS)):
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in range(4, 12):
+    for month in range(4, 13):
         for day in range(1, 33):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
