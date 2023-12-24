@@ -2,7 +2,7 @@
 | [**Demo**](https://chat.lmsys.org/) | [**Discord**](https://discord.gg/HSWAKCrnFx) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
-- FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 5 million chat requests for 30+ LLMs.
+- FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 6 million chat requests for 50+ LLMs.
 - Arena has collected over 100K human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
 
 FastChat's core features include:
@@ -108,16 +108,6 @@ FastChat supports a wide range of models, including
 LLama 2, Vicuna, Alpaca, Baize, ChatGLM, Dolly, Falcon, FastChat-T5, GPT4ALL, Guanaco, MTP, OpenAssistant, OpenChat, RedPajama, StableLM, WizardLM, xDAN-AI and more.
 
 See a complete list of supported models and instructions to add a new model [here](docs/model_support.md).
-
-#### Use Models from modelscope
-You can use models from www.modelscope.cn, just set environment variable FASTCHAT_USE_MODELSCOPE.
-```
-export FASTCHAT_USE_MODELSCOPE=True
-```
-Example:  
-```
-FASTCHAT_USE_MODELSCOPE=True python3 -m fastchat.serve.cli --model-path qwen/Qwen-7B-Chat --revision v1.1.9
-```
 
 #### Single GPU
 The command below requires around 14GB of GPU memory for Vicuna-7B and 28GB of GPU memory for Vicuna-13B.
