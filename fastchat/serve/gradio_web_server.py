@@ -141,14 +141,19 @@ def get_model_list(
         models += list(openai_compatible_models_info.keys())
 
     if add_chatgpt:
-        models += ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106"]
+        models += [
+            "gpt-4-0314",
+            "gpt-4-0613",
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-1106",
+        ]
     if add_claude:
-        models += ["claude-2.0", "claude-2.1", "claude-instant-1"]
+        models += ["claude-2.1", "claude-2.0", "claude-instant-1"]
     if add_palm:
         models += ["gemini-pro"]
     models = list(set(models))
-    # hidden_models = ["deluxe-chat-v1.2", "gpt-4-0613"]
-    hidden_models = ["gpt-4-0613"]
+
+    hidden_models = ["gpt-4-0314", "gpt-4-0613"]
     for hm in hidden_models:
         del models[models.index(hm)]
 

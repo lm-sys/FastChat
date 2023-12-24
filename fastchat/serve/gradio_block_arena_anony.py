@@ -185,7 +185,6 @@ SAMPLING_WEIGHTS = {
     "chatglm3-6b": 2,
     # tier 1
     "deluxe-chat-v1.2": 2,
-    "palm-2": 1.5,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
@@ -215,6 +214,7 @@ SAMPLING_WEIGHTS = {
     "llama-13b": 0.1,
     "chatglm-6b": 0.5,
     "deluxe-chat-v1": 4,
+    "palm-2": 1.5,
 }
 
 # target model sampling weights will be boosted.
@@ -286,7 +286,6 @@ BATTLE_TARGETS = {
     "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
     "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
     "wizardlm-70b": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
-    "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo-0613"},
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -305,11 +304,7 @@ SAMPLING_BOOST_MODELS = [
 ]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-alpha",
-    "falcon-180b-chat",
-    "palm-2",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model):
