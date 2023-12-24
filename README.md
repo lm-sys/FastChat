@@ -248,10 +248,7 @@ python3 -m fastchat.serve.gradio_web_server_multi
 - The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
 
 #### (Optional): Advanced Features, Third Party UI
-- if you want to host it on your own UI or third party UI. Launch the OpenAI compatible server, host with a hosting service like ngrok, and enter the credentials appropriately.
-    - https://github.com/WongSaang/chatgpt-ui
-    - https://github.com/mckaywrigley/chatbot-ui
-- Note some third party provider only offer the stand `gpt-3.5-turbo, gpt-4, etc`, so you will have to add your own custom model inside the code. [Here is an example of a modification of creating a UI with any custom model name](https://github.com/ztjhz/BetterChatGPT/pull/461)
+- If you want to host it on your own UI or third party UI, you can launch the OpenAI compatible server and host with a tunnelling service such as Tunnelmole or ngrok, and then enter the credentials appropriately.
 
 You can find suitable UIs from third party repos:
 - [WongSaang's ChatGPT UI](https://github.com/WongSaang/chatgpt-ui)
