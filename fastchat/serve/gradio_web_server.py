@@ -61,11 +61,12 @@ enable_moderation = False
 acknowledgment_md = """
 ### Acknowledgment
 <div class="image-container">
-    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="Image 2">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="Image 4">
+    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, <a href="https://www.a16z.com/" target="_blank">a16z</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
+    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
+    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
+    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
 </div>
 """
 
@@ -532,14 +533,15 @@ footer {
     height: 30px;
     max-height: 100%;
     width: auto;
-    max-width: 30%;
+    max-width: 20%;
 }
 .image-about img {
     margin: 0 30px;
-    margin-top:  30px;
+    margin-top: 30px;
     height: 60px;
     max-height: 100%;
     width: auto;
+    max-width: 20%;
     float: left;
 }
 """
@@ -590,14 +592,15 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 
 ## Acknowledgment
 We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
+We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [a16z](https://www.a16z.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
 Learn more about partnership [here](https://lmsys.org/donations/).
 
 <div class="image-about">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Image 1">
-    <img src="https://upload.wikimedia.org/wikipedia/en/5/55/Mohamed_bin_Zayed_University_of_Artificial_Intelligence_logo.png" alt="Image 2">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="Image 3">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="Image 4">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
+    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
+    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
+    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
 </div>
 """
 
@@ -613,6 +616,8 @@ def build_single_model_ui(models, add_promotion_links=False):
 - | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 - Introducing Llama 2: The Next Generation Open Source Large Language Model. [[Website]](https://ai.meta.com/llama/)
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
+
+## 🤖 Choose any model to chat
 """
         if add_promotion_links
         else ""
@@ -621,8 +626,6 @@ def build_single_model_ui(models, add_promotion_links=False):
     notice_markdown = f"""
 # 🏔️ Chat with Open Large Language Models
 {promotion}
-
-## 🤖 Choose any model to chat
 """
 
     state = gr.State()
@@ -655,6 +658,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
+            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)

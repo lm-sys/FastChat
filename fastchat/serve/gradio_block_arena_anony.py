@@ -456,7 +456,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We use **100K** human votes to compile an Elo-based LLM leaderboard.
+We use **100K+** human votes to compile an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
@@ -504,7 +504,7 @@ Find out who is the 🥇LLM Champion!
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
-            container=True,
+            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
