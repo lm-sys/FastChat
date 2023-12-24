@@ -93,7 +93,18 @@ def load_demo(url_params, request: gr.Request):
         if args.add_claude:
             models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
         if args.add_palm:
-            models_anony += ["palm-2"]
+            models_anony += ["gemini-pro"]
+    anony_only_models = [
+        "deluxe-chat-v1.2",
+        "claude-1",
+        "claude-2.0",
+        "claude-2.1",
+        "claude-instant-1",
+        "gpt-4-0613",
+        "gpt-4-0314",
+    ]
+    for mdl in anony_only_models:
+        models_anony.append(mdl)
     models_anony = list(set(models_anony))
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)

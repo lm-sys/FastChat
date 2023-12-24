@@ -1038,8 +1038,12 @@ class ChatGPTAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return model_path in (
             "gpt-3.5-turbo",
+            "gpt-3.5-turbo-0301",
+            "gpt-3.5-turbo-0613",
             "gpt-3.5-turbo-1106",
             "gpt-4",
+            "gpt-4-0314",
+            "gpt-4-0613",
             "gpt-4-turbo",
         )
 
@@ -1061,6 +1065,22 @@ class AzureOpenAIAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("chatgpt")
+
+
+class PplxAIAdapter(BaseModelAdapter):
+    """The model adapter for Perplexity AI"""
+
+    def match(self, model_path: str):
+        return model_path in (
+            "pplx-7b-online",
+            "pplx-70b-online",
+        )
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("pplxai")
 
 
 class ClaudeAdapter(BaseModelAdapter):
@@ -1094,6 +1114,19 @@ class PaLM2Adapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return model_path == "palm-2"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("bard")
+
+
+class GeminiAdapter(BaseModelAdapter):
+    """The model adapter for Gemini"""
+
+    def match(self, model_path: str):
+        return model_path in ["gemini-pro"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1420,7 +1453,7 @@ class MistralAdapter(BaseModelAdapter):
     """The model adapter for Mistral AI models"""
 
     def match(self, model_path: str):
-        return "mistral" in model_path.lower()
+        return "mistral" in model_path.lower() or "mixtral" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -2056,6 +2089,7 @@ register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
+register_model_adapter(GeminiAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
@@ -2107,6 +2141,7 @@ register_model_adapter(PygmalionAdapter)
 register_model_adapter(MicrosoftOrcaAdapter)
 register_model_adapter(XdanAdapter)
 register_model_adapter(YiAdapter)
+register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)

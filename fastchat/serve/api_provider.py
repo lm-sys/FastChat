@@ -111,41 +111,58 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
 def init_palm_chat(model_name):
     import vertexai  # pip3 install google-cloud-aiplatform
     from vertexai.preview.language_models import ChatModel
+    from vertexai.preview.generative_models import GenerativeModel
 
     project_id = os.environ["GCP_PROJECT_ID"]
     location = "us-central1"
     vertexai.init(project=project_id, location=location)
 
-    chat_model = ChatModel.from_pretrained(model_name)
-    chat = chat_model.start_chat(examples=[])
+    if model_name in ["palm-2"]:
+        # According to release note, "chat-bison@001" is PaLM 2 for chat.
+        # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
+        model_name = "chat-bison@001"
+        chat_model = ChatModel.from_pretrained(model_name)
+        chat = chat_model.start_chat(examples=[])
+    elif model_name in ["gemini-pro"]:
+        model = GenerativeModel(model_name)
+        chat = model.start_chat()
     return chat
 
 
-def palm_api_stream_iter(chat, message, temperature, top_p, max_new_tokens):
+def palm_api_stream_iter(model_name, chat, message, temperature, top_p, max_new_tokens):
+    if model_name in ["gemini-pro"]:
+        max_new_tokens = max_new_tokens * 2
     parameters = {
         "temperature": temperature,
         "top_p": top_p,
         "max_output_tokens": max_new_tokens,
     }
     gen_params = {
-        "model": "palm-2",
+        "model": model_name,
         "prompt": message,
     }
     gen_params.update(parameters)
+    if model_name == "palm-2":
+        response = chat.send_message(message, **parameters)
+    else:
+        response = chat.send_message(message, generation_config=parameters, stream=True)
+
     logger.info(f"==== request ====\n{gen_params}")
 
-    response = chat.send_message(message, **parameters)
-    content = response.text
-
-    pos = 0
-    while pos < len(content):
-        # This is a fancy way to simulate token generation latency combined
-        # with a Poisson process.
-        pos += random.randint(10, 20)
-        time.sleep(random.expovariate(50))
-        data = {
-            "text": content[:pos],
-            "error_code": 0,
+    try:
+        text = ""
+        for chunk in response:
+            text += chunk.text
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: {e}\nPlease try again or increase the number of max tokens.",
+            "error_code": 1,
         }
         yield data
 

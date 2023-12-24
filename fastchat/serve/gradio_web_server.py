@@ -21,6 +21,7 @@ from fastchat.constants import (
     ErrorCode,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
+    RATE_LIMIT_MSG,
     SERVER_ERROR_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
@@ -91,10 +92,8 @@ class State:
         self.skip_next = False
         self.model_name = model_name
 
-        if model_name == "palm-2":
-            # According to release note, "chat-bison@001" is PaLM 2 for chat.
-            # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
-            self.palm_chat = init_palm_chat("chat-bison@001")
+        if model_name in ["palm-2", "gemini-pro"]:
+            self.palm_chat = init_palm_chat(model_name)
 
     def to_gradio_chatbot(self):
         return self.conv.to_gradio_chatbot()
@@ -142,19 +141,18 @@ def get_model_list(
         models += list(openai_compatible_models_info.keys())
 
     if add_chatgpt:
-        models += ["gpt-3.5-turbo", "gpt-3.5-turbo-1106"]
+        models += ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106"]
     if add_claude:
         models += ["claude-2.0", "claude-2.1", "claude-instant-1"]
     if add_palm:
-        models += ["palm-2"]
+        models += ["gemini-pro"]
     models = list(set(models))
+    # hidden_models = ["deluxe-chat-v1.2", "gpt-4-0613"]
+    hidden_models = ["gpt-4-0613"]
+    for hm in hidden_models:
+        del models[models.index(hm)]
 
-    if "deluxe-chat-v1" in models:
-        del models[models.index("deluxe-chat-v1")]
-    if "deluxe-chat-v1.1" in models:
-        del models[models.index("deluxe-chat-v1.1")]
-
-    priority = {k: f"___{i:02d}" for i, k in enumerate(model_info)}
+    priority = {k: f"___{i:03d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
     logger.info(f"Models: {models}")
     return models
@@ -329,7 +327,27 @@ def model_worker_stream_iter(
             yield data
 
 
-def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request):
+def is_limit_reached(model_name, ip):
+    monitor_url = "http://localhost:9090"
+    try:
+        ret = requests.get(
+            f"{monitor_url}/is_limit_reached?model={model_name}&user_id={ip}", timeout=1
+        )
+        obj = ret.json()
+        return obj
+    except Exception as e:
+        logger.info(f"monitor error: {e}")
+        return None
+
+
+def bot_response(
+    state,
+    temperature,
+    top_p,
+    max_new_tokens,
+    request: gr.Request,
+    apply_rate_limit=True,
+):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
     start_tstamp = time.time()
@@ -342,6 +360,15 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         state.skip_next = False
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
+
+    if apply_rate_limit:
+        ret = is_limit_reached(state.model_name, ip)
+        if ret is not None and ret["is_limit_reached"]:
+            error_msg = RATE_LIMIT_MSG + "\n\n" + ret["reason"]
+            logger.info(f"rate limit reached. ip: {ip}. error_msg: {ret['reason']}")
+            state.conv.update_last_message(error_msg)
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+            return
 
     conv, model_name = state.conv, state.model_name
     if model_name in openai_compatible_models_info:
@@ -356,7 +383,16 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
             api_base=model_info["api_base"],
             api_key=model_info["api_key"],
         )
-    elif model_name in ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo-1106"]:
+    elif model_name in [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-0301",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-1106",
+        "gpt-4",
+        "gpt-4-0314",
+        "gpt-4-0613",
+        "gpt-4-turbo",
+    ]:
         # avoid conflict with Azure OpenAI
         assert model_name not in openai_compatible_models_info
         prompt = conv.to_openai_api_messages()
@@ -368,9 +404,14 @@ def bot_response(state, temperature, top_p, max_new_tokens, request: gr.Request)
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
-    elif model_name == "palm-2":
+    elif model_name in ["palm-2", "gemini-pro"]:
         stream_iter = palm_api_stream_iter(
-            state.palm_chat, conv.messages[-2][1], temperature, top_p, max_new_tokens
+            model_name,
+            state.palm_chat,
+            conv.messages[-2][1],
+            temperature,
+            top_p,
+            max_new_tokens,
         )
     else:
         # Query worker address
@@ -689,8 +730,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         )
         max_output_tokens = gr.Slider(
             minimum=16,
-            maximum=1024,
-            value=512,
+            maximum=2048,
+            value=1024,
             step=64,
             interactive=True,
             label="Max output tokens",

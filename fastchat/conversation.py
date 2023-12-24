@@ -276,7 +276,10 @@ class Conversation:
 
     def to_openai_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
-        ret = [{"role": "system", "content": self.system_message}]
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "content": self.system_message}]
 
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -673,6 +676,17 @@ register_conv_template(
     Conversation(
         name="chatgpt",
         system_message="You are a helpful assistant.",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
+# Perplexity AI template
+register_conv_template(
+    Conversation(
+        name="pplxai",
+        system_message="Be precise and concise.",
         roles=("user", "assistant"),
         sep_style=None,
         sep=None,
