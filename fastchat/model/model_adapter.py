@@ -319,6 +319,19 @@ def load_model(
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
 
+    if os.environ.get("FASTCHAT_USE_MODELSCOPE", "False").lower() == "true":
+        # download model from ModelScope hub,
+        # lazy import so that modelscope is not required for normal use.
+        try:
+            from modelscope.hub.snapshot_download import snapshot_download
+
+            model_path = snapshot_download(model_id=model_path, revision=revision)
+        except ImportError as e:
+            warnings.warn(
+                "Use model from www.modelscope.cn need pip install modelscope"
+            )
+            raise e
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
@@ -1760,7 +1773,7 @@ class Lamma2ChineseAlpacaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("llama2-chinese")
+        return get_conv_template("chinese-alpaca2")
 
 
 class VigogneAdapter(BaseModelAdapter):
@@ -1887,6 +1900,16 @@ class ZephyrAdapter(BaseModelAdapter):
         return get_conv_template("zephyr")
 
 
+class CatPPTAdapter(BaseModelAdapter):
+    """The model adapter for CatPPT (e.g. rishiraj/CatPPT)"""
+
+    def match(self, model_path: str):
+        return "catppt" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("catppt")
+
+
 class XwinLMAdapter(BaseModelAdapter):
     """The model adapter for Xwin-LM V0.1 and V0.2 series of models(e.g., Xwin-LM/Xwin-LM-70B-V0.1)"""
 
@@ -1999,6 +2022,16 @@ class BagelAdapter(BaseModelAdapter):
         return get_conv_template("airoboros_v3")
 
 
+class SolarAdapter(BaseModelAdapter):
+    """The model adapter for upstage/SOLAR-10.7B-Instruct-v1.0"""
+
+    def match(self, model_path: str):
+        return "solar-" in model_path.lower() and "instruct" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("solar")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2066,6 +2099,7 @@ register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
+register_model_adapter(CatPPTAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
@@ -2076,6 +2110,7 @@ register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
+register_model_adapter(SolarAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

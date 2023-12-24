@@ -135,6 +135,12 @@ register_model_info(
     "a chatbot fine-tuned from Mistral by Hugging Face",
 )
 register_model_info(
+    ["catppt"],
+    "CatPPT",
+    "https://huggingface.co/rishiraj/CatPPT",
+    "a chatbot fine-tuned from a SLERP merged model by Rishiraj Acharya",
+)
+register_model_info(
     ["qwen-14b-chat"],
     "Qwen",
     "https://huggingface.co/Qwen/Qwen-14B-Chat",
@@ -440,4 +446,11 @@ register_model_info(
     "MetaMath",
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)
+
+register_model_info(
+    ["upstage/SOLAR-10.7B-Instruct-v1.0"],
+    "SOLAR-10.7B-Instruct",
+    "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
+    "A Llama2 fine-tune developed by upstage.ai that incorporates depth up-scaling.",
 )
