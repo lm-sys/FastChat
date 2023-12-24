@@ -1,5 +1,6 @@
 """Call API providers."""
 
+from json import loads
 import os
 import random
 import time
@@ -159,7 +160,6 @@ def ai2_api_stream_iter(
     api_base=None,
 ):
     from requests import post
-    from json import loads
 
     # get keys and needed values
     ai2_key = api_key or os.environ.get("AI2_API_KEY")
