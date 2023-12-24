@@ -180,7 +180,7 @@ def load_model(
 ):
     """Load a model from Hugging Face."""
     import accelerate
-    
+
     # get model adapter
     adapter = get_model_adapter(model_path)
 
