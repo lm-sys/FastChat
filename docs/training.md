@@ -90,7 +90,7 @@ deepspeed fastchat/train/train_lora_t5.py \
 
 ### Fine-tuning Vicuna-7B with Local NPUs
 
-You can use the following command to train Vicuna-7B with 8 x 910B (60GB). Use `--nproc_per_node` to specify the number of NPUs.
+You can use the following command to train Vicuna-7B with 8 x NPUs. Use `--nproc_per_node` to specify the number of NPUs.
 ```bash
 torchrun --nproc_per_node=8 --master_port=20001 fastchat/train/train.py \
     --model_name_or_path ~/vicuna-7b-v1.5-16k  \
