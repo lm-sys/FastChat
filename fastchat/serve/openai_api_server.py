@@ -375,6 +375,7 @@ async def show_available_models():
     return ModelList(data=model_cards)
 
 
+@app.post("/v1chat/completions", dependencies=[Depends(check_api_key)])
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
