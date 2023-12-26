@@ -510,7 +510,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["xDAN-L1-Chat-RL-v1"],
+    ["xDAN-L1-Chat-RL-v1","xDAN-L1-Chat-v0.1"],
     "xDAN-L1-Chat",
     "https://huggingface.co/xDAN-AI/xDAN-L1-Chat-RL-v1",
     "A large language chat model created by xDAN-AI.",
