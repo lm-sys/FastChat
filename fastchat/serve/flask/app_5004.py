@@ -211,6 +211,8 @@ def report_model_only():
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
     for model in result_dict:
+        if model != MODEL_ID:
+            continue
         dd0 = defaultdict(list)
         dd1 = {}
         model_result = result_dict[model]
