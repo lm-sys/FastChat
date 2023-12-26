@@ -56,11 +56,11 @@ def read_jsonl_files(directory):
 app = Flask(__name__)
 
 
-@app.route('/report', methods=['POST'])
-def report():
+@app.route('/report1', methods=['POST'])
+def report1():
     def read_report_files(directory, model_list=None):
         markdown_table = """
-            | 模型名称 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
+            | 数据集 | 总得分 | 第一轮得分 | 第二轮得分 | 分数差异 |
             |:--------:|:------:|:--------:|:--------:|:--------:|
             | GPT-4 | 87.43 | 88.76 | 86.09 | -2.67 |
             | BlueLM | 85.17 | 84.80 | 85.55 | 0.75 |
@@ -81,8 +81,8 @@ def report():
     
     data = request.json
     # Validate input data
-    if not all(key in data for key in ['data_id']):
-        return jsonify({"error": "Missing required fields in the request"}), 400
+    # if not all(key in data for key in ['data_id']):
+    #     return jsonify({"error": "Missing required fields in the request"}), 400
     
     DATA_ID = data.get('data_id')
     MODEL_LIST = data.get('model_list', range(len(MODEL_TABLE)))
@@ -99,6 +99,194 @@ def report():
             "time_start": start_time,
             "time_end": end_time
         }
+        return jsonify(result)
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Script execution failed"}), 500
+
+
+@app.route('/report_all', methods=['POST'])
+def report_all():
+    # data = request.json
+    # Validate input data
+    # if not all(key in data for key in ['data_id']):
+    #     return jsonify({"error": "Missing required fields in the request"}), 400
+    
+    DATA_ID = "moral_bench_test3"
+    
+    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
+    result_dict = read_jsonl_files(directory_path)
+    score_result = {}
+    for model in result_dict:
+        dd0 = defaultdict(list)
+        dd1 = {}
+        model_result = result_dict[model]
+        for answer in model_result:
+            category = answer["category"].split('|||')[0]
+            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
+            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
+            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
+                status = True
+            else:
+                status = False
+            dd0[category].append(status)
+        for k, v in dd0.items():
+            dd1[k] = (sum(v) / len(v), sum(v), len(v))
+        
+        print(model, dd1)
+        s0 = sum([v[1] for v in dd1.values()])
+        s1 = sum([v[2] for v in dd1.values()])
+        score_result.update({model: (s0, s1, s0 / s1)})
+    
+    try:
+        start_time = get_start_time()
+        end_time = get_end_time()
+        result = {"output": score_result,
+                  "data_ids": ["moral_bench_test1", "moral_bench_test2", "moral_bench_test3"],
+                  "model_ids": MODEL_TABLE,
+                  "time_start": start_time,
+                  "time_end": end_time}
+        return jsonify(result)
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Script execution failed"}), 500
+
+
+@app.route('/report_model_data', methods=['POST'])
+def report_model_data():
+    data = request.json
+    # Validate input data
+    if not all(key in data for key in ['data_id', 'model_id']):
+        return jsonify({"error": "Missing required fields in the request"}), 400
+    DATA_ID = data.get('data_id')
+    MODEL_ID = data.get('model_id')
+    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
+    result_dict = read_jsonl_files(directory_path)
+    score_result = {}
+    for model in result_dict:
+        dd0 = defaultdict(list)
+        dd1 = {}
+        model_result = result_dict[model]
+        for answer in model_result:
+            category = answer["category"].split('|||')[0]
+            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
+            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
+            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
+                status = True
+            else:
+                status = False
+            dd0[category].append(status)
+        for k, v in dd0.items():
+            dd1[k] = (sum(v) / len(v), sum(v), len(v))
+        
+        print(model, dd1)
+        s0 = sum([v[1] for v in dd1.values()])
+        s1 = sum([v[2] for v in dd1.values()])
+        score_result.update({model: (s0, s1, s0 / s1)})
+    
+    try:
+        start_time = get_start_time()
+        end_time = get_end_time()
+        result = {"output": score_result,
+                  "data_id": DATA_ID,
+                  "model_id": MODEL_ID,
+                  "time_start": start_time,
+                  "time_end": end_time}
+        return jsonify(result)
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Script execution failed"}), 500
+
+
+@app.route('/report_model_only', methods=['POST'])
+def report_model_only():
+    data = request.json
+    # Validate input data
+    if not all(key in data for key in ['model_id']):
+        return jsonify({"error": "Missing required fields in the request"}), 400
+
+    DATA_ID = "moral_bench_test3"
+    MODEL_ID = data.get('model_id')
+    
+    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
+    result_dict = read_jsonl_files(directory_path)
+    score_result = {}
+    for model in result_dict:
+        dd0 = defaultdict(list)
+        dd1 = {}
+        model_result = result_dict[model]
+        for answer in model_result:
+            category = answer["category"].split('|||')[0]
+            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
+            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
+            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
+                status = True
+            else:
+                status = False
+            dd0[category].append(status)
+        for k, v in dd0.items():
+            dd1[k] = (sum(v) / len(v), sum(v), len(v))
+        
+        print(model, dd1)
+        s0 = sum([v[1] for v in dd1.values()])
+        s1 = sum([v[2] for v in dd1.values()])
+        score_result.update({model: (s0, s1, s0 / s1)})
+    
+    try:
+        start_time = get_start_time()
+        end_time = get_end_time()
+        result = {"output": score_result,
+                  "data_ids": ["moral_bench_test1", "moral_bench_test2", "moral_bench_test3"],
+                  "model_id": MODEL_ID,
+                  "time_start": start_time,
+                  "time_end": end_time}
+        return jsonify(result)
+    except subprocess.CalledProcessError:
+        return jsonify({"error": "Script execution failed"}), 500
+
+
+@app.route('/report_data_only', methods=['POST'])
+def report_data_only():
+    data = request.json
+    # Validate input data
+    if not all(key in data for key in ['data_id']):
+        return jsonify({"error": "Missing required fields in the request"}), 400
+    
+    DATA_ID = data.get('data_id')
+    
+    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
+    result_dict = read_jsonl_files(directory_path)
+    score_result = {}
+    for model in result_dict:
+        dd0 = defaultdict(list)
+        dd1 = {}
+        model_result = result_dict[model]
+        for answer in model_result:
+            category = answer["category"].split('|||')[0]
+            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
+            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
+            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
+            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
+                status = True
+            else:
+                status = False
+            dd0[category].append(status)
+        for k, v in dd0.items():
+            dd1[k] = (sum(v) / len(v), sum(v), len(v))
+        
+        print(model, dd1)
+        s0 = sum([v[1] for v in dd1.values()])
+        s1 = sum([v[2] for v in dd1.values()])
+        score_result.update({model: (s0, s1, s0 / s1)})
+    
+    try:
+        start_time = get_start_time()
+        end_time = get_end_time()
+        result = {"output": score_result,
+                  "data_id": DATA_ID,
+                  "model_id": MODEL_TABLE,
+                  "time_start": start_time,
+                  "time_end": end_time}
         return jsonify(result)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
