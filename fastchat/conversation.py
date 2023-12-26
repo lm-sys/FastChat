@@ -1313,11 +1313,11 @@ register_conv_template(
     )
 )
 # xDAN default template
-# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1
+# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-RL-v1
 register_conv_template(
     Conversation(
         name="xdan-v1",
-        system_message="You are a helpful  and harmless assistant named xDAN and created by xDAN-AI.Please response and work on questions thinking step by step.",
+        system_message="You are a helpful  and harmless assistant named xDAN and created by xDAN-AI.You are an expert in worldly knowledge, skilled in employing a probing questioning strategy, and you carefully consider each step before providing answers.",
         roles=("### Human", "### Assistant"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="\n",
