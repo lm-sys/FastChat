@@ -211,6 +211,7 @@ def report_model_only():
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
     for model in result_dict:
+        print(model)
         if model != MODEL_ID:
             continue
         dd0 = defaultdict(list)
@@ -286,7 +287,7 @@ def report_data_only():
         end_time = get_end_time()
         result = {"output": score_result,
                   "data_id": DATA_ID,
-                  "model_id": MODEL_TABLE,
+                  "model_ids": MODEL_TABLE,
                   "time_start": start_time,
                   "time_end": end_time}
         return jsonify(result)
