@@ -5,17 +5,14 @@ import datetime
 import pytz
 
 
+
+
 def append_dict_to_jsonl(file_path, data_dict):
     print("1111111111111")
     with open(file_path, 'a', encoding='utf-8') as f:
         print("save the file_path to", file_path)
         json_str = json.dumps(data_dict, ensure_ascii=False)
         f.write(json_str + '\n')
-
-
-def generate_random_identifier():
-    chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(16))
 
 
 def get_free_gpus():

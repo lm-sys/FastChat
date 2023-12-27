@@ -16,7 +16,8 @@ import pytz
 
 from fastchat.llm_judge.gen_model_answer import run_eval
 from fastchat.utils import str_to_torch_dtype
-from flask_utils import get_free_gpus, generate_random_identifier, append_dict_to_jsonl, get_end_time, get_start_time
+from flask_utils import get_free_gpus, append_dict_to_jsonl, get_end_time, get_start_time
+from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt
 
 MODEL_TABLE = [
     "chatglm3-6b",
@@ -90,7 +91,7 @@ def report1():
     MODEL_LIST = data.get('model_list', range(len(MODEL_TABLE)))
     MODEL_LIST1 = [MODEL_TABLE[int(item)] for item in MODEL_LIST]
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
-
+    
     result_dict = read_report_files(directory_path, model_list=MODEL_LIST1)
     try:
         start_time = get_start_time()
@@ -204,20 +205,21 @@ def report_model_only():
     data = request.json
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
-
+    
     DATA_ID = "moral_bench_test3"
     MODEL_ID = data.get('model_id')
-
+    
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
     err_result = []
-    dd2 = {}
+    model_cate_dd = {}
+    report_data = {}
     for model in result_dict:
         if model != MODEL_ID:
             continue
-        dd0 = defaultdict(list)
-        dd1 = {}
+        cate_status_dd = defaultdict(list)
+        cate_score_dd = {}
         model_result = result_dict[model]
         for answer in model_result:
             category = answer["category"].split('|||')[0]
@@ -235,25 +237,37 @@ def report_model_only():
                     "refer": [k for k, v in refer_counts.items() if v > 0],
                     "question": answer["question"].split("仅输出选项A、B、C、D中的一个即可:")[-1],
                 })
-            dd0[category].append(status)
-        for k, v in dd0.items():
-            dd1[k] = (sum(v) / len(v), sum(v), len(v))
-
-        dd2[model] = dd1
+            cate_status_dd[category].append(status)
+        for k, v in cate_status_dd.items():
+            cate_score_dd[k] = (sum(v), len(v), sum(v) / len(v))
+        
+        model_cate_dd[model] = cate_score_dd
         pprint(err_result[0:10])
-        s0 = sum([v[1] for v in dd1.values()])
-        s1 = sum([v[2] for v in dd1.values()])
+        s0 = sum([v[0] for v in cate_score_dd.values()])
+        s1 = sum([v[1] for v in cate_score_dd.values()])
         score_result.update({model: (s0, s1, s0 / s1)})
-    
+
+        report_data[model] = {
+            "score_total": s0 / s1,
+            "score_per_category": cate_score_dd,
+            "error_result": err_result
+        }
+
+    sys_prompt = get_system_prompt()
+    report = generate_report(sys_prompt, report_data[MODEL_ID])
+
     try:
         start_time = get_start_time()
         end_time = get_end_time()
-        result = {"output": score_result,
-                  "data_ids": ["moral_bench_test1", "moral_bench_test2", "moral_bench_test3"],
-                  "model_id": MODEL_ID,
-                  "category": dd2,
-                  "time_start": start_time,
-                  "time_end": end_time}
+        result = {
+            "output": score_result,
+            "data_ids": ["moral_bench_test1", "moral_bench_test2", "moral_bench_test3"],
+            "model_id": MODEL_ID,
+            "category": model_cate_dd,
+            "report": report,
+            "time_start": start_time,
+            "time_end": end_time
+        }
         return json.dumps(result, ensure_ascii=False)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
@@ -370,7 +384,7 @@ def generate():
     num_gpus_total = data.get('num_gpus_total', 1)
     max_gpu_memory = data.get('max_gpu_memory', 16)
     dtype = str_to_torch_dtype(data.get('dtype', None))
-
+    
     # GPUs = get_free_gpus()
     # if "13b" in model_name or "13B" in model_name or "20b" in model_name or "20B" in model_name:
     #     if len(GPUs) >= 2:
