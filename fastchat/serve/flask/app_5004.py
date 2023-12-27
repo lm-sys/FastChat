@@ -1,6 +1,8 @@
 import json
 import os
 from collections import defaultdict
+from pprint import pprint
+
 import pandas as pd
 from io import StringIO
 
@@ -227,13 +229,18 @@ def report_model_only():
             else:
                 status = False
             if not status:
-                err_result.append(answer)
+                err_result.append({
+                    "category": category,
+                    "pred": [k for k, v in pred_counts.items() if v > 0],
+                    "refer": [k for k, v in refer_counts.items() if v > 0],
+                    "question": answer["question"].split("仅输出选项A、B、C、D中的一个即可:")[-1],
+                })
             dd0[category].append(status)
         for k, v in dd0.items():
             dd1[k] = (sum(v) / len(v), sum(v), len(v))
 
         dd2[model] = dd1
-        print(err_result[0])
+        pprint(err_result[0:10])
         s0 = sum([v[1] for v in dd1.values()])
         s1 = sum([v[2] for v in dd1.values()])
         score_result.update({model: (s0, s1, s0 / s1)})
