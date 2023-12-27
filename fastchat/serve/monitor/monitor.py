@@ -54,13 +54,17 @@ Last updated: {elo_results["last_updated_datetime"]}
     return leaderboard_md
 
 
-def update_elo_components(max_num_files, elo_results_file, ban_ip_file, exclude_model_names):
+def update_elo_components(
+    max_num_files, elo_results_file, ban_ip_file, exclude_model_names
+):
     log_files = get_log_files(max_num_files)
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
         ban_ip_list = json.load(open(ban_ip_file)) if ban_ip_file else None
-        battles = clean_battle_data(log_files, exclude_model_names, ban_ip_list=ban_ip_list)
+        battles = clean_battle_data(
+            log_files, exclude_model_names, ban_ip_list=ban_ip_list
+        )
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
@@ -93,10 +97,14 @@ def update_elo_components(max_num_files, elo_results_file, ban_ip_file, exclude_
     basic_component_values[5] = md4
 
 
-def update_worker(max_num_files, interval, elo_results_file, ban_ip_file, exclude_model_names):
+def update_worker(
+    max_num_files, interval, elo_results_file, ban_ip_file, exclude_model_names
+):
     while True:
         tic = time.time()
-        update_elo_components(max_num_files, elo_results_file, ban_ip_file, exclude_model_names)
+        update_elo_components(
+            max_num_files, elo_results_file, ban_ip_file, exclude_model_names
+        )
         durtaion = time.time() - tic
         print(f"update duration: {durtaion:.2f} s")
         time.sleep(max(interval - durtaion, 0))
@@ -270,7 +278,9 @@ def build_demo(elo_results_file, leaderboard_table_file):
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
                 leader_components = build_leaderboard_tab(
-                    elo_results_file, leaderboard_table_file, show_plot=True,
+                    elo_results_file,
+                    leaderboard_table_file,
+                    show_plot=True,
                 )
 
             with gr.Tab("Basic Stats", id=1):
@@ -307,7 +317,13 @@ if __name__ == "__main__":
     if args.elo_results_file is None:  # Do live update
         update_thread = threading.Thread(
             target=update_worker,
-            args=(args.max_num_files, args.update_interval, args.elo_results_file, args.ban_ip_file, args.exclude_model_names),
+            args=(
+                args.max_num_files,
+                args.update_interval,
+                args.elo_results_file,
+                args.ban_ip_file,
+                args.exclude_model_names,
+            ),
         )
         update_thread.start()
 

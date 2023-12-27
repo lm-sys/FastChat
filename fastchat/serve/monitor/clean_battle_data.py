@@ -77,9 +77,9 @@ def replace_model_name(old_name, tstamp):
     }
     if old_name in ["gpt-4", "gpt-3.5-turbo"]:
         if tstamp > 1687849200:
-            return old_name+"-0613"
+            return old_name + "-0613"
         else:
-            return old_name+"-0314"
+            return old_name + "-0314"
     if old_name in replace_dict:
         return replace_dict[old_name]
     return old_name
@@ -99,9 +99,11 @@ def read_file(filename):
             time.sleep(2)
     return data
 
+
 def read_file_parallel(log_files, num_threads=8):
     data_all = []
     from multiprocessing import Pool
+
     with Pool(num_threads) as p:
         ret_all = list(tqdm(p.imap(read_file, log_files), total=len(log_files)))
         for ret in ret_all:
@@ -109,7 +111,9 @@ def read_file_parallel(log_files, num_threads=8):
     return data_all
 
 
-def clean_battle_data(log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False):
+def clean_battle_data(
+    log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False
+):
     data = read_file_parallel(log_files, num_threads=8)
 
     convert_type = {
@@ -171,7 +175,9 @@ def clean_battle_data(log_files, exclude_model_names, ban_ip_list=None, sanitize
         messages = ""
         for i in range(2):
             state = row["states"][i]
-            for turn_idx, (role, msg) in enumerate(state["messages"][state["offset"] :]):
+            for turn_idx, (role, msg) in enumerate(
+                state["messages"][state["offset"] :]
+            ):
                 if msg:
                     messages += msg.lower()
         for word in IDENTITY_WORDS:
@@ -201,11 +207,7 @@ def clean_battle_data(log_files, exclude_model_names, ban_ip_list=None, sanitize
 
         ip = row["ip"]
         if ip not in all_ips:
-            all_ips[ip] = {
-                "ip": ip,
-                "count": 0,
-                "sanitized_id": len(all_ips)
-            }
+            all_ips[ip] = {"ip": ip, "count": 0, "sanitized_id": len(all_ips)}
         all_ips[ip]["count"] += 1
         if sanitize_ip:
             user_id = f"arena_user_{all_ips[ip]['sanitized_id']}"
@@ -272,7 +274,9 @@ if __name__ == "__main__":
     log_files = get_log_files(args.max_num_files)
     ban_ip_list = json.load(open(args.ban_ip_file)) if args.ban_ip_file else None
 
-    battles = clean_battle_data(log_files, args.exclude_model_names or [], ban_ip_list, args.sanitize_ip)
+    battles = clean_battle_data(
+        log_files, args.exclude_model_names or [], ban_ip_list, args.sanitize_ip
+    )
     last_updated_tstamp = battles[-1]["tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")

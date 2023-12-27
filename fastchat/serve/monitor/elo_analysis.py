@@ -54,6 +54,7 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
 
 def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000):
     from sklearn.linear_model import LogisticRegression
+
     models = pd.concat([df["model_a"], df["model_b"]]).unique()
     models = pd.Series(np.arange(len(models)), index=models)
 
@@ -73,17 +74,17 @@ def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000):
     # one tie => one A win + one B win
     # find tie + tie (both bad) index
     tie_idx = (df["winner"] == "tie") | (df["winner"] == "tie (bothbad)")
-    tie_idx[len(tie_idx)//2:] = False
+    tie_idx[len(tie_idx) // 2 :] = False
     Y[tie_idx] = 1.0
 
     lr = LogisticRegression(fit_intercept=False)
-    lr.fit(X,Y)
+    lr.fit(X, Y)
 
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
     # calibrate llama-13b to 800 if applicable
     if "llama-13b" in models.index:
-        elo_scores += (800-elo_scores[models["llama-13b"]])
-    return pd.Series(elo_scores, index = models.index).sort_values(ascending=False)
+        elo_scores += 800 - elo_scores[models["llama-13b"]]
+    return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
 
 def get_median_elo_from_bootstrap(bootstrap_df):
@@ -260,10 +261,14 @@ def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=
     elo_rating_online = compute_elo(battles)
 
     if rating_system == "bt":
-        bootstrap_df = get_bootstrap_result(battles, compute_elo_mle_with_tie, num_round=num_bootstrap)
+        bootstrap_df = get_bootstrap_result(
+            battles, compute_elo_mle_with_tie, num_round=num_bootstrap
+        )
         elo_rating_final = compute_elo_mle_with_tie(battles)
     elif rating_system == "elo":
-        bootstrap_df = get_bootstrap_result(battles, compute_elo, num_round=num_bootstrap)
+        bootstrap_df = get_bootstrap_result(
+            battles, compute_elo, num_round=num_bootstrap
+        )
         elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
         elo_rating_final = elo_rating_median
 
@@ -316,7 +321,9 @@ if __name__ == "__main__":
     parser.add_argument("--clean-battle-file", type=str)
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--num-bootstrap", type=int, default=100)
-    parser.add_argument("--rating-system", type=str, choices=["bt", "elo"], default="bt")
+    parser.add_argument(
+        "--rating-system", type=str, choices=["bt", "elo"], default="bt"
+    )
     parser.add_argument("--exclude-tie", action="store_true", default=False)
     args = parser.parse_args()
 
@@ -330,7 +337,9 @@ if __name__ == "__main__":
         log_files = get_log_files(args.max_num_files)
         battles = clean_battle_data(log_files)
 
-    results = report_elo_analysis_results(battles, rating_system=args.rating_system, num_bootstrap=args.num_bootstrap)
+    results = report_elo_analysis_results(
+        battles, rating_system=args.rating_system, num_bootstrap=args.num_bootstrap
+    )
 
     print("# Online Elo")
     pretty_print_elo_rating(results["elo_rating_online"])

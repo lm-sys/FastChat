@@ -53,14 +53,17 @@ def load_log_files(filename):
         )
     return data
 
+
 def load_log_files_parallel(log_files, num_threads=8):
     data_all = []
     from multiprocessing import Pool
+
     with Pool(num_threads) as p:
         ret_all = list(tqdm(p.imap(load_log_files, log_files), total=len(log_files)))
         for ret in ret_all:
             data_all.extend(ret)
     return data_all
+
 
 def get_anony_vote_df(df):
     anony_vote_df = df[
