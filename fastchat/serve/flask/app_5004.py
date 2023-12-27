@@ -210,8 +210,9 @@ def report_model_only():
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
+    err_result = []
+    dd2 = {}
     for model in result_dict:
-        print(model)
         if model != MODEL_ID:
             continue
         dd0 = defaultdict(list)
@@ -226,10 +227,13 @@ def report_model_only():
                 status = True
             else:
                 status = False
+            if not status:
+                err_result.append(answer)
             dd0[category].append(status)
         for k, v in dd0.items():
             dd1[k] = (sum(v) / len(v), sum(v), len(v))
-        
+
+        dd2[model] = dd1
         print(model, dd1)
         s0 = sum([v[1] for v in dd1.values()])
         s1 = sum([v[2] for v in dd1.values()])
@@ -241,6 +245,7 @@ def report_model_only():
         result = {"output": score_result,
                   "data_ids": ["moral_bench_test1", "moral_bench_test2", "moral_bench_test3"],
                   "model_id": MODEL_ID,
+                  "category": dd2,
                   "time_start": start_time,
                   "time_end": end_time}
         return jsonify(result)
