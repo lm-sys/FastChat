@@ -17,7 +17,7 @@ import pytz
 from fastchat.llm_judge.gen_model_answer import run_eval
 from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, append_dict_to_jsonl, get_end_time, get_start_time
-from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt
+from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt, get_cache
 
 MODEL_TABLE = [
     "chatglm3-6b",
@@ -242,7 +242,7 @@ def report_model_only():
             cate_score_dd[k] = (sum(v), len(v), sum(v) / len(v))
         
         model_cate_dd[model] = cate_score_dd
-        pprint(err_result[0:10])
+        pprint(err_result[0:2])
         s0 = sum([v[0] for v in cate_score_dd.values()])
         s1 = sum([v[1] for v in cate_score_dd.values()])
         score_result.update({model: (s0, s1, s0 / s1)})
@@ -254,8 +254,8 @@ def report_model_only():
         }
 
     sys_prompt = get_system_prompt()
-    report = generate_report(sys_prompt, report_data[MODEL_ID])
-
+    # report = generate_report(sys_prompt, report_data[MODEL_ID])
+    report = get_cache()
     try:
         start_time = get_start_time()
         end_time = get_end_time()
