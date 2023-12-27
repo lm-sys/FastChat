@@ -250,7 +250,7 @@ def report_model_only():
         report_data[model] = {
             "score_total": s0 / s1,
             "score_per_category": cate_score_dd,
-            "error_result": err_result
+            "error_result": err_result[0:2]
         }
 
     sys_prompt = get_system_prompt()
