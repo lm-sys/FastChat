@@ -8,6 +8,7 @@ pip install pytz gradio gdown plotly polyglot pyicu pycld2 tabulate
 
 import argparse
 import ast
+import json
 import pickle
 import os
 import threading
@@ -22,9 +23,7 @@ from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
-notebook_url = (
-    "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
-)
+notebook_url = "https://colab.research.google.com/drive/1RAWb22-PFNI-X1gPVzc927SGUdfr6nsR?usp=sharing"
 
 
 basic_component_values = [None] * 6
@@ -41,7 +40,7 @@ This leaderboard is based on the following three benchmarks.
 - [MT-Bench](https://arxiv.org/abs/2306.05685) - a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot) - a test to measure a model's multitask accuracy on 57 tasks.
 
-💻 Code: The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge). The MMLU scores are mostly computed by [InstructEval](https://github.com/declare-lab/instruct-eval). Higher values are better for all benchmarks. Empty cells mean not available. Last updated: Dec 20, 2023.
+💻 Code: The Arena Elo ratings are computed by this [notebook]({notebook_url}). The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge). The MMLU scores are mostly computed by [InstructEval](https://github.com/declare-lab/instruct-eval). Higher values are better for all benchmarks. Empty cells mean not available. Last updated: November, 2023.
 """
     return leaderboard_md
 
@@ -55,12 +54,13 @@ Last updated: {elo_results["last_updated_datetime"]}
     return leaderboard_md
 
 
-def update_elo_components(max_num_files, elo_results_file):
+def update_elo_components(max_num_files, elo_results_file, ban_ip_file, exclude_model_names):
     log_files = get_log_files(max_num_files)
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
-        battles = clean_battle_data(log_files, [])
+        ban_ip_list = json.load(open(ban_ip_file)) if ban_ip_file else None
+        battles = clean_battle_data(log_files, exclude_model_names, ban_ip_list=ban_ip_list)
         elo_results = report_elo_analysis_results(battles)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
@@ -93,10 +93,10 @@ def update_elo_components(max_num_files, elo_results_file):
     basic_component_values[5] = md4
 
 
-def update_worker(max_num_files, interval, elo_results_file):
+def update_worker(max_num_files, interval, elo_results_file, ban_ip_file, exclude_model_names):
     while True:
         tic = time.time()
-        update_elo_components(max_num_files, elo_results_file)
+        update_elo_components(max_num_files, elo_results_file, ban_ip_file, exclude_model_names)
         durtaion = time.time() - tic
         print(f"update duration: {durtaion:.2f} s")
         time.sleep(max(interval - durtaion, 0))
@@ -168,7 +168,7 @@ def build_basic_stats_tab():
     return [md0, plot_1, md1, md2, md3, md4]
 
 
-def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
+def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=False):
     if elo_results_file is None:  # Do live update
         md = "Loading ..."
         p1 = p2 = p3 = p4 = None
@@ -202,8 +202,10 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
             values.append(row)
         values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
 
-        headers[1] = "⭐ " + headers[1]
-        headers[2] = "📈 " + headers[2]
+        # headers[1] = "⭐ " + headers[1]
+        # headers[2] = "📈 " + headers[2]
+        headers[1] = "Arena Elo"
+        headers[2] = "MT-bench"
 
         gr.Dataframe(
             headers=headers,
@@ -222,36 +224,36 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file):
 
     leader_component_values[:] = [md, p1, p2, p3, p4]
 
-    """
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown(
-                "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles"
-            )
-            plot_1 = gr.Plot(p1, show_label=False)
-        with gr.Column():
-            gr.Markdown(
-                "#### Figure 2: Battle Count for Each Combination of Models (without Ties)"
-            )
-            plot_2 = gr.Plot(p2, show_label=False)
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown(
-                "#### Figure 3: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
-            )
-            plot_3 = gr.Plot(p3, show_label=False)
-        with gr.Column():
-            gr.Markdown(
-                "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
-            )
-            plot_4 = gr.Plot(p4, show_label=False)
-    """
+    if show_plot:
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown(
+                    "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles"
+                )
+                plot_1 = gr.Plot(p1, show_label=False)
+            with gr.Column():
+                gr.Markdown(
+                    "#### Figure 2: Battle Count for Each Combination of Models (without Ties)"
+                )
+                plot_2 = gr.Plot(p2, show_label=False)
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown(
+                    "#### Figure 3: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
+                )
+                plot_3 = gr.Plot(p3, show_label=False)
+            with gr.Column():
+                gr.Markdown(
+                    "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
+                )
+                plot_4 = gr.Plot(p4, show_label=False)
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
     gr.Markdown(acknowledgment_md)
 
-    # return [md_1, plot_1, plot_2, plot_3, plot_4]
+    if show_plot:
+        return [md_1, plot_1, plot_2, plot_3, plot_4]
     return [md_1]
 
 
@@ -268,7 +270,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
         with gr.Tabs() as tabs:
             with gr.Tab("Leaderboard", id=0):
                 leader_components = build_leaderboard_tab(
-                    elo_results_file, leaderboard_table_file
+                    elo_results_file, leaderboard_table_file, show_plot=True,
                 )
 
             with gr.Tab("Basic Stats", id=1):
@@ -295,6 +297,8 @@ if __name__ == "__main__":
     parser.add_argument("--max-num-files", type=int)
     parser.add_argument("--elo-results-file", type=str)
     parser.add_argument("--leaderboard-table-file", type=str)
+    parser.add_argument("--ban-ip-file", type=str)
+    parser.add_argument("--exclude-model-names", type=str, nargs="+")
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")
@@ -303,7 +307,7 @@ if __name__ == "__main__":
     if args.elo_results_file is None:  # Do live update
         update_thread = threading.Thread(
             target=update_worker,
-            args=(args.max_num_files, args.update_interval, args.elo_results_file),
+            args=(args.max_num_files, args.update_interval, args.elo_results_file, args.ban_ip_file, args.exclude_model_names),
         )
         update_thread.start()
 

@@ -17,7 +17,7 @@ NUM_SERVERS = 14
 
 def get_log_files(max_num_files=None):
     dates = []
-    for month in range(4, 12):
+    for month in range(4, 13):
         for day in range(1, 33):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
@@ -32,30 +32,35 @@ def get_log_files(max_num_files=None):
     return filenames
 
 
-def load_log_files(log_files):
+def load_log_files(filename):
     data = []
-    for filename in tqdm(log_files, desc="read files"):
-        for retry in range(5):
-            try:
-                lines = open(filename).readlines()
-                break
-            except FileNotFoundError:
-                time.sleep(2)
+    for retry in range(5):
+        try:
+            lines = open(filename).readlines()
+            break
+        except FileNotFoundError:
+            time.sleep(2)
 
-        for l in lines:
-            row = json.loads(l)
-
-            data.append(
-                dict(
-                    type=row["type"],
-                    tstamp=row["tstamp"],
-                    model=row.get("model", ""),
-                    models=row.get("models", ["", ""]),
-                )
+    for l in lines:
+        row = json.loads(l)
+        data.append(
+            dict(
+                type=row["type"],
+                tstamp=row["tstamp"],
+                model=row.get("model", ""),
+                models=row.get("models", ["", ""]),
             )
-
+        )
     return data
 
+def load_log_files_parallel(log_files, num_threads=8):
+    data_all = []
+    from multiprocessing import Pool
+    with Pool(num_threads) as p:
+        ret_all = list(tqdm(p.imap(load_log_files, log_files), total=len(log_files)))
+        for ret in ret_all:
+            data_all.extend(ret)
+    return data_all
 
 def get_anony_vote_df(df):
     anony_vote_df = df[
@@ -77,7 +82,7 @@ def merge_counts(series, on, names):
 
 
 def report_basic_stats(log_files):
-    df_all = load_log_files(log_files)
+    df_all = load_log_files_parallel(log_files)
     df_all = pd.DataFrame(df_all)
     now_t = df_all["tstamp"].max()
     df_1_hour = df_all[df_all["tstamp"] > (now_t - 3600)]
