@@ -234,7 +234,7 @@ def report_model_only():
             dd1[k] = (sum(v) / len(v), sum(v), len(v))
 
         dd2[model] = dd1
-        print(err_result)
+        print(err_result[0])
         s0 = sum([v[1] for v in dd1.values()])
         s1 = sum([v[2] for v in dd1.values()])
         score_result.update({model: (s0, s1, s0 / s1)})
