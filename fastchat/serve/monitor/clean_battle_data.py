@@ -225,7 +225,7 @@ def clean_battle_data(
                 model_a=models[0],
                 model_b=models[1],
                 winner=convert_type[row["type"]],
-                judge=f"{user_id}",
+                judge=f"arena_user_{user_id}",
                 conversation_a=conversation_a,
                 conversation_b=conversation_b,
                 turn=len(conversation_a) // 2,
