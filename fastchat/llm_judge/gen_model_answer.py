@@ -114,9 +114,8 @@ def get_model_answers(
     print("len of prompts: ", len(prompts), len(outputs))
     for idx, (question, output) in enumerate(zip(questions, outputs)):
         prompt = output.prompt
+        qs = '\n'.join(question["turns"])
         generated_text = output.outputs[0].text
-        # print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
         with open(os.path.expanduser(answer_file), "a") as fout:
             ans_json = {
@@ -128,6 +127,7 @@ def get_model_answers(
                 "question_type": question["question_type"],
                 "category": question['category'],
                 "prompt": prompt,
+                "question": qs,
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")

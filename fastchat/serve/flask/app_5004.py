@@ -200,13 +200,12 @@ def report_model_data():
 @app.route('/report_model_only', methods=['POST'])
 def report_model_only():
     data = request.json
-    # Validate input data
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
 
     DATA_ID = "moral_bench_test3"
     MODEL_ID = data.get('model_id')
-    
+
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
     result_dict = read_jsonl_files(directory_path)
     score_result = {}
