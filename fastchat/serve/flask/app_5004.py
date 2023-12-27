@@ -206,7 +206,7 @@ def report_model_only():
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     
-    DATA_ID = "moral_bench_test3"
+    DATA_ID = "moral_bench_test1"
     MODEL_ID = data.get('model_id')
     
     directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
