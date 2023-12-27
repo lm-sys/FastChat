@@ -422,11 +422,6 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     else:
         return generate_stream
 
-def get_result(model, tokenizer, prompt):
-    for response, history in model.stream_chat(tokenizer, prompt, [], past_key_values=None, return_past_key_values=False, max_length=8192, top_p=0.8, temperature=0.95):
-        pass
-    return response
-
 
 def add_model_args(parser):
     parser.add_argument(
