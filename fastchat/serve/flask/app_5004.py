@@ -248,7 +248,7 @@ def report_model_only():
                   "category": dd2,
                   "time_start": start_time,
                   "time_end": end_time}
-        return jsonify(result)
+        return json.dumps(result, ensure_ascii=False)
     except subprocess.CalledProcessError:
         return jsonify({"error": "Script execution failed"}), 500
 
