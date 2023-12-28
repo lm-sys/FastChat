@@ -142,7 +142,7 @@ def preprocess(
             # "-2" is hardcoded for the Llama tokenizer to make the offset correct.
             instruction_len = len(tokenizer(parts[0]).input_ids) - 2
 
-            if i != 0 and not tokenizer.legacy:
+            if i != 0:# and not tokenizer.legacy:
                 # The legacy and non-legacy modes handle special tokens differently
                 instruction_len -= 1
 
@@ -150,7 +150,7 @@ def preprocess(
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
             cur_len += turn_len
 
-            if i != 0 and not tokenizer.legacy:
+            if i != 0:# and not tokenizer.legacy:
                 # The legacy and non-legacy modes handle special tokens differently
                 cur_len -= 1
 
@@ -261,7 +261,6 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
-
     # Set RoPE scaling factor
     config = transformers.AutoConfig.from_pretrained(
         model_args.model_name_or_path,
@@ -280,6 +279,8 @@ def train():
         config=config,
         cache_dir=training_args.cache_dir,
         trust_remote_code=model_args.trust_remote_code,
+        torch_dtype=torch.bfloat16,
+        attn_implementation="flash_attention_2",
     )
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,

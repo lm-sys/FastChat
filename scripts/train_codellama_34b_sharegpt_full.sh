@@ -1,0 +1,26 @@
+python -m torch.distributed.run --nnodes 2 --nproc-per-node 8 --master-addr 10.6.47.248 --master-port 5000 --node-rank 0 fastchat/train/train.py \
+    --model_name_or_path /home/mltraining/models/code-llama2-34B-instruct-hf-2 \
+    --data_path ~/data/sharegpt_20230521_4k_clean_lang_split_identity.json \
+    --bf16 True \
+    --output_dir output_codellama_34b_sharegpt_full \
+    --num_train_epochs 3 \
+    --per_device_train_batch_size 1 \
+    --per_device_eval_batch_size 32 \
+    --gradient_accumulation_steps 8 \
+    --evaluation_strategy "no" \
+    --eval_steps 1500 \
+    --save_strategy "epoch" \
+    --save_steps 1500 \
+    --save_total_limit 8 \
+    --learning_rate 2e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.04 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True \
+    --model_max_length 1024 \
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+
