@@ -796,6 +796,18 @@ register_conv_template(
     )
 )
 
+# Gemini default template
+# Reference: https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L150
+#            https://github.com/google/generative-ai-python/blob/9c99bcb474a991a97a2e7d62fcdb52db7ce40729/google/generativeai/discuss.py#L40
+register_conv_template(
+    Conversation(
+        name="gemini",
+        roles=("0", "1"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
 # BiLLa default template
 register_conv_template(
     Conversation(

@@ -21,6 +21,7 @@ from fastchat.llm_judge.common import (
     chat_compeletion_anthropic,
     chat_compeletion_cohere,
     chat_compeletion_palm,
+    chat_compeletion_gemini,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
@@ -76,7 +77,11 @@ def get_answer(
             elif cfg_mtbench.api == "cohere":
                 output = chat_compeletion_cohere(
                 model, conv, temperature, max_tokens
-                )       
+                ) 
+            elif cfg_mtbench.api == "google":
+                chat_state, output = chat_compeletion_gemini(
+                    chat_state, model, conv, temperature, max_tokens
+                )  
             else:
                 output = chat_compeletion_openai(model, conv, temperature, max_tokens)
 

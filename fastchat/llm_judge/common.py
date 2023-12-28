@@ -14,6 +14,7 @@ from typing import Optional
 import openai
 import anthropic
 import cohere
+import google.generativeai as genai
 
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
@@ -523,6 +524,39 @@ def chat_compeletion_palm(chat_state, model, conv, temperature, max_tokens):
     for _ in range(API_MAX_RETRY):
         try:
             response = chat_state.send_message(conv.messages[-2][1], **parameters)
+            output = response.text
+            break
+        except Exception as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return chat_state, output
+
+
+def chat_compeletion_gemini(chat_state, model, conv, temperature, max_tokens):
+    safety_settings_NONE=[
+                            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+                            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+                            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+                            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                        ]
+
+    assert model == "gemini-pro"
+
+    if chat_state is None:
+        gemini = genai.GenerativeModel(
+            model_name=model, safety_settings=safety_settings_NONE)
+        chat_state = gemini.start_chat()
+
+    parameters = {
+        "temperature": temperature,
+        "top_p": 0.8,
+        "top_k": 40,
+        "max_output_tokens": max_tokens,
+    }
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            response = chat_state.send_message(conv.messages[-2][1], generation_config=parameters)
             output = response.text
             break
         except Exception as e:
