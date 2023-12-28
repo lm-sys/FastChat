@@ -370,10 +370,14 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     from fastchat.serve.inference import generate_stream
 
     model_type = str(type(model)).lower()
+    is_peft = "peft" in model_type
+    if is_peft:
+        model.set_adapter(model_path)
+        model_type = str(type(model.base_model.model))
+
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
-    is_peft = "peft" in model_type
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
 
