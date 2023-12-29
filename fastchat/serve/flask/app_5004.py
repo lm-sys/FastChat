@@ -49,32 +49,6 @@ def random_uuid() -> str:
     return str(uuid.uuid4().hex)
 
 
-@app.route('/get_homepage_dataids', methods=['POST'])
-def get_homepage_dataids():
-    request_id = random_uuid()
-    try:
-        result = {
-            "request_id": request_id,
-            "data_ids": DATA_TABLE
-        }
-        return jsonify(result)
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Script execution failed"}), 500
-
-
-@app.route('/get_homepage_models', methods=['POST'])
-def get_homepage_models():
-    request_id = random_uuid()
-    try:
-        result = {
-            "request_id": request_id,
-            "model_ids": MODEL_TABLE
-        }
-        return jsonify(result)
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Script execution failed"}), 500
-
-
 @app.route('/get_modelpage_list', methods=['POST'])
 def get_modelpage_list():
     request_id = random_uuid()
@@ -129,7 +103,7 @@ def get_datapage_info():
     request_id = random_uuid()
     result = {
         "request_id": request_id,
-        "datasets": json.load(open('./resources/datasets_config.json'))
+        "datasets": json.load(open('resources/datasets_config.json'))
     }
     return json.dumps(result, ensure_ascii=False)
 
