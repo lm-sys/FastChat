@@ -83,7 +83,7 @@ def get_modelpage_detail():
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     MODEL_ID = data.get('model_id')
-    overall_report = calculate_model_scores(DATA_TABLE)
+    overall_report = calculate_model_scores(["moral_bench_test1"])
     # sys_prompt = get_system_prompt()
     # report = generate_report(sys_prompt, overall_report[MODEL_ID]["error_examples"])
     report = get_cache()
