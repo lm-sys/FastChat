@@ -109,6 +109,7 @@ def get_datapage_list():
 @app.route('/get_datapage_detail', methods=['POST'])
 def get_datapage_detail():
     request_id = random_uuid()
+    dataset = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
     data = request.json
     if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
