@@ -162,6 +162,7 @@ SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
     "gpt-4-0314": 4,
+    "gpt-4-0613": 4,
     "gpt-4-turbo": 4,
     "gpt-3.5-turbo-0613": 2,
     "gpt-3.5-turbo-1106": 2,
@@ -174,6 +175,7 @@ SAMPLING_WEIGHTS = {
     "pplx-70b-online": 4,
     "solar-10.7b-instruct-v1.0": 2,
     "mixtral-8x7b-instruct-v0.1": 4,
+    "mistral-medium": 8,
     "openhermes-2.5-mistral-7b": 2,
     "dolphin-2.2.1-mistral-7b": 2,
     "wizardlm-70b": 2,
@@ -235,6 +237,12 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "llama-2-70b-chat",
     },
+    "mistral-medium": {
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-0613",
+        "gpt-4-turbo",
+        "mixtral-8x7b-instruct-v0.1",
+    },
     "mixtral-8x7b-instruct-v0.1": {
         "gpt-3.5-turbo-1106",
         "gpt-3.5-turbo-0613",
@@ -292,15 +300,16 @@ SAMPLING_BOOST_MODELS = [
     # "tulu-2-dpo-70b",
     # "yi-34b-chat",
     "claude-2.1",
-    "claude-1",
+    # "claude-1",
     "gpt-4-0613",
     # "gpt-3.5-turbo-1106",
     # "gpt-4-0314",
     "gpt-4-turbo",
     # "dolphin-2.2.1-mistral-7b",
-    "mixtral-8x7b-instruct-v0.1",
-    "gemini-pro",
-    "solar-10.7b-instruct-v1.0",
+    # "mixtral-8x7b-instruct-v0.1",
+    "mistral-medium",
+    # "gemini-pro",
+    # "solar-10.7b-instruct-v1.0",
 ]
 
 # outage models won't be sampled.

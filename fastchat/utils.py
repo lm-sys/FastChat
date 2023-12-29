@@ -57,6 +57,9 @@ def build_logger(logger_name, logger_filename):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
+    # Avoid httpx flooding POST logs
+    logging.getLogger('httpx').setLevel(logging.WARNING)
+
     # if LOGDIR is empty, then don't try output log to local file
     if LOGDIR != "":
         os.makedirs(LOGDIR, exist_ok=True)

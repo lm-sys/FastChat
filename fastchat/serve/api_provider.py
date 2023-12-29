@@ -239,3 +239,45 @@ def ai2_api_stream_iter(
                 "error_code": 0,
             }
             yield data
+
+
+def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+    from mistralai.client import MistralClient
+    from mistralai.models.chat_completion import ChatMessage
+
+    api_key = os.environ["MISTRAL_API_KEY"]
+
+    client = MistralClient(api_key=api_key)
+
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    new_messages = []
+    for message in messages:
+        new_messages.append(ChatMessage(role=message["role"], content=message["content"]))
+    new_messages = [ChatMessage(role=message["role"], content=message["content"]) for message in messages]
+
+    res = client.chat_stream(
+        model=model_name,
+        temperature=temperature,
+        messages=new_messages,
+        max_tokens=max_new_tokens,
+        top_p=top_p,
+    )
+
+    text = ""
+    for chunk in res:
+        if chunk.choices[0].delta.content is not None:
+            text += chunk.choices[0].delta.content
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
