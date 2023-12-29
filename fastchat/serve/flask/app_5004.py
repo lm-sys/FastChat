@@ -26,7 +26,7 @@ DATA_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resour
 DATA_DICT = {dataset["data_id"]: dataset for dataset in DATA_JSON["datasets"]}
 
 MODEL_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
-MODEL_DICT = {model["model_id"]: model for model in DATA_JSON["models"]}
+MODEL_DICT = {model["model_id"]: model for model in MODEL_JSON["models"]}
 
 
 def generate_random_model_id():
