@@ -101,10 +101,8 @@ def get_modelpage_detail():
 @app.route('/get_datapage_info', methods=['POST'])
 def get_datapage_info():
     request_id = random_uuid()
-    result = {
-        "request_id": request_id,
-        "datasets": json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
-    }
+    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
+    result.update({"request_id": request_id})
     return json.dumps(result, ensure_ascii=False)
 
 
