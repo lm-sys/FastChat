@@ -259,10 +259,10 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    new_messages = []
-    for message in messages:
-        new_messages.append(ChatMessage(role=message["role"], content=message["content"]))
-    new_messages = [ChatMessage(role=message["role"], content=message["content"]) for message in messages]
+    new_messages = [
+        ChatMessage(role=message["role"], content=message["content"])
+        for message in messages
+    ]
 
     res = client.chat_stream(
         model=model_name,

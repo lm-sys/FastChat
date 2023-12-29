@@ -366,8 +366,11 @@ def bot_response(
             return
 
     conv, model_name = state.conv, state.model_name
-    model_api_dict = (openai_compatible_models_info[model_name]
-                  if model_name in openai_compatible_models_info else None)
+    model_api_dict = (
+        openai_compatible_models_info[model_name]
+        if model_name in openai_compatible_models_info
+        else None
+    )
 
     if model_api_dict is None:
         # Query worker address
