@@ -99,7 +99,7 @@ def get_model_answers(
     # llm = LLM(model=model_dir, trust_remote_code=True)
     llm = LLM(model="/root/autodl-tmp/model/" + model_path, trust_remote_code=True)
     prompts = []
-   
+
     for question in tqdm(questions):
         conv = get_conversation_template(model_id)
         qs = '\n'.join(question["turns"])
