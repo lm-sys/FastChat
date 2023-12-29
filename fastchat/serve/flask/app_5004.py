@@ -23,17 +23,10 @@ from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt
 
 
 DATA_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
-
 DATA_DICT = {dataset["data_id"]: dataset for dataset in DATA_JSON["datasets"]}
 
-MODEL_TABLE = [
-    "chatglm3-6b",
-    "chatglm2-6b",
-    "Baichuan2-7B-Chat",
-    "Qwen-7B-Chat",
-    "internlm-chat-7b",
-    "Yi-6B-Chat"
-]
+MODEL_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
+MODEL_DICT = {model["model_id"]: model for model in DATA_JSON["models"]}
 
 
 def generate_random_model_id():
@@ -60,7 +53,7 @@ def get_modelpage_list():
 def get_modelpage_detail():
     request_id = random_uuid()
     data = request.json
-    model_infos = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
+    
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     MODEL_ID = data.get('model_id')
@@ -73,7 +66,7 @@ def get_modelpage_detail():
         "model_id": MODEL_ID,
         "score": overall_report[MODEL_ID]["score_total"],
         "ability_scores": overall_report[MODEL_ID]["score_per_category"],
-        "model_description": model_infos.get(MODEL_ID, {}),
+        "model_description": MODEL_DICT.get(MODEL_ID, {}),
         "report": report
     }
     return json.dumps(result, ensure_ascii=False)
