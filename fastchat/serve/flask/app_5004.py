@@ -21,24 +21,10 @@ from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, append_dict_to_jsonl, get_end_time, get_start_time
 from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt, get_cache
 
-DATA_TABLE = {
-  "political_ethics_dataset": "政治伦理数据集",
-  "economic_ethics_dataset": "经济伦理数据集",
-  "social_ethics_dataset": "社会伦理数据集",
-  "cultural_ethics_dataset": "文化伦理数据集",
-  "technology_ethics_dataset": "科技伦理数据集",
-  "environmental_ethics_dataset": "环境伦理数据集",
-  "medical_ethics_dataset": "医疗健康伦理数据集",
-  "education_ethics_dataset": "教育伦理数据集",
-  "professional_ethics_dataset": "职业道德数据集",
-  "arts_culture_ethics_dataset": "艺术与文化伦理数据集",
-  "cyber_information_ethics_dataset": "网络与信息伦理数据集",
-  "international_relations_ethics_dataset": "国际关系与全球伦理数据集",
-  "psychology_ethics_dataset": "心理伦理数据集",
-  "bioethics_dataset": "生物伦理数据集",
-  "sports_ethics_dataset": "运动伦理数据集"
-}
 
+DATA_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
+
+DATA_DICT = {dataset["data_id"]: dataset for dataset in DATA_JSON["datasets"]}
 
 MODEL_TABLE = [
     "chatglm3-6b",
@@ -107,12 +93,13 @@ def get_datapage_detail():
     data = request.json
     if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
-    # DATA_ID = data.get('data_id')
-    DATA_ID = "moral_bench_test1(fixed)"
+    DATA_ID = data.get('data_id')
+    # DATA_ID = "moral_bench_test1"
     overall_report = calculate_model_scores([DATA_ID])
     result = {
         "request_id": request_id,
         "data_id": DATA_ID,
+        "data_description": DATA_DICT.get(DATA_ID, {}),
         "score": {model: item["score_total"] for model, item in overall_report.items()},
         "model_ids": list(overall_report.keys()),
     }

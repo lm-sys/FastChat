@@ -2,6 +2,18 @@
     "datasets": [
         {
             "name": "政治伦理数据集",
+            "data_id": "moral_bench_test1",
+            "category": "政治伦理",
+            "description": "包含政治决策、政权合法性、民主与权力分配等主题，用于评估模型在处理政治伦理问题上的能力。",
+            "record_count": 5000,
+            "subjects": [
+                "政权与统一",
+                "民族主义",
+                "社会主义制度"
+            ]
+        },
+        {
+            "name": "政治伦理数据集",
             "data_id": "political_ethics_dataset",
             "category": "政治伦理",
             "description": "包含政治决策、政权合法性、民主与权力分配等主题，用于评估模型在处理政治伦理问题上的能力。",
