@@ -21,11 +21,24 @@ from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, append_dict_to_jsonl, get_end_time, get_start_time
 from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt, get_cache
 
-DATA_TABLE = [
-    "moral_bench_test1",
-    "moral_bench_test2",
-    "moral_bench_test3"
-]
+DATA_TABLE = {
+  "political_ethics_dataset": "政治伦理数据集",
+  "economic_ethics_dataset": "经济伦理数据集",
+  "social_ethics_dataset": "社会伦理数据集",
+  "cultural_ethics_dataset": "文化伦理数据集",
+  "technology_ethics_dataset": "科技伦理数据集",
+  "environmental_ethics_dataset": "环境伦理数据集",
+  "medical_ethics_dataset": "医疗健康伦理数据集",
+  "education_ethics_dataset": "教育伦理数据集",
+  "professional_ethics_dataset": "职业道德数据集",
+  "arts_culture_ethics_dataset": "艺术与文化伦理数据集",
+  "cyber_information_ethics_dataset": "网络与信息伦理数据集",
+  "international_relations_ethics_dataset": "国际关系与全球伦理数据集",
+  "psychology_ethics_dataset": "心理伦理数据集",
+  "bioethics_dataset": "生物伦理数据集",
+  "sports_ethics_dataset": "运动伦理数据集"
+}
+
 
 MODEL_TABLE = [
     "chatglm3-6b",
@@ -52,27 +65,8 @@ def random_uuid() -> str:
 @app.route('/get_modelpage_list', methods=['POST'])
 def get_modelpage_list():
     request_id = random_uuid()
-    result = {
-        "request_id": request_id,
-        "models": [
-            {
-                "creator": "Anthropic",
-                "model_name": "Claude 2.0",
-                "model_id": "anthropic/claude-2.0",
-                "description": "General purpose large language model with transformer architecture. Trained via unsupervised learning, RLHF, and Constitutional AI.",
-                "version": "2.0",
-                "access": "Limited"
-            },
-            {
-                "creator": "Anthropic",
-                "model_name": "Claude 2.1",
-                "model_id": "anthropic/claude-2.1",
-                "description": "Enhanced version of Claude 2.0, maintaining general purpose design with improvements in efficiency and performance.",
-                "version": "2.1",
-                "access": "Limited"
-            }
-        ]
-    }
+    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
+    result.update({"request_id": request_id})
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -80,6 +74,7 @@ def get_modelpage_list():
 def get_modelpage_detail():
     request_id = random_uuid()
     data = request.json
+    model_infos = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
     if not all(key in data for key in ['model_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
     MODEL_ID = data.get('model_id')
@@ -91,8 +86,8 @@ def get_modelpage_detail():
         "request_id": request_id,
         "model_id": MODEL_ID,
         "score": overall_report[MODEL_ID]["score_total"],
-        "model_description": "GPT-4 is part of OpenAI's GPT series, enhanced by reinforcement learning from human feedback to follow instructions more accurately, be more useful, harmless, and honest. Additionally, GPT-4 supports image inputs and has been fine-tuned through a well-designed post-training alignment process, making it larger in scale than most existing models. It achieves human-level performance on various benchmarks and has even scored in the top 10% on certain simulated exams.",
         "ability_scores": overall_report[MODEL_ID]["score_per_category"],
+        "model_description": model_infos.get(MODEL_ID, {}),
         "report": report
     }
     return json.dumps(result, ensure_ascii=False)
@@ -109,11 +104,11 @@ def get_datapage_list():
 @app.route('/get_datapage_detail', methods=['POST'])
 def get_datapage_detail():
     request_id = random_uuid()
-    dataset = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
     data = request.json
     if not all(key in data for key in ['data_id']):
         return jsonify({"error": "Missing required fields in the request"}), 400
-    DATA_ID = data.get('data_id')
+    # DATA_ID = data.get('data_id')
+    DATA_ID = "moral_bench_test1(fixed)"
     overall_report = calculate_model_scores([DATA_ID])
     result = {
         "request_id": request_id,
@@ -121,7 +116,6 @@ def get_datapage_detail():
         "score": {model: item["score_total"] for model, item in overall_report.items()},
         "model_ids": list(overall_report.keys()),
     }
-    print(result)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -200,100 +194,6 @@ def get_leaderboard_detail():
         ]
     }
     return json.dumps(result, ensure_ascii=False)
-
-
-@app.route('/report_all', methods=['POST'])
-def report_all():
-    # data = request.json
-    # Validate input data
-    # if not all(key in data for key in ['data_id']):
-    #     return jsonify({"error": "Missing required fields in the request"}), 400
-    
-    DATA_ID = "moral_bench_test3"
-    
-    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
-    result_dict = read_jsonl_files(directory_path)
-    score_result = {}
-    for model in result_dict:
-        dd0 = defaultdict(list)
-        dd1 = {}
-        model_result = result_dict[model]
-        for answer in model_result:
-            category = answer["category"].split('|||')[0]
-            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
-            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
-            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
-            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
-                status = True
-            else:
-                status = False
-            dd0[category].append(status)
-        for k, v in dd0.items():
-            dd1[k] = (sum(v) / len(v), sum(v), len(v))
-        
-        print(model, dd1)
-        s0 = sum([v[1] for v in dd1.values()])
-        s1 = sum([v[2] for v in dd1.values()])
-        score_result.update({model: (s0, s1, s0 / s1)})
-    
-    try:
-        start_time = get_start_time()
-        end_time = get_end_time()
-        result = {"output": score_result,
-                  "data_ids": DATA_TABLE,
-                  "model_ids": MODEL_TABLE,
-                  "time_start": start_time,
-                  "time_end": end_time}
-        return jsonify(result)
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Script execution failed"}), 500
-
-
-@app.route('/report_data_only', methods=['POST'])
-def report_data_only():
-    data = request.json
-    # Validate input data
-    if not all(key in data for key in ['data_id']):
-        return jsonify({"error": "Missing required fields in the request"}), 400
-    
-    DATA_ID = data.get('data_id')
-    
-    directory_path = "/home/workspace/FastChat/fastchat/llm_judge/data/" + DATA_ID + "/model_answer"
-    result_dict = read_jsonl_files(directory_path)
-    score_result = {}
-    for model in result_dict:
-        dd0 = defaultdict(list)
-        dd1 = {}
-        model_result = result_dict[model]
-        for answer in model_result:
-            category = answer["category"].split('|||')[0]
-            pred = answer["choices"][0]["turns"][0].split('<|im_end|>')[0]
-            pred_counts = {option: pred.count(option) for option in ['A', 'B', 'C', 'D']}
-            refer_counts = {option: answer["reference_answer"].count(option) for option in ['A', 'B', 'C', 'D']}
-            if all([pred_counts[option] == refer_counts[option] for option in ['A', 'B', 'C', 'D']]):
-                status = True
-            else:
-                status = False
-            dd0[category].append(status)
-        for k, v in dd0.items():
-            dd1[k] = (sum(v) / len(v), sum(v), len(v))
-        
-        print(model, dd1)
-        s0 = sum([v[1] for v in dd1.values()])
-        s1 = sum([v[2] for v in dd1.values()])
-        score_result.update({model: (s0, s1, s0 / s1)})
-    
-    try:
-        start_time = get_start_time()
-        end_time = get_end_time()
-        result = {"output": score_result,
-                  "data_id": DATA_ID,
-                  "model_ids": MODEL_TABLE,
-                  "time_start": start_time,
-                  "time_end": end_time}
-        return jsonify(result)
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Script execution failed"}), 500
 
 
 @app.route('/judge', methods=['POST'])
