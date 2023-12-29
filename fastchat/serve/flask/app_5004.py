@@ -118,7 +118,7 @@ def get_datapage_detail():
         "request_id": request_id,
         "data_id": DATA_ID,
         "score": {model: item["score_total"] for model, item in overall_report.items()},
-        "model_ids": overall_report.keys(),
+        "model_ids": list(overall_report.keys()),
     }
     print(result)
     return json.dumps(result, ensure_ascii=False)
