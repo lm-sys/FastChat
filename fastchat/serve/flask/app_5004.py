@@ -51,7 +51,7 @@ def random_uuid() -> str:
 @app.route('/get_modelpage_list', methods=['POST'])
 def get_modelpage_list():
     request_id = random_uuid()
-    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
+    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/model_config.json'))
     result.update({"request_id": request_id})
     return json.dumps(result, ensure_ascii=False)
 
