@@ -13,20 +13,21 @@ from tqdm import tqdm
 
 
 NUM_SERVERS = 14
-
+LOG_ROOT_DIR = "~/fastchat_logs"
 
 def get_log_files(max_num_files=None):
-    dates = []
-    for month in range(4, 13):
-        for day in range(1, 33):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-
+    log_root = os.path.expanduser(LOG_ROOT_DIR)
     filenames = []
-    for d in dates:
-        for i in range(NUM_SERVERS):
-            name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
-            if os.path.exists(name):
-                filenames.append(name)
+    for i in range(NUM_SERVERS):
+        for filename in os.listdir(f"{log_root}/server{i}"):
+            if filename.endswith("-conv.json"):
+                filepath = f"{log_root}/server{i}/{filename}"
+                name_tstamp_tuple = (filepath, os.path.getmtime(filepath))
+                filenames.append(name_tstamp_tuple)
+    # sort by tstamp
+    filenames = sorted(filenames, key=lambda x: x[1])
+    filenames = [x[0] for x in filenames]
+
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
     return filenames
@@ -54,7 +55,7 @@ def load_log_files(filename):
     return data
 
 
-def load_log_files_parallel(log_files, num_threads=8):
+def load_log_files_parallel(log_files, num_threads=16):
     data_all = []
     from multiprocessing import Pool
 

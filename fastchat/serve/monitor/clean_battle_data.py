@@ -101,7 +101,7 @@ def read_file(filename):
     return data
 
 
-def read_file_parallel(log_files, num_threads=8):
+def read_file_parallel(log_files, num_threads=16):
     data_all = []
     from multiprocessing import Pool
 
@@ -115,7 +115,7 @@ def read_file_parallel(log_files, num_threads=8):
 def clean_battle_data(
     log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False
 ):
-    data = read_file_parallel(log_files, num_threads=8)
+    data = read_file_parallel(log_files, num_threads=16)
 
     convert_type = {
         "leftvote": "model_a",
