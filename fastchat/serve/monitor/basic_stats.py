@@ -15,6 +15,7 @@ from tqdm import tqdm
 NUM_SERVERS = 14
 LOG_ROOT_DIR = "~/fastchat_logs"
 
+
 def get_log_files(max_num_files=None):
     log_root = os.path.expanduser(LOG_ROOT_DIR)
     filenames = []
