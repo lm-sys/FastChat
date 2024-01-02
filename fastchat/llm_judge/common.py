@@ -463,11 +463,15 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
     return output
 
 
-def chat_completion_anthropic(model, conv, temperature, max_tokens):
+def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=None):
+    api_key = os.environ["ANTHROPIC_API_KEY"]
+    if api_dict is not None and "api_key" in api_dict:
+        api_key = api_dict["api_key"]
+
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+            c = anthropic.Anthropic(api_key=api_key)
             prompt = conv.get_prompt()
             response = c.completions.create(
                 model=model,
