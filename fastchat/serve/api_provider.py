@@ -179,26 +179,16 @@ def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens)
     }
 
     safety_settings = [
-        {
-            "category": "HARM_CATEGORY_HARASSMENT",
-            "threshold": "BLOCK_NONE"
-        },
-        {
-            "category": "HARM_CATEGORY_HATE_SPEECH",
-            "threshold": "BLOCK_NONE"
-        },
-        {
-            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            "threshold": "BLOCK_NONE"
-        },
-        {
-            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-            "threshold": "BLOCK_NONE"
-        },
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
     ]
-    model = genai.GenerativeModel(model_name=model_name,
-                                  generation_config=generation_config,
-                                  safety_settings=safety_settings)
+    model = genai.GenerativeModel(
+        model_name=model_name,
+        generation_config=generation_config,
+        safety_settings=safety_settings,
+    )
     history = []
     for role, message in conv.messages[:-2]:
         history.append({"role": role, "parts": message})
