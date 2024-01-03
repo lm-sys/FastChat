@@ -29,7 +29,7 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    ["mistral-medium", "mixtral-8x7b-instruct-v0.1", "mistral-7b-instruct"],
+    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
