@@ -63,7 +63,7 @@ def load_demo(url_params, request: gr.Request):
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
             args.controller_url,
-            args.register_openai_compatible_models,
+            args.register_api_endpoint_file,
         )
 
     single_updates = load_demo_single(models, url_params)
@@ -164,9 +164,9 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--register-openai-compatible-models",
+        "--register-api-endpoint-file",
         type=str,
-        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+        help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     set_global_vars_anony(args.moderate)
     models, all_models = get_model_list(
         args.controller_url,
-        args.register_openai_compatible_models,
+        args.register_api_endpoint_file,
     )
 
     # Set authorization credentials
