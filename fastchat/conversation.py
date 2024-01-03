@@ -789,6 +789,15 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="gemini",
+        roles=("user", "model"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
 # BiLLa default template
 register_conv_template(
     Conversation(

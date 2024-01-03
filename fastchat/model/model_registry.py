@@ -36,7 +36,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["gemini-pro"],
+    ["gemini-pro", "gemini-pro-dev-api"],
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
     "Gemini by Google",

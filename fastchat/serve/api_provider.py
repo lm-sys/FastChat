@@ -167,6 +167,54 @@ def palm_api_stream_iter(model_name, chat, message, temperature, top_p, max_new_
         yield data
 
 
+def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens):
+    import google.generativeai as genai  # pip install google-generativeai
+
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+    generation_config = {
+        "temperature": temperature,
+        "max_output_tokens": max_new_tokens,
+        "top_p": top_p,
+    }
+
+    safety_settings = [
+        {
+            "category": "HARM_CATEGORY_HARASSMENT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_HATE_SPEECH",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE"
+        },
+    ]
+    model = genai.GenerativeModel(model_name=model_name,
+                                  generation_config=generation_config,
+                                  safety_settings=safety_settings)
+    history = []
+    for role, message in conv.messages[:-2]:
+        history.append({"role": role, "parts": message})
+    convo = model.start_chat(history=history)
+    response = convo.send_message(conv.messages[-2][1], stream=True)
+
+    text = ""
+    for chunk in response:
+        text += chunk.text
+        data = {
+            "text": text,
+            "error_code": 0,
+        }
+        yield data
+
+
 def ai2_api_stream_iter(
     model_name,
     messages,

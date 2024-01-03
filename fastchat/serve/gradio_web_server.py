@@ -36,6 +36,7 @@ from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
     openai_api_stream_iter,
     palm_api_stream_iter,
+    gemini_api_stream_iter,
     mistral_api_stream_iter,
     init_palm_chat,
 )
@@ -435,6 +436,10 @@ def bot_response(
             temperature,
             top_p,
             max_new_tokens,
+        )
+    elif model_api_dict["api_type"] == "gemini":
+        stream_iter = gemini_api_stream_iter(
+            model_api_dict["model_name"], conv, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "mistral":
         prompt = conv.to_openai_api_messages()
