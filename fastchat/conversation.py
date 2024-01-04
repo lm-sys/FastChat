@@ -982,7 +982,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mistral",
-        system_template="[INST]{system_message}\n",
+        system_template="[INST] {system_message}\n",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
@@ -1313,7 +1313,7 @@ register_conv_template(
     )
 )
 # xDAN default template
-# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1
+# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-RL-v1
 register_conv_template(
     Conversation(
         name="xdan-v1",

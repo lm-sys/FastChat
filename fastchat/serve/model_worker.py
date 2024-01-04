@@ -31,7 +31,6 @@ from fastchat.utils import (
     str_to_torch_dtype,
 )
 
-
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
@@ -103,6 +102,10 @@ class ModelWorker(BaseModelWorker):
             self.init_heart_beat()
 
     def generate_stream_gate(self, params):
+        if self.device == "npu":
+            import torch_npu
+
+            torch_npu.npu.set_device("npu:0")
         self.call_ct += 1
 
         try:

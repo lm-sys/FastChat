@@ -1987,10 +1987,10 @@ class PygmalionAdapter(BaseModelAdapter):
 
 
 class XdanAdapter(BaseModelAdapter):
-    """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-v0.1)"""
+    """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-RL-v1)"""
 
     def match(self, model_path: str):
-        return "xdan" in model_path.lower()
+        return "xdan" in model_path.lower() and "v1" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("xdan-v1")

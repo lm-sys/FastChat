@@ -155,7 +155,8 @@ def get_model_list(
 
     hidden_models = ["gpt-4-0314", "gpt-4-0613"]
     for hm in hidden_models:
-        del models[models.index(hm)]
+        if hm in models:
+            del models[models.index(hm)]
 
     priority = {k: f"___{i:03d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
