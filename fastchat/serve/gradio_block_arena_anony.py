@@ -171,11 +171,13 @@ SAMPLING_WEIGHTS = {
     "claude-1": 2,
     "claude-instant-1": 4,
     "gemini-pro": 4,
+    "gemini-pro-dev-api": 4,
     "pplx-7b-online": 4,
     "pplx-70b-online": 4,
     "solar-10.7b-instruct-v1.0": 2,
+    "llama2-70b-steerlm-chat": 2,
     "mixtral-8x7b-instruct-v0.1": 4,
-    "mistral-medium": 8,
+    "mistral-medium": 4,
     "openhermes-2.5-mistral-7b": 2,
     "dolphin-2.2.1-mistral-7b": 2,
     "wizardlm-70b": 2,
@@ -186,7 +188,7 @@ SAMPLING_WEIGHTS = {
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.2": 2,
+    "deluxe-chat-v1.2": 4,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
@@ -254,6 +256,7 @@ BATTLE_TARGETS = {
     "claude-1": {"claude-2.1", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
     "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "gemini-pro-dev-api": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-turbo"},
     "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-turbo"},
     "pplx-7b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
@@ -297,19 +300,14 @@ BATTLE_TARGETS = {
 }
 
 SAMPLING_BOOST_MODELS = [
-    # "tulu-2-dpo-70b",
-    # "yi-34b-chat",
-    "claude-2.1",
-    # "claude-1",
+    # "claude-2.1",
     "gpt-4-0613",
-    # "gpt-3.5-turbo-1106",
     # "gpt-4-0314",
     "gpt-4-turbo",
-    # "dolphin-2.2.1-mistral-7b",
-    # "mixtral-8x7b-instruct-v0.1",
     "mistral-medium",
+    "llama2-70b-steerlm-chat",
+    "gemini-pro-dev-api",
     # "gemini-pro",
-    # "solar-10.7b-instruct-v1.0",
 ]
 
 # outage models won't be sampled.
@@ -479,13 +477,22 @@ def bot_response_multi(
             )
         )
 
+    is_gemini = []
+    for i in range(num_sides):
+        is_gemini.append("gemini" in states[i].model_name)
+
     chatbots = [None] * num_sides
+    iters = 0
     while True:
         stop = True
+        iters += 1
         for i in range(num_sides):
             try:
-                ret = next(gen[i])
-                states[i], chatbots[i] = ret[0], ret[1]
+                # yield gemini fewer times as its chunk size is larger
+                # otherwise, gemini will stream too fast
+                if not is_gemini[i] or (iters % 30 == 1 or iters < 3):
+                    ret = next(gen[i])
+                    states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
             except StopIteration:
                 pass

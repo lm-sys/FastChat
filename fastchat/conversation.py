@@ -1403,6 +1403,17 @@ register_conv_template(
     )
 )
 
+# nvidia/Llama2-70B-SteerLM-Chat
+register_conv_template(
+    Conversation(
+        name="steerlm",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
 

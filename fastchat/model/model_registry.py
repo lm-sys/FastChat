@@ -92,6 +92,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["llama2-70b-steerlm-chat"],
+    "Llama2-70B-SteerLM-Chat",
+    "https://huggingface.co/nvidia/Llama2-70B-SteerLM-Chat",
+    "A Llama fine-tuned with SteerLM method by NVIDIA",
+)
+
+register_model_info(
     ["pplx-70b-online", "pplx-7b-online"],
     "pplx-online-llms",
     "https://blog.perplexity.ai/blog/introducing-pplx-online-llms",

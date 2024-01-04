@@ -2,7 +2,10 @@
 
 from json import loads
 import os
+
+import json
 import random
+import requests
 import time
 
 from fastchat.utils import build_logger
@@ -177,6 +180,12 @@ def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens)
         "max_output_tokens": max_new_tokens,
         "top_p": top_p,
     }
+    params = {
+        "model": model_name,
+        "prompt": conv,
+    }
+    params.update(generation_config)
+    logger.info(f"==== request ====\n{params}")
 
     safety_settings = [
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -195,14 +204,22 @@ def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens)
     convo = model.start_chat(history=history)
     response = convo.send_message(conv.messages[-2][1], stream=True)
 
-    text = ""
-    for chunk in response:
-        text += chunk.text
-        data = {
-            "text": text,
-            "error_code": 0,
+    try:
+        text = ""
+        for chunk in response:
+            text += chunk.text
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        reason = chunk.candidates
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: {reason}.",
+            "error_code": 1,
         }
-        yield data
 
 
 def ai2_api_stream_iter(
@@ -319,3 +336,40 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
                 "error_code": 0,
             }
             yield data
+
+
+def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base):
+    assert model_name in ["llama2-70b-steerlm-chat"]
+
+    api_key = os.environ["NVIDIA_API_KEY"]
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "accept": "text/event-stream",
+        "content-type": "application/json",
+    }
+    # nvidia api does not accept 0 temperature
+    if temp == 0.0:
+        temp = 0.0001
+
+    payload = {
+        "messages": messages,
+        "temperature": temp,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
+        "seed": 42,
+        "stream": True,
+    }
+    logger.info(f"==== request ====\n{payload}")
+
+    response = requests.post(
+        api_base, headers=headers, json=payload, stream=True, timeout=1
+    )
+    text = ""
+    for line in response.iter_lines():
+        if line:
+            data = line.decode("utf-8")
+            if data.endswith("[DONE]"):
+                break
+            data = json.loads(data[6:])["choices"][0]["delta"]["content"]
+            text += data
+            yield {"text": text, "error_code": 0}

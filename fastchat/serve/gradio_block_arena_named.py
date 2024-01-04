@@ -242,13 +242,22 @@ def bot_response_multi(
             )
         )
 
+    is_gemini = []
+    for i in range(num_sides):
+        is_gemini.append("gemini" in states[i].model_name)
+
     chatbots = [None] * num_sides
+    iters = 0
     while True:
         stop = True
+        iters += 1
         for i in range(num_sides):
             try:
-                ret = next(gen[i])
-                states[i], chatbots[i] = ret[0], ret[1]
+                # yield gemini fewer times as its chunk size is larger
+                # otherwise, gemini will stream too fast
+                if not is_gemini[i] or (iters % 30 == 1 or iters < 3):
+                    ret = next(gen[i])
+                    states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
             except StopIteration:
                 pass
