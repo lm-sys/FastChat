@@ -29,14 +29,14 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    ["mixtral-8x7b-instruct-v0.1", "mistral-7b-instruct"],
+    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
 )
 
 register_model_info(
-    ["gemini-pro"],
+    ["gemini-pro", "gemini-pro-dev-api"],
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
     "Gemini by Google",

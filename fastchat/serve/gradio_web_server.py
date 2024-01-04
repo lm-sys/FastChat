@@ -36,6 +36,8 @@ from fastchat.serve.api_provider import (
     anthropic_api_stream_iter,
     openai_api_stream_iter,
     palm_api_stream_iter,
+    gemini_api_stream_iter,
+    mistral_api_stream_iter,
     init_palm_chat,
 )
 from fastchat.utils import (
@@ -73,16 +75,17 @@ acknowledgment_md = """
 
 ip_expiration_dict = defaultdict(lambda: 0)
 
-# Information about custom OpenAI compatible API models.
-# JSON file format:
+# JSON file format of API-based models:
 # {
 #     "vicuna-7b": {
 #         "model_name": "vicuna-7b-v1.5",
 #         "api_base": "http://8.8.8.55:5555/v1",
-#         "api_key": "password"
+#         "api_key": "password",
+#         "api_type": "openai", # openai, anthropic, palm, mistral
+#         "anony_only": false,  # whether to show this model in anonymous mode only
 #     },
 # }
-openai_compatible_models_info = {}
+api_endpoint_info = {}
 
 
 class State:
@@ -121,9 +124,7 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list(
-    controller_url, register_openai_compatible_models, add_chatgpt, add_claude, add_palm
-):
+def get_model_list(controller_url, register_api_endpoint_file):
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
@@ -133,34 +134,26 @@ def get_model_list(
         models = []
 
     # Add API providers
-    if register_openai_compatible_models:
-        global openai_compatible_models_info
-        openai_compatible_models_info = json.load(
-            open(register_openai_compatible_models)
-        )
-        models += list(openai_compatible_models_info.keys())
+    if register_api_endpoint_file:
+        global api_endpoint_info
+        api_endpoint_info = json.load(open(register_api_endpoint_file))
+        models += list(api_endpoint_info.keys())
 
-    if add_chatgpt:
-        models += [
-            "gpt-4-0314",
-            "gpt-4-0613",
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-1106",
-        ]
-    if add_claude:
-        models += ["claude-2.1", "claude-2.0", "claude-instant-1"]
-    if add_palm:
-        models += ["gemini-pro"]
     models = list(set(models))
-
-    hidden_models = ["gpt-4-0314", "gpt-4-0613"]
-    for hm in hidden_models:
-        del models[models.index(hm)]
+    visible_models = models.copy()
+    for mdl in visible_models:
+        if mdl not in api_endpoint_info:
+            continue
+        mdl_dict = api_endpoint_info[mdl]
+        if mdl_dict["anony_only"]:
+            visible_models.remove(mdl)
 
     priority = {k: f"___{i:03d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
-    logger.info(f"Models: {models}")
-    return models
+    visible_models.sort(key=lambda x: priority.get(x, x))
+    logger.info(f"All models: {models}")
+    logger.info(f"Visible models: {visible_models}")
+    return visible_models, models
 
 
 def load_demo_single(models, url_params):
@@ -186,12 +179,9 @@ def load_demo(url_params, request: gr.Request):
     ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     if args.model_list_mode == "reload":
-        models = get_model_list(
+        models, all_models = get_model_list(
             controller_url,
-            args.register_openai_compatible_models,
-            args.add_chatgpt,
-            args.add_claude,
-            args.add_palm,
+            args.register_api_endpoint_file,
         )
 
     return load_demo_single(models, url_params)
@@ -376,49 +366,11 @@ def bot_response(
             return
 
     conv, model_name = state.conv, state.model_name
-    if model_name in openai_compatible_models_info:
-        model_info = openai_compatible_models_info[model_name]
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_info["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_info["api_base"],
-            api_key=model_info["api_key"],
-        )
-    elif model_name in [
-        "gpt-3.5-turbo",
-        "gpt-3.5-turbo-0301",
-        "gpt-3.5-turbo-0613",
-        "gpt-3.5-turbo-1106",
-        "gpt-4",
-        "gpt-4-0314",
-        "gpt-4-0613",
-        "gpt-4-turbo",
-    ]:
-        # avoid conflict with Azure OpenAI
-        assert model_name not in openai_compatible_models_info
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name in ANTHROPIC_MODEL_LIST:
-        prompt = conv.get_prompt()
-        stream_iter = anthropic_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name in ["palm-2", "gemini-pro"]:
-        stream_iter = palm_api_stream_iter(
-            model_name,
-            state.palm_chat,
-            conv.messages[-2][1],
-            temperature,
-            top_p,
-            max_new_tokens,
-        )
-    else:
+    model_api_dict = (
+        api_endpoint_info[model_name] if model_name in api_endpoint_info else None
+    )
+
+    if model_api_dict is None:
         # Query worker address
         ret = requests.post(
             controller_url + "/get_worker_address", json={"model": model_name}
@@ -460,6 +412,42 @@ def bot_response(
             top_p,
             max_new_tokens,
         )
+    elif model_api_dict["api_type"] == "openai":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "anthropic":
+        prompt = conv.get_prompt()
+        stream_iter = anthropic_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
+    elif model_api_dict["api_type"] == "palm":
+        stream_iter = palm_api_stream_iter(
+            model_name,
+            state.palm_chat,
+            conv.messages[-2][1],
+            temperature,
+            top_p,
+            max_new_tokens,
+        )
+    elif model_api_dict["api_type"] == "gemini":
+        stream_iter = gemini_api_stream_iter(
+            model_api_dict["model_name"], conv, temperature, top_p, max_new_tokens
+        )
+    elif model_api_dict["api_type"] == "mistral":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = mistral_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
+    else:
+        raise NotImplementedError
 
     conv.update_last_message("▌")
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -704,7 +692,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
-            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -861,24 +848,9 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--add-chatgpt",
-        action="store_true",
-        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)",
-    )
-    parser.add_argument(
-        "--add-claude",
-        action="store_true",
-        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
-    )
-    parser.add_argument(
-        "--add-palm",
-        action="store_true",
-        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
-    )
-    parser.add_argument(
-        "--register-openai-compatible-models",
+        "--register-api-endpoint-file",
         type=str,
-        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+        help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -895,12 +867,9 @@ if __name__ == "__main__":
 
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
-    models = get_model_list(
+    models, all_models = get_model_list(
         args.controller_url,
-        args.register_openai_compatible_models,
-        args.add_chatgpt,
-        args.add_claude,
-        args.add_palm,
+        args.register_api_endpoint_file,
     )
 
     # Set authorization credentials

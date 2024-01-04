@@ -1126,13 +1126,13 @@ class GeminiAdapter(BaseModelAdapter):
     """The model adapter for Gemini"""
 
     def match(self, model_path: str):
-        return model_path in ["gemini-pro"]
+        return model_path in ["gemini-pro", "gemini-pro-dev-api"]
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("bard")
+        return get_conv_template("gemini")
 
 
 class BiLLaAdapter(BaseModelAdapter):
