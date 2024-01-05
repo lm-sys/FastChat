@@ -36,8 +36,11 @@ def process_response(response):
         response = re.sub(r"%s([\u4e00-\u9fff])" % item[0], r"%s\1" % item[1], response)
     return response
 
+
 def recover_message_list(prompt):
-    role_token_pattern = "|".join([re.escape(r) for r in ["<|system|>", "<|user|>", "<|assistant|>"]])
+    role_token_pattern = "|".join(
+        [re.escape(r) for r in ["<|system|>", "<|user|>", "<|assistant|>"]]
+    )
     role = None
     last_end_idx = -1
     message_list = []
@@ -50,13 +53,14 @@ def recover_message_list(prompt):
                 messge["role"] = "user"
             else:
                 messge["role"] = "assistant"
-            messge["content"] = prompt[last_end_idx + 1: match.start()]
+            messge["content"] = prompt[last_end_idx + 1 : match.start()]
             message_list.append(messge)
 
-        role = prompt[match.start(): match.end()]
+        role = prompt[match.start() : match.end()]
         last_end_idx = match.end()
 
     return message_list
+
 
 @torch.inference_mode()
 def generate_stream_chatglm(
@@ -81,7 +85,9 @@ def generate_stream_chatglm(
 
     if "chatglm3" in model_type:
         message_list = recover_message_list(prompt)
-        inputs = tokenizer.build_chat_input(query=message_list[-1]["content"], history=message_list[:-1], role='user').to(model.device)
+        inputs = tokenizer.build_chat_input(
+            query=message_list[-1]["content"], history=message_list[:-1], role="user"
+        ).to(model.device)
     else:
         inputs = tokenizer([prompt], return_tensors="pt").to(model.device)
     input_echo_len = len(inputs["input_ids"][0])
