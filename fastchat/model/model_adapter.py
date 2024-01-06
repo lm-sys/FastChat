@@ -1946,7 +1946,8 @@ class CatPPTAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("catppt")
-    
+
+
 class TinyLlamaAdapter(BaseModelAdapter):
     """The model adapter for TinyLlama (e.g. TinyLlama/TinyLlama-1.1B-Chat-v1.0)"""
 
