@@ -54,8 +54,7 @@ class BaseModelWorker:
         self.heart_beat_thread = None
 
         if logger is None:
-            logger = build_logger(
-                "model_worker", f"model_worker_{self.worker_id}.log")
+            logger = build_logger("model_worker", f"model_worker_{self.worker_id}.log")
         if worker is None:
             worker = self
 
@@ -130,12 +129,14 @@ class BaseModelWorker:
         if self.semaphore is None:
             return 0
         else:
-            sempahore_value = self.semaphore._value \
-                if self.semaphore._value is not None \
+            sempahore_value = (
+                self.semaphore._value
+                if self.semaphore._value is not None
                 else self.limit_worker_concurrency
-            waiter_count = 0 \
-                if self.semaphore._waiters is None \
-                else len(self.semaphore._waiters)
+            )
+            waiter_count = (
+                0 if self.semaphore._waiters is None else len(self.semaphore._waiters)
+            )
             return self.limit_worker_concurrency - sempahore_value + waiter_count
 
     def get_status(self):
