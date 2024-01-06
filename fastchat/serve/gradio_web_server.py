@@ -39,6 +39,7 @@ from fastchat.serve.api_provider import (
     gemini_api_stream_iter,
     mistral_api_stream_iter,
     nvidia_api_stream_iter,
+    ai2_api_stream_iter,
     init_palm_chat,
 )
 from fastchat.utils import (
@@ -456,6 +457,18 @@ def bot_response(
             top_p,
             max_new_tokens,
             model_api_dict["api_base"],
+        )
+    elif model_api_dict["api_type"] == "ai2":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = ai2_api_stream_iter(
+            model_name,
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
         )
     else:
         raise NotImplementedError

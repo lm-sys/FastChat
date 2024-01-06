@@ -224,6 +224,7 @@ def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens)
 
 def ai2_api_stream_iter(
     model_name,
+    model_id,
     messages,
     temperature,
     top_p,
@@ -231,12 +232,9 @@ def ai2_api_stream_iter(
     api_key=None,
     api_base=None,
 ):
-    from requests import post
-
     # get keys and needed values
     ai2_key = api_key or os.environ.get("AI2_API_KEY")
     api_base = api_base or "https://inferd.allen.ai/api/v1/infer"
-    model_id = "mod_01hhgcga70c91402r9ssyxekan"
 
     # Make requests
     gen_params = {
@@ -253,7 +251,7 @@ def ai2_api_stream_iter(
     if temperature == 0.0 and top_p < 1.0:
         raise ValueError("top_p must be 1 when temperature is 0.0")
 
-    res = post(
+    res = requests.post(
         api_base,
         stream=True,
         headers={"Authorization": f"Bearer {ai2_key}"},
@@ -272,6 +270,7 @@ def ai2_api_stream_iter(
                 },
             },
         },
+        timeout=5,
     )
 
     if res.status_code != 200:
