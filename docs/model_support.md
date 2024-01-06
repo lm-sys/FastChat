@@ -47,6 +47,7 @@
 - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
 - [Qwen/Qwen-7B-Chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
 - [rishiraj/CatPPT](https://huggingface.co/rishiraj/CatPPT)
+- [TinyLlama/TinyLlama-1.1B-Chat-v1.0](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)
 - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)

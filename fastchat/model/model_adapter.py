@@ -1946,6 +1946,15 @@ class CatPPTAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("catppt")
+    
+class TinyLlamaAdapter(BaseModelAdapter):
+    """The model adapter for CatPPT (e.g. rishiraj/CatPPT)"""
+
+    def match(self, model_path: str):
+        return "TinyLlama" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("TinyLlama")
 
 
 class XwinLMAdapter(BaseModelAdapter):
@@ -2139,6 +2148,7 @@ register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
 register_model_adapter(CatPPTAdapter)
+register_model_adapter(TinyLlamaAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)

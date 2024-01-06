@@ -176,6 +176,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["TinyLlama"],
+    "TinyLlama",
+    "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "The TinyLlama project is an open endeavor to pretrain a 1.1B Llama model on 3 trillion tokens.",
+)
+
+register_model_info(
     ["qwen-14b-chat"],
     "Qwen",
     "https://huggingface.co/Qwen/Qwen-14B-Chat",
