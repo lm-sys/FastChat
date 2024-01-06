@@ -7,9 +7,9 @@ import argparse
 import pickle
 
 from fastchat.llm_judge.common import (
-    chat_compeletion_openai,
-    chat_compeletion_openai_azure,
-    chat_compeletion_anthropic,
+    chat_completion_openai,
+    chat_completion_openai_azure,
+    chat_completion_anthropic,
 )
 from fastchat.conversation import get_conv_template
 
@@ -52,13 +52,13 @@ if __name__ == "__main__":
 
         if "azure-" in model:
             template_name = "chatgpt"
-            completion_func = chat_compeletion_openai_azure
+            completion_func = chat_completion_openai_azure
         elif "gpt" in model:
             template_name = "chatgpt"
-            completion_func = chat_compeletion_openai
+            completion_func = chat_completion_openai
         elif "claude" in model:
             template_name = "claude"
-            completion_func = chat_compeletion_anthropic
+            completion_func = chat_completion_anthropic
 
         conv = get_conv_template(template_name)
         conv.set_system_message(instruct)

@@ -88,7 +88,9 @@ class VLLMWorker(BaseModelWorker):
 
         for tid in stop_token_ids:
             if tid is not None:
-                stop.add(self.tokenizer.decode(tid))
+                s = self.tokenizer.decode(tid)
+                if s != "":
+                    stop.add(s)
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -147,7 +149,7 @@ class VLLMWorker(BaseModelWorker):
             # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
             # This aligns with the behavior of model_worker.
             if request_output.finished:
-                yield (json.dumps(ret | {"finish_reason": None}) + "\0").encode()
+                yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):
