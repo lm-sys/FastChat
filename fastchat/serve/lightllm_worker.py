@@ -358,7 +358,7 @@ if __name__ == "__main__":
 
     can_use_ports = alloc_can_use_network_port(num=6 + args.tp)
 
-    assert can_use_ports is not None, "Can not alloc free enough port"
+    assert can_use_ports is not None, "Can not alloc enough free ports."
     router_port, detokenization_port, httpserver_port, visual_port, cache_port, nccl_port = can_use_ports[
         0:6]
     args.nccl_port = nccl_port
