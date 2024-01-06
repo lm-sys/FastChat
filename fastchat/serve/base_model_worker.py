@@ -126,17 +126,13 @@ class BaseModelWorker:
             self.register_to_controller()
 
     def get_queue_length(self):
-        if (
-            self.semaphore is None
-            or self.semaphore._value is None
-            or self.semaphore._waiters is None
-        ):
+        if self.semaphore is None:
             return 0
         else:
             return (
                 self.limit_worker_concurrency
-                - self.semaphore._value
-                + len(self.semaphore._waiters)
+                - (self.semaphore._value or self.limit_worker_concurrency)
+                + len((self.semaphore._waiters or []))
             )
 
     def get_status(self):
