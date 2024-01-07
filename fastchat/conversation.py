@@ -172,7 +172,7 @@ class Conversation:
                 ret += system_prompt
             for role, message in self.messages:
                 if message:
-                    ret += role + "\n" + " " + message
+                    ret += role + "\n" + message
                 else:
                     ret += role
             return ret
@@ -487,7 +487,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="chatglm3",
-        system_template="<|system|>\n {system_message}",
+        system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
         stop_token_ids=[
