@@ -96,6 +96,8 @@ class LightLLMWorker(BaseModelWorker):
         if self.tokenizer.eos_token_id is not None:
             stop_token_ids.append(self.tokenizer.eos_token_id)
 
+        request = params.get("request", None)
+
         # Handle stop_str
         stop = set()
         if isinstance(stop_str, str) and stop_str != "":
@@ -138,13 +140,18 @@ class LightLLMWorker(BaseModelWorker):
 
         completion_tokens = 0
         text_outputs = ""
-        async for request_output, metadata, finished in results_generator:
+        async for request_output, metadata, finish_reason in results_generator:
             text_outputs += request_output
+            completion_tokens += 1
 
             partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
             # prevent yielding partial stop sequence
             if partial_stop:
                 continue
+
+            if request and await request.is_disconnected():
+                await httpserver_manager.abort(request_id)
+                finish_reason = "abort"
 
             prompt_tokens = metadata["prompt_tokens"]
             ret = {
@@ -156,13 +163,15 @@ class LightLLMWorker(BaseModelWorker):
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
             }
-            finish_reason = None
-            if finished:
+
+            if type(finish_reason) is bool:  # compatibility with old version
+                finish_reason = "stop" if finish_reason else None
+
+            if finish_reason is not None:
                 yield (
                     json.dumps({**ret, "finish_reason": None}, ensure_ascii=False)
                     + "\0"
                 ).encode("utf-8")
-                finish_reason = "stop"
             yield (
                 json.dumps({**ret, "finish_reason": finish_reason}, ensure_ascii=False)
                 + "\0"
@@ -200,6 +209,7 @@ async def api_generate_stream(request: Request):
     await acquire_worker_semaphore()
     request_id = g_id_gen.generate_id()
     params["request_id"] = request_id
+    params["request"] = request
     generator = worker.generate_stream(params)
     background_tasks = create_background_tasks(request_id)
     return StreamingResponse(generator, background=background_tasks)
@@ -211,6 +221,7 @@ async def api_generate(request: Request):
     await acquire_worker_semaphore()
     request_id = g_id_gen.generate_id()
     params["request_id"] = request_id
+    params["request"] = request
     output = await worker.generate(params)
     release_worker_semaphore()
     await httpserver_manager.abort(request_id)
