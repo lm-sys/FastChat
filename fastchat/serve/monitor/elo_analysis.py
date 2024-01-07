@@ -278,6 +278,17 @@ def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=
     limit_show_number = 25  # limit show number to make plots smaller
     model_order = model_order[:limit_show_number]
 
+    # leaderboard_table_df: elo rating, variance, 95% interval, number of battles
+    leaderboard_table_df = pd.DataFrame(
+        {
+            "rating": elo_rating_final,
+            "variance": bootstrap_df.var(),
+            "rating_q975": bootstrap_df.quantile(0.975),
+            "rating_q025": bootstrap_df.quantile(0.025),
+            "num_battles": battles["model_a"].value_counts() + battles["model_b"].value_counts()
+        }
+    )
+
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_final)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
@@ -306,6 +317,7 @@ def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=
         "last_updated_datetime": last_updated_datetime,
         "last_updated_tstamp": last_updated_tstamp,
         "bootstrap_df": bootstrap_df,
+        "leaderboard_table_df": leaderboard_table_df,
     }
 
 

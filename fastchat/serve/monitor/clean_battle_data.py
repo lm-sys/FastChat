@@ -48,6 +48,7 @@ IDENTITY_WORDS = [
     "$MODERATION$ YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES.",
     "API REQUEST ERROR. Please increase the number of max tokens.",
     "**API REQUEST ERROR** Reason: The response was blocked.",
+    "**API REQUEST ERROR**",
 ]
 
 for i in range(len(IDENTITY_WORDS)):
