@@ -193,9 +193,8 @@ def clean_battle_data(
 
         # Replace bard with palm
         models = [replace_model_name(m, row["tstamp"]) for m in models]
-
         # Exclude certain models
-        if any(x in exclude_model_names for x in models):
+        if exclude_model_names and any(x in exclude_model_names for x in models):
             ct_invalid += 1
             continue
 
@@ -254,9 +253,10 @@ def clean_battle_data(
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
 
-    for ban_ip in ban_ip_list:
-        if ban_ip in all_ips:
-            del all_ips[ban_ip]
+    if ban_ip_list is not None:
+        for ban_ip in ban_ip_list:
+            if ban_ip in all_ips:
+                del all_ips[ban_ip]
     print("Top 30 IPs:")
     print(sorted(all_ips.values(), key=lambda x: x["count"], reverse=True)[:30])
     return battles

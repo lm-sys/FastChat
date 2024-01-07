@@ -242,7 +242,7 @@ def get_arena_table(arena_df, model_table_df):
 
 def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=False):
     if elo_results_file is None:  # Do live update
-        md = "Loading ..."
+        default_md = "Loading ..."
         p1 = p2 = p3 = p4 = None
     else:
         with open(elo_results_file, "rb") as fin:
@@ -255,10 +255,8 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         arena_df = elo_results["leaderboard_table_df"]
         default_md = make_default_md(arena_df, elo_results)
 
-
+    md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
-        md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
-
         data = load_leaderboard_table_csv(leaderboard_table_file)
         model_table_df = pd.DataFrame(data)
 
