@@ -1353,6 +1353,20 @@ register_conv_template(
     )
 )
 
+# TinyLlama template
+# reference: https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0
+register_conv_template(
+    Conversation(
+        name="TinyLlama",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
 # Orca-2 template
 # reference: https://huggingface.co/microsoft/Orca-2-7b
 register_conv_template(
