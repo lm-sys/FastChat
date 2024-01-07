@@ -169,6 +169,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["notus-7b-v1"],
+    "Notus",
+    "https://huggingface.co/argilla/notus-7b-v1",
+    "a chatbot fine-tuned from Zephyr SFT by Argilla",
+)
+
+register_model_info(
     ["catppt"],
     "CatPPT",
     "https://huggingface.co/rishiraj/CatPPT",
