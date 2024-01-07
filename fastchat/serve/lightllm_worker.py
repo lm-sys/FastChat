@@ -177,6 +177,9 @@ class LightLLMWorker(BaseModelWorker):
                 + "\0"
             ).encode("utf-8")
 
+            if finish_reason is not None:  # In case of abort, we need to break the loop
+                break
+
     async def generate(self, params):
         async for x in self.generate_stream(params):
             pass

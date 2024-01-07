@@ -129,9 +129,11 @@ class VLLMWorker(BaseModelWorker):
             if partial_stop:
                 continue
 
+            aborted = False
             if request and await request.is_disconnected():
                 await engine.abort(request_id)
                 request_output.finished = True
+                aborted = True
                 for output in request_output.outputs:
                     output.finish_reason = "abort"
 
@@ -159,6 +161,9 @@ class VLLMWorker(BaseModelWorker):
             if request_output.finished:
                 yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
+
+            if aborted:
+                break
 
     async def generate(self, params):
         async for x in self.generate_stream(params):
