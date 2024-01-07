@@ -370,10 +370,10 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     from fastchat.serve.inference import generate_stream
 
     model_type = str(type(model)).lower()
+    is_peft = "peft" in model_type
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
-    is_peft = "peft" in model_type
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
 
@@ -403,7 +403,24 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             judge_sent_end: bool = False,
         ):
             model.set_adapter(model_path)
-            for x in generate_stream(
+            base_model_type = str(type(model.base_model.model))
+            is_chatglm = "chatglm" in base_model_type
+            is_falcon = "rwforcausallm" in base_model_type
+            is_codet5p = "codet5p" in base_model_type
+            is_exllama = "exllama" in base_model_type
+            is_xft = "xft" in base_model_type
+            generate_stream_function = generate_stream
+            if is_chatglm:
+                generate_stream_function = generate_stream_chatglm
+            elif is_falcon:
+                generate_stream_function = generate_stream_falcon
+            elif is_codet5p:
+                generate_stream_function = generate_stream_codet5p
+            elif is_exllama:
+                generate_stream_function = generate_stream_exllama
+            elif is_xft:
+                generate_stream_function = generate_stream_xft
+            for x in generate_stream_function(
                 model,
                 tokenizer,
                 params,
@@ -1954,6 +1971,16 @@ class CatPPTAdapter(BaseModelAdapter):
         return get_conv_template("catppt")
 
 
+class TinyLlamaAdapter(BaseModelAdapter):
+    """The model adapter for TinyLlama (e.g. TinyLlama/TinyLlama-1.1B-Chat-v1.0)"""
+
+    def match(self, model_path: str):
+        return "TinyLlama" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("TinyLlama")
+
+
 class XwinLMAdapter(BaseModelAdapter):
     """The model adapter for Xwin-LM V0.1 and V0.2 series of models(e.g., Xwin-LM/Xwin-LM-70B-V0.1)"""
 
@@ -1993,10 +2020,10 @@ class PygmalionAdapter(BaseModelAdapter):
 
 
 class XdanAdapter(BaseModelAdapter):
-    """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-v0.1)"""
+    """The model adapter for xDAN-AI (e.g. xDAN-AI/xDAN-L1-Chat-RL-v1)"""
 
     def match(self, model_path: str):
-        return "xdan" in model_path.lower()
+        return "xdan" in model_path.lower() and "v1" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("xdan-v1")
@@ -2146,6 +2173,7 @@ register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
 register_model_adapter(NotusAdapter)
 register_model_adapter(CatPPTAdapter)
+register_model_adapter(TinyLlamaAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)

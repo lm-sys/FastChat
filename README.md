@@ -163,7 +163,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device xpu
 ```
 Vicuna-7B can run on an Intel Arc A770 16GB.
 
-#### Ascend NPU (Huawei AI Processor)
+#### Ascend NPU
 Install the [Ascend PyTorch Adapter](https://github.com/Ascend/pytorch). Set the CANN environment variables:
 ```
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
@@ -173,7 +173,7 @@ Use `--device npu` to enable NPU acceleration.
 ```
 python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device npu
 ```
-Vicuna-7B/13B can run on an Ascend 910B NPU 60GB.
+Vicuna-7B/13B can run on an Ascend NPU.
 
 #### Not Enough Memory
 If you do not have enough memory, you can enable 8-bit compression by adding `--load-8bit` to commands above.
