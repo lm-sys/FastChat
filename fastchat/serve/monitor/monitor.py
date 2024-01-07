@@ -33,7 +33,7 @@ leader_component_values = [None] * 5
 
 
 def make_default_md(arena_df, elo_results):
-    total_votes = sum(arena_df["num_battles"])//2
+    total_votes = sum(arena_df["num_battles"]) // 2
     total_models = len(arena_df)
 
     leaderboard_md = f"""
@@ -46,6 +46,7 @@ We collect user preference votes and rank models by Elo ratings. More statistics
 Total #models: **{total_models}**. Total #votes: **{total_votes}**.
 """
     return leaderboard_md
+
 
 def make_full_leaderboard_md(elo_results):
     leaderboard_md = f"""
@@ -197,15 +198,15 @@ def get_full_table(arena_df, model_table_df):
         row.append(model_name)
         if model_key in arena_df.index:
             idx = arena_df.index.get_loc(model_key)
-            row.append(round(arena_df.iloc[idx]['rating'], 1))
+            row.append(round(arena_df.iloc[idx]["rating"], 1))
         else:
             row.append(np.nan)
         row.append(model_table_df.iloc[i]["MT-bench (score)"])
         row.append(model_table_df.iloc[i]["MMLU"])
         # Organization
-        row.append(model_table_df.iloc[i]['Organization'])
+        row.append(model_table_df.iloc[i]["Organization"])
         # license
-        row.append(model_table_df.iloc[i]['License'])
+        row.append(model_table_df.iloc[i]["License"])
 
         values.append(row)
     values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
@@ -219,22 +220,30 @@ def get_arena_table(arena_df, model_table_df):
     for i in range(len(arena_df)):
         row = []
         model_key = arena_df.index[i]
-        model_name = model_table_df[model_table_df["key"] == model_key]["Model"].values[0]
+        model_name = model_table_df[model_table_df["key"] == model_key]["Model"].values[
+            0
+        ]
 
         # rank
-        row.append(i+1)
+        row.append(i + 1)
         # model display name
         row.append(model_name)
         # elo rating
         row.append(round(arena_df.iloc[i]["rating"], 1))
-        interval = round((arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating_q025"])/2, 1)
+        interval = round(
+            (arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating_q025"]) / 2, 1
+        )
         row.append(f"± {interval}")
         # num battles
         row.append(round(arena_df.iloc[i]["num_battles"]))
         # Organization
-        row.append(model_table_df[model_table_df["key"] == model_key]["Organization"].values[0])
+        row.append(
+            model_table_df[model_table_df["key"] == model_key]["Organization"].values[0]
+        )
         # license
-        row.append(model_table_df[model_table_df["key"] == model_key]["License"].values[0])
+        row.append(
+            model_table_df[model_table_df["key"] == model_key]["License"].values[0]
+        )
 
         values.append(row)
     return values
@@ -261,7 +270,15 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         model_table_df = pd.DataFrame(data)
 
         # arena table
-        arena_headers = ["Rank", "Model", "Arena Elo", "95% CI", "#Votes", "Organization", "License"]
+        arena_headers = [
+            "Rank",
+            "Model",
+            "Arena Elo",
+            "95% CI",
+            "#Votes",
+            "Organization",
+            "License",
+        ]
         arena_table_vals = get_arena_table(arena_df, model_table_df)
 
         # full table
@@ -278,7 +295,15 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
             with gr.Tab("Arena Elo", id=0):
                 gr.Dataframe(
                     headers=arena_headers,
-                    datatype=["number", "markdown", "number", "str", "number", "str", "str"],
+                    datatype=[
+                        "number",
+                        "markdown",
+                        "number",
+                        "str",
+                        "number",
+                        "str",
+                        "str",
+                    ],
                     value=arena_table_vals,
                     elem_id="arena_leaderboard_dataframe",
                 )
