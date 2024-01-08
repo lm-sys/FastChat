@@ -7,7 +7,23 @@ from transformers import (
     StoppingCriteria,
     StoppingCriteriaList,
     TextIteratorStreamer,
+    AutoTokenizer,
+    AutoModelForCausalLM
 )
+
+# Load the model and tokenizer
+MODEL_NAME = "lmsys/vicuna-13b-v1.5-16k"
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+
+# Check if multiple GPUs are available and wrap the model using DataParallel
+if torch.cuda.device_count() > 1:
+    print(f"Using {torch.cuda.device_count()} GPUs!")
+    model = torch.nn.DataParallel(model)
+
+# Ensure the model is on the correct device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
 
 @torch.inference_mode()
