@@ -464,9 +464,10 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
 
 
 def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=None):
-    api_key = os.environ["ANTHROPIC_API_KEY"]
     if api_dict is not None and "api_key" in api_dict:
         api_key = api_dict["api_key"]
+    else:
+        api_key = os.environ["ANTHROPIC_API_KEY"]
 
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
