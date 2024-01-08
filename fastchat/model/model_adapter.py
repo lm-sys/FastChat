@@ -1975,7 +1975,7 @@ class TinyLlamaAdapter(BaseModelAdapter):
     """The model adapter for TinyLlama (e.g. TinyLlama/TinyLlama-1.1B-Chat-v1.0)"""
 
     def match(self, model_path: str):
-        return "TinyLlama" in model_path.lower()
+        return "tinyllama" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("TinyLlama")
