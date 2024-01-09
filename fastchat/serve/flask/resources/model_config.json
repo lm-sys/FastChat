@@ -1,0 +1,64 @@
+{
+    "models": [
+        {
+            "model_id": "chatglm3_6b",
+            "name": "ChatGLM3-6B",
+            "parameters_size": "6B",
+            "training_tokens": "1T",
+            "max_length": "2K",
+            "commercial_use": "可商用",
+            "url": "https://github.com/THUDM/ChatGLM3",
+            "description": "ChatGLM3-6B 是 ChatGLM3 系列中的开源模型，拥有更强大的基础模型、更完整的功能支持，包括正常的多轮对话外，支持工具调用、代码执行等复杂场景。"
+        },
+        {
+            "model_id": "chatglm2_6b",
+            "name": "ChatGLM2-6B",
+            "parameters_size": "6B",
+            "training_tokens": "1.4T",
+            "max_length": "32K",
+            "commercial_use": "可商用",
+            "url": "https://github.com/THUDM/ChatGLM2-6B",
+            "description": "ChatGLM2-6B 是 ChatGLM-6B 的第二代版本，引入了混合目标函数，扩展了上下文长度，实现了更高效的推理速度和更低的显存占用。"
+        },
+        {
+            "model_id": "baichuan2_7b_chat",
+            "name": "Baichuan2-7B-Chat",
+            "parameters_size": "7B",
+            "training_tokens": "1.2T/1.4T",
+            "max_length": "4K",
+            "commercial_use": "可商用",
+            "url": "-",
+            "description": "Baichuan2-7B-Chat 是 Baichuan 系列的一个版本，专注于中文领域的对话和问答，支持4K上下文长度。"
+        },
+        {
+            "model_id": "qwen_7b_chat",
+            "name": "Qwen-7B-Chat",
+            "parameters_size": "7B",
+            "training_tokens": "2.2T",
+            "max_length": "8K",
+            "commercial_use": "可商用",
+            "url": "-",
+            "description": "Qwen-7B-Chat 是基于7B参数的模型，针对多轮对话优化，支持长上下文和插件调用。"
+        },
+        {
+            "model_id": "internlm_chat_7b",
+            "name": "InternLM-Chat-7B",
+            "parameters_size": "7B",
+            "training_tokens": "-",
+            "max_length": "2K",
+            "commercial_use": "可商用",
+            "url": "-",
+            "description": "InternLM-Chat-7B 是一个中文优化的模型，支持多轮对话和各种语言处理任务。"
+        },
+        {
+            "model_id": "yi_6b_chat",
+            "name": "Yi-6B-Chat",
+            "parameters_size": "6B",
+            "training_tokens": "-",
+            "max_length": "2K",
+            "commercial_use": "可商用",
+            "url": "-",
+            "description": "Yi-6B-Chat 是一个中文对话模型，支持复杂的对话场景和流畅的语言生成。"
+        }
+    ]
+}
