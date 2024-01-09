@@ -21,11 +21,15 @@ from fastchat.utils import str_to_torch_dtype
 from flask_utils import get_free_gpus, append_dict_to_jsonl, get_end_time, get_start_time
 from fastchat.llm_judge.report.assist1 import generate_report, get_system_prompt, get_cache
 
-
-DATA_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
+app_dir = os.path.abspath(os.path.dirname(__file__))
+DATA_PATH = os.path.join(app_dir, 'resources', 'data_config.json')
+with open(DATA_PATH) as file:
+    DATA_JSON = json.load(file)
 DATA_DICT = {dataset["data_id"]: dataset for dataset in DATA_JSON["datasets"]}
 
-MODEL_JSON = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/models_config.json'))
+MODEL_PATH = os.path.join(app_dir, 'resources', 'model_config.json')
+with open(MODEL_PATH) as file:
+    MODEL_JSON = json.load(file)
 MODEL_DICT = {model["model_id"]: model for model in MODEL_JSON["models"]}
 
 
@@ -44,7 +48,7 @@ def random_uuid() -> str:
 @app.route('/get_modelpage_list', methods=['POST'])
 def get_modelpage_list():
     request_id = random_uuid()
-    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/model_config.json'))
+    result = MODEL_JSON.copy()
     result.update({"request_id": request_id})
     return json.dumps(result, ensure_ascii=False)
 
@@ -75,7 +79,7 @@ def get_modelpage_detail():
 @app.route('/get_datapage_list', methods=['POST'])
 def get_datapage_list():
     request_id = random_uuid()
-    result = json.load(open('/home/workspace/FastChat/fastchat/serve/flask/resources/datasets_config.json'))
+    result = DATA_JSON.copy()
     result.update({"request_id": request_id})
     return json.dumps(result, ensure_ascii=False)
 

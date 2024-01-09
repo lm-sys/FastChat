@@ -2,18 +2,6 @@
     "datasets": [
         {
             "name": "政治伦理数据集",
-            "data_id": "moral_bench_test1",
-            "category": "政治伦理",
-            "description": "包含政治决策、政权合法性、民主与权力分配等主题，用于评估模型在处理政治伦理问题上的能力。",
-            "record_count": 5000,
-            "subjects": [
-                "政权与统一",
-                "民族主义",
-                "社会主义制度"
-            ]
-        },
-        {
-            "name": "政治伦理数据集",
             "data_id": "political_ethics_dataset",
             "category": "政治伦理",
             "description": "包含政治决策、政权合法性、民主与权力分配等主题，用于评估模型在处理政治伦理问题上的能力。",
@@ -49,13 +37,13 @@
             ]
         },
         {
-      "name": "文化伦理数据集",
-      "data_id": "cultural_ethics_dataset",
-      "category": "文化伦理",
-      "description": "包括传统传承、文化多样性、跨文化理解等，用于评估模型在文化伦理方面的敏感性和适应性。",
-      "record_count": 3500,
-      "subjects": ["传统传承", "全球化", "民族主义"]
-    },
+            "name": "文化伦理数据集",
+            "data_id": "cultural_ethics_dataset",
+            "category": "文化伦理",
+            "description": "包括传统传承、文化多样性与融合、文化遗产与保护等主题，用于评估模型在理解和尊重多元文化背景、维护文化遗产、以及促进跨文化交流与理解方面的敏感性和适应性。",
+            "record_count": 3500,
+            "subjects": ["传统传承", "文化多样性与融合", "文化遗产与保护"]
+        },
         {
           "name": "科技伦理数据集",
           "data_id": "technology_ethics_dataset",
@@ -65,21 +53,21 @@
           "subjects": ["创新发展", "技术影响评估", "数据隐私"]
         },
         {
-      "name": "环境伦理数据集",
-      "data_id": "environmental_ethics_dataset",
-      "category": "环境伦理",
-      "description": "聚焦气候变化、生态保护、可持续发展等环境伦理议题，评估模型对环境问题的理解和决策。",
-      "record_count": 4000,
-      "subjects": ["环境保护", "生态可持续性", "自然资源伦理"]
-    },
+            "name": "环境伦理数据集",
+            "data_id": "environmental_ethics_dataset",
+            "category": "环境伦理",
+            "description": "聚焦气候变化、生态保护、可持续发展等环境伦理议题，评估模型对环境问题的理解和决策。",
+            "record_count": 4000,
+            "subjects": ["环境保护", "生态可持续性", "自然资源伦理"]
+        },
         {
-      "name": "医疗健康伦理数据集",
-      "data_id": "medical_ethics_dataset",
-      "category": "医疗健康伦理",
-      "description": "包含医疗实践、患者权益、医学研究伦理等问题，专注于评估模型在医疗决策和医疗道德方面的表现。",
-      "record_count": 3500,
-      "subjects": ["患者隐私", "医疗公正", "生命伦理"]
-    },
+            "name": "医疗健康伦理数据集",
+            "data_id": "medical_ethics_dataset",
+            "category": "医疗健康伦理",
+            "description": "包含医疗实践、患者权益、医学研究伦理等问题，专注于评估模型在医疗决策和医疗道德方面的表现。",
+            "record_count": 3500,
+            "subjects": ["患者隐私", "医疗公正", "生命伦理"]
+        },
         {
           "name": "教育伦理数据集",
           "data_id": "education_ethics_dataset",

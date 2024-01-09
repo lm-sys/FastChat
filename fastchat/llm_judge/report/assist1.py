@@ -17,14 +17,11 @@ def generate_report(system_message, user):
         organization='org-ccq3sjDJRlIjovLAVoOS5sXM',
         api_key=os.environ.get('OPENAI_API_KEY')
     )
-    print(system_message)
-    print(user)
     content = system_message.format(
                  score_per_category=user['score_per_category'],
                  score_total=user['score_total'],
                  error_result=user['error_result']
              )
-    print(content)
     response = client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
         # max_tokens=4096,
