@@ -22,18 +22,12 @@ from fastchat.serve.model_worker import (
     worker_id,
 )
 
-
 from lightllm.server.sampling_params import SamplingParams
 from lightllm.server.multimodal_params import MultimodalParams
 from lightllm.server.httpserver.manager import HttpServerManager
 from lightllm.server.detokenization.manager import start_detokenization_process
 from lightllm.server.router.manager import start_router_process
-from lightllm.server.embed_cache.manager import start_cache_manager
-from lightllm.server.visualserver.manager import start_visual_process
 from lightllm.server.req_id_generator import ReqIDGenerator
-
-from lightllm.server.httpserver.manager import HttpServerManager
-from lightllm.server.detokenization.manager import start_detokenization_process
 
 from lightllm.utils.net_utils import alloc_can_use_network_port
 from lightllm.utils.start_utils import start_submodule_processes
@@ -140,7 +134,7 @@ class LightLLMWorker(BaseModelWorker):
 
         completion_tokens = 0
         text_outputs = ""
-        async for request_output, metadata, finish_reason in results_generator:
+        async for request_output, metadata, finish_status in results_generator:
             text_outputs += request_output
             completion_tokens += 1
 
@@ -148,6 +142,11 @@ class LightLLMWorker(BaseModelWorker):
             # prevent yielding partial stop sequence
             if partial_stop:
                 continue
+
+            if type(finish_status) is bool:  # compatibility with old version
+                finish_reason = "stop" if finish_status else None
+            else:
+                finish_reason = finish_status.get_finish_reason()
 
             if request and await request.is_disconnected():
                 await httpserver_manager.abort(request_id)
@@ -163,9 +162,6 @@ class LightLLMWorker(BaseModelWorker):
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
             }
-
-            if type(finish_reason) is bool:  # compatibility with old version
-                finish_reason = "stop" if finish_reason else None
 
             if finish_reason is not None:
                 yield (
