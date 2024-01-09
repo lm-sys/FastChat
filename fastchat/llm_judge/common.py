@@ -266,7 +266,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if model in ["gpt-3.5-turbo", "gpt-4"]:
+    if model in OPENAI_MODEL_LIST:
         conv.set_system_message(system_prompt)
         judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
