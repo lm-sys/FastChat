@@ -69,6 +69,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-turbo",
 )
 
+
 class BaseModelAdapter:
     """The base and the default model adapter."""
 
