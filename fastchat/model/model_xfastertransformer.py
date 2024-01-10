@@ -16,27 +16,10 @@ def generate_stream_xft(
     judge_sent_end=False,
 ):
     prompt = params["prompt"]
-    # repetition_penalty = float(params.get("repetition_penalty", 1.0))
-
-    # unused now, and placehold for future.
-    # temperature = float(params.get("temperature", 1.0))
-    # top_p = float(params.get("top_p", 1.0))
 
     max_new_tokens = int(params.get("max_new_tokens", 4096))
     echo = params.get("echo", True)
-    print("")
-    print("###########")
-    print(f"#2 prompt={prompt}")
-    print("###########")
     inputs = tokenizer(prompt, return_tensors="pt").input_ids
-    print(f"inputs={inputs}")
-
-    # model.config.pad_token_id = 151643
-    # model.config.eos_token_id = 151643
-    print(f"model={model}")
-    print(f"model.config={model.config}")
-    print(f"model.config.pad_token_id={model.config.pad_token_id}")
-    print(f"model.config.eos_token_id={model.config.eos_token_id}")
 
     input_echo_len = len(inputs[0])
     max_len = max_new_tokens + input_echo_len
