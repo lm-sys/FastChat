@@ -37,13 +37,21 @@ def make_default_md(arena_df, elo_results):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-# 🏆 LMSys Chatbot Arena Leaderboard
+# 🏆 LMSYS Chatbot Arena Leaderboard
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-[Chatbot Arena](https://chat.lmsys.org) is an open crowdsourced platform for LLM evals.
-We collect user preference votes and rank models by Elo ratings. More statistics can be found in the [notebook]({notebook_url}).
+This leaderboard is based on [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/), which is a crowdsourced open platform for LLM evals.
+Arena collects human preference votes to rank LLMs with the Elo ranking system. More analysis in the [notebook]({notebook_url}).
+"""
+    return leaderboard_md
 
+def make_arena_leaderboard_md(arena_df):
+    total_votes = sum(arena_df["num_battles"]) // 2
+    total_models = len(arena_df)
+
+    leaderboard_md = f"""
 Total #models: **{total_models}**. Total #votes: **{total_votes}**.
+Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)!
 """
     return leaderboard_md
 
@@ -51,8 +59,8 @@ Total #models: **{total_models}**. Total #votes: **{total_votes}**.
 def make_full_leaderboard_md(elo_results):
     leaderboard_md = f"""
 Two more benchmarks are displayed: **MT-Bench** and **MMLU**.
-- [MT-Bench](https://arxiv.org/abs/2306.05685) - a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
-- [MMLU](https://arxiv.org/abs/2009.03300) (5-shot) - a test to measure a model's multitask accuracy on 57 tasks.
+- [MT-Bench](https://arxiv.org/abs/2306.05685): a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
+- [MMLU](https://arxiv.org/abs/2009.03300) (5-shot): a test to measure a model's multitask accuracy on 57 tasks.
 """
     return leaderboard_md
 
@@ -230,10 +238,9 @@ def get_arena_table(arena_df, model_table_df):
         row.append(model_name)
         # elo rating
         row.append(round(arena_df.iloc[i]["rating"], 1))
-        interval = round(
-            (arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating_q025"]) / 2, 1
-        )
-        row.append(f"± {interval}")
+        upper_diff = round(arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"], 1)
+        lower_diff = round(arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"], 1)
+        row.append(f"+{upper_diff}/-{lower_diff}")
         # num battles
         row.append(round(arena_df.iloc[i]["num_battles"]))
         # Organization
@@ -269,32 +276,22 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         data = load_leaderboard_table_csv(leaderboard_table_file)
         model_table_df = pd.DataFrame(data)
 
-        # arena table
-        arena_headers = [
-            "Rank",
-            "Model",
-            "Arena Elo",
-            "95% CI",
-            "#Votes",
-            "Organization",
-            "License",
-        ]
-        arena_table_vals = get_arena_table(arena_df, model_table_df)
-
-        # full table
-        full_headers = [
-            "Model",
-            "Arena Elo",
-            "MT-bench",
-            "MMLU",
-            "Organization",
-            "License",
-        ]
-        full_table_vals = get_full_table(arena_df, model_table_df)
         with gr.Tabs() as tabs:
+            # arena table
+            arena_table_vals = get_arena_table(arena_df, model_table_df)
             with gr.Tab("Arena Elo", id=0):
+                md = make_arena_leaderboard_md(arena_df)
+                gr.Markdown(md, elem_id="leaderboard_markdown")
                 gr.Dataframe(
-                    headers=arena_headers,
+                    headers=[
+                        "Rank",
+                        "Model",
+                        "Arena Elo",
+                        "95% CI",
+                        "#Votes",
+                        "Organization",
+                        "License",
+                    ],
                     datatype=[
                         "number",
                         "markdown",
@@ -306,15 +303,29 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                     ],
                     value=arena_table_vals,
                     elem_id="arena_leaderboard_dataframe",
+                    height=700,
+                    column_widths=[50, 200, 100, 100, 100, 150, 150],
+                    wrap=True,
                 )
             with gr.Tab("Full Leaderboard", id=1):
                 md = make_full_leaderboard_md(elo_results)
-                md_2 = gr.Markdown(md, elem_id="leaderboard_markdown")
+                gr.Markdown(md, elem_id="leaderboard_markdown")
+                full_table_vals = get_full_table(arena_df, model_table_df)
                 gr.Dataframe(
-                    headers=full_headers,
-                    datatype=["markdown", "number", "number", "number", "str"],
+                    headers=[
+                        "Model",
+                        "Arena Elo",
+                        "MT-bench",
+                        "MMLU",
+                        "Organization",
+                        "License",
+                    ],
+                    datatype=["markdown", "number", "number", "number", "str", "str"],
                     value=full_table_vals,
                     elem_id="full_leaderboard_dataframe",
+                    column_widths=[200, 100, 100, 100, 150, 150],
+                    height=700,
+                    wrap=True,
                 )
         gr.Markdown(
             """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
