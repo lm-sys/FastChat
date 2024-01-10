@@ -40,8 +40,8 @@ def make_default_md(arena_df, elo_results):
 # 🏆 LMSYS Chatbot Arena Leaderboard
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-This leaderboard is based on [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/), which is a crowdsourced open platform for LLM evals.
-Arena collects human preference votes to rank LLMs with the Elo ranking system. More analysis in the [notebook]({notebook_url}).
+LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
+We've collected over **200,000** human preference votes to rank LLMs with the Elo ranking system.
 """
     return leaderboard_md
 
@@ -51,8 +51,9 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**.
-Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)!
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Jan 9, 2024.
+
+Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
 """
     return leaderboard_md
 
@@ -290,15 +291,15 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 gr.Dataframe(
                     headers=[
                         "Rank",
-                        "Model",
-                        "Arena Elo",
-                        "95% CI",
-                        "#Votes",
+                        "🤖 Model",
+                        "⭐ Arena Elo",
+                        "📊 95% CI",
+                        "🗳️ Votes",
                         "Organization",
                         "License",
                     ],
                     datatype=[
-                        "number",
+                        "str",
                         "markdown",
                         "number",
                         "str",
@@ -318,10 +319,10 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 full_table_vals = get_full_table(arena_df, model_table_df)
                 gr.Dataframe(
                     headers=[
-                        "Model",
-                        "Arena Elo",
-                        "MT-bench",
-                        "MMLU",
+                        "🤖 Model",
+                        "⭐ Arena Elo",
+                        "📈 MT-bench",
+                        "📚 MMLU",
                         "Organization",
                         "License",
                     ],
@@ -332,18 +333,26 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                     height=700,
                     wrap=True,
                 )
-        gr.Markdown(
-            """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
-            If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
-            """,
-            elem_id="leaderboard_markdown",
-        )
+        if not show_plot:
+            gr.Markdown(
+                """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
+                If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
+                """,
+                elem_id="leaderboard_markdown",
+            )
     else:
         pass
 
     leader_component_values[:] = [default_md, p1, p2, p3, p4]
 
     if show_plot:
+        gr.Markdown(
+            f"""## More Statistics for Chatbot Arena\n
+Below are figures for more statistics. The code for generating them is also included in this [notebook]({notebook_url}).
+You can find more discussions in this blog [post](https://lmsys.org/blog/2023-12-07-leaderboard/).
+    """,
+            elem_id="leaderboard_markdown"
+        )
         with gr.Row():
             with gr.Column():
                 gr.Markdown(
