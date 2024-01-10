@@ -512,7 +512,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We use **100K+** human votes to compile an Elo-based LLM leaderboard.
+We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
