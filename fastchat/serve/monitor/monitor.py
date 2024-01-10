@@ -240,12 +240,8 @@ def get_arena_table(arena_df, model_table_df):
         row.append(model_name)
         # elo rating
         row.append(round(arena_df.iloc[i]["rating"]))
-        upper_diff = round(
-            arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"]
-        )
-        lower_diff = round(
-            arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"]
-        )
+        upper_diff = round(arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"])
+        lower_diff = round(arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"])
         row.append(f"+{upper_diff}/-{lower_diff}")
         # num battles
         row.append(round(arena_df.iloc[i]["num_battles"]))
