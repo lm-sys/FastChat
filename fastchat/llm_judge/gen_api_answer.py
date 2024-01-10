@@ -13,6 +13,8 @@ from omegaconf import OmegaConf
 import openai
 import shortuuid
 import tqdm
+import wandb
+from config_singleton import WandbConfigSingleton
 
 from fastchat.llm_judge.common import (
     load_questions,
@@ -22,12 +24,13 @@ from fastchat.llm_judge.common import (
     chat_compeletion_cohere,
     chat_compeletion_palm,
     chat_compeletion_gemini,
+    chat_compeletion_bedrock,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
-cfg_mtbench = OmegaConf.load("configs/config.yaml")
 def get_api_answer(question_file, answer_file):
+    config = WandbConfigSingleton.get_instance().config
     questions = load_questions(question_file, None, None)
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         futures = []
@@ -35,9 +38,9 @@ def get_api_answer(question_file, answer_file):
             future = executor.submit(
                     get_answer,
                     question,
-                    cfg_mtbench.model.pretrained_model_name_or_path,
-                    cfg_mtbench.mtbench.num_choices,
-                    cfg_mtbench.mtbench.max_new_token,
+                    config.model.pretrained_model_name_or_path,
+                    config.mtbench.num_choices,
+                    config.mtbench.max_new_token,
                     answer_file,
                 )
             futures.append(future)
@@ -54,10 +57,11 @@ def get_answer(
     question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
 ):
 
-    temperature = cfg_mtbench.generator.temperature
+    config = WandbConfigSingleton.get_instance().config
+    temperature = config.generator.temperature
 
     choices = []
-    chat_state = None  # for palm-2 model
+    chat_state = None  # for palm-2, gemini and bedrock-claude model
     for i in range(num_choices):
         conv = get_conversation_template(model)
 
@@ -74,12 +78,16 @@ def get_answer(
                 chat_state, output = chat_compeletion_palm(
                     chat_state, model, conv, temperature, max_tokens
                 )
-            elif cfg_mtbench.api == "cohere":
+            elif config.api == "cohere":
                 output = chat_compeletion_cohere(
                 model, conv, temperature, max_tokens
                 ) 
-            elif cfg_mtbench.api == "google":
+            elif config.api == "google":
                 chat_state, output = chat_compeletion_gemini(
+                    chat_state, model, conv, temperature, max_tokens
+                ) 
+            elif config.api == "amazon_bedrock":
+                chat_state, output = chat_compeletion_bedrock(
                     chat_state, model, conv, temperature, max_tokens
                 )  
             else:

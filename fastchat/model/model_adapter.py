@@ -44,6 +44,7 @@ from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
 from fastchat.modules.xfastertransformer import load_xft_model, XftConfig
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
 from fastchat.utils import get_gpu_memory
+from config_singleton import WandbConfigSingleton
 
 import wandb
 
@@ -1064,12 +1065,13 @@ class ClaudeAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("claude")
 
-cfg_mtbench = OmegaConf.load("configs/config.yaml")
+
 class CohereAdapter(BaseModelAdapter):
     """The model adapter for Cohere"""
 
     def match(self, model_path: str):
-        return cfg_mtbench.api == "cohere"
+        config = WandbConfigSingleton.get_instance().config
+        return config.api == "cohere"
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1109,6 +1111,20 @@ class GeminiAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return model_path == "gemini-pro"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemini")
+
+
+class BedrockAdapter(BaseModelAdapter):
+    """The model adapter for Claude in Amaon Bedrock"""
+
+    def match(self, model_path: str):
+        config = WandbConfigSingleton.get_instance().config
+        return config.api == "amazon_bedrock"
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1953,7 +1969,7 @@ class PygmalionAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("metharme")
     
-cfg_mtbench = OmegaConf.load("configs/config.yaml")
+
 class CustomAdapter(BaseModelAdapter):  # ←追加
     """
     Custom Model adapter
@@ -1961,10 +1977,12 @@ class CustomAdapter(BaseModelAdapter):  # ←追加
     model_variation = None
 
     def match(self, model_path: str):
-        return cfg_mtbench.mtbench.custom_conv_template
+        config = WandbConfigSingleton.get_instance().config
+        return config.mtbench.custom_conv_template
 
     def get_default_conv_template(self, model_path:str):
-        return get_conv_template(cfg_mtbench.mtbench.conv_name)
+        config = WandbConfigSingleton.get_instance().config
+        return get_conv_template(config.mtbench.conv_name)
 
 
 class XdanAdapter(BaseModelAdapter):
@@ -2069,6 +2087,7 @@ register_model_adapter(PaLM2Adapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(CohereAdapter)
+register_model_adapter(BedrockAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)

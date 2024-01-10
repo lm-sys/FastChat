@@ -8,9 +8,8 @@ If you have any changes in mind, please contribute back so the community can ben
 import dataclasses
 from enum import auto, IntEnum
 from typing import List, Any, Dict, Union, Tuple
-
-from omegaconf import OmegaConf
-cfg_mtbench = OmegaConf.load("configs/config.yaml")
+import wandb
+from config_singleton import WandbConfigSingleton
 
 class SeparatorStyle(IntEnum):
     """Separator styles."""
@@ -248,13 +247,14 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
-        elif self.sep_style == SeparatorStyle.CUSTOM:  # ←追加
+        elif self.sep_style == SeparatorStyle.CUSTOM:
+            config = WandbConfigSingleton.get_instance().config  # ←追加
             ret = self.system_message + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += role + cfg_mtbench.mtbench.conv_role_message_separator + message + self.sep
+                    ret += role + config.mtbench.conv_role_message_separator + message + self.sep
                 else:
-                    ret += role + cfg_mtbench.mtbench.conv_role_only_separator
+                    ret += role + config.mtbench.conv_role_only_separator
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1348,20 +1348,19 @@ register_conv_template(
 
 # conv template for Custom
 # source: hogehoge
-from omegaconf import OmegaConf
-cfg = OmegaConf.load("configs/config.yaml")
-
-register_conv_template(
-    Conversation(
-        name=cfg.mtbench.conv_name,
-        system_message=cfg.mtbench.conv_system_message,
-        roles=eval(cfg.mtbench.conv_roles),
-        sep_style=SeparatorStyle.CUSTOM,
-        sep=cfg.mtbench.conv_sep,
-        stop_token_ids=eval(cfg.mtbench.conv_stop_token_ids),
-        stop_str=cfg.mtbench.conv_stop_str,
+def initialize_custom_template():
+    config = WandbConfigSingleton.get_instance().config
+    register_conv_template(
+        Conversation(
+            name=config.mtbench.conv_name,
+            system_message=config.mtbench.conv_system_message,
+            roles=eval(config.mtbench.conv_roles),
+            sep_style=SeparatorStyle.CUSTOM,
+            sep=config.mtbench.conv_sep,
+            stop_token_ids=eval(config.mtbench.conv_stop_token_ids),
+            stop_str=config.mtbench.conv_stop_str,
+        )
     )
-)
 
 # Orca-2 template
 # reference: https://huggingface.co/microsoft/Orca-2-7b
