@@ -24,10 +24,13 @@ python3 -m fastchat.serve.test_message --model vicuna-13b --controller http://lo
 
 cd fastchat_logs/server0
 
+python3 -m fastchat.serve.huggingface_api_worker --model-info-file ~/elo_results/register_hf_api_models.json
+
 export OPENAI_API_KEY=
 export ANTHROPIC_API_KEY=
+export GCP_PROJECT_ID=
 
-python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 10 --add-chatgpt --add-claude --add-palm --anony-only --elo ~/elo_results/elo_results.pkl --leaderboard-table-file ~/elo_results/leaderboard_table.csv --register ~/elo_results/register_oai_models.json --show-terms
+python3 -m fastchat.serve.gradio_web_server_multi --controller http://localhost:21001 --concurrency 50 --add-chatgpt --add-claude --add-palm --elo ~/elo_results/elo_results.pkl --leaderboard-table-file ~/elo_results/leaderboard_table.csv --register ~/elo_results/register_oai_models.json --show-terms
 
 python3 backup_logs.py
 ```

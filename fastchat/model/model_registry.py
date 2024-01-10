@@ -176,10 +176,24 @@ register_model_info(
 )
 
 register_model_info(
+    ["notus-7b-v1"],
+    "Notus",
+    "https://huggingface.co/argilla/notus-7b-v1",
+    "a chatbot fine-tuned from Zephyr SFT by Argilla",
+)
+
+register_model_info(
     ["catppt"],
     "CatPPT",
     "https://huggingface.co/rishiraj/CatPPT",
     "a chatbot fine-tuned from a SLERP merged model by Rishiraj Acharya",
+)
+
+register_model_info(
+    ["TinyLlama"],
+    "TinyLlama",
+    "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "The TinyLlama project is an open endeavor to pretrain a 1.1B Llama model on 3 trillion tokens.",
 )
 
 register_model_info(
@@ -517,9 +531,9 @@ register_model_info(
 )
 
 register_model_info(
-    ["xDAN-L1-Chat-v0.1"],
+    ["xDAN-L1-Chat-RL-v1"],
     "xDAN-L1-Chat",
-    "https://huggingface.co/xDAN-AI/xDAN-L1-Chat-v0.1",
+    "https://huggingface.co/xDAN-AI/xDAN-L1-Chat-RL-v1",
     "A large language chat model created by xDAN-AI.",
 )
 
