@@ -127,6 +127,7 @@ def get_conv_log_filename():
 
 
 def get_model_list(controller_url, register_api_endpoint_file):
+    global api_endpoint_info
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
@@ -137,7 +138,6 @@ def get_model_list(controller_url, register_api_endpoint_file):
 
     # Add API providers
     if register_api_endpoint_file:
-        global api_endpoint_info
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         models += list(api_endpoint_info.keys())
 
