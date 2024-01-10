@@ -45,6 +45,7 @@ Arena collects human preference votes to rank LLMs with the Elo ranking system. 
 """
     return leaderboard_md
 
+
 def make_arena_leaderboard_md(arena_df):
     total_votes = sum(arena_df["num_battles"]) // 2
     total_models = len(arena_df)
@@ -238,8 +239,12 @@ def get_arena_table(arena_df, model_table_df):
         row.append(model_name)
         # elo rating
         row.append(round(arena_df.iloc[i]["rating"], 1))
-        upper_diff = round(arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"], 1)
-        lower_diff = round(arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"], 1)
+        upper_diff = round(
+            arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"], 1
+        )
+        lower_diff = round(
+            arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"], 1
+        )
         row.append(f"+{upper_diff}/-{lower_diff}")
         # num battles
         row.append(round(arena_df.iloc[i]["num_battles"]))
