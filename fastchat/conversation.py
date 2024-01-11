@@ -973,6 +973,7 @@ register_conv_template(
         roles=("<reserved_106>", "<reserved_107>"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
+        sep2="</s>",
         stop_token_ids=[],
     )
 )
