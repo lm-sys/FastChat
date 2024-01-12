@@ -67,9 +67,6 @@ class VLLMWorker(BaseModelWorker):
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
-        top_k = params.get("top_k", -1.0)
-        presence_penalty = float(params.get("presence_penalty", 0.0))
-        frequency_penalty = float(params.get("frequency_penalty", 0.0))
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
@@ -78,6 +75,7 @@ class VLLMWorker(BaseModelWorker):
         echo = params.get("echo", True)
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
+        logprobs = params.get("logprobs", None)
 
         # Handle stop_str
         stop = set()
@@ -88,27 +86,21 @@ class VLLMWorker(BaseModelWorker):
 
         for tid in stop_token_ids:
             if tid is not None:
-                s = self.tokenizer.decode(tid)
-                if s != "":
-                    stop.add(s)
+                stop.add(self.tokenizer.decode(tid))
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
-
         sampling_params = SamplingParams(
             n=1,
             temperature=temperature,
             top_p=top_p,
             use_beam_search=use_beam_search,
             stop=list(stop),
-            stop_token_ids=stop_token_ids,
             max_tokens=max_new_tokens,
-            top_k=top_k,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
             best_of=best_of,
+            logprobs=logprobs
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
@@ -121,16 +113,30 @@ class VLLMWorker(BaseModelWorker):
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
-
-            partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
-            # prevent yielding partial stop sequence
-            if partial_stop:
-                continue
-
+            # Note: usage is not supported yet
             prompt_tokens = len(request_output.prompt_token_ids)
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
             )
+            def fix_logprobs(self, logprobs):
+                def make_json_compliant(value):
+                    """
+                    Converts a Python float to a JSON-compliant value.
+                    - Positive infinity is replaced with a very large number.
+                    - Negative infinity is replaced with a very small number.
+                    - NaN (not a number) is replaced with a very small number.
+                    """
+                    if value == float('inf'):
+                        return 1e30  
+                    elif value == float('-inf'):
+                        return -1e30  
+                    elif value != value:  # Check for NaN
+                        return -1e30 
+                    return value
+                return {self.tokenizer.decode(key): make_json_compliant(value) for key, value in logprobs.items()}
+            logprobs = None
+            if request_output.outputs[-1].logprobs:
+                logprobs = [fix_logprobs(self, output) for output in request_output.outputs[-1].logprobs]
             ret = {
                 "text": text_outputs,
                 "error_code": 0,
@@ -139,6 +145,7 @@ class VLLMWorker(BaseModelWorker):
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
+                "logprobs": logprobs,
                 "cumulative_logprob": [
                     output.cumulative_logprob for output in request_output.outputs
                 ],
@@ -146,10 +153,6 @@ class VLLMWorker(BaseModelWorker):
                 if len(request_output.outputs) == 1
                 else [output.finish_reason for output in request_output.outputs],
             }
-            # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
-            # This aligns with the behavior of model_worker.
-            if request_output.finished:
-                yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):
