@@ -60,7 +60,7 @@ class VLLMWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
-     async def generate_stream(self, params):
+    async def generate_stream(self, params):
         self.call_ct += 1
 
         context = params.pop("prompt")
