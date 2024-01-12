@@ -25,6 +25,7 @@ from fastchat.llm_judge.common import (
     chat_compeletion_palm,
     chat_compeletion_gemini,
     chat_compeletion_bedrock,
+    chat_compeletion_mistral,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
 from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
@@ -88,6 +89,10 @@ def get_answer(
                 ) 
             elif config.api == "amazon_bedrock":
                 chat_state, output = chat_compeletion_bedrock(
+                    chat_state, model, conv, temperature, max_tokens
+                )  
+            elif config.api == "mistral":
+                chat_state, output = chat_compeletion_mistral(
                     chat_state, model, conv, temperature, max_tokens
                 )  
             else:

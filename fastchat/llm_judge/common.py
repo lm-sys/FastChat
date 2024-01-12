@@ -601,6 +601,44 @@ def chat_compeletion_bedrock(chat_state, model, conv, temperature, max_tokens):
     return chat_state, output
 
 
+def chat_compeletion_mistral(chat_state, model, conv, temperature, max_tokens):
+    from langchain_mistralai.chat_models import ChatMistralAI
+    from langchain.chains import ConversationChain
+    from langchain.memory import ConversationBufferMemory
+    from langchain.prompts.chat import (
+        ChatPromptTemplate,
+        HumanMessagePromptTemplate,
+        MessagesPlaceholder,
+    )
+
+    if chat_state is None:
+        llm = ChatMistralAI(
+            model=model,
+            mistral_api_key=os.environ.get("MISTRAL_API_KEY"),
+            temperature=temperature, 
+            max_tokens=max_tokens,
+        )
+
+        memory = ConversationBufferMemory(return_messages=True)
+        prompt = ChatPromptTemplate.from_messages([
+            MessagesPlaceholder(variable_name="history"),
+            HumanMessagePromptTemplate.from_template("""{input}""")
+        ])
+
+        chat_state = ConversationChain(llm=llm, prompt=prompt, memory=memory)
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            response = chat_state.run(conv.messages[-2][1])
+            output = response
+            break
+        except Exception as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return chat_state, output
+
+
 def normalize_game_key_single(gamekey, result):
     """Make the model names sorted in a game key."""
     qid, model_1, model_2 = gamekey

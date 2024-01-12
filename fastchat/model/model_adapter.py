@@ -1132,6 +1132,19 @@ class BedrockAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemini")
 
+class MistralAPIAdapter(BaseModelAdapter):
+    """The model adapter for Mistral API"""
+
+    def match(self, model_path: str):
+        config = WandbConfigSingleton.get_instance().config
+        return config.api == "mistral"
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemini")
+
 
 class BiLLaAdapter(BaseModelAdapter):
     """The model adapter for Neutralzz/BiLLa-7B-SFT"""
@@ -2088,6 +2101,7 @@ register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(CohereAdapter)
 register_model_adapter(BedrockAdapter)
+register_model_adapter(MistralAPIAdapter)
 register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
