@@ -60,13 +60,16 @@ class VLLMWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
-    async def generate_stream(self, params):
+     async def generate_stream(self, params):
         self.call_ct += 1
 
         context = params.pop("prompt")
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
+        top_k = params.get("top_k", -1.0)
+        presence_penalty = float(params.get("presence_penalty", 0.0))
+        frequency_penalty = float(params.get("frequency_penalty", 0.0))
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
@@ -86,19 +89,26 @@ class VLLMWorker(BaseModelWorker):
 
         for tid in stop_token_ids:
             if tid is not None:
-                stop.add(self.tokenizer.decode(tid))
+                s = self.tokenizer.decode(tid)
+                if s != "":
+                    stop.add(s)
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
+
         sampling_params = SamplingParams(
             n=1,
             temperature=temperature,
             top_p=top_p,
             use_beam_search=use_beam_search,
             stop=list(stop),
+            stop_token_ids=stop_token_ids,
             max_tokens=max_new_tokens,
+            top_k=top_k,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
             best_of=best_of,
             logprobs=logprobs
         )
@@ -113,7 +123,12 @@ class VLLMWorker(BaseModelWorker):
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
-            # Note: usage is not supported yet
+
+            partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
+            # prevent yielding partial stop sequence
+            if partial_stop:
+                continue
+
             prompt_tokens = len(request_output.prompt_token_ids)
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
@@ -124,14 +139,14 @@ class VLLMWorker(BaseModelWorker):
                     Converts a Python float to a JSON-compliant value.
                     - Positive infinity is replaced with a very large number.
                     - Negative infinity is replaced with a very small number.
-                    - NaN (not a number) is replaced with a very small number.
+                    - NaN (not a number) is replaced witha very small number.
                     """
                     if value == float('inf'):
-                        return 1e30  
+                        return 1e30 
                     elif value == float('-inf'):
                         return -1e30  
                     elif value != value:  # Check for NaN
-                        return -1e30 
+                        return -1e30
                     return value
                 return {self.tokenizer.decode(key): make_json_compliant(value) for key, value in logprobs.items()}
             logprobs = None
@@ -153,6 +168,10 @@ class VLLMWorker(BaseModelWorker):
                 if len(request_output.outputs) == 1
                 else [output.finish_reason for output in request_output.outputs],
             }
+            # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
+            # This aligns with the behavior of model_worker.
+            if request_output.finished:
+                yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
 
     async def generate(self, params):
