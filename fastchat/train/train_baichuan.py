@@ -159,7 +159,7 @@ def preprocess(sources, tokenizer: transformers.PreTrainedTokenizer, **kwargs) -
     else:  # If the data volume is large, use multithreading for processing
         with Pool() as p:
             conversations, conv = p.apply_async(
-                apply_prompt_template, (sources, tokenizer, systems)
+                apply_prompt_template, (sources, systems)
             ).get()
             input_ids, targets = p.apply_async(
                 tokenize_conversations, (conversations, tokenizer)
