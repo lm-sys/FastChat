@@ -215,11 +215,11 @@ class ModelWorker(BaseModelWorker):
             base64_encode = params.get("encoding_format", None)
 
             if self.embed_in_truncate:
-                chunk_embeddings, token_num = self.__process_embed_chunk(
+                embedding, token_num = self.__process_embed_chunk(
                     input_ids, attention_mask, **model_type_dict
                 )
                 if not hasattr(self.model, 'use_cls_pooling') or not self.model.use_cls_pooling:
-                    embedding = chunk_embeddings / token_num
+                    embedding = embedding / token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
                 ret["token_num"] = token_num
             else:
