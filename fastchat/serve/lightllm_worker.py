@@ -152,6 +152,10 @@ class LightLLMWorker(BaseModelWorker):
                 await httpserver_manager.abort(request_id)
                 finish_reason = "abort"
 
+            logprob = metadata.get("logprob", None)
+            if logprob is not None:
+                cumulative_logprob += logprob
+
             prompt_tokens = metadata["prompt_tokens"]
             ret = {
                 "text": prompt + text_outputs if echo else text_outputs,
@@ -161,6 +165,7 @@ class LightLLMWorker(BaseModelWorker):
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
+                "cumulative_logprob": cumulative_logprob,
             }
 
             if finish_reason is not None:
