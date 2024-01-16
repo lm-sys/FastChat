@@ -434,8 +434,7 @@ if __name__ == "__main__":
     if not args.splitfuse_mode:
         assert len(args.prompt_cache_strs) == 0
 
-    with open(os.path.join(args.model_dir, "config.json"), "r") as f:
-        model_config = json.load(f)
+    model_config = AutoConfig.from_pretrained(args.model_dir)
     context_length = get_context_length(model_config)
 
     if args.max_req_input_len is None:
