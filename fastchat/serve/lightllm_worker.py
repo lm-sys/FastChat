@@ -11,6 +11,8 @@ import os
 import torch
 import uvicorn
 
+from transformers import AutoConfig
+
 from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
