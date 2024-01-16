@@ -134,6 +134,8 @@ class LightLLMWorker(BaseModelWorker):
 
         completion_tokens = 0
         text_outputs = ""
+        cumulative_logprob = 0.0
+
         async for request_output, metadata, finish_status in results_generator:
             text_outputs += request_output
             completion_tokens += 1
