@@ -2,7 +2,7 @@
 Use FastChat with Hugging Face generation APIs.
 
 Usage:
-python3 -m fastchat.serve.huggingface_api --model lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.huggingface_api --model lmsys/vicuna-7b-v1.5
 python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 """
 import argparse
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     add_model_args(parser)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
-    parser.add_argument("--max-new-tokens", type=int, default=512)
+    parser.add_argument("--max-new-tokens", type=int, default=1024)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--message", type=str, default="Hello! Who are you?")
     args = parser.parse_args()

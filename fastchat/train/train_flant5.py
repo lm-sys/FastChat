@@ -231,7 +231,7 @@ def preprocess(
     """
     # add end signal and concatenate together
     conversations = []
-    header = f"{default_conversation.system}\n\n"
+    header = f"{default_conversation.system_message}\n\n"
     for source in sources:
         conversation = _add_speaker_and_signal(header, source, tokenizer)
         conversations.append(conversation)

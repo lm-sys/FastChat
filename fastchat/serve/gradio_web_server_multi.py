@@ -26,9 +26,11 @@ from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
     build_single_model_ui,
+    build_about,
     get_model_list,
     load_demo_single,
     ip_expiration_dict,
+    get_ip,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import (
@@ -44,7 +46,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 def load_demo(url_params, request: gr.Request):
     global models
 
-    ip = request.client.host
+    ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
     ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
@@ -82,11 +84,24 @@ def load_demo(url_params, request: gr.Request):
     if args.anony_only_for_proprietary_model:
         # Only enable these models in anony battles.
         if args.add_chatgpt:
-            models_anony += ["gpt-4", "gpt-3.5-turbo"]
+            models_anony += [
+                "gpt-4-0314",
+                "gpt-4-0613",
+                "gpt-3.5-turbo-0613",
+                "gpt-3.5-turbo-1106",
+            ]
         if args.add_claude:
-            models_anony += ["claude-2", "claude-instant-1"]
+            models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
         if args.add_palm:
-            models_anony += ["palm-2"]
+            models_anony += ["gemini-pro"]
+    anony_only_models = [
+        "claude-1",
+        "gpt-4-0314",
+        "gpt-4-0613",
+    ]
+    for mdl in anony_only_models:
+        models_anony.append(mdl)
+    models_anony = list(set(models_anony))
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
@@ -99,26 +114,28 @@ def load_demo(url_params, request: gr.Request):
 
 
 def build_demo(models, elo_results_file, leaderboard_table_file):
+    text_size = gr.themes.sizes.text_md
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Default(),
+        theme=gr.themes.Default(text_size=text_size),
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Chatbot Arena (battle)", id=0):
+            with gr.Tab("Arena (battle)", id=0):
                 side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("Chatbot Arena (side-by-side)", id=1):
+            with gr.Tab("Arena (side-by-side)", id=1):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("Single Model", id=2):
+            with gr.Tab("Direct Chat", id=2):
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
-
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
                     build_leaderboard_tab(elo_results_file, leaderboard_table_file)
+            with gr.Tab("About Us", id=4):
+                about = build_about()
 
         url_params = gr.JSON(visible=False)
 
@@ -218,6 +235,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--leaderboard-table-file", type=str, help="Load leaderboard results and plots"
     )
+    parser.add_argument(
+        "--gradio-root-path",
+        type=str,
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -257,4 +279,5 @@ if __name__ == "__main__":
         share=args.share,
         max_threads=200,
         auth=auth,
+        root_path=args.gradio_root_path,
     )

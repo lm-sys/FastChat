@@ -1,5 +1,5 @@
 # Usage:
-# python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3 --model-names gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002
+# python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.5 --model-names gpt-3.5-turbo,text-davinci-003,text-embedding-ada-002
 # export OPENAI_API_BASE=http://localhost:8000/v1
 # export OPENAI_API_KEY=EMPTY
 # wget https://raw.githubusercontent.com/hwchase17/langchain/v0.0.200/docs/modules/state_of_the_union.txt

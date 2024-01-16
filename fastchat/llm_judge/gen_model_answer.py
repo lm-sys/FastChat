@@ -31,6 +31,7 @@ def run_eval(
     num_gpus_total,
     max_gpu_memory,
     dtype,
+    revision,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -61,6 +62,7 @@ def run_eval(
                 num_gpus_per_model,
                 max_gpu_memory,
                 dtype=dtype,
+                revision=revision,
             )
         )
 
@@ -79,9 +81,11 @@ def get_model_answers(
     num_gpus_per_model,
     max_gpu_memory,
     dtype,
+    revision,
 ):
     model, tokenizer = load_model(
         model_path,
+        revision=revision,
         device="cuda",
         num_gpus=num_gpus_per_model,
         max_gpu_memory=max_gpu_memory,
@@ -141,8 +145,19 @@ def get_model_answers(
                         output_ids,
                         spaces_between_special_tokens=False,
                     )
-                    if conv.stop_str and output.find(conv.stop_str) > 0:
+                    if conv.stop_str and isinstance(conv.stop_str, list):
+                        stop_str_indices = sorted(
+                            [
+                                output.find(stop_str)
+                                for stop_str in conv.stop_str
+                                if output.find(stop_str) > 0
+                            ]
+                        )
+                        if len(stop_str_indices) > 0:
+                            output = output[: stop_str_indices[0]]
+                    elif conv.stop_str and output.find(conv.stop_str) > 0:
                         output = output[: output.find(conv.stop_str)]
+
                     for special_token in tokenizer.special_tokens_map.values():
                         if isinstance(special_token, list):
                             for special_tok in special_token:
@@ -157,8 +172,8 @@ def get_model_answers(
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
 
+                conv.update_last_message(output)
                 turns.append(output)
-                conv.messages[-1][-1] = output
 
             choices.append({"index": i, "turns": turns})
 
@@ -248,6 +263,12 @@ if __name__ == "__main__":
         help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
         default=None,
     )
+    parser.add_argument(
+        "--revision",
+        type=str,
+        default="main",
+        help="The model revision to load.",
+    )
 
     args = parser.parse_args()
 
@@ -277,6 +298,7 @@ if __name__ == "__main__":
         num_gpus_total=args.num_gpus_total,
         max_gpu_memory=args.max_gpu_memory,
         dtype=str_to_torch_dtype(args.dtype),
+        revision=args.revision,
     )
 
     reorg_answer_file(answer_file)

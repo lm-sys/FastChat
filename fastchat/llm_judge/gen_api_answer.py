@@ -1,7 +1,7 @@
 """Generate answers with GPT-4
 
 Usage:
-python3 get_api_answer.py --model gpt-3.5-turbo
+python3 gen_api_answer.py --model gpt-3.5-turbo
 """
 import argparse
 import json
@@ -16,19 +16,24 @@ import tqdm
 from fastchat.llm_judge.common import (
     load_questions,
     temperature_config,
-    chat_compeletion_openai,
-    chat_compeletion_anthropic,
-    chat_compeletion_palm,
+    chat_completion_openai,
+    chat_completion_anthropic,
+    chat_completion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
-from fastchat.model.model_adapter import get_conversation_template
+from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
 
 
 def get_answer(
     question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
 ):
-    if args.force_temperature:
+    assert (
+        args.force_temperature is not None and "required_temperature" in question.keys()
+    ) == False
+    if args.force_temperature is not None:
         temperature = args.force_temperature
+    elif "required_temperature" in question.keys():
+        temperature = question["required_temperature"]
     elif question["category"] in temperature_config:
         temperature = temperature_config[question["category"]]
     else:
@@ -44,16 +49,14 @@ def get_answer(
             conv.append_message(conv.roles[0], question["turns"][j])
             conv.append_message(conv.roles[1], None)
 
-            if model in ["claude-v1", "claude-instant-v1"]:
-                output = chat_compeletion_anthropic(
-                    model, conv, temperature, max_tokens
-                )
+            if model in ANTHROPIC_MODEL_LIST:
+                output = chat_completion_anthropic(model, conv, temperature, max_tokens)
             elif model == "palm-2-chat-bison-001":
-                chat_state, output = chat_compeletion_palm(
+                chat_state, output = chat_completion_palm(
                     chat_state, model, conv, temperature, max_tokens
                 )
             else:
-                output = chat_compeletion_openai(model, conv, temperature, max_tokens)
+                output = chat_completion_openai(model, conv, temperature, max_tokens)
 
             conv.update_last_message(output)
             turns.append(output)

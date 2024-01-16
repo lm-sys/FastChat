@@ -18,7 +18,7 @@ python3 -m fastchat.serve.controller
 Then, launch the model worker(s)
 
 ```bash
-python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.3
+python3 -m fastchat.serve.model_worker --model-path lmsys/vicuna-7b-v1.5
 ```
 
 Finally, launch the RESTful API server
@@ -32,29 +32,28 @@ Now, let us test the API server.
 ### OpenAI Official SDK
 The goal of `openai_api_server.py` is to implement a fully OpenAI-compatible API server, so the models can be used directly with [openai-python](https://github.com/openai/openai-python) library.
 
-First, install openai-python:
+First, install OpenAI python package >= 1.0:
 ```bash
 pip install --upgrade openai
 ```
 
-Then, interact with model vicuna:
+Then, interact with the Vicuna model:
 ```python
 import openai
-# to get proper authentication, make sure to use a valid key that's listed in
-# the --api-keys flag. if no flag value is provided, the `api_key` will be ignored.
-openai.api_key = "EMPTY"
-openai.api_base = "http://localhost:8000/v1"
 
-model = "vicuna-7b-v1.3"
+openai.api_key = "EMPTY"
+openai.base_url = "http://localhost:8000/v1/"
+
+model = "vicuna-7b-v1.5"
 prompt = "Once upon a time"
 
 # create a completion
-completion = openai.Completion.create(model=model, prompt=prompt, max_tokens=64)
+completion = openai.completions.create(model=model, prompt=prompt, max_tokens=64)
 # print the completion
 print(prompt + completion.choices[0].text)
 
 # create a chat completion
-completion = openai.ChatCompletion.create(
+completion = openai.chat.completions.create(
   model=model,
   messages=[{"role": "user", "content": "Hello! What is your name?"}]
 )
@@ -77,7 +76,7 @@ Chat Completions:
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "messages": [{"role": "user", "content": "Hello! What is your name?"}]
   }'
 ```
@@ -87,7 +86,7 @@ Text Completions:
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "prompt": "Once upon a time",
     "max_tokens": 41,
     "temperature": 0.5
@@ -99,7 +98,7 @@ Embeddings:
 curl http://localhost:8000/v1/embeddings \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vicuna-7b-v1.3",
+    "model": "vicuna-7b-v1.5",
     "input": "Hello world!"
   }'
 ```
@@ -111,8 +110,8 @@ you can replace the `model_worker` step above with a multi model variant:
 
 ```bash
 python3 -m fastchat.serve.multi_model_worker \
-    --model-path lmsys/vicuna-7b-v1.3 \
-    --model-names vicuna-7b-v1.3 \
+    --model-path lmsys/vicuna-7b-v1.5 \
+    --model-names vicuna-7b-v1.5 \
     --model-path lmsys/longchat-7b-16k \
     --model-names longchat-7b-16k
 ```
