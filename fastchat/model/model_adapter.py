@@ -1603,6 +1603,22 @@ class Hermes2Adapter(BaseModelAdapter):
         return get_conv_template("OpenHermes-2.5-Mistral-7B")
 
 
+class NousHermes2MixtralAdapter(BaseModelAdapter):
+    """Model adapter for NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO model"""
+
+    def match(self, model_path: str):
+        return any(
+            model_str in model_path.lower()
+            for model_str in [
+                "nous-hermes-2-mixtral-8x7b-dpo",
+                "nous-hermes-2-mixtral-8x7b-sft",
+            ]
+        )
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("Nous-Hermes-2-Mixtral-8x7B-DPO")
+
+
 class WizardCoderAdapter(BaseModelAdapter):
     """The model adapter for WizardCoder (e.g., WizardLM/WizardCoder-Python-34B-V1.0)"""
 
@@ -2176,7 +2192,6 @@ register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
 register_model_adapter(XGenAdapter)
-register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
@@ -2185,6 +2200,8 @@ register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(DolphinAdapter)
 register_model_adapter(Hermes2Adapter)
+register_model_adapter(NousHermes2MixtralAdapter)
+register_model_adapter(NousHermesAdapter)
 register_model_adapter(MistralAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
