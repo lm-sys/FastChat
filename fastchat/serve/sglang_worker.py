@@ -56,6 +56,7 @@ class SGLWorker(BaseModelWorker):
         no_register: bool,
         conv_template: str,
         runtime: Runtime,
+        trust_remote_code: bool,
     ):
         super().__init__(
             controller_addr,
@@ -73,7 +74,7 @@ class SGLWorker(BaseModelWorker):
 
         self.tokenizer = get_tokenizer(tokenizer_path)
         self.context_len = get_context_length(
-            get_config(model_path, trust_remote_code=True)
+            get_config(model_path, trust_remote_code=trust_remote_code)
         )
 
         if not no_register:
@@ -136,42 +137,30 @@ class SGLWorker(BaseModelWorker):
             stream=True,
         )
 
-        loop = asyncio.get_running_loop()
-        event = state.stream_executor.stream_var_event["response"]
         entire_output = prompt if echo else ""
-        prev = 0
-        while True:
-            await loop.run_in_executor(None, event.wait)
+        async for out, meta_info in state.text_async_iter(var_name="response", return_meta_data=True):
+            partial_stop = any(is_partial_stop(out, i) for i in stop)
 
-            event.clear()
-            meta_info = state.stream_executor.meta_info.get("response", None)
+            # prevent yielding partial stop sequence
+            if partial_stop:
+                continue
+
+            entire_output += out
             prompt_tokens = meta_info["prompt_tokens"]
             completion_tokens = meta_info["completion_tokens"]
+            
+            ret = {
+                "text": entire_output,
+                "usage": {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": prompt_tokens + completion_tokens,
+                },
+                "error_code": 0,
+            }
 
-            out = str(state.stream_executor.variables["response"][prev:])
-            prev += len(out)
-            if out:
-                partial_stop = any(is_partial_stop(out, i) for i in stop)
+            yield (json.dumps(ret) + "\0").encode()
 
-                # prevent yielding partial stop sequence
-                if partial_stop:
-                    continue
-
-                entire_output += out
-                ret = {
-                    "text": entire_output,
-                    "usage": {
-                        "prompt_tokens": prompt_tokens,
-                        "completion_tokens": completion_tokens,
-                        "total_tokens": prompt_tokens + completion_tokens,
-                    },
-                    "error_code": 0,
-                }
-
-                yield (json.dumps(ret) + "\0").encode()
-
-            if state.stream_executor.variable_event["response"].is_set():
-                break
 
     async def generate_gate(self, params):
         async for x in self.generate_stream_gate(params):
@@ -300,5 +289,6 @@ if __name__ == "__main__":
         args.no_register,
         args.conv_template,
         runtime,
+        args.trust_remote_code,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
