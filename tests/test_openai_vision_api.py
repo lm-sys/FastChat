@@ -109,6 +109,7 @@ def test_chat_completion_stream(model):
         print(content, end="", flush=True)
     print()
 
+
 if __name__ == "__main__":
     models = test_list_models()
     print(f"models: {models}")

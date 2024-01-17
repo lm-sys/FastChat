@@ -10,10 +10,18 @@ from typing import List
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
-from sglang import function, image, system, user, assistant, gen, set_default_backend, Runtime
+from sglang import (
+    function,
+    image,
+    system,
+    user,
+    assistant,
+    gen,
+    set_default_backend,
+    Runtime,
+)
+from sglang.srt.hf_transformers_utils import get_tokenizer, get_config
 from sglang.srt.utils import load_image
-from sglang.srt.model_config import ModelConfig
-from vllm.transformers_utils.tokenizer import get_tokenizer
 
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
@@ -24,14 +32,16 @@ from fastchat.utils import get_context_length, is_partial_stop
 
 app = FastAPI()
 
+
 @function
 def pipeline(s, prompt, max_tokens):
     for p in prompt:
-        if isinstance(p, str): 
+        if isinstance(p, str):
             s += p
         else:
             s += image(p)
     s += gen("response", max_tokens=max_tokens)
+
 
 class SGLWorker(BaseModelWorker):
     def __init__(
@@ -45,7 +55,7 @@ class SGLWorker(BaseModelWorker):
         limit_worker_concurrency: int,
         no_register: bool,
         conv_template: str,
-        runtime: Runtime
+        runtime: Runtime,
     ):
         super().__init__(
             controller_addr,
@@ -62,9 +72,9 @@ class SGLWorker(BaseModelWorker):
         )
 
         self.tokenizer = get_tokenizer(tokenizer_path)
-
-        model_config = ModelConfig(model_path)
-        self.context_len = get_context_length(model_config)
+        self.context_len = get_context_length(
+            get_config(model_path, trust_remote_code=True)
+        )
 
         if not no_register:
             self.init_heart_beat()
@@ -97,7 +107,6 @@ class SGLWorker(BaseModelWorker):
                 if s != "":
                     stop.append(s)
 
-
         # make sampling params for sgl.gen
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
@@ -106,34 +115,69 @@ class SGLWorker(BaseModelWorker):
         # split prompt by image token
         split_prompt = prompt.split("<image>\n")
         if prompt.count("<image>") != len(images):
-            raise ValueError("The number of images passed in does not match the number of <image> tokens in the prompt!")
+            raise ValueError(
+                "The number of images passed in does not match the number of <image> tokens in the prompt!"
+            )
         prompt = []
         for i in range(len(split_prompt)):
             prompt.append(split_prompt[i])
             if i < len(images):
                 prompt.append(load_image(images[i]))
 
-        state = pipeline.run(prompt, max_new_tokens, stop=stop, temperature=temperature, top_p=top_p, top_k=top_k, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty, stream=True)
-        
-        entire_output = prompt if echo else ""
-        async for text_output in state.text_async_iter(var_name="response"):
-            entire_output += text_output
-            partial_stop = any(is_partial_stop(text_output, i) for i in stop)
-            
-            # prevent yielding partial stop sequence
-            if partial_stop:
-                continue
+        state = pipeline.run(
+            prompt,
+            max_new_tokens,
+            stop=stop,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            stream=True,
+        )
 
-            ret = {
-                "text": entire_output,
-                "error_code": 0,
-            }
-            yield (json.dumps(ret) + "\0").encode()
+        loop = asyncio.get_running_loop()
+        event = state.stream_executor.stream_var_event["response"]
+        entire_output = prompt if echo else ""
+        prev = 0
+        while True:
+            await loop.run_in_executor(None, event.wait)
+
+            event.clear()
+            meta_info = state.stream_executor.meta_info.get("response", None)
+            prompt_tokens = meta_info["prompt_tokens"]
+            completion_tokens = meta_info["completion_tokens"]
+
+            out = str(state.stream_executor.variables["response"][prev:])
+            prev += len(out)
+            if out:
+                partial_stop = any(is_partial_stop(out, i) for i in stop)
+
+                # prevent yielding partial stop sequence
+                if partial_stop:
+                    continue
+
+                entire_output += out
+                ret = {
+                    "text": entire_output,
+                    "usage": {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": prompt_tokens + completion_tokens,
+                    },
+                    "error_code": 0,
+                }
+
+                yield (json.dumps(ret) + "\0").encode()
+
+            if state.stream_executor.variable_event["response"].is_set():
+                break
 
     async def generate_gate(self, params):
         async for x in self.generate_stream_gate(params):
             pass
         return json.loads(x[:-1].decode())
+
 
 def release_worker_semaphore():
     worker.semaphore.release()
@@ -232,14 +276,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.tp_size = args.num_gpus if args.num_gpus > 1 else 1
-    args.tokenizer_path = args.model_path if args.tokenizer_path == "" else args.tokenizer_path
+    args.tokenizer_path = (
+        args.model_path if args.tokenizer_path == "" else args.tokenizer_path
+    )
 
-    runtime = Runtime(model_path=args.model_path, 
-                      tokenizer_path=args.tokenizer_path,
-                      trust_remote_code=args.trust_remote_code,
-                      mem_fraction_static=args.mem_fraction_static, 
-                      tp_size=args.tp_size
-                      )
+    runtime = Runtime(
+        model_path=args.model_path,
+        tokenizer_path=args.tokenizer_path,
+        trust_remote_code=args.trust_remote_code,
+        mem_fraction_static=args.mem_fraction_static,
+        tp_size=args.tp_size,
+    )
     set_default_backend(runtime)
 
     worker = SGLWorker(
@@ -252,6 +299,6 @@ if __name__ == "__main__":
         args.limit_worker_concurrency,
         args.no_register,
         args.conv_template,
-        runtime
+        runtime,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
