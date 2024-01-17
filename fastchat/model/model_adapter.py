@@ -927,6 +927,16 @@ class OpenChat35Adapter(BaseModelAdapter):
         return get_conv_template("openchat_3.5")
 
 
+class TenyxChatAdapter(BaseModelAdapter):
+    """The model adapter for TenyxChat (e.g. tenyx/TenyxChat-7B-v1)"""
+
+    def match(self, model_path: str):
+        return "tenyxchat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("tenyxchat")
+
+
 class PythiaAdapter(BaseModelAdapter):
     """The model adapter for any EleutherAI/pythia model"""
 
@@ -2121,6 +2131,7 @@ register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
 register_model_adapter(OasstLLaMAAdapter)
 register_model_adapter(OpenChat35Adapter)
+register_model_adapter(TenyxChatAdapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)

@@ -162,6 +162,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["tenyxchat-7b-v1"],
+    "TenyxChat-7B",
+    "https://huggingface.co/tenyx/TenyxChat-7B-v1",
+    "an open model DPO trained on top of OpenChat-3.5 using Tenyx fine-tuning",
+)
+
+register_model_info(
     ["zephyr-7b-beta", "zephyr-7b-alpha"],
     "Zephyr",
     "https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha",

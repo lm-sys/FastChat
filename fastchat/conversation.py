@@ -551,6 +551,16 @@ register_conv_template(
     )
 )
 
+# TenyxChat default template
+register_conv_template(
+    Conversation(
+        name="tenyxchat",
+        roles=("User", "Assistant"),
+        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep="<|end_of_turn|>",
+    )
+)
+
 # Deepseek code default template
 register_conv_template(
     Conversation(
