@@ -1418,6 +1418,22 @@ register_conv_template(
     )
 )
 
+
+#yuan 2.0 template
+#reference:https://github.com/IEIT-Yuan/Yuan-2.0
+#reference:https://huggingface.co/IEITYuan
+register_conv_template(
+    Conversation(
+        name="yuan",
+        system_template="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="<sep>",
+        stop_str="<eod>",
+
+    )
+)
+
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
 
