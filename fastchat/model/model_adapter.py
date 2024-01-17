@@ -2130,8 +2130,9 @@ class SolarAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("solar")
 
+
 class Yuan2Adapter(BaseModelAdapter):
-    """The model adapter for Yuan """
+    """The model adapter for Yuan"""
 
     def match(self, model_path: str):
         return "yuan" in model_path.lower()
@@ -2139,13 +2140,30 @@ class Yuan2Adapter(BaseModelAdapter):
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
         tokenizer.add_tokens(
-            ['<sep>', '<pad>', '<mask>', '<predict>', '<FIM_SUFFIX>', '<FIM_PREFIX>', '<FIM_MIDDLE>', '<commit_before>',
-             '<commit_msg>', '<commit_after>', '<jupyter_start>', '<jupyter_text>', '<jupyter_code>',
-             '<jupyter_output>', '<empty_output>'], special_tokens=True)
+            [
+                "<sep>",
+                "<pad>",
+                "<mask>",
+                "<predict>",
+                "<FIM_SUFFIX>",
+                "<FIM_PREFIX>",
+                "<FIM_MIDDLE>",
+                "<commit_before>",
+                "<commit_msg>",
+                "<commit_after>",
+                "<jupyter_start>",
+                "<jupyter_text>",
+                "<jupyter_code>",
+                "<jupyter_output>",
+                "<empty_output>",
+            ],
+            special_tokens=True,
+        )
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("yuan")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.

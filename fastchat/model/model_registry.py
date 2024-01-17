@@ -545,7 +545,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["Yuan2-2B-hf","Yuan2-51B-hf","Yuan2-102B-hf"],
+    ["Yuan2-2B-hf", "Yuan2-51B-hf", "Yuan2-102B-hf"],
     "IEIYuan",
     "https://huggingface.co/IEITYuan",
     "Yuan2 is a Basemodel developed by IEI.",
