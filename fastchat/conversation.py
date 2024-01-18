@@ -31,7 +31,6 @@ class SeparatorStyle(IntEnum):
     CHATGLM3 = auto()
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
-    YUANCHAT = auto()
 
 
 @dataclasses.dataclass
@@ -245,15 +244,6 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
-            return ret
-
-        elif self.sep_style == SeparatorStyle.YUANCHAT:
-            ret = system_prompt
-            for role, message in enumerate(self.messages):
-                if message:
-                    ret += role + message + self.sep
-                else:
-                    ret += role
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
