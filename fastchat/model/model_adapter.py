@@ -336,7 +336,8 @@ def load_model(
         # lazy import so that modelscope is not required for normal use.
         try:
             from modelscope.hub.snapshot_download import snapshot_download
-            if not os.path.exists(model_path):                
+
+            if not os.path.exists(model_path):
                 model_path = snapshot_download(model_id=model_path, revision=revision)
         except ImportError as e:
             warnings.warn(
