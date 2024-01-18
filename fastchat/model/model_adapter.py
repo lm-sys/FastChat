@@ -402,7 +402,6 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_xft
     elif is_yuan:
         return generate_stream_yuan2
-
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
         # according to the model_name available in this context.  This ensures
