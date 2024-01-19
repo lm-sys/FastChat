@@ -2101,6 +2101,40 @@ class DeepseekChatAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("deepseek-chat")
 
+class Yuan2Adapter(BaseModelAdapter):
+    """The model adapter for Yuan2.0"""
+
+    def match(self, model_path: str):
+        return "yuan2" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        # from_pretrained_kwargs["torch_dtype"] = torch.bfloat16
+        tokenizer = LlamaTokenizer.from_pretrained(
+            model_path,
+            add_eos_token=False,
+            add_bos_token=False,
+            eos_token='<eod>',
+            eod_token='<eod>',
+            sep_token='<sep>',
+            revision = revision,
+        )
+        tokenizer.add_tokens(
+            ['<sep>', '<pad>', '<mask>', '<predict>', '<FIM_SUFFIX>', '<FIM_PREFIX>', '<FIM_MIDDLE>', '<commit_before>',
+             '<commit_msg>', '<commit_after>', '<jupyter_start>', '<jupyter_text>', '<jupyter_code>',
+             '<jupyter_output>', '<empty_output>'], special_tokens=True)
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            # device_map='auto',
+            trust_remote_code=True,
+            **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("yuan2")
+
 
 class MetaMathAdapter(BaseModelAdapter):
     """The model adapter for MetaMath models"""
@@ -2132,7 +2166,7 @@ class SolarAdapter(BaseModelAdapter):
         return get_conv_template("solar")
 
 
-class Yuan2Adapter(BaseModelAdapter):
+class YuanAdapter(BaseModelAdapter):
     """The model adapter for Yuan"""
 
     def match(self, model_path: str):
@@ -2248,10 +2282,11 @@ register_model_adapter(YiAdapter)
 register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
+register_model_adapter(Yuan2Adapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
-register_model_adapter(Yuan2Adapter)
+register_model_adapter(YuanAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
