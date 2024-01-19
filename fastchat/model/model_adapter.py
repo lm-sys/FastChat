@@ -2136,16 +2136,8 @@ class LlavaAdapter(BaseModelAdapter):
     """The model adapter for liuhaotian/llava-v1.5 series of models"""
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = LlavaForConditionalGeneration.from_pretrained(
-            model_path,
-            torch_dtype=torch.float16,
-            low_cpu_mem_usage=True,
-        )
-        processor = AutoProcessor.from_pretrained(model_path)
-
-        model.config.is_multimodal = True
-        return model, processor
+        # TODO(chris): Implement huggingface-compatible load_model
+        pass
 
     def match(self, model_path: str):
         return "llava" in model_path.lower()
