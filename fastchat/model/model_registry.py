@@ -43,6 +43,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["bard-jan-24-gemini-pro"],
+    "Bard",
+    "https://bard.google.com/",
+    "Bard by Google",
+)
+
+register_model_info(
     ["solar-10.7b-instruct-v1.0"],
     "SOLAR-10.7B-Instruct",
     "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
@@ -542,4 +549,11 @@ register_model_info(
     "MetaMath",
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)
+
+register_model_info(
+    ["stripedhyena-nous-7b"],
+    "StripedHyena-Nous",
+    "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
+    "A chat model developed by Together Research and Nous Research."
 )

@@ -244,7 +244,7 @@ def bot_response_multi(
 
     is_gemini = []
     for i in range(num_sides):
-        is_gemini.append("gemini" in states[i].model_name)
+        is_gemini.append(states[i].model_name in ["gemini-pro", "gemini-pro-dev-api"])
 
     chatbots = [None] * num_sides
     iters = 0

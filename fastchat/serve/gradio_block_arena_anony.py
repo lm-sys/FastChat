@@ -172,10 +172,12 @@ SAMPLING_WEIGHTS = {
     "claude-instant-1": 4,
     "gemini-pro": 4,
     "gemini-pro-dev-api": 4,
+    "bard-jan-24-gemini-pro": 4,
     "pplx-7b-online": 4,
     "pplx-70b-online": 4,
     "solar-10.7b-instruct-v1.0": 2,
     "llama2-70b-steerlm-chat": 2,
+    "stripedhyena-nous-7b": 4,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-medium": 4,
     "openhermes-2.5-mistral-7b": 2,
@@ -257,6 +259,18 @@ BATTLE_TARGETS = {
     "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
     "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "gemini-pro-dev-api": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "bard-jan-24-gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "llama2-70b-steerlm-chat": {
+        "llama-2-70b-chat",
+        "tulu-2-dpo-70b",
+        "yi-34b-chat",
+    },
+    "stripedhyena-nous-7b": {
+        "starling-lm-7b-alpha",
+        "openhermes-2.5-mistral-7b",
+        "mistral-7b-instruct",
+        "llama-2-7b-chat",
+    },
     "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-turbo"},
     "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-turbo"},
     "pplx-7b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
@@ -301,12 +315,14 @@ BATTLE_TARGETS = {
 
 SAMPLING_BOOST_MODELS = [
     # "claude-2.1",
-    "gpt-4-0613",
+    # "gpt-4-0613",
     # "gpt-4-0314",
     "gpt-4-turbo",
     "mistral-medium",
     "llama2-70b-steerlm-chat",
-    "gemini-pro-dev-api",
+    # "gemini-pro-dev-api",
+    "stripedhyena-nous-7b",
+    "bard-jan-24-gemini-pro",
     # "gemini-pro",
 ]
 
@@ -479,8 +495,7 @@ def bot_response_multi(
 
     is_gemini = []
     for i in range(num_sides):
-        is_gemini.append("gemini" in states[i].model_name)
-
+        is_gemini.append(states[i].model_name in ["gemini-pro", "gemini-pro-dev-api"])
     chatbots = [None] * num_sides
     iters = 0
     while True:
