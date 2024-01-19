@@ -119,7 +119,10 @@ class MLXWorker(BaseModelWorker):
 
         finish_reason = "length"
 
-        for token, _ in zip(generate_step(context_mlx, self.mlx_model, temperature), range(max_new_tokens)):
+        for token, _ in zip(
+            generate_step(context_mlx, self.mlx_model, temperature),
+            range(max_new_tokens),
+        ):
             if token == self.mlx_tokenizer.eos_token_id:
                 finish_reason = "stop"
                 break
@@ -128,8 +131,7 @@ class MLXWorker(BaseModelWorker):
             last_token_decoded = self.mlx_tokenizer.decode([token.item()])
             skip = len(tokens_decoded)
 
-            partial_stop = any(is_partial_stop(tokens_decoded, i)
-                               for i in stop)
+            partial_stop = any(is_partial_stop(tokens_decoded, i) for i in stop)
 
             if partial_stop:
                 finish_reason = "stop"
@@ -143,20 +145,17 @@ class MLXWorker(BaseModelWorker):
                     "completion_tokens": len(tokens),
                     "total_tokens": len(context) + len(tokens),
                 },
-                "cumulative_logprob": [
-                ],
-                "finish_reason": None   # hard code for now
+                "cumulative_logprob": [],
+                "finish_reason": None,  # hard code for now
             }
             # print(ret)
             yield (json.dumps(ret) + "\0").encode()
         ret = {
             "text": self.mlx_tokenizer.decode(tokens),
             "error_code": 0,
-            "usage": {
-            },
-            "cumulative_logprob": [
-            ],
-            "finish_reason": finish_reason
+            "usage": {},
+            "cumulative_logprob": [],
+            "finish_reason": finish_reason,
         }
         yield (json.dumps(obj={**ret, **{"finish_reason": None}}) + "\0").encode()
         yield (json.dumps(ret) + "\0").encode()
@@ -231,6 +230,7 @@ async def api_get_conv(request: Request):
 async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
+
 worker = None
 
 
@@ -246,13 +246,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str,
-                        default="http://localhost:21002")
+    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
-    parser.add_argument("--model-path", type=str,
-                        default="microsoft/phi-2")
+    parser.add_argument("--model-path", type=str, default="microsoft/phi-2")
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
