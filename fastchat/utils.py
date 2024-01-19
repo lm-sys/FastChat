@@ -313,9 +313,9 @@ def is_sentence_complete(output: str):
 # NOTE: The ordering here is important.  Some models have two of these and we
 # have a preference for which value gets used.
 SEQUENCE_LENGTH_KEYS = [
+    "max_position_embeddings",
     "max_sequence_length",
     "seq_length",
-    "max_position_embeddings",
     "max_seq_len",
     "model_max_length",
 ]

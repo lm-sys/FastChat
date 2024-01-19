@@ -138,7 +138,9 @@ class SGLWorker(BaseModelWorker):
         )
 
         entire_output = prompt if echo else ""
-        async for out, meta_info in state.text_async_iter(var_name="response", return_meta_data=True):
+        async for out, meta_info in state.text_async_iter(
+            var_name="response", return_meta_data=True
+        ):
             partial_stop = any(is_partial_stop(out, i) for i in stop)
 
             # prevent yielding partial stop sequence
@@ -148,7 +150,7 @@ class SGLWorker(BaseModelWorker):
             entire_output += out
             prompt_tokens = meta_info["prompt_tokens"]
             completion_tokens = meta_info["completion_tokens"]
-            
+
             ret = {
                 "text": entire_output,
                 "usage": {
@@ -160,7 +162,6 @@ class SGLWorker(BaseModelWorker):
             }
 
             yield (json.dumps(ret) + "\0").encode()
-
 
     async def generate_gate(self, params):
         async for x in self.generate_stream_gate(params):

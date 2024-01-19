@@ -92,6 +92,7 @@ def test_chat_completion(model):
     print(completion.choices[0].message.content)
     print("=" * 25)
 
+
 def test_chat_completion_stream(model):
     image_url = "https://picsum.photos/seed/picsum/1024/1024"
 
@@ -112,8 +113,10 @@ def test_chat_completion_stream(model):
         print(content, end="", flush=True)
     print()
 
+
 def test_openai_curl():
-    run_cmd("""curl http://localhost:8000/v1/chat/completions \
+    run_cmd(
+        """curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "llava-v1.5-7b",
@@ -140,6 +143,7 @@ def test_openai_curl():
     )
 
     print()
+
 
 if __name__ == "__main__":
     models = test_list_models()
