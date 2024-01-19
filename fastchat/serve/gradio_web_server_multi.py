@@ -85,15 +85,22 @@ def load_demo(url_params, request: gr.Request):
         # Only enable these models in anony battles.
         if args.add_chatgpt:
             models_anony += [
-                "gpt-4",
-                "gpt-3.5-turbo",
-                "gpt-4-turbo",
+                "gpt-4-0314",
+                "gpt-4-0613",
+                "gpt-3.5-turbo-0613",
                 "gpt-3.5-turbo-1106",
             ]
         if args.add_claude:
             models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
         if args.add_palm:
-            models_anony += ["palm-2"]
+            models_anony += ["gemini-pro"]
+    anony_only_models = [
+        "claude-1",
+        "gpt-4-0314",
+        "gpt-4-0613",
+    ]
+    for mdl in anony_only_models:
+        models_anony.append(mdl)
     models_anony = list(set(models_anony))
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
@@ -228,6 +235,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--leaderboard-table-file", type=str, help="Load leaderboard results and plots"
     )
+    parser.add_argument(
+        "--gradio-root-path",
+        type=str,
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -267,4 +279,5 @@ if __name__ == "__main__":
         share=args.share,
         max_threads=200,
         auth=auth,
+        root_path=args.gradio_root_path,
     )

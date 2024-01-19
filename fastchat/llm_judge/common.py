@@ -14,7 +14,11 @@ from typing import Optional
 import openai
 import anthropic
 
-from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
+from fastchat.model.model_adapter import (
+    get_conversation_template,
+    ANTHROPIC_MODEL_LIST,
+    OPENAI_MODEL_LIST,
+)
 
 # API setting constants
 API_MAX_RETRY = 16
@@ -159,10 +163,10 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if model in ["gpt-3.5-turbo", "gpt-4"]:
-        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
+    if model in OPENAI_MODEL_LIST:
+        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
-        judgment = chat_compeletion_anthropic(
+        judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
     else:
@@ -262,14 +266,14 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if model in ["gpt-3.5-turbo", "gpt-4"]:
+    if model in OPENAI_MODEL_LIST:
         conv.set_system_message(system_prompt)
-        judgment = chat_compeletion_openai(model, conv, temperature=0, max_tokens=2048)
+        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
         if system_prompt != "You are a helpful assistant.":
             user_prompt = "[Instruction]\n" + system_prompt + "\n\n" + user_prompt
             conv.messages[0][1] = user_prompt
-        judgment = chat_compeletion_anthropic(
+        judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
     else:
@@ -400,7 +404,7 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
-def chat_compeletion_openai(model, conv, temperature, max_tokens, api_dict=None):
+def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
@@ -424,7 +428,7 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens, api_dict=None)
     return output
 
 
-def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
+def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
     openai.api_type = "azure"
     openai.api_version = "2023-07-01-preview"
     if api_dict is not None:
@@ -463,11 +467,16 @@ def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict
     return output
 
 
-def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
+def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=None):
+    if api_dict is not None and "api_key" in api_dict:
+        api_key = api_dict["api_key"]
+    else:
+        api_key = os.environ["ANTHROPIC_API_KEY"]
+
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+            c = anthropic.Anthropic(api_key=api_key)
             prompt = conv.get_prompt()
             response = c.completions.create(
                 model=model,
@@ -484,7 +493,7 @@ def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
     return output.strip()
 
 
-def chat_compeletion_palm(chat_state, model, conv, temperature, max_tokens):
+def chat_completion_palm(chat_state, model, conv, temperature, max_tokens):
     from fastchat.serve.api_provider import init_palm_chat
 
     assert model == "palm-2-chat-bison-001"

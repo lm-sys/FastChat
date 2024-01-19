@@ -206,7 +206,7 @@ def check_requests(request) -> Optional[JSONResponse]:
     if request.top_p is not None and request.top_p > 1:
         return create_error_response(
             ErrorCode.PARAM_OUT_OF_RANGE,
-            f"{request.top_p} is greater than the maximum of 1 - 'temperature'",
+            f"{request.top_p} is greater than the maximum of 1 - 'top_p'",
         )
     if request.top_k is not None and (request.top_k > -1 and request.top_k < 1):
         return create_error_response(
@@ -375,6 +375,7 @@ async def show_available_models():
     return ModelList(data=model_cards)
 
 
+@app.post("/v1chat/completions", dependencies=[Depends(check_api_key)])
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
 async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
