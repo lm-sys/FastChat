@@ -241,10 +241,10 @@ if __name__ == "__main__":
     show_top_k = args.show_top_k
     show_cut_off = args.show_cut_off
 
+    texts = read_texts(
+        args.input_file, args.min_length, args.max_length, args.english_only
+    )
     if args.embeddings_file is None:
-        texts = read_texts(
-            args.input_file, args.min_length, args.max_length, args.english_only
-        )
         print(f"#text: {len(texts)}")
         embeddings = get_embeddings(texts, args.model, args.batch_size)
         print(f"embeddings shape: {embeddings.shape}")
