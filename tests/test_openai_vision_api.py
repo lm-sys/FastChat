@@ -40,7 +40,6 @@ def test_list_models():
 
 def test_chat_completion(model):
     image_url = "https://picsum.photos/seed/picsum/1024/1024"
-    image_url_two = "https://picsum.photos/id/237/200/300"
     base64_image_url = f"data:image/jpeg;base64,{encode_image(image_url)}"
 
     # No Image
@@ -57,7 +56,9 @@ def test_chat_completion(model):
         temperature=0,
     )
     print(completion.choices[0].message.content)
+    print("=" * 25)
 
+    # Image using url link
     completion = openai.ChatCompletion.create(
         model=model,
         messages=[
@@ -72,7 +73,9 @@ def test_chat_completion(model):
         temperature=0,
     )
     print(completion.choices[0].message.content)
+    print("=" * 25)
 
+    # Image using base64 image url
     completion = openai.ChatCompletion.create(
         model=model,
         messages=[
@@ -87,7 +90,7 @@ def test_chat_completion(model):
         temperature=0,
     )
     print(completion.choices[0].message.content)
-
+    print("=" * 25)
 
 def test_chat_completion_stream(model):
     image_url = "https://picsum.photos/seed/picsum/1024/1024"
@@ -109,6 +112,34 @@ def test_chat_completion_stream(model):
         print(content, end="", flush=True)
     print()
 
+def test_openai_curl():
+    run_cmd("""curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llava-v1.5-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "<image>\\nWhat’s in this image?"
+          },
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://picsum.photos/seed/picsum/1024/1024"
+            }
+          }
+        ]
+      }
+    ],
+    "max_tokens": 300
+  }'
+            """
+    )
+
+    print()
 
 if __name__ == "__main__":
     models = test_list_models()
@@ -118,3 +149,4 @@ if __name__ == "__main__":
         print(f"===== Test {model} ======")
         test_chat_completion(model)
         test_chat_completion_stream(model)
+    test_openai_curl()

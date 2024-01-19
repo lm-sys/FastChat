@@ -115,7 +115,7 @@ class SGLWorker(BaseModelWorker):
 
         # split prompt by image token
         split_prompt = prompt.split("<image>\n")
-        if prompt.count("<image>") != len(images):
+        if prompt.count("<image>\n") != len(images):
             raise ValueError(
                 "The number of images passed in does not match the number of <image> tokens in the prompt!"
             )
