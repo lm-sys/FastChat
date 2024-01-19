@@ -443,10 +443,10 @@ def add_text(
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
-    slow_model_msg = ""
+    hint_msg = ""
     for i in range(num_sides):
         if "deluxe" in states[i].model_name:
-            slow_model_msg = SLOW_MODEL_MSG
+            hint_msg = SLOW_MODEL_MSG
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
@@ -455,7 +455,7 @@ def add_text(
             disable_btn,
         ]
         * 6
-        + [slow_model_msg]
+        + [hint_msg]
     )
 
 
