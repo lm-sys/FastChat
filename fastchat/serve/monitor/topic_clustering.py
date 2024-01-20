@@ -244,15 +244,16 @@ if __name__ == "__main__":
     texts = read_texts(
         args.input_file, args.min_length, args.max_length, args.english_only
     )
+    print(f"#text: {len(texts)}")
+
     if args.embeddings_file is None:
-        print(f"#text: {len(texts)}")
         embeddings = get_embeddings(texts, args.model, args.batch_size)
-        print(f"embeddings shape: {embeddings.shape}")
         if args.save_embeddings:
-            # allow saving embedding to save time
+            # allow saving embedding to save time and money
             torch.save(embeddings, "embeddings.pt")
     else:
         embeddings = torch.load(args.embeddings_file)
+    print(f"embeddings shape: {embeddings.shape}")
 
     if args.cluster_alg == "kmeans":
         centers, labels = run_k_means(embeddings, num_clusters)
