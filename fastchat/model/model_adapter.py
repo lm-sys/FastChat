@@ -183,6 +183,7 @@ def load_model(
     revision: str = "main",
     debug: bool = False,
 ):
+    cfg = WandbConfigSingleton.get_instance().config
     """Load a model from Hugging Face."""
     # get model adapter
     adapter = get_model_adapter(model_path)
@@ -323,6 +324,10 @@ def load_model(
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
 
+    if cfg.model.use_wandb_artifacts==True:
+        kwargs["device_map"] = "auto"
+        print(kwargs) 
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
@@ -333,7 +338,7 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading and not kwargs["device_map"] == "auto") or device in (
         "mps",
         "xpu",
         "npu",
