@@ -111,6 +111,12 @@ class ModelWorker(BaseModelWorker):
         try:
             if self.seed is not None:
                 set_seed(self.seed)
+            if self.use_huggingface_chat_template:
+                params["prompt"] = self.tokenizer.apply_chat_template(
+                self.conv.to_openai_api_messages(),
+                tokenize=False,
+                add_generation_prompt=True,
+            )
             for output in self.generate_stream_func(
                 self.model,
                 self.tokenizer,

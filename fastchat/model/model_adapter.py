@@ -117,7 +117,7 @@ class BaseModelAdapter:
         )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+        return get_conv_template(model_path)
 
 
 # A global registry for all model adapters
@@ -2249,7 +2249,7 @@ register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
-register_model_adapter(BagelAdapter)
+# register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
 register_model_adapter(Yuan2Adapter)
 
