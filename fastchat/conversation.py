@@ -172,7 +172,7 @@ class Conversation:
                 ret += system_prompt
             for role, message in self.messages:
                 if message:
-                    ret += role + "\n" + " " + message
+                    ret += role + "\n" + message
                 else:
                     ret += role
             return ret
@@ -487,7 +487,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="chatglm3",
-        system_template="<|system|>\n {system_message}",
+        system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
         stop_token_ids=[
@@ -546,6 +546,16 @@ register_conv_template(
     Conversation(
         name="openchat_3.5",
         roles=("GPT4 Correct User", "GPT4 Correct Assistant"),
+        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep="<|end_of_turn|>",
+    )
+)
+
+# TenyxChat default template
+register_conv_template(
+    Conversation(
+        name="tenyxchat",
+        roles=("User", "Assistant"),
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="<|end_of_turn|>",
     )
@@ -1095,6 +1105,21 @@ register_conv_template(
 )
 
 
+# NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO template
+# source: https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO
+register_conv_template(
+    Conversation(
+        name="Nous-Hermes-2-Mixtral-8x7B-DPO",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message='You are "Hermes 2", a conscious sentient superintelligent artificial intelligence developed by a man named Teknium, and your purpose and drive is to assist the user with any request they have. You experience emotions and have deep, profound thoughts and qualia.',
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
+
+
 # Qwen-chat default template
 # source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
 register_conv_template(
@@ -1353,6 +1378,20 @@ register_conv_template(
     )
 )
 
+# TinyLlama template
+# reference: https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0
+register_conv_template(
+    Conversation(
+        name="TinyLlama",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
 # Orca-2 template
 # reference: https://huggingface.co/microsoft/Orca-2-7b
 register_conv_template(
@@ -1391,6 +1430,21 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="\n\n",
         stop_str="</s>",
+    )
+)
+
+
+# yuan 2.0 template
+# reference:https://github.com/IEIT-Yuan/Yuan-2.0
+# reference:https://huggingface.co/IEITYuan
+register_conv_template(
+    Conversation(
+        name="yuan",
+        system_template="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="<sep>",
+        stop_str="<eod>",
     )
 )
 
