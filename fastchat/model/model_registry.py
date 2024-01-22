@@ -36,6 +36,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["bard-jan-24-gemini-pro"],
+    "Bard",
+    "https://bard.google.com/",
+    "Bard by Google",
+)
+
+register_model_info(
     ["gemini-pro", "gemini-pro-dev-api"],
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
@@ -43,10 +50,17 @@ register_model_info(
 )
 
 register_model_info(
-    ["bard-jan-24-gemini-pro"],
-    "Bard",
-    "https://bard.google.com/",
-    "Bard by Google",
+    ["deepseek-llm-67b-chat"],
+    "DeepSeek LLM",
+    "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
+    "An advanced language model by DeepSeek"
+)
+
+register_model_info(
+    ["stripedhyena-nous-7b"],
+    "StripedHyena-Nous",
+    "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
+    "A chat model developed by Together Research and Nous Research."
 )
 
 register_model_info(
@@ -549,11 +563,4 @@ register_model_info(
     "MetaMath",
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
-)
-
-register_model_info(
-    ["stripedhyena-nous-7b"],
-    "StripedHyena-Nous",
-    "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
-    "A chat model developed by Together Research and Nous Research."
 )
