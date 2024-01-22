@@ -247,7 +247,13 @@ python3 -m fastchat.serve.gradio_web_server_multi
 ```
 - The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
 - If you want to host it on your own UI or third party UI, see [Third Party UI](docs/third_party_ui.md).
- 
+
+## Use models from modelscope
+For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
+```bash
+export FASTCHAT_USE_MODELSCOPE=True
+```
+
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
 FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
