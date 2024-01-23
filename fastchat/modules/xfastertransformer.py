@@ -41,18 +41,22 @@ def load_default_config(model_path, xft_config):
     keys = []
     values = []
     for it in cf.items(xft_config.model_type):
-        if it[0] == "end_id":
-            xft_config.eos_token_id = (int)(it[1])
-        elif it[0] == "do_sample":
-            xft_config.do_sample = (bool)(it[1])
-        elif it[0] == "pad_id":
-            xft_config.pad_id = (int)(it[1])
-        elif it[0] == "repetition_penalty":
-            xft_config.repetition_penalty = (float)(it[1])
-        elif it[0] == "top_k":
-            xft_config.top_k = (int)(it[1])
-        elif it[0] == "top_p":
-            xft_config.top_p = (float)(it[1])
+        try :
+            if it[1] is not None :
+                if it[0] == "end_id":
+                    xft_config.eos_token_id = (int)(it[1])
+                elif it[0] == "do_sample":
+                    xft_config.do_sample = (bool)(it[1])
+                elif it[0] == "pad_id":
+                    xft_config.pad_id = (int)(it[1])
+                elif it[0] == "repetition_penalty":
+                    xft_config.repetition_penalty = (float)(it[1])
+                elif it[0] == "top_k":
+                    xft_config.top_k = (int)(it[1])
+                elif it[0] == "top_p":
+                    xft_config.top_p = (float)(it[1])
+        except ValueError as e:
+            print(f"Warnning: xFasterTransformer parser config.ini error @{it[0]}={it[1]}. {e}")
 
 
 def load_xft_model(model_path, xft_config: XftConfig):
