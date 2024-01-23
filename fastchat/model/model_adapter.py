@@ -338,7 +338,7 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading and not kwargs["device_map"] == "auto") or device in (
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading and not cfg.model.use_wandb_artifacts) or device in (
         "mps",
         "xpu",
         "npu",
