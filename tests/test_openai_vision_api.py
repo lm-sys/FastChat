@@ -9,7 +9,7 @@ import openai
 from fastchat.utils import run_cmd
 
 openai.api_key = "EMPTY"  # Not support yet
-openai.api_base = "http://localhost:8000/v1"
+openai.base_url = "http://localhost:8000/v1/"
 
 
 def encode_image(image):
@@ -33,8 +33,8 @@ def encode_image(image):
 
 
 def test_list_models():
-    model_list = openai.Model.list()
-    names = [x["id"] for x in model_list["data"]]
+    model_list = openai.models.list()
+    names = [x.id for x in model_list.data]
     return names
 
 
@@ -43,7 +43,7 @@ def test_chat_completion(model):
     base64_image_url = f"data:image/jpeg;base64,{encode_image(image_url)}"
 
     # No Image
-    completion = openai.ChatCompletion.create(
+    completion = openai.chat.completions.create(
         model=model,
         messages=[
             {
@@ -59,7 +59,7 @@ def test_chat_completion(model):
     print("=" * 25)
 
     # Image using url link
-    completion = openai.ChatCompletion.create(
+    completion = openai.chat.completions.create(
         model=model,
         messages=[
             {
@@ -76,7 +76,7 @@ def test_chat_completion(model):
     print("=" * 25)
 
     # Image using base64 image url
-    completion = openai.ChatCompletion.create(
+    completion = openai.chat.completions.create(
         model=model,
         messages=[
             {
@@ -105,11 +105,16 @@ def test_chat_completion_stream(model):
             ],
         }
     ]
-    res = openai.ChatCompletion.create(
+    res = openai.chat.completions.create(
         model=model, messages=messages, stream=True, temperature=0
     )
     for chunk in res:
-        content = chunk["choices"][0]["delta"].get("content", "")
+        try:
+            content = chunk.choices[0].delta.content
+            if content is None:
+                content = ""
+        except Exception as e:
+            content = chunk.choices[0].delta.get("content", "")
         print(content, end="", flush=True)
     print()
 
