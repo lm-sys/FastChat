@@ -1,25 +1,20 @@
 """
 A model worker that executes the model based on SGLANG.
+
+Usage:
+python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --tokenizer-path llava-hf/llava-1.5-7b-hf --port 30000 --worker-address http://localhost:30000
 """
 
 import argparse
 import asyncio
 import json
+import multiprocessing
 from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
-from sglang import (
-    function,
-    image,
-    system,
-    user,
-    assistant,
-    gen,
-    set_default_backend,
-    Runtime,
-)
+import sglang as sgl
 from sglang.srt.hf_transformers_utils import get_tokenizer, get_config
 from sglang.srt.utils import load_image
 
@@ -33,14 +28,14 @@ from fastchat.utils import get_context_length, is_partial_stop
 app = FastAPI()
 
 
-@function
+@sgl.function
 def pipeline(s, prompt, max_tokens):
     for p in prompt:
         if isinstance(p, str):
             s += p
         else:
-            s += image(p)
-    s += gen("response", max_tokens=max_tokens)
+            s += sgl.image(p)
+    s += sgl.gen("response", max_tokens=max_tokens)
 
 
 class SGLWorker(BaseModelWorker):
@@ -55,7 +50,7 @@ class SGLWorker(BaseModelWorker):
         limit_worker_concurrency: int,
         no_register: bool,
         conv_template: str,
-        runtime: Runtime,
+        runtime: sgl.Runtime,
         trust_remote_code: bool,
     ):
         super().__init__(
@@ -270,14 +265,16 @@ if __name__ == "__main__":
         args.model_path if args.tokenizer_path == "" else args.tokenizer_path
     )
 
-    runtime = Runtime(
+    multiprocessing.set_start_method("spawn", force=True)
+    runtime = sgl.Runtime(
         model_path=args.model_path,
         tokenizer_path=args.tokenizer_path,
         trust_remote_code=args.trust_remote_code,
         mem_fraction_static=args.mem_fraction_static,
         tp_size=args.tp_size,
+        log_level="info",
     )
-    set_default_backend(runtime)
+    sgl.set_default_backend(runtime)
 
     worker = SGLWorker(
         args.controller_address,
