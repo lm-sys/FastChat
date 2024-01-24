@@ -29,6 +29,18 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
+    [
+        "IEITYuan/Yuan2-2B-Janus-hf",
+        "IEITYuan/Yuan2-2B-hf",
+        "IEITYuan/Yuan2-51B-hf",
+        "IEITYuan/Yuan2-102B-hf",
+    ],
+    "IEIT-Yuan2",
+    "https://github.com/IEIT-Yuan/Yuan-2.0",
+    "Yuan2.0 is a new generation Fundamental Large Language Model developed by IEIT System.",
+)
+
+register_model_info(
     ["mixtral-8x7b-instruct-v0.1", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
