@@ -1,8 +1,9 @@
 import gc
-from threading import Thread
+from threading import Thread, Lock
 import torch
 from transformers import TextIteratorStreamer
 
+lock = Lock()
 
 @torch.inference_mode()
 def generate_stream_xft(
@@ -15,12 +16,16 @@ def generate_stream_xft(
     judge_sent_end=False,
 ):
     prompt = params["prompt"]
+    print(f"prompt={prompt}")
 
     max_new_tokens = int(params.get("max_new_tokens", 4096))
     echo = params.get("echo", True)
+
     inputs = tokenizer(prompt, return_tensors="pt").input_ids
     input_echo_len = len(inputs[0])
     max_len = max_new_tokens + input_echo_len
+
+    stop_words_ids = [[151645], [151644]]
 
     decode_config = dict(skip_special_tokens=True, clean_up_tokenization_spaces=True)
     streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, **decode_config)
@@ -34,8 +39,11 @@ def generate_stream_xft(
         "early_stopping": model.config.early_stopping,
         "eos_token_id": model.config.eos_token_id,
         "pad_token_id": model.config.pad_token_id,
+        "stop_words_ids": stop_words_ids,
     }
 
+#    lock = Lock()
+    lock.acquire()
     thread = Thread(target=model.model.generate, kwargs=generation_kwargs)
     thread.start()
     if echo:
@@ -69,4 +77,5 @@ def generate_stream_xft(
         },
         "finish_reason": finish_reason,
     }
+    lock.release()
     gc.collect()
