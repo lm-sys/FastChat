@@ -2249,7 +2249,7 @@ register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(MetaMathAdapter)
-# register_model_adapter(BagelAdapter)
+register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
 register_model_adapter(Yuan2Adapter)
 

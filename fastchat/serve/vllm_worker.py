@@ -63,12 +63,12 @@ class VLLMWorker(BaseModelWorker):
     async def generate_stream(self, params):
         self.call_ct += 1
 
-        if self.use_huggingface_chat_template:
+        if self.conv.sep_style == SeparatorStyle.HF_TEMPLATE:
             params["prompt"] = self.tokenizer.apply_chat_template(
-            self.conv.to_openai_api_messages(),
-            tokenize=False,
-            add_generation_prompt=True,
-        )
+                params["prompt"],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
 
         context = params.pop("prompt")
         request_id = params.pop("request_id")

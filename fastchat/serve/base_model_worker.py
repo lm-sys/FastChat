@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import requests
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
-from fastchat.conversation import Conversation, SeparatorStyle
+from fastchat.conversation import Conversation
 from fastchat.utils import pretty_print_semaphore, build_logger
 
 
@@ -46,7 +46,6 @@ class BaseModelWorker:
         self.limit_worker_concurrency = limit_worker_concurrency
         self.conv = self.make_conv_template(conv_template, model_path)
         self.conv.sep_style = int(self.conv.sep_style)
-        self.use_huggingface_chat_template = self.conv.sep_style == SeparatorStyle.HF_TEMPLATE
         self.tokenizer = None
         self.context_len = None
         self.call_ct = 0

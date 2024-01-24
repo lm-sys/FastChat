@@ -341,6 +341,7 @@ def register_conv_template(template: Conversation, override: bool = False):
 def huggingface_chat_template_exists(model_path: str) -> bool:
     try:
         from transformers import AutoTokenizer
+
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
             return True
@@ -350,13 +351,12 @@ def huggingface_chat_template_exists(model_path: str) -> bool:
 
 def get_conv_template(name: str) -> Conversation:
     """Get a conversation template."""
-    if "/" in name:
-        if huggingface_chat_template_exists(name):
-            return conv_templates["huggingface"].copy()
-        else:
-            return conv_templates["one_shot"].copy()
+    if "/" in name and huggingface_chat_template_exists(name):
+        return conv_templates["huggingface"].copy()
+    elif name in conv_templates:
+        return conv_templates[name].copy()
 
-    return conv_templates[name].copy()
+    return conv_templates["one_shot"].copy()
 
 
 # An empty template for raw conversation.
