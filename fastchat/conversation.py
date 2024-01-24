@@ -253,10 +253,10 @@ class Conversation:
                 ret += system_prompt + seps[1]
             for _, message in self.messages:
                 if message:
-                    ret += message + '<n>'
+                    ret += message + "<n>"
                 else:
                     ret += ""
-            ret = ret.rstrip('<n>') + seps[0]
+            ret = ret.rstrip("<n>") + seps[0]
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
