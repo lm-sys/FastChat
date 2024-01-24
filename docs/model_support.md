@@ -92,8 +92,7 @@ FastChat uses the `Conversation` class to handle prompt templates and `BaseModel
 
 <b>If the model has a chat template in its tokenizer's config:</b>
 
-It will look something like [this](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/tokenizer_config.json#L42). Then, implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can do so by checking existing examples like "jondurbin/bagel-dpo-7b-v0.1" and using `register_model_adapter`.
-
+It will look something like [this](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/tokenizer_config.json#L42). The code will work automatically since we use huggingface's `apply_chat_template` function.
 
 <b>If the model does not have a chat template in its tokenizer's config:</b>
 1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one. Please also add a link to the official reference code if possible.

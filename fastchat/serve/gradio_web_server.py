@@ -40,7 +40,6 @@ from fastchat.serve.api_provider import (
 )
 from fastchat.utils import (
     build_logger,
-    fetch_remote,
     moderation_filter,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
