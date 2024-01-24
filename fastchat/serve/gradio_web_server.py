@@ -83,6 +83,7 @@ ip_expiration_dict = defaultdict(lambda: 0)
 #     },
 # }
 openai_compatible_models_info = {}
+conv_template_map = {}
 
 
 class State:
@@ -295,6 +296,23 @@ def post_process_code(code):
     return code
 
 
+def get_conv(model_name: str, worker_addr: str):
+    conv_template = conv_template_map.get((worker_addr, model_name))
+    if conv_template is None:
+        response = requests.post(worker_addr + "/worker_get_conv_template")
+
+        if response.status_code != 200:
+            ret = {
+                "text": f"{response.reason}",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+            return json.dumps(ret)
+
+        conv_template = json.loads(response.content)["conv"]
+        conv_template_map[(worker_addr, model_name)] = conv_template
+    return conv_template
+
+
 def model_worker_stream_iter(
     conv,
     model_name,
@@ -421,7 +439,11 @@ def bot_response(
 
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
-        prompt = conv.get_prompt()
+        worker_conv_template = get_conv(model_name, worker_addr)
+        if worker_conv_template["sep_style"] == SeparatorStyle.HF_TEMPLATE:
+            prompt = conv.to_openai_api_messages()
+        else:
+            prompt = conv.get_prompt()
 
         # Set repetition_penalty
         if "t5" in model_name:

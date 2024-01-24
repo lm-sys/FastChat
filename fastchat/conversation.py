@@ -7,7 +7,13 @@ If you have any changes in mind, please contribute back so the community can ben
 
 import dataclasses
 from enum import auto, IntEnum
+import sys
 from typing import List, Any, Dict, Union, Tuple
+
+if sys.version_info >= (3, 9):
+    from functools import cache
+else:
+    from functools import lru_cache as cache
 
 
 class SeparatorStyle(IntEnum):
@@ -31,6 +37,7 @@ class SeparatorStyle(IntEnum):
     CHATGLM3 = auto()
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
+    HF_TEMPLATE = auto()
 
 
 @dataclasses.dataclass
@@ -245,6 +252,8 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.HF_TEMPLATE:
+            return self.to_openai_api_messages()
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -328,9 +337,26 @@ def register_conv_template(template: Conversation, override: bool = False):
     conv_templates[template.name] = template
 
 
+@cache
+def huggingface_chat_template_exists(model_path: str) -> bool:
+    try:
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+            return True
+    except:  # Could not find valid tokenizer for this, so use one_shot template
+        return False
+
+
 def get_conv_template(name: str) -> Conversation:
     """Get a conversation template."""
-    return conv_templates[name].copy()
+    if "/" in name and huggingface_chat_template_exists(name):
+        return conv_templates["huggingface"].copy()
+    elif name in conv_templates:
+        return conv_templates[name].copy()
+
+    return conv_templates["one_shot"].copy()
 
 
 # An empty template for raw conversation.
@@ -341,6 +367,15 @@ register_conv_template(
         roles=("", ""),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
+    )
+)
+
+# An empty template for raw conversation with roles named, used for loading huggingface chat templates
+register_conv_template(
+    Conversation(
+        name="huggingface",
+        roles=("User", "Assistant"),
+        sep_style=SeparatorStyle.HF_TEMPLATE,
     )
 )
 

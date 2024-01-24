@@ -14,6 +14,7 @@ import torch.nn.functional as F
 from transformers import set_seed
 import uvicorn
 
+from fastchat.conversation import SeparatorStyle
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.model.model_adapter import (
     load_model,
@@ -111,6 +112,12 @@ class ModelWorker(BaseModelWorker):
         try:
             if self.seed is not None:
                 set_seed(self.seed)
+            if self.conv.sep_style == SeparatorStyle.HF_TEMPLATE:
+                params["prompt"] = self.tokenizer.apply_chat_template(
+                    params["prompt"],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
             for output in self.generate_stream_func(
                 self.model,
                 self.tokenizer,
