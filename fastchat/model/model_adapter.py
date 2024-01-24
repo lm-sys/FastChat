@@ -2198,7 +2198,7 @@ class LlavaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("vicuna_v1.1")
 
-      
+
 class YuanAdapter(BaseModelAdapter):
     """The model adapter for Yuan"""
 
