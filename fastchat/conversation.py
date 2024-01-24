@@ -253,7 +253,7 @@ class Conversation:
                     ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.HF_TEMPLATE:
-            return "Note: Model Worker is responsible for creating the prompt"
+            return self.to_openai_api_messages()
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
