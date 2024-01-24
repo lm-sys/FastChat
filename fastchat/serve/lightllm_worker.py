@@ -1,7 +1,7 @@
 """
 A model worker that executes the model based on LightLLM.
 
-See documentations at docs/vllm_integration.md
+See documentations at docs/lightllm_integration.md
 """
 
 import argparse
