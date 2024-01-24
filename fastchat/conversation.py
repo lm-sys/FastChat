@@ -75,6 +75,8 @@ class Conversation:
             ret = system_prompt + seps[0]
             for i, (role, message) in enumerate(self.messages):
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
@@ -260,6 +262,16 @@ class Conversation:
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
+
+    def get_images(self):
+        images = []
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    for image in msg[1]:
+                        images.append(image)
+
+        return images
 
     def set_system_message(self, system_message: str):
         """Set the system message."""
