@@ -62,6 +62,10 @@
 - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
 - [Xwin-LM/Xwin-LM-7B-V0.1](https://huggingface.co/Xwin-LM/Xwin-LM-70B-V0.1)
 - [IEITYuan/Yuan2-2B/51B/102B-hf](https://huggingface.co/IEITYuan)
+- [IEITYuan/Yuan2-2B-Janus-hf](https://huggingface.co/IEITYuan/Yuan2-2B-Janus-hf)
+- [IEITYuan/Yuan2-2B-hf](https://huggingface.co/IEITYuan/Yuan2-2B-hf)
+- [IEITYuan/Yuan2-51B-hf](https://huggingface.co/IEITYuan/Yuan2-51B-hf)
+- [IEITYuan/Yuan2-102B-hf](https://huggingface.co/IEITYuan/Yuan2-102B-hf)
 - Any [EleutherAI](https://huggingface.co/EleutherAI) pythia model such as [pythia-6.9b](https://huggingface.co/EleutherAI/pythia-6.9b)
 - Any [Peft](https://github.com/huggingface/peft) adapter trained on top of a
   model above.  To activate, must have `peft` in the model path.  Note: If
