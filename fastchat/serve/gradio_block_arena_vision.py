@@ -43,20 +43,34 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
 """
 
     state = gr.State()
-    model_description_md = get_model_description_md(models)
-    gr.Markdown(notice_markdown + model_description_md, elem_id="notice_markdown")
+
+    with gr.Box():
+        with gr.Row(elem_id="model_selector_row"):
+            model_selector = gr.Dropdown(
+                choices=models,
+                value=models[0] if len(models) > 0 else "",
+                interactive=True,
+                show_label=False,
+                container=False,
+            )
+
+        with gr.Accordion(
+            "🔍 Expand to see 20+ model descriptions",
+            open=False,
+            elem_id="model_description_accordion",
+        ):
+            model_description_md = get_model_description_md(models)
+            gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
     with gr.Row():
         with gr.Column(scale=3):
-            with gr.Row(elem_id="model_selector_row"):
-                model_selector = gr.Dropdown(
-                    choices=models,
-                    value=models[0] if len(models) > 0 else "",
-                    interactive=True,
-                    show_label=False,
-                    container=False,
-                )
-
+            textbox = gr.Textbox(
+                show_label=False,
+                placeholder="Enter your prompt here and press ENTER",
+                container=False,
+                render=False,
+                elem_id="input_box",
+            )
             imagebox = gr.Image(type="pil")
 
             cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -87,6 +101,20 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                     label="Max output tokens",
                 )
 
+            gr.Examples(
+                examples=[
+                    [
+                        f"{cur_dir}/example_images/city.jpeg",
+                        "Explain this photo.",
+                    ],
+                    [
+                        f"{cur_dir}/example_images/fridge.jpeg",
+                        "What is in this fridge?",
+                    ],
+                ],
+                inputs=[imagebox, textbox],
+            )
+
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
                 elem_id="chatbot", label="Scroll down and start chatting", height=550
@@ -94,12 +122,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
 
             with gr.Row():
                 with gr.Column(scale=8):
-                    textbox = gr.Textbox(
-                        show_label=False,
-                        placeholder="Enter your prompt here and press ENTER",
-                        container=False,
-                        elem_id="input_box",
-                    )
+                    textbox.render()
                 with gr.Column(scale=1, min_width=50):
                     send_btn = gr.Button(value="Send", variant="primary")
             with gr.Row(elem_id="buttons"):
@@ -108,20 +131,6 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
-
-            gr.Examples(
-                examples=[
-                    [
-                        f"{cur_dir}/example_images/city.jpeg",
-                        "Explain what is happening in this photo.",
-                    ],
-                    [
-                        f"{cur_dir}/example_images/nature.jpeg",
-                        "Where was this picture taken?",
-                    ],
-                ],
-                inputs=[imagebox, textbox],
-            )
 
     if add_promotion_links:
         gr.Markdown(acknowledgment_md)

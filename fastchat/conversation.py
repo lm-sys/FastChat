@@ -47,6 +47,7 @@ class Conversation:
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
     # All messages. Each item is (role, message).
+    # Each message is either a string or a tuple of (string, List[image_url]).
     messages: List[List[str]] = ()
     # The number of few shot examples
     offset: int = 0
@@ -289,11 +290,54 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
+    def convert_image_to_base64(self, image):
+        """Given an image, return the base64 encoded image string."""
+        import base64
+        from io import BytesIO
+        from PIL import Image
+        import requests
+
+        # Load image if it has not been loaded in yet
+        if type(image) == str:
+            if image.startswith("http://") or image.startswith("https://"):
+                response = requests.get(image)
+                image = Image.open(BytesIO(response.content)).convert("RGB")
+            elif "base64" in image:
+                # OpenAI format is: data:image/jpeg;base64,{base64_encoded_image_str}
+                return image.split(",")[1]
+            else:
+                image = Image.open(image).convert("RGB")
+
+        max_hw, min_hw = max(image.size), min(image.size)
+        aspect_ratio = max_hw / min_hw
+        max_len, min_len = 800, 400
+        shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+        longest_edge = int(shortest_edge * aspect_ratio)
+        W, H = image.size
+        if longest_edge != max(image.size):
+            if H > W:
+                H, W = longest_edge, shortest_edge
+            else:
+                H, W = shortest_edge, longest_edge
+            image = image.resize((W, H))
+
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return img_b64_str
+
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
+                if type(msg) is tuple:
+                    msg, image = msg
+                    img_b64_str = image[0]  # Only one image on gradio at one time
+                    img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
+                    msg = img_str + msg.replace("<image>\n", "").strip()
+
                 ret.append([msg, None])
             else:
                 ret[-1][-1] = msg

@@ -122,13 +122,23 @@ def get_conv_log_filename():
 
 
 def get_model_list(
-    controller_url, register_openai_compatible_models, add_chatgpt, add_claude, add_palm
+    controller_url,
+    register_openai_compatible_models,
+    add_chatgpt,
+    add_claude,
+    add_palm,
+    multimodal,
 ):
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
-        ret = requests.post(controller_url + "/list_models")
-        models = ret.json()["models"]
+
+        if multimodal:
+            ret = requests.post(controller_url + "/list_multimodal_models")
+            models = ret.json()["models"]
+        else:
+            ret = requests.post(controller_url + "/list_language_models")
+            models = ret.json()["models"]
     else:
         models = []
 
@@ -193,6 +203,7 @@ def load_demo(url_params, request: gr.Request):
             args.add_chatgpt,
             args.add_claude,
             args.add_palm,
+            False,
         )
 
     return load_demo_single(models, url_params)
@@ -235,14 +246,14 @@ def regenerate(state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"regenerate. ip: {ip}")
     state.conv.update_last_message(None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], "") + (disable_btn,) * 5
+    return (state, [], "", None) + (disable_btn,) * 5
 
 
 def get_ip(request: gr.Request):
@@ -322,6 +333,7 @@ def model_worker_stream_iter(
     repetition_penalty,
     top_p,
     max_new_tokens,
+    images,
 ):
     # Make requests
     gen_params = {
@@ -335,6 +347,10 @@ def model_worker_stream_iter(
         "stop_token_ids": conv.stop_token_ids,
         "echo": False,
     }
+
+    if len(images) > 0:
+        gen_params["images"] = images
+
     logger.info(f"==== request ====\n{gen_params}")
 
     # Stream output
@@ -440,6 +456,7 @@ def bot_response(
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
+        images = conv.get_images()
 
         # Set repetition_penalty
         if "t5" in model_name:
@@ -456,6 +473,7 @@ def bot_response(
             repetition_penalty,
             top_p,
             max_new_tokens,
+            images,
         )
 
     conv.update_last_message("▌")
