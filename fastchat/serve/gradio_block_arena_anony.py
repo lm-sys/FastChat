@@ -164,6 +164,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0314": 4,
     "gpt-4-0613": 4,
     "gpt-4-turbo": 4,
+    "gpt-4-0125-preview": 4,
     "gpt-3.5-turbo-0613": 2,
     "gpt-3.5-turbo-1106": 2,
     "claude-2.1": 4,
@@ -191,7 +192,7 @@ SAMPLING_WEIGHTS = {
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.2": 4,
+    "deluxe-chat-v1.2": 8,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
@@ -234,6 +235,13 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "gpt-3.5-turbo-1106",
         "claude-2.1",
+    },
+    "gpt-4-0125-preview": {
+        "gpt-4-turbo",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "claude-2.1",
+        "mistral-medium",
     },
     "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
@@ -317,13 +325,14 @@ BATTLE_TARGETS = {
 
 SAMPLING_BOOST_MODELS = [
     # "claude-2.1",
-    "gpt-4-0613",
+    # "gpt-4-0613",
     # "gpt-4-0314",
     "gpt-4-turbo",
+    "gpt-4-0125-preview",
     # "gpt-3.5-turbo-1106",
-    "mistral-medium",
+    # "mistral-medium",
     # "gemini-pro-dev-api",
-    "stripedhyena-nous-7b",
+    # "stripedhyena-nous-7b",
     "bard-jan-24-gemini-pro",
     "deepseek-llm-67b-chat",
 ]

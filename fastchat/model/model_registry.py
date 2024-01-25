@@ -71,7 +71,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["gpt-4-turbo"],
+    ["gpt-4-turbo", "gpt-4-0125-preview"],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",

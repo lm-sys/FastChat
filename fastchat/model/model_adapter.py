@@ -1062,6 +1062,7 @@ class ChatGPTAdapter(BaseModelAdapter):
             "gpt-4-0314",
             "gpt-4-0613",
             "gpt-4-turbo",
+            "gpt-4-0125-preview",
         )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
