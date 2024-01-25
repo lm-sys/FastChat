@@ -79,6 +79,8 @@ class VLLMWorker(BaseModelWorker):
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
 
+        request = params.get("request", None)
+
         # Handle stop_str
         stop = set()
         if isinstance(stop_str, str) and stop_str != "":
@@ -127,6 +129,14 @@ class VLLMWorker(BaseModelWorker):
             if partial_stop:
                 continue
 
+            aborted = False
+            if request and await request.is_disconnected():
+                await engine.abort(request_id)
+                request_output.finished = True
+                aborted = True
+                for output in request_output.outputs:
+                    output.finish_reason = "abort"
+
             prompt_tokens = len(request_output.prompt_token_ids)
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
@@ -151,6 +161,9 @@ class VLLMWorker(BaseModelWorker):
             if request_output.finished:
                 yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
+
+            if aborted:
+                break
 
     async def generate(self, params):
         async for x in self.generate_stream(params):
@@ -184,6 +197,7 @@ async def api_generate_stream(request: Request):
     await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
+    params["request"] = request
     generator = worker.generate_stream(params)
     background_tasks = create_background_tasks(request_id)
     return StreamingResponse(generator, background=background_tasks)
@@ -195,6 +209,7 @@ async def api_generate(request: Request):
     await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
+    params["request"] = request
     output = await worker.generate(params)
     release_worker_semaphore()
     await engine.abort(request_id)
