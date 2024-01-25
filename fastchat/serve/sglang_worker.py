@@ -16,7 +16,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
 import sglang as sgl
 from sglang.srt.hf_transformers_utils import get_tokenizer, get_config
-from sglang.srt.utils import load_image
+from sglang.srt.utils import load_image, is_multimodal_model
 
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
@@ -61,6 +61,7 @@ class SGLWorker(BaseModelWorker):
             model_names,
             limit_worker_concurrency,
             conv_template,
+            is_multimodal_model(model_path),
         )
 
         logger.info(
@@ -256,6 +257,13 @@ if __name__ == "__main__":
         "values will increase the KV cache size and thus improve the model's"
         "throughput. However, if the value is too high, it may cause out-of-"
         "memory (OOM) errors.",
+    )
+    parser.add_argument(
+        "--multimodal",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Register this worker as serving a multimodal model.",
     )
 
     args = parser.parse_args()
