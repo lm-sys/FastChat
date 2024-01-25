@@ -1,13 +1,12 @@
 """
 A model worker using Apple MLX
 
-docs/mlx_integration.md
-
 https://github.com/ml-explore/mlx-examples/tree/main/llms
 
 Code based on vllm_worker https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/vllm_worker.py
 
 You must install MLX python:
+
 pip install mlx-lm
 """
 
@@ -19,6 +18,7 @@ from typing import List
 import uuid
 
 from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
 
@@ -119,10 +119,12 @@ class MLXWorker(BaseModelWorker):
 
         finish_reason = "length"
 
-        for token, _ in zip(
-            generate_step(context_mlx, self.mlx_model, temperature),
-            range(max_new_tokens),
-        ):
+        iterator = await run_in_threadpool(
+            generate_step, context_mlx, self.mlx_model, temperature
+        )
+
+        for i in range(max_new_tokens):
+            token = await run_in_threadpool(next, iterator)
             if token == self.mlx_tokenizer.eos_token_id:
                 finish_reason = "stop"
                 break
