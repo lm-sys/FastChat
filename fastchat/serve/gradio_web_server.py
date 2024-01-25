@@ -678,6 +678,7 @@ def build_single_model_ui(models, add_promotion_links=False):
             elem_id="chatbot",
             label="Scroll down and start chatting",
             height=550,
+            show_copy_button=True,
         )
     with gr.Row():
         textbox = gr.Textbox(
