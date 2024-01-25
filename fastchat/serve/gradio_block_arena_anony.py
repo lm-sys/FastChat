@@ -518,7 +518,10 @@ Find out who is the 🥇LLM Champion!
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", height=550
+                        label=label,
+                        elem_id=f"chatbot",
+                        height=550,
+                        show_copy_button=True,
                     )
 
         with gr.Row():
