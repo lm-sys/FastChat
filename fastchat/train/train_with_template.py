@@ -109,6 +109,38 @@ def tokenize_conversations(conversations, tokenizer):
     return input_ids, targets
 
 
+def get_prompt_separator(conv):
+    if conv.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.ADD_COLON_TWO:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
+        if conv.sep2 is None:
+            user_turn_separator = conv.roles[0] + ": "
+        else:
+            user_turn_separator = conv.sep2
+
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.LLAMA2:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + " "
+
+    elif conv.sep_style == SeparatorStyle.CHATML:
+        if conv.sep2 is None:
+            user_turn_separator = conv.sep
+        else:
+            user_turn_separator = conv.sep2
+
+        assistant_turn_separator = conv.roles[1] + "\n"
+
+    return user_turn_separator, assistant_turn_separator
+
+
 def mask_targets(conversations, targets, tokenizer, conv):
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
@@ -120,19 +152,20 @@ def mask_targets(conversations, targets, tokenizer, conv):
             cur_len = 1
 
         target[:cur_len] = IGNORE_TOKEN_ID
-        turns = conversation.split(conv.sep2)
+        user_turn_separator, assistant_turn_separator = get_prompt_separator(conv)
+        turns = conversation.split(user_turn_separator)
         for i, turn in enumerate(turns):
             if turn == "":
                 break
 
             if i != 0:
-                turn = conv.sep2 + turn
+                turn = user_turn_separator + turn
 
             turn_len = len(tokenizer(turn).input_ids)
 
-            if conv.prefix_token in turn:
-                parts = turn.rsplit(conv.prefix_token)
-                parts[0] += conv.prefix_token
+            if assistant_turn_separator in turn:
+                parts = turn.rsplit(assistant_turn_separator)
+                parts[0] += assistant_turn_separator
             else:
                 parts = [turn]
 
