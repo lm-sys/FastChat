@@ -53,7 +53,6 @@ class Conversation:
     sep_style: SeparatorStyle = SeparatorStyle.ADD_COLON_SINGLE
     sep: str = "\n"
     sep2: str = None
-    prefix_token = ""
     # Stop criteria (the default one is EOS token)
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
@@ -63,7 +62,6 @@ class Conversation:
         """Get the prompt for generation."""
         system_prompt = self.system_template.format(system_message=self.system_message)
         if self.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
-            self.prefix_token = self.roles[1] + ": "
             ret = system_prompt + self.sep
             for role, message in self.messages:
                 if message:
@@ -72,7 +70,6 @@ class Conversation:
                     ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.ADD_COLON_TWO:
-            self.prefix_token = self.roles[1] + ": "
             seps = [self.sep, self.sep2]
             ret = system_prompt + seps[0]
             for i, (role, message) in enumerate(self.messages):
@@ -82,9 +79,6 @@ class Conversation:
                     ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
-            self.prefix_token = self.roles[1] + ": "
-            if self.sep2 is None:
-                self.sep2 = self.roles[0] + ": "
             ret = system_prompt + self.sep
             for role, message in self.messages:
                 if message:
@@ -131,7 +125,6 @@ class Conversation:
                     ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
-            self.prefix_token = self.roles[1] + " "
             seps = [self.sep, self.sep2]
             if self.system_message:
                 ret = system_prompt
@@ -166,9 +159,6 @@ class Conversation:
                     ret += f"{role}："
             return ret
         elif self.sep_style == SeparatorStyle.CHATML:
-            self.prefix_token = self.roles[1] + "\n"
-            if self.sep2 is None:
-                self.sep2 = self.sep
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
@@ -310,7 +300,6 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            prefix_token=self.prefix_token,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
         )
