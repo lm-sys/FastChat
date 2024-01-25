@@ -305,7 +305,8 @@ async def get_gen_params(
                         if item["type"] == "text"
                     ]
 
-                    text = "\n".join(text_list)
+                    text = "<image>\n" * len(image_list)
+                    text += "\n".join(text_list)
                     conv.append_message(conv.roles[0], (text, image_list))
                 else:
                     conv.append_message(conv.roles[0], message["content"])
