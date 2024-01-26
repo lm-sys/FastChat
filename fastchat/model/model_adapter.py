@@ -67,14 +67,6 @@ COHERE_MODEL_LIST = (
     "command-nightly-light",
 )
 
-# See available Cohere models at https://docs.cohere.com/docs/models
-COHERE_MODEL_LIST = (
-    "command",
-    "command-light",
-    "command-nightly",
-    "command-nightly-light",
-)
-
 
 class BaseModelAdapter:
     """The base and the default model adapter."""
