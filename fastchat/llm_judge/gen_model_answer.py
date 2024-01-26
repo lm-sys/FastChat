@@ -104,7 +104,7 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            conv = get_conversation_template(model_path)
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
@@ -222,6 +222,12 @@ if __name__ == "__main__":
         help="The name of the benchmark question set.",
     )
     parser.add_argument(
+        "--question_file",
+        type=str,
+        default="question_ru.jsonl",
+        help="The name of the file with questions.",
+    )
+    parser.add_argument(
         "--question-begin",
         type=int,
         help="A debug option. The begin index of questions.",
@@ -277,12 +283,13 @@ if __name__ == "__main__":
 
         ray.init()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}"
     if args.answer_file:
         answer_file = args.answer_file
     else:
         answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
 
+    print(f"Input file {question_file}")
     print(f"Output to {answer_file}")
 
     run_eval(
