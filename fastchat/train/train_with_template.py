@@ -77,8 +77,8 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
-def apply_prompt_template(sources, systems=None):
-    conv = get_conversation_template("vicuna")
+def apply_prompt_template(sources, template_id, systems=None):
+    conv = get_conversation_template(template_id)
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
     conversations = []
     for i, source in enumerate(sources):
@@ -109,24 +109,69 @@ def tokenize_conversations(conversations, tokenizer):
     return input_ids, targets
 
 
+def get_prompt_separator(conv):
+    if conv.sep_style == SeparatorStyle.ADD_COLON_SINGLE:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.ADD_COLON_TWO:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.ADD_COLON_SPACE_SINGLE:
+        if conv.sep2 is None:
+            user_turn_separator = conv.roles[0] + ": "
+        else:
+            user_turn_separator = conv.sep2
+
+        assistant_turn_separator = conv.roles[1] + ": "
+
+    elif conv.sep_style == SeparatorStyle.LLAMA2:
+        user_turn_separator = conv.sep2
+        assistant_turn_separator = conv.roles[1] + " "
+
+    elif conv.sep_style == SeparatorStyle.CHATML:
+        if conv.sep2 is None:
+            user_turn_separator = conv.sep
+        else:
+            user_turn_separator = conv.sep2
+
+        assistant_turn_separator = conv.roles[1] + "\n"
+
+    return user_turn_separator, assistant_turn_separator
+
+
 def mask_targets(conversations, targets, tokenizer, conv):
-    sep = conv.sep + conv.roles[1] + ": "
     for conversation, target in zip(conversations, targets):
         total_len = int(target.ne(tokenizer.pad_token_id).sum())
+        if tokenizer.eos_token is None:
+            cur_len = 0
+        elif tokenizer.eos_token is not None and target[0] != tokenizer.bos_token_id:
+            cur_len = 0
+        elif tokenizer.eos_token is not None and target[0] == tokenizer.bos_token_id:
+            cur_len = 1
 
-        turns = conversation.split(conv.sep2)
-        cur_len = 0
         target[:cur_len] = IGNORE_TOKEN_ID
+        user_turn_separator, assistant_turn_separator = get_prompt_separator(conv)
+        turns = conversation.split(user_turn_separator)
         for i, turn in enumerate(turns):
             if turn == "":
                 break
-            turn_len = len(tokenizer(turn + conv.sep2).input_ids)
 
-            parts = turn.split(sep)
-            if len(parts) != 2:
-                break
-            parts[0] += sep
-            instruction_len = len(tokenizer(parts[0]).input_ids) - 1
+            if i != 0:
+                turn = user_turn_separator + turn
+
+            turn_len = len(tokenizer(turn).input_ids)
+
+            if assistant_turn_separator in turn:
+                parts = turn.rsplit(assistant_turn_separator)
+                parts[0] += assistant_turn_separator
+            else:
+                parts = [turn]
+
+            instruction_len = len(
+                tokenizer(parts[0], add_special_tokens=False).input_ids
+            )
 
             target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
             cur_len += turn_len
@@ -148,18 +193,20 @@ def mask_targets(conversations, targets, tokenizer, conv):
     return targets
 
 
-def preprocess(sources, tokenizer: transformers.PreTrainedTokenizer, **kwargs) -> Dict:
+def preprocess(
+    sources, tokenizer: transformers.PreTrainedTokenizer, template_id, **kwargs
+) -> Dict:
     systems = None if not kwargs else kwargs.get("systems", None)
 
     # If the data volume is small, process it directly in the main thread
     if len(sources) <= 1000:
-        conversations, conv = apply_prompt_template(sources, systems)
+        conversations, conv = apply_prompt_template(sources, template_id, systems)
         input_ids, targets = tokenize_conversations(conversations, tokenizer)
         targets = mask_targets(conversations, targets, tokenizer, conv)
     else:  # If the data volume is large, use multithreading for processing
         with Pool() as p:
             conversations, conv = p.apply_async(
-                apply_prompt_template, (sources, systems)
+                apply_prompt_template, (sources, template_id, systems)
             ).get()
             input_ids, targets = p.apply_async(
                 tokenize_conversations, (conversations, tokenizer)
@@ -180,14 +227,16 @@ def preprocess(sources, tokenizer: transformers.PreTrainedTokenizer, **kwargs) -
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, raw_data, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(
+        self, raw_data, tokenizer: transformers.PreTrainedTokenizer, template_id
+    ):
         super(SupervisedDataset, self).__init__()
 
         rank0_print("Formatting inputs...")
         systems = [example.get("system", "") for example in raw_data]
         sources = [example["conversations"] for example in raw_data]
 
-        data_dict = preprocess(sources, tokenizer, systems=systems)
+        data_dict = preprocess(sources, tokenizer, template_id, systems=systems)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
@@ -207,9 +256,12 @@ class SupervisedDataset(Dataset):
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, raw_data, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(
+        self, raw_data, tokenizer: transformers.PreTrainedTokenizer, template_id
+    ):
         super(LazySupervisedDataset, self).__init__()
         self.tokenizer = tokenizer
+        self.template_id = template_id
 
         rank0_print("Formatting inputs...Skip in lazy mode")
         self.raw_data = raw_data
@@ -225,6 +277,7 @@ class LazySupervisedDataset(Dataset):
         ret = preprocess(
             [self.raw_data[i]["conversations"]],
             self.tokenizer,
+            self.template_id,
             systems=[self.raw_data[i].get("system", "")],
         )
         ret = dict(
@@ -238,7 +291,10 @@ class LazySupervisedDataset(Dataset):
 
 
 def make_supervised_data_module(
-    tokenizer: transformers.PreTrainedTokenizer, data_args, train_ratio=0.98
+    tokenizer: transformers.PreTrainedTokenizer,
+    data_args,
+    template_id,
+    train_ratio=0.98,
 ) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     train_ratio = min(train_ratio, 1.0)
@@ -267,8 +323,12 @@ def make_supervised_data_module(
     eval_raw_data = [raw_data[i] for i in eval_indices]
     rank0_print(f"#train {len(train_raw_data)}, #eval {len(eval_raw_data)}")
 
-    train_dataset = dataset_cls(train_raw_data, tokenizer=tokenizer)
-    eval_dataset = dataset_cls(eval_raw_data, tokenizer=tokenizer)
+    train_dataset = dataset_cls(
+        train_raw_data, tokenizer=tokenizer, template_id=template_id
+    )
+    eval_dataset = dataset_cls(
+        eval_raw_data, tokenizer=tokenizer, template_id=template_id
+    )
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
@@ -314,8 +374,12 @@ def train():
     print(f"tokens len: {len(tokenizer)}")
     model.resize_token_embeddings(len(tokenizer))
 
+    template_id = model_args.model_name_or_path
     data_module = make_supervised_data_module(
-        tokenizer=tokenizer, train_ratio=0.98, data_args=data_args
+        tokenizer=tokenizer,
+        template_id=template_id,
+        train_ratio=0.98,
+        data_args=data_args,
     )
     trainer = Trainer(
         model=model, tokenizer=tokenizer, args=training_args, **data_module

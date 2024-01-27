@@ -161,14 +161,21 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
+    "gpt-4-0314": 4,
     "gpt-4-turbo": 4,
-    "gpt-3.5-turbo": 2,
+    "gpt-3.5-turbo-0613": 2,
     "gpt-3.5-turbo-1106": 2,
     "claude-2.1": 4,
     "claude-2.0": 2,
     "claude-1": 2,
     "claude-instant-1": 4,
+    "gemini-pro": 4,
+    "pplx-7b-online": 4,
+    "pplx-70b-online": 4,
+    "solar-10.7b-instruct-v1.0": 2,
+    "mixtral-8x7b-instruct-v0.1": 4,
     "openhermes-2.5-mistral-7b": 2,
+    "dolphin-2.2.1-mistral-7b": 2,
     "wizardlm-70b": 2,
     "starling-lm-7b-alpha": 2,
     "tulu-2-dpo-70b": 2,
@@ -177,8 +184,7 @@ SAMPLING_WEIGHTS = {
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.1": 4,
-    "palm-2": 1.5,
+    "deluxe-chat-v1.2": 2,
     "llama-2-70b-chat": 1.5,
     "llama-2-13b-chat": 1.5,
     "codellama-34b-instruct": 1.5,
@@ -208,24 +214,57 @@ SAMPLING_WEIGHTS = {
     "llama-13b": 0.1,
     "chatglm-6b": 0.5,
     "deluxe-chat-v1": 4,
+    "palm-2": 1.5,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4": {"claude-2.1", "gpt-4-turbo"},
-    "gpt-4-turbo": {"gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-1106", "claude-2.1"},
-    "gpt-3.5-turbo": {"claude-instant-1", "gpt-4", "claude-2.1"},
-    "gpt-3.5-turbo-1106": {"claude-instant-1", "gpt-3.5-turbo"},
-    "claude-2.1": {"gpt-4-turbo", "gpt-4", "claude-1"},
-    "claude-2.0": {"gpt-4-turbo", "gpt-4", "claude-1"},
-    "claude-1": {"claude-2.1", "gpt-4", "gpt-3.5-turbo"},
+    "gpt-4": {"gpt-4-0314", "claude-2.1", "gpt-4-turbo"},
+    "gpt-4-0613": {"gpt-4-0314", "claude-2.1", "gpt-4-turbo"},
+    "gpt-4-0314": {"gpt-4-turbo", "gpt-4-0613", "claude-2.1", "gpt-3.5-turbo-0613"},
+    "gpt-4-turbo": {
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-1106",
+        "claude-2.1",
+    },
+    "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
+    "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
+    "solar-10.7b-instruct-v1.0": {
+        "mixtral-8x7b-instruct-v0.1",
+        "gpt-3.5-turbo-0613",
+        "llama-2-70b-chat",
+    },
+    "mixtral-8x7b-instruct-v0.1": {
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-0613",
+        "gpt-4-turbo",
+        "llama-2-70b-chat",
+    },
+    "claude-2.1": {"gpt-4-turbo", "gpt-4-0613", "claude-1"},
+    "claude-2.0": {"gpt-4-turbo", "gpt-4-0613", "claude-1"},
+    "claude-1": {"claude-2.1", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
-    "deluxe-chat-v1.1": {"gpt-4", "gpt-4-turbo"},
-    "openhermes-2.5-mistral-7b": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
-    "starling-lm-7b-alpha": {"gpt-3.5-turbo", "openchat-3.5", "zephyr-7b-beta"},
-    "tulu-2-dpo-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
-    "yi-34b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
-    "openchat-3.5": {"gpt-3.5-turbo", "llama-2-70b-chat", "zephyr-7b-beta"},
+    "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-turbo"},
+    "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-turbo"},
+    "pplx-7b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
+    "pplx-70b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
+    "openhermes-2.5-mistral-7b": {
+        "gpt-3.5-turbo-0613",
+        "openchat-3.5",
+        "zephyr-7b-beta",
+    },
+    "dolphin-2.2.1-mistral-7b": {
+        "gpt-3.5-turbo-0613",
+        "vicuna-33b",
+        "starling-lm-7b-alpha",
+        "openhermes-2.5-mistral-7b",
+    },
+    "starling-lm-7b-alpha": {"gpt-3.5-turbo-0613", "openchat-3.5", "zephyr-7b-beta"},
+    "tulu-2-dpo-70b": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
+    "yi-34b-chat": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
+    "openchat-3.5": {"gpt-3.5-turbo-0613", "llama-2-70b-chat", "zephyr-7b-beta"},
     "chatglm3-6b": {"yi-34b-chat", "qwen-14b-chat"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
     "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
@@ -235,7 +274,7 @@ BATTLE_TARGETS = {
         "llama-2-7b-chat",
         "wizardlm-13b",
     },
-    "llama-2-70b-chat": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
+    "llama-2-70b-chat": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
     "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
     "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
     "mistral-7b-instruct": {
@@ -243,31 +282,29 @@ BATTLE_TARGETS = {
         "llama-2-13b-chat",
         "llama-2-70b-chat",
     },
-    "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo", "claude-instant-1"},
+    "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo-0613", "claude-instant-1"},
     "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
     "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
-    "wizardlm-70b": {"gpt-3.5-turbo", "vicuna-33b", "claude-instant-1"},
-    "palm-2": {"llama-2-13b-chat", "gpt-3.5-turbo"},
+    "wizardlm-70b": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
 }
 
 SAMPLING_BOOST_MODELS = [
-    "tulu-2-dpo-70b",
-    "yi-34b-chat",
+    # "tulu-2-dpo-70b",
+    # "yi-34b-chat",
     "claude-2.1",
-    "wizardlm-70b",
-    "starling-lm-7b-alpha",
-    "openhermes-2.5-mistral-7b",
-    "gpt-3.5-turbo-1106",
-    # "openchat-3.5",
-    # "gpt-4-turbo",
-    # "claude-1",
+    "claude-1",
+    "gpt-4-0613",
+    # "gpt-3.5-turbo-1106",
+    # "gpt-4-0314",
+    "gpt-4-turbo",
+    # "dolphin-2.2.1-mistral-7b",
+    "mixtral-8x7b-instruct-v0.1",
+    "gemini-pro",
+    "solar-10.7b-instruct-v1.0",
 ]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-alpha",
-    "falcon-180b-chat",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model):
@@ -291,6 +328,8 @@ def get_battle_pair():
     model_weights = model_weights / total_weight
     chosen_idx = np.random.choice(len(models), p=model_weights)
     chosen_model = models[chosen_idx]
+    # for p, w in zip(models, model_weights):
+    #     print(p, w)
 
     rival_models = []
     rival_weights = []
@@ -427,6 +466,7 @@ def bot_response_multi(
                 top_p,
                 max_new_tokens,
                 request,
+                apply_rate_limit=False,
             )
         )
 
@@ -456,7 +496,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We use **100K** human votes to compile an Elo-based LLM leaderboard.
+We use **100K+** human votes to compile an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
@@ -478,7 +518,10 @@ Find out who is the 🥇LLM Champion!
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", height=550
+                        label=label,
+                        elem_id=f"chatbot",
+                        height=550,
+                        show_copy_button=True,
                     )
 
         with gr.Row():
@@ -504,7 +547,7 @@ Find out who is the 🥇LLM Champion!
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
-            container=True,
+            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -533,8 +576,8 @@ Find out who is the 🥇LLM Champion!
         )
         max_output_tokens = gr.Slider(
             minimum=16,
-            maximum=1024,
-            value=512,
+            maximum=2048,
+            value=1024,
             step=64,
             interactive=True,
             label="Max output tokens",

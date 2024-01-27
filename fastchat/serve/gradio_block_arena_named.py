@@ -307,7 +307,10 @@ def build_side_by_side_ui_named(models):
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", height=550
+                        label=label,
+                        elem_id=f"chatbot",
+                        height=550,
+                        show_copy_button=True,
                     )
 
         with gr.Row():
@@ -326,6 +329,7 @@ def build_side_by_side_ui_named(models):
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
+            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -354,8 +358,8 @@ def build_side_by_side_ui_named(models):
         )
         max_output_tokens = gr.Slider(
             minimum=16,
-            maximum=1024,
-            value=512,
+            maximum=2048,
+            value=1024,
             step=64,
             interactive=True,
             label="Max output tokens",

@@ -1,21 +1,22 @@
 """
-A model worker that executes the model based on vLLM.
+A model worker that executes the model based on SGLANG.
 
-See documentations at docs/vllm_integration.md
+Usage:
+python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --tokenizer-path llava-hf/llava-1.5-7b-hf --port 30000 --worker-address http://localhost:30000
 """
 
 import argparse
 import asyncio
 import json
+import multiprocessing
 from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
-from vllm import AsyncLLMEngine
-from vllm.engine.arg_utils import AsyncEngineArgs
-from vllm.sampling_params import SamplingParams
-from vllm.utils import random_uuid
+import sglang as sgl
+from sglang.srt.hf_transformers_utils import get_tokenizer, get_config
+from sglang.srt.utils import load_image
 
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
@@ -24,22 +25,33 @@ from fastchat.serve.model_worker import (
 )
 from fastchat.utils import get_context_length, is_partial_stop
 
-
 app = FastAPI()
 
 
-class VLLMWorker(BaseModelWorker):
+@sgl.function
+def pipeline(s, prompt, max_tokens):
+    for p in prompt:
+        if isinstance(p, str):
+            s += p
+        else:
+            s += sgl.image(p)
+    s += sgl.gen("response", max_tokens=max_tokens)
+
+
+class SGLWorker(BaseModelWorker):
     def __init__(
         self,
         controller_addr: str,
         worker_addr: str,
         worker_id: str,
         model_path: str,
+        tokenizer_path: str,
         model_names: List[str],
         limit_worker_concurrency: int,
         no_register: bool,
-        llm_engine: AsyncLLMEngine,
         conv_template: str,
+        runtime: sgl.Runtime,
+        trust_remote_code: bool,
     ):
         super().__init__(
             controller_addr,
@@ -52,121 +64,102 @@ class VLLMWorker(BaseModelWorker):
         )
 
         logger.info(
-            f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
+            f"Loading the model {self.model_names} on worker {worker_id}, worker type: SGLang worker..."
         )
-        self.tokenizer = llm_engine.engine.tokenizer
-        self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
+
+        self.tokenizer = get_tokenizer(tokenizer_path)
+        self.context_len = get_context_length(
+            get_config(model_path, trust_remote_code=trust_remote_code)
+        )
 
         if not no_register:
             self.init_heart_beat()
 
-    async def generate_stream(self, params):
+    async def generate_stream_gate(self, params):
         self.call_ct += 1
 
-        context = params.pop("prompt")
-        request_id = params.pop("request_id")
+        prompt = params.pop("prompt")
+        images = params.get("images", [])
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
         top_k = params.get("top_k", -1.0)
-        presence_penalty = float(params.get("presence_penalty", 0.0))
         frequency_penalty = float(params.get("frequency_penalty", 0.0))
+        presence_penalty = float(params.get("presence_penalty", 0.0))
         max_new_tokens = params.get("max_new_tokens", 256)
         stop_str = params.get("stop", None)
         stop_token_ids = params.get("stop_token_ids", None) or []
-        if self.tokenizer.eos_token_id is not None:
-            stop_token_ids.append(self.tokenizer.eos_token_id)
         echo = params.get("echo", True)
-        use_beam_search = params.get("use_beam_search", False)
-        best_of = params.get("best_of", None)
-
-        request = params.get("request", None)
 
         # Handle stop_str
-        stop = set()
+        stop = []
         if isinstance(stop_str, str) and stop_str != "":
-            stop.add(stop_str)
+            stop.append(stop_str)
         elif isinstance(stop_str, list) and stop_str != []:
-            stop.update(stop_str)
+            stop.extend(stop_str)
 
         for tid in stop_token_ids:
             if tid is not None:
                 s = self.tokenizer.decode(tid)
                 if s != "":
-                    stop.add(s)
+                    stop.append(s)
 
-        # make sampling params in vllm
+        # make sampling params for sgl.gen
         top_p = max(top_p, 1e-5)
         if temperature <= 1e-5:
             top_p = 1.0
 
-        sampling_params = SamplingParams(
-            n=1,
+        # split prompt by image token
+        split_prompt = prompt.split("<image>\n")
+        if prompt.count("<image>\n") != len(images):
+            raise ValueError(
+                "The number of images passed in does not match the number of <image> tokens in the prompt!"
+            )
+        prompt = []
+        for i in range(len(split_prompt)):
+            prompt.append(split_prompt[i])
+            if i < len(images):
+                prompt.append(load_image(images[i]))
+
+        state = pipeline.run(
+            prompt,
+            max_new_tokens,
+            stop=stop,
             temperature=temperature,
             top_p=top_p,
-            use_beam_search=use_beam_search,
-            stop=list(stop),
-            stop_token_ids=stop_token_ids,
-            max_tokens=max_new_tokens,
             top_k=top_k,
-            presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
-            best_of=best_of,
+            presence_penalty=presence_penalty,
+            stream=True,
         )
-        results_generator = engine.generate(context, sampling_params, request_id)
 
-        async for request_output in results_generator:
-            prompt = request_output.prompt
-            if echo:
-                text_outputs = [
-                    prompt + output.text for output in request_output.outputs
-                ]
-            else:
-                text_outputs = [output.text for output in request_output.outputs]
-            text_outputs = " ".join(text_outputs)
+        entire_output = prompt if echo else ""
+        async for out, meta_info in state.text_async_iter(
+            var_name="response", return_meta_data=True
+        ):
+            partial_stop = any(is_partial_stop(out, i) for i in stop)
 
-            partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
             # prevent yielding partial stop sequence
             if partial_stop:
                 continue
 
-            aborted = False
-            if request and await request.is_disconnected():
-                await engine.abort(request_id)
-                request_output.finished = True
-                aborted = True
-                for output in request_output.outputs:
-                    output.finish_reason = "abort"
+            entire_output += out
+            prompt_tokens = meta_info["prompt_tokens"]
+            completion_tokens = meta_info["completion_tokens"]
 
-            prompt_tokens = len(request_output.prompt_token_ids)
-            completion_tokens = sum(
-                len(output.token_ids) for output in request_output.outputs
-            )
             ret = {
-                "text": text_outputs,
-                "error_code": 0,
+                "text": entire_output,
                 "usage": {
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
-                "cumulative_logprob": [
-                    output.cumulative_logprob for output in request_output.outputs
-                ],
-                "finish_reason": request_output.outputs[0].finish_reason
-                if len(request_output.outputs) == 1
-                else [output.finish_reason for output in request_output.outputs],
+                "error_code": 0,
             }
-            # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
-            # This aligns with the behavior of model_worker.
-            if request_output.finished:
-                yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
+
             yield (json.dumps(ret) + "\0").encode()
 
-            if aborted:
-                break
-
-    async def generate(self, params):
-        async for x in self.generate_stream(params):
+    async def generate_gate(self, params):
+        async for x in self.generate_stream_gate(params):
             pass
         return json.loads(x[:-1].decode())
 
@@ -181,13 +174,9 @@ def acquire_worker_semaphore():
     return worker.semaphore.acquire()
 
 
-def create_background_tasks(request_id):
-    async def abort_request() -> None:
-        await engine.abort(request_id)
-
+def create_background_tasks():
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_worker_semaphore)
-    background_tasks.add_task(abort_request)
     return background_tasks
 
 
@@ -195,24 +184,17 @@ def create_background_tasks(request_id):
 async def api_generate_stream(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
-    request_id = random_uuid()
-    params["request_id"] = request_id
-    params["request"] = request
-    generator = worker.generate_stream(params)
-    background_tasks = create_background_tasks(request_id)
-    return StreamingResponse(generator, background=background_tasks)
+    generator = worker.generate_stream_gate(params)
+    background_tasks = create_background_tasks()
+    return StreamingResponse(generator)
 
 
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
-    request_id = random_uuid()
-    params["request_id"] = request_id
-    params["request"] = request
-    output = await worker.generate(params)
+    output = await worker.generate_gate(params)
     release_worker_semaphore()
-    await engine.abort(request_id)
     return JSONResponse(output)
 
 
@@ -246,6 +228,7 @@ if __name__ == "__main__":
         "--controller-address", type=str, default="http://localhost:21001"
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.5")
+    parser.add_argument("--tokenizer-path", type=str, default="")
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
@@ -258,14 +241,14 @@ if __name__ == "__main__":
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
     parser.add_argument(
-        "--trust_remote_code",
+        "--trust-remote-code",
         action="store_false",
         default=True,
         help="Trust remote code (e.g., from HuggingFace) when"
         "downloading the model and tokenizer.",
     )
     parser.add_argument(
-        "--gpu_memory_utilization",
+        "--mem-fraction-static",
         type=float,
         default=0.9,
         help="The ratio (between 0 and 1) of GPU memory to"
@@ -275,24 +258,35 @@ if __name__ == "__main__":
         "memory (OOM) errors.",
     )
 
-    parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
-    if args.model_path:
-        args.model = args.model_path
-    if args.num_gpus > 1:
-        args.tensor_parallel_size = args.num_gpus
 
-    engine_args = AsyncEngineArgs.from_cli_args(args)
-    engine = AsyncLLMEngine.from_engine_args(engine_args)
-    worker = VLLMWorker(
+    args.tp_size = args.num_gpus if args.num_gpus > 1 else 1
+    args.tokenizer_path = (
+        args.model_path if args.tokenizer_path == "" else args.tokenizer_path
+    )
+
+    multiprocessing.set_start_method("spawn", force=True)
+    runtime = sgl.Runtime(
+        model_path=args.model_path,
+        tokenizer_path=args.tokenizer_path,
+        trust_remote_code=args.trust_remote_code,
+        mem_fraction_static=args.mem_fraction_static,
+        tp_size=args.tp_size,
+        log_level="info",
+    )
+    sgl.set_default_backend(runtime)
+
+    worker = SGLWorker(
         args.controller_address,
         args.worker_address,
         worker_id,
         args.model_path,
+        args.tokenizer_path,
         args.model_names,
         args.limit_worker_concurrency,
         args.no_register,
-        engine,
         args.conv_template,
+        runtime,
+        args.trust_remote_code,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
