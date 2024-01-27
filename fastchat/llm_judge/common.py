@@ -498,18 +498,18 @@ def chat_completion_cohere(model, conv, temperature, max_tokens):
             co = cohere.Client(api_key=os.environ["CO_API_KEY"])
             prompt = conv.get_prompt()  # we don't use this, here for compatibility
             # Convert to Cohere chat_history format (see https://docs.cohere.com/docs/cochat-beta)
-            chat_history = [{"user_name": m[0], "text": m[1]} for m in conv.messages]
+            chat_history = [{"role": m[0], "message": m[1]} for m in conv.messages]
             # The last message is ['Chatbot', None], which is not needed
             if (
-                chat_history[-1]["user_name"] == conv.roles[1]
-                and chat_history[-1]["text"] is None
+                chat_history[-1]["role"] == conv.roles[1]
+                and chat_history[-1]["message"] is None
             ):
                 chat_history = chat_history[:-1]
             else:
                 raise ValueError("The last message is not ['Chatbot', None]")
             # The last message remaining is now the User message we want to send to the model
-            if chat_history[-1]["user_name"] == conv.roles[0]:
-                message = chat_history.pop()["text"]
+            if chat_history[-1]["role"] == conv.roles[0]:
+                message = chat_history.pop()["message"]
             else:
                 raise ValueError("The last message is not from the User")
             response = co.chat(
