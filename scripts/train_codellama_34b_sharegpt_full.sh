@@ -20,7 +20,7 @@ python -m torch.distributed.run --nnodes 2 --nproc-per-node 8 --master-addr 10.6
     --fsdp "full_shard auto_wrap" \
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --tf32 True \
-    --model_max_length 1024 \
+    --model_max_length 4096 \
     --gradient_checkpointing True \
     --lazy_preprocess True
 
