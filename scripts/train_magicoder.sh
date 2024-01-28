@@ -1,0 +1,26 @@
+python -m torch.distributed.run --nnodes 4 --nproc-per-node 8 --master-addr 10.6.47.248 --master-port 5000 --node-rank $1 fastchat/train/train.py \
+    --model_name_or_path /home/mltraining/models/base_models/models/code-llama2-34B-instruct-hf-2 \
+    --data_path /shared/dataset/magicoder-oss-instruct.json \
+    --bf16 True \
+    --output_dir /shared/checkpoints/output_magicoder_stage1 \
+    --num_train_epochs 2 \
+    --per_device_train_batch_size 4 \
+    --per_device_eval_batch_size 32 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "no" \
+    --eval_steps 1500 \
+    --save_strategy "epoch" \
+    --save_steps 1500 \
+    --save_total_limit 8 \
+    --learning_rate 5e-5 \
+    --weight_decay 0. \
+    --warmup_steps 15 \
+    --lr_scheduler_type "linear" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True \
+    --model_max_length 4096 \
+    --gradient_checkpointing True \
+    --lazy_preprocess True
+
