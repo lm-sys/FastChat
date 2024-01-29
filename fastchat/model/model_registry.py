@@ -29,18 +29,6 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    [
-        "IEITYuan/Yuan2-2B-Janus-hf",
-        "IEITYuan/Yuan2-2B-hf",
-        "IEITYuan/Yuan2-51B-hf",
-        "IEITYuan/Yuan2-102B-hf",
-    ],
-    "IEIT-Yuan2",
-    "https://github.com/IEIT-Yuan/Yuan-2.0",
-    "Yuan2.0 is a new generation Fundamental Large Language Model developed by IEIT System.",
-)
-
-register_model_info(
     ["mixtral-8x7b-instruct-v0.1", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
@@ -171,13 +159,6 @@ register_model_info(
     "OpenChat 3.5",
     "https://github.com/imoneoi/openchat",
     "an open model fine-tuned on Mistral-7B using C-RLFT",
-)
-
-register_model_info(
-    ["tenyxchat-7b-v1"],
-    "TenyxChat-7B",
-    "https://huggingface.co/tenyx/TenyxChat-7B-v1",
-    "an open model DPO trained on top of OpenChat-3.5 using Tenyx fine-tuning",
 )
 
 register_model_info(
@@ -555,5 +536,14 @@ register_model_info(
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
 )
-
-
+register_model_info(
+    [
+        "IEITYuan/Yuan2-2B-Janus-hf",
+        "IEITYuan/Yuan2-2B-hf",
+        "IEITYuan/Yuan2-51B-hf",
+        "IEITYuan/Yuan2-102B-hf",
+    ],
+    "IEIYuan",
+    "https://huggingface.co/IEITYuan",
+    "Yuan2 is a Basemodel developed by IEI.",
+)
