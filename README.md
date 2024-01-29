@@ -68,7 +68,9 @@ pip3 install -e ".[model_worker,webui]"
 ### Vicuna Weights
 [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) is based on Llama 2 and should be used under Llama's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
 
-You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos. Downloaded models are stored in a .cache folder in user's home folder ~. For example `~/.cache/huggingface/hub/<model_name>`.
+You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
+Downloaded weights are stored in a `.cache` folder in the user's home folder (e.g., `~/.cache/huggingface/hub/<model_name>`).
+
 See more command options and how to handle out-of-memory in the "Inference with Command Line Interface" section below.
 
 **NOTE: `transformers>=4.31` is required for 16K versions.**
