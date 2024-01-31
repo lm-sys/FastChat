@@ -8,6 +8,8 @@ import json
 
 import numpy as np
 from tqdm import tqdm
+from azureml.core import Run
+import os
 
 from fastchat.llm_judge.common import (
     load_questions,
@@ -207,10 +209,33 @@ if __name__ == "__main__":
     parser.add_argument(
         "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
     )
+
+    # arguments added to make AML runs work.
+    parser.add_argument("--aoai_api_key_name",
+                    help="AOAI api key name stored in AML workspace key vault",
+                    default="AOAI-API-KEY-MTB")
+    
+    parser.add_argument(
+        "--answer_dir",
+        type=str,
+        default=None,
+        help="dir where model generated answers are picked up from",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        help="if provided, will output judgements to this directory",
+    )
+
     args = parser.parse_args()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
-    answer_dir = f"data/{args.bench_name}/model_answer"
+    
+    if args.answer_dir:
+        answer_dir = f"{args.answer_dir}"
+    else:
+        answer_dir = f"data/{args.bench_name}/model_answer"
+
     ref_answer_dir = f"data/{args.bench_name}/reference_answer"
 
     # Load questions
@@ -234,9 +259,15 @@ if __name__ == "__main__":
     if args.mode == "single":
         judges = make_judge_single(args.judge_model, judge_prompts)
         play_a_match_func = play_a_match_single
-        output_file = (
-            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+
+        if args.output_dir:
+            filename = f"{args.judge_model}_single.jsonl"
+            output_file = os.path.join(args.output_dir, filename)
+        else:
+            output_file = (
+                f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
         )
+
         make_match_func = make_match_single
         baseline_model = None
     else:
@@ -301,7 +332,24 @@ if __name__ == "__main__":
     # Show match stats and prompt enter to continue
     print("Stats:")
     print(json.dumps(match_stat, indent=4))
-    input("Press Enter to confirm...")
+    # input("Press Enter to confirm...")
+
+    aml_run = False
+    if aml_run:
+        # for aml run, we get AOAI key from keyvault of the AMl workspace.
+        run = Run.get_context()
+        ws = run.experiment.workspace
+        keyvault = ws.get_default_keyvault()
+        aoai_api_key = keyvault.get_secret(args["aoai_api_key_name"])
+    else:    
+        # for local run, replace aoai_api_key
+        aoai_api_key = ""
+
+    assert len(aoai_api_key) > 0, "cannot find the admin key"
+
+    # these get picked up in chat_completion_openai_azure
+    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aoaiptswc.openai.azure.com/"
+    os.environ["AZURE_OPENAI_KEY"] = aoai_api_key
 
     # Play matches
     if args.parallel == 1:

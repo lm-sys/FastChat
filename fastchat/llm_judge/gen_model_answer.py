@@ -269,6 +269,11 @@ if __name__ == "__main__":
         default="main",
         help="The model revision to load.",
     )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        help="if provided, will output model generated answers to this directory",
+    )
 
     args = parser.parse_args()
 
@@ -282,6 +287,10 @@ if __name__ == "__main__":
         answer_file = args.answer_file
     else:
         answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
+
+    if args.output_dir:
+        filename = f"{args.model_id}.jsonl"
+        answer_file = os.path.join(args.output_dir, filename)
 
     print(f"Output to {answer_file}")
 
