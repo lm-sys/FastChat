@@ -334,7 +334,7 @@ if __name__ == "__main__":
     print(json.dumps(match_stat, indent=4))
     # input("Press Enter to confirm...")
 
-    aml_run = False
+    aml_run = True
     if aml_run:
         # for aml run, we get AOAI key from keyvault of the AMl workspace.
         run = Run.get_context()
