@@ -54,7 +54,7 @@ class VLLMWorker(BaseModelWorker):
         logger.info(
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
-        self.tokenizer = llm_engine.engine.tokenizer
+        self.tokenizer = llm_engine.engine.tokenizer.tokenizer
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:
