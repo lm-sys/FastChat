@@ -26,10 +26,10 @@ def generate_stream_yuan2(
     top_p = float(params.get("top_p", 0))
     top_k = int(params.get("top_k", 1))  # -1 means disable
     max_new_tokens = int(params.get("max_new_tokens", 512))
-    stop_str = params.get("stop", '<eod>')
+    stop_str = params.get("stop", "<eod>")
     echo = bool(params.get("echo", True))
     stop_token_ids = params.get("stop_token_ids", None) or []
-    stop_token_ids.append(tokenizer("<eod>")['input_ids'][0])
+    stop_token_ids.append(tokenizer("<eod>")["input_ids"][0])
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     input_ids = inputs["input_ids"]

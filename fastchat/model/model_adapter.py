@@ -426,7 +426,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             is_exllama = "exllama" in base_model_type
             is_xft = "xft" in base_model_type
             is_yuan = "yuan" in base_model_type
-            
+
             generate_stream_function = generate_stream
             if is_chatglm:
                 generate_stream_function = generate_stream_chatglm
