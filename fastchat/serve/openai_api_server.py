@@ -229,10 +229,20 @@ def process_input(model_name, inp):
         inp = [inp]
     elif isinstance(inp, list):
         if isinstance(inp[0], int):
-            decoding = tiktoken.model.encoding_for_model(model_name)
+            try:
+                decoding = tiktoken.model.encoding_for_model(model_name)
+            except KeyError:
+                logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                model = "cl100k_base"
+                decoding = tiktoken.get_encoding(model)
             inp = [decoding.decode(inp)]
         elif isinstance(inp[0], list):
-            decoding = tiktoken.model.encoding_for_model(model_name)
+            try:
+                decoding = tiktoken.model.encoding_for_model(model_name)
+            except KeyError:
+                logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                model = "cl100k_base"
+                decoding = tiktoken.get_encoding(model)
             inp = [decoding.decode(text) for text in inp]
 
     return inp
