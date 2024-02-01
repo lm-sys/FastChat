@@ -451,12 +451,21 @@ def bot_response(
         )
     elif model_api_dict["api_type"] == "gemini":
         stream_iter = gemini_api_stream_iter(
-            model_api_dict["model_name"], conv, temperature, top_p, max_new_tokens, api_key=model_api_dict["api_key"],
+            model_api_dict["model_name"],
+            conv,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "bard":
         prompt = conv.to_openai_api_messages()
         stream_iter = bard_api_stream_iter(
-            model_api_dict["model_name"], prompt, temperature, top_p, api_key=model_api_dict["api_key"],
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "mistral":
         prompt = conv.to_openai_api_messages()

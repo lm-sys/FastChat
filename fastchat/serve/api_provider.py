@@ -170,7 +170,9 @@ def palm_api_stream_iter(model_name, chat, message, temperature, top_p, max_new_
         yield data
 
 
-def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens, api_key=None):
+def gemini_api_stream_iter(
+    model_name, conv, temperature, top_p, max_new_tokens, api_key=None
+):
     import google.generativeai as genai  # pip install google-generativeai
 
     if api_key is None:
