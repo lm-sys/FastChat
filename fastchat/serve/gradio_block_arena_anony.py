@@ -236,6 +236,7 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "gpt-3.5-turbo-1106",
         "claude-2.1",
+        "bard-feb-2024",
     },
     "gpt-4-0125-preview": {
         "gpt-4-turbo",
@@ -243,6 +244,7 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "claude-2.1",
         "mistral-medium",
+        "bard-feb-2024",
     },
     "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
@@ -256,6 +258,7 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "gpt-4-turbo",
         "mixtral-8x7b-instruct-v0.1",
+        "bard-feb-2024",
     },
     "mixtral-8x7b-instruct-v0.1": {
         "gpt-3.5-turbo-1106",
@@ -268,7 +271,7 @@ BATTLE_TARGETS = {
     "claude-1": {"claude-2.1", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
     "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
-    "gemini-pro-dev-api": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "gemini-pro-dev-api": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613", "bard-feb-2024"},
     "bard-jan-24-gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613", "gemini-pro-dev-api"},
     "bard-feb-2024": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613", "bard-jan-24-gemini-pro"},
     "deepseek-llm-67b-chat": {"gpt-4-turbo", "gpt-3.5-turbo-0613", "mixtral-8x7b-instruct-v0.1", "yi-34b-chat"},
@@ -326,7 +329,7 @@ BATTLE_TARGETS = {
 }
 
 SAMPLING_BOOST_MODELS = [
-    # "claude-2.1",
+    "claude-2.1",
     # "gpt-4-0613",
     # "gpt-4-0314",
     "gpt-4-turbo",

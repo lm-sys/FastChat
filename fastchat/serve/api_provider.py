@@ -225,6 +225,9 @@ def gemini_api_stream_iter(model_name, conv, temperature, top_p, max_new_tokens,
 
 
 def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
+    del top_p  # not supported
+    del temperature  # not supported
+
     if api_key is None:
         api_key = os.environ["BARD_API_KEY"]
 
@@ -238,15 +241,10 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
         else:
             raise ValueError(f"Unsupported role: {turn['role']}")
 
-    generation_config = {
-        "temperature": temperature,
-        "top_p": top_p,
-    }
     params = {
         "model": model_name,
         "prompt": conv_bard,
     }
-    params.update(generation_config)
     logger.info(f"==== request ====\n{params}")
 
     try:
@@ -256,8 +254,6 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
                 "prompt": {
                     "messages": conv_bard,
                 },
-                "temperature": temperature,
-                "topP": top_p,
             },
             timeout=30,
         )
