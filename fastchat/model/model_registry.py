@@ -36,7 +36,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["bard-jan-24-gemini-pro", "bard-feb-2024"],
+    ["bard-feb-2024", "bard-jan-24-gemini-pro"],
     "Bard",
     "https://bard.google.com/",
     "Bard by Google",
