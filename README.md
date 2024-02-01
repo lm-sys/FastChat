@@ -69,6 +69,8 @@ pip3 install -e ".[model_worker,webui]"
 [Vicuna](https://lmsys.org/blog/2023-03-30-vicuna/) is based on Llama 2 and should be used under Llama's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
 
 You can use the commands below to start chatting. It will automatically download the weights from Hugging Face repos.
+Downloaded weights are stored in a `.cache` folder in the user's home folder (e.g., `~/.cache/huggingface/hub/<model_name>`).
+
 See more command options and how to handle out-of-memory in the "Inference with Command Line Interface" section below.
 
 **NOTE: `transformers>=4.31` is required for 16K versions.**
@@ -247,11 +249,18 @@ python3 -m fastchat.serve.gradio_web_server_multi
 ```
 - The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
 - If you want to host it on your own UI or third party UI, see [Third Party UI](docs/third_party_ui.md).
- 
+
+## Use models from modelscope
+For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
+```bash
+export FASTCHAT_USE_MODELSCOPE=True
+```
+
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
 FastChat provides OpenAI-compatible APIs for its supported models, so you can use FastChat as a local drop-in replacement for OpenAI APIs.
 The FastChat server is compatible with both [openai-python](https://github.com/openai/openai-python) library and cURL commands.
+The REST API is capable of being executed from Google Colab free tier, as demonstrated in the [FastChat_API_GoogleColab.ipynb](https://github.com/lm-sys/FastChat/blob/main/playground/FastChat_API_GoogleColab.ipynb) notebook, available in our repository.
 See [docs/openai_api.md](docs/openai_api.md).
 
 ### Hugging Face Generation APIs
