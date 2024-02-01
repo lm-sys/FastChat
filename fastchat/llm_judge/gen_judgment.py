@@ -340,7 +340,7 @@ if __name__ == "__main__":
         run = Run.get_context()
         ws = run.experiment.workspace
         keyvault = ws.get_default_keyvault()
-        aoai_api_key = keyvault.get_secret(args["aoai_api_key_name"])
+        aoai_api_key = keyvault.get_secret(args.aoai_api_key_name)
     else:    
         # for local run, replace aoai_api_key
         aoai_api_key = ""
