@@ -5,8 +5,10 @@ We kindly request that you import fastchat instead of copying this file if you w
 If you have any changes in mind, please contribute back so the community can benefit collectively and continue to maintain these valuable templates.
 """
 
+import base64
 import dataclasses
 from enum import auto, IntEnum
+from io import BytesIO
 from typing import List, Any, Dict, Union, Tuple
 
 
@@ -292,8 +294,6 @@ class Conversation:
 
     def convert_image_to_base64(self, image):
         """Given an image, return the base64 encoded image string."""
-        import base64
-        from io import BytesIO
         from PIL import Image
         import requests
 

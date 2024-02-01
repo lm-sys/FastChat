@@ -305,6 +305,7 @@ async def get_gen_params(
                         if item["type"] == "text"
                     ]
 
+                    # TODO(chris): This only applies to LLaVA model. Implement an image_token string in the conv template.
                     text = "<image>\n" * len(image_list)
                     text += "\n".join(text_list)
                     conv.append_message(conv.roles[0], (text, image_list))
