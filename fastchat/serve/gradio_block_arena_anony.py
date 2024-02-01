@@ -173,7 +173,8 @@ SAMPLING_WEIGHTS = {
     "claude-instant-1": 4,
     "gemini-pro": 4,
     "gemini-pro-dev-api": 4,
-    "bard-jan-24-gemini-pro": 8,
+    "bard-jan-24-gemini-pro": 4,
+    "bard-feb-2024": 8,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-medium": 4,
     "deepseek-llm-67b-chat": 4,
@@ -192,18 +193,18 @@ SAMPLING_WEIGHTS = {
     "openchat-3.5": 2,
     "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.2": 8,
-    "llama-2-70b-chat": 1.5,
-    "llama-2-13b-chat": 1.5,
+    "deluxe-chat-v1.2": 4,
+    "llama-2-70b-chat": 2,
+    "llama-2-13b-chat": 2,
+    "llama-2-7b-chat": 2,
+    "mistral-7b-instruct": 2,
     "codellama-34b-instruct": 1.5,
     "vicuna-33b": 4,
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "qwen-14b-chat": 1.5,
-    "mistral-7b-instruct": 1.5,
     # tier 2
     "vicuna-7b": 1.0,
-    "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
     # deprecated
     "zephyr-7b-alpha": 1.5,
@@ -269,6 +270,7 @@ BATTLE_TARGETS = {
     "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "gemini-pro-dev-api": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
     "bard-jan-24-gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613", "gemini-pro-dev-api"},
+    "bard-feb-2024": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613", "bard-jan-24-gemini-pro"},
     "deepseek-llm-67b-chat": {"gpt-4-turbo", "gpt-3.5-turbo-0613", "mixtral-8x7b-instruct-v0.1", "yi-34b-chat"},
     "llama2-70b-steerlm-chat": {
         "llama-2-70b-chat",
@@ -330,11 +332,12 @@ SAMPLING_BOOST_MODELS = [
     "gpt-4-turbo",
     "gpt-4-0125-preview",
     # "gpt-3.5-turbo-1106",
-    # "mistral-medium",
+    "mistral-medium",
     # "gemini-pro-dev-api",
     # "stripedhyena-nous-7b",
-    "bard-jan-24-gemini-pro",
-    "deepseek-llm-67b-chat",
+    # "bard-jan-24-gemini-pro",
+    "bard-feb-2024",
+    # "deepseek-llm-67b-chat",
 ]
 
 # outage models won't be sampled.

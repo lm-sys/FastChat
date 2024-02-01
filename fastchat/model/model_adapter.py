@@ -1144,7 +1144,7 @@ class GeminiAdapter(BaseModelAdapter):
     """The model adapter for Gemini"""
 
     def match(self, model_path: str):
-        return "gemini" in model_path.lower()
+        return "gemini" in model_path.lower() or "bard" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()

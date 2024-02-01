@@ -287,10 +287,9 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
     response = response_json["candidates"][0]["content"]
     pos = 0
     while pos < len(response):
-        # This is a fancy way to simulate token generation latency combined
-        # with a Poisson process.
-        pos += random.randint(1, 5)
-        time.sleep(random.expovariate(200))
+        # simulate token streaming
+        pos += random.randint(3, 6)
+        time.sleep(0.002)
         data = {
             "text": response[:pos],
             "error_code": 0,
