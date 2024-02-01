@@ -292,6 +292,7 @@ if __name__ == "__main__":
         filename = f"{args.model_id}.jsonl"
         answer_file = os.path.join(args.output_dir, filename)
 
+    print(f"Model path {args.model_path}")
     print(f"Output to {answer_file}")
 
     run_eval(
