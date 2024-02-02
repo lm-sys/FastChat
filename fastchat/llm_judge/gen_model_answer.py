@@ -35,6 +35,9 @@ def run_eval(
     revision,
 ):
     questions = load_questions(question_file, question_begin, question_end)
+
+    # questions = questions[:2]
+    
     # random shuffle the questions to balance the loading
     random.shuffle(questions)
 
@@ -107,11 +110,13 @@ def get_model_answers(
             torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
+            prompts = [] # we add prompts to aid debug.
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
                 prompt = conv.get_prompt()
+                prompts.append(prompt)
                 input_ids = tokenizer([prompt]).input_ids
 
                 if temperature < 1e-4:
@@ -176,7 +181,7 @@ def get_model_answers(
                 conv.update_last_message(output)
                 turns.append(output)
 
-            choices.append({"index": i, "turns": turns})
+            choices.append({"index": i, "turns": turns, "prompts": prompts})
 
         # Dump answers
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
@@ -296,9 +301,10 @@ if __name__ == "__main__":
     # https://github.com/huggingface/alignment-handbook/tree/main/scripts#evaluating-chat-models
     new_directory_name = "zephyr" # Modify model path name to include word "zephyr"
     new_directory_path = os.path.join(os.path.dirname(args.model_path), new_directory_name) # Join the path and new directory name to get the new path
+    shutil.copytree(args.model_path, new_directory_path) # Rename the directory
 
-    # Rename the directory
-    shutil.copytree(args.model_path, new_directory_path)
+    # for local run, do this
+    # new_directory_path = args.model_path
 
     print(f"Model path used: {new_directory_path}")
     print(f"Output to {answer_file}")
