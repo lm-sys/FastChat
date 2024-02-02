@@ -167,6 +167,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0125-preview": 4,
     "gpt-3.5-turbo-0613": 2,
     "gpt-3.5-turbo-1106": 2,
+    "gpt-3.5-turbo-0125": 4,
     "claude-2.1": 4,
     "claude-2.0": 2,
     "claude-1": 2,
@@ -248,6 +249,13 @@ BATTLE_TARGETS = {
     },
     "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
+    "gpt-3.5-turbo-0125": {
+        "gpt-4-0613",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-1106",
+        "mixtral-8x7b-instruct-v0.1",
+    },
     "solar-10.7b-instruct-v1.0": {
         "mixtral-8x7b-instruct-v0.1",
         "gpt-3.5-turbo-0613",
@@ -349,11 +357,12 @@ BATTLE_TARGETS = {
 }
 
 SAMPLING_BOOST_MODELS = [
-    "claude-2.1",
+    # "claude-2.1",
     # "gpt-4-0613",
     # "gpt-4-0314",
     "gpt-4-turbo",
     "gpt-4-0125-preview",
+    "gpt-3.5-turbo-0125",
     # "gpt-3.5-turbo-1106",
     "mistral-medium",
     # "gemini-pro-dev-api",
