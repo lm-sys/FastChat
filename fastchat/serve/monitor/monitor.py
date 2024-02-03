@@ -308,7 +308,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                     height=700,
                     column_widths=[50, 200, 100, 100, 100, 150, 150],
                     wrap=True,
-                    interactive=False
+                    interactive=False,
                 )
             with gr.Tab("Full Leaderboard", id=1):
                 md = make_full_leaderboard_md(elo_results)
@@ -329,7 +329,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                     column_widths=[200, 100, 100, 100, 150, 150],
                     height=700,
                     wrap=True,
-                    interactive=False
+                    interactive=False,
                 )
         if not show_plot:
             gr.Markdown(
