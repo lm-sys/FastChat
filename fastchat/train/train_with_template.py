@@ -163,7 +163,7 @@ def mask_targets(conversations, targets, tokenizer, conv):
             if i != 0:
                 turn = user_turn_separator + turn
 
-            turn_len = len(tokenizer(turn).input_ids)
+            turn_len = len(tokenizer(turn, add_special_tokens=False).input_ids)
 
             if assistant_turn_separator in turn:
                 parts = turn.rsplit(assistant_turn_separator)
@@ -373,6 +373,7 @@ def train():
     )
     # NOTE: if the token_id exceed the vocab_size will cause failing in training process! we need add special config and resize the embedding size!
     tokenizer.pad_token = tokenizer.unk_token
+    tokenizer.pad_token_id = tokenizer.unk_token_id
     print(f"tokens len: {len(tokenizer)}")
     model.resize_token_embeddings(len(tokenizer))
 
