@@ -373,6 +373,7 @@ def train():
     )
     # NOTE: if the token_id exceed the vocab_size will cause failing in training process! we need add special config and resize the embedding size!
     tokenizer.pad_token = tokenizer.unk_token
+    tokenizer.pad_token_id = tokenizer.unk_token_id
     print(f"tokens len: {len(tokenizer)}")
     model.resize_token_embeddings(len(tokenizer))
 
