@@ -189,7 +189,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     return rating, user_prompt, judgment
 
 
-def play_a_match_single(match: MatchPair, output_file: str):
+def play_a_match_single(match: MatchSingle, output_file: str):
     question, model, answer, judge, ref_answer, multi_turn = (
         match.question,
         match.model,
