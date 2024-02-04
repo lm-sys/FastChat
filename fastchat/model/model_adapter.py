@@ -1981,7 +1981,15 @@ class ZephyrAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zephyr")
 
+class PhyagiUserassistantNlAdapter(BaseModelAdapter):
+    """The model adapter for phyagi-userassistant-nl"""
 
+    def match(self, model_path: str):
+        return "phyagi-userassistant-nl" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("phyagi-userassistant-nl")
+    
 class NotusAdapter(BaseModelAdapter):
     """The model adapter for Notus (e.g. argilla/notus-7b-v1)"""
 
@@ -2303,6 +2311,7 @@ register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
+register_model_adapter(PhyagiUserassistantNlAdapter)
 register_model_adapter(NotusAdapter)
 register_model_adapter(CatPPTAdapter)
 register_model_adapter(TinyLlamaAdapter)
