@@ -164,7 +164,13 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[1], None)
 
     if model in OPENAI_MODEL_LIST:
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        # OpenAI endpoint
+        # judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+
+        # AOAI endpoint
+        engine = "gpt-4-0613"
+        judgment = chat_completion_openai_azure(engine, conv, temperature=0, max_tokens=2048)
+        
     elif model in ANTHROPIC_MODEL_LIST:
         judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024

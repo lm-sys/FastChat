@@ -3,6 +3,8 @@ Usage:
 python3 show_result.py --mode [single|pairwise-baseline|pairwise-all]
 """
 import argparse
+import glob
+import os
 import pandas as pd
 
 
@@ -117,6 +119,12 @@ if __name__ == "__main__":
             "`single` runs single answer grading."
         ),
     )
+    parser.add_argument(
+        "--judgment_dir",
+        type=str,
+        default=None,
+        help="dir where judgment file is picked up from",
+    )
     args = parser.parse_args()
 
     if args.mode == "single":
@@ -127,4 +135,10 @@ if __name__ == "__main__":
         display_result_func = display_result_pairwise
 
     print(f"Mode: {args.mode}")
+
+    if args.judgment_dir:
+        filenames = glob.glob(os.path.join(args.judgment_dir, "*.jsonl"))
+        assert len(filenames) == 1, "support 1 judgment file only"
+        args.input_file = filenames[0]
+
     display_result_func(args)

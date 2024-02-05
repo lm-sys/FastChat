@@ -1,3 +1,7 @@
+abgoswam_trials/
+fastchat/llm_judge/data/mt_bench/model_answer/
+fastchat/llm_judge/data/mt_bench/model_judgment/
+
 # Python
 __pycache__
 *.pyc

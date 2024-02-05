@@ -1474,6 +1474,17 @@ register_conv_template(
     )
 )
 
+# phyagi-userassistant-nl, got from Michael
+register_conv_template(
+    Conversation(
+        name="phyagi-userassistant-nl",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="<|end|>\n",
+        stop_str="<|end|>"
+    )
+)
+
 
 # yuan 2.0 template
 # reference:https://github.com/IEIT-Yuan/Yuan-2.0
