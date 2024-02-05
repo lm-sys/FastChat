@@ -41,7 +41,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct"],
+    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct-v0.2", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
