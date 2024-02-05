@@ -55,6 +55,10 @@ class VLLMWorker(BaseModelWorker):
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
         self.tokenizer = llm_engine.engine.tokenizer
+        # This is to support vllm >= 0.2.7 where TokenizerGroup was introduced
+        # and llm_engine.engine.tokenizer was no longer a raw tokenizer
+        if hasattr(self.tokenizer, "tokenizer"):
+            self.tokenizer = llm_engine.engine.tokenizer.tokenizer
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:

@@ -132,9 +132,9 @@ def get_prompt_separator(conv):
 
     elif conv.sep_style == SeparatorStyle.CHATML:
         if conv.sep2 is None:
-            user_turn_separator = conv.sep
+            user_turn_separator = conv.sep + "\n"
         else:
-            user_turn_separator = conv.sep2
+            user_turn_separator = conv.sep2 + "\n"
 
         assistant_turn_separator = conv.roles[1] + "\n"
 
@@ -155,13 +155,15 @@ def mask_targets(conversations, targets, tokenizer, conv):
         user_turn_separator, assistant_turn_separator = get_prompt_separator(conv)
         turns = conversation.split(user_turn_separator)
         for i, turn in enumerate(turns):
-            if turn == "":
+            if (
+                i < len(turns) - 1 and turn == ""
+            ):  # Last turn is the user_turn_separator
                 break
 
             if i != 0:
                 turn = user_turn_separator + turn
 
-            turn_len = len(tokenizer(turn).input_ids)
+            turn_len = len(tokenizer(turn, add_special_tokens=False).input_ids)
 
             if assistant_turn_separator in turn:
                 parts = turn.rsplit(assistant_turn_separator)
@@ -371,6 +373,7 @@ def train():
     )
     # NOTE: if the token_id exceed the vocab_size will cause failing in training process! we need add special config and resize the embedding size!
     tokenizer.pad_token = tokenizer.unk_token
+    tokenizer.pad_token_id = tokenizer.unk_token_id
     print(f"tokens len: {len(tokenizer)}")
     model.resize_token_embeddings(len(tokenizer))
 
