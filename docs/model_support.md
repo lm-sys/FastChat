@@ -29,7 +29,9 @@ After these steps, the new model should be compatible with most FastChat feature
 
 ### API-based model
 
-For API-based model, you still need to follow the above steps to implement conversation template, adapter, and register the model. In addition, you need to implement a streaming token generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) and . And then specify your endpoint base in a JSON configuration file
+For API-based model, you still need to follow the above steps to implement conversation template, adapter, and register the model. In addition, you need to
+1. Implement an API-based streaming token generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py)
+2. Specify your endpoint info in a JSON configuration file
 ```
 {
   "gpt-3.5-turbo-0613": {
@@ -40,12 +42,14 @@ For API-based model, you still need to follow the above steps to implement conve
   }
 }
 ```
-Then launch the gradio web server with argument `--register [JSON-file]`.
+3. Invoke your API generator in `bot_response` of [fastchat/serve/gradio_web_server.py](https://github.com/lm-sys/FastChat/blob/22642048eeb2f1f06eb1c4e0490d802e91e62473/fastchat/serve/gradio_web_server.py#L427) accordingly.
+4. Launch the gradio web server with argument `--register [JSON-file]`.
 ```
-python3 -m fastchat.serve.gradio_web_server --register [JSON-file] 
+python3 -m fastchat.serve.gradio_web_server --register [JSON-file]
 ```
+You should be able to chat with your API-based model!
 
-Currently, FastChat supports OpenAI, Anthropic, and Google Vertex AI.
+Currently, FastChat supports OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.
 
 
 ## Supported models
