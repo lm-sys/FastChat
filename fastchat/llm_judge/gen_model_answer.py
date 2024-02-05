@@ -298,19 +298,19 @@ if __name__ == "__main__":
         filename = f"{args.model_id}.jsonl"
         answer_file = os.path.join(args.output_dir, filename)
 
-    # https://github.com/huggingface/alignment-handbook/tree/main/scripts#evaluating-chat-models
-    new_directory_name = "zephyr" # Modify model path name to include word "zephyr"
-    new_directory_path = os.path.join(os.path.dirname(args.model_path), new_directory_name) # Join the path and new directory name to get the new path
-    shutil.copytree(args.model_path, new_directory_path) # Rename the directory
+    # # https://github.com/huggingface/alignment-handbook/tree/main/scripts#evaluating-chat-models
+    # new_directory_name = "zephyr" # Modify model path name to include word "zephyr"
+    # new_directory_path = os.path.join(os.path.dirname(args.model_path), new_directory_name) # Join the path and new directory name to get the new path
+    # shutil.copytree(args.model_path, new_directory_path) # Rename the directory
 
     # for local run, do this
     # new_directory_path = args.model_path
 
-    print(f"Model path used: {new_directory_path}")
+    print(f"Model path used: {args.model_path}")
     print(f"Output to {answer_file}")
 
     run_eval(
-        model_path=new_directory_path,
+        model_path=args.model_path,
         model_id=args.model_id,
         question_file=question_file,
         question_begin=args.question_begin,
