@@ -824,6 +824,15 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="gemini",
+        roles=("user", "model"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
 # BiLLa default template
 register_conv_template(
     Conversation(
@@ -1474,6 +1483,16 @@ register_conv_template(
     )
 )
 
+# nvidia/Llama2-70B-SteerLM-Chat
+register_conv_template(
+    Conversation(
+        name="steerlm",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
 
 # yuan 2.0 template
 # reference:https://github.com/IEIT-Yuan/Yuan-2.0

@@ -51,7 +51,7 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Jan 9, 2024.
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Jan 26, 2024.
 
 Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
 """
