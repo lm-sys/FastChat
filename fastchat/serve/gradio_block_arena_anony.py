@@ -179,6 +179,7 @@ SAMPLING_WEIGHTS = {
     "bard-feb-2024": 8,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-medium": 4,
+    "nous-hermes-2-mixtral-8x7b-dpo": 4,
     "deepseek-llm-67b-chat": 4,
     "stripedhyena-nous-7b": 4,
     "pplx-7b-online": 2,
@@ -255,6 +256,13 @@ BATTLE_TARGETS = {
         "gpt-4-1106-preview",
         "gpt-3.5-turbo-0613",
         "gpt-3.5-turbo-1106",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "nous-hermes-2-mixtral-8x7b-dpo": {
+        "gpt-4-1106-preview",
+        "claude-2.1",
+        "mistral-medium",
+        "gpt-3.5-turbo-0613",
         "mixtral-8x7b-instruct-v0.1",
     },
     "solar-10.7b-instruct-v1.0": {
@@ -365,12 +373,12 @@ SAMPLING_BOOST_MODELS = [
     "gpt-4-0125-preview",
     "gpt-3.5-turbo-0125",
     # "gpt-3.5-turbo-1106",
-    "mistral-medium",
+    # "mistral-medium",
     # "gemini-pro-dev-api",
     # "stripedhyena-nous-7b",
     # "bard-jan-24-gemini-pro",
     "bard-feb-2024",
-    # "deepseek-llm-67b-chat",
+    "nous-hermes-2-mixtral-8x7b-dpo",
 ]
 
 # outage models won't be sampled.

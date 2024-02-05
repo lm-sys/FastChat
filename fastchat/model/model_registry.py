@@ -48,6 +48,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["nous-hermes-2-mixtral-8x7b-dpo"],
+    "Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "Nous Hermes finetuned from Mixtral 8x7B",
+)
+
+register_model_info(
     ["bard-feb-2024", "bard-jan-24-gemini-pro"],
     "Bard",
     "https://bard.google.com/",
