@@ -195,7 +195,6 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        print(f"This is bot number {i} with text {text}")
         post_processed_text = _prepare_text_with_image(states[i], text, image)
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
