@@ -19,5 +19,5 @@ Note that for Apple Silicon Macs with less memory, smaller models (or quantized 
 2. When you launch a model worker, replace the normal worker (`fastchat.serve.model_worker`) with the MLX worker (`fastchat.serve.mlx_worker`). Remember to launch a model worker after you have launched the controller ([instructions](../README.md))
 
    ```
-   python3 -m fastchat.serve.mlx_worker --model-path lmsys/vicuna-7b-v1.5
+   python3 -m fastchat.serve.mlx_worker --model-path TinyLlama/TinyLlama-1.1B-Chat-v1.0
    ```
