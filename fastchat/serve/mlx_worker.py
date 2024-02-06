@@ -124,7 +124,7 @@ class MLXWorker(BaseModelWorker):
         )
 
         for i in range(max_new_tokens):
-            token = await run_in_threadpool(next, iterator)
+            (token, _) = await run_in_threadpool(next, iterator)
             if token == self.mlx_tokenizer.eos_token_id:
                 finish_reason = "stop"
                 break
