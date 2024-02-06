@@ -48,10 +48,16 @@ register_model_info(
 )
 
 register_model_info(
-    ["nous-hermes-2-mixtral-8x7b-dpo"],
-    "Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "Nous Hermes finetuned from Mixtral 8x7B",
+    ["qwen1.5-72b-chat",
+     "qwen1.5-14b-chat",
+     "qwen1.5-7b-chat",
+     "qwen1.5-4b-chat",
+     "qwen1.5-1.8b-chat",
+     "qwen1.5-0.5b-chat",
+     "qwen-14b-chat"],
+    "Qwen",
+    "https://huggingface.co/Qwen",
+    "a large language model by Alibaba Cloud",
 )
 
 register_model_info(
@@ -121,6 +127,20 @@ register_model_info(
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
+)
+
+register_model_info(
+    ["nous-hermes-2-mixtral-8x7b-dpo"],
+    "Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "Nous Hermes finetuned from Mixtral 8x7B",
+)
+
+register_model_info(
+    ["openchat-3.5-0106", "openchat-3.5"],
+    "OpenChat 3.5",
+    "https://github.com/imoneoi/openchat",
+    "an open model fine-tuned on Mistral-7B using C-RLFT",
 )
 
 register_model_info(
@@ -208,13 +228,6 @@ register_model_info(
 )
 
 register_model_info(
-    ["openchat-3.5"],
-    "OpenChat 3.5",
-    "https://github.com/imoneoi/openchat",
-    "an open model fine-tuned on Mistral-7B using C-RLFT",
-)
-
-register_model_info(
     ["tenyxchat-7b-v1"],
     "TenyxChat-7B",
     "https://huggingface.co/tenyx/TenyxChat-7B-v1",
@@ -247,13 +260,6 @@ register_model_info(
     "TinyLlama",
     "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     "The TinyLlama project is an open endeavor to pretrain a 1.1B Llama model on 3 trillion tokens.",
-)
-
-register_model_info(
-    ["qwen-14b-chat"],
-    "Qwen",
-    "https://huggingface.co/Qwen/Qwen-14B-Chat",
-    "a large language model by Alibaba Cloud",
 )
 
 register_model_info(
