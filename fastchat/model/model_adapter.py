@@ -813,7 +813,7 @@ class AlpacaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("alpaca")
 
-class JaisAdapter(BaseModelAdapter)
+class JaisAdapter(BaseModelAdapter):
     """The model adapter for Jais"""
     use_fast_tokenizer = False
     def match(self, model_path: str):
