@@ -859,7 +859,7 @@ async def get_embedding(payload: Dict[str, Any]):
 
 @app.post("/api/v1/token_check")
 async def count_tokens(request: Annotated[
-        APIChatCompletionRequest,
+        APITokenCheckRequest,
         fastapi.Body(
             openapi_examples={
                 "example": {
