@@ -32,6 +32,7 @@ from fastchat.model.llama_condense_monkey_patch import replace_llama_with_conden
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_yuan2 import generate_stream_yuan2
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
@@ -67,6 +68,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0314",
     "gpt-4-0613",
     "gpt-4-turbo",
+    "gpt-4-0125-preview",
 )
 
 
@@ -388,6 +390,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_codet5p = "codet5p" in model_type
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
+    is_yuan = "yuan" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -399,6 +402,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_exllama
     elif is_xft:
         return generate_stream_xft
+    elif is_yuan:
+        return generate_stream_yuan2
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -421,6 +426,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             is_codet5p = "codet5p" in base_model_type
             is_exllama = "exllama" in base_model_type
             is_xft = "xft" in base_model_type
+            is_yuan = "yuan" in base_model_type
+
             generate_stream_function = generate_stream
             if is_chatglm:
                 generate_stream_function = generate_stream_chatglm
@@ -432,6 +439,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
                 generate_stream_function = generate_stream_exllama
             elif is_xft:
                 generate_stream_function = generate_stream_xft
+            elif is_yuan:
+                generate_stream_function = generate_stream_yuan2
             for x in generate_stream_function(
                 model,
                 tokenizer,
@@ -1156,13 +1165,13 @@ class GeminiAdapter(BaseModelAdapter):
     """The model adapter for Gemini"""
 
     def match(self, model_path: str):
-        return model_path in ["gemini-pro"]
+        return "gemini" in model_path.lower() or "bard" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("bard")
+        return get_conv_template("gemini")
 
 
 class BiLLaAdapter(BaseModelAdapter):
@@ -2185,6 +2194,16 @@ class SolarAdapter(BaseModelAdapter):
         return get_conv_template("solar")
 
 
+class SteerLMAdapter(BaseModelAdapter):
+    """The model adapter for nvidia/Llama2-70B-SteerLM-Chat"""
+
+    def match(self, model_path: str):
+        return "steerlm-chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("steerlm")
+
+
 class LlavaAdapter(BaseModelAdapter):
     """The model adapter for liuhaotian/llava-v1.5 series of models"""
 
@@ -2319,6 +2338,7 @@ register_model_adapter(Yuan2Adapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
+register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
 
