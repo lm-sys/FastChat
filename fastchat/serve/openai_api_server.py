@@ -110,7 +110,7 @@ headers = {"User-Agent": "FastChat API Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
 
 # !!!Offline setting for swagger doc page!!!
-cwd = os.getcwd()
+cwd = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=f'{cwd}/static'), name="static")
 def swagger_monkey_patch(*args, **kwargs):
     return get_swagger_ui_html(
