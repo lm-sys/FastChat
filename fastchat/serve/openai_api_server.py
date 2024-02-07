@@ -406,7 +406,26 @@ async def show_available_models():
 
 
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
-async def create_chat_completion(request: ChatCompletionRequest):
+async def create_chat_completion(
+    request: ChatCompletionRequest = fastapi.Body(
+        examples=[
+            {
+                "model": "jais-13b-chat",
+                "messages": "Give me a poem of water in 100 words. RESPONSE:"
+            },
+            {
+                "model": "jais-13b-chat",
+                "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+            },
+            {
+                "model": "jais-13b-chat",
+                "messages": [
+                    {"role": "assistant", "content": "Response in a happy tone"},
+                    {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
+                ]
+            }
+        ]
+    )):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
