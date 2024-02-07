@@ -858,7 +858,23 @@ async def get_embedding(payload: Dict[str, Any]):
 
 
 @app.post("/api/v1/token_check")
-async def count_tokens(request: APITokenCheckRequest):
+async def count_tokens(
+    request: Annotated[
+        APITokenCheckRequest,
+        fastapi.Body(
+            openapi_examples={
+                "example": {
+                    "summary": "Example of token check",
+                    "description": "Check how many token in a prompt",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": "Give me a poem of water in 100 words. RESPONSE:",
+                        "max_tokens": 2048
+                    }
+                }
+            }
+        )
+    ]):
     """
     Checks the token count for each message in your list
     This is not part of the OpenAI API spec.
