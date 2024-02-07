@@ -47,7 +47,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models, all_models, vision_language_models
+    global models, all_models, vl_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -72,7 +72,7 @@ def load_demo(url_params, request: gr.Request):
             False,
         )
 
-        vision_language_models, _ = get_model_list(
+        vl_models, all_vl_models = get_model_list(
             args.controller_url,
             args.register_api_endpoint_file,
             True,
@@ -82,7 +82,7 @@ def load_demo(url_params, request: gr.Request):
 
     side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
-    vision_language_updates = load_demo_single(vision_language_models, url_params)
+    vision_language_updates = load_demo_single(vl_models, url_params)
     return (
         (gr.Tabs.update(selected=selected),)
         + single_updates
@@ -92,9 +92,7 @@ def load_demo(url_params, request: gr.Request):
     )
 
 
-def build_demo(
-    models, vision_language_models, elo_results_file, leaderboard_table_file
-):
+def build_demo(models, vl_models, elo_results_file, leaderboard_table_file):
     text_size = gr.themes.sizes.text_md
     with gr.Blocks(
         title="Chat with Open Large Language Models",
@@ -115,7 +113,7 @@ def build_demo(
             with gr.Tab("Vision-Language Model Direct Chat", id=3):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
-                        vision_language_models, add_promotion_links=True
+                        vl_models, add_promotion_links=True
                     )
                 )
 
@@ -222,7 +220,7 @@ if __name__ == "__main__":
         False,
     )
 
-    vision_language_models, _ = get_model_list(
+    vl_models, all_vl_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
         True,
@@ -236,7 +234,7 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(
         models,
-        vision_language_models,
+        vl_models,
         args.elo_results_file,
         args.leaderboard_table_file,
     )

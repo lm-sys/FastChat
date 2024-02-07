@@ -358,6 +358,12 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
+    def extract_text_from_messages(self):
+        return [
+            (role, message[0]) if type(message) is tuple else (role, message)
+            for role, message in self.messages
+        ]
+
     def copy(self):
         return Conversation(
             name=self.name,
@@ -378,7 +384,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.messages,
+            "messages": self.extract_text_from_messages(),
             "offset": self.offset,
         }
 

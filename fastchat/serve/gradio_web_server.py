@@ -5,6 +5,7 @@ The gradio demo server for chatting with a single model.
 import argparse
 from collections import defaultdict
 import datetime
+import hashlib
 import json
 import os
 import random
@@ -49,6 +50,7 @@ from fastchat.utils import (
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,
+    load_image,
 )
 
 
@@ -154,7 +156,12 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
     # Add API providers
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
-        models += list(api_endpoint_info.keys())
+        for mdl, mdl_dict in api_endpoint.items():
+            mdl_multimodal = mdl_dict.get("multimodal", False)
+            if multimodal and mdl_multimodal:
+                models += [mdl]
+            elif not multimodal and not mdl_multimodal:
+                models += [mdl]
 
     models = list(set(models))
     visible_models = models.copy()
@@ -581,6 +588,21 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
+    # We load the image because gradio accepts base64 but that increases file size by ~1.33x
+    loaded_images = [load_image(image) for image in images]
+    images_hash = [hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images]
+    for image, hash_str in zip(loaded_images, images_hash):
+        t = datetime.datetime.now()
+        filename = os.path.join(
+            LOGDIR,
+            "serve_images",
+            f"{t.year}-{t.month:02d}-{t.day:02d}",
+            f"{hash_str}.jpg",
+        )
+        if not os.path.isfile(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            image.save(filename)
+
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
@@ -595,6 +617,7 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
+            "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
 

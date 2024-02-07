@@ -93,9 +93,9 @@ class Controller:
             worker_status["model_names"],
             worker_status["speed"],
             worker_status["queue_length"],
-            multimodal,
             check_heart_beat,
             time.time(),
+            multimodal,
         )
 
         logger.info(f"Register done: {worker_name}, {worker_status}")
