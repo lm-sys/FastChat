@@ -197,9 +197,7 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
-            controller_url,
-            args.register_api_endpoint_file,
-            False
+            controller_url, args.register_api_endpoint_file, False
         )
 
     return load_demo_single(models, url_params)
@@ -955,9 +953,7 @@ if __name__ == "__main__":
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
     models, all_models = get_model_list(
-        args.controller_url,
-        args.register_api_endpoint_file,
-        False
+        args.controller_url, args.register_api_endpoint_file, False
     )
 
     # Set authorization credentials
