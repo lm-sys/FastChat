@@ -51,7 +51,7 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Jan 26, 2024.
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Feb 2, 2024.
 
 Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
 """
@@ -445,7 +445,7 @@ if __name__ == "__main__":
 
     demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
         server_name=args.host, server_port=args.port, share=args.share, max_threads=200
     )

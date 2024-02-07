@@ -56,10 +56,10 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 headers = {"User-Agent": "FastChat Client"}
 
-no_change_btn = gr.Button.update()
-enable_btn = gr.Button.update(interactive=True, visible=True)
-disable_btn = gr.Button.update(interactive=False)
-invisible_btn = gr.Button.update(interactive=False, visible=False)
+no_change_btn = gr.Button()
+enable_btn = gr.Button(interactive=True, visible=True)
+disable_btn = gr.Button(interactive=False)
+invisible_btn = gr.Button(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
@@ -177,7 +177,7 @@ def load_demo_single(models, url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown.update(
+    dropdown_update = gr.Dropdown(
         choices=models, value=selected_model, visible=True
     )
 
@@ -573,8 +573,11 @@ def bot_response(
 
 
 block_css = """
-#notice_markdown {
-    font-size: 110%
+#chatbot {
+    line-height: 1.5;
+}
+#notice_markdown .prose {
+    font-size: 120% !important;
 }
 #notice_markdown th {
     display: none;
@@ -584,10 +587,10 @@ block_css = """
     padding-bottom: 6px;
 }
 #model_description_markdown {
-    font-size: 110%
+    font-size: 120% !important;
 }
-#leaderboard_markdown {
-    font-size: 110%
+#leaderboard_markdown .prose {
+    font-size: 120% !important;
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -596,16 +599,16 @@ block_css = """
 #leaderboard_dataframe td {
     line-height: 0.1em;
 }
-#about_markdown {
-    font-size: 110%
+#about_markdown .prose {
+    font-size: 120% !important;
 }
-#ack_markdown {
-    font-size: 110%
+#ack_markdown .prose {
+    font-size: 120% !important;
 }
 #input_box textarea {
 }
 footer {
-    display:none !important
+    display:none !important;
 }
 .image-container {
     display: flex;
@@ -620,12 +623,11 @@ footer {
     max-width: 20%;
 }
 .image-about img {
-    margin: 0 30px;
-    margin-top: 30px;
-    height: 50px;
+    margin: 0 20px;
+    margin-top: 20px;
+    height: 40px;
     max-height: 100%;
     width: auto;
-    max-width: 20%;
     float: left;
 }
 """
@@ -715,7 +717,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-named"):
+    with gr.Group(elem_id="share-region-named"):
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=models,
@@ -931,7 +933,7 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(models)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
         server_name=args.host,
         server_port=args.port,

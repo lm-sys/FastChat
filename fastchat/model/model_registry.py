@@ -55,6 +55,13 @@ register_model_info(
      "qwen1.5-1.8b-chat",
      "qwen1.5-0.5b-chat",
      "qwen-14b-chat"],
+    "Qwen 1.5",
+    "https://qwenlm.github.io/blog/qwen1.5/",
+    "a large language model by Alibaba Cloud",
+)
+
+register_model_info(
+    ["qwen-14b-chat"],
     "Qwen",
     "https://huggingface.co/Qwen",
     "a large language model by Alibaba Cloud",

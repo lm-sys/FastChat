@@ -55,8 +55,8 @@ def load_demo_side_by_side_anony(models_, url_params):
 
     states = (None,) * num_sides
     selector_updates = (
-        gr.Markdown.update(visible=True),
-        gr.Markdown.update(visible=True),
+        gr.Markdown(visible=True),
+        gr.Markdown(visible=True),
     )
 
     return states + selector_updates
@@ -74,13 +74,13 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
 
     if ":" not in model_selectors[0]:
-        for i in range(15):
+        for i in range(5):
             names = (
                 "### Model A: " + states[0].model_name,
                 "### Model B: " + states[1].model_name,
             )
             yield names + ("",) + (disable_btn,) * 4
-            time.sleep(0.2)
+            time.sleep(0.1)
     else:
         names = (
             "### Model A: " + states[0].model_name,
@@ -613,7 +613,7 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
+# ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
@@ -621,7 +621,7 @@ def build_side_by_side_ui_anony(models):
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 
-## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
+## 🏆 Arena Elo ([Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard))
 We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
@@ -635,7 +635,7 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-anony"):
+    with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion("🔍 Expand to see 20+ Arena players", open=False):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
@@ -645,7 +645,7 @@ Find out who is the 🥇LLM Champion!
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
                         label=label,
-                        elem_id=f"chatbot",
+                        elem_id="chatbot",
                         height=550,
                         show_copy_button=True,
                     )
@@ -653,21 +653,21 @@ Find out who is the 🥇LLM Champion!
         with gr.Row():
             for i in range(num_sides):
                 with gr.Column():
-                    model_selectors[i] = gr.Markdown(anony_names[i])
+                    model_selectors[i] = gr.Markdown(anony_names[i], elem_id="model_selector_md")
         with gr.Row():
             slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
-        with gr.Row():
-            leftvote_btn = gr.Button(
-                value="👈  A is better", visible=False, interactive=False
-            )
-            rightvote_btn = gr.Button(
-                value="👉  B is better", visible=False, interactive=False
-            )
-            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-            bothbad_btn = gr.Button(
-                value="👎  Both are bad", visible=False, interactive=False
-            )
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
 
     with gr.Row():
         textbox = gr.Textbox(
@@ -774,7 +774,7 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
+    share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     textbox.submit(
         add_text,
