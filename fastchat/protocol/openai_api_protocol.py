@@ -72,8 +72,8 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 1.2
     frequency_penalty: Optional[float] = 1.2
     user: Optional[str] = None
-    class Config:
-        schema_extra = {
+    model_config = {
+       "json_schema_extra": {
             "examples": [
                 {
                     "model": "jais-13b-chat",
@@ -92,6 +92,7 @@ class ChatCompletionRequest(BaseModel):
                 }
             ]
         }
+    }
 
 
 class ChatMessage(BaseModel):
