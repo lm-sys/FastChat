@@ -72,38 +72,6 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 1.2
     frequency_penalty: Optional[float] = 1.2
     user: Optional[str] = None
-    class Config:
-        schema_extra = {
-            "openapi_examples": {
-                "english": {
-                    "summary": "English chat example",
-                    "description": "A simple English example",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
-                    }
-                },
-                "arabic": {
-                    "summary": "Arabic chat example",
-                    "description": "A simple Arabic example",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
-                    }
-                },
-                "history": {
-                    "summary": "Example with chat history",
-                    "description": "A simple example with chat history between assistant and user",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": [
-                            {"role": "assistant", "content": "Response in a happy tone"},
-                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
-                        ]
-                    }
-                }
-            }
-        }
 
 
 class ChatMessage(BaseModel):
@@ -186,8 +154,8 @@ class CompletionRequest(BaseModel):
     suffix: Optional[str] = None
     temperature: Optional[float] = 0.01
     n: Optional[int] = 1
-    max_tokens: Optional[int] = 16
-    stop: Optional[Union[str, List[str]]] = None
+    max_tokens: Optional[int] = 2048
+    stop: Optional[Union[str, List[str]]] = ["<|stop|>"]
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0
     top_k: Optional[int] = -1

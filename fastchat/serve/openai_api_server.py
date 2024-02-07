@@ -11,7 +11,7 @@ import asyncio
 import argparse
 import json
 import os
-from typing import Generator, Optional, Union, Dict, List, Any
+from typing import Generator, Optional, Union, Dict, List, Any, Annotated
 import aiohttp
 import fastapi
 from fastapi import Depends, HTTPException
@@ -403,9 +403,67 @@ async def show_available_models():
         model_cards.append(ModelCard(id=m, root=m, permission=[ModelPermission()]))
     return ModelList(data=model_cards)
 
+COMMON_SETTINGS="""Common settings:
+model- model name
+messages- input message
+temperature- between 0.0~1.0, increase output variability with higher value
+             , set to a near 0 number if you want to keep the output the same
+n- number of output examples
+max_tokens- stopping criteria of output in tokens, should less than the limit of model, e.g. 2048 for Jais
+stop- list of stop signals, should be text
+stream- open streaming or not
+"""
 
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
-async def create_chat_completion(request: ChatCompletionRequest):
+async def create_chat_completion(
+    request: Annotated[
+        ChatCompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": [
+                            {"role": "assistant", "content": "Response in a happy tone"},
+                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
@@ -536,7 +594,55 @@ async def chat_completion_stream_generator(
 
 
 @app.post("/v1/completions", dependencies=[Depends(check_api_key)])
-async def create_completion(request: CompletionRequest):
+async def create_completion(
+    request: Annotated[
+        CompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": [
+                            "Response in a happy tone",
+                            "Give me a poem of water in 100 words. RESPONSE:"
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "prompt": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
         return error_check_ret
@@ -795,7 +901,55 @@ async def count_tokens(request: APITokenCheckRequest):
 
 
 @app.post("/api/v1/chat/completions")
-async def create_chat_completion(request: APIChatCompletionRequest):
+async def create_chat_completion(
+    request: Annotated[
+        APIChatCompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": [
+                            {"role": "assistant", "content": "Response in a happy tone"},
+                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:

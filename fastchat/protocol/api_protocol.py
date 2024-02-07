@@ -51,17 +51,17 @@ class UsageInfo(BaseModel):
 class APIChatCompletionRequest(BaseModel):
     model: str
     messages: Union[str, List[Dict[str, str]]]
-    temperature: Optional[float] = 0.7
+    temperature: Optional[float] = 0.01
     top_p: Optional[float] = 1.0
     top_k: Optional[int] = -1
     n: Optional[int] = 1
-    max_tokens: Optional[int] = None
-    stop: Optional[Union[str, List[str]]] = None
+    max_tokens: Optional[int] = 2048
+    stop: Optional[Union[str, List[str]]] = ["<|stop|>"]
     stream: Optional[bool] = False
-    user: Optional[str] = None
     repetition_penalty: Optional[float] = 1.0
-    frequency_penalty: Optional[float] = 0.0
-    presence_penalty: Optional[float] = 0.0
+    presence_penalty: Optional[float] = 1.2
+    frequency_penalty: Optional[float] = 1.2
+    user: Optional[str] = None
 
 
 class ChatMessage(BaseModel):
@@ -127,17 +127,17 @@ class CompletionRequest(BaseModel):
     model: str
     prompt: Union[str, List[Any]]
     suffix: Optional[str] = None
-    temperature: Optional[float] = 0.7
+    temperature: Optional[float] = 0.01
     n: Optional[int] = 1
-    max_tokens: Optional[int] = 16
-    stop: Optional[Union[str, List[str]]] = None
+    max_tokens: Optional[int] = 2048
+    stop: Optional[Union[str, List[str]]] = ["<|stop|>"]
     stream: Optional[bool] = False
     top_p: Optional[float] = 1.0
     top_k: Optional[int] = -1
     logprobs: Optional[int] = None
     echo: Optional[bool] = False
-    presence_penalty: Optional[float] = 0.0
-    frequency_penalty: Optional[float] = 0.0
+    presence_penalty: Optional[float] = 1.2
+    frequency_penalty: Optional[float] = 1.2
     user: Optional[str] = None
 
 
