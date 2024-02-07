@@ -404,15 +404,7 @@ async def show_available_models():
     return ModelList(data=model_cards)
 
 COMMON_SETTINGS="""Common settings:
-model- model name
-messages- input message
-temperature- between 0.0~1.0, increase output variability with higher value
-             , set to a near 0 number if you want to keep the output the same
-n- number of output examples
-max_tokens- stopping criteria of output in tokens, should less than the limit of model, e.g. 2048 for Jais
-stop- list of stop signals, should be text
-stream- open streaming or not
-"""
+model- model name | messages- input message | temperature- between 0.0~1.0, increase output variability with higher value | n- number of output examples | max_tokens- stopping criteria of output in tokens, should less than the limit of model, e.g. 2048 for Jais | stop- list of stop signals, should be text | stream- streaming output or not"""
 
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
 async def create_chat_completion(
