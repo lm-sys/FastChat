@@ -19,6 +19,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import applications
+from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.docs import get_swagger_ui_html
+
 import httpx
 from pydantic import BaseSettings
 import shortuuid
@@ -99,9 +103,23 @@ class AppSettings(BaseSettings):
 
 
 app_settings = AppSettings()
-app = fastapi.FastAPI()
-headers = {"User-Agent": "JAIS API Server"}
+app = fastapi.FastAPI(
+    title="Jais Chatbot API"
+)
+headers = {"User-Agent": "FastChat API Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
+
+# !!!Offline setting for swagger doc page!!!
+app.mount("/static", StaticFiles(directory='./static'), name="static")
+def swagger_monkey_patch(*args, **kwargs):
+    return get_swagger_ui_html(
+        *args,
+        **kwargs,
+        swagger_favicon_url="/static/favicon.png",
+        swagger_css_url="/static/swagger-ui.css",
+        swagger_js_url="/static/swagger-ui-bundle.js",
+    )
+applications.get_swagger_ui_html = swagger_monkey_patch
 
 
 async def check_api_key(
