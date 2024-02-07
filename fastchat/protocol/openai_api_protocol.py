@@ -77,14 +77,6 @@ class ChatCompletionRequest(BaseModel):
             "examples": [
                 {
                     "model": "jais-13b-chat",
-                    "messages": "Give me a poem of water in 100 words. RESPONSE:"
-                },
-                {
-                    "model": "jais-13b-chat",
-                    "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
-                },
-                {
-                    "model": "jais-13b-chat",
                     "messages": [
                         {"role": "assistant", "content": "Response in a happy tone"},
                         {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},

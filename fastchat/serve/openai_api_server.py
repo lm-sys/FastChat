@@ -101,7 +101,7 @@ class AppSettings(BaseSettings):
 
 app_settings = AppSettings()
 app = fastapi.FastAPI()
-headers = {"User-Agent": "FastChat API Server"}
+headers = {"User-Agent": "JAIS API Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
 
 
