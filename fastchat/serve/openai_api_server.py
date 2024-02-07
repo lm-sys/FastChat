@@ -858,20 +858,29 @@ async def get_embedding(payload: Dict[str, Any]):
 
 
 @app.post("/api/v1/token_check")
-async def count_tokens(
-    request: Annotated[
-        APITokenCheckRequest,
+async def count_tokens(request: Annotated[
+        APIChatCompletionRequest,
         fastapi.Body(
             openapi_examples={
                 "example": {
-                    "summary": "Example of token check",
-                    "description": "Check how many token in a prompt",
+                    "summary": "Check token numbers",
+                    "description": "Check token number of a series of prompts",
                     "value": {
-                        "model": "jais-13b-chat",
-                        "prompt": "Give me a poem of water in 100 words. RESPONSE:",
-                        "max_tokens": 2048
+                        "prompts": [
+                            {
+                                "model": "jais-13b-chat",
+                                "prompt": "Give me a poem of water in 100 words. RESPONSE:",
+                                "max_tokens": 2048
+                            },
+                            {
+                                "model": "jais-13b-chat",
+                                "prompt": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:",
+                                "max_tokens": 2048
+                            },
+                        ]
                     }
                 }
+
             }
         )
     ]):
