@@ -11,7 +11,7 @@ import asyncio
 import argparse
 import json
 import os
-from typing import Generator, Optional, Union, Dict, List, Any, Annotated
+from typing import Generator, Optional, Union, Dict, List, Any
 import aiohttp
 import fastapi
 from fastapi import Depends, HTTPException
@@ -405,42 +405,7 @@ async def show_available_models():
 
 
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
-async def create_chat_completion(
-    request: Annotated[
-        ChatCompletionRequest,
-        fastapi.Body(
-            openapi_examples={
-                "english": {
-                    "summary": "English chat example",
-                    "description": "A simple English example",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
-                    }
-                },
-                "arabic": {
-                    "summary": "Arabic chat example",
-                    "description": "A simple Arabic example",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
-                    }
-                },
-                "history": {
-                    "summary": "Example with chat history",
-                    "description": "A simple example with chat history between assistant and user",
-                    "value": {
-                        "model": "jais-13b-chat",
-                        "messages": [
-                            {"role": "assistant", "content": "Response in a happy tone"},
-                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
-                        ]
-                    }
-                },
-
-            }
-        )
-    ]):
+async def create_chat_completion(request: ChatCompletionRequest):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
