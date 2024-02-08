@@ -621,7 +621,7 @@ def build_side_by_side_ui_anony(models):
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 
-## 🏆 Arena Elo ([Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard))
+## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
 We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
