@@ -7,6 +7,7 @@ import glob
 import os
 import pandas as pd
 
+CATEGORIES = ["Writing", "Roleplay", "Reasoning", "Math", "Coding", "Extraction", "STEM", "Humanities"]
 
 def display_result_single(args):
     if args.input_file is None:
@@ -36,6 +37,17 @@ def display_result_single(args):
         print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
         print(df_3.sort_values(by="score", ascending=False))
+
+        print("\n########## Category Average ##########")
+        df_category = df_all[["model", "score", "question_id", "turn"]]
+        df_category = df_category[df_category["score"] != -1]
+        if args.model_list is not None:
+            df_category = df_category[df_category["model"].isin(args.model_list)]
+        df_category["category"] = df_category["question_id"].apply(
+            lambda x: CATEGORIES[(x-81)//10]
+        )
+        df_4 = df_category[["model", "category", "score"]].groupby(["model", "category"]).mean()
+        print(df_4)
 
 
 def display_result_pairwise(args):
