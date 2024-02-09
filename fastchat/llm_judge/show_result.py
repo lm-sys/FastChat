@@ -6,8 +6,59 @@ import argparse
 import glob
 import os
 import pandas as pd
+import json
+import plotly.express as px
+import plotly.graph_objects as go
+import mlflow
 
 CATEGORIES = ["Writing", "Roleplay", "Reasoning", "Math", "Coding", "Extraction", "STEM", "Humanities"]
+
+def get_model_df(input_file):
+    cnt = 0
+    q2result = []
+    fin = open(input_file, "r")
+    for line in fin:
+        obj = json.loads(line)
+        obj["category"] = CATEGORIES[(obj["question_id"]-81)//10]
+        q2result.append(obj)
+    df = pd.DataFrame(q2result)
+    return df
+
+# https://colab.research.google.com/drive/15O3Y8Rxq37PuMlArE291P4OC6ia37PQK#scrollTo=5i8R0l-XqkgO
+def plot_result_single(input_file):
+    df = get_model_df(input_file)
+    
+    all_models = df["model"].unique()
+    print(all_models)
+    scores_all = []
+    for model in all_models:
+        for cat in CATEGORIES:
+            # filter category/model, and score format error (<1% case)
+            res = df[(df["category"]==cat) & (df["model"]==model) & (df["score"] >= 0)]
+            score = res["score"].mean()
+
+            # # pairwise result
+            # res_pair = df_pair[(df_pair["category"]==cat) & (df_pair["model"]==model)]["result"].value_counts()
+            # wincnt = res_pair["win"] if "win" in res_pair.index else 0
+            # tiecnt = res_pair["tie"] if "tie" in res_pair.index else 0
+            # winrate = wincnt/res_pair.sum()
+            # winrate_adjusted = (wincnt + tiecnt)/res_pair.sum()
+            # # print(winrate_adjusted)
+
+            # scores_all.append({"model": model, "category": cat, "score": score, "winrate": winrate, "wtrate": winrate_adjusted})
+            scores_all.append({"model": model, "category": cat, "score": score})
+
+    df_score = pd.DataFrame(scores_all)
+    
+    fig = px.line_polar(df_score, r = 'score', theta = 'category', line_close = True, category_orders = {"category": CATEGORIES},
+                    color = 'model', markers=True, color_discrete_sequence=px.colors.qualitative.Pastel)
+
+    fig_filename = "mtb_radar.png"
+
+    fig.write_image(fig_filename)
+    mlflow.log_artifact(fig_filename)
+    fig.show()
+
 
 def display_result_single(args):
     if args.input_file is None:
@@ -48,6 +99,8 @@ def display_result_single(args):
         )
         df_4 = df_category[["model", "category", "score"]].groupby(["model", "category"]).mean()
         print(df_4)
+
+        plot_result_single(input_file)
 
 
 def display_result_pairwise(args):

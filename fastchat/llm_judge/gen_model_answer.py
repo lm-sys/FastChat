@@ -18,6 +18,7 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
+import glob
 
 def run_eval(
     model_path,
@@ -280,6 +281,11 @@ if __name__ == "__main__":
         type=str,
         help="if provided, will output model generated answers to this directory",
     )
+    parser.add_argument(
+        "--questions_dir",
+        type=str,
+        help="if provided, will pick up questions from directory",
+    )
 
     args = parser.parse_args()
 
@@ -288,7 +294,13 @@ if __name__ == "__main__":
 
         ray.init()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    if args.questions_dir:
+        filenames = glob.glob(os.path.join(args.questions_dir, "*.jsonl"))
+        assert len(filenames) == 1, "support 1 question file only"
+        question_file = filenames[0]
+    else:
+        question_file = f"data/{args.bench_name}/question.jsonl"
+
     if args.answer_file:
         answer_file = args.answer_file
     else:
@@ -298,19 +310,26 @@ if __name__ == "__main__":
         filename = f"{args.model_id}.jsonl"
         answer_file = os.path.join(args.output_dir, filename)
 
-    # # https://github.com/huggingface/alignment-handbook/tree/main/scripts#evaluating-chat-models
-    # new_directory_name = "zephyr" # Modify model path name to include word "zephyr"
-    # new_directory_path = os.path.join(os.path.dirname(args.model_path), new_directory_name) # Join the path and new directory name to get the new path
-    # shutil.copytree(args.model_path, new_directory_path) # Rename the directory
+    print(f"question_file : {question_file}")
+    print(f"answer_file : {answer_file}")
+
+    # https://github.com/huggingface/alignment-handbook/tree/main/scripts#evaluating-chat-models
+    # https://github.com/huggingface/alignment-handbook/issues/114
+    # https://github.com/lm-sys/FastChat/issues/3026
+    # FastChat code uses  model_path and model_id  interchangeably to create the adapter. 
+    # Workaround : use model_id as our invariant. 
+    new_directory_name = args.model_id 
+    new_directory_path = os.path.join(os.path.dirname(args.model_path), new_directory_name) 
+    shutil.copytree(args.model_path, new_directory_path)
 
     # for local run, do this
     # new_directory_path = args.model_path
 
-    print(f"Model path used: {args.model_path}")
+    print(f"Model path used: {new_directory_path}")
     print(f"Output to {answer_file}")
 
     run_eval(
-        model_path=args.model_path,
+        model_path=new_directory_path,
         model_id=args.model_id,
         question_file=question_file,
         question_begin=args.question_begin,
