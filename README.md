@@ -193,6 +193,12 @@ This requires 8-bit compression to be enabled and the bitsandbytes package to be
 - FastChat supports AWQ 4bit inference with [mit-han-lab/llm-awq](https://github.com/mit-han-lab/llm-awq). See [docs/awq.md](/docs/awq.md).
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
+#### Use models from modelscope
+For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
+```bash
+export FASTCHAT_USE_MODELSCOPE=True
+```
+
 ## Serving with Web GUI
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
@@ -244,12 +250,6 @@ python3 -m fastchat.serve.gradio_web_server_multi
 ```
 - The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
 - If you want to host it on your own UI or third party UI, see [Third Party UI](docs/third_party_ui.md).
-
-## Use models from modelscope
-For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
-```bash
-export FASTCHAT_USE_MODELSCOPE=True
-```
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
