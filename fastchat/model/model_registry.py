@@ -29,17 +29,50 @@ def get_model_info(name: str) -> ModelInfo:
 
 
 register_model_info(
-    ["mixtral-8x7b-instruct-v0.1", "mistral-7b-instruct"],
+    [
+        "IEITYuan/Yuan2-2B-Janus-hf",
+        "IEITYuan/Yuan2-2B-hf",
+        "IEITYuan/Yuan2-51B-hf",
+        "IEITYuan/Yuan2-102B-hf",
+    ],
+    "IEIT-Yuan2",
+    "https://github.com/IEIT-Yuan/Yuan-2.0",
+    "Yuan2.0 is a new generation Fundamental Large Language Model developed by IEIT System.",
+)
+
+register_model_info(
+    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct"],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
 )
 
 register_model_info(
-    ["gemini-pro"],
+    ["bard-feb-2024", "bard-jan-24-gemini-pro"],
+    "Bard",
+    "https://bard.google.com/",
+    "Bard by Google",
+)
+
+register_model_info(
+    ["gemini-pro", "gemini-pro-dev-api"],
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
     "Gemini by Google",
+)
+
+register_model_info(
+    ["deepseek-llm-67b-chat"],
+    "DeepSeek LLM",
+    "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
+    "An advanced language model by DeepSeek",
+)
+
+register_model_info(
+    ["stripedhyena-nous-7b"],
+    "StripedHyena-Nous",
+    "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
+    "A chat model developed by Together Research and Nous Research.",
 )
 
 register_model_info(
@@ -50,7 +83,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["gpt-4-turbo"],
+    ["gpt-4-turbo", "gpt-4-0125-preview"],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
@@ -89,6 +122,13 @@ register_model_info(
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
+)
+
+register_model_info(
+    ["llama2-70b-steerlm-chat"],
+    "Llama2-70B-SteerLM-Chat",
+    "https://huggingface.co/nvidia/Llama2-70B-SteerLM-Chat",
+    "A Llama fine-tuned with SteerLM method by NVIDIA",
 )
 
 register_model_info(
@@ -159,6 +199,13 @@ register_model_info(
     "OpenChat 3.5",
     "https://github.com/imoneoi/openchat",
     "an open model fine-tuned on Mistral-7B using C-RLFT",
+)
+
+register_model_info(
+    ["tenyxchat-7b-v1"],
+    "TenyxChat-7B",
+    "https://huggingface.co/tenyx/TenyxChat-7B-v1",
+    "an open model DPO trained on top of OpenChat-3.5 using Tenyx fine-tuning",
 )
 
 register_model_info(
@@ -535,4 +582,11 @@ register_model_info(
     "MetaMath",
     "https://huggingface.co/meta-math",
     "MetaMath is a finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
+)
+
+register_model_info(
+    ["Yuan2-2B-hf", "Yuan2-51B-hf", "Yuan2-102B-hf"],
+    "IEIYuan",
+    "https://huggingface.co/IEITYuan",
+    "Yuan2 is a Basemodel developed by IEI.",
 )

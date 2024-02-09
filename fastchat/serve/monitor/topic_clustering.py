@@ -16,6 +16,7 @@ from sentence_transformers.util import cos_sim
 from sklearn.cluster import KMeans, AgglomerativeClustering
 import torch
 from tqdm import tqdm
+from openai import OpenAI
 
 from fastchat.utils import detect_language
 
@@ -46,6 +47,8 @@ def read_texts(input_file, min_length, max_length, english_only):
             line_texts = [
                 x["content"] for x in l["conversation"] if x["role"] == "user"
             ]
+        elif "turns" in l:
+            line_texts = l["turns"]
 
         for text in line_texts:
             text = text.strip()
@@ -77,14 +80,26 @@ def read_texts(input_file, min_length, max_length, english_only):
 
 
 def get_embeddings(texts, model_name, batch_size):
-    model = SentenceTransformer(model_name)
-    embeddings = model.encode(
-        texts,
-        batch_size=batch_size,
-        show_progress_bar=True,
-        device="cuda",
-        convert_to_tensor=True,
-    )
+    if model_name == "text-embedding-ada-002":
+        client = OpenAI()
+        texts = texts.tolist()
+
+        embeddings = []
+        for i in tqdm(range(0, len(texts), batch_size)):
+            text = texts[i : i + batch_size]
+            responses = client.embeddings.create(input=text, model=model_name).data
+            embeddings.extend([data.embedding for data in responses])
+        embeddings = torch.tensor(embeddings)
+    else:
+        model = SentenceTransformer(model_name)
+        embeddings = model.encode(
+            texts,
+            batch_size=batch_size,
+            show_progress_bar=True,
+            device="cuda",
+            convert_to_tensor=True,
+        )
+
     embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
     return embeddings.cpu()
 
@@ -218,6 +233,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--show-top-k", type=int, default=200)
     parser.add_argument("--show-cut-off", type=int, default=512)
+    parser.add_argument("--save-embeddings", action="store_true")
+    parser.add_argument("--embeddings-file", type=str, default=None)
     args = parser.parse_args()
 
     num_clusters = args.num_clusters
@@ -229,7 +246,15 @@ if __name__ == "__main__":
     )
     print(f"#text: {len(texts)}")
 
-    embeddings = get_embeddings(texts, args.model, args.batch_size)
+    if args.embeddings_file is None:
+        embeddings = get_embeddings(texts, args.model, args.batch_size)
+        if args.save_embeddings:
+            # allow saving embedding to save time and money
+            torch.save(embeddings, "embeddings.pt")
+    else:
+        embeddings = torch.load(args.embeddings_file)
+    print(f"embeddings shape: {embeddings.shape}")
+
     if args.cluster_alg == "kmeans":
         centers, labels = run_k_means(embeddings, num_clusters)
     elif args.cluster_alg == "aggcls":
@@ -249,7 +274,7 @@ if __name__ == "__main__":
     with open(filename_prefix + "_topk.txt", "w") as fout:
         fout.write(topk_str)
 
-    with open(filename_prefix + "_all.txt", "w") as fout:
+    with open(filename_prefix + "_all.jsonl", "w") as fout:
         for i in range(len(centers)):
             tmp_indices = labels == i
             tmp_embeddings = embeddings[tmp_indices]

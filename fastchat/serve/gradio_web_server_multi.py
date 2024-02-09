@@ -44,7 +44,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models
+    global models, all_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -61,49 +61,14 @@ def load_demo(url_params, request: gr.Request):
         selected = 3
 
     if args.model_list_mode == "reload":
-        if args.anony_only_for_proprietary_model:
-            models = get_model_list(
-                args.controller_url,
-                args.register_openai_compatible_models,
-                False,
-                False,
-                False,
-            )
-        else:
-            models = get_model_list(
-                args.controller_url,
-                args.register_openai_compatible_models,
-                args.add_chatgpt,
-                args.add_claude,
-                args.add_palm,
-            )
+        models, all_models = get_model_list(
+            args.controller_url,
+            args.register_api_endpoint_file,
+        )
 
     single_updates = load_demo_single(models, url_params)
 
-    models_anony = list(models)
-    if args.anony_only_for_proprietary_model:
-        # Only enable these models in anony battles.
-        if args.add_chatgpt:
-            models_anony += [
-                "gpt-4-0314",
-                "gpt-4-0613",
-                "gpt-3.5-turbo-0613",
-                "gpt-3.5-turbo-1106",
-            ]
-        if args.add_claude:
-            models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
-        if args.add_palm:
-            models_anony += ["gemini-pro"]
-    anony_only_models = [
-        "claude-1",
-        "gpt-4-0314",
-        "gpt-4-0613",
-    ]
-    for mdl in anony_only_models:
-        models_anony.append(mdl)
-    models_anony = list(set(models_anony))
-
-    side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
+    side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
     return (
         (gr.Tabs.update(selected=selected),)
@@ -199,29 +164,9 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--add-chatgpt",
-        action="store_true",
-        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)",
-    )
-    parser.add_argument(
-        "--add-claude",
-        action="store_true",
-        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
-    )
-    parser.add_argument(
-        "--add-palm",
-        action="store_true",
-        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
-    )
-    parser.add_argument(
-        "--anony-only-for-proprietary-model",
-        action="store_true",
-        help="Only add ChatGPT, Claude, Bard under anony battle tab",
-    )
-    parser.add_argument(
-        "--register-openai-compatible-models",
+        "--register-api-endpoint-file",
         type=str,
-        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+        help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -247,22 +192,10 @@ if __name__ == "__main__":
     set_global_vars(args.controller_url, args.moderate)
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
-    if args.anony_only_for_proprietary_model:
-        models = get_model_list(
-            args.controller_url,
-            args.register_openai_compatible_models,
-            False,
-            False,
-            False,
-        )
-    else:
-        models = get_model_list(
-            args.controller_url,
-            args.register_openai_compatible_models,
-            args.add_chatgpt,
-            args.add_claude,
-            args.add_palm,
-        )
+    models, all_models = get_model_list(
+        args.controller_url,
+        args.register_api_endpoint_file,
+    )
 
     # Set authorization credentials
     auth = None
