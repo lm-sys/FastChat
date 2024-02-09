@@ -71,7 +71,7 @@ def load_demo(url_params, request: gr.Request):
     side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
     return (
-        (gr.Tabs.update(selected=selected),)
+        (gr.Tabs(selected=selected),)
         + single_updates
         + side_by_side_anony_updates
         + side_by_side_named_updates
@@ -80,10 +80,30 @@ def load_demo(url_params, request: gr.Request):
 
 def build_demo(models, elo_results_file, leaderboard_table_file):
     text_size = gr.themes.sizes.text_md
+    if args.show_terms_of_use:
+        load_js = get_window_url_params_with_tos_js
+    else:
+        load_js = get_window_url_params_js
+    head_js = """
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+"""
+    if args.ga_id is not None:
+        head_js += f"""
+<script async src="https://www.googletagmanager.com/gtag/js?id={args.ga_id}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){{dataLayer.push(arguments);}}
+gtag('js', new Date());
+
+gtag('config', '{args.ga_id}');
+window.__gradio_mode__ = "app";
+</script>
+        """
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Default(text_size=text_size),
         css=block_css,
+        head=head_js,
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Arena (battle)", id=0):
@@ -107,11 +127,6 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
 
-        if args.show_terms_of_use:
-            load_js = get_window_url_params_with_tos_js
-        else:
-            load_js = get_window_url_params_js
-
         demo.load(
             load_demo,
             [url_params],
@@ -119,7 +134,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
             + single_model_list
             + side_by_side_anony_list
             + side_by_side_named_list,
-            _js=load_js,
+            js=load_js,
         )
 
     return demo
@@ -185,6 +200,12 @@ if __name__ == "__main__":
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
     )
+    parser.add_argument(
+        "--ga-id",
+        type=str,
+        help="the Google Analytics ID",
+        default=None,
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -205,7 +226,9 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(models, args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,

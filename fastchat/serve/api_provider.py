@@ -411,7 +411,7 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
 
 
 def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base):
-    assert model_name in ["llama2-70b-steerlm-chat"]
+    assert model_name in ["llama2-70b-steerlm-chat", "yi-34b-chat"]
 
     api_key = os.environ["NVIDIA_API_KEY"]
     headers = {

@@ -56,10 +56,10 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 headers = {"User-Agent": "FastChat Client"}
 
-no_change_btn = gr.Button.update()
-enable_btn = gr.Button.update(interactive=True, visible=True)
-disable_btn = gr.Button.update(interactive=False)
-invisible_btn = gr.Button.update(interactive=False, visible=False)
+no_change_btn = gr.Button()
+enable_btn = gr.Button(interactive=True, visible=True)
+disable_btn = gr.Button(interactive=False)
+invisible_btn = gr.Button(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
@@ -75,13 +75,15 @@ The service collects user dialogue data and reserves the right to distribute it 
 Additionally, Bard is offered on LMSys for research purposes only. To access the Bard product, please visit its [website](http://bard.google.com).
 
 ### Acknowledgment
-<div class="image-container">
-    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, <a href="https://www.a16z.com/" target="_blank">a16z</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
-    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
+We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
+
+<div class="image-about">
+    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
+    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
+    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
+    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
+    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
 """
 
@@ -175,9 +177,7 @@ def load_demo_single(models, url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown.update(
-        choices=models, value=selected_model, visible=True
-    )
+    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
 
     state = None
     return state, dropdown_update
@@ -571,8 +571,11 @@ def bot_response(
 
 
 block_css = """
-#notice_markdown {
-    font-size: 110%
+#chatbot {
+    line-height: 1.5;
+}
+#notice_markdown .prose {
+    font-size: 120% !important;
 }
 #notice_markdown th {
     display: none;
@@ -582,10 +585,10 @@ block_css = """
     padding-bottom: 6px;
 }
 #model_description_markdown {
-    font-size: 110%
+    font-size: 120% !important;
 }
-#leaderboard_markdown {
-    font-size: 110%
+#leaderboard_markdown .prose {
+    font-size: 120% !important;
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -594,16 +597,16 @@ block_css = """
 #leaderboard_dataframe td {
     line-height: 0.1em;
 }
-#about_markdown {
-    font-size: 110%
+#about_markdown .prose {
+    font-size: 120% !important;
 }
-#ack_markdown {
-    font-size: 110%
+#ack_markdown .prose {
+    font-size: 120% !important;
 }
 #input_box textarea {
 }
 footer {
-    display:none !important
+    display:none !important;
 }
 .image-container {
     display: flex;
@@ -618,12 +621,11 @@ footer {
     max-width: 20%;
 }
 .image-about img {
-    margin: 0 30px;
-    margin-top: 30px;
-    height: 60px;
+    margin: 0 20px;
+    margin-top: 20px;
+    height: 40px;
     max-height: 100%;
     width: auto;
-    max-width: 20%;
     float: left;
 }
 """
@@ -653,7 +655,7 @@ def get_model_description_md(models):
 
 
 def build_about():
-    about_markdown = f"""
+    about_markdown = """
 # About Us
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
 
@@ -674,15 +676,15 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 
 ## Acknowledgment
 We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [a16z](https://www.a16z.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
-Learn more about partnership [here](https://lmsys.org/donations/).
+We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
 
 <div class="image-about">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
-    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
+    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
+    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
+    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
+    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
+    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
 """
 
@@ -713,7 +715,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-named"):
+    with gr.Group(elem_id="share-region-named"):
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=models,
@@ -929,7 +931,9 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(models)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,
