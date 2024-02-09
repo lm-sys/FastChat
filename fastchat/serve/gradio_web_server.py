@@ -177,9 +177,7 @@ def load_demo_single(models, url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown(
-        choices=models, value=selected_model, visible=True
-    )
+    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
 
     state = None
     return state, dropdown_update
@@ -933,7 +931,9 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(models)
     demo.queue(
-        default_concurrency_limit=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,

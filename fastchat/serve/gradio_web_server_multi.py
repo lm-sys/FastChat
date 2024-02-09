@@ -227,7 +227,8 @@ if __name__ == "__main__":
     demo = build_demo(models, args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
         default_concurrency_limit=args.concurrency_count,
-        status_update_rate=10, api_open=False
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,

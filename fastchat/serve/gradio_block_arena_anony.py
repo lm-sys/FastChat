@@ -238,7 +238,12 @@ SAMPLING_WEIGHTS = {
 BATTLE_TARGETS = {
     "gpt-4": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
     "gpt-4-0613": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
-    "gpt-4-0314": {"gpt-4-1106-preview", "gpt-4-0613", "claude-2.1", "gpt-3.5-turbo-0613"},
+    "gpt-4-0314": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "claude-2.1",
+        "gpt-3.5-turbo-0613",
+    },
     "gpt-4-1106-preview": {
         "gpt-4-0613",
         "gpt-3.5-turbo-0613",
@@ -653,7 +658,9 @@ Find out who is the 🥇LLM Champion!
         with gr.Row():
             for i in range(num_sides):
                 with gr.Column():
-                    model_selectors[i] = gr.Markdown(anony_names[i], elem_id="model_selector_md")
+                    model_selectors[i] = gr.Markdown(
+                        anony_names[i], elem_id="model_selector_md"
+                    )
         with gr.Row():
             slow_warning = gr.Markdown("", elem_id="notice_markdown")
 

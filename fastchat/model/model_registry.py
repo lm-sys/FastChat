@@ -41,20 +41,27 @@ register_model_info(
 )
 
 register_model_info(
-    ["mixtral-8x7b-instruct-v0.1", "mistral-medium", "mistral-7b-instruct-v0.2", "mistral-7b-instruct"],
+    [
+        "mixtral-8x7b-instruct-v0.1",
+        "mistral-medium",
+        "mistral-7b-instruct-v0.2",
+        "mistral-7b-instruct",
+    ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
 )
 
 register_model_info(
-    ["qwen1.5-72b-chat",
-     "qwen1.5-14b-chat",
-     "qwen1.5-7b-chat",
-     "qwen1.5-4b-chat",
-     "qwen1.5-1.8b-chat",
-     "qwen1.5-0.5b-chat",
-     "qwen-14b-chat"],
+    [
+        "qwen1.5-72b-chat",
+        "qwen1.5-14b-chat",
+        "qwen1.5-7b-chat",
+        "qwen1.5-4b-chat",
+        "qwen1.5-1.8b-chat",
+        "qwen1.5-0.5b-chat",
+        "qwen-14b-chat",
+    ],
     "Qwen 1.5",
     "https://qwenlm.github.io/blog/qwen1.5/",
     "a large language model by Alibaba Cloud",
@@ -101,7 +108,7 @@ register_model_info(
         "gpt-3.5-turbo-0125",
         "gpt-3.5-turbo-1106",
         "gpt-3.5-turbo-0314",
-        "gpt-3.5-turbo-0613"
+        "gpt-3.5-turbo-0613",
     ],
     "GPT-3.5",
     "https://platform.openai.com/docs/models/gpt-3-5",
