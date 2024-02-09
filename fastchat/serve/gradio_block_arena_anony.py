@@ -353,9 +353,8 @@ BATTLE_TARGETS = {
     },
     "deepseek-llm-67b-chat": {
         "gpt-4-1106-preview",
+        "gpt-4-turbo",
         "gpt-3.5-turbo-0613",
-        "mixtral-8x7b-instruct-v0.1",
-        "yi-34b-chat",
     },
     "llama2-70b-steerlm-chat": {
         "llama-2-70b-chat",

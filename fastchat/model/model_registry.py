@@ -89,6 +89,20 @@ register_model_info(
 )
 
 register_model_info(
+    ["deepseek-llm-67b-chat"],
+    "DeepSeek LLM",
+    "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
+    "An advanced language model by DeepSeek",
+)
+
+register_model_info(
+    ["stripedhyena-nous-7b"],
+    "StripedHyena-Nous",
+    "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
+    "A chat model developed by Together Research and Nous Research.",
+)
+
+register_model_info(
     ["solar-10.7b-instruct-v1.0"],
     "SOLAR-10.7B-Instruct",
     "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
