@@ -85,9 +85,9 @@ See more command options and how to handle out-of-memory in the "Inference with 
 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
-### LongChat and FastChat-T5 Weights
+### Other Models
 Besides Vicuna, we also released two additional models: [LongChat](https://lmsys.org/blog/2023-06-29-longchat/) and FastChat-T5.
-You can use the commands below to chat with them. It will automatically download the weights from Hugging Face repos.
+You can use the commands below to chat with them. They will automatically download the weights from Hugging Face repos.
 
 | Model | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
