@@ -726,7 +726,7 @@ def build_single_model_ui(models, add_promotion_links=False):
             )
         with gr.Row():
             with gr.Accordion(
-                "🔍 Expand to see 20+ model descriptions",
+                f"🔍 Expand to see the descriptions of {len(models)} models",
                 open=False,
                 elem_id="model_description_accordion",
             ):
@@ -854,7 +854,7 @@ def build_demo(models):
                 state,
                 model_selector,
             ],
-            _js=load_js,
+            js=load_js,
         )
 
     return demo
