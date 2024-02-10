@@ -5,7 +5,7 @@ We invite the entire community to join this benchmarking effort by contributing 
 ## How to add a new model
 If you want to see a specific model in the arena, you can follow the methods below.
 
-- Method 1: Hosted by 3rd party API providers or yourself.
+- Method 1: Hosted by 3rd party API providers or yourself.  
   If you have a model hosted by a 3rd party API provider or yourself, please give us the access to an API endpoint.
   - We prefer OpenAI-compatible APIs, so we can reuse our [code](https://github.com/lm-sys/FastChat/blob/gradio/fastchat/serve/api_provider.py) for calling OpenAI models.
   - If you have your own API protocol, please follow [instructions](model_support.md) to add them.
