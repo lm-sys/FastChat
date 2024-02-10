@@ -119,7 +119,7 @@ After these steps, the new model should be compatible with most FastChat feature
 3. Launch the gradio web server with argument `--register [JSON-file]`.
 
 ```
-python3 -m fastchat.serve.gradio_web_server --register [JSON-file] --controller "" --share
+python3 -m fastchat.serve.gradio_web_server --controller "" --share --register [JSON-file]
 ```
 
 You should be able to chat with your API-based model!
