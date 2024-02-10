@@ -3,6 +3,7 @@ Common utilities.
 """
 from asyncio import AbstractEventLoop
 from io import BytesIO
+import base64
 import json
 import logging
 import logging.handlers
@@ -362,7 +363,6 @@ def str_to_torch_dtype(dtype: str):
 
 
 def load_image(image_file):
-    import base64
     from PIL import Image
     import requests
 

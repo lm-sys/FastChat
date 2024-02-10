@@ -262,10 +262,7 @@ def _prepare_text_with_image(state, text, image):
             image
         )  # PIL type is not JSON serializable
 
-        text = (
-            "<image>\n" + text,
-            [image],
-        )
+        text = text, [image]
 
     return text
 
@@ -391,6 +388,7 @@ def bot_response(
     model_api_dict = (
         api_endpoint_info[model_name] if model_name in api_endpoint_info else None
     )
+    images = conv.get_images()
 
     if model_api_dict is None:
         # Query worker address
@@ -417,7 +415,6 @@ def bot_response(
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
-        images = conv.get_images()
 
         # Set repetition_penalty
         if "t5" in model_name:
@@ -507,7 +504,6 @@ def bot_response(
         filename = os.path.join(
             LOGDIR,
             "serve_images",
-            f"{t.year}-{t.month:02d}-{t.day:02d}",
             f"{hash_str}.jpg",
         )
         if not os.path.isfile(filename):

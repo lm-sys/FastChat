@@ -36,6 +36,9 @@ class SeparatorStyle(IntEnum):
     YUAN2 = auto()
 
 
+IMAGE_PLACEHOLDER_STR = "$$<image>$$"
+
+
 @dataclasses.dataclass
 class Conversation:
     """A class that manages prompt templates and keeps all conversation history."""
@@ -80,6 +83,7 @@ class Conversation:
                 if message:
                     if type(message) is tuple:
                         message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
@@ -310,7 +314,7 @@ class Conversation:
 
         max_hw, min_hw = max(image.size), min(image.size)
         aspect_ratio = max_hw / min_hw
-        max_len, min_len = 800, 400
+        max_len, min_len = 2048, 2048
         shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
         longest_edge = int(shortest_edge * aspect_ratio)
         W, H = image.size

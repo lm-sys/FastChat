@@ -4,7 +4,7 @@ The gradio demo server for chatting with a large multimodal model.
 Usage:
 python3 -m fastchat.serve.controller
 python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --tokenizer-path llava-hf/llava-1.5-7b-hf
-python3 -m fastchat.serve.gradio_web_server_multi --share
+python3 -m fastchat.serve.gradio_web_server_multi --share --multimodal
 """
 
 import os
@@ -27,13 +27,12 @@ from fastchat.utils import (
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
-enable_moderation = False
 
 
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
     promotion = (
         """
-- | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+| [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 """
         if add_promotion_links
         else ""
@@ -135,7 +134,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
 
     if add_promotion_links:
-        gr.Markdown(acknowledgment_md)
+        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]

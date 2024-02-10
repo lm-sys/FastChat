@@ -128,7 +128,7 @@ window.__gradio_mode__ = "app";
                     models, add_promotion_links=True
                 )
 
-            with gr.Tab("Vision-Language Model Direct Chat", id=3):
+            with gr.Tab("Vision-Language Model Direct Chat", id=3, visible=args.multimodal):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
                         vl_models, add_promotion_links=True
@@ -198,6 +198,11 @@ if __name__ == "__main__":
         "--show-terms-of-use",
         action="store_true",
         help="Shows term of use before loading the demo",
+    )
+    parser.add_argument(
+        "--multimodal",
+        action="store_true",
+        help="Show multi modal tabs."
     )
     parser.add_argument(
         "--register-api-endpoint-file",
