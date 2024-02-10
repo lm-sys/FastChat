@@ -5,6 +5,7 @@ The gradio demo server for chatting with a single model.
 import argparse
 from collections import defaultdict
 import datetime
+import hashlib
 import json
 import os
 import random
@@ -37,6 +38,7 @@ from fastchat.utils import (
     get_window_url_params_with_tos_js,
     moderation_filter,
     parse_gradio_auth_creds,
+    load_image,
 )
 
 
@@ -65,7 +67,7 @@ Additionally, Bard is offered on LMSys for research purposes only. To access the
 ### Acknowledgment
 We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
 
-<div class="image-about">
+<div class="sponsor-image-about">
     <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
     <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
     <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
@@ -123,22 +125,32 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list(controller_url, register_api_endpoint_file):
+def get_model_list(controller_url, register_api_endpoint_file, multimodal):
     global api_endpoint_info
 
     # Add models from the controller
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
-        ret = requests.post(controller_url + "/list_models")
-        models = ret.json()["models"]
+
+        if multimodal:
+            ret = requests.post(controller_url + "/list_multimodal_models")
+            models = ret.json()["models"]
+        else:
+            ret = requests.post(controller_url + "/list_language_models")
+            models = ret.json()["models"]
     else:
         models = []
 
     # Add models from the API providers
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
-        models += list(api_endpoint_info.keys())
+        for mdl, mdl_dict in api_endpoint_info.items():
+            mdl_multimodal = mdl_dict.get("multimodal", False)
+            if multimodal and mdl_multimodal:
+                models += [mdl]
+            elif not multimodal and not mdl_multimodal:
+                models += [mdl]
 
     # Remove anonymous models
     models = list(set(models))
@@ -179,8 +191,7 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
-            controller_url,
-            args.register_api_endpoint_file,
+            controller_url, args.register_api_endpoint_file, False
         )
 
     return load_demo_single(models, url_params)
@@ -223,14 +234,14 @@ def regenerate(state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"regenerate. ip: {ip}")
     state.conv.update_last_message(None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], "") + (disable_btn,) * 5
+    return (state, [], "", None) + (disable_btn,) * 5
 
 
 def get_ip(request: gr.Request):
@@ -241,7 +252,22 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def add_text(state, model_selector, text, request: gr.Request):
+def _prepare_text_with_image(state, text, image):
+    if image is not None:
+        if len(state.conv.get_images()) > 0:
+            # reset convo with new image
+            state.conv = get_conversation_template(state.model_name)
+
+        image = state.conv.convert_image_to_base64(
+            image
+        )  # PIL type is not JSON serializable
+
+        text = text, [image]
+
+    return text
+
+
+def add_text(state, model_selector, text, image, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -258,8 +284,7 @@ def add_text(state, model_selector, text, request: gr.Request):
         # overwrite the original text
         text = MODERATION_MSG
 
-    conv = state.conv
-    if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
+    if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
@@ -267,9 +292,10 @@ def add_text(state, model_selector, text, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    conv.append_message(conv.roles[0], text)
-    conv.append_message(conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    text = _prepare_text_with_image(state, text, image)
+    state.conv.append_message(state.conv.roles[0], text)
+    state.conv.append_message(state.conv.roles[1], None)
+    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
 def model_worker_stream_iter(
@@ -281,6 +307,7 @@ def model_worker_stream_iter(
     repetition_penalty,
     top_p,
     max_new_tokens,
+    images,
 ):
     # Make requests
     gen_params = {
@@ -294,7 +321,11 @@ def model_worker_stream_iter(
         "stop_token_ids": conv.stop_token_ids,
         "echo": False,
     }
+
     logger.info(f"==== request ====\n{gen_params}")
+
+    if len(images) > 0:
+        gen_params["images"] = images
 
     # Stream output
     response = requests.post(
@@ -357,6 +388,7 @@ def bot_response(
     model_api_dict = (
         api_endpoint_info[model_name] if model_name in api_endpoint_info else None
     )
+    images = conv.get_images()
 
     if model_api_dict is None:
         # Query worker address
@@ -399,6 +431,7 @@ def bot_response(
             repetition_penalty,
             top_p,
             max_new_tokens,
+            images,
         )
     else:
         stream_iter = get_api_provider_stream_iter(
@@ -463,6 +496,20 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
+    # We load the image because gradio accepts base64 but that increases file size by ~1.33x
+    loaded_images = [load_image(image) for image in images]
+    images_hash = [hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images]
+    for image, hash_str in zip(loaded_images, images_hash):
+        t = datetime.datetime.now()
+        filename = os.path.join(
+            LOGDIR,
+            "serve_images",
+            f"{hash_str}.jpg",
+        )
+        if not os.path.isfile(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            image.save(filename)
+
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
@@ -477,14 +524,12 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
+            "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
 
 
 block_css = """
-#chatbot {
-    line-height: 1.5;
-}
 #notice_markdown .prose {
     font-size: 120% !important;
 }
@@ -514,24 +559,10 @@ block_css = """
 #ack_markdown .prose {
     font-size: 120% !important;
 }
-#input_box textarea {
-}
 footer {
     display:none !important;
 }
-.image-container {
-    display: flex;
-    align-items: center;
-    padding: 1px;
-}
-.image-container img {
-    margin: 0 30px;
-    height: 30px;
-    max-height: 100%;
-    width: auto;
-    max-width: 20%;
-}
-.image-about img {
+.sponsor-image-about img {
     margin: 0 20px;
     margin-top: 20px;
     height: 40px;
@@ -589,7 +620,7 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
 We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
 
-<div class="image-about">
+<div class="sponsor-image-about">
     <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
     <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
     <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
@@ -635,7 +666,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             with gr.Accordion(
                 f"🔍 Expand to see the descriptions of {len(models)} models",
                 open=False,
-                elem_id="model_description_accordion",
             ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
@@ -691,6 +721,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
+    imagebox = gr.State(None)
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
@@ -707,17 +738,23 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, model_selector],
         [textbox, upvote_btn, downvote_btn, flag_btn],
     )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
+    regenerate_btn.click(
+        regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
+    ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+    clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+    model_selector.change(
+        clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+    )
 
     textbox.submit(
-        add_text, [state, model_selector, textbox], [state, chatbot, textbox] + btn_list
+        add_text,
+        [state, model_selector, textbox, imagebox],
+        [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -725,8 +762,8 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
     send_btn.click(
         add_text,
-        [state, model_selector, textbox],
-        [state, chatbot, textbox] + btn_list,
+        [state, model_selector, textbox, imagebox],
+        [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -826,8 +863,7 @@ if __name__ == "__main__":
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
     models, all_models = get_model_list(
-        args.controller_url,
-        args.register_api_endpoint_file,
+        args.controller_url, args.register_api_endpoint_file, False
     )
 
     # Set authorization credentials

@@ -34,6 +34,7 @@ class BaseModelWorker:
         model_names: List[str],
         limit_worker_concurrency: int,
         conv_template: str = None,
+        multimodal: bool = False,
     ):
         global logger, worker
 
@@ -46,6 +47,7 @@ class BaseModelWorker:
         self.limit_worker_concurrency = limit_worker_concurrency
         self.conv = self.make_conv_template(conv_template, model_path)
         self.conv.sep_style = int(self.conv.sep_style)
+        self.multimodal = multimodal
         self.tokenizer = None
         self.context_len = None
         self.call_ct = 0
@@ -92,6 +94,7 @@ class BaseModelWorker:
             "worker_name": self.worker_addr,
             "check_heart_beat": True,
             "worker_status": self.get_status(),
+            "multimodal": self.multimodal,
         }
         r = requests.post(url, json=data)
         assert r.status_code == 200

@@ -2,6 +2,8 @@
 Common utilities.
 """
 from asyncio import AbstractEventLoop
+from io import BytesIO
+import base64
 import json
 import logging
 import logging.handlers
@@ -358,3 +360,24 @@ def str_to_torch_dtype(dtype: str):
         return torch.bfloat16
     else:
         raise ValueError(f"Unrecognized dtype: {dtype}")
+
+
+def load_image(image_file):
+    from PIL import Image
+    import requests
+
+    image = None
+
+    if image_file.startswith("http://") or image_file.startswith("https://"):
+        timeout = int(os.getenv("REQUEST_TIMEOUT", "3"))
+        response = requests.get(image_file, timeout=timeout)
+        image = Image.open(BytesIO(response.content))
+    elif image_file.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
+        image = Image.open(image_file)
+    elif image_file.startswith("data:"):
+        image_file = image_file.split(",")[1]
+        image = Image.open(BytesIO(base64.b64decode(image_file)))
+    else:
+        image = Image.open(BytesIO(base64.b64decode(image_file)))
+
+    return image
