@@ -403,6 +403,7 @@ def bot_response(
     else:
         stream_iter = get_api_provider_stream_iter(
             conv,
+            model_name,
             model_api_dict,
             temperature,
             top_p,

@@ -15,6 +15,7 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 def get_api_provider_stream_iter(
     conv,
+    model_name,
     model_api_dict,
     temperature,
     top_p,
