@@ -307,8 +307,8 @@ def build_side_by_side_ui_named(models):
                     )
         with gr.Row():
             with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(models)} models",
-                    open=False):
+                f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+            ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
 

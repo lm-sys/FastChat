@@ -639,8 +639,8 @@ Find out who is the 🥇LLM Champion!
 
     with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion(
-                f"🔍 Expand to see the descriptions of {len(models)} models",
-                open=False):
+            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+        ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
         with gr.Row():

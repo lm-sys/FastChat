@@ -50,7 +50,7 @@ def load_demo(url_params, request: gr.Request):
         selected = 0
     elif "compare" in url_params:
         selected = 1
-    elif "single" in url_params or "model" in url_params:
+    elif "direct" in url_params or "model" in url_params:
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
