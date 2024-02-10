@@ -41,7 +41,6 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
     notice_markdown = f"""
 # 🏔️ Chat with Open Large Vision-Language Models
 {promotion}
-## 🤖 Choose any model to chat
 """
 
     state = gr.State()

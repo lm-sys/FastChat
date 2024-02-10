@@ -99,17 +99,19 @@ def openai_api_stream_iter(
 ):
     import openai
 
-    is_azure = False
-    if "azure" in model_name:
-        is_azure = True
-        openai.api_type = "azure"
-        openai.api_version = "2023-07-01-preview"
-    else:
-        openai.api_type = "open_ai"
-        openai.api_version = None
+    api_key = api_key or os.environ["OPENAI_API_KEY"]
 
-    openai.api_base = api_base or "https://api.openai.com/v1"
-    openai.api_key = api_key or os.environ["OPENAI_API_KEY"]
+    if "azure" in model_name:
+        client = openai.AzureOpenAI(
+            api_version="2023-07-01-preview",
+            azure_endpoint=api_base or "https://api.openai.com/v1",
+            api_key=api_key,
+        )
+    else:
+        client = openai.OpenAI(
+            base_url=api_base or "https://api.openai.com/v1", api_key=api_key
+        )
+
     if model_name == "gpt-4-turbo":
         model_name = "gpt-4-1106-preview"
 
@@ -123,26 +125,17 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    if is_azure:
-        res = openai.ChatCompletion.create(
-            engine=model_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_new_tokens,
-            stream=True,
-        )
-    else:
-        res = openai.ChatCompletion.create(
-            model=model_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_new_tokens,
-            stream=True,
-        )
+    res = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_new_tokens,
+        stream=True,
+    )
     text = ""
     for chunk in res:
-        if len(chunk["choices"]) > 0:
-            text += chunk["choices"][0]["delta"].get("content", "")
+        if len(chunk.choices) > 0:
+            text += chunk.choices[0].delta.content or ""
             data = {
                 "text": text,
                 "error_code": 0,
