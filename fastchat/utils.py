@@ -154,10 +154,7 @@ def oai_moderation(text):
     """
     import openai
 
-    openai.api_base = "https://api.openai.com/v1"
-    openai.api_key = os.environ["OPENAI_API_KEY"]
-    openai.api_type = "open_ai"
-    openai.api_version = None
+    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     threshold_dict = {
         "sexual": 0.2,
@@ -165,13 +162,13 @@ def oai_moderation(text):
     MAX_RETRY = 3
     for _ in range(MAX_RETRY):
         try:
-            res = openai.Moderation.create(input=text)
-            flagged = res["results"][0]["flagged"]
+            res = client.moderations.create(input=text)
+            flagged = res.results[0].flagged
             for category, threshold in threshold_dict.items():
-                if res["results"][0]["category_scores"][category] > threshold:
+                if getattr(res.results[0].category_scores, category) > threshold:
                     flagged = True
             break
-        except (openai.error.OpenAIError, KeyError, IndexError) as e:
+        except (openai.OpenAIError, KeyError, IndexError) as e:
             # flag true to be conservative
             flagged = True
             print(f"MODERATION ERROR: {e}\nInput: {text}")
