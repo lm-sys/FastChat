@@ -101,7 +101,7 @@ After these steps, the new model should be compatible with most FastChat feature
   worker.
 
 ## API-Based Models
-1. Implement an API-based streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py)
+1. Implement an API-based streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py). You can learn from the OpenAI example.
 2. Specify your endpoint info in a JSON configuration file
 ```
 {
