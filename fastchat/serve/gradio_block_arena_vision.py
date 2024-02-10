@@ -48,7 +48,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box():
+    with gr.Group():
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=models,
@@ -59,9 +59,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
             )
 
         with gr.Accordion(
-            "🔍 Expand to see 20+ model descriptions",
-            open=False,
-            elem_id="model_description_accordion",
+            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
         ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")

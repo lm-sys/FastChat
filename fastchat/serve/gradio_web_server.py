@@ -67,7 +67,7 @@ Additionally, Bard is offered on LMSys for research purposes only. To access the
 ### Acknowledgment
 We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
 
-<div class="sponor-image-about">
+<div class="sponsor-image-about">
     <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
     <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
     <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
@@ -534,9 +534,6 @@ def bot_response(
 
 
 block_css = """
-#chatbot {
-    line-height: 1.5;
-}
 #notice_markdown .prose {
     font-size: 120% !important;
 }
@@ -566,22 +563,8 @@ block_css = """
 #ack_markdown .prose {
     font-size: 120% !important;
 }
-#input_box textarea {
-}
 footer {
     display:none !important;
-}
-.sponsor-image-container {
-    display: flex;
-    align-items: center;
-    padding: 1px;
-}
-.sponsor-image-container img {
-    margin: 0 30px;
-    height: 30px;
-    max-height: 100%;
-    width: auto;
-    max-width: 20%;
 }
 .sponsor-image-about img {
     margin: 0 20px;
@@ -685,9 +668,7 @@ def build_single_model_ui(models, add_promotion_links=False):
             )
         with gr.Row():
             with gr.Accordion(
-                f"🔍 Expand to see the descriptions of {len(models)} models",
-                open=False,
-                elem_id="model_description_accordion",
+                f"🔍 Expand to see the descriptions of {len(models)} models", open=False,
             ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
