@@ -367,7 +367,7 @@ def ai2_api_stream_iter(
     text = ""
     for line in res.iter_lines():
         if line:
-            part = loads(line)
+            part = json.loads(line)
             if "result" in part and "output" in part["result"]:
                 for t in part["result"]["output"]["text"]:
                     text += t
