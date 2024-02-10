@@ -106,7 +106,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 examples=[
                     [
                         f"{cur_dir}/example_images/city.jpeg",
-                        "Explain this photo.",
+                        "What is unusual about this image?",
                     ],
                     [
                         f"{cur_dir}/example_images/fridge.jpeg",

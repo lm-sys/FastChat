@@ -322,10 +322,10 @@ def model_worker_stream_iter(
         "echo": False,
     }
 
+    logger.info(f"==== request ====\n{gen_params}")
+
     if len(images) > 0:
         gen_params["images"] = images
-
-    logger.info(f"==== request ====\n{gen_params}")
 
     # Stream output
     response = requests.post(
@@ -664,7 +664,8 @@ def build_single_model_ui(models, add_promotion_links=False):
             )
         with gr.Row():
             with gr.Accordion(
-                f"🔍 Expand to see the descriptions of {len(models)} models", open=False,
+                f"🔍 Expand to see the descriptions of {len(models)} models",
+                open=False,
             ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
