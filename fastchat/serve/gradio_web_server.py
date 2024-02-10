@@ -81,7 +81,7 @@ We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a1
 #     "model_name": "gpt-3.5-turbo-0613",
 #     "api_type": "openai",
 #     "api_base": "https://api.openai.com/v1",
-#     "api_key": "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",
+#     "api_key": "sk-******",
 #     "anony_only": false
 #   }
 # }
