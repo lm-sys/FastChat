@@ -1,18 +1,91 @@
 """Call API providers."""
 
-from json import loads
-import os
-
 import json
+import os
 import random
-import requests
 import time
 
+import requests
+
 from fastchat.utils import build_logger
-from fastchat.constants import WORKER_API_TIMEOUT
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
+
+
+def get_api_provider_stream_iter(
+    conv,
+    model_name,
+    model_api_dict,
+    temperature,
+    top_p,
+    max_new_tokens,
+):
+    if model_api_dict["api_type"] == "openai":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "anthropic":
+        prompt = conv.get_prompt()
+        stream_iter = anthropic_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
+    elif model_api_dict["api_type"] == "gemini":
+        stream_iter = gemini_api_stream_iter(
+            model_api_dict["model_name"],
+            conv,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "bard":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = bard_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "mistral":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = mistral_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
+    elif model_api_dict["api_type"] == "nvidia":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = nvidia_api_stream_iter(
+            model_name,
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            model_api_dict["api_base"],
+        )
+    elif model_api_dict["api_type"] == "ai2":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = ai2_api_stream_iter(
+            model_name,
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
+    else:
+        raise NotImplementedError()
+
+    return stream_iter
 
 
 def openai_api_stream_iter(
@@ -107,65 +180,6 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
         data = {
             "text": text,
             "error_code": 0,
-        }
-        yield data
-
-
-def init_palm_chat(model_name):
-    import vertexai  # pip3 install google-cloud-aiplatform
-    from vertexai.preview.language_models import ChatModel
-    from vertexai.preview.generative_models import GenerativeModel
-
-    project_id = os.environ["GCP_PROJECT_ID"]
-    location = "us-central1"
-    vertexai.init(project=project_id, location=location)
-
-    if model_name in ["palm-2"]:
-        # According to release note, "chat-bison@001" is PaLM 2 for chat.
-        # https://cloud.google.com/vertex-ai/docs/release-notes#May_10_2023
-        model_name = "chat-bison@001"
-        chat_model = ChatModel.from_pretrained(model_name)
-        chat = chat_model.start_chat(examples=[])
-    elif model_name in ["gemini-pro"]:
-        model = GenerativeModel(model_name)
-        chat = model.start_chat()
-    return chat
-
-
-def palm_api_stream_iter(model_name, chat, message, temperature, top_p, max_new_tokens):
-    if model_name in ["gemini-pro"]:
-        max_new_tokens = max_new_tokens * 2
-    parameters = {
-        "temperature": temperature,
-        "top_p": top_p,
-        "max_output_tokens": max_new_tokens,
-    }
-    gen_params = {
-        "model": model_name,
-        "prompt": message,
-    }
-    gen_params.update(parameters)
-    if model_name == "palm-2":
-        response = chat.send_message(message, **parameters)
-    else:
-        response = chat.send_message(message, generation_config=parameters, stream=True)
-
-    logger.info(f"==== request ====\n{gen_params}")
-
-    try:
-        text = ""
-        for chunk in response:
-            text += chunk.text
-            data = {
-                "text": text,
-                "error_code": 0,
-            }
-            yield data
-    except Exception as e:
-        logger.error(f"==== error ====\n{e}")
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {e}\nPlease try again or increase the number of max tokens.",
-            "error_code": 1,
         }
         yield data
 
@@ -353,7 +367,7 @@ def ai2_api_stream_iter(
     text = ""
     for line in res.iter_lines():
         if line:
-            part = loads(line)
+            part = json.loads(line)
             if "result" in part and "output" in part["result"]:
                 for t in part["result"]["output"]["text"]:
                     text += t

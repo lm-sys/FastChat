@@ -177,7 +177,7 @@ def oai_moderation(text):
 
 
 def moderation_filter(text, model_list):
-    MODEL_KEYWORDS = ["claude", "gpt-4", "gpt-3.5", "bard"]
+    MODEL_KEYWORDS = ["claude", "gpt-4", "bard"]
 
     for keyword in MODEL_KEYWORDS:
         for model in model_list:

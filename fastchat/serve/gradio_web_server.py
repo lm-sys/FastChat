@@ -14,7 +14,6 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import SeparatorStyle
 from fastchat.constants import (
     LOGDIR,
     WORKER_API_TIMEOUT,
@@ -29,25 +28,14 @@ from fastchat.constants import (
 )
 from fastchat.model.model_adapter import (
     get_conversation_template,
-    ANTHROPIC_MODEL_LIST,
 )
 from fastchat.model.model_registry import get_model_info, model_info
-from fastchat.serve.api_provider import (
-    anthropic_api_stream_iter,
-    openai_api_stream_iter,
-    palm_api_stream_iter,
-    gemini_api_stream_iter,
-    bard_api_stream_iter,
-    mistral_api_stream_iter,
-    nvidia_api_stream_iter,
-    ai2_api_stream_iter,
-    init_palm_chat,
-)
+from fastchat.serve.api_provider import get_api_provider_stream_iter
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
+    moderation_filter,
     parse_gradio_auth_creds,
 )
 
@@ -87,18 +75,18 @@ We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a1
 </div>
 """
 
-ip_expiration_dict = defaultdict(lambda: 0)
-
 # JSON file format of API-based models:
 # {
-#     "vicuna-7b": {
-#         "model_name": "vicuna-7b-v1.5",
-#         "api_base": "http://8.8.8.55:5555/v1",
-#         "api_key": "password",
-#         "api_type": "openai", # openai, anthropic, palm, mistral
-#         "anony_only": false,  # whether to show this model in anonymous mode only
-#     },
+#   "gpt-3.5-turbo-0613": {
+#     "model_name": "gpt-3.5-turbo-0613",
+#     "api_type": "openai",
+#     "api_base": "https://api.openai.com/v1",
+#     "api_key": "sk-******",
+#     "anony_only": false
+#   }
 # }
+# "api_type" can be one of the following: openai, anthropic, gemini, mistral.
+# "anony_only" means whether to show this model in anonymous mode only.
 api_endpoint_info = {}
 
 
@@ -108,9 +96,6 @@ class State:
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
-
-        if model_name in ["palm-2", "gemini-pro"]:
-            self.palm_chat = init_palm_chat(model_name)
 
     def to_gradio_chatbot(self):
         return self.conv.to_gradio_chatbot()
@@ -140,6 +125,8 @@ def get_conv_log_filename():
 
 def get_model_list(controller_url, register_api_endpoint_file):
     global api_endpoint_info
+
+    # Add models from the controller
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
@@ -148,11 +135,12 @@ def get_model_list(controller_url, register_api_endpoint_file):
     else:
         models = []
 
-    # Add API providers
+    # Add models from the API providers
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         models += list(api_endpoint_info.keys())
 
+    # Remove anonymous models
     models = list(set(models))
     visible_models = models.copy()
     for mdl in visible_models:
@@ -162,6 +150,7 @@ def get_model_list(controller_url, register_api_endpoint_file):
         if mdl_dict["anony_only"]:
             visible_models.remove(mdl)
 
+    # Sort models and add descriptions
     priority = {k: f"___{i:03d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
     visible_models.sort(key=lambda x: priority.get(x, x))
@@ -178,7 +167,6 @@ def load_demo_single(models, url_params):
             selected_model = model
 
     dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
-
     state = None
     return state, dropdown_update
 
@@ -188,7 +176,6 @@ def load_demo(url_params, request: gr.Request):
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
@@ -283,17 +270,6 @@ def add_text(state, model_selector, text, request: gr.Request):
     conv.append_message(conv.roles[0], text)
     conv.append_message(conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
-
-
-def post_process_code(code):
-    sep = "\n```"
-    if sep in code:
-        blocks = code.split(sep)
-        if len(blocks) % 2 == 1:
-            for i in range(1, len(blocks), 2):
-                blocks[i] = blocks[i].replace("\\_", "_")
-        code = sep.join(blocks)
-    return code
 
 
 def model_worker_stream_iter(
@@ -424,78 +400,15 @@ def bot_response(
             top_p,
             max_new_tokens,
         )
-    elif model_api_dict["api_type"] == "openai":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
-        )
-    elif model_api_dict["api_type"] == "anthropic":
-        prompt = conv.get_prompt()
-        stream_iter = anthropic_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_api_dict["api_type"] == "palm":
-        stream_iter = palm_api_stream_iter(
-            model_name,
-            state.palm_chat,
-            conv.messages[-2][1],
-            temperature,
-            top_p,
-            max_new_tokens,
-        )
-    elif model_api_dict["api_type"] == "gemini":
-        stream_iter = gemini_api_stream_iter(
-            model_api_dict["model_name"],
-            conv,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_key=model_api_dict["api_key"],
-        )
-    elif model_api_dict["api_type"] == "bard":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = bard_api_stream_iter(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            api_key=model_api_dict["api_key"],
-        )
-    elif model_api_dict["api_type"] == "mistral":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = mistral_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_api_dict["api_type"] == "nvidia":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = nvidia_api_stream_iter(
-            model_name,
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            model_api_dict["api_base"],
-        )
-    elif model_api_dict["api_type"] == "ai2":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = ai2_api_stream_iter(
-            model_name,
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
-        )
     else:
-        raise NotImplementedError
+        stream_iter = get_api_provider_stream_iter(
+            conv,
+            model_name,
+            model_api_dict,
+            temperature,
+            top_p,
+            max_new_tokens,
+        )
 
     conv.update_last_message("▌")
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -518,8 +431,6 @@ def bot_response(
                 )
                 return
         output = data["text"].strip()
-        if "vicuna" in model_name:
-            output = post_process_code(output)
         conv.update_last_message(output)
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
@@ -687,11 +598,7 @@ We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/)
     <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
 """
-
-    # state = gr.State()
     gr.Markdown(about_markdown, elem_id="about_markdown")
-
-    # return [state]
 
 
 def build_single_model_ui(models, add_promotion_links=False):

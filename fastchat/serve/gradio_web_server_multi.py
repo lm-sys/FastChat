@@ -9,9 +9,6 @@ import time
 
 import gradio as gr
 
-from fastchat.constants import (
-    SESSION_EXPIRATION_TIME,
-)
 from fastchat.serve.gradio_block_arena_anony import (
     build_side_by_side_ui_anony,
     load_demo_side_by_side_anony,
@@ -29,7 +26,6 @@ from fastchat.serve.gradio_web_server import (
     build_about,
     get_model_list,
     load_demo_single,
-    ip_expiration_dict,
     get_ip,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
@@ -48,14 +44,13 @@ def load_demo(url_params, request: gr.Request):
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     selected = 0
     if "arena" in url_params:
         selected = 0
     elif "compare" in url_params:
         selected = 1
-    elif "single" in url_params:
+    elif "direct" in url_params or "model" in url_params:
         selected = 2
     elif "leaderboard" in url_params:
         selected = 3
@@ -67,9 +62,9 @@ def load_demo(url_params, request: gr.Request):
         )
 
     single_updates = load_demo_single(models, url_params)
-
     side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
+
     return (
         (gr.Tabs(selected=selected),)
         + single_updates
@@ -84,6 +79,7 @@ def build_demo(models, elo_results_file, leaderboard_table_file):
         load_js = get_window_url_params_with_tos_js
     else:
         load_js = get_window_url_params_js
+
     head_js = """
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 """
@@ -99,6 +95,7 @@ gtag('config', '{args.ga_id}');
 window.__gradio_mode__ = "app";
 </script>
         """
+
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Default(text_size=text_size),
@@ -116,9 +113,11 @@ window.__gradio_mode__ = "app";
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
+
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=3):
                     build_leaderboard_tab(elo_results_file, leaderboard_table_file)
+
             with gr.Tab("About Us", id=4):
                 about = build_about()
 
