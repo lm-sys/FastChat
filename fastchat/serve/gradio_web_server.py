@@ -77,14 +77,16 @@ We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a1
 
 # JSON file format of API-based models:
 # {
-#     "vicuna-7b": {
-#         "model_name": "vicuna-7b-v1.5",
-#         "api_base": "http://8.8.8.55:5555/v1",
-#         "api_key": "password",
-#         "api_type": "openai", # openai, anthropic, gemini, mistral
-#         "anony_only": false,  # whether to show this model in anonymous mode only
-#     },
+#   "gpt-3.5-turbo-0613": {
+#     "model_name": "gpt-3.5-turbo-0613",
+#     "api_type": "openai",
+#     "api_base": "https://api.openai.com/v1",
+#     "api_key": "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",
+#     "anony_only": false
+#   }
 # }
+# "api_type" can be one of the following: openai, anthropic, gemini, mistral.
+# "anony_only" means whether to show this model in anonymous mode only.
 api_endpoint_info = {}
 
 
