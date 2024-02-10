@@ -105,11 +105,12 @@ def openai_api_stream_iter(
         client = openai.AzureOpenAI(
             api_version="2023-07-01-preview",
             azure_endpoint=api_base or "https://api.openai.com/v1",
-            api_key=api_key)
+            api_key=api_key,
+        )
     else:
         client = openai.OpenAI(
-            base_url=api_base or "https://api.openai.com/v1",
-            api_key=api_key)
+            base_url=api_base or "https://api.openai.com/v1", api_key=api_key
+        )
 
     if model_name == "gpt-4-turbo":
         model_name = "gpt-4-1106-preview"
@@ -124,11 +125,13 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = client.chat.completions.create(model=model_name,
+    res = client.chat.completions.create(
+        model=model_name,
         messages=messages,
         temperature=temperature,
         max_tokens=max_new_tokens,
-        stream=True)
+        stream=True,
+    )
     text = ""
     for chunk in res:
         if len(chunk.choices) > 0:
