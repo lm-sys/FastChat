@@ -25,9 +25,8 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     invisible_btn,
     acknowledgment_md,
-    get_model_description_md,
-    ip_expiration_dict,
     get_ip,
+    get_model_description_md,
 )
 from fastchat.utils import (
     build_logger,
