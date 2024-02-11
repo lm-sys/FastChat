@@ -172,6 +172,9 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + "\n" + message + self.sep + "\n"
                 else:
                     ret += role + "\n"
@@ -1561,6 +1564,21 @@ register_conv_template(
         stop_str="<eod>",
     )
 )
+
+# Llava-chatml
+# reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
+register_conv_template(
+    Conversation(
+        name="llava-chatml",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="Answer the questions.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_str="<|im_end|>",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
