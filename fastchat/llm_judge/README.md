@@ -92,11 +92,11 @@ python gen_model_answer.py --bench-name japanese_mt_bench --model-path [MODEL-PA
     - `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.
     - `[MODEL-ID]` is a name you give to the model.
 
-  - You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
-
-- e.g. `python gen_model_answer.py --bench-name japanese_mt_bench --model-path lmsys/vicuna-7b-v1.5 --model-id vicuna-7b-v1.5`
-
-The answers will be saved to `data/japanese_mt_bench/model_answer/[MODEL-ID/MODEL-NAME].jsonl`.
+e.g.,
+```
+python gen_model_answer.py --bench-name japanese_mt_bench --model-path lmsys/vicuna-7b-v1.3 --model-id vicuna-7b-v1.3
+```
+The answers will be saved to `data/japanese_mt_bench/model_answer/[MODEL-ID].jsonl`.
 
 To make sure FastChat loads the correct prompt template, see the supported models and how to add a new model [here](../../docs/model_support.md#how-to-support-a-new-model).
 
@@ -107,7 +107,6 @@ This mode asks GPT-4 to grade and give a score to model's answer directly withou
 For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 ```
-export OPENAI_API_KEY=XXXXXX  # set the OpenAI API key
 python gen_judgment.py --bench-name japanese_mt_bench --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call]
 ```
 
