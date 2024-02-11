@@ -628,6 +628,51 @@ class PeftModelAdapter:
         return base_adapter.get_default_conv_template(config.base_model_name_or_path)
 
 
+class JSLMAlphaAdapter(BaseModelAdapter):
+    """
+    Model adapter for Japanese StableLM Alpha (JSLM-Alpha) instruct model
+    https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
+    """
+    model_variation = None
+
+    def match(self, model_path: str):
+        model_path = model_path.lower()
+        if model_path == "japanese-stablelm-instruct-alpha-7b":
+            self.model_variation = "alpha" 
+        # TODO: adhoc, better matching later
+        elif "jslm-alpha-" in model_path or "checkpoint-" in os.path.basename(model_path):
+            self.model_variation = "alpha-dev"
+        
+        return True if self.model_variation else False
+    
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+
+        tokenizer = LlamaTokenizer.from_pretrained(
+            "novelai/nerdstash-tokenizer-v1", 
+            additional_special_tokens=['▁▁']
+        )
+        from_pretrained_kwargs.pop("trust_remote_code", None)
+
+        if self.model_variation == "alpha":
+            clm_cls = AutoModelForCausalLM
+        else:
+            from fastchat.model.japanese_stablelm_alpha.modeling_japanese_stablelm_alpha \
+                import JapaneseStableLMAlphaForCausalLM
+            clm_cls = JapaneseStableLMAlphaForCausalLM
+
+        model = clm_cls.from_pretrained(
+            model_path,    
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs
+        )
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path:str):
+        # TODO: (meng) might need to adapt default conv tpl based on model version
+        return get_conv_template("jslm_alpha")
+
 class VicunaAdapter(BaseModelAdapter):
     "Model adapter for Vicuna models (e.g., lmsys/vicuna-7b-v1.5)" ""
 
@@ -1497,6 +1542,48 @@ class Llama2Adapter(BaseModelAdapter):
         return get_conv_template("llama-2")
 
 
+class JLlama2Adapter(BaseModelAdapter):
+    """
+    Model adapter for llama-2-based models developed internally in SAIJ
+    """
+    tokenizer_path: str = None
+
+    def match(self, model_path: str) -> bool:
+        model_path = model_path.lower()
+
+        if model_path == os.path.basename(model_path):
+            return False  # no full path available
+
+        gpt_prj_root = "/".join(os.path.abspath(model_path).split("/")[:3])
+
+        # TODO: (meng) note now we assume there is only 1 specific japanese friendly tokenizer
+        if "javocab" in model_path:  
+            self.tokenizer_path = os.path.join(gpt_prj_root, "tokenizers/llama2-ja-hf-lt/")
+        else:
+            self.tokenizer_path = "meta-llama/Llama-2-7b"
+
+        return True if "proj-jp-stablegpt/llama2" in model_path else False
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        print(f"{self.tokenizer_path=}")
+        tokenizer = LlamaTokenizer.from_pretrained(self.tokenizer_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,    
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs
+        )
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        conv = get_conv_template("jllama-2")
+        if "sys-v" in model_path:
+            if "sys-v2" in model_path:
+                conv.set_system_message("あなたは役立つアシスタントです。ユーザーから特別な要求がない限り、あなたの回答言語は日本語でなければなりません。")
+            else:
+                raise NotImplementedError
+        return conv
+    
+
 class CuteGPTAdapter(BaseModelAdapter):
     """The model adapter for CuteGPT"""
 
@@ -2080,6 +2167,8 @@ class SolarAdapter(BaseModelAdapter):
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(CustomAdapter)  # ←追加
+register_model_adapter(JLlama2Adapter)
+register_model_adapter(JSLMAlphaAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
@@ -2162,3 +2251,53 @@ register_model_adapter(SolarAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
+
+
+if __name__ == "__main__":
+    model, tokenizer = load_model(
+        # model_path="stabilityai/japanese-stablelm-instruct-alpha-7b",
+        # model_path="/fsx/proj-jp-stablegpt/llama2/sft/hf/mixv3_5btok_7b.ja-orca-v2_llama2/ckpt_final",
+        model_path="/fsx/proj-jp-stablegpt/llama2/sft/hf/emb-only_mixv3_10btok_7b_javocab.mixv3_5btok.ja-orca-v2_llama2/ckpt_final",
+        device="cuda",   
+        num_gpus=8,
+    )
+    model.eval()
+    model.half()
+
+    user_query = """
+    美術の名作を子供向けのインタラクティブな体験に変えるためのアイデアを5つ挙げ、それぞれの作品とそのアイデアを説明してください。
+    """.strip()
+
+    def build_prompt(user_query, inputs="", sep="\n\n### "):
+        sys_msg = "以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。"
+        p = sys_msg
+        roles = ["指示", "応答"]
+        msgs = [": \n" + user_query, ": "]
+        if inputs:
+            roles.insert(1, "入力")
+            msgs.insert(1, ": \n" + inputs)
+        for role, msg in zip(roles, msgs):
+            p += sep + role + msg
+        return p
+        
+    prompt = build_prompt(user_query)
+
+    input_ids = tokenizer.encode(
+        prompt, 
+        add_special_tokens=False, 
+        return_tensors="pt"
+    )
+
+    seed = 23
+    torch.manual_seed(seed)
+
+    tokens = model.generate(
+        input_ids.to(device=model.device),
+        max_new_tokens=256,
+        temperature=1,
+        top_p=0.95,
+        do_sample=True,
+    )
+
+    out = tokenizer.decode(tokens[0], skip_special_tokens=True)
+    print(out)
