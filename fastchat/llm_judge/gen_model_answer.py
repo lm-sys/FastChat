@@ -30,8 +30,8 @@ def run_eval(
     num_gpus_per_model,
     num_gpus_total,
     max_gpu_memory,
-    dtype,
-    revision,
+    top_p,
+    repetition_penalty,
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -61,8 +61,6 @@ def run_eval(
                 num_choices,
                 num_gpus_per_model,
                 max_gpu_memory,
-                dtype=dtype,
-                revision=revision,
             )
         )
 
@@ -80,8 +78,8 @@ def get_model_answers(
     num_choices,
     num_gpus_per_model,
     max_gpu_memory,
-    dtype,
-    revision,
+    top_p,
+    repetition_penalty,
 ):
     model, tokenizer = load_model(
         model_path,
@@ -104,14 +102,21 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            conv = get_conversation_template(model_path)
             turns = []
             for j in range(len(question["turns"])):
+                if j == args.max_turns: 
+                    break
+
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
                 prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt], add_special_tokens=False).input_ids # 'add_special_tokens=False' is necessary for running llm-jp models
+
+                # TODO: find better way to adapt for NAI tokenizer usage of JSLM Alpha
+                # this should align with the model adapter behavior
+                add_special_tokens = conv.add_special_tokens
+                input_ids = tokenizer([prompt], add_special_tokens=add_special_tokens).input_ids
 
                 if temperature < 1e-4:
                     do_sample = False
@@ -125,6 +130,8 @@ def get_model_answers(
                         do_sample=do_sample,
                         temperature=temperature,
                         max_new_tokens=max_new_token,
+                        top_p=top_p,
+                        repetition_penalty=repetition_penalty,   
                     )
                     if model.config.is_encoder_decoder:
                         output_ids = output_ids[0]
@@ -171,6 +178,7 @@ def get_model_answers(
                 except RuntimeError as e:
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
+                    print(e)
 
                 conv.update_last_message(output)
                 turns.append(output)
@@ -186,8 +194,16 @@ def get_model_answers(
                 "model_id": model_id,
                 "choices": choices,
                 "tstamp": time.time(),
+                "generate_params": {
+                    "prompt": prompt,
+                    "do_sample": do_sample,
+                    "max_new_token": max_new_token,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "repetition_penalty": repetition_penalty,
+                }
             }
-            fout.write(json.dumps(ans_json) + "\n")
+            fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
 
 
 def reorg_answer_file(answer_file):
@@ -195,7 +211,10 @@ def reorg_answer_file(answer_file):
     answers = {}
     with open(answer_file, "r") as fin:
         for l in fin:
-            qid = json.loads(l)["question_id"]
+            try:
+                qid = int(json.loads(l)["question_id"])
+            except ValueError:
+                raise NotImplementedError(f"question_id should be of integer to allow sorting. found: {qid}")
             answers[qid] = l
 
     qids = sorted(list(answers.keys()))
@@ -218,8 +237,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--bench-name",
         type=str,
-        default="mt_bench",
+        default="japanese_mt_bench",
         help="The name of the benchmark question set.",
+    )
+    parser.add_argument(
+        "--max-turns",
+        type=int,
+        default=2,
+        help="Max number of turns to evaluate for each question.",
     )
     parser.add_argument(
         "--question-begin",
@@ -233,7 +258,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-new-token",
         type=int,
-        default=1024,
+        default=512,
         help="The maximum number of new generated tokens.",
     )
     parser.add_argument(
@@ -257,19 +282,15 @@ if __name__ == "__main__":
         help="Maxmum GPU memory used for model weights per GPU.",
     )
     parser.add_argument(
-        "--dtype",
-        type=str,
-        choices=["float32", "float16", "bfloat16"],
-        help="Override the default dtype. If not set, it will use float16 on GPU and float32 on CPU.",
-        default=None,
+        "--top-p",
+        type=float,
+        default=0.9,
     )
     parser.add_argument(
-        "--revision",
-        type=str,
-        default="main",
-        help="The model revision to load.",
+        "--repetition-penalty",
+        type=float,
+        default=1.1,
     )
-
     args = parser.parse_args()
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
@@ -286,19 +307,19 @@ if __name__ == "__main__":
     print(f"Output to {answer_file}")
 
     run_eval(
-        model_path=args.model_path,
-        model_id=args.model_id,
-        question_file=question_file,
-        question_begin=args.question_begin,
-        question_end=args.question_end,
-        answer_file=answer_file,
-        max_new_token=args.max_new_token,
-        num_choices=args.num_choices,
-        num_gpus_per_model=args.num_gpus_per_model,
-        num_gpus_total=args.num_gpus_total,
-        max_gpu_memory=args.max_gpu_memory,
-        dtype=str_to_torch_dtype(args.dtype),
-        revision=args.revision,
+        args.model_path,
+        args.model_id,
+        question_file,
+        args.question_begin,
+        args.question_end,
+        answer_file,
+        args.max_new_token,
+        args.num_choices,
+        args.num_gpus_per_model,
+        args.num_gpus_total,
+        args.max_gpu_memory,
+        top_p=args.top_p,
+        repetition_penalty=args.repetition_penalty,
     )
 
     reorg_answer_file(answer_file)

@@ -448,3 +448,10 @@ register_model_info(
     "https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0",
     "A Llama2 fine-tune developed by upstage.ai that incorporates depth up-scaling.",
 )
+
+register_model_info(
+    ["japanese-stablelm-instruct-alpha-7b"],
+    "JSLM Alpha",
+    "https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b",
+    "JSLM Alpha is a 7B Japanese instruct model, developed by Stability AI Japan.",
+)

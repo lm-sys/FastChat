@@ -21,6 +21,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     LLAMA2 = auto()
+    JLLAMA2 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -33,6 +34,7 @@ class SeparatorStyle(IntEnum):
     CUSTOM = auto() # added
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
+    JSLM_ALPHA = auto()
 
 
 @dataclasses.dataclass
@@ -59,6 +61,8 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
+    # TODO: (meng) Adhoc way to adjust tokenizer behavior (mainly for NAI tokenizer)
+    add_special_tokens: bool = True
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -141,6 +145,18 @@ class Conversation:
                         ret += tag + " " + message + seps[i % 2]
                 else:
                     ret += tag
+            return ret
+        elif self.sep_style == SeparatorStyle.JLLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += system_prompt + message + seps[i % 2]
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role + " "
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -255,6 +271,13 @@ class Conversation:
                     ret += role + config.mtbench.conv_role_message_separator + message + self.sep
                 else:
                     ret += role + config.mtbench.conv_role_only_separator
+        elif self.sep_style == SeparatorStyle.JSLM_ALPHA:
+            ret = self.system_message + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": \n" + message + self.sep
+                else:
+                    ret += role + ": \n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -310,6 +333,7 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
+            add_special_tokens=self.add_special_tokens,
         )
 
     def dict(self):
@@ -395,6 +419,23 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n### ",
         stop_str="###",
+    )
+)
+
+# conv template for JSLM ALPHA with NAI tokenizer
+# source: https://huggingface.co/stabilityai/japanese-stablelm-instruct-alpha-7b
+register_conv_template(
+    Conversation(
+        name="jslm_alpha",
+        system_message="以下は、タスクを説明する指示と、文脈のある入力の組み合わせです。要求を適切に満たす応答を書きなさい。",
+        roles=("指示", "応答"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JSLM_ALPHA,
+        sep="\n\n### ",
+        stop_str="<|endoftext|>",
+        stop_token_ids=[3],
+        add_special_tokens=False,
     )
 )
 
@@ -1025,6 +1066,22 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="jllama-2",
+        system_template="<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="あなたは役立つアシスタントです。",
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JLLAMA2,
+        roles=("[INST]", "[/INST]"),
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+        add_special_tokens=False,
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="cutegpt",
         roles=("问：", "答：\n"),
         sep_style=SeparatorStyle.NO_COLON_TWO,
@@ -1405,8 +1462,17 @@ register_conv_template(
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
+    print("JSLM Alpha template:")
+    conv = get_conv_template("jslm_alpha")
+    conv.append_message(conv.roles[0], "こんにちは")
+    conv.append_message(conv.roles[1], "こんにちは")
+    conv.append_message(conv.roles[0], "お元気ですか？")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
 
-    print("-- Vicuna template --")
+    print("\n")
+
+    print("Vicuna template:")
     conv = get_conv_template("vicuna_v1.1")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
@@ -1442,5 +1508,12 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
+    
+    print("JLlama-2 template:")
+    conv = get_conv_template("jllama-2")
+    conv.set_system_message("あなたは役立つアシスタントです。")
+    conv.append_message(conv.roles[0], "こんにちは。")
+    conv.append_message(conv.roles[1], "こんにちは！")
+    conv.append_message(conv.roles[0], "日本で一番高い山は？")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
