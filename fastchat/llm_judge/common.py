@@ -45,6 +45,14 @@ temperature_config = {
     "reasoning": 0.1,
     "stem": 0.2,
     "humanities": 0.2,
+    "writing": 0.5,
+    "roleplay": 0.5,
+    "extraction": 0.2,
+    "math": 0.1,
+    "coding": 0.1,
+    "reasoning": 0.1,
+    "stem": 0.2,
+    "humanities": 0.2,
 }
 
 reverse_model_map = {
@@ -433,9 +441,6 @@ def setup_openai_api(model: str, use_azure=True):
     
 
 def chat_compeletion_openai(model, conv, temperature, max_tokens):
-    if api_dict is not None:
-        openai.api_base = api_dict["api_base"]
-        openai.api_key = api_dict["api_key"]
     output = API_ERROR_OUTPUT
     # TODO: allow additional params for toggling between azure api
     openai_chat_completion_func = setup_openai_api(model)
@@ -460,48 +465,7 @@ def chat_compeletion_openai(model, conv, temperature, max_tokens):
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
-
     return output
-
-
-def chat_compeletion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
-    openai.api_type = "azure"
-    openai.api_version = "2023-07-01-preview"
-    if api_dict is not None:
-        openai.api_base = api_dict["api_base"]
-        openai.api_key = api_dict["api_key"]
-    else:
-        openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
-        openai.api_key = os.environ["AZURE_OPENAI_KEY"]
-
-    if "azure-" in model:
-        model = model[6:]
-
-    output = API_ERROR_OUTPUT
-    for _ in range(API_MAX_RETRY):
-        try:
-            messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
-                engine=model,
-                messages=messages,
-                n=1,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            output = response["choices"][0]["message"]["content"]
-            break
-        except openai.error.OpenAIError as e:
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.error.InvalidRequestError as e:
-            print(type(e), e)
-            break
-        except KeyError:
-            print(response)
-            break
-
-    return output
-
 
 def chat_compeletion_anthropic(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT

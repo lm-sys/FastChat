@@ -61,6 +61,8 @@ def run_eval(
                 num_choices,
                 num_gpus_per_model,
                 max_gpu_memory,
+                top_p,
+                repetition_penalty,
             )
         )
 

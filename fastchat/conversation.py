@@ -156,6 +156,30 @@ class Conversation:
                     else:
                         ret += role + " " + message + seps[i % 2]
                 else:
+                    ret += role
+            return ret
+        elif self.sep_style == SeparatorStyle.JLLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += system_prompt + message + seps[i % 2]
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
+                    ret += role + " "
+            return ret
+        elif self.sep_style == SeparatorStyle.JLLAMA2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    if i == 0:
+                        ret += system_prompt + message + seps[i % 2]
+                    else:
+                        ret += role + " " + message + seps[i % 2]
+                else:
                     ret += role + " "
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
@@ -271,6 +295,14 @@ class Conversation:
                     ret += role + config.mtbench.conv_role_message_separator + message + self.sep
                 else:
                     ret += role + config.mtbench.conv_role_only_separator
+        elif self.sep_style == SeparatorStyle.JSLM_ALPHA:
+            ret = self.system_message + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": \n" + message + self.sep
+                else:
+                    ret += role + ": \n"
+            return ret
         elif self.sep_style == SeparatorStyle.JSLM_ALPHA:
             ret = self.system_message + self.sep
             for role, message in self.messages:
@@ -1082,9 +1114,43 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="jllama-2",
+        system_template="<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="あなたは役立つアシスタントです。",
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JLLAMA2,
+        roles=("[INST]", "[/INST]"),
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+        add_special_tokens=False,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="jllama-2",
+        system_template="<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="あなたは役立つアシスタントです。",
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.JLLAMA2,
+        roles=("[INST]", "[/INST]"),
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+        add_special_tokens=False,
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="cutegpt",
         roles=("问：", "答：\n"),
         sep_style=SeparatorStyle.NO_COLON_TWO,
+        messages=(),
+        offset=0,
         sep="\n",
         sep2="\n",
         stop_str="<end>",
@@ -1493,22 +1559,6 @@ if __name__ == "__main__":
 
     print("\n")
 
-    print("-- ChatGPT template --")
-    conv = get_conv_template("chatgpt")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.to_openai_api_messages())
-
-    print("\n")
-
-    print("-- Claude template --")
-    conv = get_conv_template("claude")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    
     print("JLlama-2 template:")
     conv = get_conv_template("jllama-2")
     conv.set_system_message("あなたは役立つアシスタントです。")
