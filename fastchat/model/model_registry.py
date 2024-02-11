@@ -291,7 +291,12 @@ register_model_info(
 )
 
 register_model_info(
-    ["codellama-70b-instruct", "codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
+    [
+        "codellama-70b-instruct",
+        "codellama-34b-instruct",
+        "codellama-13b-instruct",
+        "codellama-7b-instruct",
+    ],
     "Code Llama",
     "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
     "Open foundation models for code by Meta",
