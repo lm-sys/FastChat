@@ -1,5 +1,5 @@
 """
-A model worker that executes the model based on SGLANG.
+A model worker that executes the model based on SGLang.
 
 Usage:
 python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --tokenizer-path llava-hf/llava-1.5-7b-hf --port 30000 --worker-address http://localhost:30000
@@ -121,6 +121,7 @@ class SGLWorker(BaseModelWorker):
         for i in range(len(split_prompt)):
             prompt.append(split_prompt[i])
             if i < len(images):
+                prompt[-1] = prompt[-1].strip()
                 prompt.append(load_image(images[i]))
 
         state = pipeline.run(
