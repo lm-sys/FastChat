@@ -291,7 +291,12 @@ register_model_info(
 )
 
 register_model_info(
-    ["codellama-34b-instruct", "codellama-13b-instruct", "codellama-7b-instruct"],
+    [
+        "codellama-70b-instruct",
+        "codellama-34b-instruct",
+        "codellama-13b-instruct",
+        "codellama-7b-instruct",
+    ],
     "Code Llama",
     "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
     "Open foundation models for code by Meta",
@@ -640,10 +645,10 @@ register_model_info(
 
 register_model_info(
     [
-        "llava-v1.6-vicuna-7b",
         "llava-v1.6-vicuna-13b",
-        "llava-v1.5-7b",
+        "llava-v1.6-vicuna-7b",
         "llava-v1.5-13b",
+        "llava-v1.5-7b",
     ],
     "LLaVA",
     "https://github.com/haotian-liu/LLaVA",
