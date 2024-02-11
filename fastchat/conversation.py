@@ -171,8 +171,11 @@ class Conversation:
         elif self.sep_style == SeparatorStyle.CHATML:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
-                if message:
-                    ret += role + "\n" + message + self.sep + "\n"
+                if type(message) is tuple:
+                    message, images = message
+                    ret += role + ": " + message + self.sep + "\n"
+                elif type(message, list):
+                    ret += role + "\n" + "\n".join(message) + self.sep + "\n"
                 else:
                     ret += role + "\n"
             return ret
