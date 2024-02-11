@@ -645,8 +645,10 @@ register_model_info(
 
 register_model_info(
     [
+        "llava-v1.6-34b",
         "llava-v1.6-vicuna-13b",
         "llava-v1.6-vicuna-7b",
+        "llava-v1.6-mistral-7b",
         "llava-v1.5-13b",
         "llava-v1.5-7b",
     ],

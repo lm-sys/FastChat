@@ -2217,6 +2217,10 @@ class LlavaAdapter(BaseModelAdapter):
         return "llava" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "34b" in model_path:
+            return get_conv_template("llava-chatml")
+
         return get_conv_template("vicuna_v1.1")
 
 
