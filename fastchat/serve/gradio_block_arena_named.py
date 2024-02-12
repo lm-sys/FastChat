@@ -25,9 +25,8 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     invisible_btn,
     acknowledgment_md,
-    get_model_description_md,
-    ip_expiration_dict,
     get_ip,
+    get_model_description_md,
 )
 from fastchat.utils import (
     build_logger,
@@ -58,8 +57,8 @@ def load_demo_side_by_side_named(models, url_params):
         model_right = model_left
 
     selector_updates = (
-        gr.Dropdown.update(choices=models, value=model_left, visible=True),
-        gr.Dropdown.update(choices=models, value=model_right, visible=True),
+        gr.Dropdown(choices=models, value=model_left, visible=True),
+        gr.Dropdown(choices=models, value=model_right, visible=True),
     )
 
     return states + selector_updates
@@ -273,12 +272,12 @@ def flash_buttons():
     ]
     for i in range(4):
         yield btn_updates[i % 2]
-        time.sleep(0.5)
+        time.sleep(0.3)
 
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
+# ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
@@ -295,7 +294,7 @@ def build_side_by_side_ui_named(models):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-named"):
+    with gr.Group(elem_id="share-region-named"):
         with gr.Row():
             for i in range(num_sides):
                 with gr.Column():
@@ -307,7 +306,9 @@ def build_side_by_side_ui_named(models):
                         container=False,
                     )
         with gr.Row():
-            with gr.Accordion("🔍 Expand to see 20+ model descriptions", open=False):
+            with gr.Accordion(
+                f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+            ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
@@ -322,17 +323,17 @@ def build_side_by_side_ui_named(models):
                         show_copy_button=True,
                     )
 
-        with gr.Row():
-            leftvote_btn = gr.Button(
-                value="👈  A is better", visible=False, interactive=False
-            )
-            rightvote_btn = gr.Button(
-                value="👉  B is better", visible=False, interactive=False
-            )
-            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-            bothbad_btn = gr.Button(
-                value="👎  Both are bad", visible=False, interactive=False
-            )
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
 
     with gr.Row():
         textbox = gr.Textbox(
@@ -435,7 +436,7 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
+    share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     for i in range(num_sides):
         model_selectors[i].change(

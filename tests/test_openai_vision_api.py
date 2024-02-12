@@ -66,7 +66,7 @@ def test_chat_completion(model):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "<image>\nWhat’s in this image?"},
+                    {"type": "text", "text": "What’s in this image?"},
                     {"type": "image_url", "image_url": {"url": image_url}},
                 ],
             }
@@ -83,7 +83,7 @@ def test_chat_completion(model):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "<image>\nWhat’s in this image?"},
+                    {"type": "text", "text": "What’s in this image?"},
                     {"type": "image_url", "image_url": {"url": base64_image_url}},
                 ],
             }
@@ -101,7 +101,7 @@ def test_chat_completion_stream(model):
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": "<image>\nWhat’s in this image?"},
+                {"type": "text", "text": "What’s in this image?"},
                 {"type": "image_url", "image_url": {"url": image_url}},
             ],
         }
@@ -132,7 +132,7 @@ def test_openai_curl():
         "content": [
           {
             "type": "text",
-            "text": "<image>\\nWhat’s in this image?"
+            "text": "What’s in this image?"
           },
           {
             "type": "image_url",

@@ -64,10 +64,12 @@ OPENAI_MODEL_LIST = (
     "gpt-3.5-turbo-0301",
     "gpt-3.5-turbo-0613",
     "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo-0125",
     "gpt-4",
     "gpt-4-0314",
     "gpt-4-0613",
     "gpt-4-turbo",
+    "gpt-4-1106-preview",
     "gpt-4-0125-preview",
 )
 
@@ -2215,6 +2217,10 @@ class LlavaAdapter(BaseModelAdapter):
         return "llava" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "34b" in model_path:
+            return get_conv_template("llava-chatml")
+
         return get_conv_template("vicuna_v1.1")
 
 
