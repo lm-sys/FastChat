@@ -21,7 +21,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
-from pydantic import BaseSettings
+
+try:
+    from pydantic.v1 import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings
 import shortuuid
 import tiktoken
 import uvicorn
@@ -229,10 +233,20 @@ def process_input(model_name, inp):
         inp = [inp]
     elif isinstance(inp, list):
         if isinstance(inp[0], int):
-            decoding = tiktoken.model.encoding_for_model(model_name)
+            try:
+                decoding = tiktoken.model.encoding_for_model(model_name)
+            except KeyError:
+                logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                model = "cl100k_base"
+                decoding = tiktoken.get_encoding(model)
             inp = [decoding.decode(inp)]
         elif isinstance(inp[0], list):
-            decoding = tiktoken.model.encoding_for_model(model_name)
+            try:
+                decoding = tiktoken.model.encoding_for_model(model_name)
+            except KeyError:
+                logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                model = "cl100k_base"
+                decoding = tiktoken.get_encoding(model)
             inp = [decoding.decode(text) for text in inp]
 
     return inp
@@ -452,6 +466,9 @@ async def create_chat_completion(request: ChatCompletionRequest):
         return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
     usage = UsageInfo()
     for i, content in enumerate(all_tasks):
+        if isinstance(content, str):
+            content = json.loads(content)
+
         if content["error_code"] != 0:
             return create_error_response(content["error_code"], content["text"])
         choices.append(

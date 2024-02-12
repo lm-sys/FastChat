@@ -1,5 +1,5 @@
 """
-A model worker that executes the model based on SGLANG.
+A model worker that executes the model based on SGLang.
 
 Usage:
 python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --tokenizer-path llava-hf/llava-1.5-7b-hf --port 30000 --worker-address http://localhost:30000
@@ -18,6 +18,8 @@ import sglang as sgl
 from sglang.srt.hf_transformers_utils import get_tokenizer, get_config
 from sglang.srt.utils import load_image, is_multimodal_model
 
+from fastchat.conversation import IMAGE_PLACEHOLDER_STR
+from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
     logger,
@@ -76,7 +78,7 @@ class SGLWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
-    async def generate_stream_gate(self, params):
+    async def generate_stream(self, params):
         self.call_ct += 1
 
         prompt = params.pop("prompt")
@@ -110,8 +112,8 @@ class SGLWorker(BaseModelWorker):
             top_p = 1.0
 
         # split prompt by image token
-        split_prompt = prompt.split("<image>\n")
-        if prompt.count("<image>\n") != len(images):
+        split_prompt = prompt.split(IMAGE_PLACEHOLDER_STR)
+        if prompt.count(IMAGE_PLACEHOLDER_STR) != len(images):
             raise ValueError(
                 "The number of images passed in does not match the number of <image> tokens in the prompt!"
             )
@@ -119,6 +121,7 @@ class SGLWorker(BaseModelWorker):
         for i in range(len(split_prompt)):
             prompt.append(split_prompt[i])
             if i < len(images):
+                prompt[-1] = prompt[-1].strip()
                 prompt.append(load_image(images[i]))
 
         state = pipeline.run(
@@ -156,8 +159,18 @@ class SGLWorker(BaseModelWorker):
                 },
                 "error_code": 0,
             }
+            yield ret
 
-            yield (json.dumps(ret) + "\0").encode()
+    async def generate_stream_gate(self, params):
+        try:
+            async for ret in self.generate_stream(params):
+                yield json.dumps(ret).encode() + b"\0"
+        except (ValueError, RuntimeError) as e:
+            ret = {
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+            yield json.dumps(ret).encode() + b"\0"
 
     async def generate_gate(self, params):
         async for x in self.generate_stream_gate(params):

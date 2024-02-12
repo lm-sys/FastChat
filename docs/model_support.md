@@ -1,6 +1,37 @@
 # Model Support
+This document describes how to support a new model in FastChat.
 
-## Supported models
+## Content
+- [Local Models](#local-models)
+- [API-Based Models](#api-based-models)
+
+## Local Models
+To support a new local model in FastChat, you need to correctly handle its prompt template and model loading.
+The goal is to make the following command run with the correct prompts.
+
+```
+python3 -m fastchat.serve.cli --model [YOUR_MODEL_PATH]
+```
+
+You can run this example command to learn the code logic.
+
+```
+python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.5
+```
+
+You can add `--debug` to see the actual prompt sent to the model.
+
+### Steps
+
+FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
+
+1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one. Please also add a link to the official reference code if possible.
+2. Implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can follow existing examples and use `register_model_adapter` to add a new one.
+3. (Optional) add the model name to the "Supported models" [section](#supported-models) above and add more information in [fastchat/model/model_registry.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_registry.py).
+
+After these steps, the new model should be compatible with most FastChat features, such as CLI, web UI, model worker, and OpenAI-compatible API server. Please do some testing with these features as well.
+
+### Supported models
 
 - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
   - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf`
@@ -69,29 +100,27 @@
   setting the environment variable `PEFT_SHARE_BASE_WEIGHTS=true` in any model
   worker.
 
-## How to support a new model
-
-To support a new model in FastChat, you need to correctly handle its prompt template and model loading.
-The goal is to make the following command run with the correct prompts.
+## API-Based Models
+1. Implement an API-based streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py). You can learn from the OpenAI example.
+2. Specify your endpoint info in a JSON configuration file
+```
+{
+  "gpt-3.5-turbo-0613": {
+    "model_name": "gpt-3.5-turbo-0613",
+    "api_type": "openai",
+    "api_base": "https://api.openai.com/v1",
+    "api_key": "sk-******",
+    "anony_only": false
+  }
+}
+```
+  - "api_type" can be one of the following: openai, anthropic, gemini, mistral. For you own API, you can add a new type and implement it.
+  - "anony_only" means whether to show this model in anonymous mode only.
+3. Launch the gradio web server with argument `--register [JSON-file]`.
 
 ```
-python3 -m fastchat.serve.cli --model [YOUR_MODEL_PATH]
+python3 -m fastchat.serve.gradio_web_server --controller "" --share --register [JSON-file]
 ```
 
-You can run this example command to learn the code logic.
-
-```
-python3 -m fastchat.serve.cli --model lmsys/vicuna-7b-v1.5
-```
-
-You can add `--debug` to see the actual prompt sent to the model.
-
-### Steps
-
-FastChat uses the `Conversation` class to handle prompt templates and `BaseModelAdapter` class to handle model loading.
-
-1. Implement a conversation template for the new model at [fastchat/conversation.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py). You can follow existing examples and use `register_conv_template` to add a new one. Please also add a link to the official reference code if possible.
-2. Implement a model adapter for the new model at [fastchat/model/model_adapter.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_adapter.py). You can follow existing examples and use `register_model_adapter` to add a new one.
-3. (Optional) add the model name to the "Supported models" [section](#supported-models) above and add more information in [fastchat/model/model_registry.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/model/model_registry.py).
-
-After these steps, the new model should be compatible with most FastChat features, such as CLI, web UI, model worker, and OpenAI-compatible API server. Please do some testing with these features as well.
+You should be able to chat with your API-based model!
+Currently, FastChat supports OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.

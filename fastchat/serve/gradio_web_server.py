@@ -5,6 +5,7 @@ The gradio demo server for chatting with a single model.
 import argparse
 from collections import defaultdict
 import datetime
+import hashlib
 import json
 import os
 import random
@@ -14,7 +15,6 @@ import uuid
 import gradio as gr
 import requests
 
-from fastchat.conversation import SeparatorStyle
 from fastchat.constants import (
     LOGDIR,
     WORKER_API_TIMEOUT,
@@ -29,21 +29,16 @@ from fastchat.constants import (
 )
 from fastchat.model.model_adapter import (
     get_conversation_template,
-    ANTHROPIC_MODEL_LIST,
 )
 from fastchat.model.model_registry import get_model_info, model_info
-from fastchat.serve.api_provider import (
-    anthropic_api_stream_iter,
-    openai_api_stream_iter,
-    palm_api_stream_iter,
-    init_palm_chat,
-)
+from fastchat.serve.api_provider import get_api_provider_stream_iter
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
+    moderation_filter,
     parse_gradio_auth_creds,
+    load_image,
 )
 
 
@@ -51,38 +46,50 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 headers = {"User-Agent": "FastChat Client"}
 
-no_change_btn = gr.Button.update()
-enable_btn = gr.Button.update(interactive=True, visible=True)
-disable_btn = gr.Button.update(interactive=False)
-invisible_btn = gr.Button.update(interactive=False, visible=False)
+no_change_btn = gr.Button()
+enable_btn = gr.Button(interactive=True, visible=True)
+disable_btn = gr.Button(interactive=False)
+invisible_btn = gr.Button(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
 
 acknowledgment_md = """
+### Terms of Service
+
+Users are required to agree to the following terms before using the service:
+
+The service is a research preview. It only provides limited safety measures and may generate offensive content.
+It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
+The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
+Additionally, Bard is offered on LMSys for research purposes only. To access the Bard product, please visit its [website](http://bard.google.com).
+
 ### Acknowledgment
-<div class="sponsor-image-container">
-    <p> We thank <a href="https://www.kaggle.com/" target="_blank">Kaggle</a>, <a href="https://mbzuai.ac.ae/" target="_blank">MBZUAI</a>, <a href="https://www.anyscale.com/" target="_blank">AnyScale</a>, <a href="https://www.a16z.com/" target="_blank">a16z</a>, and <a href="https://huggingface.co/" target="_blank">HuggingFace</a> for their generous <a href="https://lmsys.org/donations/" target="_blank">sponsorship</a>. </p>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
-    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
+We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
+
+<div class="sponsor-image-about">
+    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
+    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
+    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
+    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
+    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
 """
 
-ip_expiration_dict = defaultdict(lambda: 0)
-
-# Information about custom OpenAI compatible API models.
-# JSON file format:
+# JSON file format of API-based models:
 # {
-#     "vicuna-7b": {
-#         "model_name": "vicuna-7b-v1.5",
-#         "api_base": "http://8.8.8.55:5555/v1",
-#         "api_key": "password"
-#     },
+#   "gpt-3.5-turbo-0613": {
+#     "model_name": "gpt-3.5-turbo-0613",
+#     "api_type": "openai",
+#     "api_base": "https://api.openai.com/v1",
+#     "api_key": "sk-******",
+#     "anony_only": false
+#   }
 # }
-openai_compatible_models_info = {}
+# "api_type" can be one of the following: openai, anthropic, gemini, mistral.
+# "anony_only" means whether to show this model in anonymous mode only.
+api_endpoint_info = {}
 
 
 class State:
@@ -91,9 +98,6 @@ class State:
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
-
-        if model_name in ["palm-2", "gemini-pro"]:
-            self.palm_chat = init_palm_chat(model_name)
 
     def to_gradio_chatbot(self):
         return self.conv.to_gradio_chatbot()
@@ -121,14 +125,10 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list(
-    controller_url,
-    register_openai_compatible_models,
-    add_chatgpt,
-    add_claude,
-    add_palm,
-    multimodal,
-):
+def get_model_list(controller_url, register_api_endpoint_file, multimodal):
+    global api_endpoint_info
+
+    # Add models from the controller
     if controller_url:
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
@@ -142,36 +142,33 @@ def get_model_list(
     else:
         models = []
 
-    # Add API providers
-    if register_openai_compatible_models:
-        global openai_compatible_models_info
-        openai_compatible_models_info = json.load(
-            open(register_openai_compatible_models)
-        )
-        models += list(openai_compatible_models_info.keys())
+    # Add models from the API providers
+    if register_api_endpoint_file:
+        api_endpoint_info = json.load(open(register_api_endpoint_file))
+        for mdl, mdl_dict in api_endpoint_info.items():
+            mdl_multimodal = mdl_dict.get("multimodal", False)
+            if multimodal and mdl_multimodal:
+                models += [mdl]
+            elif not multimodal and not mdl_multimodal:
+                models += [mdl]
 
-    if add_chatgpt:
-        models += [
-            "gpt-4-0314",
-            "gpt-4-0613",
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-1106",
-        ]
-    if add_claude:
-        models += ["claude-2.1", "claude-2.0", "claude-instant-1"]
-    if add_palm:
-        models += ["gemini-pro"]
+    # Remove anonymous models
     models = list(set(models))
+    visible_models = models.copy()
+    for mdl in visible_models:
+        if mdl not in api_endpoint_info:
+            continue
+        mdl_dict = api_endpoint_info[mdl]
+        if mdl_dict["anony_only"]:
+            visible_models.remove(mdl)
 
-    hidden_models = ["gpt-4-0314", "gpt-4-0613"]
-    for hm in hidden_models:
-        if hm in models:
-            del models[models.index(hm)]
-
+    # Sort models and add descriptions
     priority = {k: f"___{i:03d}" for i, k in enumerate(model_info)}
     models.sort(key=lambda x: priority.get(x, x))
-    logger.info(f"Models: {models}")
-    return models
+    visible_models.sort(key=lambda x: priority.get(x, x))
+    logger.info(f"All models: {models}")
+    logger.info(f"Visible models: {visible_models}")
+    return visible_models, models
 
 
 def load_demo_single(models, url_params):
@@ -181,10 +178,7 @@ def load_demo_single(models, url_params):
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown.update(
-        choices=models, value=selected_model, visible=True
-    )
-
+    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
     state = None
     return state, dropdown_update
 
@@ -194,16 +188,10 @@ def load_demo(url_params, request: gr.Request):
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     if args.model_list_mode == "reload":
-        models = get_model_list(
-            controller_url,
-            args.register_openai_compatible_models,
-            args.add_chatgpt,
-            args.add_claude,
-            args.add_palm,
-            False,
+        models, all_models = get_model_list(
+            controller_url, args.register_api_endpoint_file, False
         )
 
     return load_demo_single(models, url_params)
@@ -274,10 +262,7 @@ def _prepare_text_with_image(state, text, image):
             image
         )  # PIL type is not JSON serializable
 
-        text = (
-            "<image>\n" + text,
-            [image],
-        )
+        text = text, [image]
 
     return text
 
@@ -313,17 +298,6 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
 
-def post_process_code(code):
-    sep = "\n```"
-    if sep in code:
-        blocks = code.split(sep)
-        if len(blocks) % 2 == 1:
-            for i in range(1, len(blocks), 2):
-                blocks[i] = blocks[i].replace("\\_", "_")
-        code = sep.join(blocks)
-    return code
-
-
 def model_worker_stream_iter(
     conv,
     model_name,
@@ -348,10 +322,10 @@ def model_worker_stream_iter(
         "echo": False,
     }
 
+    logger.info(f"==== request ====\n{gen_params}")
+
     if len(images) > 0:
         gen_params["images"] = images
-
-    logger.info(f"==== request ====\n{gen_params}")
 
     # Stream output
     response = requests.post(
@@ -365,6 +339,19 @@ def model_worker_stream_iter(
         if chunk:
             data = json.loads(chunk.decode())
             yield data
+
+
+def is_limit_reached(model_name, ip):
+    monitor_url = "http://localhost:9090"
+    try:
+        ret = requests.get(
+            f"{monitor_url}/is_limit_reached?model={model_name}&user_id={ip}", timeout=1
+        )
+        obj = ret.json()
+        return obj
+    except Exception as e:
+        logger.info(f"monitor error: {e}")
+        return None
 
 
 def bot_response(
@@ -388,50 +375,22 @@ def bot_response(
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
+    if apply_rate_limit:
+        ret = is_limit_reached(state.model_name, ip)
+        if ret is not None and ret["is_limit_reached"]:
+            error_msg = RATE_LIMIT_MSG + "\n\n" + ret["reason"]
+            logger.info(f"rate limit reached. ip: {ip}. error_msg: {ret['reason']}")
+            state.conv.update_last_message(error_msg)
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+            return
+
     conv, model_name = state.conv, state.model_name
-    if model_name in openai_compatible_models_info:
-        model_info = openai_compatible_models_info[model_name]
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_info["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_info["api_base"],
-            api_key=model_info["api_key"],
-        )
-    elif model_name in [
-        "gpt-3.5-turbo",
-        "gpt-3.5-turbo-0301",
-        "gpt-3.5-turbo-0613",
-        "gpt-3.5-turbo-1106",
-        "gpt-4",
-        "gpt-4-0314",
-        "gpt-4-0613",
-        "gpt-4-turbo",
-    ]:
-        # avoid conflict with Azure OpenAI
-        assert model_name not in openai_compatible_models_info
-        prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name in ANTHROPIC_MODEL_LIST:
-        prompt = conv.get_prompt()
-        stream_iter = anthropic_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
-        )
-    elif model_name in ["palm-2", "gemini-pro"]:
-        stream_iter = palm_api_stream_iter(
-            model_name,
-            state.palm_chat,
-            conv.messages[-2][1],
-            temperature,
-            top_p,
-            max_new_tokens,
-        )
-    else:
+    model_api_dict = (
+        api_endpoint_info[model_name] if model_name in api_endpoint_info else None
+    )
+    images = conv.get_images()
+
+    if model_api_dict is None:
         # Query worker address
         ret = requests.post(
             controller_url + "/get_worker_address", json={"model": model_name}
@@ -475,6 +434,15 @@ def bot_response(
             max_new_tokens,
             images,
         )
+    else:
+        stream_iter = get_api_provider_stream_iter(
+            conv,
+            model_name,
+            model_api_dict,
+            temperature,
+            top_p,
+            max_new_tokens,
+        )
 
     conv.update_last_message("▌")
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -497,8 +465,6 @@ def bot_response(
                 )
                 return
         output = data["text"].strip()
-        if "vicuna" in model_name:
-            output = post_process_code(output)
         conv.update_last_message(output)
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
@@ -531,6 +497,20 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
+    # We load the image because gradio accepts base64 but that increases file size by ~1.33x
+    loaded_images = [load_image(image) for image in images]
+    images_hash = [hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images]
+    for image, hash_str in zip(loaded_images, images_hash):
+        t = datetime.datetime.now()
+        filename = os.path.join(
+            LOGDIR,
+            "serve_images",
+            f"{hash_str}.jpg",
+        )
+        if not os.path.isfile(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            image.save(filename)
+
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
@@ -545,13 +525,14 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
+            "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
 
 
 block_css = """
-#notice_markdown {
-    font-size: 110%
+#notice_markdown .prose {
+    font-size: 120% !important;
 }
 #notice_markdown th {
     display: none;
@@ -561,10 +542,10 @@ block_css = """
     padding-bottom: 6px;
 }
 #model_description_markdown {
-    font-size: 110%
+    font-size: 120% !important;
 }
-#leaderboard_markdown {
-    font-size: 110%
+#leaderboard_markdown .prose {
+    font-size: 120% !important;
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -573,36 +554,21 @@ block_css = """
 #leaderboard_dataframe td {
     line-height: 0.1em;
 }
-#about_markdown {
-    font-size: 110%
+#about_markdown .prose {
+    font-size: 120% !important;
 }
-#ack_markdown {
-    font-size: 110%
-}
-#input_box textarea {
+#ack_markdown .prose {
+    font-size: 120% !important;
 }
 footer {
-    display:none !important
-}
-.sponsor-image-container {
-    display: flex;
-    align-items: center;
-    padding: 1px;
-}
-.sponsor-image-container img {
-    margin: 0 30px;
-    height: 30px;
-    max-height: 100%;
-    width: auto;
-    max-width: 20%;
+    display:none !important;
 }
 .sponsor-image-about img {
-    margin: 0 30px;
-    margin-top: 30px;
-    height: 60px;
+    margin: 0 20px;
+    margin-top: 20px;
+    height: 40px;
     max-height: 100%;
     width: auto;
-    max-width: 20%;
     float: left;
 }
 """
@@ -632,7 +598,7 @@ def get_model_description_md(models):
 
 
 def build_about():
-    about_markdown = f"""
+    about_markdown = """
 # About Us
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
 
@@ -653,22 +619,18 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 
 ## Acknowledgment
 We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [Anyscale](https://www.anyscale.com/), [a16z](https://www.a16z.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship.
-Learn more about partnership [here](https://lmsys.org/donations/).
+We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
 
 <div class="sponsor-image-about">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kaggle_logo.png/400px-Kaggle_logo.png" alt="Kaggle">
-    <img src="https://mma.prnewswire.com/media/1227419/MBZUAI_Logo.jpg?p=facebookg" alt="MBZUAI">
-    <img src="https://docs.anyscale.com/site-assets/logo.png" alt="AnyScale">
-    <img src="https://a16z.com/wp-content/themes/a16z/assets/images/opegraph_images/corporate-Yoast-Twitter.jpg" alt="a16z">
-    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="HuggingFace">
+    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
+    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
+    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
+    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
+    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
 """
-
-    # state = gr.State()
     gr.Markdown(about_markdown, elem_id="about_markdown")
-
-    # return [state]
 
 
 def build_single_model_ui(models, add_promotion_links=False):
@@ -692,7 +654,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-named"):
+    with gr.Group(elem_id="share-region-named"):
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=models,
@@ -703,9 +665,8 @@ def build_single_model_ui(models, add_promotion_links=False):
             )
         with gr.Row():
             with gr.Accordion(
-                "🔍 Expand to see 20+ model descriptions",
+                f"🔍 Expand to see the descriptions of {len(models)} models",
                 open=False,
-                elem_id="model_description_accordion",
             ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
@@ -714,12 +675,12 @@ def build_single_model_ui(models, add_promotion_links=False):
             elem_id="chatbot",
             label="Scroll down and start chatting",
             height=550,
+            show_copy_button=True,
         )
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
-            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -838,7 +799,7 @@ def build_demo(models):
                 state,
                 model_selector,
             ],
-            _js=load_js,
+            js=load_js,
         )
 
     return demo
@@ -883,24 +844,9 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--add-chatgpt",
-        action="store_true",
-        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)",
-    )
-    parser.add_argument(
-        "--add-claude",
-        action="store_true",
-        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
-    )
-    parser.add_argument(
-        "--add-palm",
-        action="store_true",
-        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
-    )
-    parser.add_argument(
-        "--register-openai-compatible-models",
+        "--register-api-endpoint-file",
         type=str,
-        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+        help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -917,12 +863,8 @@ if __name__ == "__main__":
 
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
-    models = get_model_list(
-        args.controller_url,
-        args.register_openai_compatible_models,
-        args.add_chatgpt,
-        args.add_claude,
-        args.add_palm,
+    models, all_models = get_model_list(
+        args.controller_url, args.register_api_endpoint_file, False
     )
 
     # Set authorization credentials
@@ -933,7 +875,9 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(models)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,

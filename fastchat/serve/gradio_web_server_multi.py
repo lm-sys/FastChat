@@ -9,9 +9,6 @@ import time
 
 import gradio as gr
 
-from fastchat.constants import (
-    SESSION_EXPIRATION_TIME,
-)
 from fastchat.serve.gradio_block_arena_anony import (
     build_side_by_side_ui_anony,
     load_demo_side_by_side_anony,
@@ -36,7 +33,6 @@ from fastchat.serve.gradio_web_server import (
     build_about,
     get_model_list,
     load_demo_single,
-    ip_expiration_dict,
     get_ip,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
@@ -51,18 +47,17 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models, vision_language_models
+    global models, all_models, vl_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
-    ip_expiration_dict[ip] = time.time() + SESSION_EXPIRATION_TIME
 
     selected = 0
     if "arena" in url_params:
         selected = 0
     elif "compare" in url_params:
         selected = 1
-    elif "single" in url_params:
+    elif "direct" in url_params or "model" in url_params:
         selected = 2
     elif "vision" in url_params:
         selected = 3
@@ -70,24 +65,17 @@ def load_demo(url_params, request: gr.Request):
         selected = 4
 
     if args.model_list_mode == "reload":
-        if args.anony_only_for_proprietary_model:
-            models = get_model_list(
-                args.controller_url,
-                args.register_openai_compatible_models,
-                False,
-                False,
-                False,
-                False,
-            )
-        else:
-            models = get_model_list(
-                args.controller_url,
-                args.register_openai_compatible_models,
-                args.add_chatgpt,
-                args.add_claude,
-                args.add_palm,
-                False,
-            )
+        models, all_models = get_model_list(
+            args.controller_url,
+            args.register_api_endpoint_file,
+            False,
+        )
+
+        vl_models, all_vl_models = get_model_list(
+            args.controller_url,
+            args.register_api_endpoint_file,
+            True,
+        )
 
         vision_language_models = get_model_list(
             args.controller_url,
@@ -99,38 +87,16 @@ def load_demo(url_params, request: gr.Request):
         )
 
     single_updates = load_demo_single(models, url_params)
-
-    models_anony = list(models)
-    if args.anony_only_for_proprietary_model:
-        # Only enable these models in anony battles.
-        if args.add_chatgpt:
-            models_anony += [
-                "gpt-4-0314",
-                "gpt-4-0613",
-                "gpt-3.5-turbo-0613",
-                "gpt-3.5-turbo-1106",
-            ]
-        if args.add_claude:
-            models_anony += ["claude-2.1", "claude-2.0", "claude-1", "claude-instant-1"]
-        if args.add_palm:
-            models_anony += ["gemini-pro"]
-    anony_only_models = [
-        "claude-1",
-        "gpt-4-0314",
-        "gpt-4-0613",
-    ]
-    for mdl in anony_only_models:
-        models_anony.append(mdl)
-    models_anony = list(set(models_anony))
-
-    side_by_side_anony_updates = load_demo_side_by_side_anony(models_anony, url_params)
+    side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
-    vision_language_updates = load_demo_single(vision_language_models, url_params)
+    
+    vision_language_updates = load_demo_single(vl_models, url_params)
     side_by_side_vision_named_updates = load_demo_side_by_side_named(
-        vision_language_models, url_params
+        vl_models, url_params
     )
+
     return (
-        (gr.Tabs.update(selected=selected),)
+        (gr.Tabs(selected=selected),)
         + single_updates
         + side_by_side_anony_updates
         + side_by_side_named_updates
@@ -139,14 +105,34 @@ def load_demo(url_params, request: gr.Request):
     )
 
 
-def build_demo(
-    models, vision_language_models, elo_results_file, leaderboard_table_file
-):
+def build_demo(models, vl_models, elo_results_file, leaderboard_table_file):
     text_size = gr.themes.sizes.text_md
+    if args.show_terms_of_use:
+        load_js = get_window_url_params_with_tos_js
+    else:
+        load_js = get_window_url_params_js
+
+    head_js = """
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+"""
+    if args.ga_id is not None:
+        head_js += f"""
+<script async src="https://www.googletagmanager.com/gtag/js?id={args.ga_id}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){{dataLayer.push(arguments);}}
+gtag('js', new Date());
+
+gtag('config', '{args.ga_id}');
+window.__gradio_mode__ = "app";
+</script>
+        """
+
     with gr.Blocks(
         title="Chat with Open Large Language Models",
         theme=gr.themes.Default(text_size=text_size),
         css=block_css,
+        head=head_js,
     ) as demo:
         with gr.Tabs() as tabs:
             with gr.Tab("Arena (battle)", id=0):
@@ -159,16 +145,18 @@ def build_demo(
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
-            with gr.Tab("VL Direct Chat", id=3):
+            with gr.Tab(
+                "Vision-Language Model Direct Chat", id=3, visible=args.multimodal
+            ):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
-                        vision_language_models, add_promotion_links=True
+                        vl_models, add_promotion_links=True
                     )
                 )
 
             with gr.Tab("VL Arena (side-by-side)", id=4):
                 side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
-                    vision_language_models
+                    vl_models
                 )
 
             if elo_results_file:
@@ -181,11 +169,6 @@ def build_demo(
 
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
-
-        if args.show_terms_of_use:
-            load_js = get_window_url_params_with_tos_js
-        else:
-            load_js = get_window_url_params_js
 
         demo.load(
             load_demo,
@@ -241,29 +224,12 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--add-chatgpt",
-        action="store_true",
-        help="Add OpenAI's ChatGPT models (gpt-3.5-turbo, gpt-4)",
+        "--multimodal", action="store_true", help="Show multi modal tabs."
     )
     parser.add_argument(
-        "--add-claude",
-        action="store_true",
-        help="Add Anthropic's Claude models (claude-2, claude-instant-1)",
-    )
-    parser.add_argument(
-        "--add-palm",
-        action="store_true",
-        help="Add Google's PaLM model (PaLM 2 for Chat: chat-bison@001)",
-    )
-    parser.add_argument(
-        "--anony-only-for-proprietary-model",
-        action="store_true",
-        help="Only add ChatGPT, Claude, Bard under anony battle tab",
-    )
-    parser.add_argument(
-        "--register-openai-compatible-models",
+        "--register-api-endpoint-file",
         type=str,
-        help="Register custom OpenAI API compatible models by loading them from a JSON file",
+        help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
         "--gradio-auth-path",
@@ -282,6 +248,12 @@ if __name__ == "__main__":
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
     )
+    parser.add_argument(
+        "--ga-id",
+        type=str,
+        help="the Google Analytics ID",
+        default=None,
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
@@ -289,24 +261,17 @@ if __name__ == "__main__":
     set_global_vars(args.controller_url, args.moderate)
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
-    if args.anony_only_for_proprietary_model:
-        models = get_model_list(
-            args.controller_url,
-            args.register_openai_compatible_models,
-            False,
-            False,
-            False,
-            False,
-        )
-    else:
-        models = get_model_list(
-            args.controller_url,
-            args.register_openai_compatible_models,
-            args.add_chatgpt,
-            args.add_claude,
-            args.add_palm,
-            False,
-        )
+    models, all_models = get_model_list(
+        args.controller_url,
+        args.register_api_endpoint_file,
+        False,
+    )
+
+    vl_models, all_vl_models = get_model_list(
+        args.controller_url,
+        args.register_api_endpoint_file,
+        True,
+    )
 
     vision_language_models = get_model_list(
         args.controller_url,
@@ -325,12 +290,14 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(
         models,
-        vision_language_models,
+        vl_models,
         args.elo_results_file,
         args.leaderboard_table_file,
     )
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host,
         server_port=args.port,

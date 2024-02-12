@@ -2,6 +2,8 @@
 Common utilities.
 """
 from asyncio import AbstractEventLoop
+from io import BytesIO
+import base64
 import json
 import logging
 import logging.handlers
@@ -56,6 +58,9 @@ def build_logger(logger_name, logger_filename):
     # Get logger
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
+
+    # Avoid httpx flooding POST logs
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     # if LOGDIR is empty, then don't try output log to local file
     if LOGDIR != "":
@@ -149,18 +154,21 @@ def oai_moderation(text):
     """
     import openai
 
-    openai.api_base = "https://api.openai.com/v1"
-    openai.api_key = os.environ["OPENAI_API_KEY"]
-    openai.api_type = "open_ai"
-    openai.api_version = None
+    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
+    threshold_dict = {
+        "sexual": 0.2,
+    }
     MAX_RETRY = 3
-    for i in range(MAX_RETRY):
+    for _ in range(MAX_RETRY):
         try:
-            res = openai.Moderation.create(input=text)
-            flagged = res["results"][0]["flagged"]
+            res = client.moderations.create(input=text)
+            flagged = res.results[0].flagged
+            for category, threshold in threshold_dict.items():
+                if getattr(res.results[0].category_scores, category) > threshold:
+                    flagged = True
             break
-        except (openai.error.OpenAIError, KeyError, IndexError) as e:
+        except (openai.OpenAIError, KeyError, IndexError) as e:
             # flag true to be conservative
             flagged = True
             print(f"MODERATION ERROR: {e}\nInput: {text}")
@@ -168,7 +176,7 @@ def oai_moderation(text):
 
 
 def moderation_filter(text, model_list):
-    MODEL_KEYWORDS = ["claude"]
+    MODEL_KEYWORDS = ["claude", "gpt-4", "bard"]
 
     for keyword in MODEL_KEYWORDS:
         for model in model_list:
@@ -349,3 +357,24 @@ def str_to_torch_dtype(dtype: str):
         return torch.bfloat16
     else:
         raise ValueError(f"Unrecognized dtype: {dtype}")
+
+
+def load_image(image_file):
+    from PIL import Image
+    import requests
+
+    image = None
+
+    if image_file.startswith("http://") or image_file.startswith("https://"):
+        timeout = int(os.getenv("REQUEST_TIMEOUT", "3"))
+        response = requests.get(image_file, timeout=timeout)
+        image = Image.open(BytesIO(response.content))
+    elif image_file.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
+        image = Image.open(image_file)
+    elif image_file.startswith("data:"):
+        image_file = image_file.split(",")[1]
+        image = Image.open(BytesIO(base64.b64decode(image_file)))
+    else:
+        image = Image.open(BytesIO(base64.b64decode(image_file)))
+
+    return image

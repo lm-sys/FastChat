@@ -96,6 +96,7 @@ class Controller:
             multimodal,
             check_heart_beat,
             time.time(),
+            multimodal,
         )
 
         logger.info(f"Register done: {worker_name}, {worker_status}")

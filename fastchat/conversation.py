@@ -36,6 +36,9 @@ class SeparatorStyle(IntEnum):
     YUAN2 = auto()
 
 
+IMAGE_PLACEHOLDER_STR = "$$<image>$$"
+
+
 @dataclasses.dataclass
 class Conversation:
     """A class that manages prompt templates and keeps all conversation history."""
@@ -80,6 +83,7 @@ class Conversation:
                 if message:
                     if type(message) is tuple:
                         message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
@@ -168,6 +172,9 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + "\n" + message + self.sep + "\n"
                 else:
                     ret += role + "\n"
@@ -310,7 +317,7 @@ class Conversation:
 
         max_hw, min_hw = max(image.size), min(image.size)
         aspect_ratio = max_hw / min_hw
-        max_len, min_len = 800, 400
+        max_len, min_len = 2048, 2048
         shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
         longest_edge = int(shortest_edge * aspect_ratio)
         W, H = image.size
@@ -358,6 +365,12 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
+    def extract_text_from_messages(self):
+        return [
+            (role, message[0]) if type(message) is tuple else (role, message)
+            for role, message in self.messages
+        ]
+
     def copy(self):
         return Conversation(
             name=self.name,
@@ -378,7 +391,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.messages,
+            "messages": self.extract_text_from_messages(),
             "offset": self.offset,
         }
 
@@ -863,6 +876,15 @@ register_conv_template(
     Conversation(
         name="bard",
         roles=("0", "1"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gemini",
+        roles=("user", "model"),
         sep_style=None,
         sep=None,
     )
@@ -1518,6 +1540,16 @@ register_conv_template(
     )
 )
 
+# nvidia/Llama2-70B-SteerLM-Chat
+register_conv_template(
+    Conversation(
+        name="steerlm",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
 
 # yuan 2.0 template
 # reference:https://github.com/IEIT-Yuan/Yuan-2.0
@@ -1532,6 +1564,21 @@ register_conv_template(
         stop_str="<eod>",
     )
 )
+
+# Llava-chatml
+# reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
+register_conv_template(
+    Conversation(
+        name="llava-chatml",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="Answer the questions.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_str="<|im_end|>",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
