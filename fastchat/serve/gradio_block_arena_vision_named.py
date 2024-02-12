@@ -49,19 +49,24 @@ from fastchat.utils import (
     moderation_filter,
 )
 
-logger = build_logger("gradio_web_server_vision_multi", "gradio_web_server_vision_multi.log")
+logger = build_logger(
+    "gradio_web_server_vision_multi", "gradio_web_server_vision_multi.log"
+)
 
 num_sides = 2
 enable_moderation = False
 
+
 def generate_random_image(request: gr.Request):
     # TODO(chris): Use precomputed random image
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    return (f"{cur_dir}/example_images/city.jpeg")
+    return f"{cur_dir}/example_images/city.jpeg"
+
 
 def generate_random_question(request: gr.Request):
     # TODO(chris): Use precomputed random question
-    return ("Explain what is unusual about this image.")
+    return "Explain what is unusual about this image."
+
 
 def build_side_by_side_vision_ui_named(models):
     notice_markdown = """
@@ -101,12 +106,8 @@ def build_side_by_side_vision_ui_named(models):
         with gr.Row():
             with gr.Column(scale=0.5):
                 imagebox = gr.Image(type="pil")
-                random_image = gr.Button(
-                    value="🎲 Random Image", interactive=True
-                )
-                random_question = gr.Button(
-                    value="🎲 Random Question", interactive=True
-                )
+                random_image = gr.Button(value="🎲 Random Image", interactive=True)
+                random_question = gr.Button(value="🎲 Random Question", interactive=True)
 
             for i in range(num_sides):
                 label = "Model A" if i == 0 else "Model B"
@@ -275,4 +276,3 @@ function (a, b, c, d) {
     )
 
     return states + model_selectors
-    

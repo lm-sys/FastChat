@@ -89,7 +89,7 @@ def load_demo(url_params, request: gr.Request):
     single_updates = load_demo_single(models, url_params)
     side_by_side_anony_updates = load_demo_side_by_side_anony(all_models, url_params)
     side_by_side_named_updates = load_demo_side_by_side_named(models, url_params)
-    
+
     vision_language_updates = load_demo_single(vl_models, url_params)
     side_by_side_vision_named_updates = load_demo_side_by_side_named(
         vl_models, url_params
