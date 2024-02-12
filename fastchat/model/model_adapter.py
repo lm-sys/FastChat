@@ -218,9 +218,9 @@ def load_model(
         if num_gpus != 1:
             kwargs["device_map"] = "auto"
             if max_gpu_memory is None:
-                kwargs[
-                    "device_map"
-                ] = "sequential"  # This is important for not the same VRAM sizes
+                kwargs["device_map"] = (
+                    "sequential"  # This is important for not the same VRAM sizes
+                )
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
                     i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -331,7 +331,7 @@ def load_model(
         return model, tokenizer
     kwargs["revision"] = revision
 
-    if state_dict is not None: # Pass state_dict if it is provided in the arguments.
+    if state_dict is not None:  # Pass state_dict if it is provided in the arguments.
         kwargs["state_dict"] = state_dict
 
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
