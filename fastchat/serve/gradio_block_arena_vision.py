@@ -34,9 +34,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def get_vqa_sample():
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    vqa_samples_file = f"{cur_dir}/example_images/filtered_questions_sample.json"
-    with open(vqa_samples_file, "r") as f:
+    with open('filtered_vqav2_questions.json', "r") as f:
         vqa_samples = json.load(f)
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
