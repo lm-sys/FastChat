@@ -129,7 +129,7 @@ window.__gradio_mode__ = "app";
                 )
 
             with gr.Tab(
-                "Vision-Language Model Direct Chat", id=3, visible=args.multimodal
+                "Vision Direct Chat", id=3, visible=args.multimodal
             ):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
