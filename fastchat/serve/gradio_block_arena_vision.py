@@ -33,8 +33,8 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-def get_vqa_sample():
-    with open('filtered_vqav2_questions.json', "r") as f:
+def get_vqa_sample(example_json: gr.components.Textbox):
+    with open(example_json, "r") as f:
         vqa_samples = json.load(f)
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
@@ -206,9 +206,10 @@ def build_single_vision_language_model_ui(
     )
 
     if random_questions:
+        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
-            [],  # No inputs for get_vqa_sample
+            questions_textbox,  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
         )
 
