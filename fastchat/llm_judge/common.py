@@ -415,12 +415,32 @@ def play_a_match_pair(match: MatchPair, output_file: str):
             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
+    
+def setup_openai_api(model: str, use_azure=True):
+    from functools import partial
+
+    if model == "gpt-3.5-turbo":
+        deployment_id = "misc-35"
+    elif model == "gpt-4":
+        deployment_id = "misc-4"
+    else:
+        raise NotImplementedError(f"{model=}")
+
+    if use_azure:
+        openai.api_type = "azure"
+        openai.api_key = os.environ['OPENAI_AZURE_API_KEY']
+        openai.api_base = os.environ['OPENAI_AZURE_API_BASE']
+        openai.api_version = "2023-05-15"  # subject to change
+        return partial(openai.ChatCompletion.create, deployment_id=deployment_id)
+    else:
+        return openai.ChatCompletion.create
 
 
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
+    openai_chat_completion_func = setup_openai_api(model)
     output = API_ERROR_OUTPUT
     # TODO: allow additional params for toggling between azure api
     for _ in range(API_MAX_RETRY):
