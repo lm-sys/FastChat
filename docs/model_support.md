@@ -114,7 +114,7 @@ For custom protocols, implementation of a streaming generator in [fastchat/serve
     "model_name": "gpt-3.5-turbo",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
-    "api_key": "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",
+    "api_key": "sk-******",
     "anony_only": false
   }
 }

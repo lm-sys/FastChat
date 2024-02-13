@@ -80,8 +80,8 @@ We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a1
 
 # JSON file format of API-based models:
 # {
-#   "gpt-3.5-turbo-0613": {
-#     "model_name": "gpt-3.5-turbo-0613",
+#   "gpt-3.5-turbo": {
+#     "model_name": "gpt-3.5-turbo",
 #     "api_type": "openai",
 #     "api_base": "https://api.openai.com/v1",
 #     "api_key": "sk-******",
