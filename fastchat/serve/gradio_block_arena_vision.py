@@ -21,12 +21,21 @@ from fastchat.serve.gradio_web_server import (
     add_text,
     clear_history,
     regenerate,
+    get_ip,
+    disable_btn,
 )
 from fastchat.utils import (
     build_logger,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+
+
+def clear_history_example(request: gr.Request):
+    ip = get_ip(request)
+    logger.info(f"clear_history_example. ip: {ip}")
+    state = None
+    return (state, []) + (disable_btn,) * 5
 
 
 def build_single_vision_language_model_ui(models, add_promotion_links=False):
@@ -71,7 +80,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 render=False,
                 elem_id="input_box",
             )
-            imagebox = gr.Image(type="pil")
+            imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
 
             cur_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -101,7 +110,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                     label="Max output tokens",
                 )
 
-            gr.Examples(
+            examples = gr.Examples(
                 examples=[
                     [
                         f"{cur_dir}/example_images/city.jpeg",
@@ -160,6 +169,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
+    examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
     model_selector.change(
         clear_history, None, [state, chatbot, textbox, imagebox] + btn_list

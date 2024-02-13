@@ -61,7 +61,8 @@ Users are required to agree to the following terms before using the service:
 
 The service is a research preview. It only provides limited safety measures and may generate offensive content.
 It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
-The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
+Please do not upload any private information.
+The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
 Additionally, Bard is offered on LMSys for research purposes only. To access the Bard product, please visit its [website](http://bard.google.com).
 
 ### Acknowledgment
@@ -79,16 +80,18 @@ We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a1
 
 # JSON file format of API-based models:
 # {
-#   "gpt-3.5-turbo-0613": {
-#     "model_name": "gpt-3.5-turbo-0613",
+#   "gpt-3.5-turbo": {
+#     "model_name": "gpt-3.5-turbo",
 #     "api_type": "openai",
 #     "api_base": "https://api.openai.com/v1",
 #     "api_key": "sk-******",
 #     "anony_only": false
 #   }
 # }
-# "api_type" can be one of the following: openai, anthropic, gemini, mistral.
-# "anony_only" means whether to show this model in anonymous mode only.
+#
+#  - "api_type" can be one of the following: openai, anthropic, gemini, or mistral. For custom APIs, add a new type and implement it accordingly.
+#  - "anony_only" indicates whether to display this model in anonymous mode only.
+
 api_endpoint_info = {}
 
 

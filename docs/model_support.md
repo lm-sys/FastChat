@@ -100,13 +100,18 @@ After these steps, the new model should be compatible with most FastChat feature
   setting the environment variable `PEFT_SHARE_BASE_WEIGHTS=true` in any model
   worker.
 
+
 ## API-Based Models
-1. Implement an API-based streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py). You can learn from the OpenAI example.
-2. Specify your endpoint info in a JSON configuration file
-```
+To support an API-based model, consider learning from the existing OpenAI example.
+If the model is compatible with OpenAI APIs, then a configuration file is all that's needed without any additional code.
+For custom protocols, implementation of a streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) is required, following the provided examples. Currently, FastChat is compatible with OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.
+
+### Steps to Launch a WebUI with an API Model
+1. Specify the endpoint information in a JSON configuration file. For instance, create a file named `api_endpoints.json`:
+```json
 {
-  "gpt-3.5-turbo-0613": {
-    "model_name": "gpt-3.5-turbo-0613",
+  "gpt-3.5-turbo": {
+    "model_name": "gpt-3.5-turbo",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
     "api_key": "sk-******",
@@ -114,13 +119,12 @@ After these steps, the new model should be compatible with most FastChat feature
   }
 }
 ```
-  - "api_type" can be one of the following: openai, anthropic, gemini, mistral. For you own API, you can add a new type and implement it.
-  - "anony_only" means whether to show this model in anonymous mode only.
-3. Launch the gradio web server with argument `--register [JSON-file]`.
+  - "api_type" can be one of the following: openai, anthropic, gemini, or mistral. For custom APIs, add a new type and implement it accordingly.
+  - "anony_only" indicates whether to display this model in anonymous mode only.
 
+2. Launch the Gradio web server with the argument `--register api_endpoints.json`:
 ```
-python3 -m fastchat.serve.gradio_web_server --controller "" --share --register [JSON-file]
+python3 -m fastchat.serve.gradio_web_server --controller "" --share --register api_endpoints.json
 ```
 
-You should be able to chat with your API-based model!
-Currently, FastChat supports OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.
+Now, you can open a browser and interact with the model.
