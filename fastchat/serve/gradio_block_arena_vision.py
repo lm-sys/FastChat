@@ -215,6 +215,7 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     )
 
     if random_questions:
+        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
