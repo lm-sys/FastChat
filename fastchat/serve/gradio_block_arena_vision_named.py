@@ -40,7 +40,6 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     invisible_btn,
     acknowledgment_md,
-    ip_expiration_dict,
     get_ip,
     get_model_description_md,
 )
@@ -87,51 +86,57 @@ def build_side_by_side_vision_ui_named(models):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-named"):
+    with gr.Group(elem_id="share-region-named"):
         with gr.Row():
-            for i in range(num_sides):
-                with gr.Column():
-                    model_selectors[i] = gr.Dropdown(
-                        choices=models,
-                        value=models[i] if len(models) > i else "",
-                        interactive=True,
-                        show_label=False,
-                        container=False,
-                    )
-        with gr.Row():
-            with gr.Accordion("🔍 Expand to see 20+ model descriptions", open=False):
+            with gr.Accordion(
+                f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+            ):
                 model_description_md = get_model_description_md(models)
                 gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
         with gr.Row():
-            with gr.Column(scale=0.5):
+            with gr.Column(scale=0):
                 imagebox = gr.Image(type="pil")
                 random_image = gr.Button(value="🎲 Random Image", interactive=True)
-                random_question = gr.Button(value="🎲 Random Question", interactive=True)
 
-            for i in range(num_sides):
-                label = "Model A" if i == 0 else "Model B"
-                with gr.Column():
-                    chatbots[i] = gr.Chatbot(
-                        label=label,
-                        elem_id=f"chatbot",
-                        height=550,
-                        show_copy_button=True,
-                    )
-
-        with gr.Row():
-            leftvote_btn = gr.Button(
-                value="👈  A is better", visible=False, interactive=False
-            )
-            rightvote_btn = gr.Button(
-                value="👉  B is better", visible=False, interactive=False
-            )
-            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-            bothbad_btn = gr.Button(
-                value="👎  Both are bad", visible=False, interactive=False
-            )
+            with gr.Column(scale=1):
+                with gr.Row():
+                    for i in range(num_sides):
+                        with gr.Column():
+                            model_selectors[i] = gr.Dropdown(
+                                choices=models,
+                                value=models[i] if len(models) > i else "",
+                                interactive=True,
+                                show_label=False,
+                                container=False,
+                            )
+                with gr.Row():
+                    for i in range(num_sides):
+                        label = "Model A" if i == 0 else "Model B"
+                        with gr.Column():
+                            chatbots[i] = gr.Chatbot(
+                                label=label,
+                                elem_id=f"chatbot",
+                                height=550,
+                                show_copy_button=True,
+                            )
 
     with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
+
+    with gr.Row():
+        random_question = gr.Button(
+            value="🎲 Random Question", interactive=True, scale=0
+        )
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
@@ -233,7 +238,7 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
+    share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     for i in range(num_sides):
         model_selectors[i].change(

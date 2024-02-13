@@ -179,7 +179,7 @@ window.__gradio_mode__ = "app";
             + side_by_side_named_list
             + single_vision_language_model_list
             + side_by_side_vision_named_list,
-            _js=load_js,
+            js=load_js,
         )
 
     return demo
@@ -270,15 +270,6 @@ if __name__ == "__main__":
     vl_models, all_vl_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
-        True,
-    )
-
-    vision_language_models = get_model_list(
-        args.controller_url,
-        args.register_openai_compatible_models,
-        False,
-        False,
-        False,
         True,
     )
 

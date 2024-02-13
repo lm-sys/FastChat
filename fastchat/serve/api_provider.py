@@ -22,7 +22,10 @@ def get_api_provider_stream_iter(
     max_new_tokens,
 ):
     if model_api_dict["api_type"] == "openai":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["multimodal"]:
+            prompt = conv.to_openai_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
