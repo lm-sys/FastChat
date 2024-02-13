@@ -101,26 +101,32 @@ After these steps, the new model should be compatible with most FastChat feature
   worker.
 
 ## API-Based Models
-1. Implement an API-based streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py). You can learn from the OpenAI example.
-2. Specify your endpoint info in a JSON configuration file
+
+To support an API-based model, you can learn from the existing OpenAI example.
+If the model supports OpenAI-compatible APIs, then you only need a configuration file without any new code.
+If you have your own protocol, you need to implement a  streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py), following the existing examples.
+Currently, FastChat supports OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.
+
+
+### Steps to Launch a WebUI with an API Model
+1. Specify the information of endpoints in a JSON configuration file. For example, create a file with the name `api_endpoints.json`
 ```
 {
-  "gpt-3.5-turbo-0613": {
-    "model_name": "gpt-3.5-turbo-0613",
+  "gpt-3.5-turbo": {
+    "model_name": "gpt-3.5-turbo",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
-    "api_key": "sk-******",
+    "api_key": "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",
     "anony_only": false
   }
 }
 ```
   - "api_type" can be one of the following: openai, anthropic, gemini, mistral. For you own API, you can add a new type and implement it.
   - "anony_only" means whether to show this model in anonymous mode only.
-3. Launch the gradio web server with argument `--register [JSON-file]`.
+2. Launch the gradio web server with argument `--register api_endpoints.json`.
 
 ```
-python3 -m fastchat.serve.gradio_web_server --controller "" --share --register [JSON-file]
+python3 -m fastchat.serve.gradio_web_server --controller "" --share --register api_endpoints.json
 ```
 
-You should be able to chat with your API-based model!
-Currently, FastChat supports OpenAI, Anthropic, Google Vertex AI, Mistral, and Nvidia NGC.
+You can open the browser and chat with the model.
