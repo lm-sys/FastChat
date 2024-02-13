@@ -85,6 +85,15 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "vertex":
+        prompt = conv.to_vertex_api_messages()
+        stream_iter = vertex_api_stream_iter(
+            model_name,
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens
+        )
     else:
         raise NotImplementedError()
 
@@ -455,3 +464,36 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
             data = json.loads(data[6:])["choices"][0]["delta"]["content"]
             text += data
             yield {"text": text, "error_code": 0}
+
+def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+    import vertexai
+    from vertexai.preview.generative_models import (
+        GenerationConfig,
+        GenerativeModel,
+    )
+
+    project_id = os.environ.get("GCP_PROJECT_ID", None)
+    location = os.environ.get("GCP_LOCATION", None)
+    vertexai.init(project=project_id, location=location)
+
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    generator = GenerativeModel(model_name).generate_content(
+        messages,
+        stream=True,
+        generation_config=GenerationConfig(top_p=top_p, max_output_tokens=max_new_tokens, temperature=temperature),
+    )
+
+    for ret in generator:
+        data = {
+            "text" : ret.text,
+            "error_code": 0,
+        }
+        yield data
