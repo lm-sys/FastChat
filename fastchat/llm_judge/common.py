@@ -507,7 +507,7 @@ def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=Non
     return output.strip()
 
 
-def chat_compeletion_cohere(model, conv, temperature, max_tokens):
+def chat_completion_cohere(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
@@ -553,7 +553,7 @@ def chat_completion_palm(chat_state, model, conv, temperature, max_tokens):
     return chat_state, output
 
 
-def chat_compeletion_gemini(chat_state, model, conv, temperature, max_tokens):
+def chat_completion_gemini(chat_state, model, conv, temperature, max_tokens):
     safety_settings_NONE=[
                             { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
                             { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
@@ -586,7 +586,7 @@ def chat_compeletion_gemini(chat_state, model, conv, temperature, max_tokens):
     return chat_state, output
 
 
-def chat_compeletion_bedrock(chat_state, model, conv, temperature, max_tokens):
+def chat_completion_bedrock(chat_state, model, conv, temperature, max_tokens):
     from langchain.chat_models import BedrockChat
     from langchain.chains import ConversationChain
     from langchain.memory import ConversationBufferMemory
@@ -622,7 +622,7 @@ def chat_compeletion_bedrock(chat_state, model, conv, temperature, max_tokens):
     return chat_state, output
 
 
-def chat_compeletion_mistral(chat_state, model, conv, temperature, max_tokens):
+def chat_completion_mistral(chat_state, model, conv, temperature, max_tokens):
     from langchain_mistralai.chat_models import ChatMistralAI
     from langchain.chains import ConversationChain
     from langchain.memory import ConversationBufferMemory
