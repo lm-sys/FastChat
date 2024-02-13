@@ -213,6 +213,7 @@ def build_single_vision_language_model_ui(
     )
 
     if random_questions:
+        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
