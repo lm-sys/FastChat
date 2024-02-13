@@ -32,22 +32,27 @@ from fastchat.utils import (
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
+
 def get_vqa_sample():
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     vqa_samples_file = f"{cur_dir}/example_images/filtered_questions_sample.json"
     with open(vqa_samples_file, "r") as f:
         vqa_samples = json.load(f)
     random_sample = np.random.choice(vqa_samples)
-    question, path = random_sample['question'], random_sample['path']
+    question, path = random_sample["question"], random_sample["path"]
     return question, path
+
 
 def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
     return (state, []) + (disable_btn,) * 5
-        
-def build_single_vision_language_model_ui(models, add_promotion_links=False, random_questions=None):
+
+
+def build_single_vision_language_model_ui(
+    models, add_promotion_links=False, random_questions=None
+):
     promotion = (
         """
 | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
@@ -150,7 +155,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False, ran
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
                 if random_questions:
-                    random_btn = gr.Button(value="🎲  Random Question", interactive=True)
+                    random_btn = gr.Button(value="🎲  Random", interactive=True)
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -206,7 +211,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False, ran
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # No inputs for get_vqa_sample
-            [textbox, imagebox]  # Outputs are textbox and imagebox
+            [textbox, imagebox],  # Outputs are textbox and imagebox
         )
 
     return [state, model_selector]
