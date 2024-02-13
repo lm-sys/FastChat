@@ -416,7 +416,7 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
     return result
     
-def setup_openai_api(model: str, use_azure=True):
+def setup_openai_api(model: str, use_azure=False):
     from functools import partial
 
     if model == "gpt-3.5-turbo":
@@ -433,13 +433,11 @@ def setup_openai_api(model: str, use_azure=True):
         openai.api_version = "2023-05-15"  # subject to change
         return partial(openai.ChatCompletion.create, deployment_id=deployment_id)
     else:
+        openai.api_key = os.environ['OPENAI_API_KEY']
         return openai.ChatCompletion.create
 
 
-def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
-    if api_dict is not None:
-        openai.api_base = api_dict["api_base"]
-        openai.api_key = api_dict["api_key"]
+def chat_completion_openai(model, conv, temperature, max_tokens):
     openai_chat_completion_func = setup_openai_api(model)
     output = API_ERROR_OUTPUT
     # TODO: allow additional params for toggling between azure api
