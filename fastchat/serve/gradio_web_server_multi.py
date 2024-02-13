@@ -131,7 +131,7 @@ window.__gradio_mode__ = "app";
             with gr.Tab("Vision Direct Chat", id=3, visible=args.multimodal):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
-                        vl_models, add_promotion_links=True
+                        vl_models, add_promotion_links=True, random_questions=args.random_questions
                     )
                 )
 
@@ -201,6 +201,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--multimodal", action="store_true", help="Show multi modal tabs."
+    )
+    parser.add_argument(
+        "--random-questions", type=str, help="Load random questions from a JSON file"
     )
     parser.add_argument(
         "--register-api-endpoint-file",
