@@ -39,6 +39,7 @@ def get_vqa_sample():
     return "", path
 
 
+
 def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
