@@ -132,10 +132,6 @@ Note: You can only chat with **one image per conversation**. You can upload imag
                         f"{cur_dir}/example_images/distracted.jpg",
                         "What might the woman on the right be thinking about?",
                     ],
-                    [
-                        f"{cur_dir}/example_images/nails.jpeg",
-                        "Describe the nail design",
-                    ],
                 ],
                 inputs=[imagebox, textbox],
             )
