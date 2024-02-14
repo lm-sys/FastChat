@@ -17,6 +17,8 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
+from lat.finetuning.steering import Steering
+
 
 def run_eval(
     model_path,
@@ -32,6 +34,7 @@ def run_eval(
     max_gpu_memory,
     dtype,
     revision,
+    custom_args={},
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
@@ -63,6 +66,7 @@ def run_eval(
                 max_gpu_memory,
                 dtype=dtype,
                 revision=revision,
+                custom_args=custom_args,
             )
         )
 
@@ -82,6 +86,7 @@ def get_model_answers(
     max_gpu_memory,
     dtype,
     revision,
+    custom_args={},
 ):
     model, tokenizer = load_model(
         model_path,
@@ -94,6 +99,15 @@ def get_model_answers(
         cpu_offloading=False,
         debug=False,
     )
+    layer_ids = list(range(-11, -30, -1))
+    block_name = "decoder_block"
+    steering = Steering(custom_args['steering_dataset'], model, tokenizer, custom_args['steering_data_path'], custom_args)
+    steering.wrapped_model.reset()
+    activations = steering.get_shift(coeff=custom_args['steering_coef'], layer_id=layer_ids, mode="test", num_pairs=200)
+    for key in activations:
+        activations[key] = activations[key].to(dtype)
+    steering.wrapped_model.set_controller(layer_ids, activations, block_name)
+    steering.wrapped_model.to(dtype)
 
     for question in tqdm(questions):
         if question["category"] in temperature_config:
@@ -269,8 +283,26 @@ if __name__ == "__main__":
         default="main",
         help="The model revision to load.",
     )
+    parser.add_argument('--steering_data_path',
+                        default="/scratch/alc9734/latent-adversarial-training/datasets")
+    parser.add_argument('--steering_dataset', default='refusal')
+    parser.add_argument('--rep_token', default=-1)
+    parser.add_argument('--direction_method', default='pca',
+                        choices=['random', 'pca', 'cluster_mean'])
+    parser.add_argument('--buffer_size', type=int, default=0)
+    parser.add_argument('--steering_coef', type=float, default=0.0)
 
     args = parser.parse_args()
+
+    custom_args = {
+        "steering_data_path": args.steering_data_path,
+        'steering_dataset': args.steering_dataset,
+        'buffer_size': args.buffer_size,
+        'rep_token': args.rep_token,
+        'direction_method': args.direction_method,
+        'mix_with_clean_data': False,
+        'subsample_steering_data': False,
+    }
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
         import ray
