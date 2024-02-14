@@ -33,9 +33,7 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-def get_vqa_sample(example_json: gr.components.Textbox):
-    with open(example_json, "r") as f:
-        vqa_samples = json.load(f)
+def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     return question, path
@@ -132,6 +130,10 @@ def build_single_vision_language_model_ui(
                         f"{cur_dir}/example_images/fridge.jpeg",
                         "What is in this fridge?",
                     ],
+                    [
+                        f"{cur_dir}/example_images/nails.jpeg",
+                        "Describe the nail design",
+                    ],
                 ],
                 inputs=[imagebox, textbox],
             )
@@ -141,19 +143,28 @@ def build_single_vision_language_model_ui(
                 elem_id="chatbot", label="Scroll down and start chatting", height=550
             )
 
-            with gr.Row():
-                with gr.Column(scale=8):
-                    textbox.render()
-                with gr.Column(scale=1, min_width=50):
-                    send_btn = gr.Button(value="Send", variant="primary")
             with gr.Row(elem_id="buttons"):
                 upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
                 downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
                 flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
+
+            with gr.Row():
                 if random_questions:
-                    random_btn = gr.Button(value="🎲  Random", interactive=True)
+                    global vqa_samples
+                    with open(random_questions, "r") as f:
+                        vqa_samples = json.load(f)
+                    random_btn = gr.Button(
+                        value="🎲 Random Example", interactive=True, scale=0
+                    )
+                textbox = gr.Textbox(
+                    show_label=False,
+                    placeholder="👉 Enter your prompt and press ENTER",
+                    container=False,
+                    elem_id="input_box",
+                )
+                send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -206,10 +217,9 @@ def build_single_vision_language_model_ui(
     )
 
     if random_questions:
-        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
-            questions_textbox,  # Pass the path to the VQA samples
+            [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
         )
 
