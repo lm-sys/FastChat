@@ -24,6 +24,7 @@ from transformers import (
     LlamaForCausalLM,
     T5Tokenizer,
 )
+from ibm_models import GPTMegatronForCausalLM
 
 from fastchat.constants import CPU_ISA
 from fastchat.conversation import Conversation, get_conv_template
@@ -2257,9 +2258,22 @@ class YuanAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("yuan")
 
+class LabradorBigcodeAdapter(BaseModelAdapter):
+    """The model adapter for ChatGPT"""
+
+    def match(self, model_path: str):
+        return "labrador" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("labrador_bigcode")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(LabradorBigcodeAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)

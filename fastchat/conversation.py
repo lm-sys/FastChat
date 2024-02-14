@@ -1579,6 +1579,17 @@ register_conv_template(
     )
 )
 
+# labrador_bigcode default template
+register_conv_template(
+    Conversation(
+        name="labrador_bigcode",
+        system_message="You are a helpful agent.",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="\n",
+        stop_str="\n\n",
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
@@ -1616,6 +1627,16 @@ if __name__ == "__main__":
 
     print("-- Claude template --")
     conv = get_conv_template("claude")
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("\n")
+    
+    print("-- labrador_bigcode template --")
+    conv = get_conv_template("labrador_bigcode")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
