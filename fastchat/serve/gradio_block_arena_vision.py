@@ -190,14 +190,8 @@ def build_single_vision_language_model_ui(
     model_selector.change(
         clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
     )
-<<<<<<< HEAD
     imagebox.upload(clear_history_example, None, [state, chatbot] + btn_list)
     examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
-=======
-    imagebox.upload(
-        clear_history_example, None, [state, chatbot] + btn_list
-    )
->>>>>>> 113cb7a (update)
 
     textbox.submit(
         add_text,
