@@ -130,6 +130,10 @@ def build_single_vision_language_model_ui(
                         f"{cur_dir}/example_images/distracted.jpg",
                         "What might the woman on the right be thinking about?",
                     ],
+                    [
+                        f"{cur_dir}/example_images/nails.jpeg",
+                        "Describe the nail design",
+                    ],
                 ],
                 inputs=[imagebox, textbox],
             )
@@ -213,7 +217,6 @@ def build_single_vision_language_model_ui(
     )
 
     if random_questions:
-        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
