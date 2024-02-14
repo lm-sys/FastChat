@@ -200,7 +200,7 @@ async def api_generate_stream(request: Request):
     await acquire_worker_semaphore()
     generator = worker.generate_stream_gate(params)
     background_tasks = create_background_tasks()
-    return StreamingResponse(generator)
+    return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_generate")
