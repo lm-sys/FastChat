@@ -7,11 +7,11 @@ python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --
 python3 -m fastchat.serve.gradio_web_server_multi --share --multimodal
 """
 
-import os
 import json
-import numpy as np
+import os
 
 import gradio as gr
+import numpy as np
 
 from fastchat.serve.gradio_web_server import (
     upvote_last_response,
@@ -113,8 +113,8 @@ def build_single_vision_language_model_ui(
                 )
                 max_output_tokens = gr.Slider(
                     minimum=0,
-                    maximum=1024,
-                    value=512,
+                    maximum=2048,
+                    value=1024,
                     step=64,
                     interactive=True,
                     label="Max output tokens",
@@ -123,25 +123,33 @@ def build_single_vision_language_model_ui(
             examples = gr.Examples(
                 examples=[
                     [
-                        f"{cur_dir}/example_images/city.jpeg",
-                        "What is unusual about this image?",
+                        f"{cur_dir}/example_images/fridge.jpg",
+                        "How can I prepare a delicious meal using these ingredients?",
                     ],
                     [
-                        f"{cur_dir}/example_images/fridge.jpeg",
-                        "What is in this fridge?",
-                    ],
-                    [
-                        f"{cur_dir}/example_images/nails.jpeg",
-                        "Describe the nail design",
+                        f"{cur_dir}/example_images/distracted.jpg",
+                        "What might the woman on the right be thinking about?",
                     ],
                 ],
                 inputs=[imagebox, textbox],
             )
 
+            if random_questions:
+                global vqa_samples
+                with open(random_questions, "r") as f:
+                    vqa_samples = json.load(f)
+                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
                 elem_id="chatbot", label="Scroll down and start chatting", height=550
             )
+
+            with gr.Row():
+                with gr.Column(scale=8):
+                    textbox.render()
+                with gr.Column(scale=1, min_width=50):
+                    send_btn = gr.Button(value="Send", variant="primary")
 
             with gr.Row(elem_id="buttons"):
                 upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
@@ -150,21 +158,8 @@ def build_single_vision_language_model_ui(
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
 
-            with gr.Row():
-                if random_questions:
-                    global vqa_samples
-                    with open(random_questions, "r") as f:
-                        vqa_samples = json.load(f)
-                    random_btn = gr.Button(
-                        value="🎲 Random Example", interactive=True, scale=0
-                    )
-                textbox = gr.Textbox(
-                    show_label=False,
-                    placeholder="👉 Enter your prompt and press ENTER",
-                    container=False,
-                    elem_id="input_box",
-                )
-                send_btn = gr.Button(value="Send", variant="primary", scale=0)
+    if add_promotion_links:
+        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -191,10 +186,12 @@ def build_single_vision_language_model_ui(
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
-    examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
     model_selector.change(
         clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+    )
+    imagebox.upload(
+        clear_history_example, None, [state, chatbot] + btn_list
     )
 
     textbox.submit(
