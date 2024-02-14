@@ -33,21 +33,10 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-<<<<<<< HEAD
 def get_vqa_sample():
-<<<<<<< HEAD
-=======
-    with open('filtered_vqav2_questions.json', "r") as f:
-=======
-def get_vqa_sample(example_json: gr.components.Textbox):
-    with open(example_json, "r") as f:
->>>>>>> 6e6ac14 (fixed random-questions param)
-        vqa_samples = json.load(f)
->>>>>>> 2a80a14 (remove filepath dependencies)
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     return "", path
-
 
 
 def clear_history_example(request: gr.Request):
@@ -143,6 +132,10 @@ Note: You can only chat with **one image per conversation**. You can upload imag
                         f"{cur_dir}/example_images/distracted.jpg",
                         "What might the woman on the right be thinking about?",
                     ],
+                    [
+                        f"{cur_dir}/example_images/nails.jpeg",
+                        "Describe the nail design",
+                    ],
                 ],
                 inputs=[imagebox, textbox],
             )
@@ -226,14 +219,9 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     )
 
     if random_questions:
-        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
-<<<<<<< HEAD
             [],  # Pass the path to the VQA samples
-=======
-            questions_textbox,  # Pass the path to the VQA samples
->>>>>>> 6e6ac14 (fixed random-questions param)
             [textbox, imagebox],  # Outputs are textbox and imagebox
         ).then(clear_history_example, None, [state, chatbot] + btn_list)
 
