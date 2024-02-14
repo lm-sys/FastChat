@@ -42,7 +42,7 @@ FastChat's core features include:
 ### Method 1: With pip
 
 ```bash
-pip3 install "fschat[model_worker,webui]"
+pip3 install "fschat[model_worker,webui,llm_judge]"
 ```
 
 ### Method 2: From source
@@ -61,7 +61,8 @@ brew install rust cmake
 2. Install Package
 ```bash
 pip3 install --upgrade pip  # enable PEP 660 support
-pip3 install -e ".[model_worker,webui]"
+pip3 install -e ".[model_worker,webui,llm_judge]"
+pip install git+ssh://git@github.ibm.com/ai-models-architectures/IBM-models
 ```
 
 ## Model Weights
