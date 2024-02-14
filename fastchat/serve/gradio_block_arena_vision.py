@@ -132,6 +132,10 @@ Note: You can only chat with **one image per conversation**. You can upload imag
                         f"{cur_dir}/example_images/distracted.jpg",
                         "What might the woman on the right be thinking about?",
                     ],
+                    [
+                        f"{cur_dir}/example_images/nails.jpeg",
+                        "Describe the nail design",
+                    ],
                 ],
                 inputs=[imagebox, textbox],
             )
@@ -215,7 +219,6 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     )
 
     if random_questions:
-        questions_textbox = gr.Textbox(value=random_questions, visible=False)
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
