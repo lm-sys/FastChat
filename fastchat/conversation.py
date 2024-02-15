@@ -545,6 +545,39 @@ register_conv_template(
     )
 )
 
+# JAIS default template
+JAIS_SYS_AR="""اسمك جيس، وقد سُميت على اسم جبل جيس، أعلى جبل في الإمارات العربية المتحدة.
+لقد تم بناءك بواسطة Inception وMBZUAI. أنت مساعد مفيد ومحترم وصادق.
+
+أكمل المحادثة أدناه بين [|Human|] و [|AI|]:"""
+register_conv_template(
+    Conversation(
+        name="jais_ar",
+        system_message=JAIS_SYS_AR,
+        roles=("### Input: [|Human|]", "### Response: [|AI|]"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n\n",
+        sep2="</s>",
+        stop_str="### Response: [|AI|]"
+    )
+)
+
+JAIS_SYS_EN="""### Instruction: Your name is Jais, and you are named after Jebel Jais, the highest mountain in UAE.
+You are built by Inception and MBZUAI. You are a helpful, respectful and honest assistant.
+
+Complete the conversation below between [|Human|] and [|AI|]:"""
+register_conv_template(
+    Conversation(
+        name="jais_en",
+        system_message=JAIS_SYS_EN,
+        roles=("### Input: [|Human|]", "### Response: [|AI|]"),
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n\n",
+        sep2="</s>",
+        stop_str="### Response: [|AI|]"
+    )
+)
+
 # ChatGLM default template
 register_conv_template(
     Conversation(

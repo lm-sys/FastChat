@@ -11,8 +11,7 @@ import asyncio
 import argparse
 import json
 import os
-from typing import Generator, Optional, Union, Dict, List, Any
-
+from typing import Generator, Optional, Union, Dict, List, Any, Annotated
 import aiohttp
 import fastapi
 from fastapi import Depends, HTTPException
@@ -20,6 +19,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import applications
+from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.docs import get_swagger_ui_html
+
 import httpx
 
 try:
@@ -104,9 +107,24 @@ class AppSettings(BaseSettings):
 
 
 app_settings = AppSettings()
-app = fastapi.FastAPI()
+app = fastapi.FastAPI(
+    title="Jais Chatbot API"
+)
 headers = {"User-Agent": "FastChat API Server"}
 get_bearer_token = HTTPBearer(auto_error=False)
+
+# !!!Offline setting for swagger doc page!!!
+cwd = os.path.dirname(os.path.abspath(__file__))
+app.mount("/static", StaticFiles(directory=f'{cwd}/static'), name="static")
+def swagger_monkey_patch(*args, **kwargs):
+    return get_swagger_ui_html(
+        *args,
+        **kwargs,
+        swagger_favicon_url="/static/favicon.png",
+        swagger_css_url="/static/swagger-ui.css",
+        swagger_js_url="/static/swagger-ui-bundle.js",
+    )
+applications.get_swagger_ui_html = swagger_monkey_patch
 
 
 async def check_api_key(
@@ -408,9 +426,59 @@ async def show_available_models():
         model_cards.append(ModelCard(id=m, root=m, permission=[ModelPermission()]))
     return ModelList(data=model_cards)
 
+COMMON_SETTINGS="""Common settings:
+model- model name | messages- input message | temperature- between 0.0~1.0, increase output variability with higher value | n- number of output examples | max_tokens- stopping criteria of output in tokens, should less than the limit of model, e.g. 2048 for Jais | stop- list of stop signals, should be text | stream- streaming output or not"""
 
 @app.post("/v1/chat/completions", dependencies=[Depends(check_api_key)])
-async def create_chat_completion(request: ChatCompletionRequest):
+async def create_chat_completion(
+    request: Annotated[
+        ChatCompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": [
+                            {"role": "assistant", "content": "Response in a happy tone"},
+                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
@@ -541,7 +609,55 @@ async def chat_completion_stream_generator(
 
 
 @app.post("/v1/completions", dependencies=[Depends(check_api_key)])
-async def create_completion(request: CompletionRequest):
+async def create_completion(
+    request: Annotated[
+        CompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "prompt": [
+                            "Response in a happy tone",
+                            "Give me a poem of water in 100 words. RESPONSE:"
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "prompt": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
         return error_check_ret
@@ -765,7 +881,32 @@ async def get_embedding(payload: Dict[str, Any]):
 
 
 @app.post("/api/v1/token_check")
-async def count_tokens(request: APITokenCheckRequest):
+async def count_tokens(request: Annotated[
+        APITokenCheckRequest,
+        fastapi.Body(
+            openapi_examples={
+                "example": {
+                    "summary": "Check token numbers",
+                    "description": "Check token number of a series of prompts",
+                    "value": {
+                        "prompts": [
+                            {
+                                "model": "jais-13b-chat",
+                                "prompt": "Give me a poem of water in 100 words. RESPONSE:",
+                                "max_tokens": 2048
+                            },
+                            {
+                                "model": "jais-13b-chat",
+                                "prompt": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:",
+                                "max_tokens": 2048
+                            },
+                        ]
+                    }
+                }
+
+            }
+        )
+    ]):
     """
     Checks the token count for each message in your list
     This is not part of the OpenAI API spec.
@@ -800,7 +941,55 @@ async def count_tokens(request: APITokenCheckRequest):
 
 
 @app.post("/api/v1/chat/completions")
-async def create_chat_completion(request: APIChatCompletionRequest):
+async def create_chat_completion(
+    request: Annotated[
+        APIChatCompletionRequest,
+        fastapi.Body(
+            openapi_examples={
+                "english": {
+                    "summary": "English chat example",
+                    "description": "A simple English example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:"
+                    }
+                },
+                "arabic": {
+                    "summary": "Arabic chat example",
+                    "description": "A simple Arabic example",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": "أعطني مقدمة عن دولة الإمارات العربية المتحدة. الرد باختصار. RESPONSE:"
+                    }
+                },
+                "history": {
+                    "summary": "Example with chat history",
+                    "description": "A simple example with chat history between assistant and user",
+                    "value": {
+                        "model": "jais-13b-chat",
+                        "messages": [
+                            {"role": "assistant", "content": "Response in a happy tone"},
+                            {"role": "user", "content": "Give me a poem of water in 100 words. RESPONSE:"},
+                        ]
+                    }
+                },
+                "common_settings": {
+                    "summary": "Example with common settings",
+                    "description": COMMON_SETTINGS,
+                    "value":{
+                        "model": "jais-13b-chat",
+                        "messages": "Give me a poem of water in 100 words. RESPONSE:",
+                        "temperature": 0.01,
+                        "n": 1,
+                        "max_tokens": 2048,
+                        "stop": ["<|stop|>"],
+                        "stream": False,
+                    }
+                }
+
+            }
+        )
+    ]):
     """Creates a completion for the chat message"""
     error_check_ret = await check_model(request)
     if error_check_ret is not None:
