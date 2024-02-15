@@ -258,6 +258,7 @@ def create_multi_model_worker():
             max_gpu_memory=args.max_gpu_memory,
             load_8bit=args.load_8bit,
             cpu_offloading=args.cpu_offloading,
+            attn_implementation=args.attn_implementation,
             gptq_config=gptq_config,
             exllama_config=exllama_config,
             xft_config=xft_config,
