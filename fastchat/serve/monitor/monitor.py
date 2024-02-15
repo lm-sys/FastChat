@@ -51,18 +51,25 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Jan 26, 2024.
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: Feb 2, 2024.
 
 Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
+
+⚠️ **Some mobile users reported the leaderboard is not displayed normally, please visit [our HF alternative](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) while we are fixing it**.
 """
     return leaderboard_md
 
 
 def make_full_leaderboard_md(elo_results):
-    leaderboard_md = f"""
-Two more benchmarks are displayed: **MT-Bench** and **MMLU**.
+    leaderboard_md = """
+Three benchmarks are displayed: **Arena Elo**, **MT-Bench** and **MMLU**.
+- [Chatbot Arena](https://chat.lmsys.org/?arena) - a crowdsourced, randomized battle platform based on human preference votes.
 - [MT-Bench](https://arxiv.org/abs/2306.05685): a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot): a test to measure a model's multitask accuracy on 57 tasks.
+
+💻 Code: The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
+The MMLU scores are mostly computed by [InstructEval](https://github.com/declare-lab/instruct-eval).
+Higher values are better for all benchmarks. Empty cells mean not available.
 """
     return leaderboard_md
 
@@ -331,7 +338,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 )
         if not show_plot:
             gr.Markdown(
-                """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
+                """ ## Visit our&nbsp;[HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)&nbsp;for more analysis!
                 If you want to see more models, please help us [add them](https://github.com/lm-sys/FastChat/blob/main/docs/arena.md#how-to-add-a-new-model).
                 """,
                 elem_id="leaderboard_markdown",
@@ -374,7 +381,7 @@ You can find more discussions in this blog [post](https://lmsys.org/blog/2023-12
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
-    gr.Markdown(acknowledgment_md)
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     if show_plot:
         return [md_1, plot_1, plot_2, plot_3, plot_4]
@@ -445,7 +452,9 @@ if __name__ == "__main__":
 
     demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
     demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
     ).launch(
         server_name=args.host, server_port=args.port, share=args.share, max_threads=200
     )

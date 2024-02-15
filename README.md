@@ -3,7 +3,7 @@
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
 - FastChat powers Chatbot Arena (https://chat.lmsys.org/), serving over 6 million chat requests for 50+ LLMs.
-- Arena has collected over 100K human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
+- Chatbot Arena has collected over 200K human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard).
 
 FastChat's core features include:
 - The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
@@ -85,19 +85,14 @@ See more command options and how to handle out-of-memory in the "Inference with 
 
 **Old weights**: see [docs/vicuna_weights_version.md](docs/vicuna_weights_version.md) for all versions of weights and their differences.
 
-### LongChat
-We release [LongChat](https://lmsys.org/blog/2023-06-29-longchat/) models under Llama's [model license](https://github.com/facebookresearch/llama/blob/main/LICENSE).
+### Other Models
+Besides Vicuna, we also released two additional models: [LongChat](https://lmsys.org/blog/2023-06-29-longchat/) and FastChat-T5.
+You can use the commands below to chat with them. They will automatically download the weights from Hugging Face repos.
 
-| Size | Chat Command | Hugging Face Repo |
+| Model | Chat Command | Hugging Face Repo |
 | ---  | --- | --- |
-| 7B   | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-7b-32k-v1.5`  | [lmsys/longchat-7b-32k](https://huggingface.co/lmsys/longchat-7b-32k-v1.5)   |
-
-### FastChat-T5
-You can use the commands below to chat with FastChat-T5. It will automatically download the weights from Hugging Face repos.
-
-| Size | Chat Command | Hugging Face Repo |
-| ---  | --- | --- |
-| 3B   | `python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0`  | [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0) |
+| LongChat-7B   | `python3 -m fastchat.serve.cli --model-path lmsys/longchat-7b-32k-v1.5`  | [lmsys/longchat-7b-32k](https://huggingface.co/lmsys/longchat-7b-32k-v1.5)   |
+| FastChat-T5-3B   | `python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0`  | [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5-3b-v1.0) |
 
 ## Inference with Command Line Interface
 
@@ -198,6 +193,12 @@ This requires 8-bit compression to be enabled and the bitsandbytes package to be
 - FastChat supports AWQ 4bit inference with [mit-han-lab/llm-awq](https://github.com/mit-han-lab/llm-awq). See [docs/awq.md](/docs/awq.md).
 - [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
+#### Use models from modelscope
+For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
+```bash
+export FASTCHAT_USE_MODELSCOPE=True
+```
+
 ## Serving with Web GUI
 
 <a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
@@ -249,12 +250,6 @@ python3 -m fastchat.serve.gradio_web_server_multi
 ```
 - The default model worker based on huggingface/transformers has great compatibility but can be slow. If you want high-throughput batched serving, you can try [vLLM integration](docs/vllm_integration.md).
 - If you want to host it on your own UI or third party UI, see [Third Party UI](docs/third_party_ui.md).
-
-## Use models from modelscope
-For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
-```bash
-export FASTCHAT_USE_MODELSCOPE=True
-```
 
 ## API
 ### OpenAI-Compatible RESTful APIs & SDK
