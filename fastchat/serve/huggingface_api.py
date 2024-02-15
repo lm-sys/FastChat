@@ -22,7 +22,7 @@ def main(args):
         max_gpu_memory=args.max_gpu_memory,
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
-        attn_implementation=attn_implementation,
+        attn_implementation=args.attn_implementation,
         revision=args.revision,
         debug=args.debug,
     )
