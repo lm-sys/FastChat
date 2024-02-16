@@ -42,6 +42,7 @@ register_model_info(
 
 register_model_info(
     [
+        "mistral-next",
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
         "mistral-7b-instruct-v0.2",

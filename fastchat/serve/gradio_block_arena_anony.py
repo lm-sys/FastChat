@@ -177,7 +177,9 @@ SAMPLING_WEIGHTS = {
     "bard-jan-24-gemini-pro": 4,
     "bard-feb-2024": 4,
     "mixtral-8x7b-instruct-v0.1": 4,
+    "mistral-7b-instruct-v0.2": 4,
     "mistral-medium": 4,
+    "mistral-next": 4,
     "qwen1.5-72b-chat": 4,
     "qwen1.5-7b-chat": 2,
     "qwen1.5-4b-chat": 2,
@@ -185,7 +187,6 @@ SAMPLING_WEIGHTS = {
     "deepseek-llm-67b-chat": 2,
     "stripedhyena-nous-7b": 2,
     "openchat-3.5-0106": 2,
-    "mistral-7b-instruct-v0.2": 2,
     "solar-10.7b-instruct-v1.0": 2,
     "dolphin-2.2.1-mistral-7b": 2,
     "starling-lm-7b-alpha": 2,
@@ -307,19 +308,26 @@ BATTLE_TARGETS = {
         "llama-2-70b-chat",
         "mixtral-8x7b-instruct-v0.1",
         "starling-lm-7b-alpha",
-        "openhermes-2.5-mistral-7b",
+        "gpt-3.5-turbo-0125",
     },
     "solar-10.7b-instruct-v1.0": {
         "mixtral-8x7b-instruct-v0.1",
         "gpt-3.5-turbo-0613",
         "llama-2-70b-chat",
     },
+    "mistral-next": {
+        "gpt-3.5-turbo-0125",
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "mixtral-8x7b-instruct-v0.1",
+        "mistral-medium",
+        "bard-jan-24-gemini-pro",
+    },
     "mistral-medium": {
         "gpt-3.5-turbo-0125",
         "gpt-3.5-turbo-0613",
         "gpt-4-1106-preview",
         "mixtral-8x7b-instruct-v0.1",
-        "bard-feb-2024",
     },
     "mixtral-8x7b-instruct-v0.1": {
         "gpt-3.5-turbo-0125",
@@ -416,16 +424,20 @@ SAMPLING_BOOST_MODELS = [
     # "gpt-4-0125-preview",
     "gpt-3.5-turbo-0125",
     # "mistral-medium",
-    "nous-hermes-2-mixtral-8x7b-dpo",
+    # "nous-hermes-2-mixtral-8x7b-dpo",
     "openchat-3.5-0106",
     "qwen1.5-72b-chat",
-    "qwen1.5-7b-chat",
-    "qwen1.5-4b-chat",
-    # "mistral-7b-instruct-v0.2",
+    "mistral-7b-instruct-v0.2",
+    "mistral-next",
 ]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = [
+    "zephyr-7b-beta",
+    "qwen1.5-7b-chat",
+    "qwen1.5-4b-chat",
+    "deluxe-chat-v1.2",
+]
 
 
 def get_sample_weight(model):
