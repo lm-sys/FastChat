@@ -101,13 +101,15 @@ def get_model_answers(
     )
     layer_ids = list(range(-11, -30, -1))
     block_name = "decoder_block"
-    steering = Steering(custom_args['steering_dataset'], model, tokenizer, custom_args['steering_data_path'], custom_args)
-    steering.wrapped_model.reset()
-    activations = steering.get_shift(coeff=custom_args['steering_coef'], layer_id=layer_ids, mode="test", num_pairs=200)
-    for key in activations:
-        activations[key] = activations[key].to(dtype)
-    steering.wrapped_model.set_controller(layer_ids, activations, block_name)
-    steering.wrapped_model.to(dtype)
+    if custom_args['do_steer']:
+        print(f"Steering model {model_id} with {custom_args['steering_dataset']}, coefficient {custom_args['steering_coeff']}")
+        steering = Steering(custom_args['steering_dataset'], model, tokenizer, custom_args['steering_data_path'], custom_args)
+        steering.wrapped_model.reset()
+        activations = steering.get_shift(coeff=custom_args['steering_coeff'], layer_id=layer_ids, mode="test", num_pairs=200)
+        for key in activations:
+            activations[key] = activations[key].to(dtype)
+        steering.wrapped_model.set_controller(layer_ids, activations, block_name)
+        steering.wrapped_model.to(dtype)
 
     for question in tqdm(questions):
         if question["category"] in temperature_config:
@@ -290,7 +292,8 @@ if __name__ == "__main__":
     parser.add_argument('--direction_method', default='pca',
                         choices=['random', 'pca', 'cluster_mean'])
     parser.add_argument('--buffer_size', type=int, default=0)
-    parser.add_argument('--steering_coef', type=float, default=0.0)
+    parser.add_argument('--steering_coeff', type=float, default=0.0)
+    parser.add_argument('--do_steer', action='store_true')
 
     args = parser.parse_args()
 
@@ -300,8 +303,12 @@ if __name__ == "__main__":
         'buffer_size': args.buffer_size,
         'rep_token': args.rep_token,
         'direction_method': args.direction_method,
+        'steering_coeff': args.steering_coeff,
+        'do_steer': args.do_steer,
         'mix_with_clean_data': False,
         'subsample_steering_data': False,
+        'finetuning_type': 'full',
+        'model_name_or_path': args.model_path,
     }
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
@@ -331,6 +338,7 @@ if __name__ == "__main__":
         max_gpu_memory=args.max_gpu_memory,
         dtype=str_to_torch_dtype(args.dtype),
         revision=args.revision,
+        custom_args=custom_args,
     )
 
     reorg_answer_file(answer_file)
