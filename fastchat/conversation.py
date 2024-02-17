@@ -427,57 +427,39 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
-    def to_vertex_api_messages(self):        
-        from vertexai.preview.generative_models import Image
+    def to_vertex_api_messages(self):
         if self.system_message == "":
             ret = []
         else:
             ret = []
+            # Gemini does not support system prompts!
             ret.append({"role": "user", "parts": [{"text": "System prompt: " + text}]})
             ret.append({"role": "model", "parts": [{"text": "Understood."}]})
 
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    text, images = msg[0], msg[1:]
+                    text, images = msg[0], msg[1]
+                    vertexai_msg = {"role": "user", "parts": [{"text": text}]}
 
                     for image in images:
-                        ret.append(Image.from_bytes(image))
-                
-                    ret.append(text)
+                        vertexai_msg["parts"].append(
+                            {
+                                "inline_data": {
+                                    "data": image,
+                                    "mime_type": "image/jpeg",
+                                }
+                            }
+                        )
+
+                    ret.append(vertexai_msg)
                 else:
-                    ret.append(msg)
+                    ret.append({"role": "user", "parts": [{"text": msg}]})
             else:
-                ret.append(msg)
-
-
-            # if i % 2 == 0:
-            #     if type(msg) is tuple:
-            #         text, images = msg[0], msg[1:]
-            #         vertexai_msg = {"role": "user", "parts": [{"text": text}]}
-
-            #         for image in images:
-            #             vertexai_msg["parts"].append(
-            #             {
-            #                 "inline_data": {
-            #                     "data": image,
-            #                     "mime_type": "image/jpeg",
-            #                 }
-            #             }
-            #         )
-
-            #         ret.append(vertexai_msg)
-            #     else:
-            #         ret.append(
-            #             {"role": "user", "parts": [{"text": msg}]}
-            #         )
-            # else:
-            #     if msg is not None:
-            #         ret.append({"role": "assistant", "parts": [{"text": msg}]})
+                if msg is not None:
+                    ret.append({"role": "model", "parts": [{"text": msg}]})
 
         return ret
-
-
 
     def extract_text_from_messages(self):
         return [
