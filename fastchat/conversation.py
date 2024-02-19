@@ -308,6 +308,7 @@ class Conversation:
                     ret += role + config.mtbench.conv_role_message_separator + message + self.sep
                 else:
                     ret += role + config.mtbench.conv_role_only_separator
+            return ret
         elif self.sep_style == SeparatorStyle.JSLM_ALPHA:
             ret = self.system_message + self.sep
             for role, message in self.messages:
