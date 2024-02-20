@@ -89,10 +89,11 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         with gr.Row():
             with gr.Column(scale=0):
                 imagebox = gr.Image(type="pil")
-                global vqa_samples
-                with open(random_questions, "r") as f:
-                    vqa_samples = json.load(f)
-                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+                if random_questions:
+                    global vqa_samples
+                    with open(random_questions, "r") as f:
+                        vqa_samples = json.load(f)
+                    random_btn = gr.Button(value="🎲 Random Example", interactive=True)
 
             with gr.Column(scale=1):
                 with gr.Row():
