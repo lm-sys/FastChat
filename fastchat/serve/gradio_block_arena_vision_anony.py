@@ -48,6 +48,9 @@ from fastchat.serve.gradio_block_arena_anony import (
     get_sample_weight,
     get_battle_pair,
 )
+from fastchat.serve.gradio_block_arena_vision import (
+    get_vqa_sample,
+)
 from fastchat.utils import (
     build_logger,
     moderation_filter,
