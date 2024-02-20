@@ -144,9 +144,13 @@ class Conversation:
                 tag = self.roles[i % 2]
                 if message:
                     if i == 0:
-                        ret += message + " "
+                        ret += str(message).strip() + " "
+                    # if the conv is not the multi turns, no need to add multi turn seperate
+                    elif len(self.messages)==2:
+                        ret += tag + " " + str(message).strip()
                     else:
-                        ret += tag + " " + message + seps[i % 2]
+                        ret += tag + " " + str(message).strip() + seps[i % 2]
+               
                 else:
                     ret += tag
             return ret
