@@ -428,44 +428,44 @@ class Conversation:
         return ret
 
     def to_vertex_api_messages(self):
+        from vertexai.preview.generative_models import Image
+        import base64
+
         if self.system_message == "":
             ret = []
         else:
-            ret = []
-            # Gemini does not support system prompts!
-            ret.append({"role": "user", "parts": [{"text": "System prompt: " + text}]})
-            ret.append({"role": "model", "parts": [{"text": "Understood."}]})
+            ret = [self.system_message]
 
-        for i, (_, msg) in enumerate(self.messages[self.offset :]):
-            if i % 2 == 0:
+        for role, msg in self.messages[self.offset :]:
+            if msg is not None:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
-                    vertexai_msg = {"role": "user", "parts": [{"text": text}]}
-
                     for image in images:
-                        vertexai_msg["parts"].append(
-                            {
-                                "inline_data": {
-                                    "data": image,
-                                    "mime_type": "image/jpeg",
-                                }
-                            }
-                        )
-
-                    ret.append(vertexai_msg)
+                        ret.append(Image.from_bytes(base64.b64decode(image)))
+                    ret.append(text)
                 else:
-                    ret.append({"role": "user", "parts": [{"text": msg}]})
-            else:
-                if msg is not None:
-                    ret.append({"role": "model", "parts": [{"text": msg}]})
+                    ret.append(msg)
 
         return ret
 
-    def extract_text_from_messages(self):
-        return [
-            (role, message[0]) if type(message) is tuple else (role, message)
-            for role, message in self.messages
-        ]
+    def extract_text_and_image_hashes_from_messages(self):
+        import hashlib
+        from fastchat.utils import load_image
+
+        messages = []
+
+        for role, message in self.messages:
+            if type(message) is tuple:
+                text, images = message[0], message[1]
+                loaded_images = [load_image(image) for image in images]
+                image_hashes = [
+                    hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
+                ]
+                messages.append((role, (text, image_hashes)))
+            else:
+                messages.append((role, message))
+
+        return messages
 
     def copy(self):
         return Conversation(
@@ -487,7 +487,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.extract_text_from_messages(),
+            "messages": self.extract_text_and_image_hashes_from_messages(),
             "offset": self.offset,
         }
 
