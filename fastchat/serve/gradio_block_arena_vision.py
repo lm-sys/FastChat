@@ -7,9 +7,11 @@ python3 -m fastchat.serve.sglang_worker --model-path liuhaotian/llava-v1.5-7b --
 python3 -m fastchat.serve.gradio_web_server_multi --share --multimodal
 """
 
+import json
 import os
 
 import gradio as gr
+import numpy as np
 
 from fastchat.serve.gradio_web_server import (
     upvote_last_response,
@@ -21,6 +23,8 @@ from fastchat.serve.gradio_web_server import (
     add_text,
     clear_history,
     regenerate,
+    get_ip,
+    disable_btn,
 )
 from fastchat.utils import (
     build_logger,
@@ -29,7 +33,22 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-def build_single_vision_language_model_ui(models, add_promotion_links=False):
+def get_vqa_sample():
+    random_sample = np.random.choice(vqa_samples)
+    question, path = random_sample["question"], random_sample["path"]
+    return question, path
+
+
+def clear_history_example(request: gr.Request):
+    ip = get_ip(request)
+    logger.info(f"clear_history_example. ip: {ip}")
+    state = None
+    return (state, []) + (disable_btn,) * 5
+
+
+def build_single_vision_language_model_ui(
+    models, add_promotion_links=False, random_questions=None
+):
     promotion = (
         """
 | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
@@ -71,7 +90,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 render=False,
                 elem_id="input_box",
             )
-            imagebox = gr.Image(type="pil")
+            imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
 
             cur_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -94,26 +113,32 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                 )
                 max_output_tokens = gr.Slider(
                     minimum=0,
-                    maximum=1024,
-                    value=512,
+                    maximum=2048,
+                    value=1024,
                     step=64,
                     interactive=True,
                     label="Max output tokens",
                 )
 
-            gr.Examples(
+            examples = gr.Examples(
                 examples=[
                     [
-                        f"{cur_dir}/example_images/city.jpeg",
-                        "What is unusual about this image?",
+                        f"{cur_dir}/example_images/fridge.jpg",
+                        "How can I prepare a delicious meal using these ingredients?",
                     ],
                     [
-                        f"{cur_dir}/example_images/fridge.jpeg",
-                        "What is in this fridge?",
+                        f"{cur_dir}/example_images/distracted.jpg",
+                        "What might the woman on the right be thinking about?",
                     ],
                 ],
                 inputs=[imagebox, textbox],
             )
+
+            if random_questions:
+                global vqa_samples
+                with open(random_questions, "r") as f:
+                    vqa_samples = json.load(f)
+                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
 
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
@@ -125,6 +150,7 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
                     textbox.render()
                 with gr.Column(scale=1, min_width=50):
                     send_btn = gr.Button(value="Send", variant="primary")
+
             with gr.Row(elem_id="buttons"):
                 upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
                 downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
@@ -164,6 +190,8 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
     model_selector.change(
         clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
     )
+    imagebox.upload(clear_history_example, None, [state, chatbot] + btn_list)
+    examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
     textbox.submit(
         add_text,
@@ -183,5 +211,12 @@ def build_single_vision_language_model_ui(models, add_promotion_links=False):
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
+
+    if random_questions:
+        random_btn.click(
+            get_vqa_sample,  # First, get the VQA sample
+            [],  # Pass the path to the VQA samples
+            [textbox, imagebox],  # Outputs are textbox and imagebox
+        )
 
     return [state, model_selector]

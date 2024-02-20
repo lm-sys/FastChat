@@ -7,7 +7,7 @@ If you want to see a specific model in the arena, you can follow the methods bel
 
 ### Method 1: Hosted by 3rd party API providers or yourself
 If you have a model hosted by a 3rd party API provider or yourself, please give us the access to an API endpoint.
-  - We prefer OpenAI-compatible APIs, so we can reuse our [code](https://github.com/lm-sys/FastChat/blob/gradio/fastchat/serve/api_provider.py) for calling OpenAI models.
+  - We prefer OpenAI-compatible APIs, so we can reuse our [code](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) for calling OpenAI models.
   - If you have your own API protocol, please follow the [instructions](model_support.md) to add them. Contribute your code by sending a pull request.
 
 ### Method 2: Hosted by LMSYS
