@@ -157,7 +157,8 @@ window.__gradio_mode__ = "app";
 
             with gr.Tab("VL Arena (side-by-side)", id=4):
                 side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
-                    vl_models
+                    vl_models,
+                    random_questions=args.random_questions,
                 )
 
             if elo_results_file:

@@ -31,6 +31,9 @@ from fastchat.serve.gradio_block_arena_named import (
     add_text,
     bot_response_multi,
 )
+from fastchat.serve.gradio_block_arena_vision import (
+    get_vqa_sample,
+)
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -56,18 +59,7 @@ num_sides = 2
 enable_moderation = False
 
 
-def generate_random_image(request: gr.Request):
-    # TODO(chris): Use precomputed random image
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    return f"{cur_dir}/example_images/city.jpeg"
-
-
-def generate_random_question(request: gr.Request):
-    # TODO(chris): Use precomputed random question
-    return "Explain what is unusual about this image."
-
-
-def build_side_by_side_vision_ui_named(models):
+def build_side_by_side_vision_ui_named(models, random_questions=None):
     notice_markdown = """
 # ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
@@ -97,7 +89,10 @@ def build_side_by_side_vision_ui_named(models):
         with gr.Row():
             with gr.Column(scale=0):
                 imagebox = gr.Image(type="pil")
-                random_image = gr.Button(value="🎲 Random Image", interactive=True)
+                global vqa_samples
+                with open(random_questions, "r") as f:
+                    vqa_samples = json.load(f)
+                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
 
             with gr.Column(scale=1):
                 with gr.Row():
@@ -134,9 +129,6 @@ def build_side_by_side_vision_ui_named(models):
         )
 
     with gr.Row():
-        random_question = gr.Button(
-            value="🎲 Random Question", interactive=True, scale=0
-        )
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
@@ -268,16 +260,11 @@ function (a, b, c, d) {
         flash_buttons, [], btn_list
     )
 
-    random_image.click(
-        generate_random_image,
-        None,
-        imagebox,
-    )
-
-    random_question.click(
-        generate_random_question,
-        None,
-        textbox,
-    )
+    if random_questions:
+        random_btn.click(
+            get_vqa_sample,  # First, get the VQA sample
+            [],  # Pass the path to the VQA samples
+            [textbox, imagebox],  # Outputs are textbox and imagebox
+        )
 
     return states + model_selectors
