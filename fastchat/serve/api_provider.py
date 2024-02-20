@@ -124,9 +124,21 @@ def openai_api_stream_iter(
         model_name = "gpt-4-1106-preview"
 
     # Make requests
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
@@ -467,15 +479,21 @@ def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tok
     from vertexai.preview.generative_models import (
         GenerationConfig,
         GenerativeModel,
+        Image,
     )
 
     project_id = os.environ.get("GCP_PROJECT_ID", None)
     location = os.environ.get("GCP_LOCATION", None)
     vertexai.init(project=project_id, location=location)
 
+    text_messages = []
+    for message in messages:
+        if type(message) == str:
+            text_messages.append(message)
+
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,

@@ -73,23 +73,28 @@ SAMPLING_WEIGHTS = {
     "llava-v1.6-7b": 4,
 }
 
-#TODO(chris): target model sampling weights will be boosted.
+# TODO(chris): target model sampling weights will be boosted.
 BATTLE_TARGETS = {
     "gpt-4-vision-preview": {"gemini-1.0-pro-vision", "llava-v1.6-34b"},
     # "gemini-1.5-pro-vision" : {"gpt-4-vision-preview", "gemini-1.0-pro-vision", "llava-v1.6-34b",},
-    "gemini-1.0-pro-vision": {"gpt-4-vision-preview", "gemini-1.0-pro-vision", "llava-v1.6-34b",},
-    "llava-v1.6-34b" : {"gpt-4-vision-preview", "gemini-1.0-pro-vision"},
+    "gemini-1.0-pro-vision": {
+        "gpt-4-vision-preview",
+        "gemini-1.0-pro-vision",
+        "llava-v1.6-34b",
+    },
+    "llava-v1.6-34b": {"gpt-4-vision-preview", "gemini-1.0-pro-vision"},
     "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
     "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
 }
 
-#TODO(chris): Fill out models that require sampling boost
+# TODO(chris): Fill out models that require sampling boost
 SAMPLING_BOOST_MODELS = [
     "llava-v1.6-34b",
 ]
 
 # outage models won't be sampled.
 OUTAGE_MODELS = []
+
 
 def load_demo_side_by_side_vision_anony(models_, url_params):
     global models
@@ -103,6 +108,7 @@ def load_demo_side_by_side_vision_anony(models_, url_params):
 
     return states + selector_updates
 
+
 def add_text(
     state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
 ):
@@ -115,7 +121,13 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        model_left, model_right = get_battle_pair(models, BATTLE_TARGETS, OUTAGE_MODELS, SAMPLING_WEIGHTS, SAMPLING_BOOST_MODELS)
+        model_left, model_right = get_battle_pair(
+            models,
+            BATTLE_TARGETS,
+            OUTAGE_MODELS,
+            SAMPLING_WEIGHTS,
+            SAMPLING_BOOST_MODELS,
+        )
         states = [
             State(model_left),
             State(model_right),
@@ -180,6 +192,7 @@ def add_text(
         + [hint_msg]
     )
 
+
 def build_side_by_side_vision_ui_anony(models, random_questions=None):
     notice_markdown = """
 # ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
@@ -217,7 +230,7 @@ Find out who is the 🥇LLM Champion!
                     with open(random_questions, "r") as f:
                         vqa_samples = json.load(f)
                     random_btn = gr.Button(value="🎲 Random Example", interactive=True)
-            
+
             with gr.Column(scale=1):
                 with gr.Row():
                     for i in range(num_sides):
