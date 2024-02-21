@@ -508,9 +508,11 @@ def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tok
         ),
     )
 
-    for ret in generator:
+    ret = ""
+    for chunk in generator:
+        ret += chunk.text
         data = {
-            "text": ret.text,
+            "text": ret,
             "error_code": 0,
         }
         yield data
