@@ -519,7 +519,9 @@ async def chat_completion_stream_generator(
                 content_dict = content.model_dump()
 
                 # Convert the dictionary to a JSON string
-                sorted_json = json.dumps(content_dict, sort_keys=True, ensure_ascii=False)
+                sorted_json = json.dumps(
+                    content_dict, sort_keys=True, ensure_ascii=False
+                )
 
                 yield f"data: {sorted_json}\n\n"
                 yield "data: [DONE]\n\n"
@@ -675,7 +677,9 @@ async def generate_completion_stream_generator(
                     content_dict = content.model_dump()
 
                     # Convert the dictionary to a JSON string
-                    sorted_json = json.dumps(content_dict, sort_keys=True, ensure_ascii=False)
+                    sorted_json = json.dumps(
+                        content_dict, sort_keys=True, ensure_ascii=False
+                    )
 
                     # Use the JSON string in your response
                     yield f"data: {sorted_json}\n\n"
