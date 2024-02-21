@@ -656,3 +656,10 @@ register_model_info(
     "https://github.com/haotian-liu/LLaVA",
     "an open large language and vision assistant",
 )
+
+register_model_info(
+    ["llava-v1.6-mistral-7b", "llava-v1.6-vicuna-7b", "llava-v1.5-7b"],
+    "LLaVA",
+    "https://huggingface.co/collections/liuhaotian/llava-16-65b9e40155f60fd046a5ccf2",
+    "LLaVA is an open-source chatbot trained by fine-tuning LLM on multimodal instruction-following data.",
+)

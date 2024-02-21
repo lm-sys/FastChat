@@ -350,6 +350,68 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
+    def to_openai_image_format(self, image_urls):
+        import base64
+
+        openai_images = []
+        for image_url in image_urls:
+            if image_url.startswith("http://") or image_url.startswith(
+                "https://"
+            ):  # input is a url
+                openai_images.append(image_url)
+            elif image_url.lower().endswith(
+                ("png", "jpg", "jpeg", "webp", "gif")
+            ):  # input is a local image
+                img_b64_str = self.convert_image_to_base64(image_url)
+                filetype = image_url.split(".")[-1].lower()
+                openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
+            else:
+                try:
+                    assert (
+                        base64.b64encode(base64.b64decode(image_url))
+                        == image_url.encode()
+                    ), "The image data is not a valid base64 encoded string"
+                    openai_images.append(f"data:image/jpeg;base64,{image_url}")
+                except:
+                    raise ValueError(
+                        f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
+                    )
+        return openai_images
+
+    def to_openai_vision_api_messages(self):
+        """Convert the conversation to OpenAI vision api completion format"""
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
+        ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
+                    image_urls = self.to_openai_image_format(msg[1])
+                    for image_url in image_urls:
+                        content_list.append(
+                            {"type": "image_url", "image_url": image_url}
+                        )
+
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
+            else:
+                if msg is not None:
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
+        return ret
+
     def to_openai_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
         if self.system_message == "":
@@ -365,11 +427,45 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
-    def extract_text_from_messages(self):
-        return [
-            (role, message[0]) if type(message) is tuple else (role, message)
-            for role, message in self.messages
-        ]
+    def to_vertex_api_messages(self):
+        from vertexai.preview.generative_models import Image
+        import base64
+
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [self.system_message]
+
+        for role, msg in self.messages[self.offset :]:
+            if msg is not None:
+                if type(msg) is tuple:
+                    text, images = msg[0], msg[1]
+                    for image in images:
+                        ret.append(Image.from_bytes(base64.b64decode(image)))
+                    ret.append(text)
+                else:
+                    ret.append(msg)
+
+        return ret
+
+    def extract_text_and_image_hashes_from_messages(self):
+        import hashlib
+        from fastchat.utils import load_image
+
+        messages = []
+
+        for role, message in self.messages:
+            if type(message) is tuple:
+                text, images = message[0], message[1]
+                loaded_images = [load_image(image) for image in images]
+                image_hashes = [
+                    hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
+                ]
+                messages.append((role, (text, image_hashes)))
+            else:
+                messages.append((role, message))
+
+        return messages
 
     def copy(self):
         return Conversation(
@@ -391,7 +487,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.extract_text_from_messages(),
+            "messages": self.extract_text_and_image_hashes_from_messages(),
             "offset": self.offset,
         }
 

@@ -418,6 +418,7 @@ def bot_response(
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
+        images = conv.get_images()
 
         # Set repetition_penalty
         if "t5" in model_name:
@@ -527,7 +528,6 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
-            "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
 

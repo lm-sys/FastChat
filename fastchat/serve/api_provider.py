@@ -22,7 +22,10 @@ def get_api_provider_stream_iter(
     max_new_tokens,
 ):
     if model_api_dict["api_type"] == "openai":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["multimodal"]:
+            prompt = conv.to_openai_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -82,6 +85,11 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "vertex":
+        prompt = conv.to_vertex_api_messages()
+        stream_iter = vertex_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
     else:
         raise NotImplementedError()
 
@@ -116,9 +124,21 @@ def openai_api_stream_iter(
         model_name = "gpt-4-1106-preview"
 
     # Make requests
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
@@ -452,3 +472,47 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
             data = json.loads(data[6:])["choices"][0]["delta"]["content"]
             text += data
             yield {"text": text, "error_code": 0}
+
+
+def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+    import vertexai
+    from vertexai.preview.generative_models import (
+        GenerationConfig,
+        GenerativeModel,
+        Image,
+    )
+
+    project_id = os.environ.get("GCP_PROJECT_ID", None)
+    location = os.environ.get("GCP_LOCATION", None)
+    vertexai.init(project=project_id, location=location)
+
+    text_messages = []
+    for message in messages:
+        if type(message) == str:
+            text_messages.append(message)
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    generator = GenerativeModel(model_name).generate_content(
+        messages,
+        stream=True,
+        generation_config=GenerationConfig(
+            top_p=top_p, max_output_tokens=max_new_tokens, temperature=temperature
+        ),
+    )
+
+    ret = ""
+    for chunk in generator:
+        ret += chunk.text
+        data = {
+            "text": ret,
+            "error_code": 0,
+        }
+        yield data
