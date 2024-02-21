@@ -179,7 +179,7 @@ SAMPLING_WEIGHTS = {
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 4,
     "mistral-medium": 4,
-    "mistral-next": 4,
+    "mistral-next": 8,
     "qwen1.5-72b-chat": 4,
     "qwen1.5-7b-chat": 2,
     "qwen1.5-4b-chat": 2,
@@ -319,9 +319,11 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0125",
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
+        "gpt-4-0613",
+        "gpt-4-0314",
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
-        "bard-jan-24-gemini-pro",
+        "claude-2.1",
     },
     "mistral-medium": {
         "gpt-3.5-turbo-0125",
@@ -425,7 +427,7 @@ SAMPLING_BOOST_MODELS = [
     "gpt-3.5-turbo-0125",
     # "mistral-medium",
     # "nous-hermes-2-mixtral-8x7b-dpo",
-    "openchat-3.5-0106",
+    # "openchat-3.5-0106",
     "qwen1.5-72b-chat",
     "mistral-7b-instruct-v0.2",
     "mistral-next",
@@ -525,7 +527,8 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    flagged = moderation_filter(text, model_list)
+    # turn on moderation in battle mode
+    flagged = moderation_filter(text, model_list, do_moderation=True)
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
@@ -637,7 +640,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
+We collect **300K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!

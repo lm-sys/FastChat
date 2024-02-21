@@ -8,7 +8,7 @@ import hashlib
 import asyncio
 
 REFRESH_INTERVAL_SEC = 60
-LOG_DIR = "/home/vicuna/fastchat_logs/server0"
+LOG_DIR = "/mnt/data/fastchat_logs/server0"
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
 
