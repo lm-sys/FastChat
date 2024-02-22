@@ -2206,6 +2206,16 @@ class SteerLMAdapter(BaseModelAdapter):
         return get_conv_template("steerlm")
 
 
+class GemmaAdapter(BaseModelAdapter):
+    """The model adapter for google/gemma"""
+
+    def match(self, model_path: str):
+        return "gemma" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
+
+
 class LlavaAdapter(BaseModelAdapter):
     """The model adapter for liuhaotian/llava-v1.5 series of models"""
 
@@ -2283,6 +2293,7 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(GeminiAdapter)
+register_model_adapter(GemmaAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)

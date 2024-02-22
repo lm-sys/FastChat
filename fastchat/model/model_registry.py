@@ -41,6 +41,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
+)
+
+register_model_info(
     [
         "mistral-next",
         "mixtral-8x7b-instruct-v0.1",

@@ -176,6 +176,8 @@ SAMPLING_WEIGHTS = {
     "gemini-pro-dev-api": 4,
     "bard-jan-24-gemini-pro": 4,
     "bard-feb-2024": 4,
+    "gemma-2b-it": 4,
+    "gemma-7b-it": 8000,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 4,
     "mistral-medium": 4,
@@ -360,6 +362,20 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-0613",
         "bard-jan-24-gemini-pro",
     },
+    "gemma-7b-it": {
+        "gpt-3.5-turbo-0125",
+        "llama-2-70b-chat",
+        "openchat-3.5-0106",
+        "llama-2-7b-chat",
+        "mistral-7b-instruct-v0.2",
+    },
+    "gemma-2b-it": {
+        "gpt-3.5-turbo-0125",
+        "llama-2-70b-chat",
+        "openchat-3.5-0106",
+        "llama-2-7b-chat",
+        "mistral-7b-instruct-v0.2",
+    },
     "deepseek-llm-67b-chat": {
         "gpt-4-1106-preview",
         "gpt-4-turbo",
@@ -424,13 +440,15 @@ SAMPLING_BOOST_MODELS = [
     # "gpt-4-0314",
     # "gpt-4-1106-preview",
     # "gpt-4-0125-preview",
-    "gpt-3.5-turbo-0125",
+    # "gpt-3.5-turbo-0125",
     # "mistral-medium",
     # "nous-hermes-2-mixtral-8x7b-dpo",
     # "openchat-3.5-0106",
     "qwen1.5-72b-chat",
     "mistral-7b-instruct-v0.2",
     "mistral-next",
+    "gemma-7b-it",
+    "gemma-2b-it",
 ]
 
 # outage models won't be sampled.
