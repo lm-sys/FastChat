@@ -656,3 +656,10 @@ register_model_info(
     "https://github.com/haotian-liu/LLaVA",
     "an open large language and vision assistant",
 )
+
+register_model_info(
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://huggingface.co/collections/google/gemma-release-65d5efbccdbb8c4202ec078b",
+    "Gemma is built for responsible AI development from the same research and technology used to create Gemini models.",
+)
