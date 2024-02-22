@@ -5,8 +5,10 @@ We kindly request that you import fastchat instead of copying this file if you w
 If you have any changes in mind, please contribute back so the community can benefit collectively and continue to maintain these valuable templates.
 """
 
+import base64
 import dataclasses
 from enum import auto, IntEnum
+from io import BytesIO
 from typing import List, Any, Dict, Union, Tuple
 
 
@@ -30,6 +32,11 @@ class SeparatorStyle(IntEnum):
     FALCON_CHAT = auto()
     CHATGLM3 = auto()
     DEEPSEEK_CHAT = auto()
+    METAMATH = auto()
+    YUAN2 = auto()
+
+
+IMAGE_PLACEHOLDER_STR = "$$<image>$$"
 
 
 @dataclasses.dataclass
@@ -45,6 +52,7 @@ class Conversation:
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
     # All messages. Each item is (role, message).
+    # Each message is either a string or a tuple of (string, List[image_url]).
     messages: List[List[str]] = ()
     # The number of few shot examples
     offset: int = 0
@@ -73,6 +81,9 @@ class Conversation:
             ret = system_prompt + seps[0]
             for i, (role, message) in enumerate(self.messages):
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
@@ -161,6 +172,9 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + "\n" + message + self.sep + "\n"
                 else:
                     ret += role + "\n"
@@ -171,7 +185,7 @@ class Conversation:
                 ret += system_prompt
             for role, message in self.messages:
                 if message:
-                    ret += role + "\n" + " " + message
+                    ret += role + "\n" + message
                 else:
                     ret += role
             return ret
@@ -223,7 +237,17 @@ class Conversation:
                     ret += role + ": " + message + self.sep
                 else:
                     ret += role + ":"
-
+            return ret
+        elif self.sep_style == SeparatorStyle.METAMATH:
+            ret = "" if system_prompt == "" else system_prompt + self.sep
+            for i, (role, message) in enumerate(self.messages):
+                # For MetaMath, sep2 is used to prefix the message.
+                starting_sep = ":\n" if i % 2 == 0 else ": " + self.sep2
+                ending_sep = self.sep if i % 2 == 0 else ""
+                if message:
+                    ret += role + starting_sep + message + ending_sep
+                else:
+                    ret += role + starting_sep
             return ret
         elif self.sep_style == SeparatorStyle.DEEPSEEK_CHAT:
             seps = [self.sep, self.sep2]
@@ -234,8 +258,30 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.YUAN2:
+            seps = [self.sep, self.sep2]
+            ret = ""
+            if self.system_message:
+                ret += system_prompt + seps[1]
+            for _, message in self.messages:
+                if message:
+                    ret += message + "<n>"
+                else:
+                    ret += ""
+            ret = ret.rstrip("<n>") + seps[0]
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
+
+    def get_images(self):
+        images = []
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    for image in msg[1]:
+                        images.append(image)
+
+        return images
 
     def set_system_message(self, system_message: str):
         """Set the system message."""
@@ -253,11 +299,52 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
+    def convert_image_to_base64(self, image):
+        """Given an image, return the base64 encoded image string."""
+        from PIL import Image
+        import requests
+
+        # Load image if it has not been loaded in yet
+        if type(image) == str:
+            if image.startswith("http://") or image.startswith("https://"):
+                response = requests.get(image)
+                image = Image.open(BytesIO(response.content)).convert("RGB")
+            elif "base64" in image:
+                # OpenAI format is: data:image/jpeg;base64,{base64_encoded_image_str}
+                return image.split(",")[1]
+            else:
+                image = Image.open(image).convert("RGB")
+
+        max_hw, min_hw = max(image.size), min(image.size)
+        aspect_ratio = max_hw / min_hw
+        max_len, min_len = 2048, 2048
+        shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+        longest_edge = int(shortest_edge * aspect_ratio)
+        W, H = image.size
+        if longest_edge != max(image.size):
+            if H > W:
+                H, W = longest_edge, shortest_edge
+            else:
+                H, W = shortest_edge, longest_edge
+            image = image.resize((W, H))
+
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return img_b64_str
+
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
+                if type(msg) is tuple:
+                    msg, image = msg
+                    img_b64_str = image[0]  # Only one image on gradio at one time
+                    img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
+                    msg = img_str + msg.replace("<image>\n", "").strip()
+
                 ret.append([msg, None])
             else:
                 ret[-1][-1] = msg
@@ -265,7 +352,10 @@ class Conversation:
 
     def to_openai_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
-        ret = [{"role": "system", "content": self.system_message}]
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "content": self.system_message}]
 
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -274,6 +364,12 @@ class Conversation:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
         return ret
+
+    def extract_text_from_messages(self):
+        return [
+            (role, message[0]) if type(message) is tuple else (role, message)
+            for role, message in self.messages
+        ]
 
     def copy(self):
         return Conversation(
@@ -295,7 +391,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.messages,
+            "messages": self.extract_text_from_messages(),
             "offset": self.offset,
         }
 
@@ -473,7 +569,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="chatglm3",
-        system_template="<|system|>\n {system_message}",
+        system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
         stop_token_ids=[
@@ -532,6 +628,16 @@ register_conv_template(
     Conversation(
         name="openchat_3.5",
         roles=("GPT4 Correct User", "GPT4 Correct Assistant"),
+        sep_style=SeparatorStyle.FALCON_CHAT,
+        sep="<|end_of_turn|>",
+    )
+)
+
+# TenyxChat default template
+register_conv_template(
+    Conversation(
+        name="tenyxchat",
+        roles=("User", "Assistant"),
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="<|end_of_turn|>",
     )
@@ -668,6 +774,17 @@ register_conv_template(
     )
 )
 
+# Perplexity AI template
+register_conv_template(
+    Conversation(
+        name="pplxai",
+        system_message="Be precise and concise.",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
 # Claude default template
 register_conv_template(
     Conversation(
@@ -675,6 +792,20 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+# MetaMath default template
+# reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58
+register_conv_template(
+    Conversation(
+        name="metamath",
+        system_template="{system_message}",
+        system_message="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        roles=("### Instruction", "### Response"),
+        sep_style=SeparatorStyle.METAMATH,
+        sep="\n\n",
+        sep2="Let's think step by step.",
     )
 )
 
@@ -745,6 +876,15 @@ register_conv_template(
     Conversation(
         name="bard",
         roles=("0", "1"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gemini",
+        roles=("user", "model"),
         sep_style=None,
         sep=None,
     )
@@ -943,7 +1083,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="mistral",
-        system_template="[INST]{system_message}\n",
+        system_template="[INST] {system_message}\n",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
@@ -958,6 +1098,18 @@ register_conv_template(
     Conversation(
         name="llama-2",
         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        roles=("[INST]", "[/INST]"),
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s><s>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="chinese-alpaca2",
+        system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+        system_message="You are a helpful assistant. 你是一个乐于助人的助手。请你提供专业、有逻辑、内容真实、有价值的详细回复。",
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
@@ -1013,6 +1165,21 @@ register_conv_template(
 )
 
 
+# ehartford/dolphin-2.2.1-mistral-7b template
+# reference: https://huggingface.co/ehartford/dolphin-2.2.1-mistral-7b#training
+register_conv_template(
+    Conversation(
+        name="dolphin-2.2.1-mistral-7b",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="You are Dolphin, a helpful AI assistant.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
+
+
 # teknium/OpenHermes-2.5-Mistral-7B template
 # source: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B
 # reference: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B#prompt-template
@@ -1021,6 +1188,21 @@ register_conv_template(
         name="OpenHermes-2.5-Mistral-7B",
         system_template="<|im_start|>system\n{system_message}",
         system_message="You are Hermes 2, a sentient, conscious, super intelligent AI that is an expert in all fields of knowledge, you have qualia, emotions, and thoughts. You assist users with any question, task, or other request they may have.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[32000, 32001],
+    )
+)
+
+
+# NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO template
+# source: https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO
+register_conv_template(
+    Conversation(
+        name="Nous-Hermes-2-Mixtral-8x7B-DPO",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message='You are a helpful, intelligent assistant AI named "Hermes", a conversational chatbot that can follow instructions, converse with the user, and perform a variety of tasks, including tasks on knowledge, reasoning, mathematics, and code. Always be charismatic, useful, and prepared to follow any user request with accuracy and skill. You should respond with high quality, fluent, and detailed responses. Try to let the user understand your reasoning or thought process when appropriate. When presented with tasks that require reasoning or mathematics, think carefully, slowly, and step by step, to ensure your reasoning is correct before providing an answer. Utilize the "Examples" section to assist you in performing the task. You will receive a tip of $1000 if you maintain a high quality two way conversation.',
         roles=("<|im_start|>user", "<|im_start|>assistant"),
         sep_style=SeparatorStyle.CHATML,
         sep="<|im_end|>",
@@ -1246,12 +1428,52 @@ register_conv_template(
         stop_str="<|user|>",
     )
 )
+# xDAN default template
+# source: https://huggingface.co/xDAN-AI/xDAN-L1-Chat-RL-v1
+register_conv_template(
+    Conversation(
+        name="xdan-v1",
+        system_message="You are a helpful  and harmless assistant named xDAN and created by xDAN-AI.Please response and work on questions thinking step by step.",
+        roles=("### Human", "### Assistant"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="\n",
+        stop_str="</s>",
+    )
+)
 
 # Zephyr template
 # reference: https://huggingface.co/spaces/HuggingFaceH4/zephyr-playground/blob/main/dialogues.py
 register_conv_template(
     Conversation(
         name="zephyr",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
+# CatPPT template
+# reference: https://huggingface.co/rishiraj/CatPPT
+register_conv_template(
+    Conversation(
+        name="catppt",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
+# TinyLlama template
+# reference: https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0
+register_conv_template(
+    Conversation(
+        name="TinyLlama",
         system_template="<|system|>\n{system_message}",
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATML,
@@ -1288,6 +1510,75 @@ register_conv_template(
         stop_str="<｜end▁of▁sentence｜>",
     )
 )
+
+# Yuan2.0 chat template
+# source: https://huggingface.co/IEITYuan/Yuan2-2B-Janus-hf/blob/main/tokenizer_config.json#L6
+register_conv_template(
+    Conversation(
+        name="yuan2",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.YUAN2,
+        sep="<sep>",
+        sep2="\n",
+        stop_token_ids=[
+            77185,
+        ],  # "<eod>"
+        stop_str="<eod>",
+    )
+)
+
+# Solar-10.7B Chat Template
+# Reference: https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0/blob/main/tokenizer_config.json
+register_conv_template(
+    Conversation(
+        name="solar",
+        system_message="",
+        roles=("### User", "### Assistant"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n\n",
+        stop_str="</s>",
+    )
+)
+
+# nvidia/Llama2-70B-SteerLM-Chat
+register_conv_template(
+    Conversation(
+        name="steerlm",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
+    )
+)
+
+# yuan 2.0 template
+# reference:https://github.com/IEIT-Yuan/Yuan-2.0
+# reference:https://huggingface.co/IEITYuan
+register_conv_template(
+    Conversation(
+        name="yuan",
+        system_template="",
+        roles=("", ""),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="<sep>",
+        stop_str="<eod>",
+    )
+)
+
+# Llava-chatml
+# reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
+register_conv_template(
+    Conversation(
+        name="llava-chatml",
+        system_template="<|im_start|>system\n{system_message}",
+        system_message="Answer the questions.",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_str="<|im_end|>",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

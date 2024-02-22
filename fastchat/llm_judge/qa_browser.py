@@ -36,7 +36,7 @@ category_selector_map = defaultdict(list)
 
 def display_question(category_selector, request: gr.Request):
     choices = category_selector_map[category_selector]
-    return gr.Dropdown.update(
+    return gr.Dropdown(
         value=choices[0],
         choices=choices,
     )
@@ -413,6 +413,8 @@ if __name__ == "__main__":
     ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
 
     demo = build_demo()
-    demo.queue(concurrency_count=10, status_update_rate=10, api_open=False).launch(
+    demo.queue(
+        default_concurrency_limit=10, status_update_rate=10, api_open=False
+    ).launch(
         server_name=args.host, server_port=args.port, share=args.share, max_threads=200
     )
