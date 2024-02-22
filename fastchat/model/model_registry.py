@@ -660,6 +660,6 @@ register_model_info(
 register_model_info(
     ["gemma-7b-it", "gemma-2b-it"],
     "Gemma",
-    "https://huggingface.co/collections/google/gemma-release-65d5efbccdbb8c4202ec078b",
-    "Gemma is built for responsible AI development from the same research and technology used to create Gemini models.",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
 )
