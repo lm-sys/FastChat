@@ -186,8 +186,9 @@ def remove_toxic_chat(toxic_chat_tag):
     return False
 
 # If the dataset is gated/private, make sure you have run huggingface-cli login
-dataset = load_dataset("lmsys/chatbot_arena_conversations")
-df = pd.DataFrame(dataset['train'])
+# dataset = load_dataset("lmsys/chatbot_arena_conversations")
+# df = pd.DataFrame(dataset['train'])
+df = pd.read_json('clean_battle_conv_20240208_80k.json')
 old_df_len = len(df)
 df = remove_toxic_rows(df)[:10]
 print(f"Removed {old_df_len - len(df)} toxic rows")
@@ -213,4 +214,4 @@ for i, row in df.iterrows():
 for k in new_columns:
     df[k] = new_columns[k]
 
-df.to_csv('redacted_conversations-test.csv', index=False)
+df.to_csv('redacted_conversations-80k-test.csv', index=False)
