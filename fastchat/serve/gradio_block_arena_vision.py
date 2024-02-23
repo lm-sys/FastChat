@@ -157,9 +157,14 @@ def build_single_vision_language_model_ui(
                 flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
                 regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
                 clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
+<<<<<<< HEAD
 
     if add_promotion_links:
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+=======
+                if random_questions:
+                    random_btn = gr.Button(value="🎲  Random", interactive=True)
+>>>>>>> d2b89fb (formatting)
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
@@ -215,7 +220,7 @@ def build_single_vision_language_model_ui(
     if random_questions:
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
-            [],  # Pass the path to the VQA samples
+            [],  # No inputs for get_vqa_sample
             [textbox, imagebox],  # Outputs are textbox and imagebox
         )
 
