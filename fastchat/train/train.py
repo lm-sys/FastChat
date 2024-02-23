@@ -92,7 +92,10 @@ def trainer_save_model_safe(trainer: transformers.Trainer):
 def preprocess(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,
+    **kwargs,
 ) -> Dict:
+    systems = None if not kwargs else kwargs.get("systems", None)
+
     conv = get_conversation_template("vicuna")
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
@@ -185,7 +188,8 @@ class SupervisedDataset(Dataset):
 
         rank0_print("Formatting inputs...")
         sources = [example["conversations"] for example in raw_data]
-        data_dict = preprocess(sources, tokenizer)
+        systems = [example.get("system", "") for example in raw_data]
+        data_dict = preprocess(sources, tokenizer, systems=systems)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
@@ -221,7 +225,11 @@ class LazySupervisedDataset(Dataset):
         if i in self.cached_data_dict:
             return self.cached_data_dict[i]
 
-        ret = preprocess([self.raw_data[i]["conversations"]], self.tokenizer)
+        ret = preprocess(
+            [self.raw_data[i]["conversations"]],
+            self.tokenizer,
+            systems=[self.raw_data[i].get("system", "")],
+        )
         ret = dict(
             input_ids=ret["input_ids"][0],
             labels=ret["labels"][0],
