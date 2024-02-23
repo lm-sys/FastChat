@@ -177,7 +177,7 @@ SAMPLING_WEIGHTS = {
     "bard-jan-24-gemini-pro": 4,
     "bard-feb-2024": 4,
     "gemma-2b-it": 4,
-    "gemma-7b-it": 8000,
+    "gemma-7b-it": 8,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 4,
     "mistral-medium": 4,
