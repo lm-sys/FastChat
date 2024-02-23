@@ -1485,6 +1485,19 @@ register_conv_template(
     )
 )
 
+# tlg47
+register_conv_template(
+    Conversation(
+        name="tlg47",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|endoftext|>",
+        stop_token_ids=[100257],
+        stop_str="<|endoftext|>",
+    )
+)
+
 
 # yuan 2.0 template
 # reference:https://github.com/IEIT-Yuan/Yuan-2.0
