@@ -1992,6 +1992,14 @@ class ZephyrAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("zephyr")
 
+class MambaChatAdapter(BaseModelAdapter):
+    """The model adapter for mamba-chat """
+
+    def match(self, model_path: str):
+        return "mamba" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("mamba")
 
 class NotusAdapter(BaseModelAdapter):
     """The model adapter for Notus (e.g. argilla/notus-7b-v1)"""
@@ -2347,6 +2355,7 @@ register_model_adapter(SolarAdapter)
 register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
+register_model_adapter(MambaChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
