@@ -1455,6 +1455,21 @@ register_conv_template(
     )
 )
 
+# Mamba-chat template
+# reference: https://huggingface.co/havenhq/mamba-chat
+# same as zephyr
+register_conv_template(
+    Conversation(
+        name="mamba",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="</s>",
+        stop_token_ids=[2],
+        stop_str="</s>",
+    )
+)
+
 # CatPPT template
 # reference: https://huggingface.co/rishiraj/CatPPT
 register_conv_template(
