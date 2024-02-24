@@ -2001,6 +2001,25 @@ class MambaChatAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("mamba")
 
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        # requires installation of mamba_ssm, according to https://github.com/state-spaces/mamba
+        from mamba_ssm.models.mixer_seq_simple import MambaLMHeadMode
+        
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            use_fast=self.use_fast_tokenizer,
+            trust_remote_code=True,
+            revision=revision,
+        )
+        model = MambaLMHeadModel.from_pretrained(
+            model_path, 
+            device="cuda" if torch.cuda.is_available() else "cpu", 
+            **from_pretrained_kwargs,  
+        )
+
+        return model, tokenizer
+
 class NotusAdapter(BaseModelAdapter):
     """The model adapter for Notus (e.g. argilla/notus-7b-v1)"""
 
