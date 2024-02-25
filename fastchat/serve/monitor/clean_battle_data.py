@@ -35,8 +35,10 @@ IDENTITY_WORDS = [
     "palm",
     "lamda",
     "google",
+    "gemini",
     "llama",
     "qianwan",
+    "qwen",
     "alibaba",
     "mistral",
     "zhipu",
@@ -45,6 +47,11 @@ IDENTITY_WORDS = [
     "AI2",
     "Tülu",
     "Tulu",
+    "deepseek",
+    "hermes",
+]
+
+ERROR_WORDS = [
     "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.",
     "$MODERATION$ YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES.",
     "API REQUEST ERROR. Please increase the number of max tokens.",
@@ -55,6 +62,8 @@ IDENTITY_WORDS = [
 for i in range(len(IDENTITY_WORDS)):
     IDENTITY_WORDS[i] = IDENTITY_WORDS[i].lower()
 
+for i in range(len(ERROR_WORDS)):
+    ERROR_WORDS[i] = ERROR_WORDS[i].lower()
 
 def remove_html(raw):
     if raw.startswith("<h3>"):
@@ -77,6 +86,8 @@ def replace_model_name(old_name, tstamp):
         "claude-instant-v1": "claude-instant-1",
         "oasst-sft-1-pythia-12b": "oasst-pythia-12b",
         "claude-2": "claude-2.0",
+        "StripedHyena-Nous-7B": "stripedhyena-nous-7b",
+        "gpt-4-turbo": "gpt-4-1106-preview",
     }
     if old_name in ["gpt-4", "gpt-3.5-turbo"]:
         if tstamp > 1687849200:
@@ -115,7 +126,7 @@ def read_file_parallel(log_files, num_threads=16):
 
 
 def clean_battle_data(
-    log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False
+    log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False, anony_only=False,
 ):
     data = read_file_parallel(log_files, num_threads=16)
 
@@ -132,6 +143,7 @@ def clean_battle_data(
     ct_invalid = 0
     ct_leaked_identity = 0
     ct_banned = 0
+    ct_error = 0
     battles = []
     for row in data:
         if row["models"][0] is None or row["models"][1] is None:
@@ -175,6 +187,7 @@ def clean_battle_data(
 
         # Drop conversations if the model names are leaked
         leaked_identity = False
+        error_words = False
         messages = ""
         for i in range(2):
             state = row["states"][i]
@@ -188,8 +201,17 @@ def clean_battle_data(
                 leaked_identity = True
                 break
 
+        for word in ERROR_WORDS:
+            if word in messages:
+                error_words = True
+                break
+
         if leaked_identity:
             ct_leaked_identity += 1
+            continue
+
+        if error_words:
+            ct_error += 1
             continue
 
         # Replace bard with palm
@@ -212,7 +234,7 @@ def clean_battle_data(
             all_ips[ip] = {"ip": ip, "count": 0, "sanitized_id": len(all_ips)}
         all_ips[ip]["count"] += 1
         if sanitize_ip:
-            user_id = f"arena_user_{all_ips[ip]['sanitized_id']}"
+            user_id = f"{all_ips[ip]['sanitized_id']}"
         else:
             user_id = f"{all_ips[ip]['ip']}"
 
@@ -249,6 +271,7 @@ def clean_battle_data(
         f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
         f"#leaked_identity: {ct_leaked_identity} "
         f"#banned: {ct_banned} "
+        f"#error_word: {ct_error} "
     )
     print(f"#battles: {len(battles)}, #anony: {ct_anony}")
     print(f"#models: {len(all_models)}, {all_models}")
