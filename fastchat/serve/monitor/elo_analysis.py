@@ -255,7 +255,9 @@ def limit_user_votes(battles, daily_vote_per_user):
 
     print("Before limiting user votes: ", len(battles))
     # add date
-    battles["date"] = battles["tstamp"].apply(lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d'))
+    battles["date"] = battles["tstamp"].apply(
+        lambda x: datetime.fromtimestamp(x).strftime("%Y-%m-%d")
+    )
 
     battles_new = pd.DataFrame()
     for date in battles["date"].unique():
@@ -268,8 +270,11 @@ def limit_user_votes(battles, daily_vote_per_user):
     print("After limiting user votes: ", len(battles_new))
     return battles_new
 
+
 def get_model_pair_stats(battles):
-    battles["ordered_pair"] = battles.apply(lambda x: tuple(sorted([x["model_a"], x["model_b"]])), axis=1)
+    battles["ordered_pair"] = battles.apply(
+        lambda x: tuple(sorted([x["model_a"], x["model_b"]])), axis=1
+    )
 
     model_pair_stats = {}
 
@@ -277,7 +282,7 @@ def get_model_pair_stats(battles):
         pair = row["ordered_pair"]
         if pair not in model_pair_stats:
             model_pair_stats[pair] = {"win": 0, "lose": 0, "tie": 0}
-        
+
         if row["winner"] in ["tie", "tie (bothbad)"]:
             model_pair_stats[pair]["tie"] += 1
         elif row["winner"] == "model_a" and row["model_a"] == min(pair):
@@ -289,7 +294,10 @@ def get_model_pair_stats(battles):
 
     return model_pair_stats
 
-def malicious_detect(model_pair_stats, battles, max_vote=200, randomized=False, alpha=0.1):
+
+def malicious_detect(
+    model_pair_stats, battles, max_vote=200, randomized=False, alpha=0.1
+):
     # only check user who has >= 5 votes to save compute
     user_vote_cnt = battles["judge"].value_counts()
     user_list = user_vote_cnt[user_vote_cnt >= 5].index.tolist()
@@ -317,7 +325,9 @@ def malicious_detect(model_pair_stats, battles, max_vote=200, randomized=False, 
                 vote = 0
 
             stats = model_pair_stats[model_pair]
-            ratings = np.array([1] * stats["win"] + [0.5] * stats["tie"] + [0] * stats["lose"])
+            ratings = np.array(
+                [1] * stats["win"] + [0.5] * stats["tie"] + [0] * stats["lose"]
+            )
             # ratings = np.array([1] * stats["win"] + [0] * stats["lose"])
             if randomized:
                 noise = np.random.uniform(-1e-5, 1e-5, len(ratings))
@@ -326,10 +336,10 @@ def malicious_detect(model_pair_stats, battles, max_vote=200, randomized=False, 
 
             p_upper += [(ratings <= vote).mean()]
             p_lower += [(ratings >= vote).mean()]
-            M_upper = np.prod(1/(2*np.array(p_upper)))
-            M_lower = np.prod(1/(2*np.array(p_lower)))
+            M_upper = np.prod(1 / (2 * np.array(p_upper)))
+            M_lower = np.prod(1 / (2 * np.array(p_lower)))
 
-            if (M_upper > 1/alpha) or (M_lower > 1/alpha):
+            if (M_upper > 1 / alpha) or (M_lower > 1 / alpha):
                 print(f"Identify bad user with {len(p_upper)} votes")
                 flag = True
                 break
@@ -342,6 +352,7 @@ def malicious_detect(model_pair_stats, battles, max_vote=200, randomized=False, 
     # remove bad users
     battles = battles[~battles["judge"].isin(bad_user_id_list)]
     return battles
+
 
 def report_elo_analysis_results(
     battles_json,
@@ -360,7 +371,12 @@ def report_elo_analysis_results(
         battles = battles[battles["language"].isin(langs)]
 
     # remove excluded models
-    battles = battles[~(battles["model_a"].isin(exclude_models) | battles["model_b"].isin(exclude_models))]
+    battles = battles[
+        ~(
+            battles["model_a"].isin(exclude_models)
+            | battles["model_b"].isin(exclude_models)
+        )
+    ]
 
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)

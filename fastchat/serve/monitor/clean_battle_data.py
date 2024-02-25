@@ -65,6 +65,7 @@ for i in range(len(IDENTITY_WORDS)):
 for i in range(len(ERROR_WORDS)):
     ERROR_WORDS[i] = ERROR_WORDS[i].lower()
 
+
 def remove_html(raw):
     if raw.startswith("<h3>"):
         return raw[raw.find(": ") + 2 : -len("</h3>\n")]
@@ -126,7 +127,11 @@ def read_file_parallel(log_files, num_threads=16):
 
 
 def clean_battle_data(
-    log_files, exclude_model_names, ban_ip_list=None, sanitize_ip=False, anony_only=False,
+    log_files,
+    exclude_model_names,
+    ban_ip_list=None,
+    sanitize_ip=False,
+    anony_only=False,
 ):
     data = read_file_parallel(log_files, num_threads=16)
 
