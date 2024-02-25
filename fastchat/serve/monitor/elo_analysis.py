@@ -295,7 +295,7 @@ def get_model_pair_stats(battles):
     return model_pair_stats
 
 
-def malicious_detect(
+def outlier_detect(
     model_pair_stats, battles, max_vote=200, randomized=False, alpha=0.1
 ):
     # only check user who has >= 5 votes to save compute
@@ -362,7 +362,7 @@ def report_elo_analysis_results(
     langs=[],
     exclude_tie=False,
     daily_vote_per_user=None,
-    run_malicious_detect=False,
+    run_outlier_detect=False,
 ):
     battles = pd.DataFrame(battles_json)
     battles = battles.sort_values(ascending=True, by=["tstamp"])
@@ -387,9 +387,9 @@ def report_elo_analysis_results(
     if daily_vote_per_user is not None:
         battles = limit_user_votes(battles, daily_vote_per_user)
 
-    if run_malicious_detect:
+    if run_outlier_detect:
         model_pair_stats = get_model_pair_stats(battles)
-        battles = malicious_detect(model_pair_stats, battles)
+        battles = outlier_detect(model_pair_stats, battles)
 
     print(f"Number of battles: {len(battles)}")
     # Online update
@@ -476,7 +476,7 @@ if __name__ == "__main__":
     parser.add_argument("--exclude-tie", action="store_true", default=False)
     parser.add_argument("--langs", type=str, nargs="+", default=[])
     parser.add_argument("--daily-vote-per-user", type=int, default=None)
-    parser.add_argument("--run-malicious-detect", action="store_true", default=False)
+    parser.add_argument("--run-outlier-detect", action="store_true", default=False)
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -497,7 +497,7 @@ if __name__ == "__main__":
         langs=args.langs,
         exclude_tie=args.exclude_tie,
         daily_vote_per_user=args.daily_vote_per_user,
-        run_malicious_detect=args.run_malicious_detect,
+        run_outlier_detect=args.run_outlier_detect,
     )
 
     print("# Online Elo")
