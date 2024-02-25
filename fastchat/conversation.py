@@ -1579,6 +1579,19 @@ register_conv_template(
     )
 )
 
+# Gemma
+# reference: https://huggingface.co/google/gemma-7b-it?text=%3Cstart_of_turn%3Euser%0AHow+does+the+brain+work%3F%3Cend_of_turn%3E%0A%3Cstart_of_turn%3Emodel
+register_conv_template(
+    Conversation(
+        name="gemma",
+        system_message="<bos>",
+        roles=("<start_of_turn>user\n", "<start_of_turn>model\n"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="<end_of_turn>\n",
+        stop_str="<end_of_turn>",
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

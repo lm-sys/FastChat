@@ -656,3 +656,10 @@ register_model_info(
     "https://github.com/haotian-liu/LLaVA",
     "an open large language and vision assistant",
 )
+
+register_model_info(
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
+)

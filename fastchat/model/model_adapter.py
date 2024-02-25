@@ -2258,6 +2258,16 @@ class YuanAdapter(BaseModelAdapter):
         return get_conv_template("yuan")
 
 
+class GemmaAdapter(BaseModelAdapter):
+    """The model adapter for Gemma"""
+
+    def match(self, model_path: str):
+        return "gemma" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2347,6 +2357,7 @@ register_model_adapter(SolarAdapter)
 register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
+register_model_adapter(GemmaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
