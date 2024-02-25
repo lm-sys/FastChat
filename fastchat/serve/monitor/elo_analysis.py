@@ -281,7 +281,7 @@ def get_model_pair_stats(battles):
     for index, row in battles.iterrows():
         pair = row["ordered_pair"]
         if pair not in model_pair_stats:
-            model_pair_stats[pair] = {"win": 0, "lose": 0, "tie": 0}
+            model_pair_stats[pair] = {"win": 0, "loss": 0, "tie": 0}
 
         if row["winner"] in ["tie", "tie (bothbad)"]:
             model_pair_stats[pair]["tie"] += 1
@@ -290,13 +290,13 @@ def get_model_pair_stats(battles):
         elif row["winner"] == "model_b" and row["model_b"] == min(pair):
             model_pair_stats[pair]["win"] += 1
         else:
-            model_pair_stats[pair]["lose"] += 1
+            model_pair_stats[pair]["loss"] += 1
 
     return model_pair_stats
 
 
 def outlier_detect(
-    model_pair_stats, battles, max_vote=200, randomized=False, alpha=0.1
+    model_pair_stats, battles, max_vote=100, randomized=False, alpha=0.05, c_param=0.5,
 ):
     # only check user who has >= 5 votes to save compute
     user_vote_cnt = battles["judge"].value_counts()
@@ -325,10 +325,13 @@ def outlier_detect(
                 vote = 0
 
             stats = model_pair_stats[model_pair]
-            ratings = np.array(
-                [1] * stats["win"] + [0.5] * stats["tie"] + [0] * stats["lose"]
-            )
-            # ratings = np.array([1] * stats["win"] + [0] * stats["lose"])
+            # count all votes
+            # ratings = np.array(
+            #     [1] * stats["win"] + [0.5] * stats["tie"] + [0] * stats["loss"]
+            # )
+
+            # only count win and loss
+            ratings = np.array([1] * stats["win"] + [0] * stats["loss"])
             if randomized:
                 noise = np.random.uniform(-1e-5, 1e-5, len(ratings))
                 ratings += noise
@@ -336,9 +339,12 @@ def outlier_detect(
 
             p_upper += [(ratings <= vote).mean()]
             p_lower += [(ratings >= vote).mean()]
+
             M_upper = np.prod(1 / (2 * np.array(p_upper)))
             M_lower = np.prod(1 / (2 * np.array(p_lower)))
 
+            # M_upper = np.prod((1 - c_param) / (c_param * np.array(p_upper) ** c_param))
+            # M_lower = np.prod((1 - c_param) / (c_param * np.array(p_lower) ** c_param))
             if (M_upper > 1 / alpha) or (M_lower > 1 / alpha):
                 print(f"Identify bad user with {len(p_upper)} votes")
                 flag = True

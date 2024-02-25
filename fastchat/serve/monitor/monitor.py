@@ -414,7 +414,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
             load_demo,
             [url_params],
             basic_components + leader_components,
-            _js=get_window_url_params_js,
+            js=get_window_url_params_js,
         )
 
     return demo
