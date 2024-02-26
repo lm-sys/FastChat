@@ -41,14 +41,8 @@ register_model_info(
 )
 
 register_model_info(
-    ["gemma-7b-it", "gemma-2b-it"],
-    "Gemma",
-    "https://blog.google/technology/developers/gemma-open-models/",
-    "Gemma by Google",
-)
-
-register_model_info(
     [
+        "mistral-large-2402",
         "mistral-next",
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
@@ -58,6 +52,13 @@ register_model_info(
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
+)
+
+register_model_info(
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
 )
 
 register_model_info(
@@ -94,13 +95,6 @@ register_model_info(
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
     "Gemini by Google",
-)
-
-register_model_info(
-    ["deepseek-llm-67b-chat"],
-    "DeepSeek LLM",
-    "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
-    "An advanced language model by DeepSeek",
 )
 
 register_model_info(
@@ -166,10 +160,15 @@ register_model_info(
 )
 
 register_model_info(
-    ["nous-hermes-2-mixtral-8x7b-dpo"],
-    "Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "Nous Hermes finetuned from Mixtral 8x7B",
+    [
+        "codellama-70b-instruct",
+        "codellama-34b-instruct",
+        "codellama-13b-instruct",
+        "codellama-7b-instruct",
+    ],
+    "Code Llama",
+    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
+    "Open foundation models for code by Meta",
 )
 
 register_model_info(
@@ -192,6 +191,14 @@ register_model_info(
     "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
     "A chat model developed by Together Research and Nous Research.",
 )
+
+register_model_info(
+    ["nous-hermes-2-mixtral-8x7b-dpo"],
+    "Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "Nous Hermes finetuned from Mixtral 8x7B",
+)
+
 
 register_model_info(
     ["llama2-70b-steerlm-chat"],
@@ -296,18 +303,6 @@ register_model_info(
     "TinyLlama",
     "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     "The TinyLlama project is an open endeavor to pretrain a 1.1B Llama model on 3 trillion tokens.",
-)
-
-register_model_info(
-    [
-        "codellama-70b-instruct",
-        "codellama-34b-instruct",
-        "codellama-13b-instruct",
-        "codellama-7b-instruct",
-    ],
-    "Code Llama",
-    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
-    "Open foundation models for code by Meta",
 )
 
 register_model_info(
