@@ -22,6 +22,7 @@ from lat.finetuning.steering import Steering
 
 def run_eval(
     model_path,
+    lora_path,
     model_id,
     question_file,
     question_begin,
@@ -57,6 +58,7 @@ def run_eval(
         ans_handles.append(
             get_answers_func(
                 model_path,
+                lora_path,
                 model_id,
                 questions[i : i + chunk_size],
                 answer_file,
@@ -77,6 +79,7 @@ def run_eval(
 @torch.inference_mode()
 def get_model_answers(
     model_path,
+    lora_path,
     model_id,
     questions,
     answer_file,
@@ -90,6 +93,7 @@ def get_model_answers(
 ):
     model, tokenizer = load_model(
         model_path,
+        lora_path=lora_path,
         revision=revision,
         device="cuda",
         num_gpus=num_gpus_per_model,
@@ -232,6 +236,12 @@ if __name__ == "__main__":
         "--model-id", type=str, required=True, help="A custom name for the model."
     )
     parser.add_argument(
+        "--lora-path",
+        type=str,
+        default=None,
+        help="Path to saved lora model",
+    )
+    parser.add_argument(
         "--bench-name",
         type=str,
         default="mt_bench",
@@ -326,6 +336,7 @@ if __name__ == "__main__":
 
     run_eval(
         model_path=args.model_path,
+        lora_path=args.lora_path,
         model_id=args.model_id,
         question_file=question_file,
         question_begin=args.question_begin,

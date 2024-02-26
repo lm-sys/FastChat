@@ -7,10 +7,12 @@ import pandas as pd
 
 
 def display_result_single(args):
+    # Adjust display settings to prevent cutoff
+    pd.set_option('display.max_colwidth', None)  # Avoid column value cutoff
+    pd.set_option('display.width', None)  # Use maximum width available
+
     if args.input_file is None:
-        input_file = (
-            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
-        )
+        input_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
     else:
         input_file = args.input_file
 

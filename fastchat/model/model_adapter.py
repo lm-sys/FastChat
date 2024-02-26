@@ -14,6 +14,7 @@ else:
 
 import psutil
 import torch
+from peft import PeftModel
 from transformers import (
     AutoConfig,
     AutoModel,
@@ -176,6 +177,7 @@ def raise_warning_for_incompatible_cpu_offloading_configuration(
 
 def load_model(
     model_path: str,
+    lora_path: Optional[str] = None,
     device: str = "cuda",
     num_gpus: int = 1,
     max_gpu_memory: Optional[str] = None,
@@ -347,7 +349,18 @@ def load_model(
 
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
+    if lora_path:
+        print(f"Loading the LoRA adapter from {lora_path}")
 
+        lora_model = PeftModel.from_pretrained(
+            model,
+            lora_path,
+            # torch_dtype=torch.float16
+        )
+    
+        print("Applying the LoRA")
+        model = lora_model.merge_and_unload()
+    
     if (
         device == "cpu"
         and kwargs["torch_dtype"] is torch.bfloat16
