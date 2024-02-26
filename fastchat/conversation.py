@@ -34,6 +34,7 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    CLLM = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -269,6 +270,14 @@ class Conversation:
                 else:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
+            return 
+        elif self.sep_style == SeparatorStyle.CLLM:
+            ret = system_prompt
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + self.sep
+                else:
+                    ret += role + ": " + self.sep
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1524,6 +1533,17 @@ register_conv_template(
             77185,
         ],  # "<eod>"
         stop_str="<eod>",
+    )
+)
+
+# Cllm chat template
+register_conv_template(
+    Conversation(
+        name="cllm",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.CLLM,
+        sep="\n",
+        stop_str="\n\n",
     )
 )
 

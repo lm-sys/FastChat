@@ -33,6 +33,7 @@ from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_yuan2 import generate_stream_yuan2
+from fastchat.model.model_cllm import generate_stream_cllm
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
@@ -393,6 +394,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
+    is_cllm = "cllm" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -406,6 +408,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_xft
     elif is_yuan:
         return generate_stream_yuan2
+    elif is_cllm:
+        return generate_stream_cllm
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -429,6 +433,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             is_exllama = "exllama" in base_model_type
             is_xft = "xft" in base_model_type
             is_yuan = "yuan" in base_model_type
+            is_cllm = "cllm" in base_model_type
 
             generate_stream_function = generate_stream
             if is_chatglm:
@@ -443,6 +448,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
                 generate_stream_function = generate_stream_xft
             elif is_yuan:
                 generate_stream_function = generate_stream_yuan2
+            elif is_cllm:
+                generate_stream_function = generate_stream_cllm
             for x in generate_stream_function(
                 model,
                 tokenizer,
@@ -2165,6 +2172,35 @@ class Yuan2Adapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("yuan2")
 
+class CllmAdapter(BaseModelAdapter):
+    """The model adapter for CLLM"""
+    def match(self, model_path: str):
+        return "cllm" in model_path.lower()
+    
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        config = AutoConfig.from_pretrained(
+            model_path,
+        )
+        
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            model_max_length=2048,
+            padding_side="right",
+        )
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            device_map='cuda',
+            attn_implementation="flash_attention_2",
+        )
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cllm")
+    
 
 class MetaMathAdapter(BaseModelAdapter):
     """The model adapter for MetaMath models"""
@@ -2351,6 +2387,7 @@ register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(Yuan2Adapter)
+register_model_adapter(CllmAdapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
