@@ -2269,7 +2269,7 @@ class GemmaAdapter(BaseModelAdapter):
 
 
 class OrionAdapter(BaseModelAdapter):
-    """The model adapter for Orion models """
+    """The model adapter for Orion models"""
 
     def match(self, model_path: str):
         return "orion" in model_path.lower()
