@@ -2267,6 +2267,7 @@ class GemmaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemma")
 
+
 class CosmosageV2Adapter(BaseModelAdapter):
     """The model adapter for cosmosage_v2"""
 
