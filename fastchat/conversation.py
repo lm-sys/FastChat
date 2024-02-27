@@ -34,6 +34,7 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    ORION = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -133,6 +134,19 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.ORION:
+            if self.system_message:
+                ret = "<s>" + system_prompt + "</s>"
+            else:
+                ret = "<s>"
+            for i, (role, message) in enumerate(self.messages):
+                if message is None:
+                    continue
+                if role == "Human":
+                    ret += role + ": " + message + self.sep + "Assistant: </s>"
+                if role == "Assistant":
+                    ret += message + "</s>"
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]
@@ -1419,7 +1433,7 @@ register_conv_template(
     Conversation(
         name="metharme",
         system_template="<|system|>{system_message}",
-        system_message="""Enter RP mode. You shall reply to the user while staying 
+        system_message="""Enter RP mode. You shall reply to the user while staying
         in character. Your responses must be detailed, creative, immersive, and drive the scenario
         forward.""",
         roles=("<|user|>", "<|model|>"),
@@ -1592,6 +1606,21 @@ register_conv_template(
     )
 )
 
+# Orion template
+# reference: https://github.com/OrionStarAI/Orion
+# reference: https://huggingface.co/OrionStarAI/Orion-14B-Chat
+register_conv_template(
+    Conversation(
+        name="orion",
+        system_message="",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ORION,
+        sep="\n\n",
+        sep2="<s>",
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
