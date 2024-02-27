@@ -34,6 +34,7 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    COSMOSAGE_V2 = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -269,6 +270,16 @@ class Conversation:
                 else:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
+            return ret
+        elif self.sep_style == SeparatorStyle.COSMOSAGE_V2:
+            ret = "<s>"
+            if system_prompt:
+                ret += system_prompt + "▁"
+            for role, message in self.messages:
+                if message:  # If there is a message, format it with the role
+                    ret += f" {role}: {message}▁"
+                else:  # If there's no message, just add the role and the final colon without trailing whitespace
+                    ret += f" {role}:"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1592,6 +1603,17 @@ register_conv_template(
     )
 )
 
+# cosmosage_v2
+# reference: https://huggingface.co/Tijmen2/cosmosage_v2#instruction-format
+register_conv_template(
+    Conversation(
+        name="cosmosage_v2",
+        system_message="You are cosmosage, an AI programmed to provide excellent and detailed answers to the user's question. You are an expert cosmology assistant, able to answer questions on the cosmic microwave background, galaxy formation, large scale structure, theoretical cosmology, inflation, big bang nucleosynthesis, cosmology instrumentation, and other related topics. Please assume the user is fluent in scientific terminology. Elaborate where possible to give a complete answer. If you do not know, say you do not know.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.COSMOSAGE_V2,
+        stop_str="</s>",
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

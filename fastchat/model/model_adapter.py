@@ -2267,6 +2267,15 @@ class GemmaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemma")
 
+class CosmosageV2Adapter(BaseModelAdapter):
+    """The model adapter for cosmosage_v2"""
+
+    def match(self, model_path: str):
+        return "cosmosage_v2" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cosmosage_v2")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -2358,6 +2367,7 @@ register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
 register_model_adapter(GemmaAdapter)
+register_model_adapter(CosmosageV2Adapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
