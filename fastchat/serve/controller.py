@@ -18,8 +18,6 @@ from fastapi.responses import StreamingResponse
 import numpy as np
 import requests
 import uvicorn
-from collections import deque
-
 
 from fastchat.constants import (
     CONTROLLER_HEART_BEAT_EXPIRATION,
@@ -36,15 +34,13 @@ logger = build_logger("controller", "controller.log")
 class DispatchMethod(Enum):
     LOTTERY = auto()
     SHORTEST_QUEUE = auto()
-    WEIGHTED_SHORTEST_QUEUE = auto()
+
     @classmethod
     def from_str(cls, name):
         if name == "lottery":
             return cls.LOTTERY
         elif name == "shortest_queue":
             return cls.SHORTEST_QUEUE
-        elif name == "weighted_shortest_queue":
-            return cls.WEIGHTED_SHORTEST_QUEUE
         else:
             raise ValueError(f"Invalid dispatch method")
 
@@ -53,7 +49,6 @@ class DispatchMethod(Enum):
 class WorkerInfo:
     model_names: List[str]
     speed: int
-    request_queue: deque
     queue_length: int
     check_heart_beat: bool
     last_heart_beat: str
@@ -98,7 +93,6 @@ class Controller:
             worker_status["model_names"],
             worker_status["speed"],
             worker_status["queue_length"],
-            worker_status["request_queue"]
             check_heart_beat,
             time.time(),
             multimodal,
@@ -202,35 +196,6 @@ class Controller:
                     worker_qlen.append(w_info.queue_length / w_info.speed)
             if len(worker_names) == 0:
                 return ""
-            min_index = np.argmin(worker_qlen)
-            w_name = worker_names[min_index]
-            self.worker_info[w_name].queue_length += 1
-            logger.info(
-                f"names: {worker_names}, queue_lens: {worker_qlen}, ret: {w_name}"
-            )
-            return w_name
-        elif self.dispatch_method == DispatchMethod.WEIGHTED_SHORTEST_QUEUE:
-            # TODO: to modify
-            worker_names = []
-            worker_qlen = []
-            worker_request_weight = [] # 1.0 x len(prompt) + 1.0 x max_new_tokens -> modified for sure? 
-            for w_name, w_info in self.worker_info.items():
-                if model_name in w_info.model_names:
-                    worker_names.append(w_name)
-                    worker_qlen.append(w_info.queue_length / w_info.speed)
-                    for request in w_info.request_queue:
-                        max_new_tokens = request.get("max_new_tokens", 0)
-                        prompt = request.get("prompt", "")
-                        prompt_len = len(prompt) if prompt else 1
-                        worker_request_weight.append(1.0 * prompt_len + 1.0 * max_new_tokens)
-            
-            if len(worker_names) == 0:
-                return ""
-            # weighted shortest queue
-            worker_qlen = np.array(worker_qlen, dtype=np.float32)
-            worker_request_weight = np.array(worker_request_weight, dtype=np.float32)
-            # times 
-            worker_qlen = worker_qlen * worker_request_weight
             min_index = np.argmin(worker_qlen)
             w_name = worker_names[min_index]
             self.worker_info[w_name].queue_length += 1

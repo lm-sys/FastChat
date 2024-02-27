@@ -22,8 +22,8 @@ from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length
-from collections import deque
+from fastchat.utils import get_context_length, is_partial_stop
+
 
 app = FastAPI()
 
@@ -60,7 +60,7 @@ class VLLMWorker(BaseModelWorker):
         if hasattr(self.tokenizer, "tokenizer"):
             self.tokenizer = llm_engine.engine.tokenizer.tokenizer
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
-        self.request_queue = deque()
+
         if not no_register:
             self.init_heart_beat()
 
@@ -173,26 +173,10 @@ class VLLMWorker(BaseModelWorker):
         async for x in self.generate_stream(params):
             pass
         return json.loads(x[:-1].decode())
-    
-    def get_status(self):
-        status_dict = super().get_status()
-        status_dict['request_queue'] = self.request_queue
-        return status_dict
-        # {
-        #     "model_names": self.model_names,
-        #     "speed": 1,
-        #     "queue_length": self.get_queue_length(),
-        # }
 
 
 def release_worker_semaphore():
     worker.semaphore.release()
-
-async def remove_request_from_queue(params):
-    try:
-        worker.request_queue.remove(params)
-    except ValueError:
-        pass
 
 
 def acquire_worker_semaphore():
@@ -201,15 +185,13 @@ def acquire_worker_semaphore():
     return worker.semaphore.acquire()
 
 
-def create_background_tasks(request_id, params):
+def create_background_tasks(request_id):
     async def abort_request() -> None:
         await engine.abort(request_id)
 
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_worker_semaphore)
     background_tasks.add_task(abort_request)
-    background_tasks.add_task(remove_request_from_queue, params)  # 添加新的后台任务
-
     return background_tasks
 
 
@@ -217,12 +199,11 @@ def create_background_tasks(request_id, params):
 async def api_generate_stream(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
-    worker.request_queue.append(params)
     request_id = random_uuid()
     params["request_id"] = request_id
     params["request"] = request
     generator = worker.generate_stream(params)
-    background_tasks = create_background_tasks(request_id, params)
+    background_tasks = create_background_tasks(request_id)
     return StreamingResponse(generator, background=background_tasks)
 
 
@@ -232,12 +213,9 @@ async def api_generate(request: Request):
     await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
-    worker.request_queue.append(params)
-
+    params["request"] = request
     output = await worker.generate(params)
     release_worker_semaphore()
-    worker.request_queue.remove(params)
-
     await engine.abort(request_id)
     return JSONResponse(output)
 
