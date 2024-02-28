@@ -663,3 +663,12 @@ register_model_info(
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
 )
+
+register_model_info(
+    [
+        "yandexgpt",
+    ],
+    "YandexGPT",
+    "https://cloud.yandex.ru/ru/docs/yandexgpt/api-ref/v1/",
+    "YandexGPT by Yandex",
+)
