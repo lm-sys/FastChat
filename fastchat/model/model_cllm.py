@@ -245,7 +245,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
     prompt = params["prompt"]
     len_prompt = len(prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    max_new_tokens = int(params.get("max_new_tokens", 512))
+    max_new_tokens = int(params.get("max_new_tokens", 32))
     max_new_seq_len = int(params.get("max_new_seq_len", 2048))
     
     CHAT = int(os.environ.get("CHAT", 0))
@@ -262,7 +262,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
     input_echo_len = len(generation)
     ### prefill the kv-cache
 
-    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True, chat=chat)
+    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True, chat=False)
     ### generation phase
     itr = 0
     eos_reached = False
@@ -272,7 +272,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
         # randomly initialize the first point of jacobian trajectory
         random_point = torch.tensor(random.choices(generation[0], k=(max_new_tokens-1)), device="cuda").view(1,-1)
         input_ids = torch.cat((first_correct_token.view(1,-1), random_point),dim=-1)
-        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False, chat=chat)
+        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False, chat=False)
         forward_times += iter_steps
         #all_jacobian_trajectory.append(jacobian_trajectory)
         
@@ -292,9 +292,11 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
         finish_reason = "length"
     else:
         finish_reason = "stop"
+        
+    output = tokenizer.decode(generation[0], skip_special_tokens=False)
 
     yield {
-        "text": generation,
+        "text": output,
         "usage": {
             "prompt_tokens": input_echo_len,
             "completion_tokens": itr*max_new_tokens,

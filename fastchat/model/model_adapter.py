@@ -394,7 +394,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
-    is_cllm = "cllm" in model_type
+    is_cllm = "cllm" in model_path
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -2175,7 +2175,7 @@ class Yuan2Adapter(BaseModelAdapter):
 class CllmAdapter(BaseModelAdapter):
     """The model adapter for CLLM"""
     def match(self, model_path: str):
-        return "cllm" in model_path.lower()
+        return "vicuna" in model_path.lower()
     
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(
@@ -2199,7 +2199,7 @@ class CllmAdapter(BaseModelAdapter):
         return model, tokenizer
     
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("cllm")
+        return get_conv_template("vicuna_v1.1")
     
 
 class MetaMathAdapter(BaseModelAdapter):
@@ -2308,6 +2308,7 @@ class GemmaAdapter(BaseModelAdapter):
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
+register_model_adapter(CllmAdapter)
 register_model_adapter(VicunaAdapter)
 register_model_adapter(AiroborosAdapter)
 register_model_adapter(LongChatAdapter)
@@ -2387,7 +2388,6 @@ register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
 register_model_adapter(Yuan2Adapter)
-register_model_adapter(CllmAdapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)

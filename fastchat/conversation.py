@@ -1543,7 +1543,7 @@ register_conv_template(
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.CLLM,
         sep="\n",
-        stop_str="\n\n",
+        stop_str=["</s>\n", "</s></s>", "</s>"]
     )
 )
 
