@@ -272,12 +272,17 @@ class Conversation:
             ret = ret.rstrip("<n>") + seps[0]
             return 
         elif self.sep_style == SeparatorStyle.CLLM:
-            ret = system_prompt
-            for role, message in self.messages:
+            seps = [self.sep, self.sep2]
+            ret = system_prompt + seps[0]
+            # for i, (role, message) in enumerate(self.messages): # prepare for multiturn model
+            for i, (role, message) in enumerate(self.messages[-2:]):
                 if message:
-                    ret += role + ": " + message + self.sep
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
+                    ret += role + ": " + message + seps[i % 2]
                 else:
-                    ret += role + ": " + self.sep
+                    ret += role + ":"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1540,10 +1545,12 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="cllm",
+        system_message="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.CLLM,
-        sep="\n",
-        stop_str=["</s>\n", "</s></s>", "</s>"]
+        sep=" ",
+        sep2="</s>",
     )
 )
 

@@ -262,7 +262,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
     input_echo_len = len(generation)
     ### prefill the kv-cache
 
-    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True, chat=False)
+    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True, chat=True)
     ### generation phase
     itr = 0
     eos_reached = False
@@ -272,7 +272,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
         # randomly initialize the first point of jacobian trajectory
         random_point = torch.tensor(random.choices(generation[0], k=(max_new_tokens-1)), device="cuda").view(1,-1)
         input_ids = torch.cat((first_correct_token.view(1,-1), random_point),dim=-1)
-        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False, chat=False)
+        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False, chat=True)
         forward_times += iter_steps
         #all_jacobian_trajectory.append(jacobian_trajectory)
         
@@ -296,7 +296,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
     output = tokenizer.decode(generation[0], skip_special_tokens=False)
 
     yield {
-        "text": output,
+        "text": "",
         "usage": {
             "prompt_tokens": input_echo_len,
             "completion_tokens": itr*max_new_tokens,

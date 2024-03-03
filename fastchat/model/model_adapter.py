@@ -2199,7 +2199,7 @@ class CllmAdapter(BaseModelAdapter):
         return model, tokenizer
     
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vicuna_v1.1")
+        return get_conv_template("cllm")
     
 
 class MetaMathAdapter(BaseModelAdapter):
