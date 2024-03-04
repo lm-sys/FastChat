@@ -29,7 +29,6 @@ def jacobi_forward(
     use_cache: Optional[bool] = None,
     max_new_tokens: Optional[int] = None,
     prefill_phase: Optional[bool] = False,
-    chat: Optional[bool] = False,
 ):
     
     assert use_cache == True
@@ -197,34 +196,33 @@ def jacobi_forward(
 
                 accurate_n_gram[0, accurate_length : accurate_length + fast_forward_cnt] = next_point[0, :fast_forward_cnt]         
                 first_correct_token = all_shift_one_token[:,-1]   
-                if chat:
-                    if tokenizer.eos_token_id in accurate_n_gram[0, :accurate_length + fast_forward_cnt]:
-                        eos_positions = torch.where(accurate_n_gram[0]==tokenizer.eos_token_id)[0]
-                        eos_position = eos_positions[0]
-                        generated_str = tokenizer.decode(accurate_n_gram[0, :eos_position], skip_special_tokens=True)
-                    else:
-                        generated_str = tokenizer.decode(accurate_n_gram[0, :accurate_length + fast_forward_cnt], skip_special_tokens=True)
+                if tokenizer.eos_token_id in accurate_n_gram[0, :accurate_length + fast_forward_cnt]:
+                    eos_positions = torch.where(accurate_n_gram[0]==tokenizer.eos_token_id)[0]
+                    eos_position = eos_positions[0]
+                    generated_str = tokenizer.decode(accurate_n_gram[0, :eos_position], skip_special_tokens=True)
+                else:
+                    generated_str = tokenizer.decode(accurate_n_gram[0, :accurate_length + fast_forward_cnt], skip_special_tokens=True)
 
-                    print(generated_str[prev_len:], flush=True, end="")
-                    prev_len = len(generated_str)
+                print(generated_str[prev_len:], flush=True, end="")
+                prev_len = len(generated_str)
                 break 
 
             accurate_n_gram[0, accurate_length : accurate_length + fast_forward_cnt] = next_point[0, :fast_forward_cnt]
             accurate_length += fast_forward_cnt
             next_point = next_point[0, fast_forward_cnt:].view(1,-1) # only false tokens should be re-generated
 
-            if chat:
-                if tokenizer.eos_token_id in accurate_n_gram[0, :accurate_length]:
-                    eos_positions = torch.where(accurate_n_gram[0]==tokenizer.eos_token_id)[0]
-                    eos_position = eos_positions[0]
 
-                    generated_str = tokenizer.decode(accurate_n_gram[0, :eos_position], skip_special_tokens=True)
-                else:
+            if tokenizer.eos_token_id in accurate_n_gram[0, :accurate_length]:
+                eos_positions = torch.where(accurate_n_gram[0]==tokenizer.eos_token_id)[0]
+                eos_position = eos_positions[0]
 
-                    generated_str = tokenizer.decode(accurate_n_gram[0, :accurate_length], skip_special_tokens=True)
+                generated_str = tokenizer.decode(accurate_n_gram[0, :eos_position], skip_special_tokens=True)
+            else:
 
-                print(generated_str[prev_len:], flush=True, end="")
-                prev_len = len(generated_str)
+                generated_str = tokenizer.decode(accurate_n_gram[0, :accurate_length], skip_special_tokens=True)
+
+            print(generated_str[prev_len:], flush=True, end="")
+            prev_len = len(generated_str)
             
             #if torch.all(torch.eq(current_point, next_point)).item():    
                 #print('Successfully break!')
@@ -243,16 +241,9 @@ LlamaForCausalLM.jacobi_forward = jacobi_forward
 def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_interval = 2, judge_sent_end = False):
     #converge_step = []
     prompt = params["prompt"]
-    len_prompt = len(prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     max_new_tokens = int(params.get("max_new_tokens", 32))
     max_new_seq_len = int(params.get("max_new_seq_len", 2048))
-    
-    CHAT = int(os.environ.get("CHAT", 0))
-    if CHAT:
-        chat = True
-    else:
-        chat = False
     forward_times = 0
 
     #all_jacobian_trajectory = []
@@ -262,7 +253,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
     input_echo_len = len(generation)
     ### prefill the kv-cache
 
-    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True, chat=True)
+    past_key_values, first_correct_token = model.jacobi_forward(input_ids=inputs['input_ids'], tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=None, use_cache = True, prefill_phase = True)
     ### generation phase
     itr = 0
     eos_reached = False
@@ -272,7 +263,7 @@ def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_i
         # randomly initialize the first point of jacobian trajectory
         random_point = torch.tensor(random.choices(generation[0], k=(max_new_tokens-1)), device="cuda").view(1,-1)
         input_ids = torch.cat((first_correct_token.view(1,-1), random_point),dim=-1)
-        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False, chat=True)
+        n_gram_generation, first_correct_token, iter_steps = model.jacobi_forward(input_ids=input_ids, tokenizer=tokenizer, max_new_tokens=max_new_tokens, past_key_values=past_key_values, use_cache = True, prefill_phase = False)
         forward_times += iter_steps
         #all_jacobian_trajectory.append(jacobian_trajectory)
         
