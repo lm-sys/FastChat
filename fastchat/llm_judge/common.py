@@ -19,6 +19,7 @@ from fastchat.model.model_adapter import (
     ANTHROPIC_MODEL_LIST,
     OPENAI_MODEL_LIST,
 )
+from fastchat.llm_judge.model_response_cache import ModelResponseCache
 
 # API setting constants
 API_MAX_RETRY = 16
@@ -29,6 +30,16 @@ TIE_DELTA = 0.1
 
 # Categories that need reference answers
 NEED_REF_CATS = ["math", "reasoning", "coding", "arena-hard-200"]
+
+do_cache = True
+if do_cache:
+    # load cache if it exists
+    print("loading cache...")
+    CACHE = ModelResponseCache(db_path='model_responses_cache.db')
+    print("cache loaded")
+else:
+    CACHE = None
+
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -411,15 +422,20 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=messages,
-                n=1,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            output = response["choices"][0]["message"]["content"]
+            prompt = conv.to_openai_string_representation()
+            if CACHE.is_key_stored(model, prompt):
+                output = CACHE.get_cached_response(model, prompt)
+            else:
+                messages = conv.to_openai_api_messages()
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages=messages,
+                    n=1,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                output = response["choices"][0]["message"]["content"]
+                CACHE.cache_response(model, prompt, output)
             break
         except openai.error.OpenAIError as e:
             print(type(e), e)

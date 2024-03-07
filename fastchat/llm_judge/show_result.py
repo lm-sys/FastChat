@@ -20,12 +20,20 @@ def display_result_single(args):
 
     print(f"Input file: {input_file}")
     df_all = pd.read_json(input_file, lines=True)
-    df = df_all[["model", "score", "turn"]]
+    print(df_all.columns)
+    # Index(['question_id', 'model', 'judge', 'user_prompt', 'judgment', 'score',
+    #   'turn', 'tstamp'],
+    # Remove any duplicate (question_id, model, user_prompt, turn) tuples
+    df_all = df_all.drop_duplicates(subset=["question_id", "model", "user_prompt", "turn"])
+    df = df_all[["model", "score", "turn", "question_id"]]
     df = df[df["score"] != -1]
 
     if args.model_list is not None:
         df = df[df["model"].isin(args.model_list)]
-
+    # loop through models and show how many outputs are stored
+    for model in df["model"].unique():
+        print(f"Model: {model}, number of outputs: {len(df[df['model'] == model])}")
+    
     print("\n########## First turn ##########")
     df_1 = df[df["turn"] == 1].groupby(["model", "turn"]).mean()
     print(df_1.sort_values(by="score", ascending=False))
@@ -38,7 +46,48 @@ def display_result_single(args):
         print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
         print(df_3.sort_values(by="score", ascending=False))
-
+        
+    suffixes_1 = [
+        # "",
+        # "_coeff_1.5_refusal_data_full_answers",
+        "_coeff_-1.5_refusal_data_full_answers",
+        # "_coeff_1.5_refusal_data_A_B_question_pairs",
+        "_coeff_-1.5_refusal_data_A_B_question_pairs",
+    ]
+    suffixes_2 = [
+        "_coeff_1.5_refusal_data_full_answers",
+        # "_coeff_-1.5_refusal_data_full_answers",
+        "_coeff_1.5_refusal_data_A_B_question_pairs",
+        # "_coeff_-1.5_refusal_data_A_B_question_pairs",
+    ]
+    suffixes = suffixes_1 + suffixes_2
+    # For all base models, show the average drop in score when the suffix is added
+    base_models = [model for model in df["model"].unique() if not any(suffix in model for suffix in suffixes)]
+    for base_model in base_models:
+        # Check if all suffixes are contained for this base model
+        if (not all([base_model + suffix in df["model"].unique() for suffix in suffixes_1]) and
+                not all([base_model + suffix in df["model"].unique() for suffix in suffixes_2])):
+            continue
+        print(f"\n########## {base_model} ##########")
+        all_diffs = []
+        min_diff = -1000
+        df_base = df[df["model"] == base_model]
+        existing_suffixes = [suffix for suffix in suffixes if base_model + suffix in df["model"].unique()]
+        for suffix in existing_suffixes:
+            model = base_model + suffix
+            df_model = df[df["model"] == model]
+            df_diff = df_model.merge(df_base, on=["turn", "question_id"], suffixes=("_" + suffix, "_base"))
+            df_diff["diff"] = df_diff["score_" + suffix] - df_diff["score_base"]
+            diff = df_diff['diff'].mean()
+            all_diffs.append(diff)
+            min_diff = max(min_diff, diff)
+            print(f"Suffix: {suffix}, diff: {diff}")
+        original_score = df_base['score'].mean()
+        average_diff = sum(all_diffs) / len(all_diffs)
+        average_diff_fraction = average_diff / original_score
+        print(f"Original score: {original_score} Min diff: {min_diff}, average diff: {average_diff}, average diff fraction: {average_diff_fraction}")
+    
+    
 
 def display_result_pairwise(args):
     if args.input_file is None:
