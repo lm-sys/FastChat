@@ -127,7 +127,6 @@ def jacobi_forward(
                 if use_legacy_cache:
                     past_key_values = DynamicCache.from_legacy_cache(past_key_values)
                 past_key_values_length = past_key_values.get_usable_length(seq_length) 
-            # print(past_key_values_length) # return previous_seq_length
             if position_ids is None:
                 device = input_ids.device if input_ids is not None else inputs_embeds.device
                 position_ids = torch.arange(
@@ -183,8 +182,6 @@ def jacobi_forward(
 
             first_false_index = torch.where(torch.eq(current_point[0], next_point[0]) == False)[0]
             
-            #print(f'all shift len: {all_shift_one_token.shape}')
-            #print(f'next point len: {next_point.shape}')
             jacobian_trajectory.append(next_point)
 
             if len(first_false_index) > 0:
@@ -224,12 +221,6 @@ def jacobi_forward(
             print(generated_str[prev_len:], flush=True, end="")
             prev_len = len(generated_str)
             
-            #if torch.all(torch.eq(current_point, next_point)).item():    
-                #print('Successfully break!')
-                #print(next_point)
-            #    first_correct_token = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)[:,-1]
-            #    break
-            #past_key_values.delete_false_key_value(seq_length)
 
             iter_counter += 1
 
@@ -238,7 +229,122 @@ def jacobi_forward(
 
 LlamaForCausalLM.jacobi_forward = jacobi_forward
 
+def get_jacobian_trajectory(
+    model,
+    tokenizer,
+    input_ids,
+    attention_mask,
+    max_new_tokens
+):
+
+    bsz = input_ids.shape[0] 
+    prompt_len = [torch.sum(t) for t in attention_mask]
+    max_prompt_len = max(prompt_len)
+    total_len = max_prompt_len + max_new_tokens
+
+    # initialize the first point of jacobian trajectory
+    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device="cuda")
+    for i in range(bsz):
+        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device="cuda")
+        tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].clone().detach()
+    itr = 0
+    next_generation = tokens
+    generate_attention_mask = torch.full_like(next_generation, 1).to(tokens.device)
+    while True:
+        
+        current_generation = next_generation
+        with torch.no_grad():
+            logits = model(current_generation, generate_attention_mask).logits
+        next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)
+
+        # hold prompt unchanged and update generated tokens
+        for i in range(bsz):
+            next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
+        if torch.all(torch.eq(next_generation, current_generation)).item():
+            return next_generation, itr # right generation is saved twice so we delete the last element of trajectory list
+        itr+=1
+
 def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_interval = 2, judge_sent_end = False):
+    prompt = params["prompt"]
+    # inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    max_new_tokens = int(params.get("max_new_tokens", 32))
+    max_new_seq_len = int(params.get("max_new_seq_len", 2048))
+    forward_times = 0
+
+    #all_jacobian_trajectory = []
+
+    itr=0
+    time_speed = []
+    converge_step = []
+    inference_time = 0
+    input_echo_len = None
+    finish_reason = "stop"
+    eos_positions = None
+    ### the following is use jacobian generate per max_new_tokens, max_seq_len is initialized
+    while True:
+        if itr == 0:
+            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+            input_ids = inputs['input_ids']
+            input_echo_len = len(input_ids)
+            input_masks = inputs['attention_mask']
+        else:
+            input_masks = torch.ones_like(input_ids).to(input_ids.device)
+            for j in range(bsz):
+                input_masks[j][torch.sum(inputs["attention_mask"], dim=-1)[j] + itr*max_new_tokens:] = 0
+            
+        bsz = input_ids.shape[0]
+        eos_reached = torch.tensor([False] * bsz, device="cuda")
+        manual_eos_check = torch.tensor([False] * bsz, device="cuda")
+
+        generation, itr_steps = get_jacobian_trajectory(model, tokenizer, input_ids, input_masks, max_new_tokens)
+        inference_time += itr_steps
+        ### tokens generated after <eos> are set to <pad>
+        for j in range(bsz):
+            prompt_len = torch.sum(input_masks, dim=-1)
+            eos_positions = torch.where(generation[j]==tokenizer.eos_token_id)[0]
+            
+            # hard-coded manual check: if </s> is reached.
+            # TODO: optimize this by taking <EOT> token into account during training
+            manual_eos_positions = torch.where(generation[j]==27)[0]
+
+            if len(eos_positions)==0 and len(manual_eos_positions)==0:
+                # no EOS, continue to the next item in the batch
+                generation[j][prompt_len[j]+ max_new_tokens:] = tokenizer.pad_token_id
+                continue
+            # otherwise, set tokens coming after EOS as pad 
+            else:
+                if len(eos_positions)!=0:
+                    eos_reached[j] = True
+                    generation[j, int(eos_positions[0])+1:] = tokenizer.pad_token_id
+                else:
+                    manual_eos_check[j] = True
+                    generation[j, int(manual_eos_positions[0])+4:] = tokenizer.pad_token_id
+        
+        ### see if next max_new_tokens should be generated & if True, update weights and prepare new input_ids
+        itr+=1      
+        
+        if all(eos_reached) or all(manual_eos_check) or itr*max_new_tokens >= max_new_seq_len:
+            finish_reason = "length"
+            break
+        input_ids = generation[torch.where(eos_reached==False)[0].tolist(), ...] # delete samples with <eos> generated
+    prompt_token_len = torch.sum(inputs['attention_mask'], dim=-1)
+    total_token_len = torch.sum(generation != tokenizer.pad_token_id, dim=-1)
+    decoded_generation = tokenizer.decode(generation[0][prompt_token_len:eos_positions[0]])
+    # print(decoded_generation)
+    
+    yield {
+        "text": decoded_generation,
+        "usage": {
+            "prompt_tokens": input_echo_len,
+            "completion_tokens": itr*max_new_tokens,
+            "total_tokens": input_echo_len + itr*max_new_tokens,
+        },
+        "finish_reason": finish_reason,
+    }
+    
+
+
+def generate_stream_cllm_test(model, tokenizer, params, device, context_len, stream_interval = 2, judge_sent_end = False):
     #converge_step = []
     prompt = params["prompt"]
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
