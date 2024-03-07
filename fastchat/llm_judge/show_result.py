@@ -46,6 +46,13 @@ def display_result_single(args):
         print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
         print(df_3.sort_values(by="score", ascending=False))
+
+    show_relative_drop(df)
+    df_turn_1 = df[df["turn"] == 1]
+    show_relative_drop(df_turn_1)
+
+
+def show_relative_drop(df):
         
     suffixes_1 = [
         # "",
@@ -60,6 +67,7 @@ def display_result_single(args):
         "_coeff_1.5_refusal_data_A_B_question_pairs",
         # "_coeff_-1.5_refusal_data_A_B_question_pairs",
     ]
+
     suffixes = suffixes_1 + suffixes_2
     # For all base models, show the average drop in score when the suffix is added
     base_models = [model for model in df["model"].unique() if not any(suffix in model for suffix in suffixes)]
