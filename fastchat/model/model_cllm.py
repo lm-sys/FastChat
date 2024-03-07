@@ -6,6 +6,7 @@ import random
 from typing import Dict, Optional, Sequence, List, Tuple
 from transformers.cache_utils import Cache, DynamicCache
 from transformers import LlamaModel,LlamaForCausalLM
+from transformers.modeling_attn_mask_utils import _prepare_4d_causal_attention_mask
 
 def delete_false_key_value(
         self,
@@ -55,23 +56,9 @@ def jacobi_forward(
             )
             position_ids = position_ids.unsqueeze(0)
 
-        if self.model._use_flash_attention_2:
-            # 2d mask is passed through the layers
-            attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
-        elif self.model._use_sdpa :
-            # output_attentions=True can not be supported when using SDPA, and we fall back on
-            # the manual implementation that requires a 4D causal mask in all cases.
-            attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
-                attention_mask,
-                (batch_size, seq_length),
-                inputs_embeds,
-                past_key_values_length,
-            )
-        else:
-            # 4d mask is passed through the layers
-            attention_mask = _prepare_4d_causal_attention_mask(
-                attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
-            )
+        attention_mask = _prepare_4d_causal_attention_mask(
+            attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
+        )
         # embed positions
         hidden_states = inputs_embeds
 
@@ -134,24 +121,10 @@ def jacobi_forward(
                 )
                 position_ids = position_ids.unsqueeze(0)
 
-            if self.model._use_flash_attention_2:
-                # 2d mask is passed through the layers
-                attention_mask = attention_mask if (attention_mask is not None and 0 in attention_mask) else None
-            elif self.model._use_sdpa :
-                # output_attentions=True can not be supported when using SDPA, and we fall back on
-                # the manual implementation that requires a 4D causal mask in all cases.
-                attention_mask = _prepare_4d_causal_attention_mask_for_sdpa(
-                    attention_mask,
-                    (batch_size, seq_length),
-                    inputs_embeds,
-                    past_key_values_length,
-                )
-            else:
-                # 4d mask is passed through the layers
-                attention_mask = _prepare_4d_causal_attention_mask(
-                    attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
-                )
-            # embed positions
+            attention_mask = _prepare_4d_causal_attention_mask(
+                attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
+            )
+        # embed positions
             hidden_states = inputs_embeds
 
             # decoder layers            
@@ -229,122 +202,7 @@ def jacobi_forward(
 
 LlamaForCausalLM.jacobi_forward = jacobi_forward
 
-def get_jacobian_trajectory(
-    model,
-    tokenizer,
-    input_ids,
-    attention_mask,
-    max_new_tokens
-):
-
-    bsz = input_ids.shape[0] 
-    prompt_len = [torch.sum(t) for t in attention_mask]
-    max_prompt_len = max(prompt_len)
-    total_len = max_prompt_len + max_new_tokens
-
-    # initialize the first point of jacobian trajectory
-    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device="cuda")
-    for i in range(bsz):
-        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device="cuda")
-        tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].clone().detach()
-    itr = 0
-    next_generation = tokens
-    generate_attention_mask = torch.full_like(next_generation, 1).to(tokens.device)
-    while True:
-        
-        current_generation = next_generation
-        with torch.no_grad():
-            logits = model(current_generation, generate_attention_mask).logits
-        next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)
-
-        # hold prompt unchanged and update generated tokens
-        for i in range(bsz):
-            next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
-        if torch.all(torch.eq(next_generation, current_generation)).item():
-            return next_generation, itr # right generation is saved twice so we delete the last element of trajectory list
-        itr+=1
-
 def generate_stream_cllm(model, tokenizer, params, device, context_len, stream_interval = 2, judge_sent_end = False):
-    prompt = params["prompt"]
-    # inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    max_new_tokens = int(params.get("max_new_tokens", 32))
-    max_new_seq_len = int(params.get("max_new_seq_len", 2048))
-    forward_times = 0
-
-    #all_jacobian_trajectory = []
-
-    itr=0
-    time_speed = []
-    converge_step = []
-    inference_time = 0
-    input_echo_len = None
-    finish_reason = "stop"
-    eos_positions = None
-    ### the following is use jacobian generate per max_new_tokens, max_seq_len is initialized
-    while True:
-        if itr == 0:
-            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-            input_ids = inputs['input_ids']
-            input_echo_len = len(input_ids)
-            input_masks = inputs['attention_mask']
-        else:
-            input_masks = torch.ones_like(input_ids).to(input_ids.device)
-            for j in range(bsz):
-                input_masks[j][torch.sum(inputs["attention_mask"], dim=-1)[j] + itr*max_new_tokens:] = 0
-            
-        bsz = input_ids.shape[0]
-        eos_reached = torch.tensor([False] * bsz, device="cuda")
-        manual_eos_check = torch.tensor([False] * bsz, device="cuda")
-
-        generation, itr_steps = get_jacobian_trajectory(model, tokenizer, input_ids, input_masks, max_new_tokens)
-        inference_time += itr_steps
-        ### tokens generated after <eos> are set to <pad>
-        for j in range(bsz):
-            prompt_len = torch.sum(input_masks, dim=-1)
-            eos_positions = torch.where(generation[j]==tokenizer.eos_token_id)[0]
-            
-            # hard-coded manual check: if </s> is reached.
-            # TODO: optimize this by taking <EOT> token into account during training
-            manual_eos_positions = torch.where(generation[j]==27)[0]
-
-            if len(eos_positions)==0 and len(manual_eos_positions)==0:
-                # no EOS, continue to the next item in the batch
-                generation[j][prompt_len[j]+ max_new_tokens:] = tokenizer.pad_token_id
-                continue
-            # otherwise, set tokens coming after EOS as pad 
-            else:
-                if len(eos_positions)!=0:
-                    eos_reached[j] = True
-                    generation[j, int(eos_positions[0])+1:] = tokenizer.pad_token_id
-                else:
-                    manual_eos_check[j] = True
-                    generation[j, int(manual_eos_positions[0])+4:] = tokenizer.pad_token_id
-        
-        ### see if next max_new_tokens should be generated & if True, update weights and prepare new input_ids
-        itr+=1      
-        
-        if all(eos_reached) or all(manual_eos_check) or itr*max_new_tokens >= max_new_seq_len:
-            finish_reason = "length"
-            break
-        input_ids = generation[torch.where(eos_reached==False)[0].tolist(), ...] # delete samples with <eos> generated
-    prompt_token_len = torch.sum(inputs['attention_mask'], dim=-1)
-    total_token_len = torch.sum(generation != tokenizer.pad_token_id, dim=-1)
-    decoded_generation = tokenizer.decode(generation[0][prompt_token_len:eos_positions[0]])
-    # print(decoded_generation)
-    
-    yield {
-        "text": decoded_generation,
-        "usage": {
-            "prompt_tokens": input_echo_len,
-            "completion_tokens": itr*max_new_tokens,
-            "total_tokens": input_echo_len + itr*max_new_tokens,
-        },
-        "finish_reason": finish_reason,
-    }
-    
-
-
-def generate_stream_cllm_test(model, tokenizer, params, device, context_len, stream_interval = 2, judge_sent_end = False):
     #converge_step = []
     prompt = params["prompt"]
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
