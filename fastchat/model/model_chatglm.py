@@ -93,8 +93,8 @@ def generate_stream_chatglm(
 
     gen_kwargs = {
         "max_new_tokens": max_new_tokens,
-        "do_sample": True if temperature > 1e-5 else False,
-        "temperature": temperature,
+        "do_sample": True if temperature > 1e-4 else False,
+        "temperature": temperature if temperature > 1e-4 else None,
         "top_p": top_p,
         "repetition_penalty": repetition_penalty,
         "logits_processor": [invalid_score_processor],
