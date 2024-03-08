@@ -2172,16 +2172,18 @@ class Yuan2Adapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("yuan2")
 
+
 class CllmAdapter(BaseModelAdapter):
     """The model adapter for CLLM"""
+
     def match(self, model_path: str):
-        return "vicuna" in model_path.lower()
-    
+        return "consistency-llm" in model_path.lower()
+
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(
             model_path,
         )
-        
+
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             model_max_length=2048,
@@ -2193,14 +2195,13 @@ class CllmAdapter(BaseModelAdapter):
             config=config,
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
-            device_map='cuda',
-            attn_implementation="flash_attention_2",
+            device_map="cuda",
         )
         return model, tokenizer
-    
+
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("cllm")
-    
+
 
 class MetaMathAdapter(BaseModelAdapter):
     """The model adapter for MetaMath models"""

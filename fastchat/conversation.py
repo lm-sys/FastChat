@@ -270,7 +270,7 @@ class Conversation:
                 else:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
-            return 
+            return
         elif self.sep_style == SeparatorStyle.CLLM:
             seps = [self.sep, self.sep2]
             ret = system_prompt + seps[0]
