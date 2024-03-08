@@ -27,7 +27,6 @@ from fastchat.serve.gradio_web_server import (
     disable_btn,
     invisible_btn,
     acknowledgment_md,
-    ip_expiration_dict,
     get_ip,
     get_model_description_md,
 )
@@ -55,8 +54,8 @@ def load_demo_side_by_side_anony(models_, url_params):
 
     states = (None,) * num_sides
     selector_updates = (
-        gr.Markdown.update(visible=True),
-        gr.Markdown.update(visible=True),
+        gr.Markdown(visible=True),
+        gr.Markdown(visible=True),
     )
 
     return states + selector_updates
@@ -74,13 +73,13 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
 
     if ":" not in model_selectors[0]:
-        for i in range(15):
+        for i in range(5):
             names = (
                 "### Model A: " + states[0].model_name,
                 "### Model B: " + states[1].model_name,
             )
             yield names + ("",) + (disable_btn,) * 4
-            time.sleep(0.2)
+            time.sleep(0.1)
     else:
         names = (
             "### Model A: " + states[0].model_name,
@@ -162,40 +161,57 @@ SAMPLING_WEIGHTS = {
     # tier 0
     "gpt-4": 4,
     "gpt-4-0314": 4,
+    "gpt-4-0613": 4,
     "gpt-4-turbo": 4,
+    "gpt-4-1106-preview": 4,
+    "gpt-4-0125-preview": 4,
     "gpt-3.5-turbo-0613": 2,
     "gpt-3.5-turbo-1106": 2,
+    "gpt-3.5-turbo-0125": 4,
     "claude-2.1": 4,
     "claude-2.0": 2,
     "claude-1": 2,
-    "claude-instant-1": 4,
+    "claude-instant-1": 2,
     "gemini-pro": 4,
-    "pplx-7b-online": 4,
-    "pplx-70b-online": 4,
-    "solar-10.7b-instruct-v1.0": 2,
+    "gemini-pro-dev-api": 4,
+    "bard-jan-24-gemini-pro": 4,
+    "bard-feb-2024": 4,
     "mixtral-8x7b-instruct-v0.1": 4,
-    "openhermes-2.5-mistral-7b": 2,
+    "mistral-medium": 4,
+    "qwen1.5-72b-chat": 4,
+    "qwen1.5-7b-chat": 2,
+    "qwen1.5-4b-chat": 2,
+    "nous-hermes-2-mixtral-8x7b-dpo": 2,
+    "deepseek-llm-67b-chat": 2,
+    "stripedhyena-nous-7b": 2,
+    "openchat-3.5-0106": 2,
+    "mistral-7b-instruct-v0.2": 2,
+    "solar-10.7b-instruct-v1.0": 2,
     "dolphin-2.2.1-mistral-7b": 2,
-    "wizardlm-70b": 2,
     "starling-lm-7b-alpha": 2,
     "tulu-2-dpo-70b": 2,
     "yi-34b-chat": 2,
     "zephyr-7b-beta": 2,
-    "openchat-3.5": 2,
-    "chatglm3-6b": 2,
     # tier 1
-    "deluxe-chat-v1.2": 2,
-    "llama-2-70b-chat": 1.5,
-    "llama-2-13b-chat": 1.5,
+    "deluxe-chat-v1.2": 4,
+    "llama-2-70b-chat": 4,
+    "llama-2-13b-chat": 2,
+    "llama-2-7b-chat": 2,
+    "mistral-7b-instruct": 2,
     "codellama-34b-instruct": 1.5,
-    "vicuna-33b": 4,
+    "vicuna-33b": 2,
     "vicuna-13b": 1.5,
     "wizardlm-13b": 1.5,
     "qwen-14b-chat": 1.5,
-    "mistral-7b-instruct": 1.5,
     # tier 2
+    "pplx-7b-online": 1,
+    "pplx-70b-online": 1,
+    "openhermes-2.5-mistral-7b": 1.0,
+    "llama2-70b-steerlm-chat": 1.0,
+    "chatglm3-6b": 1.0,
+    "openchat-3.5": 1.0,
+    "wizardlm-70b": 1.0,
     "vicuna-7b": 1.0,
-    "llama-2-7b-chat": 1.0,
     "chatglm2-6b": 1.0,
     # deprecated
     "zephyr-7b-alpha": 1.5,
@@ -219,37 +235,141 @@ SAMPLING_WEIGHTS = {
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4": {"gpt-4-0314", "claude-2.1", "gpt-4-turbo"},
-    "gpt-4-0613": {"gpt-4-0314", "claude-2.1", "gpt-4-turbo"},
-    "gpt-4-0314": {"gpt-4-turbo", "gpt-4-0613", "claude-2.1", "gpt-3.5-turbo-0613"},
-    "gpt-4-turbo": {
+    "gpt-4": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
+    "gpt-4-0613": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
+    "gpt-4-0314": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "claude-2.1",
+        "gpt-3.5-turbo-0613",
+    },
+    "gpt-4-1106-preview": {
         "gpt-4-0613",
         "gpt-3.5-turbo-0613",
         "gpt-3.5-turbo-1106",
         "claude-2.1",
+        "bard-feb-2024",
+    },
+    "gpt-4-0125-preview": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "claude-2.1",
+        "mistral-medium",
+        "bard-feb-2024",
     },
     "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
     "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
+    "gpt-3.5-turbo-0125": {
+        "gpt-4-0613",
+        "gpt-4-1106-preview",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-1106",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "qwen1.5-72b-chat": {
+        "gpt-3.5-turbo-0125",
+        "gpt-4-0613",
+        "gpt-4-1106-preview",
+        "llama-2-70b-chat",
+        "mixtral-8x7b-instruct-v0.1",
+        "mistral-medium",
+        "yi-34b-chat",
+    },
+    "qwen1.5-7b-chat": {
+        "gpt-3.5-turbo-0125",
+        "starling-lm-7b-alpha",
+        "llama-2-70b-chat",
+        "openchat-3.5",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "qwen1.5-4b-chat": {
+        "llama-2-70b-chat",
+        "llama-2-13b-chat",
+        "llama-2-7b-chat",
+        "openchat-3.5",
+    },
+    "openchat-3.5-0106": {
+        "gpt-3.5-turbo-0125",
+        "gpt-3.5-turbo-0613",
+        "llama-2-70b-chat",
+        "openchat-3.5",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "nous-hermes-2-mixtral-8x7b-dpo": {
+        "gpt-4-1106-preview",
+        "claude-2.1",
+        "mistral-medium",
+        "gpt-3.5-turbo-0613",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "mistral-7b-instruct-v0.2": {
+        "llama-2-70b-chat",
+        "mixtral-8x7b-instruct-v0.1",
+        "starling-lm-7b-alpha",
+        "openhermes-2.5-mistral-7b",
+    },
     "solar-10.7b-instruct-v1.0": {
         "mixtral-8x7b-instruct-v0.1",
         "gpt-3.5-turbo-0613",
         "llama-2-70b-chat",
     },
-    "mixtral-8x7b-instruct-v0.1": {
-        "gpt-3.5-turbo-1106",
+    "mistral-medium": {
+        "gpt-3.5-turbo-0125",
         "gpt-3.5-turbo-0613",
-        "gpt-4-turbo",
+        "gpt-4-1106-preview",
+        "mixtral-8x7b-instruct-v0.1",
+        "bard-feb-2024",
+    },
+    "mixtral-8x7b-instruct-v0.1": {
+        "gpt-3.5-turbo-0125",
+        "gpt-3.5-turbo-0613",
+        "gpt-4-1106-preview",
         "llama-2-70b-chat",
     },
-    "claude-2.1": {"gpt-4-turbo", "gpt-4-0613", "claude-1"},
-    "claude-2.0": {"gpt-4-turbo", "gpt-4-0613", "claude-1"},
+    "claude-2.1": {"gpt-4-1106-preview", "gpt-4-0613", "claude-1"},
+    "claude-2.0": {"gpt-4-1106-preview", "gpt-4-0613", "claude-1"},
     "claude-1": {"claude-2.1", "gpt-4-0613", "gpt-3.5-turbo-0613"},
-    "claude-instant-1": {"gpt-3.5-turbo-1106", "claude-2.1"},
-    "gemini-pro": {"gpt-4-turbo", "gpt-4-0613", "gpt-3.5-turbo-0613"},
-    "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-turbo"},
-    "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-turbo"},
-    "pplx-7b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
-    "pplx-70b-online": {"gpt-3.5-turbo-0613", "gpt-3.5-turbo-1106", "llama-2-70b-chat"},
+    "claude-instant-1": {"gpt-3.5-turbo-0125", "claude-2.1"},
+    "gemini-pro": {"gpt-4-1106-preview", "gpt-4-0613", "gpt-3.5-turbo-0613"},
+    "gemini-pro-dev-api": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "bard-feb-2024",
+    },
+    "bard-jan-24-gemini-pro": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "gemini-pro-dev-api",
+    },
+    "bard-feb-2024": {
+        "gpt-4-1106-preview",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0613",
+        "bard-jan-24-gemini-pro",
+    },
+    "deepseek-llm-67b-chat": {
+        "gpt-4-1106-preview",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo-0613",
+    },
+    "llama2-70b-steerlm-chat": {
+        "llama-2-70b-chat",
+        "tulu-2-dpo-70b",
+        "yi-34b-chat",
+    },
+    "stripedhyena-nous-7b": {
+        "starling-lm-7b-alpha",
+        "openhermes-2.5-mistral-7b",
+        "mistral-7b-instruct",
+        "llama-2-7b-chat",
+    },
+    "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-1106-preview"},
+    "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-1106-preview"},
+    "pplx-7b-online": {"gpt-3.5-turbo-0125", "llama-2-70b-chat"},
+    "pplx-70b-online": {"gpt-3.5-turbo-0125", "llama-2-70b-chat"},
     "openhermes-2.5-mistral-7b": {
         "gpt-3.5-turbo-0613",
         "openchat-3.5",
@@ -274,7 +394,7 @@ BATTLE_TARGETS = {
         "llama-2-7b-chat",
         "wizardlm-13b",
     },
-    "llama-2-70b-chat": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
+    "llama-2-70b-chat": {"gpt-3.5-turbo-0125", "claude-instant-1"},
     "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
     "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
     "mistral-7b-instruct": {
@@ -289,18 +409,19 @@ BATTLE_TARGETS = {
 }
 
 SAMPLING_BOOST_MODELS = [
-    # "tulu-2-dpo-70b",
-    # "yi-34b-chat",
-    "claude-2.1",
-    "claude-1",
-    "gpt-4-0613",
-    # "gpt-3.5-turbo-1106",
+    # "claude-2.1",
+    # "gpt-4-0613",
     # "gpt-4-0314",
-    "gpt-4-turbo",
-    # "dolphin-2.2.1-mistral-7b",
-    "mixtral-8x7b-instruct-v0.1",
-    "gemini-pro",
-    "solar-10.7b-instruct-v1.0",
+    # "gpt-4-1106-preview",
+    # "gpt-4-0125-preview",
+    "gpt-3.5-turbo-0125",
+    # "mistral-medium",
+    "nous-hermes-2-mixtral-8x7b-dpo",
+    "openchat-3.5-0106",
+    "qwen1.5-72b-chat",
+    "qwen1.5-7b-chat",
+    "qwen1.5-4b-chat",
+    # "mistral-7b-instruct-v0.2",
 ]
 
 # outage models won't be sampled.
@@ -420,10 +541,10 @@ def add_text(
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
-    slow_model_msg = ""
+    hint_msg = ""
     for i in range(num_sides):
         if "deluxe" in states[i].model_name:
-            slow_model_msg = SLOW_MODEL_MSG
+            hint_msg = SLOW_MODEL_MSG
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
@@ -432,7 +553,7 @@ def add_text(
             disable_btn,
         ]
         * 6
-        + [slow_model_msg]
+        + [hint_msg]
     )
 
 
@@ -470,13 +591,21 @@ def bot_response_multi(
             )
         )
 
+    is_gemini = []
+    for i in range(num_sides):
+        is_gemini.append(states[i].model_name in ["gemini-pro", "gemini-pro-dev-api"])
     chatbots = [None] * num_sides
+    iters = 0
     while True:
         stop = True
+        iters += 1
         for i in range(num_sides):
             try:
-                ret = next(gen[i])
-                states[i], chatbots[i] = ret[0], ret[1]
+                # yield gemini fewer times as its chunk size is larger
+                # otherwise, gemini will stream too fast
+                if not is_gemini[i] or (iters % 30 == 1 or iters < 3):
+                    ret = next(gen[i])
+                    states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
             except StopIteration:
                 pass
@@ -487,7 +616,7 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena ⚔️ : Benchmarking LLMs in the Wild
+# ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
@@ -495,12 +624,11 @@ def build_side_by_side_ui_anony(models):
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 
-## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We use **100K+** human votes to compile an Elo-based LLM leaderboard.
+## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
+We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
-
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -509,8 +637,10 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Box(elem_id="share-region-anony"):
-        with gr.Accordion("🔍 Expand to see 20+ Arena players", open=False):
+    with gr.Group(elem_id="share-region-anony"):
+        with gr.Accordion(
+            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+        ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
         with gr.Row():
@@ -518,33 +648,37 @@ Find out who is the 🥇LLM Champion!
                 label = "Model A" if i == 0 else "Model B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
-                        label=label, elem_id=f"chatbot", height=550
+                        label=label,
+                        elem_id="chatbot",
+                        height=550,
+                        show_copy_button=True,
                     )
 
         with gr.Row():
             for i in range(num_sides):
                 with gr.Column():
-                    model_selectors[i] = gr.Markdown(anony_names[i])
+                    model_selectors[i] = gr.Markdown(
+                        anony_names[i], elem_id="model_selector_md"
+                    )
         with gr.Row():
             slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
-        with gr.Row():
-            leftvote_btn = gr.Button(
-                value="👈  A is better", visible=False, interactive=False
-            )
-            rightvote_btn = gr.Button(
-                value="👉  B is better", visible=False, interactive=False
-            )
-            tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-            bothbad_btn = gr.Button(
-                value="👎  Both are bad", visible=False, interactive=False
-            )
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
 
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
-            container=False,
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -646,7 +780,7 @@ function (a, b, c, d) {
     return [a, b, c, d];
 }
 """
-    share_btn.click(share_click, states + model_selectors, [], _js=share_js)
+    share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     textbox.submit(
         add_text,

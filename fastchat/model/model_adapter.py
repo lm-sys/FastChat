@@ -32,6 +32,7 @@ from fastchat.model.llama_condense_monkey_patch import replace_llama_with_conden
 from fastchat.model.model_chatglm import generate_stream_chatglm
 from fastchat.model.model_codet5p import generate_stream_codet5p
 from fastchat.model.model_falcon import generate_stream_falcon
+from fastchat.model.model_yuan2 import generate_stream_yuan2
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.monkey_patch_non_inplace import (
@@ -56,6 +57,20 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2.1",
     "claude-instant-1",
     "claude-instant-1.2",
+)
+
+OPENAI_MODEL_LIST = (
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0301",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo-0125",
+    "gpt-4",
+    "gpt-4-0314",
+    "gpt-4-0613",
+    "gpt-4-turbo",
+    "gpt-4-1106-preview",
+    "gpt-4-0125-preview",
 )
 
 
@@ -326,7 +341,8 @@ def load_model(
         try:
             from modelscope.hub.snapshot_download import snapshot_download
 
-            model_path = snapshot_download(model_id=model_path, revision=revision)
+            if not os.path.exists(model_path):
+                model_path = snapshot_download(model_id=model_path, revision=revision)
         except ImportError as e:
             warnings.warn(
                 "Use model from www.modelscope.cn need pip install modelscope"
@@ -371,15 +387,12 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
 
     model_type = str(type(model)).lower()
     is_peft = "peft" in model_type
-    if is_peft:
-        model.set_adapter(model_path)
-        model_type = str(type(model.base_model.model))
-
     is_chatglm = "chatglm" in model_type
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
+    is_yuan = "yuan" in model_type
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -391,6 +404,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_exllama
     elif is_xft:
         return generate_stream_xft
+    elif is_yuan:
+        return generate_stream_yuan2
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -407,7 +422,28 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             judge_sent_end: bool = False,
         ):
             model.set_adapter(model_path)
-            for x in generate_stream(
+            base_model_type = str(type(model.base_model.model))
+            is_chatglm = "chatglm" in base_model_type
+            is_falcon = "rwforcausallm" in base_model_type
+            is_codet5p = "codet5p" in base_model_type
+            is_exllama = "exllama" in base_model_type
+            is_xft = "xft" in base_model_type
+            is_yuan = "yuan" in base_model_type
+
+            generate_stream_function = generate_stream
+            if is_chatglm:
+                generate_stream_function = generate_stream_chatglm
+            elif is_falcon:
+                generate_stream_function = generate_stream_falcon
+            elif is_codet5p:
+                generate_stream_function = generate_stream_codet5p
+            elif is_exllama:
+                generate_stream_function = generate_stream_exllama
+            elif is_xft:
+                generate_stream_function = generate_stream_xft
+            elif is_yuan:
+                generate_stream_function = generate_stream_yuan2
+            for x in generate_stream_function(
                 model,
                 tokenizer,
                 params,
@@ -903,6 +939,16 @@ class OpenChat35Adapter(BaseModelAdapter):
         return get_conv_template("openchat_3.5")
 
 
+class TenyxChatAdapter(BaseModelAdapter):
+    """The model adapter for TenyxChat (e.g. tenyx/TenyxChat-7B-v1)"""
+
+    def match(self, model_path: str):
+        return "tenyxchat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("tenyxchat")
+
+
 class PythiaAdapter(BaseModelAdapter):
     """The model adapter for any EleutherAI/pythia model"""
 
@@ -1040,16 +1086,7 @@ class ChatGPTAdapter(BaseModelAdapter):
     """The model adapter for ChatGPT"""
 
     def match(self, model_path: str):
-        return model_path in (
-            "gpt-3.5-turbo",
-            "gpt-3.5-turbo-0301",
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-1106",
-            "gpt-4",
-            "gpt-4-0314",
-            "gpt-4-0613",
-            "gpt-4-turbo",
-        )
+        return model_path in OPENAI_MODEL_LIST
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -1130,13 +1167,13 @@ class GeminiAdapter(BaseModelAdapter):
     """The model adapter for Gemini"""
 
     def match(self, model_path: str):
-        return model_path in ["gemini-pro"]
+        return "gemini" in model_path.lower() or "bard" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("bard")
+        return get_conv_template("gemini")
 
 
 class BiLLaAdapter(BaseModelAdapter):
@@ -1578,6 +1615,22 @@ class Hermes2Adapter(BaseModelAdapter):
         return get_conv_template("OpenHermes-2.5-Mistral-7B")
 
 
+class NousHermes2MixtralAdapter(BaseModelAdapter):
+    """Model adapter for NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO model"""
+
+    def match(self, model_path: str):
+        return any(
+            model_str in model_path.lower()
+            for model_str in [
+                "nous-hermes-2-mixtral-8x7b-dpo",
+                "nous-hermes-2-mixtral-8x7b-sft",
+            ]
+        )
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("Nous-Hermes-2-Mixtral-8x7B-DPO")
+
+
 class WizardCoderAdapter(BaseModelAdapter):
     """The model adapter for WizardCoder (e.g., WizardLM/WizardCoder-Python-34B-V1.0)"""
 
@@ -1689,6 +1742,8 @@ class BGEAdapter(BaseModelAdapter):
             model.config.max_sequence_length = min(
                 model.config.max_position_embeddings, tokenizer.model_max_length
             )
+        model.use_cls_pooling = True
+        model.eval()
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
@@ -1938,6 +1993,16 @@ class ZephyrAdapter(BaseModelAdapter):
         return get_conv_template("zephyr")
 
 
+class NotusAdapter(BaseModelAdapter):
+    """The model adapter for Notus (e.g. argilla/notus-7b-v1)"""
+
+    def match(self, model_path: str):
+        return "notus" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("zephyr")
+
+
 class CatPPTAdapter(BaseModelAdapter):
     """The model adapter for CatPPT (e.g. rishiraj/CatPPT)"""
 
@@ -1946,6 +2011,16 @@ class CatPPTAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("catppt")
+
+
+class TinyLlamaAdapter(BaseModelAdapter):
+    """The model adapter for TinyLlama (e.g. TinyLlama/TinyLlama-1.1B-Chat-v1.0)"""
+
+    def match(self, model_path: str):
+        return "tinyllama" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("TinyLlama")
 
 
 class XwinLMAdapter(BaseModelAdapter):
@@ -2040,6 +2115,57 @@ class DeepseekChatAdapter(BaseModelAdapter):
         return get_conv_template("deepseek-chat")
 
 
+class Yuan2Adapter(BaseModelAdapter):
+    """The model adapter for Yuan2.0"""
+
+    def match(self, model_path: str):
+        return "yuan2" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        # from_pretrained_kwargs["torch_dtype"] = torch.bfloat16
+        tokenizer = LlamaTokenizer.from_pretrained(
+            model_path,
+            add_eos_token=False,
+            add_bos_token=False,
+            eos_token="<eod>",
+            eod_token="<eod>",
+            sep_token="<sep>",
+            revision=revision,
+        )
+        tokenizer.add_tokens(
+            [
+                "<sep>",
+                "<pad>",
+                "<mask>",
+                "<predict>",
+                "<FIM_SUFFIX>",
+                "<FIM_PREFIX>",
+                "<FIM_MIDDLE>",
+                "<commit_before>",
+                "<commit_msg>",
+                "<commit_after>",
+                "<jupyter_start>",
+                "<jupyter_text>",
+                "<jupyter_code>",
+                "<jupyter_output>",
+                "<empty_output>",
+            ],
+            special_tokens=True,
+        )
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            # device_map='auto',
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("yuan2")
+
+
 class MetaMathAdapter(BaseModelAdapter):
     """The model adapter for MetaMath models"""
 
@@ -2070,6 +2196,78 @@ class SolarAdapter(BaseModelAdapter):
         return get_conv_template("solar")
 
 
+class SteerLMAdapter(BaseModelAdapter):
+    """The model adapter for nvidia/Llama2-70B-SteerLM-Chat"""
+
+    def match(self, model_path: str):
+        return "steerlm-chat" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("steerlm")
+
+
+class LlavaAdapter(BaseModelAdapter):
+    """The model adapter for liuhaotian/llava-v1.5 series of models"""
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        # TODO(chris): Implement huggingface-compatible load_model
+        pass
+
+    def match(self, model_path: str):
+        return "llava" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        model_path = model_path.lower()
+        if "34b" in model_path:
+            return get_conv_template("llava-chatml")
+
+        return get_conv_template("vicuna_v1.1")
+
+
+class YuanAdapter(BaseModelAdapter):
+    """The model adapter for Yuan"""
+
+    def match(self, model_path: str):
+        return "yuan" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        tokenizer.add_tokens(
+            [
+                "<sep>",
+                "<pad>",
+                "<mask>",
+                "<predict>",
+                "<FIM_SUFFIX>",
+                "<FIM_PREFIX>",
+                "<FIM_MIDDLE>",
+                "<commit_before>",
+                "<commit_msg>",
+                "<commit_after>",
+                "<jupyter_start>",
+                "<jupyter_text>",
+                "<jupyter_code>",
+                "<jupyter_output>",
+                "<empty_output>",
+            ],
+            special_tokens=True,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("yuan")
+
+
+class GemmaAdapter(BaseModelAdapter):
+    """The model adapter for Gemma"""
+
+    def match(self, model_path: str):
+        return "gemma" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2086,6 +2284,7 @@ register_model_adapter(DollyV2Adapter)
 register_model_adapter(OasstPythiaAdapter)
 register_model_adapter(OasstLLaMAAdapter)
 register_model_adapter(OpenChat35Adapter)
+register_model_adapter(TenyxChatAdapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
@@ -2114,7 +2313,6 @@ register_model_adapter(FalconAdapter)
 register_model_adapter(TigerBotAdapter)
 register_model_adapter(BaichuanAdapter)
 register_model_adapter(XGenAdapter)
-register_model_adapter(NousHermesAdapter)
 register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
@@ -2123,6 +2321,8 @@ register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(DolphinAdapter)
 register_model_adapter(Hermes2Adapter)
+register_model_adapter(NousHermes2MixtralAdapter)
+register_model_adapter(NousHermesAdapter)
 register_model_adapter(MistralAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
@@ -2138,7 +2338,9 @@ register_model_adapter(PhindCodeLlamaAdapter)
 register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
+register_model_adapter(NotusAdapter)
 register_model_adapter(CatPPTAdapter)
+register_model_adapter(TinyLlamaAdapter)
 register_model_adapter(XwinLMAdapter)
 register_model_adapter(LemurAdapter)
 register_model_adapter(PygmalionAdapter)
@@ -2148,9 +2350,14 @@ register_model_adapter(YiAdapter)
 register_model_adapter(PplxAIAdapter)
 register_model_adapter(DeepseekCoderAdapter)
 register_model_adapter(DeepseekChatAdapter)
+register_model_adapter(Yuan2Adapter)
 register_model_adapter(MetaMathAdapter)
 register_model_adapter(BagelAdapter)
 register_model_adapter(SolarAdapter)
+register_model_adapter(SteerLMAdapter)
+register_model_adapter(LlavaAdapter)
+register_model_adapter(YuanAdapter)
+register_model_adapter(GemmaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
