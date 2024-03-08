@@ -42,6 +42,17 @@ register_model_info(
 
 register_model_info(
     [
+        "cllm/consistency-llm-7b-codesearchnet",
+        "cllm/consistency-llm-7b-gsm8k",
+        "cllm/consistency-llm-7b-sharegpt48k",
+    ],
+    "consistency-llm",
+    "https://huggingface.co/cllm",
+    "consistency-llm is a new tech to improve Large Language Model in generation speed.",
+)
+
+register_model_info(
+    [
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
         "mistral-7b-instruct-v0.2",
