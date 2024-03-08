@@ -8,6 +8,8 @@ The following OpenAI APIs are supported:
 - Completions. (Reference: https://platform.openai.com/docs/api-reference/completions)
 - Embeddings. (Reference: https://platform.openai.com/docs/api-reference/embeddings)
 
+The REST API can be seamlessly operated from Google Colab, as demonstrated in the [FastChat_API_GoogleColab.ipynb](https://github.com/lm-sys/FastChat/blob/main/playground/FastChat_API_GoogleColab.ipynb) notebook, available in our repository. This notebook provides a practical example of how to utilize the API effectively within the Google Colab environment.
+
 ## RESTful API Server
 First, launch the controller
 

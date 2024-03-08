@@ -2,7 +2,7 @@
 Clean chatbot arena chat log.
 
 Usage:
-python3 clean_chat_data.py --mode conv_release
+python3 clean_chat_data.py
 """
 import argparse
 import datetime

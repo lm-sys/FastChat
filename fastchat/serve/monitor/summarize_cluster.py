@@ -6,6 +6,8 @@ python3 summarize_cluster.py --in results_c20_kmeans_cluster.pkl --model azure-g
 import argparse
 import pickle
 
+import pandas as pd
+
 from fastchat.llm_judge.common import (
     chat_completion_openai,
     chat_completion_openai_azure,
@@ -74,3 +76,10 @@ if __name__ == "__main__":
     print()
     print(f"topics: {topics}")
     print(f"percentages: {percentages}")
+
+    # save the informations
+    df = pd.DataFrame()
+    df["topic"] = topics
+    df["percentage"] = percentages
+
+    df.to_json(f"cluster_summary_{len(df)}.jsonl", lines=True, orient="records")
