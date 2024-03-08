@@ -40,13 +40,13 @@ app = FastAPI()
 def read_model_name(engine_dir: str):
     engine_version = tensorrt_llm.runtime.engine.get_engine_version(engine_dir)
 
-    with open(Path(engine_dir) / "config.json", 'r') as f:
+    with open(Path(engine_dir) / "config.json", "r") as f:
         config = json.load(f)
 
     if engine_version is None:
-        return config['builder_config']['name']
+        return config["builder_config"]["name"]
 
-    return config['pretrained_config']['architecture']
+    return config["pretrained_config"]["architecture"]
 
 
 def throttle_generator(generator, stream_interval):
@@ -58,42 +58,46 @@ def throttle_generator(generator, stream_interval):
         yield out
 
 
-def load_tokenizer(tokenizer_dir: Optional[str] = None,
-                   vocab_file: Optional[str] = None,
-                   model_name: str = 'gpt',
-                   tokenizer_type: Optional[str] = None):
+def load_tokenizer(
+    tokenizer_dir: Optional[str] = None,
+    vocab_file: Optional[str] = None,
+    model_name: str = "gpt",
+    tokenizer_type: Optional[str] = None,
+):
     if vocab_file is None:
         use_fast = True
         if tokenizer_type is not None and tokenizer_type == "llama":
             use_fast = False
         # Should set both padding_side and truncation_side to be 'left'
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir,
-                                                  legacy=False,
-                                                  padding_side='left',
-                                                  truncation_side='left',
-                                                  trust_remote_code=True,
-                                                  tokenizer_type=tokenizer_type,
-                                                  use_fast=use_fast)
+        tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_dir,
+            legacy=False,
+            padding_side="left",
+            truncation_side="left",
+            trust_remote_code=True,
+            tokenizer_type=tokenizer_type,
+            use_fast=use_fast,
+        )
     else:
         # For gpt-next, directly load from tokenizer.model
-        assert model_name == 'gpt'
-        tokenizer = T5Tokenizer(vocab_file=vocab_file,
-                                padding_side='left',
-                                truncation_side='left')
+        assert model_name == "gpt"
+        tokenizer = T5Tokenizer(
+            vocab_file=vocab_file, padding_side="left", truncation_side="left"
+        )
 
-    if model_name == 'qwen':
+    if model_name == "qwen":
         with open(Path(tokenizer_dir) / "generation_config.json") as f:
             gen_config = json.load(f)
-        chat_format = gen_config['chat_format']
-        if chat_format == 'raw':
-            pad_id = gen_config['pad_token_id']
-            end_id = gen_config['eos_token_id']
-        elif chat_format == 'chatml':
+        chat_format = gen_config["chat_format"]
+        if chat_format == "raw":
+            pad_id = gen_config["pad_token_id"]
+            end_id = gen_config["eos_token_id"]
+        elif chat_format == "chatml":
             pad_id = tokenizer.im_end_id
             end_id = tokenizer.im_end_id
         else:
             raise Exception(f"unknown chat format: {chat_format}")
-    elif model_name == 'glm_10b':
+    elif model_name == "glm_10b":
         pad_id = tokenizer.pad_token_id
         end_id = tokenizer.eop_token_id
     else:
@@ -103,7 +107,6 @@ def load_tokenizer(tokenizer_dir: Optional[str] = None,
         end_id = tokenizer.eos_token_id
 
     return tokenizer, pad_id, end_id
-
 
 
 class TensorRTWorker(BaseModelWorker):
@@ -120,7 +123,7 @@ class TensorRTWorker(BaseModelWorker):
         runner: ModelRunner,
         tokenizer: AutoTokenizer,
         pad_id: int,
-        end_id: int
+        end_id: int,
     ):
         super().__init__(
             controller_addr,
@@ -133,7 +136,8 @@ class TensorRTWorker(BaseModelWorker):
         )
 
         logger.info(
-            f"Loading the model {self.model_names} on worker {worker_id}, worker type: tensorRT worker..."
+            f"Loading the model {self.model_names} on worker {worker_id}."
+            f"worker type: tensorRT worker..."
         )
         logger.info(
             (
@@ -161,18 +165,21 @@ class TensorRTWorker(BaseModelWorker):
 
         if not no_register:
             self.init_heart_beat()
-    
+
     async def generate_stream(self, params):
         self.call_ct += 1
         try:
+
             def generate(runner, tokenizer, params):
-                input_ids = tokenizer.encode(params["prompt"], add_special_tokens=True, truncation=True)
+                input_ids = tokenizer.encode(
+                    params["prompt"], add_special_tokens=True, truncation=True
+                )
                 batch_input_ids = [torch.tensor(input_ids, dtype=torch.int32)]
-                
+
                 max_new_tokens = int(params.get("max_new_tokens", 128))
-                temperature=float(params.get("temperature", 0.7))
-                top_k=int(params.get("top_k", -1))
-                top_p=float(params.get("top_p", 1.0))
+                temperature = float(params.get("temperature", 0.7))
+                top_k = int(params.get("top_k", -1))
+                top_p = float(params.get("top_p", 1.0))
 
                 assert top_k != -1, "Top_k in TensorRT should not be -1"
 
@@ -187,33 +194,37 @@ class TensorRTWorker(BaseModelWorker):
                     num_beams=1,
                     streaming=True,
                     output_sequence_lengths=True,
-                    return_dict=True)
+                    return_dict=True,
+                )
                 torch.cuda.synchronize()
 
                 input_lengths = [x.size(0) for x in batch_input_ids]
                 for curr_outputs in throttle_generator(outputs, 1):
                     if tensorrt_llm.mpi_rank() == 0:
-                        output_ids = curr_outputs['output_ids']
-                        sequence_lengths = curr_outputs['sequence_lengths']
-                        batch_size, num_beams, _ = output_ids.size()                   
+                        output_ids = curr_outputs["output_ids"]
+                        sequence_lengths = curr_outputs["sequence_lengths"]
+                        batch_size, num_beams, _ = output_ids.size()
                         for batch_idx in range(0, batch_size):
                             for beam in range(num_beams):
                                 output_begin = input_lengths[batch_idx]
                                 output_end = sequence_lengths[batch_idx][beam].item()
                                 outputs = output_ids[batch_idx][beam][
-                                    output_begin:output_end].tolist()
+                                    output_begin:output_end
+                                ].tolist()
                                 output_text = tokenizer.decode(outputs)
                                 response = output_text
-                                yield  {
+                                yield {
                                     "text": response,
                                     "usage": {
                                         "prompt_tokens": input_lengths[batch_idx],
                                         "completion_tokens": output_end - output_begin,
-                                        "total_tokens": input_lengths[batch_idx] + output_end - output_begin,
+                                        "total_tokens": input_lengths[batch_idx]
+                                        + output_end
+                                        - output_begin,
                                     },
                                     "finish_reason": None,
                                 }
-                yield  {
+                yield {
                     "text": response,
                     "usage": {
                         "prompt_tokens": input_lengths[0],
@@ -222,7 +233,7 @@ class TensorRTWorker(BaseModelWorker):
                     },
                     "finish_reason": "stop",
                 }
-            
+
             for output in generate(self.runner, self.tokenizer, params):
                 ret = {
                     "text": output["text"],
@@ -317,7 +328,12 @@ def create_model_worker():
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
-    parser.add_argument("--model-path", type=str, help='tensorRT engine path', default="lmsys/vicuna-7b-v1.5")
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        help="tensorRT engine path",
+        default="lmsys/vicuna-7b-v1.5",
+    )
     parser.add_argument(
         "--model-names",
         type=lambda s: s.split(","),
@@ -330,12 +346,18 @@ def create_model_worker():
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
-    parser.add_argument("--lora-dir", type=str, default=None, nargs="+", help="The directory of LoRA weights")
     parser.add_argument(
-        "--debug-mode", 
-        default=False, 
-        action = 'store_true',
-        help="Whether or not to turn on the debug mode"
+        "--lora-dir",
+        type=str,
+        default=None,
+        nargs="+",
+        help="The directory of LoRA weights",
+    )
+    parser.add_argument(
+        "--debug-mode",
+        default=False,
+        action="store_true",
+        help="Whether or not to turn on the debug mode",
     )
 
     args = parser.parse_args()
@@ -344,22 +366,23 @@ def create_model_worker():
     # load tokenizer
     model_name = read_model_name(args.model_path)
     tokenizer, pad_id, end_id = load_tokenizer(
-        tokenizer_dir=args.tokenizer_path,
-        model_name=model_name
+        tokenizer_dir=args.tokenizer_path, model_name=model_name
     )
 
     # load trt runner
     runtime_rank = tensorrt_llm.mpi_rank()
     runner_cls = ModelRunner
-    runner_kwargs = dict(engine_dir=args.model_path,
-                        lora_dir=args.lora_dir,
-                        rank=runtime_rank,
-                        debug_mode=args.debug_mode)
+    runner_kwargs = dict(
+        engine_dir=args.model_path,
+        lora_dir=args.lora_dir,
+        rank=runtime_rank,
+        debug_mode=args.debug_mode,
+    )
     runner = runner_cls.from_dir(**runner_kwargs)
 
     # get config
-    config_path = os.path.join(args.model_path, 'config.json')
-    with open(config_path, 'r') as f:
+    config_path = os.path.join(args.model_path, "config.json")
+    with open(config_path, "r") as f:
         config = json.load(f)
     runner.config = {**config["builder_config"], **config["plugin_config"]}
 
@@ -375,8 +398,8 @@ def create_model_worker():
         conv_template=args.conv_template,
         runner=runner,
         tokenizer=tokenizer,
-        pad_id = pad_id,
-        end_id = end_id
+        pad_id=pad_id,
+        end_id=end_id,
     )
 
     return args, worker
@@ -385,4 +408,3 @@ def create_model_worker():
 if __name__ == "__main__":
     args, worker = create_model_worker()
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-
