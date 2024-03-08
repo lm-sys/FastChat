@@ -233,7 +233,9 @@ def build_pairwise_browser_tab():
     # Conversation
     chat_mds = []
     for i in range(num_turns):
-        chat_mds.append(gr.Markdown(elem_id=f"user_question_{i+1}"))
+        chat_mds.append(
+            gr.Markdown(elem_id=f"user_question_{i+1}", elem_classes=["qa-block-text"])
+        )
         with gr.Row():
             for j in range(num_sides):
                 with gr.Column(scale=100):
@@ -242,11 +244,15 @@ def build_pairwise_browser_tab():
                 if j == 0:
                     with gr.Column(scale=1, min_width=8):
                         gr.Markdown()
-    reference = gr.Markdown(elem_id=f"reference")
+    reference = gr.Markdown(elem_id=f"reference", elem_classes=["qa-block-text"])
     chat_mds.append(reference)
 
-    model_explanation = gr.Markdown(elem_id="model_explanation")
-    model_explanation2 = gr.Markdown(elem_id="model_explanation")
+    model_explanation = gr.Markdown(
+        elem_id="model_explanation", elem_classes=["qa-block-text"]
+    )
+    model_explanation2 = gr.Markdown(
+        elem_id="model_explanation", elem_classes=["qa-block-text"]
+    )
 
     # Callbacks
     category_selector.change(display_question, [category_selector], [question_selector])
@@ -302,7 +308,9 @@ def build_single_answer_browser_tab():
     # Conversation
     chat_mds = []
     for i in range(num_turns):
-        chat_mds.append(gr.Markdown(elem_id=f"user_question_{i+1}"))
+        chat_mds.append(
+            gr.Markdown(elem_id=f"user_question_{i+1}", elem_classes=["qa-block-text"])
+        )
         with gr.Row():
             for j in range(num_sides):
                 with gr.Column(scale=100):
@@ -312,11 +320,15 @@ def build_single_answer_browser_tab():
                     with gr.Column(scale=1, min_width=8):
                         gr.Markdown()
 
-    reference = gr.Markdown(elem_id=f"reference")
+    reference = gr.Markdown(elem_id=f"reference", elem_classes=["qa-block-text"])
     chat_mds.append(reference)
 
-    model_explanation = gr.Markdown(elem_id="model_explanation")
-    model_explanation2 = gr.Markdown(elem_id="model_explanation")
+    model_explanation = gr.Markdown(
+        elem_id="model_explanation", elem_classes=["qa-block-text"]
+    )
+    model_explanation2 = gr.Markdown(
+        elem_id="model_explanation", elem_classes=["qa-block-text"]
+    )
 
     # Callbacks
     category_selector.change(display_question, [category_selector], [question_selector])
@@ -349,11 +361,14 @@ block_css = """
 #model_explanation {
     background-color: #FBE5D6;
 }
+.qa-block-text.prose * {
+    color: #1F2937 !important;
+}
 """
 
 
 def load_demo():
-    dropdown_update = gr.Dropdown.update(value=list(category_selector_map.keys())[0])
+    dropdown_update = gr.Dropdown(value=list(category_selector_map.keys())[0])
     return dropdown_update, dropdown_update
 
 
