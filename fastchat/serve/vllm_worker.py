@@ -31,6 +31,7 @@ from fastchat.utils import get_context_length, is_partial_stop
 try:
     from vllm.entrypoints.openai.serving_engine import LoRA
     from vllm.lora.request import LoRARequest
+
     VLLM_LORA_SUPPORTED = True
 except:
     VLLM_LORA_SUPPORTED = False
@@ -38,6 +39,7 @@ except:
     # Fake LoRA class to compatible with old vLLM versions
     class LoRA:
         pass
+
 
 app = FastAPI()
 
@@ -59,7 +61,11 @@ class VLLMWorker(BaseModelWorker):
         # Register LoRA model names
         if VLLM_LORA_SUPPORTED:
             # If model_names defined, use basename of model path by default
-            model_names = [path.basename(path.normpath(model_path))] if model_names is None else model_names
+            model_names = (
+                [path.basename(path.normpath(model_path))]
+                if model_names is None
+                else model_names
+            )
             lora_model_names = [lora.name for lora in lora_modules]
             model_names += lora_model_names
 
@@ -84,13 +90,18 @@ class VLLMWorker(BaseModelWorker):
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         # Add LoRA requests, lora request will be forwarded to vLLM engine for generating with specific LoRA weights
-        self.lora_requests = [
-            LoRARequest(
-                lora_name=lora.name,
-                lora_int_id=i,
-                lora_local_path=lora.local_path,
-            ) for i, lora in enumerate(lora_modules, start=1)
-        ] if VLLM_LORA_SUPPORTED else []
+        self.lora_requests = (
+            [
+                LoRARequest(
+                    lora_name=lora.name,
+                    lora_int_id=i,
+                    lora_local_path=lora.local_path,
+                )
+                for i, lora in enumerate(lora_modules, start=1)
+            ]
+            if VLLM_LORA_SUPPORTED
+            else []
+        )
 
         if not no_register:
             self.init_heart_beat()
@@ -154,9 +165,10 @@ class VLLMWorker(BaseModelWorker):
             best_of=best_of,
         )
         if VLLM_LORA_SUPPORTED:
-            lora_request = self.get_model_lora_request(params.get('model'))
-            results_generator = engine.generate(context, sampling_params, request_id,
-                                                lora_request=lora_request)
+            lora_request = self.get_model_lora_request(params.get("model"))
+            results_generator = engine.generate(
+                context, sampling_params, request_id, lora_request=lora_request
+            )
         else:
             results_generator = engine.generate(context, sampling_params, request_id)
 
@@ -285,15 +297,16 @@ async def api_model_details(request: Request):
 
 # Add LoRAParserAction for supporting vLLM Multi-LoRA
 class LoRAParserAction(argparse.Action):
-
     def __call__(self, parser, namespace, values, option_string=None):
         if VLLM_LORA_SUPPORTED is False:
-            logger.warning("To use the vLLM LoRAs feature, please upgrade vLLM to version v0.3.2 or higher.")
+            logger.warning(
+                "To use the vLLM LoRAs feature, please upgrade vLLM to version v0.3.2 or higher."
+            )
             return
 
         lora_list = []
         for item in values:
-            name, path = item.split('=')
+            name, path = item.split("=")
             lora_list.append(LoRA(name, path))
         setattr(namespace, self.dest, lora_list)
 
@@ -337,8 +350,14 @@ if __name__ == "__main__":
     )
 
     # Support parse LoRA modules
-    parser.add_argument("--lora-modules", type=str, default=None, nargs='+', action=LoRAParserAction,
-                        help="LoRA module configurations in the format name=path. Multiple modules can be specified.")
+    parser.add_argument(
+        "--lora-modules",
+        type=str,
+        default=None,
+        nargs="+",
+        action=LoRAParserAction,
+        help="LoRA module configurations in the format name=path. Multiple modules can be specified.",
+    )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
