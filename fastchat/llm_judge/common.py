@@ -477,15 +477,16 @@ def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=Non
     for _ in range(API_MAX_RETRY):
         try:
             c = anthropic.Anthropic(api_key=api_key)
-            prompt = conv.get_prompt()
-            response = c.completions.create(
+            prompt = [text for role, text in conv.messages if role == "Human"][0]
+            response = c.messages.create(
                 model=model,
-                prompt=prompt,
-                stop_sequences=[anthropic.HUMAN_PROMPT],
-                max_tokens_to_sample=max_tokens,
+                max_tokens=max_tokens,
                 temperature=temperature,
+                messages=[
+                    {"role": "user", "content": [{"type": "text", "text": prompt}]}
+                ],
             )
-            output = response.completion
+            output = response.content[0].text
             break
         except anthropic.APIError as e:
             print(type(e), e)
