@@ -37,6 +37,11 @@ def get_api_provider_stream_iter(
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
+    elif model_api_dict["api_type"] == "anthropic_message":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = anthropic_message_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
     elif model_api_dict["api_type"] == "gemini":
         stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
@@ -109,7 +114,9 @@ def openai_api_stream_iter(
         )
     else:
         client = openai.OpenAI(
-            base_url=api_base or "https://api.openai.com/v1", api_key=api_key
+            base_url=api_base or "https://api.openai.com/v1",
+            api_key=api_key,
+            timeout=180,
         )
 
     if model_name == "gpt-4-turbo":
@@ -175,6 +182,46 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
             "error_code": 0,
         }
         yield data
+
+
+def anthropic_message_api_stream_iter(
+    model_name, messages, temperature, top_p, max_new_tokens
+):
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    system_prompt = ""
+    if messages[0]["role"] == "system":
+        system_prompt = messages[0]["content"]
+        # remove system prompt
+        messages = messages[1:]
+
+    text = ""
+    with client.messages.stream(
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_new_tokens,
+        messages=messages,
+        model=model_name,
+        system=system_prompt,
+    ) as stream:
+        for chunk in stream.text_stream:
+            text += chunk
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
 
 
 def gemini_api_stream_iter(
@@ -381,7 +428,7 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
 
     api_key = os.environ["MISTRAL_API_KEY"]
 
-    client = MistralClient(api_key=api_key)
+    client = MistralClient(api_key=api_key, timeout=5)
 
     # Make requests
     gen_params = {
@@ -426,7 +473,7 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
     }
     # nvidia api does not accept 0 temperature
     if temp == 0.0:
-        temp = 0.0001
+        temp = 0.000001
 
     payload = {
         "messages": messages,

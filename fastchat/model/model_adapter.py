@@ -55,6 +55,8 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2",
     "claude-2.0",
     "claude-2.1",
+    "claude-3-sonnet-20240229",
+    "claude-3-opus-20240229",
     "claude-instant-1",
     "claude-instant-1.2",
 )
@@ -1134,6 +1136,10 @@ class ClaudeAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "claude-3-sonnet-20240229" in model_path:
+            return get_conv_template("claude-3-sonnet-20240229")
+        if "claude-3-opus-20240229" in model_path:
+            return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
 
 
@@ -2268,6 +2274,16 @@ class YuanAdapter(BaseModelAdapter):
         return get_conv_template("yuan")
 
 
+class OlmoAdapter(BaseModelAdapter):
+    """The model adapter for allenai/OLMo-7B-Instruct"""
+
+    def match(self, model_path: str):
+        return "olmo" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2358,6 +2374,7 @@ register_model_adapter(SolarAdapter)
 register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
+register_model_adapter(OlmoAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

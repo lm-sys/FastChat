@@ -101,6 +101,17 @@ class State:
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
+        self.oai_thread_id = None
+
+        self.init_system_prompt(self.conv)
+
+    def init_system_prompt(self, conv):
+        system_prompt = conv.get_system_message()
+        if len(system_prompt) == 0:
+            return
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        system_prompt = system_prompt.replace("{{currentDateTime}}", current_date)
+        conv.set_system_message(system_prompt)
 
     def to_gradio_chatbot(self):
         return self.conv.to_gradio_chatbot()
@@ -158,7 +169,7 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
     # Remove anonymous models
     models = list(set(models))
     visible_models = models.copy()
-    for mdl in visible_models:
+    for mdl in models:
         if mdl not in api_endpoint_info:
             continue
         mdl_dict = api_endpoint_info[mdl]
@@ -448,6 +459,7 @@ def bot_response(
             temperature,
             top_p,
             max_new_tokens,
+            state,
         )
 
     conv.update_last_message("▌")

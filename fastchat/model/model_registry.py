@@ -42,16 +42,36 @@ register_model_info(
 
 register_model_info(
     [
-        "mistral-large-2402",
-        "mistral-next",
+        "claude-3-sonnet-20240229",
+        "claude-3-opus-20240229",
+        "claude-2.1",
+        "claude-2.0",
+        "claude-1",
+    ],
+    "Claude",
+    "https://www.anthropic.com/index/claude-2",
+    "Claude by Anthropic",
+)
+
+register_model_info(
+    [
         "mixtral-8x7b-instruct-v0.1",
+        "mistral-large-2402",
         "mistral-medium",
+        "mistral-next",
         "mistral-7b-instruct-v0.2",
         "mistral-7b-instruct",
     ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
+)
+
+register_model_info(
+    ["olmo-7b-instruct"],
+    "OLMo-7B",
+    "https://huggingface.co/allenai/OLMo-7B-Instruct",
+    "OLMo by Allen AI",
 )
 
 register_model_info(
@@ -139,24 +159,17 @@ register_model_info(
 )
 
 register_model_info(
-    ["claude-2.1", "claude-2.0"],
-    "Claude",
-    "https://www.anthropic.com/index/claude-2",
-    "Claude 2 by Anthropic",
-)
-
-register_model_info(
-    ["claude-1"],
-    "Claude",
-    "https://www.anthropic.com/index/introducing-claude",
-    "Claude 1 by Anthropic",
-)
-
-register_model_info(
     ["claude-instant-1", "claude-instant-1.2"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
     "Claude Instant by Anthropic",
+)
+
+register_model_info(
+    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
+    "Llama 2",
+    "https://ai.meta.com/llama/",
+    "Open foundation and fine-tuned chat models by Meta",
 )
 
 register_model_info(
@@ -240,13 +253,6 @@ register_model_info(
     "Yi-Chat",
     "https://huggingface.co/01-ai/Yi-34B-Chat",
     "A large language model by 01 AI",
-)
-
-register_model_info(
-    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
-    "Llama 2",
-    "https://ai.meta.com/llama/",
-    "Open foundation and fine-tuned chat models by Meta",
 )
 
 register_model_info(

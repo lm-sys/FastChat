@@ -59,6 +59,8 @@ def load_demo(url_params, request: gr.Request):
         selected = 3
     elif "leaderboard" in url_params:
         selected = 4
+    elif "about" in url_params:
+        selected = 5
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
