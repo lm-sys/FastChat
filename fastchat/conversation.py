@@ -34,6 +34,7 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    GEMMA = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -269,6 +270,14 @@ class Conversation:
                 else:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
+            return ret
+        elif self.sep_style == SeparatorStyle.GEMMA:
+            ret = "<bos>"
+            for role, message in self.messages:
+                if message:
+                    ret += "<start_of_turn>" + role + "\n" + message + self.sep
+                else:
+                    ret += "<start_of_turn>" + role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -954,16 +963,6 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="gemini",
-        roles=("user", "model"),
-        sep_style=None,
-        sep=None,
-    )
-)
-
-register_conv_template(
-    Conversation(
-        name="gemma",
-        system_message="",
         roles=("user", "model"),
         sep_style=None,
         sep=None,
@@ -1664,9 +1663,8 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="gemma",
-        system_message="<bos>",
-        roles=("<start_of_turn>user\n", "<start_of_turn>model\n"),
-        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.GEMMA,
         sep="<end_of_turn>\n",
         stop_str="<end_of_turn>",
     )

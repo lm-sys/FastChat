@@ -20,6 +20,7 @@ def get_api_provider_stream_iter(
     temperature,
     top_p,
     max_new_tokens,
+    state,
 ):
     if model_api_dict["api_type"] == "openai":
         prompt = conv.to_openai_api_messages()
