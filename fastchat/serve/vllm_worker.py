@@ -7,6 +7,7 @@ See documentations at docs/vllm_integration.md
 import argparse
 import asyncio
 import json
+from os import path
 from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -57,7 +58,8 @@ class VLLMWorker(BaseModelWorker):
     ):
         # Register LoRA model names
         if VLLM_LORA_SUPPORTED:
-            model_names = [] if model_names is None else model_names
+            # If model_names defined, use basename of model path by default
+            model_names = [path.basename(path.normpath(model_path))] if model_names is None else model_names
             lora_model_names = [lora.name for lora in lora_modules]
             model_names += lora_model_names
 
