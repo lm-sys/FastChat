@@ -201,7 +201,7 @@ def load_demo(url_params, request: gr.Request):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    with open(get_conv_log_filename(), "a") as fout:
+    with open(get_conv_log_filename(), "a", encoding='utf-8') as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
@@ -209,7 +209,7 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
             "state": state.dict(),
             "ip": get_ip(request),
         }
-        fout.write(json.dumps(data) + "\n")
+        fout.write(json.dumps(data, ensure_ascii=False) + "\n")
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
@@ -513,7 +513,7 @@ def bot_response(
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             image.save(filename)
 
-    with open(get_conv_log_filename(), "a") as fout:
+    with open(get_conv_log_filename(), "a", encoding='utf-8') as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
@@ -529,7 +529,7 @@ def bot_response(
             "ip": get_ip(request),
             "images": images_hash,
         }
-        fout.write(json.dumps(data) + "\n")
+        fout.write(json.dumps(data, ensure_ascii=False) + "\n")
 
 
 block_css = """
