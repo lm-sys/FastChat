@@ -753,7 +753,7 @@ register_model_info(
 
 register_model_info(
     ["merlinite-7b"],
-    "Labradorite",
+    "Merlinite",
     "https://huggingface.co/ibm/merlinite-7b",
     "Merlinite by IBM",
 )
