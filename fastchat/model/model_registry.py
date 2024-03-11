@@ -31,6 +31,7 @@ def get_model_info(name: str) -> ModelInfo:
 register_model_info(
     [
         "IEITYuan/Yuan2-2B-Janus-hf",
+        "IEITYuan/Yuan2-2B-Februa-hf",
         "IEITYuan/Yuan2-2B-hf",
         "IEITYuan/Yuan2-51B-hf",
         "IEITYuan/Yuan2-102B-hf",
@@ -634,13 +635,6 @@ register_model_info(
     "MetaMath",
     "https://huggingface.co/meta-math",
     "A finetune of Llama2 on [MetaMathQA](https://huggingface.co/datasets/meta-math/MetaMathQA) that specializes in mathematical reasoning.",
-)
-
-register_model_info(
-    ["Yuan2-2B-hf", "Yuan2-51B-hf", "Yuan2-102B-hf"],
-    "IEIYuan",
-    "https://huggingface.co/IEITYuan",
-    "A Basemodel developed by IEI.",
 )
 
 register_model_info(
