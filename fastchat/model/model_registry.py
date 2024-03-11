@@ -663,3 +663,17 @@ register_model_info(
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
 )
+
+register_model_info(
+    ["labradorite-13b"],
+    "Labradorite",
+    "https://huggingface.co/ibm/labradorite-13b",
+    "Labradorite by IBM",
+)
+
+register_model_info(
+    ["merlinite-7b"],
+    "Merlinite",
+    "https://huggingface.co/ibm/merlinite-7b",
+    "Merlinite by IBM",
+)
