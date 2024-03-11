@@ -59,6 +59,8 @@ After these steps, the new model should be compatible with most FastChat feature
 - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
 - [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
 - [HuggingFaceH4/zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
+- [ibm/labradorite-13b](https://huggingface.co/ibm/labradorite-13b)
+- [ibm/merlinite-7b](https://huggingface.co/ibm/merlinite-7b)
 - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
 - [cllm/consistency-llm-7b-codesearchnet/consistency-llm-7b-gsm8k/consistency-llm-7b-sharegpt48k/consistency-llm-7b-spider](https://huggingface.co/cllm)
 - [IEITYuan/Yuan2-2B/51B/102B-hf](https://huggingface.co/IEITYuan)
