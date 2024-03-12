@@ -3,6 +3,7 @@ Global constants.
 """
 
 from enum import IntEnum
+from httpx._config import DEFAULT_TIMEOUT_CONFIG
 import os
 
 REPO_PATH = os.path.dirname(os.path.dirname(__file__))
@@ -37,6 +38,7 @@ WORKER_API_TIMEOUT = int(os.getenv("FASTCHAT_WORKER_API_TIMEOUT", 100))
 WORKER_API_EMBEDDING_BATCH_SIZE = int(
     os.getenv("FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE", 4)
 )
+HTTPX_TIMEOUT = int(os.getenv("FASTCHAT_HTTPX_TIMEOUT", DEFAULT_TIMEOUT_CONFIG))
 
 
 class ErrorCode(IntEnum):
