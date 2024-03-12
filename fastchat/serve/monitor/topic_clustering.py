@@ -274,7 +274,7 @@ if __name__ == "__main__":
     with open(filename_prefix + "_topk.txt", "w") as fout:
         fout.write(topk_str)
 
-    with open(filename_prefix + "_all.jsonl", "w") as fout:
+    with open(filename_prefix + "_all.jsonl", "w", encoding="utf-8") as fout:
         for i in range(len(centers)):
             tmp_indices = labels == i
             tmp_embeddings = embeddings[tmp_indices]
