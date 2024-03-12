@@ -201,7 +201,7 @@ def load_demo(url_params, request: gr.Request):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    with open(get_conv_log_filename(), "a", encoding='utf-8') as fout:
+    with open(get_conv_log_filename(), "a", encoding="utf-8") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
@@ -513,7 +513,7 @@ def bot_response(
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             image.save(filename)
 
-    with open(get_conv_log_filename(), "a", encoding='utf-8') as fout:
+    with open(get_conv_log_filename(), "a", encoding="utf-8") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",

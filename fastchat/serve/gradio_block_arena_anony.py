@@ -62,7 +62,7 @@ def load_demo_side_by_side_anony(models_, url_params):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    with open(get_conv_log_filename(), "a", encoding='utf-8') as fout:
+    with open(get_conv_log_filename(), "a", encoding="utf-8") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
