@@ -26,7 +26,7 @@ def get_jacobian_trajectory(
     tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device="cuda")
     for i in range(bsz):
         tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device="cuda")
-        tokens[i, : prompt_len[i]] = torch.tensor(input_ids[i][: prompt_len[i]], dtype=torch.long, device="cuda").clone()
+        tokens[i, : prompt_len[i]] = torch.tensor(input_ids[i][: prompt_len[i]], dtype=torch.long, device="cuda")
     itr = 0
     next_generation = tokens
     generate_attention_mask = torch.full_like(next_generation, 1).to(tokens.device)
