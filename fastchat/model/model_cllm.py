@@ -71,7 +71,6 @@ def generate_stream_cllm(
     eos_reached = False
     while True:
         if itr == 0:
-            inputs = tokenizer(processed_prompt, return_tensors="pt").to(model.device)
             input_ids = inputs['input_ids']
             input_masks = inputs['attention_mask']
         else:
