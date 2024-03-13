@@ -56,7 +56,10 @@ def get_jacobian_trajectory(
 
         # skip the first itr, current_generation has not been updated yet
         if itr != 0:
-            matched_position = (torch.eq(current_generation, next_generation).squeeze(0)==False).nonzero(as_tuple=True)[0][0]
+            if torch.all(torch.eq(next_generation, current_generation)).item():
+                matched_position = total_len
+            else:
+                matched_position = (torch.eq(current_generation, next_generation).squeeze(0)==False).nonzero(as_tuple=True)[0][0]
             fast_forward_cnt = matched_position - accurate_lengths[0]
 
             for i in range(bsz):
