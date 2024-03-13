@@ -49,7 +49,6 @@ def get_jacobian_trajectory(
         for i in range(bsz):
             next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
 
-        print(itr)
         if torch.all(torch.eq(next_generation, current_generation)).item() and itr == max_new_tokens or len(torch.where(current_generation[0, :accurate_lengths[0]]==tokenizer.eos_token_id)[0]) > 0:
             # forced exit due to max_new_tokens constraint or eos reached
             return next_generation, itr
