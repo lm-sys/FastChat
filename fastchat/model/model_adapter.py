@@ -73,6 +73,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-0125-preview",
+    "gpt-4-turbo-browsing",
 )
 
 
@@ -1094,6 +1095,8 @@ class ChatGPTAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "browsing" in model_path:
+            return get_conv_template("api_based_default")
         return get_conv_template("chatgpt")
 
 

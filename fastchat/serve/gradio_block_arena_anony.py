@@ -131,9 +131,15 @@ def bothbad_vote_last_response(
 def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (anony). ip: {get_ip(request)}")
     states = [state0, state1]
-    for i in range(num_sides):
-        states[i].conv.update_last_message(None)
-    return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+    if state0.regen_support and state1.regen_support:
+        for i in range(num_sides):
+            states[i].conv.update_last_message(None)
+        return (
+            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+        )
+    states[0].skip_next = True
+    states[1].skip_next = True
+    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 6
 
 
 def clear_history(request: gr.Request):
@@ -163,6 +169,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0613": 4,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 4,
+    "gpt-4-turbo-browsing": 6,
     "gpt-3.5-turbo-0125": 4,
     "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 6,
@@ -195,6 +202,12 @@ BATTLE_TARGETS = {
         "gpt-4-1106-preview",
         "gpt-4-0613",
         "claude-3-opus-20240229",
+    },
+    "gpt-4-turbo-browsing": {
+        "gpt-4-0125-preview",
+        "gpt-4-1106-preview",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
     },
     "gpt-3.5-turbo-0125": {
         "gpt-4-0613",
@@ -302,11 +315,12 @@ BATTLE_TARGETS = {
 SAMPLING_BOOST_MODELS = [
     # "gpt-4-1106-preview",
     "gpt-4-0125-preview",
+    "gpt-4-turbo-browsing",
     # "gpt-3.5-turbo-0125",
     # "gemma-7b-it",
     # "gemma-2b-it",
     "mistral-large-2402",
-    "olmo-7b-instruct",
+    # "olmo-7b-instruct",
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
 ]
@@ -589,7 +603,7 @@ Find out who is the 🥇LLM Champion!
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,

@@ -103,6 +103,9 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
 
+        self.regen_support = True
+        if "browsing" in model_name:
+            self.regen_support = False
         self.init_system_prompt(self.conv)
 
     def init_system_prompt(self, conv):
@@ -251,6 +254,9 @@ def flag_last_response(state, model_selector, request: gr.Request):
 def regenerate(state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"regenerate. ip: {ip}")
+    if not state.regen_support:
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
@@ -462,14 +468,19 @@ def bot_response(
             state,
         )
 
-    conv.update_last_message("▌")
+    html_code = ' <span class="cursor"></span> '
+
+    # conv.update_last_message("▌")
+    conv.update_last_message(html_code)
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
+        data = {"text": ""}
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                conv.update_last_message(output + "▌")
+                # conv.update_last_message(output + "▌")
+                conv.update_last_message(output + html_code)
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
@@ -592,6 +603,52 @@ footer {
     max-height: 100%;
     width: auto;
     float: left;
+}
+
+.chatbot h1, h2, h3 {
+    margin-top: 8px; /* Adjust the value as needed */
+    margin-bottom: 0px; /* Adjust the value as needed */
+    padding-bottom: 0px;
+}
+
+.chatbot h1 {
+    font-size: 130%;
+}
+.chatbot h2 {
+    font-size: 120%;
+}
+.chatbot h3 {
+    font-size: 110%;
+}
+.chatbot p:not(:first-child) {
+    margin-top: 8px;
+}
+
+.typing {
+    display: inline-block;
+}
+
+.cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1em;
+    background-color: black;
+    vertical-align: middle;
+    animation: blink 1s infinite;
+}
+
+.dark .cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1em;
+    background-color: white;
+    vertical-align: middle;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.1%, 100% { opacity: 0; }
 }
 """
 

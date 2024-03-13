@@ -15,6 +15,8 @@ LOG_DIR_LIST = [
     "/mnt/data/fastchat_logs/server3",
     "/mnt/data/fastchat_logs/server4",
     "/mnt/data/fastchat_logs/server5",
+    "/mnt/data/fastchat_logs/server6",
+    "/mnt/data/fastchat_logs/server7",
 ]
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
@@ -29,11 +31,13 @@ class Monitor:
         self.model_call_limit_global = {
             "gpt-4-1106-preview": 300,
             "gpt-4-0125-preview": 300,
+            "gpt-4-turbo-browsing": 500,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 8,
             "gpt-4-0125-preview": 8,
-            "claude-3-opus-20240229": 30,
+            "gpt-4-turbo-browsing": 16,
+            "claude-3-opus-20240229": 32,
         }
 
     async def update_stats(self, num_file=1) -> None:

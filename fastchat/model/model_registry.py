@@ -139,6 +139,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["gpt-4-turbo-browsing"],
+    "GPT-4-Turbo with browsing",
+    "https://platform.openai.com/docs/assistants/overview",
+    "GPT-4-Turbo with browsing by OpenAI",
+)
+
+register_model_info(
     [
         "gpt-3.5-turbo",
         "gpt-3.5-turbo-0125",

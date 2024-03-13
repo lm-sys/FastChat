@@ -119,9 +119,15 @@ def bothbad_vote_last_response(
 def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (named). ip: {get_ip(request)}")
     states = [state0, state1]
-    for i in range(num_sides):
-        states[i].conv.update_last_message(None)
-    return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+    if state0.regen_support and state1.regen_support:
+        for i in range(num_sides):
+            states[i].conv.update_last_message(None)
+        return (
+            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+        )
+    states[0].skip_next = True
+    states[1].skip_next = True
+    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 6
 
 
 def clear_history(request: gr.Request):

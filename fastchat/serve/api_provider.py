@@ -3,6 +3,7 @@
 import json
 import os
 import random
+import re
 import time
 
 import requests
@@ -31,6 +32,14 @@ def get_api_provider_stream_iter(
             top_p,
             max_new_tokens,
             api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "openai_assistant":
+        last_prompt = conv.messages[-2][1]
+        stream_iter = openai_assistant_api_stream_iter(
+            state,
+            last_prompt,
+            assistant_id=model_api_dict["assistant_id"],
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "anthropic":
@@ -149,6 +158,172 @@ def openai_api_stream_iter(
                 "error_code": 0,
             }
             yield data
+
+
+def upload_openai_file_to_gcs(file_id):
+    import openai
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+
+    file = openai.files.content(file_id)
+    # upload file to GCS
+    bucket = storage_client.get_bucket("arena_user_content")
+    blob = bucket.blob(f"{file_id}")
+    blob.upload_from_string(file.read())
+    blob.make_public()
+    return blob.public_url
+
+
+def openai_assistant_api_stream_iter(
+    state,
+    prompt,
+    assistant_id,
+    api_key=None,
+):
+    import openai
+    import base64
+
+    api_key = api_key or os.environ["OPENAI_API_KEY"]
+    client = openai.OpenAI(base_url="https://api.openai.com/v1", api_key=api_key)
+
+    if state.oai_thread_id is None:
+        logger.info("==== create thread ====")
+        thread = client.beta.threads.create()
+        state.oai_thread_id = thread.id
+    logger.info(f"==== thread_id ====\n{state.oai_thread_id}")
+    thread_message = client.beta.threads.messages.with_raw_response.create(
+        state.oai_thread_id,
+        role="user",
+        content=prompt,
+        timeout=3,
+    )
+    # logger.info(f"header {thread_message.headers}")
+    thread_message = thread_message.parse()
+    # Make requests
+    gen_params = {
+        "assistant_id": assistant_id,
+        "thread_id": state.oai_thread_id,
+        "message": prompt,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = requests.post(
+        f"https://api.openai.com/v1/threads/{state.oai_thread_id}/runs",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "OpenAI-Beta": "assistants=v1",
+        },
+        json={"assistant_id": assistant_id, "stream": True},
+        timeout=30,
+        stream=True,
+    )
+
+    list_of_text = []
+    list_of_raw_text = []
+    offset_idx = 0
+    full_ret_text = ""
+    idx_mapping = {}
+    for line in res.iter_lines():
+        if not line:
+            continue
+        data = line.decode("utf-8")
+        # logger.info("data:", data)
+        if data.endswith("[DONE]"):
+            break
+        if data.startswith("event"):
+            event = data.split(":")[1].strip()
+            if event == "thread.message.completed":
+                offset_idx += len(list_of_text)
+            continue
+        data = json.loads(data[6:])
+
+        if data.get("status") == "failed":
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: {data['last_error']['message']}",
+                "error_code": 1,
+            }
+            return
+
+        if data.get("status") == "completed":
+            logger.info(f"[debug]: {data}")
+
+        if data["object"] != "thread.message.delta":
+            continue
+
+        for delta in data["delta"]["content"]:
+            text_index = delta["index"] + offset_idx
+            if len(list_of_text) <= text_index:
+                list_of_text.append("")
+                list_of_raw_text.append("")
+
+            text = list_of_text[text_index]
+            raw_text = list_of_raw_text[text_index]
+
+            if delta["type"] == "text":
+                # text, url_citation or file_path
+                content = delta["text"]
+                if "annotations" in content and len(content["annotations"]) > 0:
+                    annotations = content["annotations"]
+
+                    cur_offset = 0
+                    raw_text_copy = raw_text
+                    for anno in annotations:
+                        if anno["type"] == "url_citation":
+                            anno_text = anno["text"]
+                            if anno_text not in idx_mapping:
+                                continue
+                            citation_number = idx_mapping[anno_text]
+
+                            start_idx = anno["start_index"] + cur_offset
+                            end_idx = anno["end_index"] + cur_offset
+                            url = anno["url_citation"]["url"]
+
+                            citation = f" [[{citation_number}]]({url})"
+                            raw_text_copy = (
+                                raw_text_copy[:start_idx]
+                                + citation
+                                + raw_text_copy[end_idx:]
+                            )
+                            cur_offset += len(citation) - (end_idx - start_idx)
+                        elif anno["type"] == "file_path":
+                            file_public_url = upload_openai_file_to_gcs(
+                                anno["file_path"]["file_id"]
+                            )
+                            raw_text_copy = raw_text_copy.replace(
+                                anno["text"], f"{file_public_url}"
+                            )
+                    text = raw_text_copy
+                else:
+                    text_content = content["value"]
+                    raw_text += text_content
+
+                    # re-index citation number
+                    pattern = r"【\d+】"
+                    matches = re.findall(pattern, content["value"])
+                    if len(matches) > 0:
+                        for match in matches:
+                            if match not in idx_mapping:
+                                idx_mapping[match] = len(idx_mapping) + 1
+                            citation_number = idx_mapping[match]
+                            text_content = text_content.replace(
+                                match, f" [{citation_number}]"
+                            )
+                    text += text_content
+                    # yield {"text": text, "error_code": 0}
+            elif delta["type"] == "image_file":
+                image_public_url = upload_openai_file_to_gcs(
+                    delta["image_file"]["file_id"]
+                )
+                # raw_text += f"![image]({image_public_url})"
+                text += f"![image]({image_public_url})"
+
+            list_of_text[text_index] = text
+            list_of_raw_text[text_index] = raw_text
+
+            full_ret_text = "\n".join(list_of_text)
+            yield {"text": full_ret_text, "error_code": 0}
 
 
 def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
