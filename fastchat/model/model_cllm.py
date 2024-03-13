@@ -44,7 +44,7 @@ def get_jacobian_trajectory(
         next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)
 
         # hold prompt unchanged and update generated tokens
-        matched_lengths = torch.sum(torch.eq(current_point, next_point))
+        matched_lengths = torch.sum(torch.eq(current_generation, next_generation))
         for i in range(bsz):
             next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
             
