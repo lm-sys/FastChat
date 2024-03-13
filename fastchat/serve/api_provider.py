@@ -94,7 +94,7 @@ def get_api_provider_stream_iter(
             max_new_tokens=max_new_tokens,
             api_base=model_api_dict.get("api_base"),
             api_key=model_api_dict.get("api_key"),
-        )        
+        )
     else:
         raise NotImplementedError()
 
@@ -466,24 +466,36 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
             text += data
             yield {"text": text, "error_code": 0}
 
+
 def cohere_api_stream_iter(
     client_name: str,
     model_id: str,
     messages: list,
-    temperature: Optional[float] = None, # The SDK or API handles None for all parameters following
+    temperature: Optional[
+        float
+    ] = None,  # The SDK or API handles None for all parameters following
     top_p: Optional[float] = None,
     max_new_tokens: Optional[int] = None,
     api_key: Optional[str] = None,  # default is env var CO_API_KEY
     api_base: Optional[str] = None,
 ):
     import cohere
-    OPENAI_TO_COHERE_ROLE_MAP = {"user": "User", "assistant": "Chatbot", "system": "System"}
 
-    client = cohere.Client(api_key=api_key, api_url=api_base, client_name=client_name or "FastChat")
+    OPENAI_TO_COHERE_ROLE_MAP = {
+        "user": "User",
+        "assistant": "Chatbot",
+        "system": "System",
+    }
+
+    client = cohere.Client(
+        api_key=api_key, api_url=api_base, client_name=client_name or "FastChat"
+    )
 
     # prepare and log requests
     chat_history = [
-        dict(role=OPENAI_TO_COHERE_ROLE_MAP[message["role"]], message=message["content"])
+        dict(
+            role=OPENAI_TO_COHERE_ROLE_MAP[message["role"]], message=message["content"]
+        )
         for message in messages[:-1]
     ]
     actual_prompt = messages[-1]["content"]
@@ -507,10 +519,12 @@ def cohere_api_stream_iter(
         temperature=temperature,
         max_tokens=max_new_tokens,
         p=top_p,
-        stream=True
+        stream=True,
     )
-    if res.response.status_code != 200: # e.g. 404 model not found
-        logger.error(f"==== error from cohere api ==== ({res.response.status_code}): {res}")
+    if res.response.status_code != 200:  # e.g. 404 model not found
+        logger.error(
+            f"==== error from cohere api ==== ({res.response.status_code}): {res}"
+        )
         yield {
             "text": f"**API REQUEST ERROR** Reason: status code {res.response.status_code}.",
             "error_code": 1,
