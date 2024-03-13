@@ -29,7 +29,7 @@ def get_jacobian_trajectory(
     total_len = max_prompt_len + max_new_tokens
 
     # initialize the first point of jacobian trajectory
-    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device=device)
+    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device=input_ids.device)
     for i in range(bsz):
         tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device=input_ids.device)
         tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].to(dtype=torch.long, device=input_ids.device)
