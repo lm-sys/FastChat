@@ -31,12 +31,12 @@ def get_jacobian_trajectory(
     # initialize the first point of jacobian trajectory
     tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device=device)
     for i in range(bsz):
-        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device=device)
-        tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].to(dtype=torch.long, device=device)
+        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device=input_ids.device)
+        tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].to(dtype=torch.long, device=input_ids.device)
     itr = 0
     next_generation = tokens
-    generate_attention_mask = torch.full_like(next_generation, 1).to(device)
-    accurate_lengths = torch.tensor([0] * bsz, device=device)
+    generate_attention_mask = torch.full_like(next_generation, 1).to(input_ids.device)
+    accurate_lengths = torch.tensor([0] * bsz, device=input_ids.device)
     while True:
         current_generation = next_generation
         with torch.no_grad():
