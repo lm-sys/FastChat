@@ -84,7 +84,7 @@ class BigDLLLMWorker(BaseModelWorker):
         temperature = float(params.get("temperature", 1.0))
         repetition_penalty = float(params.get("repetition_penalty", 1.0))
         top_p = float(params.get("top_p", 1.0))
-        top_k = int(params.get("top_k", -1))  # -1 means disable
+        top_k = int(params.get("top_k", 0))  # 0 means disable
         max_new_tokens = int(params.get("max_new_tokens", 256))
         echo = bool(params.get("echo", True))
         stop_str = params.get("stop", None)
@@ -297,8 +297,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--trust-remote-code",
-        action="store_false",
-        default=True,
+        action="store_true",
+        default=False,
         help="Trust remote code (e.g., from HuggingFace) when"
         "downloading the model and tokenizer.",
     )
