@@ -663,3 +663,10 @@ register_model_info(
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
 )
+
+register_model_info(
+    ["cohere-command-r"],
+    "Command-R",
+    "https://txt.cohere.com/command-r/",
+    "Command-R by Cohere",
+)
