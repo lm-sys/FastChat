@@ -34,6 +34,7 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    CLLM = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -269,6 +270,18 @@ class Conversation:
                 else:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
+            return ret
+        elif self.sep_style == SeparatorStyle.CLLM:
+            seps = [self.sep, self.sep2]
+            ret = system_prompt + seps[0]
+            for i, (role, message) in enumerate(self.messages[-2:]):
+                if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
+                    ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1589,6 +1602,20 @@ register_conv_template(
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="<end_of_turn>\n",
         stop_str="<end_of_turn>",
+    )
+)
+
+# Cllm chat template
+# reference: 
+register_conv_template(
+    Conversation(
+        name="cllm",
+        system_message="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.CLLM,
+        sep=" ",
+        sep2="</s>",
     )
 )
 
