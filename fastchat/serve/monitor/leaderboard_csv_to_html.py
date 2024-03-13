@@ -4,6 +4,7 @@ Convert a leaderboard csv file to html table used in the blog.
 Usage:
 python3 leaderboard_csv_to_html.py --in leaderboard_table_20230619.csv
 """
+
 import argparse
 
 import numpy as np

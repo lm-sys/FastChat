@@ -2,6 +2,7 @@
 Usage:
 python3 -m fastchat.model.convert_fp16 --in in-folder --out out-folder
 """
+
 import argparse
 
 from transformers import AutoTokenizer, AutoModelForCausalLM

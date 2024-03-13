@@ -7,6 +7,7 @@ pip install opencc-python-reimplementedpip install opencc-python-reimplemented
 Usage:
 python3 filter_bad_conv_lmsys_chat_1m.py --in clean_battle_conv_20230630_tagged_v1_pii.json
 """
+
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 from collections import defaultdict

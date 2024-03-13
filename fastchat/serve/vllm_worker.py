@@ -156,9 +156,11 @@ class VLLMWorker(BaseModelWorker):
                 "cumulative_logprob": [
                     output.cumulative_logprob for output in request_output.outputs
                 ],
-                "finish_reason": request_output.outputs[0].finish_reason
-                if len(request_output.outputs) == 1
-                else [output.finish_reason for output in request_output.outputs],
+                "finish_reason": (
+                    request_output.outputs[0].finish_reason
+                    if len(request_output.outputs) == 1
+                    else [output.finish_reason for output in request_output.outputs]
+                ),
             }
             # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
             # This aligns with the behavior of model_worker.

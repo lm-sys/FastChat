@@ -5,6 +5,7 @@ Usage:
 python3 -m fastchat.data.filter_wrong_format --in input.json --out output.json
 
 """
+
 import argparse
 import json
 import re

@@ -5,6 +5,7 @@
 Usage:
 python3 -m fastchat.data.clean_sharegpt --in sharegpt_html.json --out sharegpt_clean.json
 """
+
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import json

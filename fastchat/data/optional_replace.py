@@ -7,6 +7,7 @@ python3 -m fastchat.data.optional_replace --in input.json --out output.json --mo
 Requirement:
 pip3 install transformers tqdm
 """
+
 import argparse
 import json
 import traceback

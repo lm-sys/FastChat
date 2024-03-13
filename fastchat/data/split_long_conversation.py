@@ -6,6 +6,7 @@ Usage: python3 -m fastchat.data.split_long_conversation \
     --out sharegpt_split.json \
     --model-name-or-path $<model-name>
 """
+
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import json
