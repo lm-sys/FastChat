@@ -2,6 +2,7 @@ import torch
 import gc
 
 import os
+import time
 import random
 from typing import Dict, Optional, Sequence, List, Tuple
 from transformers.cache_utils import Cache, DynamicCache
@@ -36,25 +37,40 @@ def get_jacobian_trajectory(
     itr = 0
     next_generation = tokens
     generate_attention_mask = torch.full_like(next_generation, 1).to(model.device)
-    accurate_lengths = torch.tensor([0] * bsz, device=model.device)
+    accurate_lengths = torch.tensor([prompt_len[i].item()] * bsz, device=model.device)
+    prev_len = 0
     while True:
         current_generation = next_generation
         with torch.no_grad():
             logits = model(current_generation, generate_attention_mask).logits
-        next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)
+        next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1) / 0.001, dim=-1)
 
         # hold prompt unchanged and update generated tokens
-        matched_lengths = torch.sum(torch.eq(current_generation, next_generation))
         for i in range(bsz):
             next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
-            
-            accurate_lengths[i] = matched_lengths[i]
 
-        # flush and print the first sequence
-        print(next_generation[accurate_lengths[0]:], flush=True, end="")
+        print(itr)
+        if torch.all(torch.eq(next_generation, current_generation)).item() and itr == max_new_tokens or len(torch.where(current_generation[0, :accurate_lengths[0]]==tokenizer.eos_token_id)[0]) > 0:
+            # forced exit due to max_new_tokens constraint or eos reached
+            return next_generation, itr
 
-        if torch.all(torch.eq(next_generation, current_generation)).item():
-            return next_generation, itr # right generation is saved twice so we delete the last element of trajectory list
+        # skip the first itr, current_generation has not been updated yet
+        if itr != 0:
+            matched_position = (torch.eq(current_generation, next_generation).squeeze(0)==False).nonzero(as_tuple=True)[0][0]
+            fast_forward_cnt = matched_position - accurate_lengths[0]
+
+            for i in range(bsz):
+                accurate_lengths[i] = matched_position.item()
+
+            # flush and print the first sequence
+            generated_str = tokenizer.decode(next_generation[0, prompt_len[0]:accurate_lengths[0]], skip_special_tokens=True, spaces_between_special_tokens=False, clean_up_tokenization_spaces=True)
+            print(generated_str[prev_len:], flush=True, end="")
+            prev_len = len(generated_str)
+
+            if torch.all(torch.eq(next_generation, current_generation)).item():
+                # early termination: itr < max_new_tokens
+                return next_generation, itr
+
         itr+=1
 
 def generate_stream_cllm(
@@ -69,8 +85,8 @@ def generate_stream_cllm(
     # converge_step = []
     prompt = params["prompt"]
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
-    max_new_tokens = int(params.get("max_new_tokens", 32))
-    max_new_seq_len = int(params.get("max_new_seq_len", 1024))
+    max_new_tokens = int(params.get("n_token_seq_length", 32))
+    max_new_seq_len = int(params.get("max_new_tokens", 1024))
 
     prompt_len = torch.sum(inputs["attention_mask"], dim=-1)
     generation = inputs["input_ids"]
