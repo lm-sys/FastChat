@@ -5,7 +5,14 @@ import os
 import random
 from typing import Dict, Optional, Sequence, List, Tuple
 from transformers.cache_utils import Cache, DynamicCache
-from transformers import LlamaModel, LlamaForCausalLM
+from transformers import (
+    LlamaModel, 
+    LlamaForCausalLM,
+    GenerationConfig,
+    StoppingCriteria,
+    StoppingCriteriaList,
+    TextIteratorStreamer,
+)
 from transformers.modeling_attn_mask_utils import _prepare_4d_causal_attention_mask
 import torch.nn.functional as F
 
@@ -16,32 +23,37 @@ def get_jacobian_trajectory(
     attention_mask,
     max_new_tokens
 ):
-
     bsz = input_ids.shape[0] 
     prompt_len = [torch.sum(t) for t in attention_mask]
     max_prompt_len = max(prompt_len)
     total_len = max_prompt_len + max_new_tokens
 
     # initialize the first point of jacobian trajectory
-    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device="cuda")
+    tokens = torch.full((bsz, total_len), tokenizer.pad_token_id, dtype=torch.long, device=device)
     for i in range(bsz):
-        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device="cuda")
-        tokens[i, : prompt_len[i]] = torch.tensor(input_ids[i][: prompt_len[i]], dtype=torch.long, device="cuda")
+        tokens[i, :] = torch.tensor(random.choices(input_ids[i][attention_mask[i]==1], k=total_len), dtype=torch.long, device=device)
+        tokens[i, : prompt_len[i]] = input_ids[i][: prompt_len[i]].to(dtype=torch.long, device=device)
     itr = 0
     next_generation = tokens
-    generate_attention_mask = torch.full_like(next_generation, 1).to(tokens.device)
+    generate_attention_mask = torch.full_like(next_generation, 1).to(device)
+    accurate_lengths = torch.tensor([0] * bsz, device=device)
     while True:
-        
         current_generation = next_generation
         with torch.no_grad():
             logits = model(current_generation, generate_attention_mask).logits
         next_generation = torch.argmax(torch.nn.functional.softmax(logits, dim=-1), dim=-1)
 
         # hold prompt unchanged and update generated tokens
+        matched_lengths = torch.sum(torch.eq(current_point, next_point))
         for i in range(bsz):
             next_generation[i, :] = torch.cat((tokens[i, :prompt_len[i]], next_generation[i, prompt_len[i]-1:total_len-1]), dim=0)
+            
+            accurate_lengths[i] = matched_lengths[i]
+
+        # flush and print the first sequence
+        print(next_generation[accurate_lengths[0]:], flush=True, end="")
+
         if torch.all(torch.eq(next_generation, current_generation)).item():
-            print(f"Iteration steps: {itr}")
             return next_generation, itr # right generation is saved twice so we delete the last element of trajectory list
         itr+=1
 
@@ -56,11 +68,9 @@ def generate_stream_cllm(
 ):
     # converge_step = []
     prompt = params["prompt"]
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    inputs = tokenizer(prompt, return_tensors="pt").to(device)
     max_new_tokens = int(params.get("max_new_tokens", 32))
     max_new_seq_len = int(params.get("max_new_seq_len", 1024))
-
-    # all_jacobian_trajectory = []
 
     prompt_len = torch.sum(inputs["attention_mask"], dim=-1)
     generation = inputs["input_ids"]
@@ -74,12 +84,12 @@ def generate_stream_cllm(
             input_ids = inputs['input_ids']
             input_masks = inputs['attention_mask']
         else:
-            input_masks = torch.ones_like(input_ids).to(input_ids.device)
+            input_masks = torch.ones_like(input_ids).to(device)
             for j in range(bsz):
                 input_masks[j][torch.sum(inputs["attention_mask"], dim=-1)[j] + itr*max_new_tokens:] = 0
 
         bsz = input_ids.shape[0]
-        eos_reached = torch.tensor([False] * bsz, device="cuda")
+        eos_reached = torch.tensor([False] * bsz, device=device)
 
         generation, iter_steps = get_jacobian_trajectory(
             model=model,
