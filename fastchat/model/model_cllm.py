@@ -17,6 +17,7 @@ from transformers import (
 from transformers.modeling_attn_mask_utils import _prepare_4d_causal_attention_mask
 import torch.nn.functional as F
 
+
 def get_jacobian_trajectory(
     model,
     tokenizer,
@@ -74,6 +75,7 @@ def get_jacobian_trajectory(
                 return next_generation, itr
 
         itr+=1
+
 
 def generate_stream_cllm(
     model,
@@ -137,7 +139,6 @@ def generate_stream_cllm(
         if all(eos_reached) or itr*max_new_tokens >= max_new_seq_len:
             break
         input_ids = generation[torch.where(eos_reached==False)[0].tolist(), ...] # delete samples with <eos> generated
-
 
     if all(eos_reached):
         finish_reason = "eos"
