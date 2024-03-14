@@ -2275,11 +2275,13 @@ class GemmaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemma")
 
+
 class CllmAdapter(BaseModelAdapter):
     """The model adapter for CLLM"""
+
     def match(self, model_path: str):
         return "consistency-llm" in model_path.lower()
-    
+
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(
             model_path,
@@ -2300,7 +2302,7 @@ class CllmAdapter(BaseModelAdapter):
         )
 
         return model, tokenizer
-    
+
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("cllm")
 

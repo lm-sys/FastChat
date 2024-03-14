@@ -1578,6 +1578,21 @@ register_conv_template(
     )
 )
 
+# Cllm chat template
+# reference:
+register_conv_template(
+    Conversation(
+        name="cllm",
+        system_message="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.CLLM,
+        sep=" ",
+        sep2="</s>",
+    )
+)
+
+
 # Llava-chatml
 # reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
 register_conv_template(
@@ -1602,20 +1617,6 @@ register_conv_template(
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="<end_of_turn>\n",
         stop_str="<end_of_turn>",
-    )
-)
-
-# Cllm chat template
-# reference: 
-register_conv_template(
-    Conversation(
-        name="cllm",
-        system_message="A chat between a curious user and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
-        roles=("USER", "ASSISTANT"),
-        sep_style=SeparatorStyle.CLLM,
-        sep=" ",
-        sep2="</s>",
     )
 )
 
