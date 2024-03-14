@@ -271,6 +271,8 @@ def clear_history(request: gr.Request):
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
         ip = request.headers["cf-connecting-ip"]
+    elif "x-forwarded-for" in request.headers:
+        ip = request.headers["x-forwarded-for"]
     else:
         ip = request.client.host
     return ip
