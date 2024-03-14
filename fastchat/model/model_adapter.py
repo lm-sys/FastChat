@@ -221,9 +221,9 @@ def load_model(
         if num_gpus != 1:
             kwargs["device_map"] = "auto"
             if max_gpu_memory is None:
-                kwargs["device_map"] = (
-                    "sequential"  # This is important for not the same VRAM sizes
-                )
+                kwargs[
+                    "device_map"
+                ] = "sequential"  # This is important for not the same VRAM sizes
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
                     i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -2275,13 +2275,11 @@ class GemmaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemma")
 
-
 class CllmAdapter(BaseModelAdapter):
     """The model adapter for CLLM"""
-
     def match(self, model_path: str):
         return "consistency-llm" in model_path.lower()
-
+    
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         config = AutoConfig.from_pretrained(
             model_path,
@@ -2302,10 +2300,9 @@ class CllmAdapter(BaseModelAdapter):
         )
 
         return model, tokenizer
-
+    
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("cllm")
-
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.

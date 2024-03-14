@@ -2,7 +2,6 @@
 Inference code for ChatGLM.
 Adapted from https://huggingface.co/THUDM/chatglm-6b/blob/main/modeling_chatglm.py.
 """
-
 import re
 
 import torch

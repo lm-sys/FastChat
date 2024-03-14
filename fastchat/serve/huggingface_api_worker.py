@@ -21,7 +21,6 @@ Register models in a JSON file with the following format:
 
 "model_path", "api_base", "token", and "context_length" are necessary, while others are optional.
 """
-
 import argparse
 import asyncio
 import json

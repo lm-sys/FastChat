@@ -2,7 +2,6 @@
 Usage:
 python3 show_result.py --mode [single|pairwise-baseline|pairwise-all]
 """
-
 import argparse
 import pandas as pd
 

@@ -4,7 +4,6 @@ Test the OpenAI compatible server
 Launch:
 python3 launch_openai_api_test_server.py
 """
-
 import warnings
 
 import openai

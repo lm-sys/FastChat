@@ -8,7 +8,6 @@ python3 -m fastchat.data.optional_clean --in input.json --out output.json --skip
 Requirement:
 pip3 install polyglot pyicu pycld2
 """
-
 import argparse
 import json
 import re

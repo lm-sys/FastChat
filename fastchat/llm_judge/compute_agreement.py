@@ -5,7 +5,6 @@ Usage:
 python compute_agreement.py --judges gpt4-pair human --votefiles human_judgments.json gpt4_pair_judgments.json
 python compute_agreement.py --judges human human --votefiles human_judgments.json
 """
-
 import argparse
 import json
 import os

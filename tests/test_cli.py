@@ -1,5 +1,4 @@
 """Test command line interface for model inference."""
-
 import argparse
 import os
 

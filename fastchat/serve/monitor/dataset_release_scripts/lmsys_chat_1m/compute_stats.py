@@ -2,7 +2,6 @@
 From colab:
 https://colab.research.google.com/drive/1oMdw_Lqgmd6DletSOLHsyD-Rc96cRShs?usp=sharing
 """
-
 import argparse
 import datetime
 import json

@@ -1,7 +1,6 @@
 """
 Download the pre-generated model answers and judgments for MT-bench.
 """
-
 import os
 
 from fastchat.utils import run_cmd

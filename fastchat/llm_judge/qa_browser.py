@@ -405,12 +405,12 @@ if __name__ == "__main__":
     model_answers = load_model_answers(answer_dir)
 
     # Load model judgments
-    model_judgments_normal_single = model_judgments_math_single = (
-        load_single_model_judgments(single_model_judgment_file)
-    )
-    model_judgments_normal_pairwise = model_judgments_math_pairwise = (
-        load_pairwise_model_judgments(pairwise_model_judgment_file)
-    )
+    model_judgments_normal_single = (
+        model_judgments_math_single
+    ) = load_single_model_judgments(single_model_judgment_file)
+    model_judgments_normal_pairwise = (
+        model_judgments_math_pairwise
+    ) = load_pairwise_model_judgments(pairwise_model_judgment_file)
 
     demo = build_demo()
     demo.queue(

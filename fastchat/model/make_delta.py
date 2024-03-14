@@ -4,7 +4,6 @@ Make the delta weights by subtracting base weights.
 Usage:
 python3 -m fastchat.model.make_delta --base ~/model_weights/llama-13b --target ~/model_weights/vicuna-13b --delta ~/model_weights/vicuna-13b-delta --hub-repo-id lmsys/vicuna-13b-delta-v1.1
 """
-
 import argparse
 
 import torch

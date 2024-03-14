@@ -1,7 +1,6 @@
 """
 Common utilities.
 """
-
 from asyncio import AbstractEventLoop
 from io import BytesIO
 import base64

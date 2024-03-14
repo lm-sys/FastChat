@@ -8,7 +8,6 @@ The key mechanism behind this scripts is:
     2, check the log of controller/worker/openai-api-server to ensure that the serve is launched properly.
 Note that a few of non-critical `fastchat.serve` cmd options are not supported currently.
 """
-
 import sys
 import os
 

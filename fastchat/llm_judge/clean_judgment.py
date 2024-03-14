@@ -1,7 +1,6 @@
 """
 Clean model judgment files.
 """
-
 import argparse
 import json
 

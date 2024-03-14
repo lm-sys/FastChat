@@ -3,7 +3,6 @@ Split the dataset into training and test set.
 
 Usage: python3 -m fastchat.data.split_train_test --in sharegpt.json
 """
-
 import argparse
 import json
 

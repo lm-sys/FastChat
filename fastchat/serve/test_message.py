@@ -1,5 +1,4 @@
 """Send a test message."""
-
 import argparse
 import json
 
