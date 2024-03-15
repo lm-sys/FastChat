@@ -663,3 +663,15 @@ register_model_info(
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
 )
+
+register_model_info(
+    [
+        "cllm/consistency-llm-7b-codesearchnet",
+        "cllm/consistency-llm-7b-gsm8k",
+        "cllm/consistency-llm-7b-sharegpt48k",
+        "cllm/consistency-llm-7b-spider",
+    ],
+    "consistency-llm",
+    "https://huggingface.co/cllm",
+    "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
+)

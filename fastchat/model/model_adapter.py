@@ -35,6 +35,8 @@ from fastchat.model.model_falcon import generate_stream_falcon
 from fastchat.model.model_yuan2 import generate_stream_yuan2
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.model_xfastertransformer import generate_stream_xft
+from fastchat.model.model_cllm import generate_stream_cllm
+
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
 )
@@ -393,6 +395,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_exllama = "exllama" in model_type
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
+    is_cllm = "consistency-llm" in model_path.lower()
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -406,6 +409,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_xft
     elif is_yuan:
         return generate_stream_yuan2
+    elif is_cllm:
+        return generate_stream_cllm
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -429,6 +434,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             is_exllama = "exllama" in base_model_type
             is_xft = "xft" in base_model_type
             is_yuan = "yuan" in base_model_type
+            is_cllm = "consistency-llm" in model_path.lower()
 
             generate_stream_function = generate_stream
             if is_chatglm:
@@ -443,6 +449,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
                 generate_stream_function = generate_stream_xft
             elif is_yuan:
                 generate_stream_function = generate_stream_yuan2
+            elif is_cllm:
+                generate_stream_function = generate_stream_cllm
             for x in generate_stream_function(
                 model,
                 tokenizer,
@@ -2268,6 +2276,37 @@ class GemmaAdapter(BaseModelAdapter):
         return get_conv_template("gemma")
 
 
+class CllmAdapter(BaseModelAdapter):
+    """The model adapter for CLLM"""
+
+    def match(self, model_path: str):
+        return "consistency-llm" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        config = AutoConfig.from_pretrained(
+            model_path,
+        )
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            model_max_length=2048,
+            padding_side="right",
+        )
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            device_map="cuda",
+        )
+
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cllm")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2358,6 +2397,7 @@ register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
 register_model_adapter(GemmaAdapter)
+register_model_adapter(CllmAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
