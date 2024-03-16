@@ -30,6 +30,7 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
 )
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -71,6 +72,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
     if ":" not in model_selectors[0]:
         for i in range(5):
