@@ -32,6 +32,7 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -40,7 +41,6 @@ from fastchat.utils import (
     parse_gradio_auth_creds,
     load_image,
 )
-
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -228,6 +228,7 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
             "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
@@ -566,6 +567,7 @@ def bot_response(
             "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
 
 block_css = """

@@ -28,11 +28,11 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
 )
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
 )
-
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -74,6 +74,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
 
 def leftvote_last_response(
