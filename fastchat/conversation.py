@@ -35,6 +35,7 @@ class SeparatorStyle(IntEnum):
     METAMATH = auto()
     YUAN2 = auto()
     GEMMA = auto()
+    DEFAULT = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -279,6 +280,14 @@ class Conversation:
                 else:
                     ret += "<start_of_turn>" + role + "\n"
             return ret
+        elif self.sep_style == SeparatorStyle.DEFAULT:
+            ret = system_prompt + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + "\n"
+                else:
+                    ret += role + ":"
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -504,7 +513,7 @@ register_conv_template(
         name="api_based_default",
         system_message="",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -793,7 +802,7 @@ register_conv_template(
         name="chatgpt",
         system_message="You are a helpful assistant.",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -804,7 +813,7 @@ register_conv_template(
         name="pplxai",
         system_message="Be precise and concise.",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -816,6 +825,29 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-haiku-20240307",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated in "
+            "August 2023 and it answers user questions about events before "
+            "August 2023 and after August 2023 the same way a highly informed "
+            "individual from August 2023 would if they were talking to someone "
+            "from {{currentDateTime}}. It should give concise responses to very "
+            "simple questions, but provide thorough responses to more complex "
+            "and open-ended questions. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly "
+            "pertinent to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
     )
 )
 
@@ -837,7 +869,7 @@ register_conv_template(
             "pertinent to the human's query."
         ),
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -869,7 +901,7 @@ register_conv_template(
             "to the human's query."
         ),
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -955,7 +987,7 @@ register_conv_template(
     Conversation(
         name="bard",
         roles=("0", "1"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -964,7 +996,7 @@ register_conv_template(
     Conversation(
         name="gemini",
         roles=("user", "model"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -1625,7 +1657,7 @@ register_conv_template(
         name="steerlm",
         system_message="",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )

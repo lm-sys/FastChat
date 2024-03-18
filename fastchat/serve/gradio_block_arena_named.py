@@ -176,7 +176,10 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    flagged = moderation_filter(text, model_list)
+    all_conv_text_left = states[0].conv.get_prompt()
+    all_conv_text_right = states[0].conv.get_prompt()
+    all_conv_text = all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    flagged = moderation_filter(all_conv_text, model_list)
     if flagged:
         logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
         # overwrite the original text

@@ -44,6 +44,7 @@ register_model_info(
     [
         "claude-3-sonnet-20240229",
         "claude-3-opus-20240229",
+        "claude-3-haiku-20240307",
         "claude-2.1",
         "claude-2.0",
         "claude-1",
@@ -65,20 +66,6 @@ register_model_info(
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
     "A Mixture-of-Experts model by Mistral AI",
-)
-
-register_model_info(
-    ["olmo-7b-instruct"],
-    "OLMo-7B",
-    "https://huggingface.co/allenai/OLMo-7B-Instruct",
-    "OLMo by Allen AI",
-)
-
-register_model_info(
-    ["gemma-7b-it", "gemma-2b-it"],
-    "Gemma",
-    "https://blog.google/technology/developers/gemma-open-models/",
-    "Gemma by Google",
 )
 
 register_model_info(
@@ -180,6 +167,41 @@ register_model_info(
 )
 
 register_model_info(
+    ["olmo-7b-instruct"],
+    "OLMo-7B",
+    "https://huggingface.co/allenai/OLMo-7B-Instruct",
+    "OLMo by Allen AI",
+)
+
+register_model_info(
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
+)
+
+register_model_info(
+    [
+        "vicuna-33b",
+        "vicuna-33b-v1.3",
+        "vicuna-13b",
+        "vicuna-13b-v1.5",
+        "vicuna-7b",
+        "vicuna-7b-v1.5",
+    ],
+    "Vicuna",
+    "https://lmsys.org/blog/2023-03-30-vicuna/",
+    "A chat assistant fine-tuned on user-shared conversations by LMSYS",
+)
+
+register_model_info(
+    ["yi-34b-chat", "yi-6b-chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai/Yi-34B-Chat",
+    "A large language model by 01 AI",
+)
+
+register_model_info(
     [
         "codellama-70b-instruct",
         "codellama-34b-instruct",
@@ -253,27 +275,6 @@ register_model_info(
     "Tulu 2",
     "https://huggingface.co/allenai/tulu-2-dpo-70b",
     "An instruction and RLHF model by UW/AllenAI",
-)
-
-register_model_info(
-    ["yi-34b-chat", "yi-6b-chat"],
-    "Yi-Chat",
-    "https://huggingface.co/01-ai/Yi-34B-Chat",
-    "A large language model by 01 AI",
-)
-
-register_model_info(
-    [
-        "vicuna-33b",
-        "vicuna-33b-v1.3",
-        "vicuna-13b",
-        "vicuna-13b-v1.5",
-        "vicuna-7b",
-        "vicuna-7b-v1.5",
-    ],
-    "Vicuna",
-    "https://lmsys.org/blog/2023-03-30-vicuna/",
-    "A chat assistant fine-tuned on user-shared conversations by LMSYS",
 )
 
 register_model_info(

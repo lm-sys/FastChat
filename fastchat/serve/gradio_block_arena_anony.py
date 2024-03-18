@@ -169,10 +169,12 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0613": 4,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 4,
-    "gpt-4-turbo-browsing": 6,
+    "gpt-4-turbo-browsing": 4,
     "gpt-3.5-turbo-0125": 4,
-    "claude-3-opus-20240229": 6,
-    "claude-3-sonnet-20240229": 6,
+    "claude-3-opus-20240229": 4,
+    "claude-3-sonnet-20240229": 4,
+    "claude-3-haiku-20240307": 6,
+    "claude-2.1": 2,
     "gemini-pro-dev-api": 2,
     "qwen1.5-72b-chat": 4,
     "qwen1.5-4b-chat": 2,
@@ -267,12 +269,25 @@ BATTLE_TARGETS = {
         "mixtral-8x7b-instruct-v0.1",
         "claude-1",
     },
+    "claude-3-haiku-20240307": {
+        # "gpt-4-0125-preview",
+        # "gpt-4-0613",
+        "gpt-4-1106-preview",
+        "gpt-4-0314",
+        "qwen1.5-72b-chat",
+        "claude-2.1",
+        # "claude-3-sonnet-20240229",
+        # "gpt-3.5-turbo-0125",
+        # "mixtral-8x7b-instruct-v0.1",
+        "gemini-pro-dev-api",
+        "llama-2-70b-chat",
+    },
     "gemini-pro": {"gpt-4-1106-preview", "gpt-4-0613", "gpt-3.5-turbo-0125"},
     "gemini-pro-dev-api": {
         "gpt-4-0125-preview",
         "gpt-4-0613",
         "gpt-3.5-turbo-0125",
-        "bard-feb-2024",
+        "claude-3-haiku-20240307",
     },
     "bard-jan-24-gemini-pro": {
         "gpt-4-0125-preview",
@@ -319,10 +334,11 @@ SAMPLING_BOOST_MODELS = [
     # "gpt-3.5-turbo-0125",
     # "gemma-7b-it",
     # "gemma-2b-it",
-    "mistral-large-2402",
+    # "mistral-large-2402",
     # "olmo-7b-instruct",
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307",
 ]
 
 # outage models won't be sampled.
@@ -338,14 +354,13 @@ OUTAGE_MODELS = [
     "openhermes-2.5-mistral-7b",
     "claude-2.0",
     "yi-34b-chat",
-    "deluxe-chat-v1.2",
 ]
 
 
 def get_sample_weight(model):
     if model in OUTAGE_MODELS:
         return 0
-    weight = SAMPLING_WEIGHTS.get(model, 0.1)
+    weight = SAMPLING_WEIGHTS.get(model, 0)
     if model in SAMPLING_BOOST_MODELS:
         weight *= 5
     return weight
@@ -428,7 +443,10 @@ def add_text(
 
     model_list = [states[i].model_name for i in range(num_sides)]
     # turn on moderation in battle mode
-    flagged = moderation_filter(text, model_list, do_moderation=True)
+    all_conv_text_left = states[0].conv.get_prompt()
+    all_conv_text_right = states[0].conv.get_prompt()
+    all_conv_text = all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text

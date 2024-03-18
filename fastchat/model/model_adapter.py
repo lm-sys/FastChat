@@ -55,6 +55,7 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2",
     "claude-2.0",
     "claude-2.1",
+    "claude-3-haiku-20240307",
     "claude-3-sonnet-20240229",
     "claude-3-opus-20240229",
     "claude-instant-1",
@@ -1139,6 +1140,8 @@ class ClaudeAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "claude-3-haiku-20240307" in model_path:
+            return get_conv_template("claude-3-haiku-20240307")
         if "claude-3-sonnet-20240229" in model_path:
             return get_conv_template("claude-3-sonnet-20240229")
         if "claude-3-opus-20240229" in model_path:

@@ -9,14 +9,16 @@ import asyncio
 
 REFRESH_INTERVAL_SEC = 60
 LOG_DIR_LIST = [
-    "/mnt/data/fastchat_logs/server0",
-    "/mnt/data/fastchat_logs/server1",
-    "/mnt/data/fastchat_logs/server2",
-    "/mnt/data/fastchat_logs/server3",
-    "/mnt/data/fastchat_logs/server4",
-    "/mnt/data/fastchat_logs/server5",
-    "/mnt/data/fastchat_logs/server6",
-    "/mnt/data/fastchat_logs/server7",
+    "/home/gcpuser/fastchat_logs/server0",
+    "/home/gcpuser/fastchat_logs/server1",
+    "/home/gcpuser/fastchat_logs/server2",
+    "/home/gcpuser/fastchat_logs/server3",
+    "/home/gcpuser/fastchat_logs/server4",
+    "/home/gcpuser/fastchat_logs/server5",
+    "/home/gcpuser/fastchat_logs/server6",
+    "/home/gcpuser/fastchat_logs/server7",
+    "/home/gcpuser/fastchat_logs/server8",
+    "/home/gcpuser/fastchat_logs/server9",
 ]
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
@@ -31,12 +33,14 @@ class Monitor:
         self.model_call_limit_global = {
             "gpt-4-1106-preview": 300,
             "gpt-4-0125-preview": 300,
-            "gpt-4-turbo-browsing": 500,
+            "gpt-4-turbo-browsing": 200,
+            "mistral-large-2402": 300,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 8,
             "gpt-4-0125-preview": 8,
-            "gpt-4-turbo-browsing": 16,
+            "gpt-4-turbo-browsing": 8,
+            "mistral-large-2402": 8,
             "claude-3-opus-20240229": 32,
         }
 

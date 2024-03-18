@@ -365,7 +365,10 @@ def anthropic_message_api_stream_iter(
 ):
     import anthropic
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = anthropic.Anthropic(
+        api_key=os.environ["ANTHROPIC_API_KEY"],
+        max_retries=5,
+    )
     # Make requests
     gen_params = {
         "model": model_name,
