@@ -396,6 +396,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
     is_cllm = "consistency-llm" in model_path.lower()
+    is_instructor = "instructor" in model_path.lower()
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -411,6 +412,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_yuan2
     elif is_cllm:
         return generate_stream_cllm
+    elif is_instructor:
+        return InstructorAdapter.generate_stream_instructor
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -2307,6 +2310,60 @@ class CllmAdapter(BaseModelAdapter):
         return get_conv_template("cllm")
 
 
+class InstructorAdapter(BaseModelAdapter):
+    """Model adapter for Instructor models (e.g., hkunlp/instructor-xl)."""
+
+    from InstructorEmbedding import INSTRUCTOR
+
+    loaded_models = {}
+
+    @torch.inference_mode()
+    def generate_stream_instructor(
+        self,
+        model,
+        tokenizer,
+        params,
+        device,
+        context_len=2048,
+        stream_interval=2,
+        judge_sent_end=False,
+    ):
+        raise NotImplementedError(
+            f"Stream is unsupported, Instructor models only generate embeddings."
+        )
+        yield
+
+    def get_parent(self, model_path):
+        model = None
+        if model_path in InstructorAdapter.loaded_models:
+            model = InstructorAdapter.loaded_models[model_path]
+        return model
+
+    def match(self, model_path: str):
+        return "hkunlp" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        # seq_model is an nn.Sequential from sentence_transformer
+        seq_models = None
+        if model_path in InstructorAdapter.loaded_models:
+            seq_models = InstructorAdapter.loaded_models[model_path]
+        else:
+            seq_models = InstructorAdapter.INSTRUCTOR(model_path)
+            InstructorAdapter.loaded_models[model_path] = seq_models
+
+        # We would have to access INSTRUCTOR_Transformer for the tokenizer
+        # but this isn't how this is suppose to be used.
+        # returning it here to ensure compliance
+        model = seq_models[0].auto_model
+        model.get_parent = self.get_parent
+        tokenizer = seq_models[0].tokenizer
+
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("raw")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2398,6 +2455,7 @@ register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(CllmAdapter)
+register_model_adapter(InstructorAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

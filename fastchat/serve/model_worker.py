@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from transformers import set_seed
 import uvicorn
 
-from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
+from fastchat.constants import ErrorCode, SERVER_ERROR_MSG, UNSUPPORTED_STREAM_MSG
 from fastchat.model.model_adapter import (
     load_model,
     add_model_args,
@@ -136,6 +136,12 @@ class ModelWorker(BaseModelWorker):
                 "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
             }
             yield json.dumps(ret).encode() + b"\0"
+        except NotImplementedError as e:
+            ret = {
+                "text": f"{UNSUPPORTED_STREAM_MSG}\n\n({e})",
+                "error_code": ErrorCode.CONTROLLER_STREAM_UNSUPPORTED,
+            }
+            yield json.dumps(ret).encode() + b"\0"
         except (ValueError, RuntimeError) as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
@@ -195,85 +201,100 @@ class ModelWorker(BaseModelWorker):
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
                 "is_robert": "robert" in str(type(self.model)),
+                "is_instructor":  hasattr(self.model, "get_parent") and "InstructorEmbedding" in str(type(self.model.get_parent(params["model"])))
             }
 
-            if self.embed_in_truncate:
-                encoding = tokenizer.batch_encode_plus(
-                    params["input"],
-                    padding=True,
-                    truncation="longest_first",
-                    return_tensors="pt",
-                    max_length=self.context_len,
-                )
+            if model_type_dict["is_instructor"]:
+                seq_model = self.model.get_parent(params["model"])
+                embedding_tensors = seq_model.encode(params["input"], output_value = None, normalize_embeddings=True)
+                base64_encode = params.get("encoding_format", None)
+
+                # Compute normalized embeddings directly
+                normalized_embeddings = torch.stack([
+                    F.normalize(embed["sentence_embedding"], p=2, dim=0)
+                    for embed in embedding_tensors
+                ])
+
+                # Return the total tokens. ret["token_num"] must only be a single number, cannot be a list of numbers.
+                ret["token_num"] =  sum(torch.sum(embed["attention_mask"]).item() for embed in embedding_tensors)
             else:
-                encoding = tokenizer.batch_encode_plus(
-                    params["input"], padding=True, return_tensors="pt"
-                )
-            input_ids = encoding["input_ids"].to(self.device)
-            attention_mask = input_ids != tokenizer.pad_token_id
+                if self.embed_in_truncate:
+                    encoding = tokenizer.batch_encode_plus(
+                        params["input"],
+                        padding=True,
+                        truncation="longest_first",
+                        return_tensors="pt",
+                        max_length=self.context_len,
+                    )
+                else:
+                    encoding = tokenizer.batch_encode_plus(
+                        params["input"], padding=True, return_tensors="pt"
+                    )
+                input_ids = encoding["input_ids"].to(self.device)
+                attention_mask = input_ids != tokenizer.pad_token_i
 
-            base64_encode = params.get("encoding_format", None)
+                base64_encode = params.get("encoding_format", None)
 
-            if self.embed_in_truncate:
-                embedding, token_num = self.__process_embed_chunk(
-                    input_ids, attention_mask, **model_type_dict
-                )
-                if (
-                    not hasattr(self.model, "use_cls_pooling")
-                    or not self.model.use_cls_pooling
-                ):
-                    embedding = embedding / token_num
-                normalized_embeddings = F.normalize(embedding, p=2, dim=1)
-                ret["token_num"] = token_num
-            else:
-                all_embeddings = []
-                all_token_num = 0
-                for i in range(0, input_ids.size(1), self.context_len):
-                    chunk_input_ids = input_ids[:, i : i + self.context_len]
-                    chunk_attention_mask = attention_mask[:, i : i + self.context_len]
-
-                    # add cls token and mask to get cls embedding
-                    if (
-                        hasattr(self.model, "use_cls_pooling")
-                        and self.model.use_cls_pooling
-                    ):
-                        cls_tokens = (
-                            torch.zeros(
-                                (chunk_input_ids.size(0), 1),
-                                dtype=chunk_input_ids.dtype,
-                                device=chunk_input_ids.device,
-                            )
-                            + tokenizer.cls_token_id
-                        )
-                        chunk_input_ids = torch.cat(
-                            [cls_tokens, chunk_input_ids], dim=-1
-                        )
-                        mask = torch.ones(
-                            (chunk_attention_mask.size(0), 1),
-                            dtype=chunk_attention_mask.dtype,
-                            device=chunk_attention_mask.device,
-                        )
-                        chunk_attention_mask = torch.cat(
-                            [mask, chunk_attention_mask], dim=-1
-                        )
-
-                    chunk_embeddings, token_num = self.__process_embed_chunk(
-                        chunk_input_ids, chunk_attention_mask, **model_type_dict
+                if self.embed_in_truncate:
+                    embedding, token_num = self.__process_embed_chunk(
+                        input_ids, attention_mask, **model_type_dict
                     )
                     if (
-                        hasattr(self.model, "use_cls_pooling")
-                        and self.model.use_cls_pooling
+                        not hasattr(self.model, "use_cls_pooling")
+                        or not self.model.use_cls_pooling
                     ):
-                        all_embeddings.append(chunk_embeddings * token_num)
-                    else:
-                        all_embeddings.append(chunk_embeddings)
-                    all_token_num += token_num
+                        embedding = embedding / token_num
+                    normalized_embeddings = F.normalize(embedding, p=2, dim=1)
+                    ret["token_num"] = token_num
+                else:
+                    all_embeddings = []
+                    all_token_num = 0
+                    for i in range(0, input_ids.size(1), self.context_len):
+                        chunk_input_ids = input_ids[:, i : i + self.context_len]
+                        chunk_attention_mask = attention_mask[:, i : i + self.context_len]
 
-                all_embeddings_tensor = torch.stack(all_embeddings)
-                embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
-                normalized_embeddings = F.normalize(embedding, p=2, dim=1)
+                        # add cls token and mask to get cls embedding
+                        if (
+                            hasattr(self.model, "use_cls_pooling")
+                            and self.model.use_cls_pooling
+                        ):
+                            cls_tokens = (
+                                torch.zeros(
+                                    (chunk_input_ids.size(0), 1),
+                                    dtype=chunk_input_ids.dtype,
+                                    device=chunk_input_ids.device,
+                                )
+                                + tokenizer.cls_token_id
+                            )
+                            chunk_input_ids = torch.cat(
+                                [cls_tokens, chunk_input_ids], dim=-1
+                            )
+                            mask = torch.ones(
+                                (chunk_attention_mask.size(0), 1),
+                                dtype=chunk_attention_mask.dtype,
+                                device=chunk_attention_mask.device,
+                            )
+                            chunk_attention_mask = torch.cat(
+                                [mask, chunk_attention_mask], dim=-1
+                            )
 
-                ret["token_num"] = all_token_num
+                        chunk_embeddings, token_num = self.__process_embed_chunk(
+                            chunk_input_ids, chunk_attention_mask, **model_type_dict
+                        )
+                        if (
+                            hasattr(self.model, "use_cls_pooling")
+                            and self.model.use_cls_pooling
+                        ):
+                            all_embeddings.append(chunk_embeddings * token_num)
+                        else:
+                            all_embeddings.append(chunk_embeddings)
+                        all_token_num += token_num
+
+                    all_embeddings_tensor = torch.stack(all_embeddings)
+                    embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
+                    normalized_embeddings = F.normalize(embedding, p=2, dim=1)
+
+                    ret["token_num"] = all_token_num
 
             if base64_encode == "base64":
                 out_embeddings = self.__encode_base64(normalized_embeddings)
