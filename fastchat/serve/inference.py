@@ -336,6 +336,7 @@ class ChatIO(abc.ABC):
 
 def chat_loop(
     model_path: str,
+    state_dict: str,
     device: str,
     num_gpus: int,
     max_gpu_memory: str,
@@ -360,6 +361,7 @@ def chat_loop(
     # Model
     model, tokenizer = load_model(
         model_path,
+        state_dict=state_dict,
         device=device,
         num_gpus=num_gpus,
         max_gpu_memory=max_gpu_memory,

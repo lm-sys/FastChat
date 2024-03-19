@@ -253,6 +253,7 @@ def create_multi_model_worker():
             model_names,
             args.limit_worker_concurrency,
             args.no_register,
+            state_dict=args.state_dict,
             device=args.device,
             num_gpus=args.num_gpus,
             max_gpu_memory=args.max_gpu_memory,
