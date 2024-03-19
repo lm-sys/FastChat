@@ -240,7 +240,9 @@ def process_input(model_name, inp):
                 try:
                     decoding = tiktoken.model.encoding_for_model(model_name)
                 except KeyError:
-                    logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                    logger.warning(
+                        "Warning: model not found. Using cl100k_base encoding."
+                    )
                     model = "cl100k_base"
                     decoding = tiktoken.get_encoding(model)
                 inp = [decoding.decode(inp)]
@@ -248,7 +250,9 @@ def process_input(model_name, inp):
                 try:
                     decoding = tiktoken.model.encoding_for_model(model_name)
                 except KeyError:
-                    logger.warning("Warning: model not found. Using cl100k_base encoding.")
+                    logger.warning(
+                        "Warning: model not found. Using cl100k_base encoding."
+                    )
                     model = "cl100k_base"
                     decoding = tiktoken.get_encoding(model)
                 inp = [decoding.decode(text) for text in inp]

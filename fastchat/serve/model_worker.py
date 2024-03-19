@@ -201,22 +201,31 @@ class ModelWorker(BaseModelWorker):
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
                 "is_robert": "robert" in str(type(self.model)),
-                "is_instructor":  hasattr(self.model, "get_parent") and "InstructorEmbedding" in str(type(self.model.get_parent(params["model"])))
+                "is_instructor": hasattr(self.model, "get_parent")
+                and "InstructorEmbedding"
+                in str(type(self.model.get_parent(params["model"]))),
             }
 
             if model_type_dict["is_instructor"]:
                 seq_model = self.model.get_parent(params["model"])
-                embedding_tensors = seq_model.encode(params["input"], output_value = None, normalize_embeddings=True)
+                embedding_tensors = seq_model.encode(
+                    params["input"], output_value=None, normalize_embeddings=True
+                )
                 base64_encode = params.get("encoding_format", None)
 
                 # Compute normalized embeddings directly
-                normalized_embeddings = torch.stack([
-                    F.normalize(embed["sentence_embedding"], p=2, dim=0)
-                    for embed in embedding_tensors
-                ])
+                normalized_embeddings = torch.stack(
+                    [
+                        F.normalize(embed["sentence_embedding"], p=2, dim=0)
+                        for embed in embedding_tensors
+                    ]
+                )
 
                 # Return the total tokens. ret["token_num"] must only be a single number, cannot be a list of numbers.
-                ret["token_num"] =  sum(torch.sum(embed["attention_mask"]).item() for embed in embedding_tensors)
+                ret["token_num"] = sum(
+                    torch.sum(embed["attention_mask"]).item()
+                    for embed in embedding_tensors
+                )
             else:
                 if self.embed_in_truncate:
                     encoding = tokenizer.batch_encode_plus(
@@ -251,7 +260,9 @@ class ModelWorker(BaseModelWorker):
                     all_token_num = 0
                     for i in range(0, input_ids.size(1), self.context_len):
                         chunk_input_ids = input_ids[:, i : i + self.context_len]
-                        chunk_attention_mask = attention_mask[:, i : i + self.context_len]
+                        chunk_attention_mask = attention_mask[
+                            :, i : i + self.context_len
+                        ]
 
                         # add cls token and mask to get cls embedding
                         if (
