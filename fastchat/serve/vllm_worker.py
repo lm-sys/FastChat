@@ -82,6 +82,7 @@ class VLLMWorker(BaseModelWorker):
         echo = params.get("echo", True)
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
+        logprobs = params.get("logprobs", None)
 
         request = params.get("request", None)
 
@@ -115,6 +116,7 @@ class VLLMWorker(BaseModelWorker):
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             best_of=best_of,
+            logprobs=logprobs
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
@@ -145,6 +147,25 @@ class VLLMWorker(BaseModelWorker):
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
             )
+            def fix_logprobs(self, logprobs):
+                def make_json_compliant(value):
+                    """
+                    Converts a Python float to a JSON-compliant value.
+                    - Positive infinity is replaced with a very large number.
+                    - Negative infinity is replaced with a very small number.
+                    - NaN (not a number) is replaced witha very small number.
+                    """
+                    if value == float('inf'):
+                        return 1e30 
+                    elif value == float('-inf'):
+                        return -1e30  
+                    elif value != value:  # Check for NaN
+                        return -1e30
+                    return value
+                return {self.tokenizer.decode(key): make_json_compliant(value) for key, value in logprobs.items()}
+            logprobs = None
+            if request_output.outputs[-1].logprobs:
+                logprobs = [fix_logprobs(self, output) for output in request_output.outputs[-1].logprobs]
             ret = {
                 "text": text_outputs,
                 "error_code": 0,
@@ -153,6 +174,7 @@ class VLLMWorker(BaseModelWorker):
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 },
+                "logprobs": logprobs,
                 "cumulative_logprob": [
                     output.cumulative_logprob for output in request_output.outputs
                 ],
