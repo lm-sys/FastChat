@@ -24,11 +24,12 @@ from fastchat.constants import (
     WORKER_API_TIMEOUT,
     ErrorCode,
     SERVER_ERROR_MSG,
+    CONTROLLER_NAME_PREFIX,
 )
 from fastchat.utils import build_logger
 
 
-logger = build_logger("controller", "controller.log")
+logger = build_logger("controller", CONTROLLER_NAME_PREFIX + "controller.log")
 
 
 class DispatchMethod(Enum):
