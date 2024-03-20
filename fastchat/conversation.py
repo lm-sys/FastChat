@@ -733,6 +733,25 @@ register_conv_template(
     )
 )
 
+# Hermes-RWKV-5-Eagle default template
+register_conv_template(
+    Conversation(
+        name="hermes-rwkv-v5",
+        roles=("\x16user", "\x16assistant"),
+        # messages=(
+        #     ("\x16user", "hi"),
+        #     (
+        #         "\x17assistant",
+        #         "Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.",
+        #     ),
+        # ),
+        offset=2,
+        sep_style=SeparatorStyle.RWKV,
+        sep="\x17",
+        # stop_str="\n\n",
+    )
+)
+
 # Buddy default template
 register_conv_template(
     Conversation(
