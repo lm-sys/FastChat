@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # v2.8 with updates for the Vicuna fastchat install. Added additional python packages for Gradio Web Interface,
 # moved python package install to a requirements.txt and added a Healthcheck component.
 # Added Python_Cude_Alloc_Conf, and path for use of cuda. Added signature and other ignores for ubuntu and nvidia repo errors
@@ -52,3 +53,12 @@ RUN pip install -r requirements.txt && rm -rf /root/.cache/pip/*
 
 # Add healthcheck (replace with your own healthcheck if not a web server on port 8080)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/ || exit 1
+=======
+FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04
+
+RUN apt-get update -y && apt-get install -y python3.9 python3.9-distutils curl
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python3.9 get-pip.py
+RUN pip3 install fschat
+RUN pip3 install fschat[model_worker,webui] pydantic==1.10.13
+>>>>>>> main
