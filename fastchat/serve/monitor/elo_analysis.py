@@ -6,7 +6,6 @@ import math
 import pickle
 from pytz import timezone
 
-import gdown
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -23,21 +22,21 @@ pd.options.display.float_format = "{:.2f}".format
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
 
-    for rd, model_a, model_b, win in battles[
-        ["model_a", "model_b", "win"]
+    for rd, model_a, model_b, winner in battles[
+        ["model_a", "model_b", "winner"]
     ].itertuples():
         ra = rating[model_a]
         rb = rating[model_b]
         ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
         eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
-        if win == "model_a":
+        if winner == "model_a":
             sa = 1
-        elif win == "model_b":
+        elif winner == "model_b":
             sa = 0
-        elif win == "tie" or win == "tie (bothbad)":
+        elif winner == "tie" or winner == "tie (bothbad)":
             sa = 0.5
         else:
-            raise Exception(f"unexpected vote {win}")
+            raise Exception(f"unexpected vote {winner}")
         rating[model_a] += K * (sa - ea)
         rating[model_b] += K * (1 - sa - eb)
 
@@ -48,20 +47,21 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     rows = []
     for i in tqdm(range(num_round), desc="bootstrap"):
         tmp_battles = battles.sample(frac=1.0, replace=True)
-        # tmp_battles = tmp_battles.sort_values(ascending=True, by=["tstamp"])
         rows.append(func_compute_elo(tmp_battles))
     df = pd.DataFrame(rows)
     return df[df.median().sort_values(ascending=False).index]
 
 
-def get_elo_from_bootstrap(bootstrap_df):
-    return dict(bootstrap_df.quantile(0.5))
+def get_median_elo_from_bootstrap(bootstrap_df):
+    median = dict(bootstrap_df.quantile(0.5))
+    median = {k: int(v + 0.5) for k, v in median.items()}
+    return median
 
 
-def compute_pairwise_win_fraction(battles, model_order):
+def compute_pairwise_win_fraction(battles, model_order, limit_show_number=None):
     # Times each model wins as Model A
     a_win_ptbl = pd.pivot_table(
-        battles[battles["win"] == "model_a"],
+        battles[battles["winner"] == "model_a"],
         index="model_a",
         columns="model_b",
         aggfunc="size",
@@ -70,7 +70,7 @@ def compute_pairwise_win_fraction(battles, model_order):
 
     # Table counting times each model wins as Model B
     b_win_ptbl = pd.pivot_table(
-        battles[battles["win"] == "model_b"],
+        battles[battles["winner"] == "model_b"],
         index="model_a",
         columns="model_b",
         aggfunc="size",
@@ -91,6 +91,9 @@ def compute_pairwise_win_fraction(battles, model_order):
     if model_order is None:
         prop_wins = row_beats_col_freq.mean(axis=1).sort_values(ascending=False)
         model_order = list(prop_wins.keys())
+
+    if limit_show_number is not None:
+        model_order = model_order[:limit_show_number]
 
     # Arrange ordering according to proprition of wins
     row_beats_col = row_beats_col_freq.loc[model_order, model_order]
@@ -125,8 +128,8 @@ def visualize_pairwise_win_fraction(battles, model_order):
         row_beats_col,
         color_continuous_scale="RdBu",
         text_auto=".2f",
-        height=600,
-        width=600,
+        height=700,
+        width=700,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -150,8 +153,8 @@ def visualize_battle_count(battles, model_order):
     fig = px.imshow(
         battle_counts.loc[model_order, model_order],
         text_auto=True,
-        height=600,
-        width=600,
+        height=700,
+        width=700,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -166,13 +169,15 @@ def visualize_battle_count(battles, model_order):
     return fig
 
 
-def visualize_average_win_rate(battles):
-    row_beats_col_freq = compute_pairwise_win_fraction(battles, None)
+def visualize_average_win_rate(battles, limit_show_number):
+    row_beats_col_freq = compute_pairwise_win_fraction(
+        battles, None, limit_show_number=limit_show_number
+    )
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        height=400,
-        width=600,
+        height=500,
+        width=700,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
@@ -180,7 +185,7 @@ def visualize_average_win_rate(battles):
     return fig
 
 
-def visualize_bootstrap_elo_rating(df):
+def visualize_bootstrap_elo_rating(df, limit_show_number):
     bars = (
         pd.DataFrame(
             dict(
@@ -192,6 +197,7 @@ def visualize_bootstrap_elo_rating(df):
         .reset_index(names="model")
         .sort_values("rating", ascending=False)
     )
+    bars = bars[:limit_show_number]
     bars["error_y"] = bars["upper"] - bars["rating"]
     bars["error_y_minus"] = bars["rating"] - bars["lower"]
     bars["rating_rounded"] = np.round(bars["rating"], 2)
@@ -202,8 +208,8 @@ def visualize_bootstrap_elo_rating(df):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        height=400,
-        width=600,
+        height=500,
+        width=700,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
@@ -214,24 +220,30 @@ def report_elo_analysis_results(battles_json):
     battles = battles.sort_values(ascending=True, by=["tstamp"])
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)
-    battles_no_ties = battles[~battles["win"].str.contains("tie")]
+    battles_no_ties = battles[~battles["winner"].str.contains("tie")]
 
     # Online update
     elo_rating_online = compute_elo(battles)
 
     # Bootstrap
     bootstrap_df = get_bootstrap_result(battles, compute_elo)
-    elo_rating_median = get_elo_from_bootstrap(bootstrap_df)
-    elo_rating_median = {k: int(v + 0.5) for k, v in elo_rating_median.items()}
-    model_order = list(elo_rating_online.keys())
-    model_order.sort(key=lambda k: -elo_rating_online[k])
+    elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
+    model_order = list(elo_rating_median.keys())
+    model_order.sort(key=lambda k: -elo_rating_median[k])
+
+    limit_show_number = 25  # limit show number to make plots smaller
+    model_order = model_order[:limit_show_number]
 
     # Plots
-    leaderboard_table = visualize_leaderboard_table(elo_rating_online)
+    leaderboard_table = visualize_leaderboard_table(elo_rating_median)
     win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
     battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
-    average_win_rate_bar = visualize_average_win_rate(battles_no_ties)
-    bootstrap_elo_rating = visualize_bootstrap_elo_rating(bootstrap_df)
+    average_win_rate_bar = visualize_average_win_rate(
+        battles_no_ties, limit_show_number
+    )
+    bootstrap_elo_rating = visualize_bootstrap_elo_rating(
+        bootstrap_df, limit_show_number
+    )
 
     last_updated_tstamp = battles["tstamp"].max()
     last_updated_datetime = datetime.datetime.fromtimestamp(
@@ -247,6 +259,7 @@ def report_elo_analysis_results(battles_json):
         "average_win_rate_bar": average_win_rate_bar,
         "bootstrap_elo_rating": bootstrap_elo_rating,
         "last_updated_datetime": last_updated_datetime,
+        "last_updated_tstamp": last_updated_tstamp,
     }
 
 
@@ -262,6 +275,8 @@ if __name__ == "__main__":
     parser.add_argument("--clean-battle-file", type=str)
     parser.add_argument("--max-num-files", type=int)
     args = parser.parse_args()
+
+    np.random.seed(42)
 
     if args.clean_battle_file:
         # Read data from a cleaned battle files
@@ -279,5 +294,10 @@ if __name__ == "__main__":
     pretty_print_elo_rating(results["elo_rating_median"])
     print(f"last update : {results['last_updated_datetime']}")
 
-    with open("elo_results.pkl", "wb") as fout:
+    last_updated_tstamp = results["last_updated_tstamp"]
+    cutoff_date = datetime.datetime.fromtimestamp(
+        last_updated_tstamp, tz=timezone("US/Pacific")
+    ).strftime("%Y%m%d")
+
+    with open(f"elo_results_{cutoff_date}.pkl", "wb") as fout:
         pickle.dump(results, fout)

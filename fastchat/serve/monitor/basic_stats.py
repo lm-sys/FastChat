@@ -6,22 +6,24 @@ import os
 from pytz import timezone
 import time
 
-import pandas as pd
+import pandas as pd  # pandas>=2.0.3
 import plotly.express as px
 import plotly.graph_objects as go
 from tqdm import tqdm
 
 
+NUM_SERVERS = 14
+
+
 def get_log_files(max_num_files=None):
     dates = []
-    for month in [4, 5, 6]:
+    for month in range(4, 12):
         for day in range(1, 33):
             dates.append(f"2023-{month:02d}-{day:02d}")
 
-    num_servers = 12
     filenames = []
     for d in dates:
-        for i in range(num_servers):
+        for i in range(NUM_SERVERS):
             name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
             if os.path.exists(name):
                 filenames.append(name)
@@ -149,12 +151,12 @@ def report_basic_stats(log_files):
     anony_vote_hist_all = anony_vote_df_all["type"].value_counts()
     anony_vote_df_1_day = get_anony_vote_df(df_1_day)
     anony_vote_hist_1_day = anony_vote_df_1_day["type"].value_counts()
-    anony_vote_df_1_hour = get_anony_vote_df(df_1_hour)
-    anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
+    # anony_vote_df_1_hour = get_anony_vote_df(df_1_hour)
+    # anony_vote_hist_1_hour = anony_vote_df_1_hour["type"].value_counts()
     anony_vote_hist = merge_counts(
-        [anony_vote_hist_all, anony_vote_hist_1_day, anony_vote_hist_1_hour],
+        [anony_vote_hist_all, anony_vote_hist_1_day],
         on="type",
-        names=["All", "Last Day", "Last Hour"],
+        names=["All", "Last Day"],
     )
     anony_vote_hist_md = anony_vote_hist.to_markdown(index=False, tablefmt="github")
 

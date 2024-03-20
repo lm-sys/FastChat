@@ -17,4 +17,4 @@ if __name__ == "__main__":
         data = json.load(fin)
 
     with open(args.out_file, "w") as fout:
-        json.dump(data, fout, indent=2)
+        json.dump(data, fout, indent=2, ensure_ascii=False)

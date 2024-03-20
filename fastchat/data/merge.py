@@ -6,7 +6,6 @@ Usage: python3 -m fastchat.data.merge --in file1.json file2.json --out merged.js
 
 import argparse
 import json
-from typing import Dict, Sequence, Optional
 
 
 if __name__ == "__main__":
@@ -20,4 +19,5 @@ if __name__ == "__main__":
         content = json.load(open(in_file, "r"))
         new_content.extend(content)
 
-    json.dump(new_content, open(args.out_file, "w"), indent=2)
+    print(f"#out: {len(new_content)}")
+    json.dump(new_content, open(args.out_file, "w"), indent=2, ensure_ascii=False)
