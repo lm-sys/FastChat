@@ -12,10 +12,10 @@ LABEL version="2.8" \
       maintainer="trig_tanning.Oj@icloud.com"
 
 # Set environment variables, CUDA max split to help with memory crash issue.
-ENV PYTHONUNBUFFERED=1 \
-    PATH=/usr/local/cuda/bin:$PATH
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/usr/local/cuda/bin:$PATH
     # Note: If you need the PYTORCH_CUDA_ALLOC_CONF, uncomment the next line
-    # PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb=256
+ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
 
 # Get GPG Keys
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub

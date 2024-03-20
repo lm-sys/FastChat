@@ -166,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model-path",
         type=str,
-        default="c:/Users/maxpo/OneDrive/Documents/GitHub/vicuna-7b-v1.5-16k",
+        default="c:/Users/maxpo/OneDrive/Documents/GitHub/vicuna-7b-v1.5",
         help="Path to model weights to load. This can be a local folder or a Hugging Face repo ID.",
     )
     parser.add_argument(
