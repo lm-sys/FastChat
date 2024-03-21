@@ -398,6 +398,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_yuan = "yuan" in model_type
     is_cllm = "consistency-llm" in model_path.lower()
     is_rwkv = 'rwkv' in model_path.lower()
+    is_mamba = 'mamba' in model_path.lower()
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -416,6 +417,9 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     elif is_rwkv:
         from fastchat.model.rwkv_model import generate_stream_rwkv
         return generate_stream_rwkv
+    elif is_mamba:
+        from fastchat.model.model_mamba import generate_stream_mamba
+        return generate_stream_mamba
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -1068,6 +1072,26 @@ class RwkvAdapter(BaseModelAdapter):
             return get_conv_template("rwkv")
         elif self.version == '5':
             return get_conv_template("hermes-rwkv-v5")
+        
+class MambaAdapter(BaseModelAdapter):
+    """The model adapter for Hermes-mamba"""
+    def match(self, model_path: str):
+        return "mamba" in model_path.lower()
+    
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+        from fastchat.model.model_mamba import MambaModel
+        tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
+        dtype = from_pretrained_kwargs.pop("torch_dtype", None)
+        from_pretrained_kwargs.pop('revision', None)
+        model = MambaLMHeadModel.from_pretrained(model_path, dtype=dtype, **from_pretrained_kwargs)
+        model.config.is_encoder_decoder = False
+        model = MambaModel(tokenizer, model)
+        return model, tokenizer
+    
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("hermes-rwkv-v5")
+
 
 
 class OpenBuddyAdapter(BaseModelAdapter):
@@ -2346,6 +2370,7 @@ register_model_adapter(TenyxChatAdapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
+register_model_adapter(MambaAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)

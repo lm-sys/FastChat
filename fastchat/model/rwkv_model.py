@@ -112,6 +112,7 @@ class RwkvModel:
 
         return [input_ids[0].tolist() + output_ids]
 
+@torch.inference_mode()
 def generate_stream_rwkv(
     model,
     tokenizer,
@@ -121,9 +122,9 @@ def generate_stream_rwkv(
     stream_interval=2,
     judge_sent_end=False,
     temperature=1.0,
-    top_p=0.7,
-    presencePenalty=0.1,
-    countPenalty=0.1,
+    top_p=0.3,
+    presencePenalty=0,
+    countPenalty=1.0,
 ):
     # __import__("ipdb").set_trace()
     ctx = params["prompt"].strip()
