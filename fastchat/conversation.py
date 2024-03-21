@@ -144,11 +144,11 @@ class Conversation:
                         role
                         # + ": "
                         + message.replace("\r\n", "\n").replace("\n\n", "\n")
-                        + '\x17'
+                        + "\x17"
                     )
                     ret += "\n"
                 else:
-                    ret += role # + ":"
+                    ret += role  # + ":"
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]

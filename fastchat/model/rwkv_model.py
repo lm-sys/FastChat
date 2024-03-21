@@ -11,13 +11,12 @@ os.environ["RWKV_CUDA_ON"] = "1"
 from rwkv.model import RWKV
 from rwkv.utils import PIPELINE, PIPELINE_ARGS
 
+
 class Rwkv5Tokenizer:
     def __init__(self, model):
         self.pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
-        self.special_tokens_map = {
-            "\x16": "",
-            "\x17": ""
-        }
+        self.special_tokens_map = {"\x16": "", "\x17": ""}
+
     def __call__(self, x):
         if isinstance(x, list):
             input_ids = []
@@ -25,15 +24,16 @@ class Rwkv5Tokenizer:
                 input_ids.append(self.pipeline.encode(xi))
             return SimpleNamespace(input_ids=input_ids)
         return SimpleNamespace(input_ids=self.pipeline.encode(x))
+
     def encode(self, x, **kwargs):
         return self.pipeline.encode(x)
+
     def decode(self, x, **kwargs):
         return self.pipeline.decode(x)
 
 
-
 class RwkvModel:
-    def __init__(self, model_path, version='4'):
+    def __init__(self, model_path, version="4"):
         warnings.warn(
             "Experimental support. Please use ChatRWKV if you want to chat with RWKV"
         )
@@ -44,7 +44,7 @@ class RwkvModel:
 
         self.tokenizer = None
         self.version = version
-        if version == '5':
+        if version == "5":
             # self.tokenizer = PIPELINE(self.model, "rwkv_vocab_v20230424").tokenizer
             self.tokenizer = Rwkv5Tokenizer(self.model)
             self.pipeline = self.tokenizer.pipeline
@@ -80,7 +80,7 @@ class RwkvModel:
             )
         prompt = self.tokenizer.decode(input_ids[0].tolist())
         conv = get_conv_template("rwkv")
-        if self.version == '5':
+        if self.version == "5":
             conv = get_conv_template("hermes-rwkv-v5")
 
         gen_params = {
@@ -93,24 +93,31 @@ class RwkvModel:
             "stop_token_ids": conv.stop_token_ids,
             "echo": False,
         }
-        if self.version == '4':
-            res_iter = generate_stream(self, self.tokenizer, gen_params, "cuda", context_len=4096)
+        if self.version == "4":
+            res_iter = generate_stream(
+                self, self.tokenizer, gen_params, "cuda", context_len=4096
+            )
 
             for res in res_iter:
                 pass
 
             output = res["text"]
             output_ids = self.tokenizer.encode(output)
-        elif self.version == '5':
-            output = self.pipeline.generate(ctx=prompt, 
-                                            token_count=max_new_tokens,
-                                            args=PIPELINE_ARGS(temperature=max(0.2, float(temperature)), 
-                                                               top_p=0.7, 
-                                                               alpha_presence=0.1,
-                                                               alpha_frequency=0.1))
+        elif self.version == "5":
+            output = self.pipeline.generate(
+                ctx=prompt,
+                token_count=max_new_tokens,
+                args=PIPELINE_ARGS(
+                    temperature=max(0.2, float(temperature)),
+                    top_p=0.7,
+                    alpha_presence=0.1,
+                    alpha_frequency=0.1,
+                ),
+            )
             output_ids = self.pipeline.encode(output)
 
         return [input_ids[0].tolist() + output_ids]
+
 
 @torch.inference_mode()
 def generate_stream_rwkv(
@@ -131,39 +138,46 @@ def generate_stream_rwkv(
     # inputs = tokenizer(prompt, return_tensors="pt").to(device)
     pipeline = tokenizer.pipeline
     max_new_tokens = int(params.get("max_new_tokens", 2048))
-    args = PIPELINE_ARGS(temperature = max(0.2, float(temperature)), top_p = float(top_p),
-                     alpha_frequency = countPenalty,
-                     alpha_presence = presencePenalty,
-                     token_ban = [], # ban the generation of some tokens
-                     token_stop = [0, 24]) # stop generation whenever you see any token here
+    args = PIPELINE_ARGS(
+        temperature=max(0.2, float(temperature)),
+        top_p=float(top_p),
+        alpha_frequency=countPenalty,
+        alpha_presence=presencePenalty,
+        token_ban=[],  # ban the generation of some tokens
+        token_stop=[0, 24],
+    )  # stop generation whenever you see any token here
 
     all_tokens = []
     out_last = 0
-    out_str = ''
+    out_str = ""
     occurrence = {}
     state = None
     for i in range(int(max_new_tokens)):
-        out, state = model.model.forward(pipeline.encode(ctx)[-context_len:] if i == 0 else [token], state)
+        out, state = model.model.forward(
+            pipeline.encode(ctx)[-context_len:] if i == 0 else [token], state
+        )
         for n in occurrence:
-            out[n] -= (args.alpha_presence + occurrence[n] * args.alpha_frequency)
-        token = pipeline.sample_logits(out, temperature=args.temperature, top_p=args.top_p)
+            out[n] -= args.alpha_presence + occurrence[n] * args.alpha_frequency
+        token = pipeline.sample_logits(
+            out, temperature=args.temperature, top_p=args.top_p
+        )
         if token in args.token_stop:
             break
         all_tokens += [token]
         for xxx in occurrence:
-            occurrence[xxx] *= 0.996        
+            occurrence[xxx] *= 0.996
         if token not in occurrence:
             occurrence[token] = 1
         else:
             occurrence[token] += 1
 
         tmp = pipeline.decode(all_tokens[out_last:])
-        if '\ufffd' not in tmp:
+        if "\ufffd" not in tmp:
             out_str += tmp
-            yield {'text': out_str.strip()}
+            yield {"text": out_str.strip()}
             out_last = i + 1
     del out
     del state
     gc.collect()
     torch.cuda.empty_cache()
-    yield {'text': out_str.strip()}
+    yield {"text": out_str.strip()}
