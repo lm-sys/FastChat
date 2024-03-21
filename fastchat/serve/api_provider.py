@@ -488,7 +488,9 @@ def cohere_api_stream_iter(
     }
 
     client = cohere.Client(
-        api_key=api_key, api_url=api_base, client_name=client_name or "FastChat"
+        api_key=api_key or os.getenv("CO_API_KEY"),  # fern sdk doesn't accept None
+        base_url=api_base,
+        client_name=client_name or "FastChat",
     )
 
     # prepare and log requests
@@ -512,26 +514,23 @@ def cohere_api_stream_iter(
     logger.info(f"==== request ====\n{gen_params}")
 
     # make request and stream response
-    res = client.chat(
-        actual_prompt,
+    res = client.chat_stream(
+        message=actual_prompt,
         chat_history=chat_history,
         model=model_id,
         temperature=temperature,
         max_tokens=max_new_tokens,
         p=top_p,
-        stream=True,
     )
-    if res.response.status_code != 200:  # e.g. 404 model not found
-        logger.error(
-            f"==== error from cohere api ==== ({res.response.status_code}): {res}"
-        )
+    try:
+        text = ""
+        for streaming_item in res:
+            if streaming_item.event_type == "text-generation":
+                text += streaming_item.text
+                yield {"text": text, "error_code": 0}
+    except cohere.core.ApiError as e:
+        logger.error(f"==== error from cohere api: {e} ====")
         yield {
-            "text": f"**API REQUEST ERROR** Reason: status code {res.response.status_code}.",
+            "text": f"**API REQUEST ERROR** Reason: {e}",
             "error_code": 1,
         }
-
-    text = ""
-    for streaming_item in res:
-        if streaming_item.event_type == "text-generation":
-            text += streaming_item.text
-            yield {"text": text, "error_code": 0}
