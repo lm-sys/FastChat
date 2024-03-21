@@ -13,10 +13,3 @@ See the supported models [here](https://lmdeploy.readthedocs.io/en/latest/suppor
    ```
    python3 -m fastchat.serve.lmdeploy_worker --model-path lmsys/vicuna-7b-v1.5
    ```
-
-   If you use an AWQ quantized model and kv cache for inference, try
-   '''
-   python3 -m fastchat.serve.lmdeploy_worker --model-path TheBloke/vicuna-7B-v1.5-AWQ --model-format awq --quant-policy 4
-   '''
-
-
