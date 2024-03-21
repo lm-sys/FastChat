@@ -488,7 +488,7 @@ def cohere_api_stream_iter(
     }
 
     client = cohere.Client(
-        api_key=api_key or os.getenv("CO_API_KEY"),  # fern sdk doesn't accept None
+        api_key=api_key,
         base_url=api_base,
         client_name=client_name or "FastChat",
     )
