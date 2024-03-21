@@ -19,19 +19,9 @@ class MambaModel:
         self.model.to(target)
         
     def generate(self, input_ids, do_sample, temperature, max_new_tokens):
-        streamer = TextIteratorStreamer(self.tokenizer)
-        generation_kwargs = dict(input_ids=input_ids, max_length=max_new_tokens, streamer=streamer)
-        thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
-        thread.start()
-        output_str = ""
-        seqlen_og = input_ids.shape[1]
-        for _ in range(seqlen_og):
-            next(streamer)
-        for new_text in streamer:
-            output_str += new_text
-            if '\x17' in new_text:
-                break
-        return [input_ids[0].tolist() + self.tokenizer.encode(output_str)]
+        generation_kwargs = dict(input_ids=input_ids, max_length=max_new_tokens, eos_token_id=200)
+        output = self.model.generate(**generation_kwargs)
+        return output
 
 
 @torch.inference_mode()
@@ -55,9 +45,17 @@ def generate_stream_mamba(
     thread.start()
     output_str = ""
     seqlen_og = inputs['input_ids'].shape[1]
-    for _ in range(seqlen_og):
-        next(streamer)
+    # __import__("ipdb").set_trace()
+    # for _ in range(seqlen_og):
+    #     item = next(streamer)
+    repeating = True
     for new_text in streamer:
+        if new_text.strip() in ctx and repeating:
+            # get rid of the repeated input ids
+            repeating = True
+            continue
+        else:
+            repeating = False
         output_str += new_text
         if '\x17' in new_text:
             break
