@@ -101,13 +101,18 @@ def preprocess(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,
     data_args,
+    **kwargs,
 ) -> Dict:
+    systems = None if not kwargs else kwargs.get("systems", None)
+
     conv = get_conversation_template("yuan2")  # wpf
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
     # Apply prompt templates
     conversations = []
     for i, source in enumerate(sources):
+        if systems and systems[i]:
+            conv.set_system_message(systems[i])
         if roles[source[0]["from"]] != conv.roles[0]:
             # Skip the first one if it is not from human
             source = source[1:]
@@ -323,7 +328,8 @@ class SupervisedDataset(Dataset):
 
         rank0_print("Formatting inputs...")
         sources = [example["conversations"] for example in raw_data]
-        data_dict = preprocess(sources, tokenizer, data_args)
+        systems = [example.get("system", "") for example in raw_data]
+        data_dict = preprocess(sources, tokenizer, data_args, systems=systems)
 
         self.input_ids = data_dict["input_ids"]
         self.labels = data_dict["labels"]
@@ -363,7 +369,10 @@ class LazySupervisedDataset(Dataset):
             return self.cached_data_dict[i]
 
         ret = preprocess(
-            [self.raw_data[i]["conversations"]], self.tokenizer, self.data_args
+            [self.raw_data[i]["conversations"]],
+            self.tokenizer,
+            self.data_args,
+            systems=[self.raw_data[i].get("system", "")],
         )
         ret = dict(
             input_ids=ret["input_ids"][0],
