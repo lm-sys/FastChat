@@ -13,3 +13,8 @@ See the supported models [here](https://lmdeploy.readthedocs.io/en/latest/suppor
    ```
    python3 -m fastchat.serve.lmdeploy_worker --model-path lmsys/vicuna-7b-v1.5
    ```
+
+   If you use an AWQ quantized model, try
+   '''
+   python3 -m fastchat.serve.lmdeploy_worker --model-path TheBloke/LLaMA2-13B-Tiefighter-AWQ --model-format awq
+   '''

@@ -25,7 +25,7 @@ app = FastAPI()
 
 class InterFace:
     request_id: int = 0
-    engine: AsyncEngine = (None,)
+    engine: AsyncEngine = None
 
 
 class LMDeployWorker(BaseModelWorker):
@@ -325,7 +325,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     backend_config = TurbomindEngineConfig(
-        "base",
         model_format=args.model_format,
         tp=args.tp,
         session_len=args.session_len,
