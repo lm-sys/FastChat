@@ -1463,7 +1463,8 @@ class NousHermesAdapter(BaseModelAdapter):
 
 
 class InternLMChatAdapter(BaseModelAdapter):
-    """The model adapter for internlm/internlm-chat-7b"""
+    """The model adapter for internlm/internlm-chat-7b
+    and internlm/internlm2-chat-7b"""
 
     def match(self, model_path: str):
         return "internlm" in model_path.lower()
@@ -1485,6 +1486,9 @@ class InternLMChatAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "internlm2" in model_path.lower():
+            if "math" in model_path.lower() or "chat" in model_path.lower():
+                return get_conv_template("internlm2-chat")
         return get_conv_template("internlm-chat")
 
 

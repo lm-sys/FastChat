@@ -60,6 +60,7 @@ After these steps, the new model should be compatible with most FastChat feature
 - [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
 - [HuggingFaceH4/zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
 - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
+- [internlm/internlm2-chat-7b](https://huggingface.co/internlm/internlm2-chat-7b)
 - [cllm/consistency-llm-7b-codesearchnet/consistency-llm-7b-gsm8k/consistency-llm-7b-sharegpt48k/consistency-llm-7b-spider](https://huggingface.co/cllm)
 - [IEITYuan/Yuan2-2B/51B/102B-hf](https://huggingface.co/IEITYuan)
 - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
