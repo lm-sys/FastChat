@@ -665,6 +665,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["cohere-command-r"],
+    "Command-R",
+    "https://txt.cohere.com/command-r/",
+    "Command-R by Cohere",
+)
+
+register_model_info(
     [
         "cllm/consistency-llm-7b-codesearchnet",
         "cllm/consistency-llm-7b-gsm8k",
