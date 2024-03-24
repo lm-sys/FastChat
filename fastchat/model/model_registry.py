@@ -536,9 +536,9 @@ register_model_info(
 )
 
 register_model_info(
-    ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
+    ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B", "Atom-7B-Chat"],
     "Llama2-Chinese",
-    "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
+    "https://github.com/LlamaFamily/Llama-Chinese",
     "A multi-language large-scale language model (LLM), developed by FlagAlpha.",
 )
 
