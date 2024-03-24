@@ -364,6 +364,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=True,
+    use_recommended_config=True,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -437,6 +438,12 @@ def bot_response(
             images,
         )
     else:
+        if use_recommended_config:
+            recommended_config = model_api_dict.get("recommended_config", None)
+            if recommended_config is not None:
+                temperature = recommended_config.get("temperature", temperature)
+                top_p = recommended_config.get("top_p", top_p)
+
         stream_iter = get_api_provider_stream_iter(
             conv,
             model_name,
@@ -725,6 +732,9 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     # Register listeners
     imagebox = gr.State(None)
+    apply_rate_limit = gr.State(True)
+    use_recommended_config = gr.State(False)
+
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
@@ -760,7 +770,14 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [
+            state,
+            temperature,
+            top_p,
+            max_output_tokens,
+            apply_rate_limit,
+            use_recommended_config,
+        ],
         [state, chatbot] + btn_list,
     )
     send_btn.click(
@@ -769,7 +786,14 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [
+            state,
+            temperature,
+            top_p,
+            max_output_tokens,
+            apply_rate_limit,
+            use_recommended_config,
+        ],
         [state, chatbot] + btn_list,
     )
 

@@ -29,6 +29,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    api_endpoint_info,
 )
 from fastchat.utils import (
     build_logger,
@@ -588,6 +589,7 @@ def bot_response_multi(
                 max_new_tokens,
                 request,
                 apply_rate_limit=False,
+                use_recommended_config=True,
             )
         )
 

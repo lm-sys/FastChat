@@ -86,14 +86,14 @@ def get_api_provider_stream_iter(
     elif model_api_dict["api_type"] == "cohere":
         messages = conv.to_openai_api_messages()
         stream_iter = cohere_api_stream_iter(
-            client_name=model_api_dict.get("client_name"),
+            client_name=model_api_dict.get("client_name", "FastChat"),
             model_id=model_api_dict["model_name"],
             messages=messages,
             temperature=temperature,
             top_p=top_p,
             max_new_tokens=max_new_tokens,
-            api_base=model_api_dict.get("api_base"),
-            api_key=model_api_dict.get("api_key"),
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
         )
     else:
         raise NotImplementedError()
@@ -490,7 +490,7 @@ def cohere_api_stream_iter(
     client = cohere.Client(
         api_key=api_key,
         base_url=api_base,
-        client_name=client_name or "FastChat",
+        client_name=client_name,
     )
 
     # prepare and log requests
