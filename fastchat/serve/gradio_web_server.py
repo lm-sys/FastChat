@@ -364,7 +364,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=True,
-    use_recommended_config=True,
+    use_recommended_config=False,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -732,8 +732,6 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     # Register listeners
     imagebox = gr.State(None)
-    apply_rate_limit = gr.State(True)
-    use_recommended_config = gr.State(False)
 
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
@@ -775,8 +773,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             temperature,
             top_p,
             max_output_tokens,
-            apply_rate_limit,
-            use_recommended_config,
         ],
         [state, chatbot] + btn_list,
     )
@@ -791,8 +787,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             temperature,
             top_p,
             max_output_tokens,
-            apply_rate_limit,
-            use_recommended_config,
         ],
         [state, chatbot] + btn_list,
     )
