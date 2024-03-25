@@ -439,7 +439,9 @@ def add_text(
     # turn on moderation in battle mode
     all_conv_text_left = states[0].conv.get_prompt()
     all_conv_text_right = states[0].conv.get_prompt()
-    all_conv_text = all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    all_conv_text = (
+        all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    )
     flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
