@@ -732,7 +732,6 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     # Register listeners
     imagebox = gr.State(None)
-
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
@@ -768,12 +767,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [
-            state,
-            temperature,
-            top_p,
-            max_output_tokens,
-        ],
+        [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     send_btn.click(
@@ -782,12 +776,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [
-            state,
-            temperature,
-            top_p,
-            max_output_tokens,
-        ],
+        [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
