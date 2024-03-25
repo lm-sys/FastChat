@@ -35,6 +35,7 @@ class SeparatorStyle(IntEnum):
     METAMATH = auto()
     YUAN2 = auto()
     GEMMA = auto()
+    CLLM = auto()
     DEFAULT = auto()
 
 
@@ -279,6 +280,18 @@ class Conversation:
                     ret += "<start_of_turn>" + role + "\n" + message + self.sep
                 else:
                     ret += "<start_of_turn>" + role + "\n"
+            return ret
+        elif self.sep_style == SeparatorStyle.CLLM:
+            seps = [self.sep, self.sep2]
+            ret = system_prompt + seps[0]
+            for i, (role, message) in enumerate(self.messages[-2:]):
+                if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
+                    ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
             return ret
         elif self.sep_style == SeparatorStyle.DEFAULT:
             ret = system_prompt + "\n"
@@ -1675,6 +1688,21 @@ register_conv_template(
         stop_str="<eod>",
     )
 )
+
+# Cllm chat template
+# reference:
+register_conv_template(
+    Conversation(
+        name="cllm",
+        system_message="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        sep_style=SeparatorStyle.CLLM,
+        sep=" ",
+        sep2="</s>",
+    )
+)
+
 
 # Llava-chatml
 # reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
