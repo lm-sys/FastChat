@@ -238,8 +238,6 @@ def bot_response_multi(
                 top_p,
                 max_new_tokens,
                 request,
-                apply_rate_limit=True,
-                use_recommended_config=False,
             )
         )
 
