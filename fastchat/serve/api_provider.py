@@ -52,6 +52,11 @@ def get_api_provider_stream_iter(
         stream_iter = anthropic_message_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
+    elif model_api_dict["api_type"] == "anthropic_message_vertex":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = anthropic_message_api_stream_iter(
+            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens, vertex_ai=True
+        )
     elif model_api_dict["api_type"] == "gemini":
         stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
@@ -361,14 +366,20 @@ def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_to
 
 
 def anthropic_message_api_stream_iter(
-    model_name, messages, temperature, top_p, max_new_tokens
+    model_name, messages, temperature, top_p, max_new_tokens, vertex_ai=False,
 ):
     import anthropic
-
-    client = anthropic.Anthropic(
-        api_key=os.environ["ANTHROPIC_API_KEY"],
-        max_retries=5,
-    )
+    if vertex_ai:
+        client = anthropic.AnthropicVertex(
+            region=os.environ["GCP_LOCATION"],
+            project_id=os.environ["GCP_PROJECT_ID"],
+            max_retries=5,
+        )
+    else:
+        client = anthropic.Anthropic(
+            api_key=os.environ["ANTHROPIC_API_KEY"],
+            max_retries=5,
+        )
     # Make requests
     gen_params = {
         "model": model_name,

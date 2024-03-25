@@ -55,6 +55,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["starling-lm-7b-beta", "starling-lm-7b-alpha"],
+    "Starling-LM-7B",
+    "https://starling.cs.berkeley.edu/",
+    "An open model trained using RLAIF by Berkeley",
+)
+
+register_model_info(
     [
         "mixtral-8x7b-instruct-v0.1",
         "mistral-large-2402",
@@ -261,13 +268,6 @@ register_model_info(
     "OpenHermes-2.5-Mistral-7B",
     "https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B",
     "A mistral-based model fine-tuned on 1M GPT-4 outputs",
-)
-
-register_model_info(
-    ["starling-lm-7b-alpha"],
-    "Starling-LM-7B-alpha",
-    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
-    "An open model trained using RLAIF by Berkeley",
 )
 
 register_model_info(
@@ -588,7 +588,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["deluxe-chat-v1", "deluxe-chat-v1.1", "deluxe-chat-v1.2"],
+    ["deluxe-chat-v1", "deluxe-chat-v1.1", "deluxe-chat-v1.2", "deluxe-chat-v1.3"],
     "DeluxeChat",
     "",
     "Deluxe Chat",

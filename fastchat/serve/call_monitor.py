@@ -35,6 +35,8 @@ class Monitor:
             "gpt-4-0125-preview": 300,
             "gpt-4-turbo-browsing": 200,
             "mistral-large-2402": 300,
+            "claude-3-opus-20240229": 2500,
+            "claude-3-sonnet-20240229": 2500,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 8,
@@ -42,6 +44,7 @@ class Monitor:
             "gpt-4-turbo-browsing": 8,
             "mistral-large-2402": 8,
             "claude-3-opus-20240229": 32,
+            "claude-3-sonnet-20240229": 64,
         }
 
     async def update_stats(self, num_file=1) -> None:

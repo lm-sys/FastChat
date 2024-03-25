@@ -51,7 +51,7 @@ class RemoteLogger:
             # process the data by keep only the top level fields, and turn any nested dict into a string
             for key, value in data.items():
                 if isinstance(value, (dict, list, tuple)):
-                    data[key] = json.dumps(value)
+                    data[key] = json.dumps(value, ensure_ascii=False)
 
             try:
                 requests.post(self.url, json=data)

@@ -1140,11 +1140,11 @@ class ClaudeAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "claude-3-haiku-20240307" in model_path:
+        if "claude-3-haiku" in model_path:
             return get_conv_template("claude-3-haiku-20240307")
-        if "claude-3-sonnet-20240229" in model_path:
+        if "claude-3-sonnet" in model_path:
             return get_conv_template("claude-3-sonnet-20240229")
-        if "claude-3-opus-20240229" in model_path:
+        if "claude-3-opus" in model_path:
             return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
 

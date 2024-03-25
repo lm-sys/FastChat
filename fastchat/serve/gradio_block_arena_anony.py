@@ -171,26 +171,27 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0613": 4,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 4,
-    "gpt-4-turbo-browsing": 4,
+    "gpt-4-turbo-browsing": 2,
     "gpt-3.5-turbo-0125": 4,
     "claude-3-opus-20240229": 4,
     "claude-3-sonnet-20240229": 4,
-    "claude-3-haiku-20240307": 6,
+    "claude-3-haiku-20240307": 4,
     "claude-2.1": 2,
     "gemini-pro-dev-api": 2,
     "qwen1.5-72b-chat": 4,
     "qwen1.5-4b-chat": 2,
-    "olmo-7b-instruct": 2,
-    "gemma-2b-it": 2,
-    "gemma-7b-it": 4,
+    "olmo-7b-instruct": 1,
+    "gemma-2b-it": 1,
+    "gemma-7b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 2,
-    "mistral-large-2402": 6,
-    "mistral-medium": 4,
+    "mistral-large-2402": 4,
+    "mistral-medium": 2,
     "openchat-3.5-0106": 2,
-    "starling-lm-7b-alpha": 2,
+    "starling-lm-7b-alpha": 1,
+    "starling-lm-7b-beta": 2,
     # tier 1
-    "deluxe-chat-v1.2": 6,
+    "deluxe-chat-v1.3": 4,
     "llama-2-70b-chat": 2,
     "vicuna-33b": 1,
 }
@@ -220,6 +221,19 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-1106",
         "mixtral-8x7b-instruct-v0.1",
     },
+    "starling-lm-7b-beta": {
+        "starling-lm-7b-alpha",
+        "claude-3-haiku-20240307",
+        "gpt-3.5-turbo-0125",
+        "openchat-3.5-0106",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "deluxe-chat-v1.3": {
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+    },
     "qwen1.5-72b-chat": {
         "gpt-3.5-turbo-0125",
         "gpt-4-0613",
@@ -243,14 +257,15 @@ BATTLE_TARGETS = {
         "openchat-3.5-0106",
     },
     "mistral-large-2402": {
-        "gpt-3.5-turbo-0125",
-        "gpt-4-1106-preview",
         "gpt-4-0125-preview",
         "gpt-4-0613",
-        "gpt-4-0314",
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
-        "claude-3-opus-20240229",
+        "mistral-next",
+        "claude-3-sonnet-20240229",
+    },
+    "mistral-next": {
+        "mistral-large-2402",
     },
     "claude-3-opus-20240229": {
         "gpt-4-1106-preview",
@@ -331,13 +346,12 @@ BATTLE_TARGETS = {
 
 SAMPLING_BOOST_MODELS = [
     # "gpt-4-1106-preview",
-    "gpt-4-0125-preview",
-    "gpt-4-turbo-browsing",
+    # "gpt-4-0125-preview",
     # "gpt-3.5-turbo-0125",
     # "gemma-7b-it",
     # "gemma-2b-it",
     # "mistral-large-2402",
-    # "olmo-7b-instruct",
+    "starling-lm-7b-beta",
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
     "claude-3-haiku-20240307",
@@ -346,7 +360,6 @@ SAMPLING_BOOST_MODELS = [
 # outage models won't be sampled.
 OUTAGE_MODELS = [
     "zephyr-7b-beta",
-    "mistral-next",
     "pplx-70b-online",
     "wizardlm-70b",
     "deepseek-llm-67b-chat",
@@ -356,6 +369,7 @@ OUTAGE_MODELS = [
     "openhermes-2.5-mistral-7b",
     "claude-2.0",
     "yi-34b-chat",
+    "deluxe-chat-v1.3",
 ]
 
 
