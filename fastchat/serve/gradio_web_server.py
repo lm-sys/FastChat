@@ -364,6 +364,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=True,
+    use_recommended_config=False,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -437,6 +438,12 @@ def bot_response(
             images,
         )
     else:
+        if use_recommended_config:
+            recommended_config = model_api_dict.get("recommended_config", None)
+            if recommended_config is not None:
+                temperature = recommended_config.get("temperature", temperature)
+                top_p = recommended_config.get("top_p", top_p)
+
         stream_iter = get_api_provider_stream_iter(
             conv,
             model_name,
