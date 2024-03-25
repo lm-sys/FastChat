@@ -229,25 +229,33 @@ def check_requests(request) -> Optional[JSONResponse]:
 
 
 def process_input(model_name, inp):
-    if isinstance(inp, str):
-        inp = [inp]
-    elif isinstance(inp, list):
-        if isinstance(inp[0], int):
-            try:
-                decoding = tiktoken.model.encoding_for_model(model_name)
-            except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                decoding = tiktoken.get_encoding(model)
-            inp = [decoding.decode(inp)]
-        elif isinstance(inp[0], list):
-            try:
-                decoding = tiktoken.model.encoding_for_model(model_name)
-            except KeyError:
-                logger.warning("Warning: model not found. Using cl100k_base encoding.")
-                model = "cl100k_base"
-                decoding = tiktoken.get_encoding(model)
-            inp = [decoding.decode(text) for text in inp]
+    # We ignore the processing of the inputs for hkunlp models (i.e. Instructor)
+    # here as they are not OpenAI standard for the data input format. hkunlp
+    # expects input of format: [[Instruction, Sentence], [Instruction, Sentence],...]
+    if "hkunlp" not in model_name:
+        if isinstance(inp, str):
+            inp = [inp]
+        elif isinstance(inp, list):
+            if isinstance(inp[0], int):
+                try:
+                    decoding = tiktoken.model.encoding_for_model(model_name)
+                except KeyError:
+                    logger.warning(
+                        "Warning: model not found. Using cl100k_base encoding."
+                    )
+                    model = "cl100k_base"
+                    decoding = tiktoken.get_encoding(model)
+                inp = [decoding.decode(inp)]
+            elif isinstance(inp[0], list):
+                try:
+                    decoding = tiktoken.model.encoding_for_model(model_name)
+                except KeyError:
+                    logger.warning(
+                        "Warning: model not found. Using cl100k_base encoding."
+                    )
+                    model = "cl100k_base"
+                    decoding = tiktoken.get_encoding(model)
+                inp = [decoding.decode(text) for text in inp]
 
     return inp
 
