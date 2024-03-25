@@ -57,6 +57,11 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2",
     "claude-2.0",
     "claude-2.1",
+    "claude-3-haiku-20240307",
+    "claude-3-haiku-20240307-vertex",
+    "claude-3-sonnet-20240229",
+    "claude-3-sonnet-20240229-vertex",
+    "claude-3-opus-20240229",
     "claude-instant-1",
     "claude-instant-1.2",
 )
@@ -73,6 +78,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-0125-preview",
+    "gpt-4-turbo-browsing",
 )
 
 
@@ -1100,6 +1106,8 @@ class ChatGPTAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "browsing" in model_path:
+            return get_conv_template("api_based_default")
         return get_conv_template("chatgpt")
 
 
@@ -1142,6 +1150,12 @@ class ClaudeAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "claude-3-haiku" in model_path:
+            return get_conv_template("claude-3-haiku-20240307")
+        if "claude-3-sonnet" in model_path:
+            return get_conv_template("claude-3-sonnet-20240229")
+        if "claude-3-opus" in model_path:
+            return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
 
 
@@ -2214,6 +2228,16 @@ class SteerLMAdapter(BaseModelAdapter):
         return get_conv_template("steerlm")
 
 
+class GemmaAdapter(BaseModelAdapter):
+    """The model adapter for google/gemma"""
+
+    def match(self, model_path: str):
+        return "gemma" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
+
+
 class LlavaAdapter(BaseModelAdapter):
     """The model adapter for liuhaotian/llava-v1.5 series of models"""
 
@@ -2266,14 +2290,14 @@ class YuanAdapter(BaseModelAdapter):
         return get_conv_template("yuan")
 
 
-class GemmaAdapter(BaseModelAdapter):
-    """The model adapter for Gemma"""
+class OlmoAdapter(BaseModelAdapter):
+    """The model adapter for allenai/OLMo-7B-Instruct"""
 
     def match(self, model_path: str):
-        return "gemma" in model_path.lower()
+        return "olmo" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("gemma")
+        return get_conv_template("api_based_default")
 
 
 class CllmAdapter(BaseModelAdapter):
@@ -2332,6 +2356,7 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(GeminiAdapter)
+register_model_adapter(GemmaAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
@@ -2396,8 +2421,7 @@ register_model_adapter(SolarAdapter)
 register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
-register_model_adapter(GemmaAdapter)
-register_model_adapter(CllmAdapter)
+register_model_adapter(OlmoAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

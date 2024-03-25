@@ -31,6 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
     api_endpoint_info,
 )
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -72,6 +73,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
     if ":" not in model_selectors[0]:
         for i in range(5):
@@ -132,9 +134,15 @@ def bothbad_vote_last_response(
 def regenerate(state0, state1, request: gr.Request):
     logger.info(f"regenerate (anony). ip: {get_ip(request)}")
     states = [state0, state1]
-    for i in range(num_sides):
-        states[i].conv.update_last_message(None)
-    return states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+    if state0.regen_support and state1.regen_support:
+        for i in range(num_sides):
+            states[i].conv.update_last_message(None)
+        return (
+            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+        )
+    states[0].skip_next = True
+    states[1].skip_next = True
+    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 6
 
 
 def clear_history(request: gr.Request):
@@ -160,270 +168,184 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4": 4,
     "gpt-4-0314": 4,
     "gpt-4-0613": 4,
-    "gpt-4-turbo": 4,
-    "gpt-4-1106-preview": 4,
+    "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 4,
-    "gpt-3.5-turbo-0613": 2,
-    "gpt-3.5-turbo-1106": 2,
+    "gpt-4-turbo-browsing": 2,
     "gpt-3.5-turbo-0125": 4,
-    "claude-2.1": 4,
-    "claude-2.0": 2,
-    "claude-1": 2,
-    "claude-instant-1": 2,
-    "gemini-pro": 4,
-    "gemini-pro-dev-api": 4,
-    "bard-jan-24-gemini-pro": 4,
-    "bard-feb-2024": 4,
-    "mixtral-8x7b-instruct-v0.1": 4,
-    "mistral-medium": 4,
+    "claude-3-opus-20240229": 4,
+    "claude-3-sonnet-20240229": 4,
+    "claude-3-haiku-20240307": 4,
+    "claude-2.1": 2,
+    "gemini-pro-dev-api": 2,
     "qwen1.5-72b-chat": 4,
-    "qwen1.5-7b-chat": 2,
     "qwen1.5-4b-chat": 2,
-    "nous-hermes-2-mixtral-8x7b-dpo": 2,
-    "deepseek-llm-67b-chat": 2,
-    "stripedhyena-nous-7b": 2,
-    "openchat-3.5-0106": 2,
+    "olmo-7b-instruct": 1,
+    "gemma-2b-it": 1,
+    "gemma-7b-it": 1,
+    "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 2,
-    "solar-10.7b-instruct-v1.0": 2,
-    "dolphin-2.2.1-mistral-7b": 2,
-    "starling-lm-7b-alpha": 2,
-    "tulu-2-dpo-70b": 2,
-    "yi-34b-chat": 2,
-    "zephyr-7b-beta": 2,
+    "mistral-large-2402": 4,
+    "mistral-medium": 2,
+    "openchat-3.5-0106": 2,
+    "starling-lm-7b-alpha": 1,
+    "starling-lm-7b-beta": 2,
     # tier 1
-    "deluxe-chat-v1.2": 4,
-    "llama-2-70b-chat": 4,
-    "llama-2-13b-chat": 2,
-    "llama-2-7b-chat": 2,
-    "mistral-7b-instruct": 2,
-    "codellama-34b-instruct": 1.5,
-    "vicuna-33b": 2,
-    "vicuna-13b": 1.5,
-    "wizardlm-13b": 1.5,
-    "qwen-14b-chat": 1.5,
-    # tier 2
-    "pplx-7b-online": 1,
-    "pplx-70b-online": 1,
-    "openhermes-2.5-mistral-7b": 1.0,
-    "llama2-70b-steerlm-chat": 1.0,
-    "chatglm3-6b": 1.0,
-    "openchat-3.5": 1.0,
-    "wizardlm-70b": 1.0,
-    "vicuna-7b": 1.0,
-    "chatglm2-6b": 1.0,
-    # deprecated
-    "zephyr-7b-alpha": 1.5,
-    "codellama-13b-instruct": 1.0,
-    "mpt-30b-chat": 1.5,
-    "guanaco-33b": 1.0,
-    "fastchat-t5-3b": 0.5,
-    "alpaca-13b": 0.5,
-    "mpt-7b-chat": 0.1,
-    "oasst-pythia-12b": 0.1,
-    "RWKV-4-Raven-14B": 0.1,
-    "gpt4all-13b-snoozy": 0.1,
-    "koala-13b": 0.1,
-    "stablelm-tuned-alpha-7b": 0.1,
-    "dolly-v2-12b": 0.1,
-    "llama-13b": 0.1,
-    "chatglm-6b": 0.5,
-    "deluxe-chat-v1": 4,
-    "palm-2": 1.5,
+    "deluxe-chat-v1.3": 4,
+    "llama-2-70b-chat": 2,
+    "vicuna-33b": 1,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
-    "gpt-4-0613": {"gpt-4-0314", "claude-2.1", "gpt-4-1106-preview"},
+    "gpt-4-0613": {"gpt-4-0314", "gpt-4-0125-preview"},
     "gpt-4-0314": {
-        "gpt-4-1106-preview",
         "gpt-4-0613",
-        "claude-2.1",
-        "gpt-3.5-turbo-0613",
-    },
-    "gpt-4-1106-preview": {
-        "gpt-4-0613",
-        "gpt-3.5-turbo-0613",
-        "gpt-3.5-turbo-1106",
-        "claude-2.1",
-        "bard-feb-2024",
+        "gpt-3.5-turbo-0125",
     },
     "gpt-4-0125-preview": {
         "gpt-4-1106-preview",
         "gpt-4-0613",
-        "gpt-3.5-turbo-0613",
-        "claude-2.1",
-        "mistral-medium",
-        "bard-feb-2024",
+        "claude-3-opus-20240229",
     },
-    "gpt-3.5-turbo-0613": {"claude-instant-1", "gpt-4-0613", "claude-2.1"},
-    "gpt-3.5-turbo-1106": {"gpt-4-0613", "claude-instant-1", "gpt-3.5-turbo-0613"},
+    "gpt-4-turbo-browsing": {
+        "gpt-4-0125-preview",
+        "gpt-4-1106-preview",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+    },
     "gpt-3.5-turbo-0125": {
         "gpt-4-0613",
-        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
         "gpt-3.5-turbo-0613",
         "gpt-3.5-turbo-1106",
         "mixtral-8x7b-instruct-v0.1",
     },
+    "starling-lm-7b-beta": {
+        "starling-lm-7b-alpha",
+        "claude-3-haiku-20240307",
+        "gpt-3.5-turbo-0125",
+        "openchat-3.5-0106",
+        "mixtral-8x7b-instruct-v0.1",
+    },
+    "deluxe-chat-v1.3": {
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+    },
     "qwen1.5-72b-chat": {
         "gpt-3.5-turbo-0125",
         "gpt-4-0613",
-        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
         "llama-2-70b-chat",
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
         "yi-34b-chat",
-    },
-    "qwen1.5-7b-chat": {
-        "gpt-3.5-turbo-0125",
-        "starling-lm-7b-alpha",
-        "llama-2-70b-chat",
-        "openchat-3.5",
-        "mixtral-8x7b-instruct-v0.1",
     },
     "qwen1.5-4b-chat": {
-        "llama-2-70b-chat",
+        "mixtral-8x7b-instruct-v0.1",
         "llama-2-13b-chat",
         "llama-2-7b-chat",
-        "openchat-3.5",
+        "openchat-3.5-0106",
     },
-    "openchat-3.5-0106": {
-        "gpt-3.5-turbo-0125",
-        "gpt-3.5-turbo-0613",
-        "llama-2-70b-chat",
-        "openchat-3.5",
+    "olmo-7b-instruct": {
         "mixtral-8x7b-instruct-v0.1",
+        "mistral-7b-instruct-v0.2",
+        "llama-2-7b-chat",
+        "gemma-7b-it",
+        "openchat-3.5-0106",
     },
-    "nous-hermes-2-mixtral-8x7b-dpo": {
-        "gpt-4-1106-preview",
-        "claude-2.1",
-        "mistral-medium",
-        "gpt-3.5-turbo-0613",
-        "mixtral-8x7b-instruct-v0.1",
-    },
-    "mistral-7b-instruct-v0.2": {
-        "llama-2-70b-chat",
-        "mixtral-8x7b-instruct-v0.1",
-        "starling-lm-7b-alpha",
-        "openhermes-2.5-mistral-7b",
-    },
-    "solar-10.7b-instruct-v1.0": {
-        "mixtral-8x7b-instruct-v0.1",
-        "gpt-3.5-turbo-0613",
-        "llama-2-70b-chat",
-    },
-    "mistral-medium": {
-        "gpt-3.5-turbo-0125",
-        "gpt-3.5-turbo-0613",
-        "gpt-4-1106-preview",
-        "mixtral-8x7b-instruct-v0.1",
-        "bard-feb-2024",
-    },
-    "mixtral-8x7b-instruct-v0.1": {
-        "gpt-3.5-turbo-0125",
-        "gpt-3.5-turbo-0613",
-        "gpt-4-1106-preview",
-        "llama-2-70b-chat",
-    },
-    "claude-2.1": {"gpt-4-1106-preview", "gpt-4-0613", "claude-1"},
-    "claude-2.0": {"gpt-4-1106-preview", "gpt-4-0613", "claude-1"},
-    "claude-1": {"claude-2.1", "gpt-4-0613", "gpt-3.5-turbo-0613"},
-    "claude-instant-1": {"gpt-3.5-turbo-0125", "claude-2.1"},
-    "gemini-pro": {"gpt-4-1106-preview", "gpt-4-0613", "gpt-3.5-turbo-0613"},
-    "gemini-pro-dev-api": {
-        "gpt-4-1106-preview",
+    "mistral-large-2402": {
+        "gpt-4-0125-preview",
         "gpt-4-0613",
+        "mixtral-8x7b-instruct-v0.1",
+        "mistral-medium",
+        "mistral-next",
+        "claude-3-sonnet-20240229",
+    },
+    "mistral-next": {
+        "mistral-large-2402",
+    },
+    "claude-3-opus-20240229": {
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "gpt-4-0613",
+        "gpt-4-0314",
+        "mixtral-8x7b-instruct-v0.1",
+        "mistral-large-2402",
+        "claude-2.1",
+        "claude-1",
+    },
+    "claude-3-sonnet-20240229": {
+        "gpt-4-0613",
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
         "gpt-3.5-turbo-0613",
-        "bard-feb-2024",
+        "gpt-3.5-turbo-0125",
+        "mixtral-8x7b-instruct-v0.1",
+        "claude-1",
+    },
+    "claude-3-haiku-20240307": {
+        # "gpt-4-0125-preview",
+        # "gpt-4-0613",
+        "gpt-4-1106-preview",
+        "gpt-4-0314",
+        "qwen1.5-72b-chat",
+        "claude-2.1",
+        # "claude-3-sonnet-20240229",
+        # "gpt-3.5-turbo-0125",
+        # "mixtral-8x7b-instruct-v0.1",
+        "gemini-pro-dev-api",
+        "llama-2-70b-chat",
+    },
+    "gemini-pro": {"gpt-4-1106-preview", "gpt-4-0613", "gpt-3.5-turbo-0125"},
+    "gemini-pro-dev-api": {
+        "gpt-4-0125-preview",
+        "gpt-4-0613",
+        "gpt-3.5-turbo-0125",
+        "claude-3-haiku-20240307",
     },
     "bard-jan-24-gemini-pro": {
-        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
         "gpt-4-0613",
-        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-0125",
         "gemini-pro-dev-api",
     },
-    "bard-feb-2024": {
-        "gpt-4-1106-preview",
-        "gpt-4-0613",
-        "gpt-3.5-turbo-0613",
-        "bard-jan-24-gemini-pro",
-    },
-    "deepseek-llm-67b-chat": {
-        "gpt-4-1106-preview",
-        "gpt-4-turbo",
-        "gpt-3.5-turbo-0613",
-    },
-    "llama2-70b-steerlm-chat": {
+    "gemma-7b-it": {
+        "gpt-3.5-turbo-0125",
         "llama-2-70b-chat",
-        "tulu-2-dpo-70b",
-        "yi-34b-chat",
-    },
-    "stripedhyena-nous-7b": {
-        "starling-lm-7b-alpha",
-        "openhermes-2.5-mistral-7b",
-        "mistral-7b-instruct",
+        "openchat-3.5-0106",
         "llama-2-7b-chat",
+        "mistral-7b-instruct-v0.2",
     },
-    "deluxe-chat-v1.1": {"gpt-4-0613", "gpt-4-1106-preview"},
-    "deluxe-chat-v1.2": {"gpt-4-0613", "gpt-4-1106-preview"},
-    "pplx-7b-online": {"gpt-3.5-turbo-0125", "llama-2-70b-chat"},
-    "pplx-70b-online": {"gpt-3.5-turbo-0125", "llama-2-70b-chat"},
+    "gemma-2b-it": {
+        "gpt-3.5-turbo-0125",
+        "llama-2-70b-chat",
+        "openchat-3.5-0106",
+        "llama-2-7b-chat",
+        "mistral-7b-instruct-v0.2",
+    },
     "openhermes-2.5-mistral-7b": {
-        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-0125",
         "openchat-3.5",
         "zephyr-7b-beta",
     },
-    "dolphin-2.2.1-mistral-7b": {
-        "gpt-3.5-turbo-0613",
-        "vicuna-33b",
-        "starling-lm-7b-alpha",
-        "openhermes-2.5-mistral-7b",
-    },
-    "starling-lm-7b-alpha": {"gpt-3.5-turbo-0613", "openchat-3.5", "zephyr-7b-beta"},
-    "tulu-2-dpo-70b": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
-    "yi-34b-chat": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
-    "openchat-3.5": {"gpt-3.5-turbo-0613", "llama-2-70b-chat", "zephyr-7b-beta"},
+    "starling-lm-7b-alpha": {"gpt-3.5-turbo-0125", "openchat-3.5", "zephyr-7b-beta"},
+    "tulu-2-dpo-70b": {"gpt-3.5-turbo-0125", "vicuna-33b", "claude-instant-1"},
+    "yi-34b-chat": {"gpt-3.5-turbo-0125", "vicuna-33b", "claude-instant-1"},
     "chatglm3-6b": {"yi-34b-chat", "qwen-14b-chat"},
     "qwen-14b-chat": {"vicuna-13b", "llama-2-13b-chat", "llama-2-70b-chat"},
-    "zephyr-7b-alpha": {"mistral-7b-instruct", "llama-2-13b-chat"},
     "zephyr-7b-beta": {
         "mistral-7b-instruct",
         "llama-2-13b-chat",
         "llama-2-7b-chat",
         "wizardlm-13b",
     },
-    "llama-2-70b-chat": {"gpt-3.5-turbo-0125", "claude-instant-1"},
-    "llama-2-13b-chat": {"mistral-7b-instruct", "vicuna-13b", "llama-2-70b-chat"},
-    "llama-2-7b-chat": {"mistral-7b-instruct", "vicuna-7b", "llama-2-13b-chat"},
-    "mistral-7b-instruct": {
-        "llama-2-7b-chat",
-        "llama-2-13b-chat",
-        "llama-2-70b-chat",
-    },
-    "vicuna-33b": {"llama-2-70b-chat", "gpt-3.5-turbo-0613", "claude-instant-1"},
-    "vicuna-13b": {"llama-2-13b-chat", "llama-2-70b-chat"},
-    "vicuna-7b": {"llama-2-7b-chat", "mistral-7b-instruct", "llama-2-13b-chat"},
-    "wizardlm-70b": {"gpt-3.5-turbo-0613", "vicuna-33b", "claude-instant-1"},
 }
 
-SAMPLING_BOOST_MODELS = [
-    # "claude-2.1",
-    # "gpt-4-0613",
-    # "gpt-4-0314",
-    # "gpt-4-1106-preview",
-    # "gpt-4-0125-preview",
-    "gpt-3.5-turbo-0125",
-    # "mistral-medium",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openchat-3.5-0106",
-    "qwen1.5-72b-chat",
-    "qwen1.5-7b-chat",
-    "qwen1.5-4b-chat",
-    # "mistral-7b-instruct-v0.2",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 OUTAGE_MODELS = []
@@ -432,7 +354,7 @@ OUTAGE_MODELS = []
 def get_sample_weight(model):
     if model in OUTAGE_MODELS:
         return 0
-    weight = SAMPLING_WEIGHTS.get(model, 1.0)
+    weight = SAMPLING_WEIGHTS.get(model, 0)
     if model in SAMPLING_BOOST_MODELS:
         weight *= 5
     return weight
@@ -514,7 +436,13 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    flagged = moderation_filter(text, model_list)
+    # turn on moderation in battle mode
+    all_conv_text_left = states[0].conv.get_prompt()
+    all_conv_text_right = states[0].conv.get_prompt()
+    all_conv_text = (
+        all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    )
+    flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
@@ -627,7 +555,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
+We collect **300K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
@@ -690,7 +618,7 @@ Find out who is the 🥇LLM Champion!
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,

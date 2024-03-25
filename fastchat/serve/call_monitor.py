@@ -8,30 +8,53 @@ import hashlib
 import asyncio
 
 REFRESH_INTERVAL_SEC = 60
-LOG_DIR = "/home/vicuna/fastchat_logs/server0"
+LOG_DIR_LIST = [
+    "/home/gcpuser/fastchat_logs/server0",
+    "/home/gcpuser/fastchat_logs/server1",
+    "/home/gcpuser/fastchat_logs/server2",
+    "/home/gcpuser/fastchat_logs/server3",
+    "/home/gcpuser/fastchat_logs/server4",
+    "/home/gcpuser/fastchat_logs/server5",
+    "/home/gcpuser/fastchat_logs/server6",
+    "/home/gcpuser/fastchat_logs/server7",
+    "/home/gcpuser/fastchat_logs/server8",
+    "/home/gcpuser/fastchat_logs/server9",
+]
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
 
 class Monitor:
     """Monitor the number of calls to each model."""
 
-    def __init__(self, log_dir: str):
-        self.log_dir = log_dir
+    def __init__(self, log_dir_list: list):
+        self.log_dir_list = log_dir_list
         self.model_call = {}
         self.user_call = {}
         self.model_call_limit_global = {
             "gpt-4-1106-preview": 300,
             "gpt-4-0125-preview": 300,
+            "gpt-4-turbo-browsing": 200,
+            "mistral-large-2402": 300,
+            "claude-3-opus-20240229": 2500,
+            "claude-3-sonnet-20240229": 2500,
         }
-        self.model_call_day_limit_per_user = {"gpt-4-1106-preview": 10}
+        self.model_call_day_limit_per_user = {
+            "gpt-4-1106-preview": 8,
+            "gpt-4-0125-preview": 8,
+            "gpt-4-turbo-browsing": 8,
+            "mistral-large-2402": 8,
+            "claude-3-opus-20240229": 32,
+            "claude-3-sonnet-20240229": 64,
+        }
 
     async def update_stats(self, num_file=1) -> None:
         while True:
             # find the latest num_file log under log_dir
-            json_files = glob.glob(os.path.join(self.log_dir, "*.json"))
-            json_files.sort(key=os.path.getctime, reverse=True)
-            json_files = json_files[:num_file]
-
+            json_files = []
+            for log_dir in self.log_dir_list:
+                json_files_per_server = glob.glob(os.path.join(log_dir, "*.json"))
+                json_files_per_server.sort(key=os.path.getctime, reverse=True)
+                json_files += json_files_per_server[:num_file]
             model_call = {}
             user_call = {}
             for json_file in json_files:
@@ -155,7 +178,7 @@ class Monitor:
         return len(user_call_stats)
 
 
-monitor = Monitor(log_dir=LOG_DIR)
+monitor = Monitor(log_dir_list=LOG_DIR_LIST)
 app = FastAPI()
 
 
