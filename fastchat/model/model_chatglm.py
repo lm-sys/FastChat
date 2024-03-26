@@ -3,7 +3,6 @@ Inference code for ChatGLM.
 Adapted from https://huggingface.co/THUDM/chatglm-6b/blob/main/modeling_chatglm.py.
 """
 import re
-
 import torch
 from transformers.generation.logits_process import LogitsProcessor
 
@@ -77,8 +76,8 @@ def generate_stream_chatglm(
     repetition_penalty = float(params.get("repetition_penalty", 1.0))
     top_p = float(params.get("top_p", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
+    stop_token_ids = params.get("stop_token_ids", [])
     echo = params.get("echo", True)
-
     model_type = str(type(model)).lower()
     if "peft" in model_type:
         model_type = str(type(model.base_model.model)).lower()
@@ -93,16 +92,17 @@ def generate_stream_chatglm(
     input_echo_len = len(inputs["input_ids"][0])
 
     gen_kwargs = {
-        "max_length": max_new_tokens + input_echo_len,
-        "do_sample": True if temperature > 1e-5 else False,
+        "max_new_tokens": max_new_tokens,
+        "do_sample": True if temperature > 1e-4 else False,
+        "temperature": temperature if temperature > 1e-4 else None,
         "top_p": top_p,
         "repetition_penalty": repetition_penalty,
         "logits_processor": [invalid_score_processor],
+        "eos_token_id": stop_token_ids,
     }
-    if temperature > 1e-5:
-        gen_kwargs["temperature"] = temperature
 
     total_len = 0
+    finish_reason = "length"
     for total_ids in model.stream_generate(**inputs, **gen_kwargs):
         total_ids = total_ids.tolist()[0]
         total_len = len(total_ids)
@@ -110,6 +110,11 @@ def generate_stream_chatglm(
             output_ids = total_ids
         else:
             output_ids = total_ids[input_echo_len:]
+
+        if len(output_ids) > 0 and output_ids[-1] in stop_token_ids:
+            output_ids.pop()
+            finish_reason = "stop"
+
         response = tokenizer.decode(output_ids)
         response = process_response(response)
 
@@ -123,8 +128,6 @@ def generate_stream_chatglm(
             "finish_reason": None,
         }
 
-    # TODO: ChatGLM stop when it reach max length
-    # Only last stream result contains finish_reason, we set finish_reason as stop
     ret = {
         "text": response,
         "usage": {
@@ -132,6 +135,7 @@ def generate_stream_chatglm(
             "completion_tokens": total_len - input_echo_len,
             "total_tokens": total_len,
         },
-        "finish_reason": "stop",
+        "finish_reason": finish_reason,
     }
+
     yield ret
