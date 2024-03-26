@@ -149,11 +149,20 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
             **kwargs,
         )
     else:
-        user_prompt = judge.prompt_template["prompt_template"].format(
-            question=question["turns"][0],
-            answer=answer["choices"][0]["turns"][0],
-            **kwargs,
-        )
+        if "criteria_table" in question:
+            user_prompt = judge.prompt_template["prompt_template"].format(
+                criteria_table=question["criteria_table"],
+                max_score=question["task_points"],
+                question=question["turns"][0],
+                answer=answer["choices"][0]["turns"][0],
+                **kwargs,
+            )
+        else:
+            user_prompt = judge.prompt_template["prompt_template"].format(
+                question=question["turns"][0],
+                answer=answer["choices"][0]["turns"][0],
+                **kwargs,
+            )
 
     rating = -1
 
