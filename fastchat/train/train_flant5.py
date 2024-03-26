@@ -299,10 +299,10 @@ class SupervisedDataset(Dataset):
             sources = [example["conversations"] for example in list_data_dict]
 
             data_dict = preprocess(sources, tokenizer)
-            json_data_dict = json.dumps(data_dict)
+            json_data_dict = json.dumps(data_dict, ensure_ascii=False)
 
             # Remember to close file to avoid concurrent r/w
-            with open(self.preprocessed_path, "w") as f:
+            with open(self.preprocessed_path, "w", encoding="utf-8") as f:
                 f.write(json_data_dict)
 
             # Release barrier

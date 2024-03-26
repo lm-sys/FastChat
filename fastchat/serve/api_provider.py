@@ -144,6 +144,7 @@ def openai_api_stream_iter(
         temperature=temperature,
         max_tokens=max_new_tokens,
         stream=True,
+        extra_headers={"Accept": "text/event-stream"},
     )
     text = ""
     for chunk in res:

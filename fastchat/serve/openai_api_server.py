@@ -33,6 +33,7 @@ import uvicorn
 from fastchat.constants import (
     WORKER_API_TIMEOUT,
     WORKER_API_EMBEDDING_BATCH_SIZE,
+    HTTPX_TIMEOUT,
     ErrorCode,
 )
 from fastchat.conversation import Conversation, SeparatorStyle
@@ -680,7 +681,7 @@ async def generate_completion_stream_generator(
 
 async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
     controller_address = app_settings.controller_address
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTPX_TIMEOUT) as client:
         delimiter = b"\0"
         async with client.stream(
             "POST",
