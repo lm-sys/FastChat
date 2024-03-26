@@ -156,10 +156,13 @@ def mask_targets(conversations, targets, tokenizer, conv):
         turns = conversation.split(user_turn_separator)
         for i, turn in enumerate(turns):
             if (
-                i < len(turns) - 1 and turn == ""
+                i <= len(turns) - 1 and turn == ""
             ):  # Last turn is the user_turn_separator
+                # if (i==len(turns) - 1), i is the last turn.
                 break
-
+            # if 'turn' is the 'user_turn_separator' no need to process
+            if str(turn).strip()==str(user_turn_separator).strip():
+                continue
             if i != 0:
                 turn = user_turn_separator + turn
 
@@ -167,15 +170,20 @@ def mask_targets(conversations, targets, tokenizer, conv):
 
             if assistant_turn_separator in turn:
                 parts = turn.rsplit(assistant_turn_separator)
-                parts[0] += assistant_turn_separator
+                # parts[0] will be the user instruction.
+                # why need add assistant_turn_separator
+                if parts[0].endswith(assistant_turn_separator):
+                    pass
+                else:
+                    parts[0] += assistant_turn_separator
             else:
                 parts = [turn]
 
             instruction_len = len(
                 tokenizer(parts[0], add_special_tokens=False).input_ids
             )
-
-            target[cur_len : cur_len + instruction_len] = IGNORE_TOKEN_ID
+            # not mask the last one
+            target[cur_len : cur_len + instruction_len-1] = IGNORE_TOKEN_ID
             cur_len += turn_len
 
         target[cur_len:] = IGNORE_TOKEN_ID

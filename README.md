@@ -326,6 +326,9 @@ Tips:
 - If you meet out-of-memory due to "FSDP Warning: When using FSDP, it is efficient and recommended... ", see solutions [here](https://github.com/huggingface/transformers/issues/24724#issuecomment-1645189539).
 - If you meet out-of-memory during model saving, see solutions [here](https://github.com/pytorch/pytorch/issues/98823).
 - To turn on logging to popular experiment tracking tools such as Tensorboard, MLFlow or Weights & Biases, use the `report_to` argument, e.g. pass `--report_to wandb` to turn on logging to Weights & Biases.
+- Configure the dependency package versions for fine-tuning by following the guidelines provided in the [example_finetune_environment](docs/example_finetune_environment.md) documentation.
+
+- To fine-tune other models such as LLaMA2 and similar, you may consider utilizing the [train_with_template.py](fastchat/train/train_with_template.py) script available at `fastchat/train/train_with_template.py`.
 
 ### Other models, platforms and LoRA support
 More instructions to train other models (e.g., FastChat-T5) and use LoRA are in [docs/training.md](docs/training.md).
