@@ -1,4 +1,5 @@
 import argparse
+import ast
 from collections import defaultdict
 import datetime
 import json
@@ -10,14 +11,14 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 
-
+category = ["full", "long"]
 pd.options.display.float_format = "{:.2f}".format
-
 
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
@@ -82,8 +83,10 @@ def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000):
 
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
     # calibrate llama-13b to 800 if applicable
-    if "llama-13b" in models.index:
-        elo_scores += 800 - elo_scores[models["llama-13b"]]
+    if "mixtral-8x7b-instruct-v0.1" in models.index:
+        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
+    # if "llama-13b" in models.index:
+    #    elo_scores += 800 - elo_scores[models["llama-13b"]]
     return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
 
@@ -247,80 +250,103 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number):
         width=700,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
-
+    return fig 
 
 def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=100):
-    battles = pd.DataFrame(battles_json)
-    battles = battles.sort_values(ascending=True, by=["tstamp"])
-    # Only use anonymous votes
-    battles = battles[battles["anony"]].reset_index(drop=True)
-    battles_no_ties = battles[~battles["winner"].str.contains("tie")]
+    threshold = 512 # conversations (Vicuna Tokenizer) longer than threshold will be considered as long
+    tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.3", use_fast=False)
 
-    # Online update
-    elo_rating_online = compute_elo(battles)
+    def filter_long_conv(row):
+        for conversation_type in ["conversation_a", "conversation_b"]:
+            cur_conv = ast.literal_eval(row[conversation_type])
+            
+            conv_content = "".join([c["content"] for c in cur_conv if c["content"] is not None])
+            if len(tokenizer(conv_content)["input_ids"]) < threshold:
+                return False
+        return True
+    
+    ret = {}
+    
+    tqdm.pandas(desc="Processing for long conversations")
 
-    if rating_system == "bt":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo_mle_with_tie, num_round=num_bootstrap
+    for cat in category:
+        battles = pd.DataFrame(battles_json)
+
+        if cat == "long":
+            filtered_indices = battles.progress_apply(filter_long_conv, axis=1)
+            battles = battles[filtered_indices]
+
+        battles = battles.sort_values(ascending=True, by=["tstamp"])
+        # Only use anonymous votes
+        battles = battles[battles["anony"]].reset_index(drop=True)
+        battles_no_ties = battles[~battles["winner"].str.contains("tie")]
+
+        # Online update
+        elo_rating_online = compute_elo(battles)
+
+        if rating_system == "bt":
+            bootstrap_df = get_bootstrap_result(
+                battles, compute_elo_mle_with_tie, num_round=num_bootstrap
+            )
+            elo_rating_final = compute_elo_mle_with_tie(battles)
+        elif rating_system == "elo":
+            bootstrap_df = get_bootstrap_result(
+                battles, compute_elo, num_round=num_bootstrap
+            )
+            elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
+            elo_rating_final = elo_rating_median
+
+        model_order = list(elo_rating_final.keys())
+        model_order.sort(key=lambda k: -elo_rating_final[k])
+
+        limit_show_number = 25  # limit show number to make plots smaller
+        model_order = model_order[:limit_show_number]
+
+        # leaderboard_table_df: elo rating, variance, 95% interval, number of battles
+        leaderboard_table_df = pd.DataFrame(
+            {
+                "rating": elo_rating_final,
+                "variance": bootstrap_df.var(),
+                "rating_q975": bootstrap_df.quantile(0.975),
+                "rating_q025": bootstrap_df.quantile(0.025),
+                "num_battles": battles["model_a"]
+                .value_counts()
+                .add(battles["model_b"].value_counts(), fill_value=0),
+            }
         )
-        elo_rating_final = compute_elo_mle_with_tie(battles)
-    elif rating_system == "elo":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo, num_round=num_bootstrap
+
+        # Plots
+        leaderboard_table = visualize_leaderboard_table(elo_rating_final)
+        win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
+        battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
+        average_win_rate_bar = visualize_average_win_rate(
+            battles_no_ties, limit_show_number
         )
-        elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
-        elo_rating_final = elo_rating_median
+        bootstrap_elo_rating = visualize_bootstrap_elo_rating(
+            bootstrap_df, elo_rating_final, limit_show_number
+        )
 
-    model_order = list(elo_rating_final.keys())
-    model_order.sort(key=lambda k: -elo_rating_final[k])
+        last_updated_tstamp = battles["tstamp"].max()
+        last_updated_datetime = datetime.datetime.fromtimestamp(
+            last_updated_tstamp, tz=timezone("US/Pacific")
+        ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    limit_show_number = 25  # limit show number to make plots smaller
-    model_order = model_order[:limit_show_number]
-
-    # leaderboard_table_df: elo rating, variance, 95% interval, number of battles
-    leaderboard_table_df = pd.DataFrame(
-        {
-            "rating": elo_rating_final,
-            "variance": bootstrap_df.var(),
-            "rating_q975": bootstrap_df.quantile(0.975),
-            "rating_q025": bootstrap_df.quantile(0.025),
-            "num_battles": battles["model_a"]
-            .value_counts()
-            .add(battles["model_b"].value_counts(), fill_value=0),
+        ret[cat] = {
+            "rating_system": rating_system,
+            "elo_rating_online": elo_rating_online,
+            "elo_rating_final": elo_rating_final,
+            "leaderboard_table": leaderboard_table,
+            "win_fraction_heatmap": win_fraction_heatmap,
+            "battle_count_heatmap": battle_count_heatmap,
+            "average_win_rate_bar": average_win_rate_bar,
+            "bootstrap_elo_rating": bootstrap_elo_rating,
+            "last_updated_datetime": last_updated_datetime,
+            "last_updated_tstamp": last_updated_tstamp,
+            "bootstrap_df": bootstrap_df,
+            "leaderboard_table_df": leaderboard_table_df,
         }
-    )
 
-    # Plots
-    leaderboard_table = visualize_leaderboard_table(elo_rating_final)
-    win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
-    battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
-    average_win_rate_bar = visualize_average_win_rate(
-        battles_no_ties, limit_show_number
-    )
-    bootstrap_elo_rating = visualize_bootstrap_elo_rating(
-        bootstrap_df, elo_rating_final, limit_show_number
-    )
-
-    last_updated_tstamp = battles["tstamp"].max()
-    last_updated_datetime = datetime.datetime.fromtimestamp(
-        last_updated_tstamp, tz=timezone("US/Pacific")
-    ).strftime("%Y-%m-%d %H:%M:%S %Z")
-
-    return {
-        "rating_system": rating_system,
-        "elo_rating_online": elo_rating_online,
-        "elo_rating_final": elo_rating_final,
-        "leaderboard_table": leaderboard_table,
-        "win_fraction_heatmap": win_fraction_heatmap,
-        "battle_count_heatmap": battle_count_heatmap,
-        "average_win_rate_bar": average_win_rate_bar,
-        "bootstrap_elo_rating": bootstrap_elo_rating,
-        "last_updated_datetime": last_updated_datetime,
-        "last_updated_tstamp": last_updated_tstamp,
-        "bootstrap_df": bootstrap_df,
-        "leaderboard_table_df": leaderboard_table_df,
-    }
+    return ret
 
 
 def pretty_print_elo_rating(rating):
@@ -355,13 +381,21 @@ if __name__ == "__main__":
         battles, rating_system=args.rating_system, num_bootstrap=args.num_bootstrap
     )
 
-    print("# Online Elo")
-    pretty_print_elo_rating(results["elo_rating_online"])
-    print("# Median")
-    pretty_print_elo_rating(results["elo_rating_final"])
-    print(f"last update : {results['last_updated_datetime']}")
+    for cat in category:
+        print(f"# Results for {cat} conversations")
+        print("# Online Elo")
+        pretty_print_elo_rating(results[cat]["elo_rating_online"])
+        print("# Median")
+        pretty_print_elo_rating(results[cat]["elo_rating_final"])
+        print(f"last update : {results[cat]['last_updated_datetime']}")
 
-    last_updated_tstamp = results["last_updated_tstamp"]
+        last_updated_tstamp = results[cat]["last_updated_tstamp"]
+        cutoff_date = datetime.datetime.fromtimestamp(
+            last_updated_tstamp, tz=timezone("US/Pacific")
+        ).strftime("%Y%m%d")
+        print(f"last update : {cutoff_date}")
+
+    last_updated_tstamp = results["full"]["last_updated_tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y%m%d")
