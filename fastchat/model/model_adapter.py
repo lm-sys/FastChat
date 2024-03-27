@@ -59,6 +59,8 @@ ANTHROPIC_MODEL_LIST = (
     "claude-2.1",
     "claude-instant-1",
     "claude-instant-1.2",
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
 )
 
 OPENAI_MODEL_LIST = (
