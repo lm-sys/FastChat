@@ -68,7 +68,7 @@ ERROR_WORDS = [
 
 UNFINISHED_WORDS = [
     "▌",
-    "<span class=\"cursor\">",
+    '<span class="cursor">',
 ]
 
 for i in range(len(IDENTITY_WORDS)):
@@ -199,7 +199,10 @@ def process_data(
         else:
             flag_anony = False
             models = models_public
-            if models_hidden[0] not in models_public[0] or models_hidden[1] not in models_public[1]:
+            if (
+                models_hidden[0] not in models_public[0]
+                or models_hidden[1] not in models_public[1]
+            ):
                 count_dict["invalid"] += 1
                 continue
 
@@ -214,9 +217,7 @@ def process_data(
         messages = ""
         for i in range(2):
             state = row["states"][i]
-            for _, (role, msg) in enumerate(
-                state["messages"][state["offset"] :]
-            ):
+            for _, (role, msg) in enumerate(state["messages"][state["offset"] :]):
                 if msg:
                     messages += msg.lower()
                 else:
@@ -285,9 +286,13 @@ def process_data(
             count_dict["anony"] += 1
 
         for conv in conversation_a:
-            conv["num_tokens"] = len(encoding.encode(conv["content"], allowed_special="all"))
+            conv["num_tokens"] = len(
+                encoding.encode(conv["content"], allowed_special="all")
+            )
         for conv in conversation_b:
-            conv["num_tokens"] = len(encoding.encode(conv["content"], allowed_special="all"))
+            conv["num_tokens"] = len(
+                encoding.encode(conv["content"], allowed_special="all")
+            )
 
         # Save the results
         battles.append(
@@ -325,9 +330,13 @@ def clean_battle_data(
     with Pool(num_threads) as p:
         # split data into chunks
         chunk_size = len(data) // min(100, len(data))
-        data_chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+        data_chunks = [
+            data[i : i + chunk_size] for i in range(0, len(data), chunk_size)
+        ]
 
-        args_list = [(data_chunk, exclude_model_names, sanitize_ip) for data_chunk in data_chunks]
+        args_list = [
+            (data_chunk, exclude_model_names, sanitize_ip) for data_chunk in data_chunks
+        ]
         ret_all = list(tqdm(p.starmap(process_data, args_list), total=len(data_chunks)))
 
         for ret in ret_all:

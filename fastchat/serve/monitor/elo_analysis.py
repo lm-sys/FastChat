@@ -23,6 +23,7 @@ from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 tokenizer = None
 pd.options.display.float_format = "{:.2f}".format
 
+
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
 
@@ -56,18 +57,38 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     return df[df.median().sort_values(ascending=False).index]
 
 
-def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None):
-    ptbl_a_win = pd.pivot_table(df[df["winner"] == "model_a"], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
-    ptbl_tie = pd.pivot_table(df[df["winner"].isin(["tie", "tie (bothbad)"])], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+def compute_elo_mle_with_tie(
+    df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None
+):
+    ptbl_a_win = pd.pivot_table(
+        df[df["winner"] == "model_a"],
+        index="model_a",
+        columns="model_b",
+        aggfunc="size",
+        fill_value=0,
+    )
+    ptbl_tie = pd.pivot_table(
+        df[df["winner"].isin(["tie", "tie (bothbad)"])],
+        index="model_a",
+        columns="model_b",
+        aggfunc="size",
+        fill_value=0,
+    )
     ptbl_tie = ptbl_tie + ptbl_tie.T
-    ptbl_b_win = pd.pivot_table(df[df["winner"] == "model_b"], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
-    ptbl_win = ptbl_a_win*2 + ptbl_b_win.T*2 + ptbl_tie
+    ptbl_b_win = pd.pivot_table(
+        df[df["winner"] == "model_b"],
+        index="model_a",
+        columns="model_b",
+        aggfunc="size",
+        fill_value=0,
+    )
+    ptbl_win = ptbl_a_win * 2 + ptbl_b_win.T * 2 + ptbl_tie
 
     models = pd.Series(np.arange(len(ptbl_win.index)), index=ptbl_win.index)
 
     p = len(models)
-    X = np.zeros([p*(p-1)*2, p])
-    Y = np.zeros(p*(p-1)*2)
+    X = np.zeros([p * (p - 1) * 2, p])
+    Y = np.zeros(p * (p - 1) * 2)
 
     cur_row = 0
     sample_weights = []
@@ -83,9 +104,9 @@ def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000, sample_we
             Y[cur_row] = 1.0
             sample_weights.append(ptbl_win.loc[m_a, m_b])
 
-            X[cur_row+1, models[m_a]] = math.log(BASE)
-            X[cur_row+1, models[m_b]] = -math.log(BASE)
-            Y[cur_row+1] = 0.0
+            X[cur_row + 1, models[m_a]] = math.log(BASE)
+            X[cur_row + 1, models[m_b]] = -math.log(BASE)
+            Y[cur_row + 1] = 0.0
             sample_weights.append(ptbl_win.loc[m_b, m_a])
             cur_row += 2
     X = X[:cur_row]
@@ -175,8 +196,8 @@ def visualize_pairwise_win_fraction(battles, model_order, scale=1):
         row_beats_col,
         color_continuous_scale="RdBu",
         text_auto=".2f",
-        height=700*scale,
-        width=700*scale,
+        height=700 * scale,
+        width=700 * scale,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -200,8 +221,8 @@ def visualize_battle_count(battles, model_order, scale=1):
     fig = px.imshow(
         battle_counts.loc[model_order, model_order],
         text_auto=True,
-        height=700*scale,
-        width=700*scale,
+        height=700 * scale,
+        width=700 * scale,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -223,8 +244,8 @@ def visualize_average_win_rate(battles, limit_show_number, scale=1):
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        height=500*scale,
-        width=700*scale,
+        height=500 * scale,
+        width=700 * scale,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
@@ -255,11 +276,12 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number, scale=1):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        height=500*scale,
-        width=700*scale,
+        height=500 * scale,
+        width=700 * scale,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig 
+    return fig
+
 
 def limit_user_votes(battles, daily_vote_per_user):
     from datetime import datetime
@@ -307,7 +329,12 @@ def get_model_pair_stats(battles):
 
 
 def outlier_detect(
-    model_pair_stats, battles, max_vote=100, randomized=False, alpha=0.05, c_param=0.5,
+    model_pair_stats,
+    battles,
+    max_vote=100,
+    randomized=False,
+    alpha=0.05,
+    c_param=0.5,
     user_list=None,
 ):
     if user_list is None:
@@ -371,9 +398,11 @@ def outlier_detect(
     # remove bad users
     battles = battles[~battles["judge"].isin(bad_user_id_list)]
     return battles
-    
+
+
 def filter_default(row):
     return True
+
 
 def filter_long_conv(row):
     threshold = 512
@@ -383,6 +412,7 @@ def filter_long_conv(row):
         if num_tokens_all >= threshold:
             return True
     return False
+
 
 def report_elo_analysis_results(
     battles_json,
@@ -482,8 +512,12 @@ def report_elo_analysis_results(
 
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_final)
-    win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order, scale=scale)
-    battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order, scale=scale)
+    win_fraction_heatmap = visualize_pairwise_win_fraction(
+        battles_no_ties, model_order, scale=scale
+    )
+    battle_count_heatmap = visualize_battle_count(
+        battles_no_ties, model_order, scale=scale
+    )
     average_win_rate_bar = visualize_average_win_rate(
         battles_no_ties, limit_show_number, scale=scale
     )
@@ -534,7 +568,7 @@ if __name__ == "__main__":
     parser.add_argument("--langs", type=str, nargs="+", default=[])
     parser.add_argument("--daily-vote-per-user", type=int, default=None)
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
-    parser.add_argument('--category', nargs='+', default=["full"])
+    parser.add_argument("--category", nargs="+", default=["full"])
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -551,7 +585,9 @@ if __name__ == "__main__":
         "full": filter_default,
         "long": filter_long_conv,
     }
-    assert all([cat in filter_func_map for cat in args.category]), f"Invalid category: {args.category}"
+    assert all(
+        [cat in filter_func_map for cat in args.category]
+    ), f"Invalid category: {args.category}"
 
     results = {}
     for cat in args.category:
@@ -566,7 +602,7 @@ if __name__ == "__main__":
             exclude_unknown_lang=args.exclude_unknown_lang,
             daily_vote_per_user=args.daily_vote_per_user,
             run_outlier_detect=args.run_outlier_detect,
-            filter_func=filter_func
+            filter_func=filter_func,
         )
 
     for cat in args.category:
