@@ -279,7 +279,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
 
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
     flagged = moderation_filter(text, [state.model_name])
     if flagged:
@@ -290,7 +290,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
+        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
             no_change_btn,
         ) * 5
 
@@ -364,6 +364,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=True,
+    use_recommended_config=False,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -437,6 +438,12 @@ def bot_response(
             images,
         )
     else:
+        if use_recommended_config:
+            recommended_config = model_api_dict.get("recommended_config", None)
+            if recommended_config is not None:
+                temperature = recommended_config.get("temperature", temperature)
+                top_p = recommended_config.get("top_p", top_p)
+
         stream_iter = get_api_provider_stream_iter(
             conv,
             model_name,

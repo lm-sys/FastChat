@@ -1,15 +1,18 @@
 import argparse
+import ast
 from collections import defaultdict
 import datetime
 import json
 import math
 import pickle
 from pytz import timezone
+from functools import partial
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 from sklearn.linear_model import LogisticRegression
 
@@ -17,9 +20,8 @@ from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 
-
+tokenizer = None
 pd.options.display.float_format = "{:.2f}".format
-
 
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
@@ -258,8 +260,7 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number, scale=1):
         width=700*scale,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
-
+    return fig 
 
 def limit_user_votes(battles, daily_vote_per_user):
     from datetime import datetime
@@ -371,7 +372,24 @@ def outlier_detect(
     # remove bad users
     battles = battles[~battles["judge"].isin(bad_user_id_list)]
     return battles
+    
+def filter_default(row):
+    return True
 
+def filter_long_conv(row):
+    global tokenizer 
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.3", use_fast=False)
+
+    threshold = 512 # conversations (Vicuna Tokenizer) longer than threshold will be considered as long
+
+    for conversation_type in ["conversation_a", "conversation_b"]:
+        cur_conv = ast.literal_eval(row[conversation_type])
+        
+        conv_content = "".join([c["content"] for c in cur_conv if c["content"] is not None])
+        if len(tokenizer(conv_content)["input_ids"]) < threshold:
+            return False
+    return True
 
 def report_elo_analysis_results(
     battles_json,
@@ -384,8 +402,14 @@ def report_elo_analysis_results(
     daily_vote_per_user=None,
     run_outlier_detect=False,
     scale=1,
+    filter_func=None,
 ):
     battles = pd.DataFrame(battles_json)
+
+    tqdm.pandas(desc=f"Processing using {filter_func.__name__}")
+    filtered_indices = battles.progress_apply(filter_func, axis=1)
+    battles = battles[filtered_indices]
+
     battles = battles.sort_values(ascending=True, by=["tstamp"])
 
     if len(langs) > 0:
@@ -450,10 +474,11 @@ def report_elo_analysis_results(
         {
             "rating": elo_rating_final,
             "variance": bootstrap_df.var(),
-            "rating_q975": model_rating_q975,
-            "rating_q025": model_rating_q025,
-            "num_battles": battles["model_a"].value_counts()
-            + battles["model_b"].value_counts(),
+            "rating_q975": bootstrap_df.quantile(0.975),
+            "rating_q025": bootstrap_df.quantile(0.025),
+            "num_battles": battles["model_a"]
+            .value_counts()
+            .add(battles["model_b"].value_counts(), fill_value=0),
             "final_ranking": pd.Series(ranking),
         }
     )
@@ -516,6 +541,7 @@ if __name__ == "__main__":
     parser.add_argument("--langs", type=str, nargs="+", default=[])
     parser.add_argument("--daily-vote-per-user", type=int, default=None)
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
+    parser.add_argument('--category', nargs='+', default=["full"])
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -528,25 +554,43 @@ if __name__ == "__main__":
         log_files = get_log_files(args.max_num_files)
         battles = clean_battle_data(log_files)
 
-    results = report_elo_analysis_results(
-        battles,
-        rating_system=args.rating_system,
-        num_bootstrap=args.num_bootstrap,
-        exclude_models=args.exclude_models,
-        langs=args.langs,
-        exclude_tie=args.exclude_tie,
-        exclude_unknown_lang=args.exclude_unknown_lang,
-        daily_vote_per_user=args.daily_vote_per_user,
-        run_outlier_detect=args.run_outlier_detect,
-    )
+    filter_func_map = {
+        "full": filter_default,
+        "long": filter_long_conv
+    }
+    assert all([cat in filter_func_map for cat in args.category]), f"Invalid category: {args.category}"
 
-    print("# Online Elo")
-    pretty_print_elo_rating(results["elo_rating_online"])
-    print("# Median")
-    pretty_print_elo_rating(results["elo_rating_final"])
-    print(f"last update : {results['last_updated_datetime']}")
+    results = {}
+    for cat in args.category:
+        filter_func = filter_func_map[cat]
+        results[cat] = report_elo_analysis_results(
+            battles,
+            rating_system=args.rating_system,
+            num_bootstrap=args.num_bootstrap,
+            exclude_models=args.exclude_models,
+            langs=args.langs,
+            exclude_tie=args.exclude_tie,
+            exclude_unknown_lang=args.exclude_unknown_lang,
+            daily_vote_per_user=args.daily_vote_per_user,
+            run_outlier_detect=args.run_outlier_detect,
+            filter_func=filter_func
+        )
 
-    last_updated_tstamp = results["last_updated_tstamp"]
+    for cat in args.category:
+        print(f"# Results for {cat} conversations")
+        print("# Online Elo")
+        pretty_print_elo_rating(results[cat]["elo_rating_online"])
+        print("# Median")
+        pretty_print_elo_rating(results[cat]["elo_rating_final"])
+        print(f"last update : {results[cat]['last_updated_datetime']}")
+
+        last_updated_tstamp = results[cat]["last_updated_tstamp"]
+        cutoff_date = datetime.datetime.fromtimestamp(
+            last_updated_tstamp, tz=timezone("US/Pacific")
+        ).strftime("%Y%m%d")
+        print(f"last update : {cutoff_date}")
+
+    last_updated_tstamp = results["full"]["last_updated_tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y%m%d")
