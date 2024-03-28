@@ -49,6 +49,9 @@ IDENTITY_WORDS = [
     "Tulu",
     "deepseek",
     "hermes",
+    "cohere",
+    "DBRX",
+    "databricks",
 ]
 
 ERROR_WORDS = [
@@ -59,6 +62,11 @@ ERROR_WORDS = [
     "**API REQUEST ERROR**",
 ]
 
+UNFINISHED_WORDS = [
+    "▌",
+    "<span class=\"cursor\">",
+]
+
 for i in range(len(IDENTITY_WORDS)):
     IDENTITY_WORDS[i] = IDENTITY_WORDS[i].lower()
 
@@ -67,7 +75,7 @@ for i in range(len(ERROR_WORDS)):
 
 
 def remove_html(raw):
-    if raw.startswith("<h3>"):
+    if isinstance(raw, str) and raw.startswith("<h3>"):
         return raw[raw.find(": ") + 2 : -len("</h3>\n")]
     return raw
 
@@ -89,6 +97,7 @@ def replace_model_name(old_name, tstamp):
         "claude-2": "claude-2.0",
         "StripedHyena-Nous-7B": "stripedhyena-nous-7b",
         "gpt-4-turbo": "gpt-4-1106-preview",
+        "gpt-4-0125-assistants-api": "gpt-4-turbo-browsing",
     }
     if old_name in ["gpt-4", "gpt-3.5-turbo"]:
         if tstamp > 1687849200:
@@ -144,13 +153,27 @@ def clean_battle_data(
 
     all_models = set()
     all_ips = dict()
-    ct_anony = 0
-    ct_invalid = 0
-    ct_leaked_identity = 0
-    ct_banned = 0
-    ct_error = 0
+
+    count_dict = {
+        "anony": 0,
+        "invalid": 0,
+        "leaked_identity": 0,
+        "banned": 0,
+        "error": 0,
+        "unfinished": 0,
+        "none_msg": 0,
+        "exclude_model": 0,
+    }
+    count_leak = {}
+
     battles = []
     for row in data:
+        flag_anony = False
+        flag_leaked_identity = False
+        flag_error = False
+        flag_unfinished = False
+        flag_none_msg = False
+
         if row["models"][0] is None or row["models"][1] is None:
             continue
 
@@ -169,61 +192,74 @@ def clean_battle_data(
         if (models_public[0] == "" and models_public[1] != "") or (
             models_public[1] == "" and models_public[0] != ""
         ):
-            ct_invalid += 1
+            count_dict["invalid"] += 1
             continue
 
         if models_public[0] == "" or models_public[0] == "Model A":
-            anony = True
+            flag_anony = True
             models = models_hidden
-            ct_anony += 1
         else:
-            anony = False
+            flag_anony = False
             models = models_public
-            if not models_public == models_hidden:
-                ct_invalid += 1
+            if models_hidden[0] not in models_public[0] or models_hidden[1] not in models_public[1]:
+                count_dict["invalid"] += 1
                 continue
 
         # Detect langauge
         state = row["states"][0]
         if state["offset"] >= len(state["messages"]):
-            ct_invalid += 1
+            count_dict["invalid"] += 1
             continue
         lang_code = detect_language(state["messages"][state["offset"]][1])
 
         # Drop conversations if the model names are leaked
-        leaked_identity = False
-        error_words = False
         messages = ""
         for i in range(2):
             state = row["states"][i]
-            for turn_idx, (role, msg) in enumerate(
+            for _, (role, msg) in enumerate(
                 state["messages"][state["offset"] :]
             ):
                 if msg:
                     messages += msg.lower()
+                else:
+                    flag_none_msg = True
+
         for word in IDENTITY_WORDS:
             if word in messages:
-                leaked_identity = True
+                if word not in count_leak:
+                    count_leak[word] = 0
+                count_leak[word] += 1
+                flag_leaked_identity = True
                 break
 
         for word in ERROR_WORDS:
             if word in messages:
-                error_words = True
+                flag_error = True
                 break
 
-        if leaked_identity:
-            ct_leaked_identity += 1
-            continue
+        for word in UNFINISHED_WORDS:
+            if word in messages:
+                flag_unfinished = True
+                break
 
-        if error_words:
-            ct_error += 1
+        if flag_none_msg:
+            count_dict["none_msg"] += 1
+            continue
+        if flag_leaked_identity:
+            count_dict["leaked_identity"] += 1
+            continue
+        if flag_error:
+            count_dict["error"] += 1
+            continue
+        if flag_unfinished:
+            count_dict["unfinished"] += 1
             continue
 
         # Replace bard with palm
         models = [replace_model_name(m, row["tstamp"]) for m in models]
         # Exclude certain models
         if exclude_model_names and any(x in exclude_model_names for x in models):
-            ct_invalid += 1
+            count_dict["exclude_model"] += 1
             continue
 
         question_id = row["states"][0]["conv_id"]
@@ -244,9 +280,11 @@ def clean_battle_data(
             user_id = f"{all_ips[ip]['ip']}"
 
         if ban_ip_list is not None and ip in ban_ip_list:
-            ct_banned += 1
+            count_dict["banned"] += 1
             continue
 
+        if flag_anony:
+            count_dict["anony"] += 1
         # Save the results
         battles.append(
             dict(
@@ -258,7 +296,7 @@ def clean_battle_data(
                 conversation_a=conversation_a,
                 conversation_b=conversation_b,
                 turn=len(conversation_a) // 2,
-                anony=anony,
+                anony=flag_anony,
                 language=lang_code,
                 tstamp=row["tstamp"],
             )
@@ -272,15 +310,12 @@ def clean_battle_data(
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    print(
-        f"#votes: {len(data)}, #invalid votes: {ct_invalid}, "
-        f"#leaked_identity: {ct_leaked_identity} "
-        f"#banned: {ct_banned} "
-        f"#error_word: {ct_error} "
-    )
-    print(f"#battles: {len(battles)}, #anony: {ct_anony}")
+    print(f"#votes: {len(data)}")
+    print(count_dict)
+    print(f"#battles: {len(battles)}, #anony: {count_dict['anony']}")
     print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
+    print(f"leaked_identity: {count_leak}")
 
     if ban_ip_list is not None:
         for ban_ip in ban_ip_list:
@@ -336,6 +371,6 @@ if __name__ == "__main__":
         battles = new_battles
         output = f"clean_battle_conv_{cutoff_date}.json"
 
-    with open(output, "w") as fout:
+    with open(output, "w", encoding="utf-8", errors="replace") as fout:
         json.dump(battles, fout, indent=2, ensure_ascii=False)
     print(f"Write cleaned data to {output}")

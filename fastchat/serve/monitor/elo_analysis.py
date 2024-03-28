@@ -11,6 +11,8 @@ import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 
+from sklearn.linear_model import LogisticRegression
+
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
@@ -52,38 +54,47 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
     return df[df.median().sort_values(ascending=False).index]
 
 
-def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000):
-    from sklearn.linear_model import LogisticRegression
+def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None):
+    print("#battles: ", len(df))
+    ptbl_a_win = pd.pivot_table(df[df["winner"] == "model_a"], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+    ptbl_tie = pd.pivot_table(df[df["winner"].isin(["tie", "tie (bothbad)"])], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+    ptbl_tie = ptbl_tie + ptbl_tie.T
+    ptbl_b_win = pd.pivot_table(df[df["winner"] == "model_b"], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
+    ptbl_win = ptbl_a_win*2 + ptbl_b_win.T*2 + ptbl_tie
 
-    models = pd.concat([df["model_a"], df["model_b"]]).unique()
-    models = pd.Series(np.arange(len(models)), index=models)
+    models = pd.Series(np.arange(len(ptbl_win.index)), index=ptbl_win.index)
 
-    # duplicate battles
-    df = pd.concat([df, df], ignore_index=True)
-    p = len(models.index)
-    n = df.shape[0]
+    p = len(models)
+    X = np.zeros([p*(p-1)*2, p])
+    Y = np.zeros(p*(p-1)*2)
 
-    X = np.zeros([n, p])
-    X[np.arange(n), models[df["model_a"]]] = +math.log(BASE)
-    X[np.arange(n), models[df["model_b"]]] = -math.log(BASE)
+    cur_row = 0
+    sample_weights = []
+    for m_a in ptbl_win.index:
+        for m_b in ptbl_win.columns:
+            if m_a == m_b:
+                continue
+            # if nan skip
+            if math.isnan(ptbl_win.loc[m_a, m_b]) or math.isnan(ptbl_win.loc[m_b, m_a]):
+                continue
+            X[cur_row, models[m_a]] = +math.log(BASE)
+            X[cur_row, models[m_b]] = -math.log(BASE)
+            Y[cur_row] = 1.0
+            sample_weights.append(ptbl_win.loc[m_a, m_b])
 
-    # one A win => two A win
-    Y = np.zeros(n)
-    Y[df["winner"] == "model_a"] = 1.0
+            X[cur_row+1, models[m_a]] = math.log(BASE)
+            X[cur_row+1, models[m_b]] = -math.log(BASE)
+            Y[cur_row+1] = 0.0
+            sample_weights.append(ptbl_win.loc[m_b, m_a])
+            cur_row += 2
+    X = X[:cur_row]
+    Y = Y[:cur_row]
 
-    # one tie => one A win + one B win
-    # find tie + tie (both bad) index
-    tie_idx = (df["winner"] == "tie") | (df["winner"] == "tie (bothbad)")
-    tie_idx[len(tie_idx) // 2 :] = False
-    Y[tie_idx] = 1.0
-
-    lr = LogisticRegression(fit_intercept=False)
-    lr.fit(X, Y)
-
+    lr = LogisticRegression(fit_intercept=False, penalty=None)
+    lr.fit(X, Y, sample_weight=sample_weights)
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
-    # set anchor as llama-2-70b-chat = 1082
-    if "llama-2-70b-chat" in models.index:
-        elo_scores += 1082 - elo_scores[models["llama-2-70b-chat"]]
+    if "mixtral-8x7b-instruct-v0.1" in models.index:
+        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
     return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
 
@@ -157,14 +168,14 @@ def visualize_leaderboard_table(rating):
     return md
 
 
-def visualize_pairwise_win_fraction(battles, model_order):
+def visualize_pairwise_win_fraction(battles, model_order, scale=1):
     row_beats_col = compute_pairwise_win_fraction(battles, model_order)
     fig = px.imshow(
         row_beats_col,
         color_continuous_scale="RdBu",
         text_auto=".2f",
-        height=700,
-        width=700,
+        height=700*scale,
+        width=700*scale,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -180,7 +191,7 @@ def visualize_pairwise_win_fraction(battles, model_order):
     return fig
 
 
-def visualize_battle_count(battles, model_order):
+def visualize_battle_count(battles, model_order, scale=1):
     ptbl = pd.pivot_table(
         battles, index="model_a", columns="model_b", aggfunc="size", fill_value=0
     )
@@ -188,8 +199,8 @@ def visualize_battle_count(battles, model_order):
     fig = px.imshow(
         battle_counts.loc[model_order, model_order],
         text_auto=True,
-        height=700,
-        width=700,
+        height=700*scale,
+        width=700*scale,
     )
     fig.update_layout(
         xaxis_title="Model B",
@@ -204,15 +215,15 @@ def visualize_battle_count(battles, model_order):
     return fig
 
 
-def visualize_average_win_rate(battles, limit_show_number):
+def visualize_average_win_rate(battles, limit_show_number, scale=1):
     row_beats_col_freq = compute_pairwise_win_fraction(
         battles, None, limit_show_number=limit_show_number
     )
     fig = px.bar(
         row_beats_col_freq.mean(axis=1).sort_values(ascending=False),
         text_auto=".2f",
-        height=500,
-        width=700,
+        height=500*scale,
+        width=700*scale,
     )
     fig.update_layout(
         yaxis_title="Average Win Rate", xaxis_title="Model", showlegend=False
@@ -220,7 +231,7 @@ def visualize_average_win_rate(battles, limit_show_number):
     return fig
 
 
-def visualize_bootstrap_elo_rating(df, df_final, limit_show_number):
+def visualize_bootstrap_elo_rating(df, df_final, limit_show_number, scale=1):
     bars = (
         pd.DataFrame(
             dict(
@@ -235,7 +246,7 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number):
     bars = bars[:limit_show_number]
     bars["error_y"] = bars["upper"] - bars["rating"]
     bars["error_y_minus"] = bars["rating"] - bars["lower"]
-    bars["rating_rounded"] = np.round(bars["rating"], 2)
+    bars["rating_rounded"] = np.round(bars["rating"])
     fig = px.scatter(
         bars,
         x="model",
@@ -243,8 +254,8 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        height=500,
-        width=700,
+        height=500*scale,
+        width=700*scale,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
     return fig
@@ -297,10 +308,12 @@ def get_model_pair_stats(battles):
 
 def outlier_detect(
     model_pair_stats, battles, max_vote=100, randomized=False, alpha=0.05, c_param=0.5,
+    user_list=None,
 ):
-    # only check user who has >= 5 votes to save compute
-    user_vote_cnt = battles["judge"].value_counts()
-    user_list = user_vote_cnt[user_vote_cnt >= 5].index.tolist()
+    if user_list is None:
+        # only check user who has >= 5 votes to save compute
+        user_vote_cnt = battles["judge"].value_counts()
+        user_list = user_vote_cnt[user_vote_cnt >= 5].index.tolist()
     print("#User to be checked: ", len(user_list))
 
     bad_user_list = []
@@ -367,14 +380,18 @@ def report_elo_analysis_results(
     exclude_models=[],
     langs=[],
     exclude_tie=False,
+    exclude_unknown_lang=False,
     daily_vote_per_user=None,
     run_outlier_detect=False,
+    scale=1,
 ):
     battles = pd.DataFrame(battles_json)
     battles = battles.sort_values(ascending=True, by=["tstamp"])
 
     if len(langs) > 0:
         battles = battles[battles["language"].isin(langs)]
+    if exclude_unknown_lang:
+        battles = battles[~battles["language"].str.contains("unknown")]
 
     # remove excluded models
     battles = battles[
@@ -414,32 +431,46 @@ def report_elo_analysis_results(
         elo_rating_final = elo_rating_median
 
     model_order = list(elo_rating_final.keys())
-    model_order.sort(key=lambda k: -elo_rating_final[k])
 
-    limit_show_number = 25  # limit show number to make plots smaller
-    model_order = model_order[:limit_show_number]
+    model_rating_q025 = bootstrap_df.quantile(0.025)
+    model_rating_q975 = bootstrap_df.quantile(0.975)
+
+    # compute ranking based on CI
+    ranking = {}
+    for i, model_a in enumerate(model_order):
+        ranking[model_a] = 1
+        for j, model_b in enumerate(model_order):
+            if i == j:
+                continue
+            if model_rating_q025[model_b] > model_rating_q975[model_a]:
+                ranking[model_a] += 1
 
     # leaderboard_table_df: elo rating, variance, 95% interval, number of battles
     leaderboard_table_df = pd.DataFrame(
         {
             "rating": elo_rating_final,
             "variance": bootstrap_df.var(),
-            "rating_q975": bootstrap_df.quantile(0.975),
-            "rating_q025": bootstrap_df.quantile(0.025),
+            "rating_q975": model_rating_q975,
+            "rating_q025": model_rating_q025,
             "num_battles": battles["model_a"].value_counts()
             + battles["model_b"].value_counts(),
+            "final_ranking": pd.Series(ranking),
         }
     )
 
+    model_order.sort(key=lambda k: -elo_rating_final[k])
+    limit_show_number = 25 * scale
+    model_order = model_order[:limit_show_number]
+
     # Plots
     leaderboard_table = visualize_leaderboard_table(elo_rating_final)
-    win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order)
-    battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order)
+    win_fraction_heatmap = visualize_pairwise_win_fraction(battles_no_ties, model_order, scale=scale)
+    battle_count_heatmap = visualize_battle_count(battles_no_ties, model_order, scale=scale)
     average_win_rate_bar = visualize_average_win_rate(
-        battles_no_ties, limit_show_number
+        battles_no_ties, limit_show_number, scale=scale
     )
     bootstrap_elo_rating = visualize_bootstrap_elo_rating(
-        bootstrap_df, elo_rating_final, limit_show_number
+        bootstrap_df, elo_rating_final, limit_show_number, scale=scale
     )
 
     last_updated_tstamp = battles["tstamp"].max()
@@ -480,6 +511,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--exclude-models", type=str, nargs="+", default=[])
     parser.add_argument("--exclude-tie", action="store_true", default=False)
+    parser.add_argument("--exclude-unknown-lang", action="store_true", default=False)
+    parser.add_argument("--exclude-url", action="store_true", default=False)
     parser.add_argument("--langs", type=str, nargs="+", default=[])
     parser.add_argument("--daily-vote-per-user", type=int, default=None)
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
@@ -502,6 +535,7 @@ if __name__ == "__main__":
         exclude_models=args.exclude_models,
         langs=args.langs,
         exclude_tie=args.exclude_tie,
+        exclude_unknown_lang=args.exclude_unknown_lang,
         daily_vote_per_user=args.daily_vote_per_user,
         run_outlier_detect=args.run_outlier_detect,
     )
