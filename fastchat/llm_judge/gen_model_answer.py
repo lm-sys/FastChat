@@ -104,7 +104,7 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            conv = get_conversation_template(model_path)
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
@@ -187,7 +187,7 @@ def get_model_answers(
                 "choices": choices,
                 "tstamp": time.time(),
             }
-            fout.write(json.dumps(ans_json) + "\n")
+            fout.write(json.dumps(ans_json, ensure_ascii=False) + "\n")
 
 
 def reorg_answer_file(answer_file):
@@ -219,7 +219,14 @@ if __name__ == "__main__":
         "--bench-name",
         type=str,
         default="mt_bench",
+        choices=["mt_bench", "vicuna_bench"],
         help="The name of the benchmark question set.",
+    )
+    parser.add_argument(
+        "--question_file",
+        type=str,
+        default="question_ru.jsonl",
+        help="The name of the file with questions.",
     )
     parser.add_argument(
         "--question-begin",
@@ -277,12 +284,13 @@ if __name__ == "__main__":
 
         ray.init()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}"
     if args.answer_file:
         answer_file = args.answer_file
     else:
         answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
 
+    print(f"Input file {question_file}")
     print(f"Output to {answer_file}")
 
     run_eval(

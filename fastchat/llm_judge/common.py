@@ -54,6 +54,21 @@ reverse_model_map = {
     "model_2": "model_1",
 }
 
+api_model_prices = {
+    "gpt-4-turbo-preview": {
+        "prompt_tokens": 0.01,
+        "completion_tokens": 0.03
+    },
+    "gpt-4": {
+        "prompt_tokens": 0.03,
+        "completion_tokens": 0.06
+    },
+    "gpt-3.5-turbo": {
+        "prompt_tokens": 0.0005,
+        "completion_tokens": 0.0015
+    }
+}
+
 
 @dataclasses.dataclass
 class Judge:
@@ -164,9 +179,9 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[1], None)
 
     if model in OPENAI_MODEL_LIST:
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        judgment, prompt_tokens, completion_tokens = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
-        judgment = chat_completion_anthropic(
+        judgment, prompt_tokens, completion_tokens = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
     else:
@@ -186,7 +201,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
             f"invalid output format: {judge.prompt_template['output_format']}"
         )
 
-    return rating, user_prompt, judgment
+    return rating, user_prompt, judgment, prompt_tokens, completion_tokens
 
 
 def play_a_match_single(match: MatchSingle, output_file: str):
@@ -200,7 +215,7 @@ def play_a_match_single(match: MatchSingle, output_file: str):
     )
 
     if judge.prompt_template["type"] == "single":
-        score, user_prompt, judgment = run_judge_single(
+        score, user_prompt, judgment, prompt_tokens, completion_tokens = run_judge_single(
             question, answer, judge, ref_answer, multi_turn=multi_turn
         )
 
@@ -215,19 +230,16 @@ def play_a_match_single(match: MatchSingle, output_file: str):
             "score": score,
             "turn": turn,
             "tstamp": time.time(),
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens
         }
-        print(
-            f"question: {question_id}, turn: {turn}, model: {model}, "
-            f"score: {score}, "
-            f"judge: {(judge.model_name, judge.prompt_template['name'])}"
-        )
     else:
         raise ValueError(f"invalid judge type: {judge['type']}")
 
     if output_file:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "a") as fout:
-            fout.write(json.dumps(result) + "\n")
+            fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
 
@@ -268,12 +280,12 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
 
     if model in OPENAI_MODEL_LIST:
         conv.set_system_message(system_prompt)
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        judgment, prompt_tokens, completion_tokens = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
         if system_prompt != "You are a helpful assistant.":
             user_prompt = "[Instruction]\n" + system_prompt + "\n\n" + user_prompt
             conv.messages[0][1] = user_prompt
-        judgment = chat_completion_anthropic(
+        judgment, prompt_tokens, completion_tokens = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
     else:
@@ -307,7 +319,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
             f"invalid output format: {judge.prompt_template['output_format']}"
         )
 
-    return winner, user_prompt, judgment
+    return winner, user_prompt, judgment, prompt_tokens, completion_tokens
 
 
 def play_a_match_pair(match: MatchPair, output_file: str):
@@ -323,10 +335,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     )
 
     if judge.prompt_template["type"] == "pairwise":
-        g1_winner, g1_user_prompt, g1_judgment = run_judge_pair(
+        g1_winner, g1_user_prompt, g1_judgment, g1_prompt_tokens, g1_completion_tokens = run_judge_pair(
             question, answer_1, answer_2, judge, ref_answer, multi_turn=multi_turn
         )
-        g2_winner, g2_user_prompt, g2_judgment = run_judge_pair(
+        g2_winner, g2_user_prompt, g2_judgment, g2_prompt_tokens, g2_completion_tokens = run_judge_pair(
             question, answer_2, answer_1, judge, ref_answer, multi_turn=multi_turn
         )
 
@@ -348,20 +360,17 @@ def play_a_match_pair(match: MatchPair, output_file: str):
             "g1_judgment": g1_judgment,
             "g2_user_prompt": g2_user_prompt,
             "g2_judgment": g2_judgment,
+            "prompt_tokens": g1_prompt_tokens + g2_prompt_tokens,
+            "completion_tokens": g1_completion_tokens + g2_completion_tokens,
             "turn": turn,
             "tstamp": time.time(),
         }
-
-        print(
-            f"question: {question_id}, turn: {turn}, model_1: {model_1}, model_2: {model_2}, "
-            f"g1_winner: {g1_winner}, g2_winner: {g2_winner}, "
-            f"judge: {(judge.model_name, judge.prompt_template['name'])}"
-        )
     elif judge.prompt_template["type"] == "single":
-        m1_score, m1_user_prompt, m1_judgment = run_judge_single(
+        raise NotImplementedError
+        m1_score, m1_user_prompt, m1_judgment, m1_prompt_tokens, m1_completion_tokens = run_judge_single(
             question, answer_1, judge
         )
-        m2_score, m2_user_prompt, m2_judgment = run_judge_single(
+        m2_score, m2_user_prompt, m2_judgment, m2_prompt_tokens, m2_completion_tokens = run_judge_single(
             question, answer_2, judge
         )
 
@@ -388,18 +397,13 @@ def play_a_match_pair(match: MatchPair, output_file: str):
             "m2_score": m2_score,
             "tstamp": time.time(),
         }
-        print(
-            f"question: {question_id}, model_1: {model_1}, model_2: {model_2}, "
-            f"winner: {winner}, m1_score: {m1_score}, m2_score: {m2_score}, "
-            f"judge: {(judge.model_name, judge.prompt_template['name'])}"
-        )
     else:
         raise ValueError(f"invalid judge type: {judge['type']}")
 
     if output_file:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "a") as fout:
-            fout.write(json.dumps(result) + "\n")
+            fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
     return result
 
@@ -409,23 +413,26 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
     output = API_ERROR_OUTPUT
+    prompt_tokens, completion_tokens = 0, 0
     for _ in range(API_MAX_RETRY):
         try:
             messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model=model,
                 messages=messages,
                 n=1,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            output = response["choices"][0]["message"]["content"]
+            output = response.choices[0].message.content
+            prompt_tokens = response.usage.prompt_tokens
+            completion_tokens = response.usage.completion_tokens
             break
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
 
-    return output
+    return output, prompt_tokens, completion_tokens
 
 
 def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
@@ -445,7 +452,7 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
     for _ in range(API_MAX_RETRY):
         try:
             messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 engine=model,
                 messages=messages,
                 n=1,

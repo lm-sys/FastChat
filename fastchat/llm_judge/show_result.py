@@ -24,16 +24,16 @@ def display_result_single(args):
 
     print("\n########## First turn ##########")
     df_1 = df[df["turn"] == 1].groupby(["model", "turn"]).mean()
-    print(df_1.sort_values(by="score", ascending=False))
+    print(df_1.sort_values(by="score", ascending=False).to_string())
 
     if args.bench_name == "mt_bench":
         print("\n########## Second turn ##########")
         df_2 = df[df["turn"] == 2].groupby(["model", "turn"]).mean()
-        print(df_2.sort_values(by="score", ascending=False))
+        print(df_2.sort_values(by="score", ascending=False).to_string())
 
         print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
-        print(df_3.sort_values(by="score", ascending=False))
+        print(df_3.sort_values(by="score", ascending=False).to_string())
 
 
 def display_result_pairwise(args):
@@ -89,14 +89,14 @@ def display_result_pairwise(args):
     )
     # print(df.sort_values(by="win_rate", ascending=False))
     # print(df.sort_values(by="loss_rate", ascending=True))
-    print(df.sort_values(by="win_rate_adjusted", ascending=False))
+    print(df.sort_values(by="win_rate_adjusted", ascending=False).to_string())
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--bench-name", type=str, default="mt_bench")
     parser.add_argument("--input-file", type=str)
-    parser.add_argument("--judge-model", type=str, default="gpt-4")
+    parser.add_argument("--judge-model", type=str, default="gpt-4-turbo-preview")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
         "--model-list",

@@ -21,6 +21,7 @@ from fastchat.llm_judge.common import (
     MatchPair,
     MatchSingle,
     NEED_REF_CATS,
+    api_model_prices
 )
 
 
@@ -180,7 +181,13 @@ if __name__ == "__main__":
         default="data/judge_prompts.jsonl",
         help="The file of judge prompts.",
     )
-    parser.add_argument("--judge-model", type=str, default="gpt-4")
+    parser.add_argument(
+        "--question_file",
+        type=str,
+        default="question_ru.jsonl",
+        help="The name of the file with questions.",
+    )
+    parser.add_argument("--judge-model", type=str, default="gpt-4-turbo-preview")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
         "--mode",
@@ -209,7 +216,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}"
     answer_dir = f"data/{args.bench_name}/model_answer"
     ref_answer_dir = f"data/{args.bench_name}/reference_answer"
 
@@ -304,19 +311,34 @@ if __name__ == "__main__":
     input("Press Enter to confirm...")
 
     # Play matches
+    match_results = []
     if args.parallel == 1:
         for match in tqdm(matches):
-            play_a_match_func(match, output_file=output_file)
+            match_results.append(play_a_match_func(match, output_file=output_file))
     else:
 
         def play_a_match_wrapper(match):
-            play_a_match_func(match, output_file=output_file)
+            return play_a_match_func(match, output_file=output_file)
 
         np.random.seed(0)
         np.random.shuffle(matches)
 
         with ThreadPoolExecutor(args.parallel) as executor:
-            for match in tqdm(
+            for result in tqdm(
                 executor.map(play_a_match_wrapper, matches), total=len(matches)
             ):
-                pass
+                match_results.append(result)
+
+    # Calculate total price for run
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    for result in match_results:
+        total_prompt_tokens += result["prompt_tokens"]
+        total_completion_tokens += result["completion_tokens"]
+
+    total_price = total_prompt_tokens / 1000 * api_model_prices[args.judge_model]["prompt_tokens"] + \
+        total_completion_tokens / 1000 * api_model_prices[args.judge_model]["completion_tokens"]
+
+    print(f"Total price: {total_price:.2f}$")
+    print(f"Total prompt tokens: {total_prompt_tokens}")
+    print(f"Total completion tokens: {total_completion_tokens}")

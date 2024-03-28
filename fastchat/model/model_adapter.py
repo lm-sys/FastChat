@@ -71,8 +71,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0314",
     "gpt-4-0613",
     "gpt-4-turbo",
-    "gpt-4-1106-preview",
-    "gpt-4-0125-preview",
+    "gpt-4-turbo-preview"
 )
 
 
@@ -679,6 +678,14 @@ class PeftModelAdapter:
         base_model_path = config.base_model_name_or_path
         base_adapter = get_model_adapter(base_model_path)
         return base_adapter.get_default_conv_template(config.base_model_name_or_path)
+
+
+class DeepVKAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "deepvk" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("deepvk-llama")
 
 
 class VicunaAdapter(BaseModelAdapter):
@@ -2309,6 +2316,7 @@ class CllmAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(DeepvkAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)

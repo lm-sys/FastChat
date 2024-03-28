@@ -74,7 +74,7 @@ def get_answer(
 
     os.makedirs(os.path.dirname(answer_file), exist_ok=True)
     with open(answer_file, "a") as fout:
-        fout.write(json.dumps(ans) + "\n")
+        fout.write(json.dumps(ans, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":
@@ -86,6 +86,12 @@ if __name__ == "__main__":
         help="The name of the benchmark question set.",
     )
     parser.add_argument("--answer-file", type=str, help="The output answer file.")
+    parser.add_argument(
+        "--question_file",
+        type=str,
+        default="question_ru.jsonl",
+        help="The name of the file with questions.",
+    )
     parser.add_argument("--model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
         "--num-choices",
@@ -119,7 +125,7 @@ if __name__ == "__main__":
     if args.openai_api_base is not None:
         openai.api_base = args.openai_api_base
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    question_file = f"data/{args.bench_name}/{args.question_file}"
     questions = load_questions(question_file, args.question_begin, args.question_end)
 
     if args.answer_file:
