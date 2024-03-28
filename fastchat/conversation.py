@@ -313,6 +313,18 @@ class Conversation:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
         return ret
+    
+    def to_openai_string_representation(self):
+        """Convert the conversation to a string representation of the OpenAI format."""
+        ret = ""
+        if self.system_message:
+            ret += f"System: {self.system_message}\n"
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                ret += f"User: {msg}\n"
+            else:
+                ret += f"Assistant: {msg}\n"
+        return ret
 
     def copy(self):
         return Conversation(

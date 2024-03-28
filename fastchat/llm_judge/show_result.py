@@ -33,10 +33,10 @@ def display_result_single(args):
     # loop through models and show how many outputs are stored
     for model in df["model"].unique():
         print(f"Model: {model}, number of outputs: {len(df[df['model'] == model])}")
-    
+        
     print("\n########## First turn ##########")
     df_1 = df[df["turn"] == 1].groupby(["model", "turn"]).mean()
-    print(df_1.sort_values(by="score", ascending=False))
+    print(df_1.sort_values(by="score", ascending=False))        
 
     if args.bench_name == "mt_bench":
         print("\n########## Second turn ##########")
@@ -50,7 +50,17 @@ def display_result_single(args):
     show_relative_drop(df)
     df_turn_1 = df[df["turn"] == 1]
     show_relative_drop(df_turn_1)
-
+    
+    results_dictionary = {}
+    # For each model name, store the average score for each turn and overall
+    for model in df["model"].unique():
+        df_model = df[df["model"] == model]
+        results_dictionary[model] = {}
+        for turn in [1, 2]:
+            df_turn = df_model[df_model["turn"] == turn]
+            results_dictionary[model][f"turn_{turn}"] = df_turn["score"].mean()
+        results_dictionary[model]["overall"] = df_model["score"].mean()
+    print(f"results_dictionary = {results_dictionary}")
 
 def show_relative_drop(df):
         
