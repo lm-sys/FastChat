@@ -134,37 +134,39 @@ window.__gradio_mode__ = "app";
         head=head_js,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Arena (battle)", id=0):
-                side_by_side_anony_list = build_side_by_side_ui_anony(models)
+            with gr.Tab("LLM Arena", id=0):
+                with gr.Tab("Arena (battle)", id=0):
+                    side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("Arena (side-by-side)", id=1):
-                side_by_side_named_list = build_side_by_side_ui_named(models)
+                with gr.Tab("Arena (side-by-side)", id=1):
+                    side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("Direct Chat", id=2):
-                single_model_list = build_single_model_ui(
-                    models, add_promotion_links=True
-                )
+                with gr.Tab("Direct Chat", id=2):
+                    single_model_list = build_single_model_ui(
+                        models, add_promotion_links=True
+                    )
 
-            with gr.Tab("Vision Arena (battle)", id=3, visible=args.multimodal):
-                side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
-                    vl_models,
-                    random_questions=args.random_questions,
-                )
-
-            with gr.Tab("Vision Arena (side-by-side)", id=4, visible=args.multimodal):
-                side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
-                    vl_models,
-                    random_questions=args.random_questions,
-                )
-
-            with gr.Tab("Vision Direct Chat", id=5, visible=args.multimodal):
-                single_vision_language_model_list = (
-                    build_single_vision_language_model_ui(
+            with gr.Tab("Vision Arena", id=3, visible=args.multimodal):
+                with gr.Tab("Vision Arena (battle)", id=3, visible=args.multimodal):
+                    side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
                         vl_models,
-                        add_promotion_links=True,
                         random_questions=args.random_questions,
                     )
-                )
+
+                with gr.Tab("Vision Arena (side-by-side)", id=4, visible=args.multimodal):
+                    side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
+                        vl_models,
+                        random_questions=args.random_questions,
+                    )
+
+                with gr.Tab("Vision Direct Chat", id=5, visible=args.multimodal):
+                    single_vision_language_model_list = (
+                        build_single_vision_language_model_ui(
+                            vl_models,
+                            add_promotion_links=True,
+                            random_questions=args.random_questions,
+                        )
+                    )
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=6):

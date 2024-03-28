@@ -664,7 +664,7 @@ register_model_info(
     "LLaVA is an open-source chatbot trained by fine-tuning LLM on multimodal instruction-following data.",
 )
 
-register_model_info(    
+register_model_info(
     ["gemma-7b-it", "gemma-2b-it"],
     "Gemma",
     "https://blog.google/technology/developers/gemma-open-models/",

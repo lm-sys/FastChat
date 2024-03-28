@@ -486,6 +486,7 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
             text += data
             yield {"text": text, "error_code": 0}
 
+
 def cohere_api_stream_iter(
     client_name: str,
     model_id: str,
