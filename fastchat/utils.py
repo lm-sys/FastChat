@@ -1,6 +1,7 @@
 """
 Common utilities.
 """
+
 from asyncio import AbstractEventLoop
 from io import BytesIO
 import base64
@@ -44,6 +45,7 @@ def build_logger(logger_name, logger_filename):
             logging.basicConfig(level=logging.INFO)
     logging.getLogger().handlers[0].setFormatter(formatter)
 
+    original_stdout, original_stderr = sys.stdout, sys.stderr
     # Redirect stdout and stderr to loggers
     stdout_logger = logging.getLogger("stdout")
     stdout_logger.setLevel(logging.INFO)
@@ -77,6 +79,8 @@ def build_logger(logger_name, logger_filename):
             visited_loggers.add(l)
             l.addHandler(handler)
 
+    # Recover original stdout and stderr back
+    sys.stdout, sys.stderr = original_stdout, original_stderr
     return logger
 
 
