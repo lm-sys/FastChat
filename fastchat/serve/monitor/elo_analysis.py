@@ -1,23 +1,25 @@
 import argparse
+import ast
 from collections import defaultdict
 import datetime
 import json
 import math
 import pickle
 from pytz import timezone
+from functools import partial
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 
-
+tokenizer = None
 pd.options.display.float_format = "{:.2f}".format
-
 
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
@@ -82,8 +84,10 @@ def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000):
 
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
     # calibrate llama-13b to 800 if applicable
-    if "llama-13b" in models.index:
-        elo_scores += 800 - elo_scores[models["llama-13b"]]
+    if "mixtral-8x7b-instruct-v0.1" in models.index:
+        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
+    # if "llama-13b" in models.index:
+    #    elo_scores += 800 - elo_scores[models["llama-13b"]]
     return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
 
@@ -247,11 +251,33 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number):
         width=700,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
-    return fig
+    return fig 
 
+def filter_default(row):
+    return True
 
-def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=100):
+def filter_long_conv(row):
+    global tokenizer 
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.3", use_fast=False)
+
+    threshold = 512 # conversations (Vicuna Tokenizer) longer than threshold will be considered as long
+
+    for conversation_type in ["conversation_a", "conversation_b"]:
+        cur_conv = ast.literal_eval(row[conversation_type])
+        
+        conv_content = "".join([c["content"] for c in cur_conv if c["content"] is not None])
+        if len(tokenizer(conv_content)["input_ids"]) < threshold:
+            return False
+    return True
+
+def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=100, filter_func=None):
     battles = pd.DataFrame(battles_json)
+
+    tqdm.pandas(desc=f"Processing using {filter_func.__name__}")
+    filtered_indices = battles.progress_apply(filter_func, axis=1)
+    battles = battles[filtered_indices]
+
     battles = battles.sort_values(ascending=True, by=["tstamp"])
     # Only use anonymous votes
     battles = battles[battles["anony"]].reset_index(drop=True)
@@ -339,6 +365,7 @@ if __name__ == "__main__":
         "--rating-system", type=str, choices=["bt", "elo"], default="bt"
     )
     parser.add_argument("--exclude-tie", action="store_true", default=False)
+    parser.add_argument('--category', nargs='+', default=["full"])
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -351,17 +378,35 @@ if __name__ == "__main__":
         log_files = get_log_files(args.max_num_files)
         battles = clean_battle_data(log_files)
 
-    results = report_elo_analysis_results(
-        battles, rating_system=args.rating_system, num_bootstrap=args.num_bootstrap
-    )
+    
+    filter_func_map = {
+        "full": filter_default,
+        "long": filter_long_conv
+    }
+    assert all([cat in filter_func_map for cat in args.category]), f"Invalid category: {args.category}"
 
-    print("# Online Elo")
-    pretty_print_elo_rating(results["elo_rating_online"])
-    print("# Median")
-    pretty_print_elo_rating(results["elo_rating_final"])
-    print(f"last update : {results['last_updated_datetime']}")
+    results = {}
+    for cat in args.category:
+        filter_func = filter_func_map[cat]
+        results[cat] = report_elo_analysis_results(
+            battles, rating_system=args.rating_system, num_bootstrap=args.num_bootstrap, filter_func=filter_func
+        )
 
-    last_updated_tstamp = results["last_updated_tstamp"]
+    for cat in args.category:
+        print(f"# Results for {cat} conversations")
+        print("# Online Elo")
+        pretty_print_elo_rating(results[cat]["elo_rating_online"])
+        print("# Median")
+        pretty_print_elo_rating(results[cat]["elo_rating_final"])
+        print(f"last update : {results[cat]['last_updated_datetime']}")
+
+        last_updated_tstamp = results[cat]["last_updated_tstamp"]
+        cutoff_date = datetime.datetime.fromtimestamp(
+            last_updated_tstamp, tz=timezone("US/Pacific")
+        ).strftime("%Y%m%d")
+        print(f"last update : {cutoff_date}")
+
+    last_updated_tstamp = results["full"]["last_updated_tstamp"]
     cutoff_date = datetime.datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
     ).strftime("%Y%m%d")
