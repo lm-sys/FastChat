@@ -12,6 +12,10 @@ from pytz import timezone
 import time
 
 from tqdm import tqdm
+from multiprocessing import Pool
+import tiktoken
+from collections import Counter
+import shortuuid
 
 from fastchat.serve.monitor.basic_stats import get_log_files, NUM_SERVERS
 from fastchat.utils import detect_language
@@ -126,8 +130,6 @@ def read_file(filename):
 
 def read_file_parallel(log_files, num_threads=16):
     data_all = []
-    from multiprocessing import Pool
-
     with Pool(num_threads) as p:
         ret_all = list(tqdm(p.imap(read_file, log_files), total=len(log_files)))
         for ret in ret_all:
@@ -135,15 +137,12 @@ def read_file_parallel(log_files, num_threads=16):
     return data_all
 
 
-def clean_battle_data(
-    log_files,
+def process_data(
+    data,
     exclude_model_names,
-    ban_ip_list=None,
-    sanitize_ip=False,
-    anony_only=False,
+    sanitize_ip,
 ):
-    data = read_file_parallel(log_files, num_threads=16)
-
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     convert_type = {
         "leftvote": "model_a",
         "rightvote": "model_b",
@@ -151,7 +150,6 @@ def clean_battle_data(
         "bothbad_vote": "tie (bothbad)",
     }
 
-    all_models = set()
     all_ips = dict()
 
     count_dict = {
@@ -272,7 +270,7 @@ def clean_battle_data(
 
         ip = row["ip"]
         if ip not in all_ips:
-            all_ips[ip] = {"ip": ip, "count": 0, "sanitized_id": len(all_ips)}
+            all_ips[ip] = {"ip": ip, "count": 0, "sanitized_id": shortuuid.uuid()}
         all_ips[ip]["count"] += 1
         if sanitize_ip:
             user_id = f"{all_ips[ip]['sanitized_id']}"
@@ -285,6 +283,12 @@ def clean_battle_data(
 
         if flag_anony:
             count_dict["anony"] += 1
+
+        for conv in conversation_a:
+            conv["num_tokens"] = len(encoding.encode(conv["content"], allowed_special="all"))
+        for conv in conversation_b:
+            conv["num_tokens"] = len(encoding.encode(conv["content"], allowed_special="all"))
+
         # Save the results
         battles.append(
             dict(
@@ -301,8 +305,41 @@ def clean_battle_data(
                 tstamp=row["tstamp"],
             )
         )
+    return battles, count_dict, count_leak, all_ips
 
-        all_models.update(models_hidden)
+
+def clean_battle_data(
+    log_files,
+    exclude_model_names,
+    ban_ip_list=None,
+    sanitize_ip=False,
+    anony_only=False,
+    num_threads=16,
+):
+    data = read_file_parallel(log_files, num_threads=16)
+
+    battles = []
+    count_dict = {}
+    count_leak = {}
+    all_ips = {}
+    with Pool(num_threads) as p:
+        # split data into chunks
+        chunk_size = len(data) // min(100, len(data))
+        data_chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+
+        args_list = [(data_chunk, exclude_model_names, sanitize_ip) for data_chunk in data_chunks]
+        ret_all = list(tqdm(p.starmap(process_data, args_list), total=len(data_chunks)))
+
+        for ret in ret_all:
+            sub_battles, sub_count_dict, sub_count_leak, sub_all_ips = ret
+            battles.extend(sub_battles)
+            count_dict = dict(Counter(count_dict) + Counter(sub_count_dict))
+            count_leak = dict(Counter(count_leak) + Counter(sub_count_leak))
+            for ip in sub_all_ips:
+                if ip not in all_ips:
+                    all_ips[ip] = sub_all_ips[ip]
+                else:
+                    all_ips[ip]["count"] += sub_all_ips[ip]["count"]
     battles.sort(key=lambda x: x["tstamp"])
     last_updated_tstamp = battles[-1]["tstamp"]
 
@@ -313,7 +350,6 @@ def clean_battle_data(
     print(f"#votes: {len(data)}")
     print(count_dict)
     print(f"#battles: {len(battles)}, #anony: {count_dict['anony']}")
-    print(f"#models: {len(all_models)}, {all_models}")
     print(f"last-updated: {last_updated_datetime}")
     print(f"leaked_identity: {count_leak}")
 

@@ -57,7 +57,6 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
 
 
 def compute_elo_mle_with_tie(df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None):
-    print("#battles: ", len(df))
     ptbl_a_win = pd.pivot_table(df[df["winner"] == "model_a"], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
     ptbl_tie = pd.pivot_table(df[df["winner"].isin(["tie", "tie (bothbad)"])], index="model_a", columns="model_b", aggfunc="size", fill_value=0)
     ptbl_tie = ptbl_tie + ptbl_tie.T
@@ -377,19 +376,13 @@ def filter_default(row):
     return True
 
 def filter_long_conv(row):
-    global tokenizer 
-    if tokenizer is None:
-        tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.3", use_fast=False)
-
-    threshold = 512 # conversations (Vicuna Tokenizer) longer than threshold will be considered as long
-
+    threshold = 512
     for conversation_type in ["conversation_a", "conversation_b"]:
-        cur_conv = ast.literal_eval(row[conversation_type])
-        
-        conv_content = "".join([c["content"] for c in cur_conv if c["content"] is not None])
-        if len(tokenizer(conv_content)["input_ids"]) < threshold:
-            return False
-    return True
+        cur_conv = row[conversation_type]
+        num_tokens_all = sum([turn["num_tokens"] for turn in cur_conv])
+        if num_tokens_all >= threshold:
+            return True
+    return False
 
 def report_elo_analysis_results(
     battles_json,
@@ -556,7 +549,7 @@ if __name__ == "__main__":
 
     filter_func_map = {
         "full": filter_default,
-        "long": filter_long_conv
+        "long": filter_long_conv,
     }
     assert all([cat in filter_func_map for cat in args.category]), f"Invalid category: {args.category}"
 
@@ -589,11 +582,6 @@ if __name__ == "__main__":
             last_updated_tstamp, tz=timezone("US/Pacific")
         ).strftime("%Y%m%d")
         print(f"last update : {cutoff_date}")
-
-    last_updated_tstamp = results["full"]["last_updated_tstamp"]
-    cutoff_date = datetime.datetime.fromtimestamp(
-        last_updated_tstamp, tz=timezone("US/Pacific")
-    ).strftime("%Y%m%d")
 
     with open(f"elo_results_{cutoff_date}.pkl", "wb") as fout:
         pickle.dump(results, fout)
