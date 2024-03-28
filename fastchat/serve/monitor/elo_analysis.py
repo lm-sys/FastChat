@@ -285,8 +285,9 @@ def report_elo_analysis_results(battles_json, rating_system="bt", num_bootstrap=
             "variance": bootstrap_df.var(),
             "rating_q975": bootstrap_df.quantile(0.975),
             "rating_q025": bootstrap_df.quantile(0.025),
-            "num_battles": battles["model_a"].value_counts()
-            + battles["model_b"].value_counts(),
+            "num_battles": battles["model_a"]
+            .value_counts()
+            .add(battles["model_b"].value_counts(), fill_value=0),
         }
     )
 

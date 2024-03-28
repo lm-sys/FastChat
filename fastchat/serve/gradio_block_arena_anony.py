@@ -602,6 +602,7 @@ def bot_response_multi(
                 max_new_tokens,
                 request,
                 apply_rate_limit=False,
+                use_recommended_config=True,
             )
         )
 

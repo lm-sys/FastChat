@@ -663,3 +663,29 @@ register_model_info(
     "https://huggingface.co/collections/liuhaotian/llava-16-65b9e40155f60fd046a5ccf2",
     "LLaVA is an open-source chatbot trained by fine-tuning LLM on multimodal instruction-following data.",
 )
+
+register_model_info(    
+    ["gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
+)
+
+register_model_info(
+    ["cohere-command-r"],
+    "Command-R",
+    "https://txt.cohere.com/command-r/",
+    "Command-R by Cohere",
+)
+
+register_model_info(
+    [
+        "cllm/consistency-llm-7b-codesearchnet",
+        "cllm/consistency-llm-7b-gsm8k",
+        "cllm/consistency-llm-7b-sharegpt48k",
+        "cllm/consistency-llm-7b-spider",
+    ],
+    "consistency-llm",
+    "https://huggingface.co/cllm",
+    "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
+)
