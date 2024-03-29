@@ -235,7 +235,7 @@ if __name__ == "__main__":
         judges = make_judge_single(args.judge_model, judge_prompts)
         play_a_match_func = play_a_match_single
         output_file = (
-            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single_filtered.jsonl"
         )
         make_match_func = make_match_single
         baseline_model = None

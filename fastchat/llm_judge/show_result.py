@@ -14,7 +14,7 @@ def display_result_single(args):
     pd.set_option('display.width', None)  # Use maximum width available
 
     if args.input_file is None:
-        input_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+        input_file = f"data/{args.bench_name}/model_judgment/{args.judge_model}_single_filtered.jsonl"
     else:
         input_file = args.input_file
 
@@ -25,9 +25,16 @@ def display_result_single(args):
     #   'turn', 'tstamp'],
     # Remove any duplicate (question_id, model, user_prompt, turn) tuples
     df_all = df_all.drop_duplicates(subset=["question_id", "model", "user_prompt", "turn"])
+    # df_all = df_all[~df_all["model"].str.contains("mean|pca")]
+    # print out model list
+    print(f"Number of outputs: {len(df_all)}")
+    print(df_all["model"].unique())
+    # Save new dataframe to a jsonl file
+    # df_all.to_json(f"data/mt_bench/model_judgment/{args.judge_model}_single_filtered.jsonl", orient="records", lines=True)
     df = df_all[["model", "score", "turn", "question_id"]]
     df = df[df["score"] != -1]
-
+    # filter out any model which contains the word "mean" or "pca"
+    
     if args.model_list is not None:
         df = df[df["model"].isin(args.model_list)]
     # loop through models and show how many outputs are stored

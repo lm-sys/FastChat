@@ -1,3 +1,4 @@
+
 """Generate answers with local models.
 
 Usage:
@@ -104,7 +105,7 @@ def get_model_answers(
         debug=False,
     )
     start_layer, end_layer = custom_args['start_layer'], custom_args['end_layer']
-    layer_ids = list(range(start_layer, end_layer))
+    layer_ids = list(range(start_layer, end_layer, -1))
     # layer_ids = list(range(-11, -30, -1))
     block_name = "decoder_block"
     if custom_args['do_steer']:
@@ -123,11 +124,25 @@ def get_model_answers(
         if custom_args['direction_method'] == 'pca' and custom_args['steering_unnormalized']:
             print("Unnormalizing raw pca activations")
             activations = {k: v * norms_dict[str(k)] for k, v in activations.items()}
-    
-        # activations = steering.get_shift(coeff=custom_args['steering_coeff'], layer_id=layer_ids, mode="test", num_pairs=200)
+        
+        decay_range = abs(decay_end_layer - decay_start_layer)
+        decay_start_layer = -15
+        decay_range_1 = abs(start_layer - decay_start_layer)
+        decay_range_2 = abs(decay_end_layer - decay_start_layer)
+
         for key in activations:
-            activations[key] = activations[key] * custom_args['steering_coeff']
-            activations[key] = activations[key].to(dtype)
+            # Calculate linear decay factor for each layer
+            layer_id = int(key)
+            if decay_start_layer <= layer_id:
+                decay_factor = (abs(layer_id - start_layer) / decay_range_1)
+            else:
+                decay_factor = (abs(layer_id - decay_end_layer) / decay_range_2)
+            # activations = steering.get_shift(coeff=custom_args['steering_coeff'], layer_id=layer_ids, mode="test", num_pairs=200)
+            for key in activations:
+                if custom_args["decay_coefficient"]:
+                    activations[key] = activations[key] * decay_factor
+                activations[key] = activations[key] * custom_args['steering_coeff']
+                activations[key] = activations[key].to(dtype)
         steering.wrapped_model.set_controller(layer_ids, activations, block_name, token_pos=custom_args['token_pos'], normalize=custom_args['normalize'])
         steering.wrapped_model.to(dtype)
 
@@ -348,6 +363,7 @@ if __name__ == "__main__":
         'finetuning_type': 'full',
         'model_name_or_path': args.model_path,
         'merge_adapter': True,
+        'decay_coefficient': True,
     }
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
