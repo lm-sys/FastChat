@@ -37,7 +37,10 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "anthropic":
-        prompt = conv.get_prompt()
+        if model_api_dict["multimodal"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
@@ -176,38 +179,49 @@ def openai_api_stream_iter(
             yield data
 
 
-def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
+def anthropic_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
     import anthropic
 
     c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     # Make requests
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    # Make requests
     gen_params = {
         "model": model_name,
-        "prompt": prompt,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = c.completions.create(
-        prompt=prompt,
-        stop_sequences=[anthropic.HUMAN_PROMPT],
-        max_tokens_to_sample=max_new_tokens,
+    complete_text = ""
+    with c.messages.stream(
+        model=model_name,
+        messages=messages,
+        max_tokens=max_new_tokens,
         temperature=temperature,
         top_p=top_p,
-        model=model_name,
-        stream=True,
-    )
-    text = ""
-    for chunk in res:
-        text += chunk.completion
-        data = {
-            "text": text,
-            "error_code": 0,
-        }
-        yield data
+    ) as stream:
+        for text in stream.text_stream:
+            complete_text += text
+            data = {
+                "text": complete_text,
+                "error_code": 0,
+            }
+            yield data
 
 
 def gemini_api_stream_iter(

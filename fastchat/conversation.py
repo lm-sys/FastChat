@@ -461,6 +461,44 @@ class Conversation:
 
         return ret
 
+    def to_anthropic_vision_api_messages(self):
+        """Convert the conversation to Claude-3 Messages Vision API format"""
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
+        ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
+                    for image_url in msg[1]:
+                        content_list.append(
+                            {"type": "image", 
+                             "source" : {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_url,
+                            }}
+                        )
+
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
+            else:
+                if msg is not None:
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
+        return ret
+
     def extract_text_and_image_hashes_from_messages(self):
         import hashlib
         from fastchat.utils import load_image
