@@ -153,7 +153,9 @@ window.__gradio_mode__ = "app";
                         random_questions=args.random_questions,
                     )
 
-                with gr.Tab("Vision Arena (side-by-side)", id=4, visible=args.multimodal):
+                with gr.Tab(
+                    "Vision Arena (side-by-side)", id=4, visible=args.multimodal
+                ):
                     side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
                         vl_models,
                         random_questions=args.random_questions,

@@ -207,6 +207,15 @@ def anthropic_api_stream_iter(model_name, messages, temperature, top_p, max_new_
     }
     logger.info(f"==== request ====\n{gen_params}")
 
+    system_prompt = ""
+    if messages[0]["role"] == "system":
+        if type(messages[0]["content"]) == dict:
+            system_prompt = messages[0]["content"]["text"]
+        elif type(messages[0]["content"]) == str:
+            system_prompt = messages[0]["content"]
+        # remove system prompt
+        messages = messages[1:]
+
     complete_text = ""
     with c.messages.stream(
         model=model_name,
@@ -214,6 +223,7 @@ def anthropic_api_stream_iter(model_name, messages, temperature, top_p, max_new_
         max_tokens=max_new_tokens,
         temperature=temperature,
         top_p=top_p,
+        system=system_prompt,
     ) as stream:
         for text in stream.text_stream:
             complete_text += text

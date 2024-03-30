@@ -476,12 +476,14 @@ class Conversation:
 
                     for image_url in msg[1]:
                         content_list.append(
-                            {"type": "image", 
-                             "source" : {
-                                "type": "base64",
-                                "media_type": "image/jpeg",
-                                "data": image_url,
-                            }}
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": image_url,
+                                },
+                            }
                         )
 
                     ret.append({"role": "user", "content": content_list})
