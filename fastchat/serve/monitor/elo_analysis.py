@@ -20,7 +20,6 @@ from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 
-tokenizer = None
 pd.options.display.float_format = "{:.2f}".format
 
 
@@ -276,7 +275,7 @@ def visualize_bootstrap_elo_rating(df, df_final, limit_show_number, scale=1):
         error_y="error_y",
         error_y_minus="error_y_minus",
         text="rating_rounded",
-        height=500 * scale,
+        height=700,
         width=700 * scale,
     )
     fig.update_layout(xaxis_title="Model", yaxis_title="Rating")
@@ -400,12 +399,8 @@ def outlier_detect(
     return battles
 
 
-def filter_default(row):
-    return True
-
-
 def filter_long_conv(row):
-    threshold = 512
+    threshold = 768
     for conversation_type in ["conversation_a", "conversation_b"]:
         cur_conv = row[conversation_type]
         num_tokens_all = sum([turn["num_tokens"] for turn in cur_conv])
@@ -425,7 +420,7 @@ def report_elo_analysis_results(
     daily_vote_per_user=None,
     run_outlier_detect=False,
     scale=1,
-    filter_func=None,
+    filter_func=lambda x: True,
 ):
     battles = pd.DataFrame(battles_json)
 
@@ -507,7 +502,7 @@ def report_elo_analysis_results(
     )
 
     model_order.sort(key=lambda k: -elo_rating_final[k])
-    limit_show_number = 25 * scale
+    limit_show_number = int(25 * scale)
     model_order = model_order[:limit_show_number]
 
     # Plots
@@ -569,6 +564,7 @@ if __name__ == "__main__":
     parser.add_argument("--daily-vote-per-user", type=int, default=None)
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
     parser.add_argument("--category", nargs="+", default=["full"])
+    parser.add_argument("--scale", type=float, default=1)
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -582,8 +578,10 @@ if __name__ == "__main__":
         battles = clean_battle_data(log_files)
 
     filter_func_map = {
-        "full": filter_default,
+        "full": lambda x: True,
         "long": filter_long_conv,
+        "chinese": lambda x: x["language"] == "Chinese",
+        "english": lambda x: x["language"] == "English",
     }
     assert all(
         [cat in filter_func_map for cat in args.category]
@@ -602,6 +600,7 @@ if __name__ == "__main__":
             exclude_unknown_lang=args.exclude_unknown_lang,
             daily_vote_per_user=args.daily_vote_per_user,
             run_outlier_detect=args.run_outlier_detect,
+            scale=args.scale,
             filter_func=filter_func,
         )
 

@@ -141,6 +141,7 @@ def process_data(
     data,
     exclude_model_names,
     sanitize_ip,
+    ban_ip_list,
 ):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     convert_type = {
@@ -335,7 +336,8 @@ def clean_battle_data(
         ]
 
         args_list = [
-            (data_chunk, exclude_model_names, sanitize_ip) for data_chunk in data_chunks
+            (data_chunk, exclude_model_names, sanitize_ip, ban_ip_list)
+            for data_chunk in data_chunks
         ]
         ret_all = list(tqdm(p.starmap(process_data, args_list), total=len(data_chunks)))
 
