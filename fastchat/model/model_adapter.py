@@ -1727,6 +1727,16 @@ class QwenChatAdapter(BaseModelAdapter):
         return get_conv_template("qwen-7b-chat")
 
 
+class SmaugChatAdapter(BaseModelAdapter):
+    """The model adapter for abacusai/Smaug-2-72B."""
+
+    def match(self, model_path: str):
+        return "smaug" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("qwen-7b-chat")
+
+
 class BGEAdapter(BaseModelAdapter):
     """The model adapter for BGE (e.g., BAAI/bge-large-en-v1.5)"""
 
