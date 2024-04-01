@@ -616,7 +616,9 @@ def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tok
 
     ret = ""
     for chunk in generator:
-        ret += chunk.text
+        # NOTE(chris): This may be a vertex api error, below is HOTFIX: https://github.com/googleapis/python-aiplatform/issues/3129
+        ret += chunk.candidates[0].content.parts[0]._raw_part.text
+        # ret += chunk.text
         data = {
             "text": ret,
             "error_code": 0,
