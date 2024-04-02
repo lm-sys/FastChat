@@ -149,10 +149,11 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         for mdl, mdl_dict in api_endpoint_info.items():
-            mdl_multimodal = mdl_dict.get("multimodal", False)
-            if multimodal and mdl_multimodal:
+            mdl_vision = mdl_dict.get("vision-arena", False)
+            mdl_text = mdl_dict.get("text-only-arena", False)
+            if multimodal and mdl_vision:
                 models += [mdl]
-            elif not multimodal and not mdl_multimodal:
+            if not multimodal and mdl_text:
                 models += [mdl]
 
     # Remove anonymous models
