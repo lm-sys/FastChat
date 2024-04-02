@@ -128,7 +128,7 @@ def get_conv_log_filename():
     return name
 
 
-def get_model_list(controller_url, register_api_endpoint_file, multimodal):
+def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     global api_endpoint_info
 
     # Add models from the controller
@@ -136,7 +136,7 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
 
-        if multimodal:
+        if vision_arena:
             ret = requests.post(controller_url + "/list_multimodal_models")
             models = ret.json()["models"]
         else:
@@ -151,9 +151,9 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
         for mdl, mdl_dict in api_endpoint_info.items():
             mdl_vision = mdl_dict.get("vision-arena", False)
             mdl_text = mdl_dict.get("text-only-arena", False)
-            if multimodal and mdl_vision:
+            if vision_arena and mdl_vision:
                 models += [mdl]
-            if not multimodal and mdl_text:
+            if not vision_arena and mdl_text:
                 models += [mdl]
 
     # Remove anonymous models
@@ -195,7 +195,7 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
-            controller_url, args.register_api_endpoint_file, False
+            controller_url, args.register_api_endpoint_file, vision_arena=False
         )
 
     return load_demo_single(models, url_params)
@@ -874,7 +874,7 @@ if __name__ == "__main__":
     # Set global variables
     set_global_vars(args.controller_url, args.moderate)
     models, all_models = get_model_list(
-        args.controller_url, args.register_api_endpoint_file, False
+        args.controller_url, args.register_api_endpoint_file, vision_arena=False
     )
 
     # Set authorization credentials

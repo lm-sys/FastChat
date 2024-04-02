@@ -195,11 +195,11 @@ def add_text(
 
 def build_side_by_side_vision_ui_anony(models, random_questions=None):
     notice_markdown = """
-# ⚔️  Vision Arena: Benchmarking VLMs in the Wild
+# ⚔️  Vision Arena ⚔️: Benchmarking VLMs in the Wild
 | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
-- Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
+- Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 

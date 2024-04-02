@@ -23,7 +23,7 @@ def get_api_provider_stream_iter(
     max_new_tokens,
 ):
     if model_api_dict["api_type"] == "openai":
-        if model_api_dict["multimodal"]:
+        if model_api_dict["vision-arena"]:
             prompt = conv.to_openai_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
@@ -37,7 +37,7 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "anthropic":
-        if model_api_dict["multimodal"]:
+        if model_api_dict["vision-arena"]:
             prompt = conv.to_anthropic_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()

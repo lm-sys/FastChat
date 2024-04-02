@@ -72,13 +72,13 @@ def load_demo(url_params, request: gr.Request):
         models, all_models = get_model_list(
             args.controller_url,
             args.register_api_endpoint_file,
-            False,
+            vision_arena=False,
         )
 
         vl_models, all_vl_models = get_model_list(
             args.controller_url,
             args.register_api_endpoint_file,
-            True,
+            vision_arena=True,
         )
 
     single_updates = load_demo_single(models, url_params)
@@ -146,22 +146,22 @@ window.__gradio_mode__ = "app";
                         models, add_promotion_links=True
                     )
 
-            with gr.Tab("Vision Arena", id=3, visible=args.multimodal):
-                with gr.Tab("Vision Arena (battle)", id=3, visible=args.multimodal):
+            with gr.Tab("Vision Arena", id=3, visible=args.vision_arena):
+                with gr.Tab("Vision Arena (battle)", id=3, visible=args.vision_arena):
                     side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
                         vl_models,
                         random_questions=args.random_questions,
                     )
 
                 with gr.Tab(
-                    "Vision Arena (side-by-side)", id=4, visible=args.multimodal
+                    "Vision Arena (side-by-side)", id=4, visible=args.vision_arena
                 ):
                     side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
                         vl_models,
                         random_questions=args.random_questions,
                     )
 
-                with gr.Tab("Vision Direct Chat", id=5, visible=args.multimodal):
+                with gr.Tab("Vision Direct Chat", id=5, visible=args.vision_arena):
                     single_vision_language_model_list = (
                         build_single_vision_language_model_ui(
                             vl_models,
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         help="Shows term of use before loading the demo",
     )
     parser.add_argument(
-        "--multimodal", action="store_true", help="Show multi modal tabs."
+        "--vision-arena", action="store_true", help="Show tabs for vision arena."
     )
     parser.add_argument(
         "--random-questions", type=str, help="Load random questions from a JSON file"
@@ -279,13 +279,13 @@ if __name__ == "__main__":
     models, all_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
-        False,
+        vision_arena=False,
     )
 
     vl_models, all_vl_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
-        True,
+        vision_arena=True,
     )
 
     # Set authorization credentials
