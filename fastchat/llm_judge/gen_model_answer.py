@@ -125,7 +125,7 @@ def get_model_answers(
             print("Unnormalizing raw pca activations")
             activations = {k: v * norms_dict[str(k)] for k, v in activations.items()}
         
-        decay_range = abs(decay_end_layer - decay_start_layer)
+        decay_end_layer = end_layer + 1
         decay_start_layer = -15
         decay_range_1 = abs(start_layer - decay_start_layer)
         decay_range_2 = abs(decay_end_layer - decay_start_layer)
@@ -138,11 +138,10 @@ def get_model_answers(
             else:
                 decay_factor = (abs(layer_id - decay_end_layer) / decay_range_2)
             # activations = steering.get_shift(coeff=custom_args['steering_coeff'], layer_id=layer_ids, mode="test", num_pairs=200)
-            for key in activations:
-                if custom_args["decay_coefficient"]:
-                    activations[key] = activations[key] * decay_factor
-                activations[key] = activations[key] * custom_args['steering_coeff']
-                activations[key] = activations[key].to(dtype)
+            if custom_args["decay_coefficient"]:
+                activations[key] = activations[key] * decay_factor
+            activations[key] = activations[key] * custom_args['steering_coeff']
+            activations[key] = activations[key].to(dtype)
         steering.wrapped_model.set_controller(layer_ids, activations, block_name, token_pos=custom_args['token_pos'], normalize=custom_args['normalize'])
         steering.wrapped_model.to(dtype)
 
@@ -225,6 +224,7 @@ def get_model_answers(
 
                 conv.update_last_message(output)
                 turns.append(output)
+                print(output)
 
             choices.append({"index": i, "turns": turns})
 
