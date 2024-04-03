@@ -18,6 +18,7 @@ SLOW_MODEL_MSG = "⚠️  Both models will show the responses all at once. Pleas
 RATE_LIMIT_MSG = "**RATE LIMIT OF THIS MODEL IS REACHED. PLEASE COME BACK LATER OR USE BATTLE MODE (the 1st tab).**"
 # Maximum input length
 INPUT_CHAR_LEN_LIMIT = int(os.getenv("FASTCHAT_INPUT_CHAR_LEN_LIMIT", 12000))
+BLIND_MODE_INPUT_CHAR_LEN_LIMIT = int(os.getenv("FASTCHAT_BLIND_MODE_INPUT_CHAR_LEN_LIMIT", 24000))
 # Maximum conversation turns
 CONVERSATION_TURN_LIMIT = 50
 # Session expiration time

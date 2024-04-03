@@ -13,7 +13,7 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
-    INPUT_CHAR_LEN_LIMIT,
+    BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
 from fastchat.model.model_adapter import get_conversation_template
@@ -168,32 +168,35 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4-0314": 4,
-    "gpt-4-0613": 4,
+    "gpt-4-0314": 2,
+    "gpt-4-0613": 2,
     "gpt-4-1106-preview": 2,
-    "gpt-4-0125-preview": 4,
-    "gpt-4-turbo-browsing": 2,
+    "gpt-4-0125-preview": 2,
+    "gpt-4-turbo-browsing": 1,
     "gpt-3.5-turbo-0125": 4,
     "claude-3-opus-20240229": 4,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "claude-2.1": 2,
+    "dbrx-instruct": 6,
+    "command-r": 6,
     "gemini-pro-dev-api": 2,
     "qwen1.5-72b-chat": 4,
+    "qwen1.5-14b-chat": 4,
     "qwen1.5-4b-chat": 2,
     "olmo-7b-instruct": 1,
-    "gemma-2b-it": 1,
-    "gemma-7b-it": 1,
+    "gemma-7b-it": 2,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 2,
     "mistral-large-2402": 4,
     "mistral-medium": 2,
     "openchat-3.5-0106": 2,
-    "starling-lm-7b-alpha": 1,
     "starling-lm-7b-beta": 2,
     # tier 1
-    "deluxe-chat-v1.3": 4,
-    "llama-2-70b-chat": 2,
+    "deluxe-chat-v1.3": 1,
+    "llama-2-70b-chat": 4,
+    "llama-2-13b-chat": 1,
+    "llama-2-7b-chat": 1,
     "vicuna-33b": 1,
 }
 
@@ -222,6 +225,24 @@ BATTLE_TARGETS = {
         "gpt-3.5-turbo-1106",
         "mixtral-8x7b-instruct-v0.1",
     },
+    "dbrx-instruct": {
+        "mixtral-8x7b-instruct-v0.1",
+        "llama-2-70b-chat",
+        "gpt-4-0125-preview",
+        "gpt-3.5-turbo-0125",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+        "mistral-large-2402",
+    },
+    "command-r": {
+        "mixtral-8x7b-instruct-v0.1",
+        "gpt-4-0125-preview",
+        "gpt-4-1106-preview",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+    },
     "starling-lm-7b-beta": {
         "starling-lm-7b-alpha",
         "claude-3-haiku-20240307",
@@ -243,6 +264,13 @@ BATTLE_TARGETS = {
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
         "yi-34b-chat",
+    },
+    "qwen1.5-14b-chat": {
+        "starling-lm-7b-alpha",
+        "claude-3-haiku-20240307",
+        "gpt-3.5-turbo-0125",
+        "openchat-3.5-0106",
+        "mixtral-8x7b-instruct-v0.1",
     },
     "qwen1.5-4b-chat": {
         "mixtral-8x7b-instruct-v0.1",
@@ -345,10 +373,35 @@ BATTLE_TARGETS = {
     },
 }
 
-SAMPLING_BOOST_MODELS = []
+SAMPLING_BOOST_MODELS = [
+    # "gpt-4-1106-preview",
+    # "gpt-4-0125-preview",
+    # "gpt-3.5-turbo-0125",
+    # "gemma-7b-it",
+    # "gemma-2b-it",
+    # "mistral-large-2402",
+    "starling-lm-7b-beta",
+    # "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307",
+    "command-r",
+    "dbrx-instruct",
+    "qwen1.5-14b-chat",
+]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = [
+    "zephyr-7b-beta",
+    "pplx-70b-online",
+    "wizardlm-70b",
+    "deepseek-llm-67b-chat",
+    "nous-hermes-2-mixtral-8x7b-dpo",
+    "qwen1.5-7b-chat",
+    "vicuna-13b",
+    "openhermes-2.5-mistral-7b",
+    "claude-2.0",
+    "yi-34b-chat",
+]
 
 
 def get_sample_weight(model):
@@ -464,7 +517,7 @@ def add_text(
             + [""]
         )
 
-    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         states[i].conv.append_message(states[i].conv.roles[0], text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
@@ -555,7 +608,7 @@ def build_side_by_side_ui_anony(models):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We collect **300K+** human votes to compute an Elo-based LLM leaderboard.
+We collect **500K+** human votes to compute an Elo-based LLM leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!

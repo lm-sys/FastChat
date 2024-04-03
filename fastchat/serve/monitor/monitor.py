@@ -51,7 +51,7 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: March 13, 2024.
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: March 29, 2024.
 
 Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
 """
@@ -235,7 +235,8 @@ def get_arena_table(arena_df, model_table_df):
     for i in range(len(arena_df)):
         row = []
         model_key = arena_df.index[i]
-        model_name = model_table_df[model_table_df["key"] == model_key]["Model"].values[
+        model_row = model_table_df[model_table_df["key"] == model_key]
+        model_name = model_row["Model"].values[
             0
         ]
 
@@ -253,12 +254,17 @@ def get_arena_table(arena_df, model_table_df):
         row.append(round(arena_df.iloc[i]["num_battles"]))
         # Organization
         row.append(
-            model_table_df[model_table_df["key"] == model_key]["Organization"].values[0]
+            model_row["Organization"].values[0]
         )
         # license
         row.append(
-            model_table_df[model_table_df["key"] == model_key]["License"].values[0]
+            model_row["License"].values[0]
         )
+        cutoff_date = model_row["Knowledge cutoff date"].values[0]
+        if cutoff_date == "-":
+            row.append("Unknown")
+        else:
+            row.append(cutoff_date)
 
         values.append(row)
     return values
@@ -271,6 +277,8 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
     else:
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
+            if "full" in elo_results:
+                elo_results = elo_results["full"]
 
         p1 = elo_results["win_fraction_heatmap"]
         p2 = elo_results["battle_count_heatmap"]
@@ -299,6 +307,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                         "🗳️ Votes",
                         "Organization",
                         "License",
+                        "Knowledge Cutoff"
                     ],
                     datatype=[
                         "str",
@@ -308,11 +317,12 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                         "number",
                         "str",
                         "str",
+                        "str",
                     ],
                     value=arena_table_vals,
                     elem_id="arena_leaderboard_dataframe",
                     height=700,
-                    column_widths=[50, 200, 100, 100, 100, 150, 150],
+                    column_widths=[50, 200, 120, 100, 100, 150, 150, 100],
                     wrap=True,
                 )
             with gr.Tab("Full Leaderboard", id=1):

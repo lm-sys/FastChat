@@ -42,9 +42,9 @@ register_model_info(
 
 register_model_info(
     [
+        "claude-3-haiku-20240307",
         "claude-3-sonnet-20240229",
         "claude-3-opus-20240229",
-        "claude-3-haiku-20240307",
         "claude-2.1",
         "claude-2.0",
         "claude-1",
@@ -55,10 +55,24 @@ register_model_info(
 )
 
 register_model_info(
+    ["dbrx-instruct"],
+    "DBRX Instruct",
+    "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
+    "DBRX by Databricks Mosaic AI",
+)
+
+register_model_info(
     ["starling-lm-7b-beta", "starling-lm-7b-alpha"],
     "Starling-LM-7B",
     "https://starling.cs.berkeley.edu/",
     "An open model trained using RLAIF by Berkeley",
+)
+
+register_model_info(
+    ["command-r"],
+    "Command-R",
+    "https://txt.cohere.com/command-r/",
+    "Command-R by Cohere",
 )
 
 register_model_info(
@@ -679,13 +693,6 @@ register_model_info(
     "Gemma",
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
-)
-
-register_model_info(
-    ["cohere-command-r"],
-    "Command-R",
-    "https://txt.cohere.com/command-r/",
-    "Command-R by Cohere",
 )
 
 register_model_info(

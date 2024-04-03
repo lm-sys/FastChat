@@ -31,16 +31,17 @@ class Monitor:
         self.model_call = {}
         self.user_call = {}
         self.model_call_limit_global = {
-            "gpt-4-1106-preview": 300,
-            "gpt-4-0125-preview": 300,
+            "gpt-4-1106-preview": 100,
+            "gpt-4-0125-preview": 100,
             "gpt-4-turbo-browsing": 200,
             "mistral-large-2402": 300,
             "claude-3-opus-20240229": 2500,
             "claude-3-sonnet-20240229": 2500,
+            "dbrx-instruct": 1000,
         }
         self.model_call_day_limit_per_user = {
-            "gpt-4-1106-preview": 8,
-            "gpt-4-0125-preview": 8,
+            "gpt-4-1106-preview": 5,
+            "gpt-4-0125-preview": 5,
             "gpt-4-turbo-browsing": 8,
             "mistral-large-2402": 8,
             "claude-3-opus-20240229": 32,

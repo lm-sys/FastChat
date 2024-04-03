@@ -2331,6 +2331,32 @@ class CllmAdapter(BaseModelAdapter):
         return get_conv_template("cllm")
 
 
+class CohereAdapter(BaseModelAdapter):
+    """The model adapter for Cohere"""
+
+    def match(self, model_path: str):
+        return model_path in ["command-r"]
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
+
+class DBRXAdapter(BaseModelAdapter):
+    """The model adapter for Cohere"""
+
+    def match(self, model_path: str):
+        return model_path in ["dbrx-instruct"]
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2422,6 +2448,8 @@ register_model_adapter(SteerLMAdapter)
 register_model_adapter(LlavaAdapter)
 register_model_adapter(YuanAdapter)
 register_model_adapter(OlmoAdapter)
+register_model_adapter(CohereAdapter)
+register_model_adapter(DBRXAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
