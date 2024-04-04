@@ -12,8 +12,34 @@ from nltk.tokenize import word_tokenize
 def is_code_conversation(text : str) -> tuple[bool, list[str]]:
     """Check if the text is a code conversation"""
 
+    if '```plaintext' in text:
+        lines = text.split('\n')
+        line1_idx = [idx for idx, line in enumerate(lines) if '```plaintext' in line][0]
+        line2_idx = [line1_idx + 1 + idx for idx, line in enumerate(lines) if '```' in line[line1_idx+1:]]
+        if line2_idx:
+            line2_idx = line2_idx[0]    
+            text = '\n'.join(lines[:line1_idx]) + '\n'.join(lines[line2_idx+1:])
+        else:
+            text = '\n'.join(lines[:line1_idx])
+        return is_code_conversation(text)
+
+    if '```markdown' in text:
+        otext = text
+        lines = text.split('\n')
+        line1_idx = [idx for idx, line in enumerate(lines) if '```markdown' in line][0]
+        line2_idx = [line1_idx + 1 + idx for idx, line in enumerate(lines) if '```' in line[line1_idx+1:]]
+        if line2_idx:
+            line2_idx = line2_idx[0]    
+            text = '\n'.join(lines[:line1_idx]) + '\n'.join(lines[line2_idx+1:])
+        else:
+            text = '\n'.join(lines[:line1_idx])
+        return is_code_conversation(text)        
+    
+    if "ascii art" in text.lower():
+        return False, []
+
     # 1. Check for code formatting
-    if re.search(r'```', text) or re.search(r'^[ \t]+\S', text, re.MULTILINE):
+    if re.search(r'```', text):
         return True, ['backticks']
 
     # Tokenize the text
@@ -22,16 +48,30 @@ def is_code_conversation(text : str) -> tuple[bool, list[str]]:
     
 
     # 2. Check for programming concepts
-    concepts = ["debug", "compile", "git", "github", "api", "package", "trace", "exception", "pull req", "branch", "import", "pandas", "array", "dataframe", "pandas"]
+    concepts = ["git", "github", "pull request", "dataframe", "nginx", "pip"]
     if any(concept in tokens for concept in concepts):
         matched_concepts = list(set(tokens).intersection(set(concepts)))
         return True, matched_concepts
 
     # 3. Check for programming language name
-    languages = ["python", "c++", 'c', "cpp", "java", "javascript", "typescript", "html", "css","sql", "bash", "shell", "powershell", "matlab", 'r']
+    languages = ["python", "c++", "cpp", "java", "javascript", "typescript", "html", "css","sql", "bash", "powershell", "matlab", "golang", "linux", "ubuntu"]
     if any(language in tokens for language in languages):
         matched_languages = list(set(tokens).intersection(set(languages)))
         return True, matched_languages
+
+    # 4. Programming concept substrings
+    strings = ["import pandas", "import numpy", "import torch", "jax", "tensorflow", "pytorch", "keras", "scikit-learn", "sklearn", " apt-get "]
+    found_array = [string in text for string in strings]
+    if any(found_array):
+        matched_strings = [string for string, found in zip(strings, found_array) if found]
+        return True, matched_strings
+
+    # 5. Programming concept regexes
+    regexes = [r"from \w+ import \w+", r"conda install \w+", r"pip install -r \w+", r"conda install -c \w+ \w+", r"#include <\w+>", r"import \w+ as \w+", r"#include \"\w+\.h\"", ]
+    found_array = [re.search(regex, text) for regex in regexes]
+    if any(found_array):
+        matched_regexes = [regex for regex, found in zip(regexes, found_array) if found]
+        return True, matched_regexes
 
     return False, []
 
