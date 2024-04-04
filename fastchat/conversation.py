@@ -22,6 +22,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     LLAMA2 = auto()
+    CODELLAMA_70B = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -150,6 +151,14 @@ class Conversation:
                         ret += tag + " " + message + seps[i % 2]
                 else:
                     ret += tag
+            return ret
+        elif self.sep_style == SeparatorStyle.CODELLAMA_70B:
+            ret = system_prompt
+            for i, (role, message) in enumerate(self.messages):
+                tag = self.roles[i % 2]
+                if message:
+                    ret += f"Source: {tag}\n\n {message}{self.sep}"
+            ret += f"Source: {self.roles[1]}\nDestination: {self.roles[0]}\n\n "
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -1115,6 +1124,19 @@ register_conv_template(
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",
+    )
+)
+
+# codellama-70b template
+# reference: https://huggingface.co/codellama/CodeLlama-70b-Instruct-hf#chat-prompt
+register_conv_template(
+    Conversation(
+        name="codellama-70b",
+        system_template="<s>Source: system\n\n{system_message} <step> ",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.CODELLAMA_70B,
+        sep=" <step> ",
+        stop_str="<step>",
     )
 )
 
