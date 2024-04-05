@@ -2,33 +2,43 @@
 A controller manages distributed workers.
 It sends worker addresses to clients.
 """
+
 import argparse
 import asyncio
+import contextlib
 import dataclasses
-from enum import Enum, auto
 import json
 import logging
 import os
-import time
-from typing import List, Union
 import threading
+import time
+from enum import Enum, auto
+from typing import List, Union, AsyncGenerator
 
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+import aiohttp
 import numpy as np
 import requests
 import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 
 from fastchat.constants import (
     CONTROLLER_HEART_BEAT_EXPIRATION,
+    SERVER_ERROR_MSG,
     WORKER_API_TIMEOUT,
     ErrorCode,
-    SERVER_ERROR_MSG,
 )
 from fastchat.utils import build_logger
 
-
 logger = build_logger("controller", "controller.log")
+
+
+@contextlib.asynccontextmanager
+async def request(url, method, timeout: int, **kwargs):
+    async with aiohttp.ClientSession() as session, session.request(
+        method, url, timeout=aiohttp.ClientTimeout(total=timeout), **kwargs
+    ) as response:
+        yield response
 
 
 class DispatchMethod(Enum):
@@ -72,7 +82,7 @@ class Controller:
         )
         self.heart_beat_thread.start()
 
-    def register_worker(
+    async def register_worker(
         self,
         worker_name: str,
         check_heart_beat: bool,
@@ -85,8 +95,7 @@ class Controller:
             logger.info(f"Register an existing worker: {worker_name}")
 
         if not worker_status:
-            worker_status = self.get_worker_status(worker_name)
-        if not worker_status:
+            worker_status = await self.get_worker_status(worker_name)
             return False
 
         self.worker_info[worker_name] = WorkerInfo(
@@ -101,30 +110,41 @@ class Controller:
         logger.info(f"Register done: {worker_name}, {worker_status}")
         return True
 
-    def get_worker_status(self, worker_name: str):
+    async def get_worker_status(self, worker_name: str):
         try:
-            r = requests.post(worker_name + "/worker_get_status", timeout=5)
-        except requests.exceptions.RequestException as e:
+            async with request(
+                method="post",
+                url=worker_name + "/worker_get_status",
+                timeout=5,
+            ) as r:
+                if r.status != 200:
+                    logger.error(f"Get status fails: {worker_name}, {r}")
+                    return None
+
+                return await r.json()
+
+        except aiohttp.ClientError as e:
             logger.error(f"Get status fails: {worker_name}, {e}")
             return None
-
-        if r.status_code != 200:
-            logger.error(f"Get status fails: {worker_name}, {r}")
-            return None
-
-        return r.json()
 
     def remove_worker(self, worker_name: str):
         del self.worker_info[worker_name]
 
-    def refresh_all_workers(self):
+    async def refresh_all_workers(self):
         old_info = dict(self.worker_info)
         self.worker_info = {}
 
-        for w_name, w_info in old_info.items():
-            if not self.register_worker(
-                w_name, w_info.check_heart_beat, None, w_info.multimodal
-            ):
+        register_results = await asyncio.gather(
+            *[
+                self.register_worker(
+                    w_name, w_info.check_heart_beat, None, w_info.multimodal
+                )
+                for w_name, w_info in old_info.items()
+            ]
+        )
+
+        for w_name in zip(old_info.keys(), register_results):
+            if not register_results:
                 logger.info(f"Remove stale worker: {w_name}")
 
     def list_models(self):
@@ -153,7 +173,7 @@ class Controller:
 
         return list(model_names)
 
-    def get_worker_address(self, model_name: str):
+    async def get_worker_address(self, model_name: str):
         if self.dispatch_method == DispatchMethod.LOTTERY:
             worker_names = []
             worker_speeds = []
@@ -176,7 +196,7 @@ class Controller:
                 pt = np.random.choice(np.arange(len(worker_names)), p=worker_speeds)
                 worker_name = worker_names[pt]
 
-                if self.get_worker_status(worker_name):
+                if await self.get_worker_status(worker_name):
                     break
                 else:
                     self.remove_worker(worker_name)
@@ -244,13 +264,16 @@ class Controller:
 
     # Let the controller act as a worker to achieve hierarchical
     # management. This can be used to connect isolated sub networks.
-    def worker_api_get_status(self):
+    async def worker_api_get_status(self):
         model_names = set()
         speed = 0
         queue_length = 0
 
-        for w_name in self.worker_info:
-            worker_status = self.get_worker_status(w_name)
+        workers = await asyncio.gather(
+            *[self.get_worker_status(worker_name=w_name) for w_name in self.worker_info]
+        )
+
+        for worker_status in workers:
             if worker_status is not None:
                 model_names.update(worker_status["model_names"])
                 speed += worker_status["speed"]
@@ -263,22 +286,22 @@ class Controller:
             "queue_length": queue_length,
         }
 
-    def worker_api_generate_stream(self, params):
-        worker_addr = self.get_worker_address(params["model"])
+    async def worker_api_generate_stream(self, params) -> AsyncGenerator[bytes, None]:
+        worker_addr = await self.get_worker_address(params["model"])
         if not worker_addr:
             yield self.handle_no_worker(params)
 
         try:
-            response = requests.post(
-                worker_addr + "/worker_generate_stream",
+            async with request(
+                url=worker_addr + "/worker_generate_stream",
+                method="post",
                 json=params,
-                stream=True,
                 timeout=WORKER_API_TIMEOUT,
-            )
-            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-                if chunk:
-                    yield chunk + b"\0"
-        except requests.exceptions.RequestException as e:
+            ) as r:
+                async for chunk, _ in r.content.iter_chunks():
+                    if chunk:
+                        yield chunk
+        except aiohttp.ClientError:
             yield self.handle_worker_timeout(worker_addr)
 
 
@@ -288,7 +311,7 @@ app = FastAPI()
 @app.post("/register_worker")
 async def register_worker(request: Request):
     data = await request.json()
-    controller.register_worker(
+    await controller.register_worker(
         data["worker_name"],
         data["check_heart_beat"],
         data.get("worker_status", None),
@@ -298,7 +321,7 @@ async def register_worker(request: Request):
 
 @app.post("/refresh_all_workers")
 async def refresh_all_workers():
-    models = controller.refresh_all_workers()
+    models = await controller.refresh_all_workers()
 
 
 @app.post("/list_models")
@@ -342,7 +365,7 @@ async def worker_api_generate_stream(request: Request):
 
 @app.post("/worker_get_status")
 async def worker_api_get_status(request: Request):
-    return controller.worker_api_get_status()
+    return await controller.worker_api_get_status()
 
 
 @app.get("/test_connection")
