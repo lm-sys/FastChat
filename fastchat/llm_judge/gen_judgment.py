@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     # Show match stats and prompt enter to continue
     print("Stats:")
-    print(json.dumps(match_stat, indent=4))
+    print(json.dumps(match_stat, indent=4, ensure_ascii=False))
     input("Press Enter to confirm...")
 
     # Play matches
