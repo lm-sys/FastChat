@@ -23,6 +23,7 @@ import tensorrt_llm
 from tensorrt_llm import runtime
 from tensorrt_llm.logger import logger
 from tensorrt_llm.runtime import PYTHON_BINDINGS, ModelRunner
+from tensorrt_llm.builder import get_engine_version
 from copy import deepcopy
 
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
@@ -38,7 +39,7 @@ app = FastAPI()
 
 
 def read_model_name(engine_dir: str):
-    engine_version = tensorrt_llm.runtime.engine.get_engine_version(engine_dir)
+    engine_version = get_engine_version(engine_dir)
 
     with open(Path(engine_dir) / "config.json", "r") as f:
         config = json.load(f)
@@ -384,7 +385,7 @@ def create_model_worker():
     config_path = os.path.join(args.model_path, "config.json")
     with open(config_path, "r") as f:
         config = json.load(f)
-    runner.config = {**config["builder_config"], **config["plugin_config"]}
+    runner.config = {**config["build_config"], **config["build_config"]["plugin_config"]}
 
     # create worker
     worker = TensorRTWorker(
