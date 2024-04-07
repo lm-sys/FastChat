@@ -320,7 +320,10 @@ async def get_gen_params(
                     ]
 
                     text = "\n".join(text_list)
-                    conv.append_message(conv.roles[0], (text, image_list))
+                    if len(image_list) == 0:
+                        conv.append_message(conv.roles[0], text)
+                    else:
+                        conv.append_message(conv.roles[0], (text, image_list))
                 else:
                     conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
