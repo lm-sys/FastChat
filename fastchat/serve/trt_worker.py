@@ -385,7 +385,10 @@ def create_model_worker():
     config_path = os.path.join(args.model_path, "config.json")
     with open(config_path, "r") as f:
         config = json.load(f)
-    runner.config = {**config["build_config"], **config["build_config"]["plugin_config"]}
+    runner.config = {
+        **config["build_config"],
+        **config["build_config"]["plugin_config"],
+    }
 
     # create worker
     worker = TensorRTWorker(
