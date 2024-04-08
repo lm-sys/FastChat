@@ -63,7 +63,6 @@ The service is a research preview. It only provides limited safety measures and 
 It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
 Please do not upload any private information.
 The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
-Additionally, Bard is offered on LMSys for research purposes only. To access the Bard product, please visit its [website](http://bard.google.com).
 
 ### Acknowledgment
 We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
@@ -279,7 +278,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
 
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
     flagged = moderation_filter(text, [state.model_name])
     if flagged:
@@ -290,7 +289,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG) + (
+        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
             no_change_btn,
         ) * 5
 
@@ -364,6 +363,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=True,
+    use_recommended_config=False,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -437,6 +437,12 @@ def bot_response(
             images,
         )
     else:
+        if use_recommended_config:
+            recommended_config = model_api_dict.get("recommended_config", None)
+            if recommended_config is not None:
+                temperature = recommended_config.get("temperature", temperature)
+                top_p = recommended_config.get("top_p", top_p)
+
         stream_iter = get_api_provider_stream_iter(
             conv,
             model_name,
