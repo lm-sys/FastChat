@@ -94,7 +94,7 @@ def update_elo_components(
         battles = clean_battle_data(
             log_files, exclude_model_names, ban_ip_list=ban_ip_list
         )
-        elo_results = report_elo_analysis_results(battles)
+        elo_results = report_elo_analysis_results(battles, scale=2)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
@@ -356,28 +356,22 @@ You can find more discussions in this blog [post](https://lmsys.org/blog/2023-12
     """,
             elem_id="leaderboard_markdown",
         )
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown(
-                    "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles"
-                )
-                plot_1 = gr.Plot(p1, show_label=False)
-            with gr.Column():
-                gr.Markdown(
-                    "#### Figure 2: Battle Count for Each Combination of Models (without Ties)"
-                )
-                plot_2 = gr.Plot(p2, show_label=False)
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown(
-                    "#### Figure 3: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
-                )
-                plot_3 = gr.Plot(p3, show_label=False)
-            with gr.Column():
-                gr.Markdown(
-                    "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
-                )
-                plot_4 = gr.Plot(p4, show_label=False)
+        gr.Markdown(
+            "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles"
+        )
+        plot_1 = gr.Plot(p1, show_label=False)
+        gr.Markdown(
+            "#### Figure 2: Battle Count for Each Combination of Models (without Ties)"
+        )
+        plot_2 = gr.Plot(p2, show_label=False)
+        gr.Markdown(
+            "#### Figure 3: Bootstrap of Elo Estimates (1000 Rounds of Random Sampling)"
+        )
+        plot_3 = gr.Plot(p3, show_label=False)
+        gr.Markdown(
+            "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)"
+        )
+        plot_4 = gr.Plot(p4, show_label=False)
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
@@ -414,7 +408,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
             load_demo,
             [url_params],
             basic_components + leader_components,
-            _js=get_window_url_params_js,
+            js=get_window_url_params_js,
         )
 
     return demo
