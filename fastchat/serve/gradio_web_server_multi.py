@@ -146,29 +146,44 @@ window.__gradio_mode__ = "app";
                         models, add_promotion_links=True
                     )
 
-            with gr.Tab("Vision Arena", id=3, visible=args.vision_arena):
-                with gr.Tab("Vision Arena (battle)", id=3, visible=args.vision_arena):
-                    side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
-                        vl_models,
-                        random_questions=args.random_questions,
-                    )
+            demo_tabs = (
+                [tabs]
+                + single_model_list
+                + side_by_side_anony_list
+                + side_by_side_named_list
+            )
 
-                with gr.Tab(
-                    "Vision Arena (side-by-side)", id=4, visible=args.vision_arena
-                ):
-                    side_by_side_vision_named_list = build_side_by_side_vision_ui_named(
-                        vl_models,
-                        random_questions=args.random_questions,
-                    )
-
-                with gr.Tab("Vision Direct Chat", id=5, visible=args.vision_arena):
-                    single_vision_language_model_list = (
-                        build_single_vision_language_model_ui(
-                            vl_models,
-                            add_promotion_links=True,
-                            random_questions=args.random_questions,
+            if args.vision_arena:
+                with gr.Tab("Vision Arena", id=3):
+                    with gr.Tab("Vision Arena (battle)", id=3):
+                        side_by_side_vision_anony_list = (
+                            build_side_by_side_vision_ui_anony(
+                                vl_models,
+                                random_questions=args.random_questions,
+                            )
                         )
-                    )
+
+                    with gr.Tab("Vision Arena (side-by-side)", id=4):
+                        side_by_side_vision_named_list = (
+                            build_side_by_side_vision_ui_named(
+                                vl_models,
+                                random_questions=args.random_questions,
+                            )
+                        )
+
+                    with gr.Tab("Vision Direct Chat", id=5):
+                        single_vision_language_model_list = (
+                            build_single_vision_language_model_ui(
+                                vl_models,
+                                add_promotion_links=True,
+                                random_questions=args.random_questions,
+                            )
+                        )
+                demo_tabs += (
+                    side_by_side_vision_anony_list
+                    + side_by_side_vision_named_list
+                    + single_vision_language_model_list
+                )
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=6):
@@ -184,13 +199,7 @@ window.__gradio_mode__ = "app";
         demo.load(
             load_demo,
             [url_params],
-            [tabs]
-            + single_model_list
-            + side_by_side_anony_list
-            + side_by_side_named_list
-            + side_by_side_vision_anony_list
-            + side_by_side_vision_named_list
-            + single_vision_language_model_list,
+            demo_tabs,
             js=load_js,
         )
 

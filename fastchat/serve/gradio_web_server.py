@@ -151,9 +151,9 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
             mdl_vision = mdl_dict.get("vision-arena", False)
             mdl_text = mdl_dict.get("text-only-arena", False)
             if vision_arena and mdl_vision:
-                models += [mdl]
+                models.append(mdl)
             if not vision_arena and mdl_text:
-                models += [mdl]
+                models.append(mdl)
 
     # Remove anonymous models
     models = list(set(models))
@@ -419,8 +419,6 @@ def bot_response(
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
-        images = conv.get_images()
-
         # Set repetition_penalty
         if "t5" in model_name:
             repetition_penalty = 1.2
