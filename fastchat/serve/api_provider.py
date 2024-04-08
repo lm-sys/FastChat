@@ -107,6 +107,7 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict.get("api_key"),
             folder_id=model_api_dict.get("folder_id"),
+        )
     elif model_api_dict["api_type"] == "cohere":
         messages = conv.to_openai_api_messages()
         stream_iter = cohere_api_stream_iter(
