@@ -600,4 +600,3 @@ def cohere_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: {e}",
             "error_code": 1,
         }
-
