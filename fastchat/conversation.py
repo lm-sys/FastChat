@@ -925,17 +925,6 @@ register_conv_template(
     )
 )
 
-# h2ogpt default template
-register_conv_template(
-    Conversation(
-        name="h2ogpt",
-        roles=("<|prompt|>", "<|answer|>"),
-        sep_style=SeparatorStyle.NO_COLON_SINGLE,
-        sep="</s>",
-        sep2="</s>",
-    )
-)
-
 # h2o-danube template
 register_conv_template(
     Conversation(
