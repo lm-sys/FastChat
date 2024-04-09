@@ -2317,6 +2317,16 @@ class CllmAdapter(BaseModelAdapter):
         return get_conv_template("cllm")
 
 
+class RekaAdapter(BaseModelAdapter):
+    """The model adapter for Reka"""
+
+    def match(self, model_path: str):
+        return "reka" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("reka")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2409,6 +2419,7 @@ register_model_adapter(YuanAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(YandexGPTAdapter)
 register_model_adapter(CllmAdapter)
+register_model_adapter(RekaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

@@ -120,6 +120,17 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "reka":
+        messages = conv.to_openai_api_messages()
+        stream_iter = reka_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_new_tokens=max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
     else:
         raise NotImplementedError()
 
@@ -600,3 +611,71 @@ def cohere_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: {e}",
             "error_code": 1,
         }
+
+
+def reka_api_stream_iter(
+    model_name: str,
+    messages: list,
+    temperature: Optional[
+        float
+    ] = None,  # The SDK or API handles None for all parameters following
+    top_p: Optional[float] = None,
+    max_new_tokens: Optional[int] = None,
+    api_key: Optional[str] = None,  # default is env var CO_API_KEY
+    api_base: Optional[str] = None,
+):
+    api_key = api_key or os.environ["REKA_API_KEY"]
+
+    OPENAI_TO_REKA_ROLE_MAP = {
+        "user": "human",
+        "assistant": "model",
+        # system prompt passed as a human round
+        "system": "human",
+    }
+
+    chat_history = []
+    for message in messages:
+        message_type = OPENAI_TO_REKA_ROLE_MAP[message["role"]]
+        if not chat_history or chat_history[-1]["type"] != message_type:
+            chat_history.append(
+                dict(
+                    type=message_type,
+                    text=message["content"],
+                )
+            )
+        else:
+            # merge consecutive rounds with same role into one round
+            chat_history[-1]["text"] += "\n\n" + message["content"]
+
+    request = dict(
+        model_name=model_name,
+        conversation_history=chat_history,
+        temperature=temperature,
+        request_output_len=max_new_tokens,
+        runtime_top_p=top_p,
+        stream=True,
+    )
+    response = requests.post(
+        api_base,
+        stream=True,
+        json=request,
+        headers={
+            "X-Api-Key": api_key,
+        },
+    )
+
+    if response.status_code != 200:
+        error_message = response.text
+        logger.error(f"==== error from reka api: {error_message} ====")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: {error_message}",
+            "error_code": 1,
+        }
+        return
+
+    for line in response.iter_lines():
+        line = line.decode("utf8")
+        if not line.startswith("data: "):
+            continue
+        gen = json.loads(line[6:])
+        yield {"text": gen["text"], "error_code": 0}

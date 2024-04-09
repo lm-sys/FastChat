@@ -682,3 +682,10 @@ register_model_info(
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
 )
+
+register_model_info(
+    ["reka-flash"],
+    "Reka Flash",
+    "https://reka.ai/reka-flash",
+    "Multimodal model by Reka",
+)
