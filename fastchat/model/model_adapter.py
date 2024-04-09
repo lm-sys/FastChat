@@ -221,9 +221,9 @@ def load_model(
         if num_gpus != 1:
             kwargs["device_map"] = "auto"
             if max_gpu_memory is None:
-                kwargs[
-                    "device_map"
-                ] = "sequential"  # This is important for not the same VRAM sizes
+                kwargs["device_map"] = (
+                    "sequential"  # This is important for not the same VRAM sizes
+                )
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
                     i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -1223,10 +1223,13 @@ class H2OAdapter(BaseModelAdapter):
             model_path,
             use_fast=self.use_fast_tokenizer,
             revision=revision,
-            trust_remote_code=True
+            trust_remote_code=True,
         )
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, trust_remote_code=True, **from_pretrained_kwargs
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
         )
 
         tokenizer.pad_token_id = tokenizer.eos_token_id
