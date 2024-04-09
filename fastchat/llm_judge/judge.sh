@@ -76,19 +76,40 @@ base_names=(
     # "run2_ppo_no_steer_lr1e-4"
     # "run2_lora_persuasion_0.5_noisytune"
     # "run2_lora_large_scale_concept_0.5"
-    "run2_lora_working_concepts_0.5_noisytune"
-    "run2_lora_working_concepts_0.5_range-1,1"
-    "run2_lora_large_scale_concept_0.5_range-1,1"
-    "run2_lora_kl_large_scale_concept_0.5"
+    # "run2_lora_working_concepts_0.5_noisytune"
+    # "run2_lora_working_concepts_0.5_range-1,1"
+    # "run2_lora_large_scale_concept_0.5_range-1,1"
+    # "run2_lora_kl_large_scale_concept_0.5"
+    run2_lora_kl_lr_5e-5_working_concepts_0.125
+    run2_lora_kl_lr_5e-5_large_scale_concept_0.125
+    run2_lora_kl_lr_1e-5_working_concepts_0.125
+    run2_lora_kl_lr_1e-5_large_scale_concept_0.125
+    # run2_lora_kl_lr_5e-5_working_concepts_0.5
+    # run2_lora_kl_lr_5e-5_large_scale_concept_0.5
+    # run2_lora_kl_lr_1e-5_working_concepts_0.5
+    # run2_lora_kl_lr_1e-5_large_scale_concept_0.5
+    # "llama-2-chat7b"
+    # "llama-2-chat13b"
+    # "run2_ppo_working_concepts_0.5"
 )
 
 # Define suffixes
 suffixes=(
-    ""
-    "_coeff_1.5_refusal_data_full_answers"
-    "_coeff_-1.5_refusal_data_full_answers"
-    "_coeff_1.5_refusal_data_A_B_question_pairs"
-    "_coeff_-1.5_refusal_data_A_B_question_pairs"
+    # ""
+    # "_coeff_1.5_refusal_data_full_answers_norm"
+    # "_coeff_-1.5_refusal_data_full_answers_norm"
+    # "_coeff_1.5_refusal_data_full_answers_token_last_20"
+    # "_coeff_-1.5_refusal_data_full_answers_token_last_20"
+    # "_coeff_1_refusal_data_full_answers_norm"
+    # "_coeff_-1_refusal_data_full_answers_norm"
+    "_coeff_1_refusal_data_full_answers2"
+    "_coeff_-1_refusal_data_full_answers2"
+    "_coeff_1_refusal_data_A_B_question_pairs"
+    "_coeff_-1_refusal_data_A_B_question_pairs"
+    # "_coeff_1.5_refusal_data_full_answers"
+    # "_coeff_-1.5_refusal_data_full_answers"
+    # "_coeff_1.5_refusal_data_A_B_question_pairs"
+    # "_coeff_-1.5_refusal_data_A_B_question_pairs"
 )
 
 # Initialize an empty array for model list
@@ -104,8 +125,8 @@ for base_name in "${base_names[@]}"; do
         model_list+=("${model_name}")
     done
 done
-model_list+=("persuasion_0.5")
-model_list+=("no_steer")
+# model_list+=("persuasion_0.5")
+# model_list+=("no_steer")
 # Convert model list array to string
 model_list_str="${model_list[@]}"
 

@@ -123,7 +123,9 @@ def get_model_answers(
             # rror: can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first
         if custom_args['direction_method'] == 'pca' and custom_args['steering_unnormalized']:
             print("Unnormalizing raw pca activations")
-            activations = {k: v * norms_dict[str(k)] for k, v in activations.items()}
+            if steering.norms_dict is None:
+                activations = {k: v * norms_dict[str(k)] for k, v in activations.items()}
+                print("Unnormalizing raw pca activations in gen_model_answer.py")
         
         decay_end_layer = end_layer + 1
         decay_start_layer = -15
@@ -337,6 +339,7 @@ if __name__ == "__main__":
     parser.add_argument('--token_pos', type=str, default=None)
     parser.add_argument('--do_steer', action='store_true')
     parser.add_argument('--normalize', action='store_true')
+    parser.add_argument('--decay_coefficient', action='store_true')
     parser.add_argument('--steering_unnormalized', action='store_true')
     parser.add_argument('--start_layer', type=int, default=-11)
     parser.add_argument('--end_layer', type=int, default=-30)
@@ -363,7 +366,7 @@ if __name__ == "__main__":
         'finetuning_type': 'full',
         'model_name_or_path': args.model_path,
         'merge_adapter': True,
-        'decay_coefficient': True,
+        'decay_coefficient': args.decay_coefficient,
     }
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:

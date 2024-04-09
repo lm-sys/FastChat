@@ -31,7 +31,7 @@ TIE_DELTA = 0.1
 # Categories that need reference answers
 NEED_REF_CATS = ["math", "reasoning", "coding", "arena-hard-200"]
 
-do_cache = True
+do_cache = False
 if do_cache:
     # load cache if it exists
     print("loading cache...")
@@ -423,9 +423,12 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     for _ in range(API_MAX_RETRY):
         try:
             prompt = conv.to_openai_string_representation()
-            if CACHE.is_key_stored(model, prompt):
-                output = CACHE.get_cached_response(model, prompt)
-            else:
+            cache_hit = False
+            if CACHE is not None:
+                if CACHE.is_key_stored(model, prompt):
+                    output = CACHE.get_cached_response(model, prompt)
+                    cache_hit = True
+            if not cache_hit:
                 messages = conv.to_openai_api_messages()
                 response = openai.ChatCompletion.create(
                     model=model,
@@ -435,7 +438,8 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
                     max_tokens=max_tokens,
                 )
                 output = response["choices"][0]["message"]["content"]
-                CACHE.cache_response(model, prompt, output)
+                if CACHE is not None:
+                    CACHE.cache_response(model, prompt, output)
             break
         except openai.error.OpenAIError as e:
             print(type(e), e)

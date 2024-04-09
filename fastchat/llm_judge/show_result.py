@@ -29,6 +29,8 @@ def display_result_single(args):
     # print out model list
     print(f"Number of outputs: {len(df_all)}")
     print(df_all["model"].unique())
+    # drop everything with the word "decay" in model
+    # df_all = df_all[~df_all["model"].str.contains("decay")]
     # Save new dataframe to a jsonl file
     # df_all.to_json(f"data/mt_bench/model_judgment/{args.judge_model}_single_filtered.jsonl", orient="records", lines=True)
     df = df_all[["model", "score", "turn", "question_id"]]
@@ -53,21 +55,22 @@ def display_result_single(args):
         print("\n########## Average ##########")
         df_3 = df[["model", "score"]].groupby(["model"]).mean()
         print(df_3.sort_values(by="score", ascending=False))
-
-    show_relative_drop(df)
-    df_turn_1 = df[df["turn"] == 1]
-    show_relative_drop(df_turn_1)
     
-    results_dictionary = {}
-    # For each model name, store the average score for each turn and overall
-    for model in df["model"].unique():
-        df_model = df[df["model"] == model]
-        results_dictionary[model] = {}
-        for turn in [1, 2]:
-            df_turn = df_model[df_model["turn"] == turn]
-            results_dictionary[model][f"turn_{turn}"] = df_turn["score"].mean()
-        results_dictionary[model]["overall"] = df_model["score"].mean()
-    print(f"results_dictionary = {results_dictionary}")
+    if args.verbose:
+        show_relative_drop(df)
+        df_turn_1 = df[df["turn"] == 1]
+        show_relative_drop(df_turn_1)
+        
+        results_dictionary = {}
+        # For each model name, store the average score for each turn and overall
+        for model in df["model"].unique():
+            df_model = df[df["model"] == model]
+            results_dictionary[model] = {}
+            for turn in [1, 2]:
+                df_turn = df_model[df_model["turn"] == turn]
+                results_dictionary[model][f"turn_{turn}"] = df_turn["score"].mean()
+            results_dictionary[model]["overall"] = df_model["score"].mean()
+        print(f"results_dictionary = {results_dictionary}")
 
 def show_relative_drop(df):
         
@@ -174,6 +177,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--bench-name", type=str, default="mt_bench")
     parser.add_argument("--input-file", type=str)
+    parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--judge-model", type=str, default="gpt-4")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
