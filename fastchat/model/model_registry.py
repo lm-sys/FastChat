@@ -443,6 +443,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["h2o-danube-1.8b-chat","h2o-danube-1.8b-sft","h2o-danube2-1.8b-chat","h2o-danube2-1.8b-sft"],
+    "H2O-Danube",
+    "https://huggingface.co/h2oai/h2o-danube2-1.8b-chat",
+    "H2O-Danube by H2O.ai",
+)
+
+register_model_info(
     ["h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2"],
     "h2oGPT-GM-7b",
     "https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b-preview-300bt-v2",
