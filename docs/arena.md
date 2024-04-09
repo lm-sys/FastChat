@@ -24,5 +24,5 @@ If you have a model hosted by a 3rd party API provider or yourself, please give 
 
 Example command:
 ```
-python3 -m fastchat.serve.gradio_web_server --share --register api_endpoints.json --vision-arena
+python3 -m fastchat.serve.gradio_web_server_multi --share --register-api-endpoint-file api_endpoints.json --vision-arena
 ```
