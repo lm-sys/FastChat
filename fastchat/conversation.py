@@ -697,6 +697,18 @@ register_conv_template(
     )
 )
 
+# stablelm-2 default template
+register_conv_template(
+    Conversation(
+        name="stablelm-2",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|endoftext|>",
+        sep2="<|endoftext|>",
+        stop_token_ids=[100257],
+    )
+)
+
 # Baize default template
 register_conv_template(
     Conversation(
@@ -925,13 +937,25 @@ register_conv_template(
     )
 )
 
-# h2oGPT default template
+# h2ogpt default template
 register_conv_template(
     Conversation(
         name="h2ogpt",
         roles=("<|prompt|>", "<|answer|>"),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="</s>",
+        sep2="</s>",
+    )
+)
+
+# h2o-danube template
+register_conv_template(
+    Conversation(
+        name="h2o-danube",
+        roles=("<|prompt|>", "<|answer|>"),
+        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        sep="</s>",
+        sep2="</s>",
     )
 )
 
