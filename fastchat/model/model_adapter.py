@@ -977,8 +977,6 @@ class StableLMAdapter(BaseModelAdapter):
         return "stablelm" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "stablelm-2" in model_path:
-            return get_conv_template("stablelm-2")
         return get_conv_template("stablelm")
 
 
