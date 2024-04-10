@@ -1831,7 +1831,7 @@ class Lamma2ChineseAdapter(BaseModelAdapter):
     """The model adapter for FlagAlpha/LLama2-Chinese sft"""
 
     def match(self, model_path: str):
-        return "llama2-chinese" in model_path.lower()
+        return "llama2-chinese" in model_path.lower() or "atom" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
