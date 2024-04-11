@@ -55,17 +55,10 @@ register_model_info(
 )
 
 register_model_info(
-    ["dbrx-instruct"],
-    "DBRX Instruct",
-    "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
-    "DBRX by Databricks Mosaic AI",
-)
-
-register_model_info(
-    ["starling-lm-7b-beta", "starling-lm-7b-alpha"],
-    "Starling-LM-7B",
-    "https://starling.cs.berkeley.edu/",
-    "An open model trained using RLAIF by Berkeley",
+    ["command-r-plus"],
+    "Command-R-Plus",
+    "https://txt.cohere.com/command-r-plus-microsoft-azure/",
+    "Command-R Plus by Cohere",
 )
 
 register_model_info(
@@ -73,6 +66,13 @@ register_model_info(
     "Command-R",
     "https://txt.cohere.com/command-r/",
     "Command-R by Cohere",
+)
+
+register_model_info(
+    ["gemma-1.1-7b-it", "gemma-1.1-2b-it", "gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
 )
 
 register_model_info(
@@ -92,6 +92,7 @@ register_model_info(
 register_model_info(
     [
         "qwen1.5-72b-chat",
+        "qwen1.5-32b-chat",
         "qwen1.5-14b-chat",
         "qwen1.5-7b-chat",
         "qwen1.5-4b-chat",
@@ -102,6 +103,21 @@ register_model_info(
     "Qwen 1.5",
     "https://qwenlm.github.io/blog/qwen1.5/",
     "A large language model by Alibaba Cloud",
+)
+
+
+register_model_info(
+    ["dbrx-instruct"],
+    "DBRX Instruct",
+    "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
+    "DBRX by Databricks Mosaic AI",
+)
+
+register_model_info(
+    ["starling-lm-7b-beta", "starling-lm-7b-alpha"],
+    "Starling-LM-7B",
+    "https://starling.cs.berkeley.edu/",
+    "An open model trained using RLAIF by Berkeley",
 )
 
 register_model_info(
@@ -140,7 +156,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["gpt-4-turbo", "gpt-4-1106-preview", "gpt-4-0125-preview"],
+    ["gpt-4-turbo", "gpt-4-turbo-2024-04-09", "gpt-4-1106-preview", "gpt-4-0125-preview"],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
@@ -192,13 +208,6 @@ register_model_info(
     "OLMo-7B",
     "https://huggingface.co/allenai/OLMo-7B-Instruct",
     "OLMo by Allen AI",
-)
-
-register_model_info(
-    ["gemma-7b-it", "gemma-2b-it"],
-    "Gemma",
-    "https://blog.google/technology/developers/gemma-open-models/",
-    "Gemma by Google",
 )
 
 register_model_info(

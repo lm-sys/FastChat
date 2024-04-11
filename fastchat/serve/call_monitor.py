@@ -34,18 +34,22 @@ class Monitor:
             "gpt-4-1106-preview": 100,
             "gpt-4-0125-preview": 100,
             "gpt-4-turbo-browsing": 200,
+            "gpt-4-turbo-2024-04-09": 300,
             "mistral-large-2402": 300,
             "claude-3-opus-20240229": 2500,
             "claude-3-sonnet-20240229": 2500,
             "dbrx-instruct": 1000,
+            "command-r-plus": 2000,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
             "gpt-4-0125-preview": 5,
+            "gpt-4-turbo-2024-04-09": 10,
             "gpt-4-turbo-browsing": 8,
             "mistral-large-2402": 8,
             "claude-3-opus-20240229": 32,
             "claude-3-sonnet-20240229": 64,
+            "command-r-plus": 32,
         }
 
     async def update_stats(self, num_file=1) -> None:

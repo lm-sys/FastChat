@@ -253,9 +253,11 @@ def bot_response_multi(
             )
         )
 
-    is_gemini = []
+    is_stream_batch = []
     for i in range(num_sides):
-        is_gemini.append(states[i].model_name in ["gemini-pro", "gemini-pro-dev-api"])
+        is_stream_batch.append(
+            states[i].model_name in ["gemini-pro", "gemini-pro-dev-api", "gemma-1.1-2b-it", "gemma-1.1-7b-it"]
+        )
 
     chatbots = [None] * num_sides
     iters = 0
@@ -266,7 +268,7 @@ def bot_response_multi(
             try:
                 # yield gemini fewer times as its chunk size is larger
                 # otherwise, gemini will stream too fast
-                if not is_gemini[i] or (iters % 30 == 1 or iters < 3):
+                if not is_stream_batch[i] or (iters % 30 == 1 or iters < 3):
                     ret = next(gen[i])
                     states[i], chatbots[i] = ret[0], ret[1]
                 stop = False

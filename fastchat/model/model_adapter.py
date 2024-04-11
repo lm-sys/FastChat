@@ -79,6 +79,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-1106-preview",
     "gpt-4-0125-preview",
     "gpt-4-turbo-browsing",
+    "gpt-4-turbo-2024-04-09",
 )
 
 
@@ -1108,6 +1109,8 @@ class ChatGPTAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         if "browsing" in model_path:
             return get_conv_template("api_based_default")
+        if "gpt-4-turbo-2024-04-09" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
         return get_conv_template("chatgpt")
 
 

@@ -41,7 +41,7 @@ def make_default_md(arena_df, elo_results):
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
-We've collected over **400,000** human preference votes to rank LLMs with the Elo ranking system.
+We've collected over **500,000** human preference votes to rank LLMs with the Elo ranking system.
 """
     return leaderboard_md
 
@@ -51,7 +51,7 @@ def make_arena_leaderboard_md(arena_df):
     total_models = len(arena_df)
 
     leaderboard_md = f"""
-Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: March 29, 2024.
+Total #models: **{total_models}**. Total #votes: **{total_votes}**. Last updated: April 9, 2024.
 
 Contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)! Find more analysis in the [notebook]({notebook_url}).
 """
@@ -230,7 +230,7 @@ def get_full_table(arena_df, model_table_df):
 
 def get_arena_table(arena_df, model_table_df):
     # sort by rating
-    arena_df = arena_df.sort_values(by=["rating"], ascending=False)
+    arena_df = arena_df.sort_values(by=["final_ranking", "rating"], ascending=[True, False])
     values = []
     for i in range(len(arena_df)):
         row = []
@@ -390,7 +390,25 @@ You can find more discussions in this blog [post](https://lmsys.org/blog/2023-12
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
-    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+    with gr.Accordion(
+            "📝 Citation",
+            open=True,
+        ):
+            citation_md = """
+            ### Citation
+            Please cite the following paper if you find our leaderboard or dataset helpful.
+            ```
+            @misc{chiang2024chatbot,
+                title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},
+                author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},
+                year={2024},
+                eprint={2403.04132},
+                archivePrefix={arXiv},
+                primaryClass={cs.AI}
+            }
+            """
+            gr.Markdown(citation_md, elem_id="leaderboard_markdown")
+            gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     if show_plot:
         return [md_1, plot_1, plot_2, plot_3, plot_4]

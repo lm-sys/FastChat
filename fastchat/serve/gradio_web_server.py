@@ -63,7 +63,6 @@ The service is a research preview. It only provides limited safety measures and 
 It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
 Please do not upload any private information.
 The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
-Additionally, Bard is offered on LMSys for research purposes only. To access the Bard product, please visit its [website](http://bard.google.com).
 
 ### Acknowledgment
 We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
@@ -579,7 +578,7 @@ def bot_response(
 
 block_css = """
 #notice_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #notice_markdown th {
     display: none;
@@ -589,10 +588,10 @@ block_css = """
     padding-bottom: 6px;
 }
 #model_description_markdown {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #leaderboard_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -602,10 +601,13 @@ block_css = """
     line-height: 0.1em;
 }
 #about_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #ack_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
+}
+#chatbot .prose {
+    font-size: 105% !important;
 }
 footer {
     display:none !important;
@@ -696,8 +698,8 @@ def build_about():
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
 
 ## Read More
-- Chatbot Arena [launch post](https://lmsys.org/blog/2023-05-03-arena/), [data release](https://lmsys.org/blog/2023-07-20-dataset/)
-- LMSYS-Chat-1M [report](https://arxiv.org/abs/2309.11998)
+- Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch post](https://lmsys.org/blog/2023-05-03-arena/), [data release](https://lmsys.org/blog/2023-07-20-dataset/)
+- LMSYS-Chat-1M [paper](https://arxiv.org/abs/2309.11998)
 
 ## Core Members
 [Lianmin Zheng](https://lmzheng.net/), [Wei-Lin Chiang](https://infwinston.github.io/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ)
