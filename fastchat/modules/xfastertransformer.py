@@ -39,6 +39,7 @@ def get_stop_words_ids_qwen(chat_format, tokenizer):
         raise NotImplementedError(f"Unknown chat format {chat_format!r}")
     return stop_words_ids
 
+
 def load_default_config(model_path, xft_config):
     file_path = os.path.join(model_path, "config.ini")
     cf = ConfigParser()
@@ -52,14 +53,14 @@ def load_default_config(model_path, xft_config):
     keys = []
     values = []
     for it in cf.items(sections[0]):
-        try :
-            if it[1] is not None :
+        try:
+            if it[1] is not None:
                 if it[0] == "end_id":
                     xft_config.eos_token_id = (int)(it[1])
                 elif it[0] == "do_sample":
-                    if it[1].lower() == "true" :
+                    if it[1].lower() == "true":
                         xft_config.do_sample = True
-                    else :
+                    else:
                         xft_config.do_sample = False
                 elif it[0] == "pad_id":
                     xft_config.pad_token_id = (int)(it[1])
@@ -70,7 +71,9 @@ def load_default_config(model_path, xft_config):
                 elif it[0] == "top_p":
                     xft_config.top_p = (float)(it[1])
         except ValueError as e:
-            print(f"Warnning: xFasterTransformer parser config.ini error @{it[0]}={it[1]}. {e}")
+            print(
+                f"Warnning: xFasterTransformer parser config.ini error @{it[0]}={it[1]}. {e}"
+            )
 
 
 def load_xft_model(model_path, xft_config: XftConfig):
@@ -102,7 +105,7 @@ def load_xft_model(model_path, xft_config: XftConfig):
             model_path, use_fast=False, revision=revision, trust_remote_code=True
         )
 
-    if "qwen" in xft_config.model_type :
+    if "qwen" in xft_config.model_type:
         xft_config.stop_words_ids = get_stop_words_ids_qwen("chatml", tokenizer)
 
     xft_model = xfastertransformer.AutoModel.from_pretrained(
