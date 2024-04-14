@@ -280,7 +280,7 @@ BATTLE_TARGETS = {
         "qwen1.5-72b-chat",
         "mistral-large-2402",
         "command-r-plus",
-    }
+    },
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -480,7 +480,13 @@ def bot_response_multi(
     is_stream_batch = []
     for i in range(num_sides):
         is_stream_batch.append(
-            states[i].model_name in ["gemini-pro", "gemini-pro-dev-api", "gemma-1.1-2b-it", "gemma-1.1-7b-it"]
+            states[i].model_name
+            in [
+                "gemini-pro",
+                "gemini-pro-dev-api",
+                "gemma-1.1-2b-it",
+                "gemma-1.1-7b-it",
+            ]
         )
     chatbots = [None] * num_sides
     iters = 0

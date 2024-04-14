@@ -141,7 +141,9 @@ window.__gradio_mode__ = "app";
 
             if elo_results_file:
                 with gr.Tab("🏆 Leaderboard", id=4):
-                    build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=True)
+                    build_leaderboard_tab(
+                        elo_results_file, leaderboard_table_file, show_plot=True
+                    )
 
             with gr.Tab("ℹ️  About Us", id=5):
                 about = build_about()

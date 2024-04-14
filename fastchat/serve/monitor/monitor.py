@@ -58,6 +58,7 @@ Code to recreate leaderboard tables and plots in this [notebook]({notebook_url})
 """
     return leaderboard_md
 
+
 def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"):
     total_votes = sum(arena_df["num_battles"]) // 2
     total_models = len(arena_df)
@@ -68,6 +69,7 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
 #### {space} #models: **{total_subset_models} ({round(total_subset_models/total_models *100)}%)** {space} #votes: **{"{:,}".format(total_subset_votes)} ({round(total_subset_votes/total_votes * 100)}%)**{space}
 """
     return leaderboard_md
+
 
 def make_full_leaderboard_md(elo_results):
     leaderboard_md = """
@@ -238,6 +240,7 @@ def get_full_table(arena_df, model_table_df):
     values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
     return values
 
+
 def create_ranking_str(ranking, ranking_difference):
     if ranking_difference > 0:
         # return f"{int(ranking)} (\u2191{int(ranking_difference)})"
@@ -248,6 +251,7 @@ def create_ranking_str(ranking, ranking_difference):
     else:
         return f"{int(ranking)}"
 
+
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -256,12 +260,18 @@ def recompute_final_ranking(arena_df):
         for j, model_b in enumerate(arena_df.index):
             if i == j:
                 continue
-            if arena_df.loc[model_b]["rating_q025"] > arena_df.loc[model_a]["rating_q975"]:
+            if (
+                arena_df.loc[model_b]["rating_q025"]
+                > arena_df.loc[model_a]["rating_q975"]
+            ):
                 ranking[model_a] += 1
     return list(ranking.values())
 
+
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
-    arena_df = arena_df.sort_values(by=["final_ranking", "rating"], ascending=[True, False])
+    arena_df = arena_df.sort_values(
+        by=["final_ranking", "rating"], ascending=[True, False]
+    )
     arena_df = arena_df[arena_df["num_battles"] > 2000]
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
     arena_df = arena_df.sort_values(by=["final_ranking"], ascending=True)
@@ -284,26 +294,35 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
         arena_subset_df["final_ranking_no_tie"] = range(1, len(arena_subset_df) + 1)
         arena_df["final_ranking_no_tie"] = range(1, len(arena_df) + 1)
         # join arena_df and arena_subset_df on index
-        arena_df = arena_subset_df.join(arena_df["final_ranking"], rsuffix="_global", how="inner")
-        arena_df["ranking_difference"] =  arena_df["final_ranking_global"] - arena_df["final_ranking"]
+        arena_df = arena_subset_df.join(
+            arena_df["final_ranking"], rsuffix="_global", how="inner"
+        )
+        arena_df["ranking_difference"] = (
+            arena_df["final_ranking_global"] - arena_df["final_ranking"]
+        )
 
         # no tie version
         # arena_df = arena_subset_df.join(arena_df["final_ranking_no_tie"], rsuffix="_global", how="inner")
         # arena_df["ranking_difference"] =  arena_df["final_ranking_no_tie_global"] - arena_df["final_ranking_no_tie"]
 
-        arena_df = arena_df.sort_values(by=["final_ranking", "rating"], ascending=[True, False])
-        arena_df["final_ranking"] = arena_df.apply(lambda x: create_ranking_str(x["final_ranking"], x["ranking_difference"]), axis=1)
+        arena_df = arena_df.sort_values(
+            by=["final_ranking", "rating"], ascending=[True, False]
+        )
+        arena_df["final_ranking"] = arena_df.apply(
+            lambda x: create_ranking_str(x["final_ranking"], x["ranking_difference"]),
+            axis=1,
+        )
 
     values = []
     for i in range(len(arena_df)):
         row = []
         model_key = arena_df.index[i]
-        try: # this is a janky fix for where the model key is not in the model table (model table and arena table dont contain all the same models)
-            model_name = model_table_df[model_table_df["key"] == model_key]["Model"].values[
-                0
-            ]
+        try:  # this is a janky fix for where the model key is not in the model table (model table and arena table dont contain all the same models)
+            model_name = model_table_df[model_table_df["key"] == model_key][
+                "Model"
+            ].values[0]
             # rank
-            ranking = arena_df.iloc[i].get("final_ranking") or i+1
+            ranking = arena_df.iloc[i].get("final_ranking") or i + 1
             row.append(ranking)
             if arena_subset_df is not None:
                 row.append(arena_df.iloc[i].get("ranking_difference") or 0)
@@ -322,13 +341,17 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
             row.append(round(arena_df.iloc[i]["num_battles"]))
             # Organization
             row.append(
-                model_table_df[model_table_df["key"] == model_key]["Organization"].values[0]
+                model_table_df[model_table_df["key"] == model_key][
+                    "Organization"
+                ].values[0]
             )
             # license
             row.append(
                 model_table_df[model_table_df["key"] == model_key]["License"].values[0]
             )
-            cutoff_date = model_table_df[model_table_df["key"] == model_key]["Knowledge cutoff date"].values[0]
+            cutoff_date = model_table_df[model_table_df["key"] == model_key][
+                "Knowledge cutoff date"
+            ].values[0]
             if cutoff_date == "-":
                 row.append("Unknown")
             else:
@@ -337,6 +360,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
         except Exception as e:
             print(f"{model_key} - {e}")
     return values
+
 
 key_to_category_name = {
     "full": "Overall",
@@ -361,6 +385,7 @@ cat_name_to_explanation = {
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
 }
 
+
 def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=False):
     arena_dfs = {}
     category_elo_results = {}
@@ -373,7 +398,9 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
             if "full" in elo_results:
                 for k in elo_results.keys():
                     for k in key_to_category_name:
-                        arena_dfs[key_to_category_name[k]] = elo_results[k]["leaderboard_table_df"]
+                        arena_dfs[key_to_category_name[k]] = elo_results[k][
+                            "leaderboard_table_df"
+                        ]
                         category_elo_results[key_to_category_name[k]] = elo_results[k]
 
         p1 = category_elo_results["Overall"]["win_fraction_heatmap"]
@@ -396,10 +423,18 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 gr.Markdown(md, elem_id="leaderboard_markdown")
                 with gr.Row():
                     with gr.Column(scale=2):
-                        category_dropdown = gr.Dropdown(choices=list(arena_dfs.keys()), label="Category", value="Overall")
-                    default_category_details = make_category_arena_leaderboard_md(arena_df, arena_df, name="Overall")
+                        category_dropdown = gr.Dropdown(
+                            choices=list(arena_dfs.keys()),
+                            label="Category",
+                            value="Overall",
+                        )
+                    default_category_details = make_category_arena_leaderboard_md(
+                        arena_df, arena_df, name="Overall"
+                    )
                     with gr.Column(scale=4, variant="panel"):
-                        category_deets = gr.Markdown(default_category_details, elem_id="category_deets")
+                        category_deets = gr.Markdown(
+                            default_category_details, elem_id="category_deets"
+                        )
 
                 elo_display_df = gr.Dataframe(
                     headers=[
@@ -434,7 +469,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
             See Figure 3 below for visualization of the confidence intervals. In each category, we remove models with fewer than 500 votes.
             More details in the [paper](https://arxiv.org/abs/2403.04132) and [notebook]({notebook_url}).
             """,
-                    elem_id="leaderboard_markdown"
+                    elem_id="leaderboard_markdown",
                 )
 
                 leader_component_values[:] = [default_md, p1, p2, p3, p4]
@@ -442,28 +477,34 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 if show_plot:
                     more_stats_md = gr.Markdown(
                         f"""## More Statistics for Chatbot Arena (Overall)""",
-                        elem_id="leaderboard_header_markdown"
+                        elem_id="leaderboard_header_markdown",
                     )
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles", elem_id="plot-title"
+                                "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles",
+                                elem_id="plot-title",
                             )
-                            plot_1 = gr.Plot(p1, show_label=False, elem_id="plot-container")
+                            plot_1 = gr.Plot(
+                                p1, show_label=False, elem_id="plot-container"
+                            )
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 2: Battle Count for Each Combination of Models (without Ties)", elem_id="plot-title"
+                                "#### Figure 2: Battle Count for Each Combination of Models (without Ties)",
+                                elem_id="plot-title",
                             )
                             plot_2 = gr.Plot(p2, show_label=False)
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 3: Confidence Intervals on Model Strength (via Bootstrapping)", elem_id="plot-title"
+                                "#### Figure 3: Confidence Intervals on Model Strength (via Bootstrapping)",
+                                elem_id="plot-title",
                             )
                             plot_3 = gr.Plot(p3, show_label=False)
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)", elem_id="plot-title"
+                                "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)",
+                                elem_id="plot-title",
                             )
                             plot_4 = gr.Plot(p4, show_label=False)
 
@@ -498,83 +539,116 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         pass
 
     def update_leaderboard_df(arena_table_vals):
-        elo_datarame = pd.DataFrame(arena_table_vals, columns=[ "Rank", "Delta", "🤖 Model", "⭐ Arena Elo", "📊 95% CI", "🗳️ Votes", "Organization", "License", "Knowledge Cutoff"])
+        elo_datarame = pd.DataFrame(
+            arena_table_vals,
+            columns=[
+                "Rank",
+                "Delta",
+                "🤖 Model",
+                "⭐ Arena Elo",
+                "📊 95% CI",
+                "🗳️ Votes",
+                "Organization",
+                "License",
+                "Knowledge Cutoff",
+            ],
+        )
 
         # goal: color the rows based on the rank with styler
         def highlight_max(s):
             # all items in S which contain up arrow should be green, down arrow should be red, otherwise black
-            return ["color: green; font-weight: bold" if "\u2191" in v else "color: red; font-weight: bold" if "\u2193" in v else "" for v in s]
+            return [
+                "color: green; font-weight: bold"
+                if "\u2191" in v
+                else "color: red; font-weight: bold"
+                if "\u2193" in v
+                else ""
+                for v in s
+            ]
 
         def highlight_rank_max(s):
-            return ["color: green; font-weight: bold" if v > 0 else "color: red; font-weight: bold" if v < 0 else "" for v in s]
+            return [
+                "color: green; font-weight: bold"
+                if v > 0
+                else "color: red; font-weight: bold"
+                if v < 0
+                else ""
+                for v in s
+            ]
 
-        return elo_datarame.style.apply(highlight_max, subset=["Rank"]).apply(highlight_rank_max, subset=["Delta"])
+        return elo_datarame.style.apply(highlight_max, subset=["Rank"]).apply(
+            highlight_rank_max, subset=["Delta"]
+        )
 
     def update_leaderboard_and_plots(category):
         arena_subset_df = arena_dfs[category]
         arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 500]
         elo_subset_results = category_elo_results[category]
         arena_df = arena_dfs["Overall"]
-        arena_values = get_arena_table(arena_df, model_table_df, arena_subset_df = arena_subset_df if category != "Overall" else None)
+        arena_values = get_arena_table(
+            arena_df,
+            model_table_df,
+            arena_subset_df=arena_subset_df if category != "Overall" else None,
+        )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
             arena_values = gr.Dataframe(
-                    headers=[
-                        "Rank",
-                        "Delta",
-                        "🤖 Model",
-                        "⭐ Arena Elo",
-                        "📊 95% CI",
-                        "🗳️ Votes",
-                        "Organization",
-                        "License",
-                        "Knowledge Cutoff",
-                    ],
-                    datatype=[
-                        "number",
-                        "number",
-                        "markdown",
-                        "number",
-                        "str",
-                        "number",
-                        "str",
-                        "str",
-                        "str",
-                    ],
-                    value=arena_values,
-                    elem_id="arena_leaderboard_dataframe",
-                    height=700,
-                    column_widths=[60, 70, 190, 110, 100, 90, 160, 150, 140],
-                    wrap=True,
-                )
+                headers=[
+                    "Rank",
+                    "Delta",
+                    "🤖 Model",
+                    "⭐ Arena Elo",
+                    "📊 95% CI",
+                    "🗳️ Votes",
+                    "Organization",
+                    "License",
+                    "Knowledge Cutoff",
+                ],
+                datatype=[
+                    "number",
+                    "number",
+                    "markdown",
+                    "number",
+                    "str",
+                    "number",
+                    "str",
+                    "str",
+                    "str",
+                ],
+                value=arena_values,
+                elem_id="arena_leaderboard_dataframe",
+                height=700,
+                column_widths=[60, 70, 190, 110, 100, 90, 160, 150, 140],
+                wrap=True,
+            )
         else:
             arena_values = gr.Dataframe(
-                    headers=[
-                        "Rank",
-                        "🤖 Model",
-                        "⭐ Arena Elo",
-                        "📊 95% CI",
-                        "🗳️ Votes",
-                        "Organization",
-                        "License",
-                        "Knowledge Cutoff",
-                    ],
-                    datatype=[
-                        "number",
-                        "markdown",
-                        "number",
-                        "str",
-                        "number",
-                        "str",
-                        "str",
-                        "str",
-                    ],
-                    value=arena_values,
-                    elem_id="arena_leaderboard_dataframe",
-                    height=700,
-                    column_widths=[70, 190, 110, 100, 90, 160, 150, 140],
-                    wrap=True,
-                )
+                headers=[
+                    "Rank",
+                    "🤖 Model",
+                    "⭐ Arena Elo",
+                    "📊 95% CI",
+                    "🗳️ Votes",
+                    "Organization",
+                    "License",
+                    "Knowledge Cutoff",
+                ],
+                datatype=[
+                    "number",
+                    "markdown",
+                    "number",
+                    "str",
+                    "number",
+                    "str",
+                    "str",
+                    "str",
+                ],
+                value=arena_values,
+                elem_id="arena_leaderboard_dataframe",
+                height=700,
+                column_widths=[70, 190, 110, 100, 90, 160, 150, 140],
+                wrap=True,
+            )
 
         p1 = elo_subset_results["win_fraction_heatmap"]
         p2 = elo_subset_results["battle_count_heatmap"]
@@ -582,18 +656,32 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         p4 = elo_subset_results["average_win_rate_bar"]
         more_stats_md = f"""## More Statistics for Chatbot Arena - {category}
         """
-        leaderboard_md = make_category_arena_leaderboard_md(arena_df, arena_subset_df, name=category)
+        leaderboard_md = make_category_arena_leaderboard_md(
+            arena_df, arena_subset_df, name=category
+        )
         return arena_values, p1, p2, p3, p4, more_stats_md, leaderboard_md
 
-    category_dropdown.change(update_leaderboard_and_plots, inputs=[category_dropdown], outputs=[elo_display_df, plot_1, plot_2, plot_3, plot_4, more_stats_md, category_deets])
+    category_dropdown.change(
+        update_leaderboard_and_plots,
+        inputs=[category_dropdown],
+        outputs=[
+            elo_display_df,
+            plot_1,
+            plot_2,
+            plot_3,
+            plot_4,
+            more_stats_md,
+            category_deets,
+        ],
+    )
 
     from fastchat.serve.gradio_web_server import acknowledgment_md
 
     with gr.Accordion(
-            "📝 Citation",
-            open=True,
-        ):
-            citation_md = """
+        "📝 Citation",
+        open=True,
+    ):
+        citation_md = """
             ### Citation
             Please cite the following paper if you find our leaderboard or dataset helpful.
             ```
@@ -606,20 +694,23 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 primaryClass={cs.AI}
             }
             """
-            gr.Markdown(citation_md, elem_id="leaderboard_markdown")
-            gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+        gr.Markdown(citation_md, elem_id="leaderboard_markdown")
+        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     if show_plot:
         return [md_1, plot_1, plot_2, plot_3, plot_4]
     return [md_1]
+
 
 def build_demo(elo_results_file, leaderboard_table_file):
     from fastchat.serve.gradio_web_server import block_css
 
     text_size = gr.themes.sizes.text_lg
     theme = gr.themes.Base(text_size=text_size)
-    theme.set(button_secondary_background_fill_hover="*primary_300",
-              button_secondary_background_fill_hover_dark="*primary_700")
+    theme.set(
+        button_secondary_background_fill_hover="*primary_300",
+        button_secondary_background_fill_hover_dark="*primary_700",
+    )
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
