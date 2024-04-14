@@ -149,7 +149,7 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         for mdl, mdl_dict in api_endpoint_info.items():
             mdl_vision = mdl_dict.get("vision-arena", False)
-            mdl_text = mdl_dict.get("text-only-arena", False)
+            mdl_text = mdl_dict.get("text-arena", True)
             if vision_arena and mdl_vision:
                 models.append(mdl)
             if not vision_arena and mdl_text:

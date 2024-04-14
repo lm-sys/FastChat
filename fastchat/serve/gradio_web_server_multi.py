@@ -134,7 +134,7 @@ window.__gradio_mode__ = "app";
         head=head_js,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("LLM Arena", id=0):
+            with gr.Tab("Text Arena", id=0):
                 with gr.Tab("Arena (battle)", id=0):
                     side_by_side_anony_list = build_side_by_side_ui_anony(models)
 

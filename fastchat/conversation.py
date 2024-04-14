@@ -407,7 +407,7 @@ class Conversation:
                     image_urls = self.to_openai_image_format(msg[1])
                     for image_url in image_urls:
                         content_list.append(
-                            {"type": "image_url", "image_url": image_url}
+                            {"type": "image_url", "image_url": {"url": image_url}}
                         )
 
                     ret.append({"role": "user", "content": content_list})
