@@ -1744,6 +1744,16 @@ class QwenChatAdapter(BaseModelAdapter):
         return get_conv_template("qwen-7b-chat")
 
 
+class SmaugChatAdapter(BaseModelAdapter):
+    """The model adapter for abacusai/Smaug-2-72B."""
+
+    def match(self, model_path: str):
+        return "smaug" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("qwen-7b-chat")
+
+
 class BGEAdapter(BaseModelAdapter):
     """The model adapter for BGE (e.g., BAAI/bge-large-en-v1.5)"""
 
@@ -2303,6 +2313,16 @@ class OlmoAdapter(BaseModelAdapter):
         return get_conv_template("api_based_default")
 
 
+class YandexGPTAdapter(BaseModelAdapter):
+    """The model adapter for YandexGPT"""
+
+    def match(self, model_path: str):
+        return "yandexgpt" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("yandexgpt")
+
+
 class CllmAdapter(BaseModelAdapter):
     """The model adapter for CLLM"""
 
@@ -2358,6 +2378,16 @@ class DBRXAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
+
+
+class RekaAdapter(BaseModelAdapter):
+    """The model adapter for Reka"""
+
+    def match(self, model_path: str):
+        return "reka" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("reka")
 
 
 # Note: the registration order matters.
@@ -2453,6 +2483,10 @@ register_model_adapter(YuanAdapter)
 register_model_adapter(OlmoAdapter)
 register_model_adapter(CohereAdapter)
 register_model_adapter(DBRXAdapter)
+register_model_adapter(GemmaAdapter)
+register_model_adapter(YandexGPTAdapter)
+register_model_adapter(CllmAdapter)
+register_model_adapter(RekaAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

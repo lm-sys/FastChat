@@ -105,7 +105,7 @@ def update_elo_components(
         battles = clean_battle_data(
             log_files, exclude_model_names, ban_ip_list=ban_ip_list
         )
-        elo_results = report_elo_analysis_results(battles)
+        elo_results = report_elo_analysis_results(battles, scale=2)
 
         leader_component_values[0] = make_leaderboard_md_live(elo_results)
         leader_component_values[1] = elo_results["win_fraction_heatmap"]
@@ -733,7 +733,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
             load_demo,
             [url_params],
             basic_components + leader_components,
-            _js=get_window_url_params_js,
+            js=get_window_url_params_js,
         )
 
     return demo

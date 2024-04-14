@@ -590,6 +590,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["smaug-2-72b"],
+    "Smaug-2-72B",
+    "https://huggingface.co/abacusai/Smaug-2-72B",
+    "An open model trained by Abacus.AI.",
+)
+
+register_model_info(
     ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
     "Llama2-Chinese",
     "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
@@ -728,4 +735,11 @@ register_model_info(
     "consistency-llm",
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
+)
+
+register_model_info(
+    ["reka-flash"],
+    "Reka Flash",
+    "https://reka.ai/reka-flash",
+    "Multimodal model by Reka",
 )
