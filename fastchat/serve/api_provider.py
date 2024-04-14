@@ -172,9 +172,6 @@ def openai_api_stream_iter(
             base_url=api_base or "https://api.openai.com/v1", api_key=api_key
         )
 
-    if model_name == "gpt-4-turbo":
-        model_name = "gpt-4-1106-preview"
-
     # Make requests
     text_messages = []
     for message in messages:
