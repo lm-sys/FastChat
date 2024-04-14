@@ -306,7 +306,7 @@ if __name__ == "__main__":
     match_stat["model_list"] = models
     match_stat["total_num_questions"] = len(questions)
     match_stat["total_num_matches"] = len(matches)
-    make_match["azure_deployment_name"] = args.azure_deployment_name
+    match_stat["azure_deployment_name"] = args.azure_deployment_name
     match_stat["output_path"] = output_file
 
     # Show match stats and prompt enter to continue
