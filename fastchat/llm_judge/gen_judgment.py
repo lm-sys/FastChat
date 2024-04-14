@@ -2,6 +2,7 @@
 Usage:
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call] --mode [single|pairwise-baseline|pairwise-all]
 """
+
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -134,36 +135,60 @@ def make_match_single(
     return matches
 
 
-def make_judge_pairwise(judge_model, judge_prompts, azure_deployment_name = None):
+def make_judge_pairwise(judge_model, judge_prompts, azure_deployment_name=None):
     judges = {}
-    judges["default"] = Judge(judge_model, judge_prompts["pair-v2"], azure_deployment_name = azure_deployment_name)
-    judges["math"] = Judge(judge_model, judge_prompts["pair-math-v1"], ref_based=True, azure_deployment_name = azure_deployment_name)
+    judges["default"] = Judge(
+        judge_model,
+        judge_prompts["pair-v2"],
+        azure_deployment_name=azure_deployment_name,
+    )
+    judges["math"] = Judge(
+        judge_model,
+        judge_prompts["pair-math-v1"],
+        ref_based=True,
+        azure_deployment_name=azure_deployment_name,
+    )
     judges["default-mt"] = Judge(
-        judge_model, judge_prompts["pair-v2-multi-turn"], multi_turn=True, azure_deployment_name = azure_deployment_name
+        judge_model,
+        judge_prompts["pair-v2-multi-turn"],
+        multi_turn=True,
+        azure_deployment_name=azure_deployment_name,
     )
     judges["math-mt"] = Judge(
         judge_model,
         judge_prompts["pair-math-v1-multi-turn"],
         ref_based=True,
         multi_turn=True,
-        azure_deployment_name = azure_deployment_name
+        azure_deployment_name=azure_deployment_name,
     )
     return judges
 
 
-def make_judge_single(judge_model, judge_prompts, azure_deployment_name = None):
+def make_judge_single(judge_model, judge_prompts, azure_deployment_name=None):
     judges = {}
-    judges["default"] = Judge(judge_model, judge_prompts["single-v1"], azure_deployment_name = azure_deployment_name)
-    judges["math"] = Judge(judge_model, judge_prompts["single-math-v1"], ref_based=True, azure_deployment_name = azure_deployment_name)
+    judges["default"] = Judge(
+        judge_model,
+        judge_prompts["single-v1"],
+        azure_deployment_name=azure_deployment_name,
+    )
+    judges["math"] = Judge(
+        judge_model,
+        judge_prompts["single-math-v1"],
+        ref_based=True,
+        azure_deployment_name=azure_deployment_name,
+    )
     judges["default-mt"] = Judge(
-        judge_model, judge_prompts["single-v1-multi-turn"], multi_turn=True, azure_deployment_name = azure_deployment_name
+        judge_model,
+        judge_prompts["single-v1-multi-turn"],
+        multi_turn=True,
+        azure_deployment_name=azure_deployment_name,
     )
     judges["math-mt"] = Judge(
         judge_model,
         judge_prompts["single-math-v1-multi-turn"],
         ref_based=True,
         multi_turn=True,
-        azure_deployment_name = azure_deployment_name
+        azure_deployment_name=azure_deployment_name,
     )
     return judges
 
@@ -188,7 +213,7 @@ if __name__ == "__main__":
         "--azure-deployment-name",
         type=str,
         default=None,
-        help="The name of the Azure deployment."
+        help="The name of the Azure deployment.",
     )
 
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
@@ -242,7 +267,9 @@ if __name__ == "__main__":
         models = args.model_list
 
     if args.mode == "single":
-        judges = make_judge_single(args.judge_model, judge_prompts, args.azure_deployment_name)
+        judges = make_judge_single(
+            args.judge_model, judge_prompts, args.azure_deployment_name
+        )
         play_a_match_func = play_a_match_single
         output_file = (
             f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
@@ -250,7 +277,9 @@ if __name__ == "__main__":
         make_match_func = make_match_single
         baseline_model = None
     else:
-        judges = make_judge_pairwise(args.judge_model, judge_prompts, args.azure_deployment_name)
+        judges = make_judge_pairwise(
+            args.judge_model, judge_prompts, args.azure_deployment_name
+        )
         play_a_match_func = play_a_match_pair
         output_file = (
             f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"

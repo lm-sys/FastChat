@@ -133,7 +133,9 @@ def load_judge_prompts(prompt_file: str):
     return prompts
 
 
-def run_judge_single(question, answer, judge, ref_answer, multi_turn=False, azure_deployment_name=None):
+def run_judge_single(
+    question, answer, judge, ref_answer, multi_turn=False, azure_deployment_name=None
+):
     kwargs = {}
     model = judge.model_name
     if ref_answer is not None:
@@ -165,7 +167,9 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False, azur
     conv.append_message(conv.roles[1], None)
 
     if azure_deployment_name:
-        judgment = chat_completion_openai_azure(azure_deployment_name, conv, temperature=0, max_tokens=2048)
+        judgment = chat_completion_openai_azure(
+            azure_deployment_name, conv, temperature=0, max_tokens=2048
+        )
     elif model in OPENAI_MODEL_LIST:
         judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
@@ -204,7 +208,12 @@ def play_a_match_single(match: MatchSingle, output_file: str):
 
     if judge.prompt_template["type"] == "single":
         score, user_prompt, judgment = run_judge_single(
-            question, answer, judge, ref_answer, multi_turn=multi_turn, azure_deployment_name=judge.azure_deployment_name
+            question,
+            answer,
+            judge,
+            ref_answer,
+            multi_turn=multi_turn,
+            azure_deployment_name=judge.azure_deployment_name,
         )
 
         question_id = question["question_id"]
