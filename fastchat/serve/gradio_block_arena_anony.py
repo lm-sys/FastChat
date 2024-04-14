@@ -283,28 +283,10 @@ BATTLE_TARGETS = {
     },
 }
 
-SAMPLING_BOOST_MODELS = [
-    # "gpt-4-1106-preview",
-    # "gpt-4-0125-preview",
-    "claude-3-opus-20240229",
-    "claude-3-sonnet-20240229",
-    # "claude-3-haiku-20240307",
-    "command-r-plus",
-    "gpt-4-turbo-2024-04-09",
-    "zephyr-orpo-141b-A35b-v0.1",
-    "gemma-1.1-2b-it",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model):
