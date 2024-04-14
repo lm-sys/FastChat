@@ -172,26 +172,27 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0613": 4,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 4,
-    "gpt-4-turbo-2024-04-09": 8,
+    "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
     "claude-3-opus-20240229": 4,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "claude-2.1": 1,
+    "zephyr-orpo-141b-A35b-v0.1": 2,
     "dbrx-instruct": 1,
-    "command-r-plus": 6,
+    "command-r-plus": 4,
     "command-r": 2,
     "gemini-pro-dev-api": 2,
     "qwen1.5-72b-chat": 2,
     "qwen1.5-32b-chat": 2,
     "qwen1.5-14b-chat": 2,
-    "qwen1.5-4b-chat": 1,
+    "qwen1.5-7b-chat": 2,
     "gemma-1.1-7b-it": 2,
+    "gemma-1.1-2b-it": 2,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 2,
     "mistral-large-2402": 4,
     "mistral-medium": 2,
-    "openchat-3.5-0106": 2,
     "starling-lm-7b-beta": 2,
     # tier 1
     "deluxe-chat-v1.3": 3,
@@ -201,21 +202,10 @@ SAMPLING_WEIGHTS = {
     "vicuna-33b": 1,
     "vicuna-13b": 1,
     "yi-34b-chat": 1,
-    "codellama-70b-instruct": 1,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "dbrx-instruct": {
-        "mixtral-8x7b-instruct-v0.1",
-        "llama-2-70b-chat",
-        "gpt-4-0125-preview",
-        "gpt-3.5-turbo-0125",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
-        "mistral-large-2402",
-    },
     "gpt-4-turbo-2024-04-09": {
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
@@ -277,18 +267,32 @@ BATTLE_TARGETS = {
         "starling-lm-7b-beta",
         "llama-2-7b-chat",
         "mistral-7b-instruct-v0.2",
-        "gemma-7b-it",
     },
+    "gemma-1.1-2b-it": {
+        "gpt-3.5-turbo-0125",
+        "mixtral-8x7b-instruct-v0.1",
+        "starling-lm-7b-beta",
+        "llama-2-7b-chat",
+        "mistral-7b-instruct-v0.2",
+        "gemma-1.1-7b-it",
+    },
+    "zephyr-orpo-141b-A35b-v0.1": {
+        "qwen1.5-72b-chat",
+        "mistral-large-2402",
+        "command-r-plus",
+    }
 }
 
 SAMPLING_BOOST_MODELS = [
     # "gpt-4-1106-preview",
     # "gpt-4-0125-preview",
     "claude-3-opus-20240229",
-    #"claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307",
+    "claude-3-sonnet-20240229",
+    # "claude-3-haiku-20240307",
     "command-r-plus",
     "gpt-4-turbo-2024-04-09",
+    "zephyr-orpo-141b-A35b-v0.1",
+    "gemma-1.1-2b-it",
 ]
 
 # outage models won't be sampled.
@@ -508,8 +512,8 @@ def build_side_by_side_ui_anony(models):
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 
-## 🏆 Arena Elo [Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We collect **500K+** human votes to compute an Elo-based LLM leaderboard.
+## 🏆 LMSYS Arena [Leaderboard](https://leaderboard.lmsys.org)
+We've collected **500K+** human votes to compute an LLM Elo leaderboard.
 Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!

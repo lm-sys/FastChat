@@ -69,6 +69,15 @@ register_model_info(
 )
 
 register_model_info(
+    [
+        "zephyr-orpo-141b-A35b-v0.1",
+    ],
+    "Zephyr 141B-A35B",
+    "https://huggingface.co/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1",
+    "ORPO fine-tuned of Mixtral-8x22B-v0.1",
+)
+
+register_model_info(
     ["gemma-1.1-7b-it", "gemma-1.1-2b-it", "gemma-7b-it", "gemma-2b-it"],
     "Gemma",
     "https://blog.google/technology/developers/gemma-open-models/",
