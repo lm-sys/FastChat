@@ -58,6 +58,7 @@ def compute_elo_mle_with_tie(
     df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None
 ):
     from sklearn.linear_model import LogisticRegression
+
     ptbl_a_win = pd.pivot_table(
         df[df["winner"] == "model_a"],
         index="model_a",
