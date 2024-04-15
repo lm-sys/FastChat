@@ -2487,6 +2487,7 @@ register_model_adapter(GemmaAdapter)
 register_model_adapter(YandexGPTAdapter)
 register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
+register_model_adapter(SmaugChatAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
