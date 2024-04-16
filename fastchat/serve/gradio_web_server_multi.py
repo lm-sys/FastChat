@@ -146,7 +146,7 @@ window.__gradio_mode__ = "app";
                 with gr.Tab("💬 Direct Chat", id=2):
                     single_model_list = build_single_model_ui(
                         models, add_promotion_links=True
-                        )
+                    )
 
             demo_tabs = (
                 [tabs]
@@ -189,8 +189,10 @@ window.__gradio_mode__ = "app";
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=6):
-                    build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=True)
-                    
+                    build_leaderboard_tab(
+                        elo_results_file, leaderboard_table_file, show_plot=True
+                    )
+
             with gr.Tab("ℹ️  About Us", id=7):
                 about = build_about()
 

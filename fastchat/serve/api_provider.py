@@ -55,12 +55,18 @@ def get_api_provider_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_message_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message_vertex":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_message_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -405,59 +411,38 @@ def openai_assistant_api_stream_iter(
             yield {"text": full_ret_text, "error_code": 0}
 
 
-def anthropic_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
     import anthropic
 
     c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     # Make requests
-    text_messages = []
-    for message in messages:
-        if type(message["content"]) == str:  # text-only model
-            text_messages.append(message)
-        else:  # vision model
-            filtered_content_list = [
-                content for content in message["content"] if content["type"] == "text"
-            ]
-            text_messages.append(
-                {"role": message["role"], "content": filtered_content_list}
-            )
-
-    # Make requests
     gen_params = {
         "model": model_name,
-        "prompt": text_messages,
+        "prompt": prompt,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    system_prompt = ""
-    if messages[0]["role"] == "system":
-        if type(messages[0]["content"]) == dict:
-            system_prompt = messages[0]["content"]["text"]
-        elif type(messages[0]["content"]) == str:
-            system_prompt = messages[0]["content"]
-        # remove system prompt
-        messages = messages[1:]
-
-    complete_text = ""
-    with c.messages.stream(
-        model=model_name,
-        messages=messages,
-        max_tokens=max_new_tokens,
+    res = c.completions.create(
+        prompt=prompt,
+        stop_sequences=[anthropic.HUMAN_PROMPT],
+        max_tokens_to_sample=max_new_tokens,
         temperature=temperature,
         top_p=top_p,
-        system=system_prompt,
-    ) as stream:
-        for text in stream.text_stream:
-            complete_text += text
-            data = {
-                "text": complete_text,
-                "error_code": 0,
-            }
-            yield data
+        model=model_name,
+        stream=True,
+    )
+    text = ""
+    for chunk in res:
+        text += chunk.completion
+        data = {
+            "text": text,
+            "error_code": 0,
+        }
+        yield data
 
 
 def anthropic_message_api_stream_iter(
@@ -481,10 +466,23 @@ def anthropic_message_api_stream_iter(
             api_key=os.environ["ANTHROPIC_API_KEY"],
             max_retries=5,
         )
-    # Make requests
+
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    # Make requests for logging
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
@@ -493,7 +491,10 @@ def anthropic_message_api_stream_iter(
 
     system_prompt = ""
     if messages[0]["role"] == "system":
-        system_prompt = messages[0]["content"]
+        if type(messages[0]["content"]) == dict:
+            system_prompt = messages[0]["content"]["text"]
+        elif type(messages[0]["content"]) == str:
+            system_prompt = messages[0]["content"]
         # remove system prompt
         messages = messages[1:]
 
