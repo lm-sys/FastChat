@@ -9,6 +9,7 @@ import base64
 import dataclasses
 from enum import auto, IntEnum
 from io import BytesIO
+import os
 from typing import List, Any, Dict, Union, Tuple
 
 
@@ -297,6 +298,8 @@ class Conversation:
             ret = system_prompt + "\n"
             for role, message in self.messages:
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
                     ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
@@ -377,7 +380,12 @@ class Conversation:
                 if type(msg) is tuple:
                     msg, image = msg
                     img_b64_str = image[0]  # Only one image on gradio at one time
-                    img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
+                    if img_b64_str.startswith("http://") or img_b64_str.startswith(
+                        "https://"
+                    ):
+                        img_str = f'<img src="{img_b64_str}" alt="user upload image" />'
+                    else:
+                        img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
@@ -465,6 +473,7 @@ class Conversation:
     def to_vertex_api_messages(self):
         from vertexai.preview.generative_models import Image
         import base64
+        import requests
 
         if self.system_message == "":
             ret = []
@@ -476,7 +485,12 @@ class Conversation:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
                     for image in images:
-                        ret.append(Image.from_bytes(base64.b64decode(image)))
+                        if image.startswith("http://") or image.startswith("https://"):
+                            response = requests.get(image)
+                            image = response.content
+                        else:  # base64
+                            image = base64.b64decode(image)
+                        ret.append(Image.from_bytes(image))
                     ret.append(text)
                 else:
                     ret.append(msg)
@@ -497,6 +511,12 @@ class Conversation:
                     content_list = [{"type": "text", "text": msg[0]}]
 
                     for image_url in msg[1]:
+                        # Claude only supports base64
+                        if image_url.startswith("http://") or image_url.startswith(
+                            "https://"
+                        ):
+                            image_url = self.convert_image_to_base64(image_url)
+
                         content_list.append(
                             {
                                 "type": "image",
@@ -523,9 +543,10 @@ class Conversation:
                     )
         return ret
 
-    def extract_text_and_image_hashes_from_messages(self):
+    def save_images(self, use_remote_storage=False):
         import hashlib
-        from fastchat.utils import load_image
+        from fastchat.constants import LOGDIR
+        from fastchat.utils import load_image, upload_image_file_to_gcs
 
         messages = []
 
@@ -536,6 +557,44 @@ class Conversation:
                 image_hashes = [
                     hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
                 ]
+
+                image_filenames = []
+                for i, (loaded_image, hash_str) in enumerate(
+                    zip(loaded_images, image_hashes)
+                ):
+                    filename = os.path.join(
+                        "serve_images",
+                        f"{hash_str}.jpg",
+                    )
+
+                    if use_remote_storage:
+                        image_url = upload_image_file_to_gcs(loaded_image, filename)
+                        images[i] = image_url
+                    else:
+                        filename = os.path.join(LOGDIR, filename)
+                        if not os.path.isfile(filename):
+                            os.makedirs(os.path.dirname(filename), exist_ok=True)
+                            loaded_image.save(filename)
+
+    def extract_text_and_image_hashes_from_messages(self):
+        import hashlib
+        from fastchat.utils import load_image
+
+        messages = []
+
+        for role, message in self.messages:
+            if type(message) is tuple:
+                text, images = message[0], message[1]
+
+                image_hashes = []
+                for image in images:
+                    if image.startswith("http://") or image.startswith("https://"):
+                        image_hashes.append(image)
+                    else:
+                        image = load_image(image)
+                        image_hash = hashlib.md5(image.tobytes()).hexdigest()
+                        image_hashes.append(image_hash)
+
                 messages.append((role, (text, image_hashes)))
             else:
                 messages.append((role, message))

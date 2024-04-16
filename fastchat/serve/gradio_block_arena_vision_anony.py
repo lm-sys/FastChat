@@ -63,34 +63,54 @@ enable_moderation = False
 anony_names = ["", ""]
 models = []
 
+# TODO(chris): fix sampling weights
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4-vision-preview": 4,
-    # "gemini-1.5-pro-vision": 4,
+    "gpt-4-turbo": 4,
+    "gemini-1.5-pro-preview-0409": 4,
     "gemini-1.0-pro-vision": 4,
+    "claude-3-opus-20240229": 4,
+    "claude-3-haiku-20240307": 4,
+    "claude-3-sonnet-20240229": 4,
     "llava-v1.6-34b": 4,
     "llava-v1.6-13b": 4,
     "llava-v1.6-7b": 4,
 }
 
-# TODO(chris): target model sampling weights will be boosted.
+# TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-vision-preview": {"gemini-1.0-pro-vision", "llava-v1.6-34b"},
-    # "gemini-1.5-pro-vision" : {"gpt-4-vision-preview", "gemini-1.0-pro-vision", "llava-v1.6-34b",},
+    "gpt-4-turbo": {"gemini-1.5-pro-preview-0409", "claude-3-opus-20240229"},
+    "gemini-1.5-pro-preview-0409": {"gpt-4-turbo", "gemini-1.0-pro-vision"},
     "gemini-1.0-pro-vision": {
-        "gpt-4-vision-preview",
-        "gemini-1.0-pro-vision",
-        "llava-v1.6-34b",
+        "gpt-4-turbo",
+        "gemini-1.5-pro-preview-0409",
     },
-    "llava-v1.6-34b": {"gpt-4-vision-preview", "gemini-1.0-pro-vision"},
+    "claude-3-opus-20240229": {"gpt-4-turbo", "gemini-1.5-pro-preview-0409"},
+    "claude-3-sonnet-20240229": {
+        "claude-3-opus-20240229",
+        "gpt-4-turbo",
+        "gemini-1.0-pro-vision",
+        "gemini-1.5-pro-preview-0409",
+    },
+    "claude-3-haiku-20240307": {
+        "claude-3-opus-20240229",
+        "gpt-4-turbo",
+        "gemini-1.0-pro-vision",
+        "gemini-1.5-pro-preview-0409",
+    },
+    "llava-v1.6-34b": {
+        "gpt-4-turbo",
+        "gemini-1.5-pro-preview-0409",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+    },
     "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
     "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
 }
 
 # TODO(chris): Fill out models that require sampling boost
-SAMPLING_BOOST_MODELS = [
-    "llava-v1.6-34b",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 OUTAGE_MODELS = []
