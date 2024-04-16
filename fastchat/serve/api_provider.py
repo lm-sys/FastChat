@@ -205,7 +205,7 @@ def openai_api_stream_iter(
             timeout=180,
         )
 
-    # Make requests
+    # Make requests for logging
     text_messages = []
     for message in messages:
         if type(message["content"]) == str:  # text-only model
