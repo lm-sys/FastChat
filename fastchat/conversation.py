@@ -543,38 +543,37 @@ class Conversation:
                     )
         return ret
 
-    def save_images(self, use_remote_storage=False):
+    def save_new_images(self, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
         from fastchat.utils import load_image, upload_image_file_to_gcs
 
-        messages = []
+        _, last_user_message = self.messages[-2]
 
-        for role, message in self.messages:
-            if type(message) is tuple:
-                text, images = message[0], message[1]
-                loaded_images = [load_image(image) for image in images]
-                image_hashes = [
-                    hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
-                ]
+        if type(last_user_message) == tuple:
+            text, images = last_user_message[0], last_user_message[1]
+            loaded_images = [load_image(image) for image in images]
+            image_hashes = [
+                hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
+            ]
 
-                image_filenames = []
-                for i, (loaded_image, hash_str) in enumerate(
-                    zip(loaded_images, image_hashes)
-                ):
-                    filename = os.path.join(
-                        "serve_images",
-                        f"{hash_str}.jpg",
-                    )
+            image_filenames = []
+            for i, (loaded_image, hash_str) in enumerate(
+                zip(loaded_images, image_hashes)
+            ):
+                filename = os.path.join(
+                    "serve_images",
+                    f"{hash_str}.jpg",
+                )
 
-                    if use_remote_storage:
-                        image_url = upload_image_file_to_gcs(loaded_image, filename)
-                        images[i] = image_url
-                    else:
-                        filename = os.path.join(LOGDIR, filename)
-                        if not os.path.isfile(filename):
-                            os.makedirs(os.path.dirname(filename), exist_ok=True)
-                            loaded_image.save(filename)
+                if use_remote_storage:
+                    image_url = upload_image_file_to_gcs(loaded_image, filename)
+                    images[i] = image_url
+                else:
+                    filename = os.path.join(LOGDIR, filename)
+                    if not os.path.isfile(filename):
+                        os.makedirs(os.path.dirname(filename), exist_ok=True)
+                        loaded_image.save(filename)
 
     def extract_text_and_image_hashes_from_messages(self):
         import hashlib

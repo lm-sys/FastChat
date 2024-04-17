@@ -540,7 +540,7 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
-    state.conv.save_images(use_remote_storage=use_remote_storage)
+    conv.save_new_images(use_remote_storage=use_remote_storage)
 
     filename = get_conv_log_filename()
     if "llava" in model_name:
