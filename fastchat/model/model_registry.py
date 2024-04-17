@@ -55,6 +55,20 @@ register_model_info(
 )
 
 register_model_info(
+    ["wizardlm-2-8x22b-together"],
+    "WizardLM 2",
+    "https://wizardlm.github.io/WizardLM2",
+    "An instruction-following LLM using evol-instruct by Microsoft",
+)
+
+register_model_info(
+    ["reka-flash", "reka-flash-online"],
+    "Reka Flash",
+    "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
+    "Multimodal model by Reka",
+)
+
+register_model_info(
     ["command-r-plus"],
     "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
@@ -735,11 +749,4 @@ register_model_info(
     "consistency-llm",
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
-)
-
-register_model_info(
-    ["reka-flash"],
-    "Reka Flash",
-    "https://reka.ai/reka-flash",
-    "Multimodal model by Reka",
 )

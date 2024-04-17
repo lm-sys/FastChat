@@ -1198,7 +1198,7 @@ class GeminiAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("gemini")
+        return get_conv_template("gemini-dev")
 
 
 class BiLLaAdapter(BaseModelAdapter):
@@ -1283,7 +1283,7 @@ class WizardLMAdapter(BaseModelAdapter):
         else:
             # TODO: use the recommended template for 7B
             # (https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
-            return get_conv_template("one_shot")
+            return get_conv_template("api_based_default")
 
 
 class ManticoreAdapter(BaseModelAdapter):
@@ -2387,7 +2387,7 @@ class RekaAdapter(BaseModelAdapter):
         return "reka" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("reka")
+        return get_conv_template("api_based_default")
 
 
 # Note: the registration order matters.
