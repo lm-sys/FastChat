@@ -1247,6 +1247,16 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="llama-3",
+        system_template="<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{system_message}<|eot_id|>",
+        roles=("<|start_header_id|>user<|end_header_id|>", "<|start_header_id|>assistant<|end_header_id|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="<|eot_id|>",
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="chinese-alpaca2",
         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
         system_message="You are a helpful assistant. 你是一个乐于助人的助手。请你提供专业、有逻辑、内容真实、有价值的详细回复。",
