@@ -1249,7 +1249,10 @@ register_conv_template(
     Conversation(
         name="llama-3",
         system_template="<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{system_message}<|eot_id|>",
-        roles=("<|start_header_id|>user<|end_header_id|>", "<|start_header_id|>assistant<|end_header_id|>"),
+        roles=(
+            "<|start_header_id|>user<|end_header_id|>",
+            "<|start_header_id|>assistant<|end_header_id|>",
+        ),
         sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="<|eot_id|>",
     )
