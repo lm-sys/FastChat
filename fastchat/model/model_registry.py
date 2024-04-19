@@ -604,6 +604,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["Meta-Llama-3-8B-Instruct", "Meta-Llama-3-70B-Instruct"],
+    "llama-3",
+    "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct",
+    "Meta developed and released the Meta Llama 3 family of large language models (LLMs), a collection of pretrained and instruction tuned generative text models in 8 and 70B sizes. The Llama 3 instruction tuned models are optimized for dialogue use cases and outperform many of the available open source chat models on common industry benchmarks. Further, in developing these models, we took great care to optimize helpfulness and safety.",
+)
+
+register_model_info(
     ["Chinese-Alpaca-2-7B", "Chinese-Alpaca-2-13B"],
     "Chinese-Alpaca",
     "https://huggingface.co/hfl/chinese-alpaca-2-13b",
