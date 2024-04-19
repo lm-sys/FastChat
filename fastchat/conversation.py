@@ -1269,8 +1269,8 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.LLAMA3,
         sep="",
-        stop_str="assistant",  # llama3 will output word "assistant" for it's output, the stop token is not working, still need to find the reason.
-        stop_token_ids=["128001", "128009"],
+        stop_str="<|eot_id|>",
+        stop_token_ids=[128001, 128009],
     )
 )
 
