@@ -22,6 +22,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     LLAMA2 = auto()
+    LLAMA3 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -150,6 +151,18 @@ class Conversation:
                         ret += message + " "
                     else:
                         ret += tag + " " + message + seps[i % 2]
+                else:
+                    ret += tag
+            return ret
+        elif self.sep_style == SeparatorStyle.LLAMA3:
+            if self.system_message:
+                ret = system_prompt
+            else:
+                ret = "<|begin_of_text|>"
+            for i, (role, message) in enumerate(self.messages):
+                tag = self.roles[i % 2]
+                if message:
+                    ret += tag + message + self.sep
                 else:
                     ret += tag
             return ret
@@ -1244,6 +1257,17 @@ register_conv_template(
         sep2=" </s><s>",
     )
 )
+
+# Llama-3 Template
+register_conv_template(
+        Conversation(
+            name="llama-3",
+            system_template="<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",            
+            roles=["<|start_header_id|>user<|end_header_id|>\n\n", "<|start_header_id|>assistant<|end_header_id|>\n\n"],
+            sep_style=SeparatorStyle.LLAMA3,
+            sep="<|eot_id|>",
+        )
+    )
 
 register_conv_template(
     Conversation(
