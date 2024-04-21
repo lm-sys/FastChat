@@ -1820,17 +1820,6 @@ if __name__ == "__main__":
 
     print("\n")
 
-    print("-- Llama-3 template --")
-    conv = get_conv_template("llama-3")
-    conv.set_system_message("You are a helpful, respectful and honest assistant.")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.get_prompt())
-
-    print("\n")
-
     print("-- ChatGPT template --")
     conv = get_conv_template("chatgpt")
     conv.append_message(conv.roles[0], "Hello!")
