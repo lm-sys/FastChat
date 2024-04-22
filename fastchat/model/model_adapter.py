@@ -122,7 +122,7 @@ class BaseModelAdapter:
         )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+        return get_conv_template(model_path)
 
 
 # A global registry for all model adapters
@@ -150,7 +150,8 @@ def get_model_adapter(model_path: str) -> BaseModelAdapter:
         if adapter.match(model_path):
             return adapter
 
-    raise ValueError(f"No valid model adapter for {model_path}")
+    warnings.warn(f"Using base model adapter for model: {model_path}")
+    return BaseModelAdapter()
 
 
 def raise_warning_for_incompatible_cpu_offloading_configuration(
@@ -378,8 +379,17 @@ def load_model(
 
 def get_conversation_template(model_path: str) -> Conversation:
     """Get the default conversation template."""
-    adapter = get_model_adapter(model_path)
-    return adapter.get_default_conv_template(model_path)
+    try:
+        # Try find conv template by full model_path, it will search chat_template within tokenizer
+        conv_template = get_conv_template(model_path)
+    except Exception as e:
+        # If we could not find conv_template with exact model_path we use adapter.
+        # It will replace model_path to predefined fastchat conv_name,
+        # e.g. find with 'gemma' not with 'google/gemma-2b-it'
+        adapter = get_model_adapter(model_path)
+        conv_template = adapter.get_default_conv_template(model_path)
+
+    return conv_template
 
 
 def get_generate_stream_function(model: torch.nn.Module, model_path: str):
@@ -2316,7 +2326,7 @@ class CllmAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
-register_model_adapter(DeepvkAdapter)
+register_model_adapter(DeepVKAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)

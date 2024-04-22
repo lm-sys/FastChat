@@ -7,9 +7,18 @@ If you have any changes in mind, please contribute back so the community can ben
 
 import base64
 import dataclasses
+import warnings
 from enum import auto, IntEnum
+import sys
 from io import BytesIO
-from typing import List, Any, Dict, Union, Tuple
+from typing import List, Any, Dict, Union, Tuple, Optional
+
+from transformers import AutoTokenizer
+
+if sys.version_info >= (3, 9):
+    from functools import cache
+else:
+    from functools import lru_cache as cache
 
 
 class SeparatorStyle(IntEnum):
@@ -35,6 +44,7 @@ class SeparatorStyle(IntEnum):
     METAMATH = auto()
     YUAN2 = auto()
     CLLM = auto()
+    HF_TEMPLATE = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -65,6 +75,8 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
+    # Hugging face tokenizer for using apply_chat_template if provided
+    tokenizer: Optional[AutoTokenizer] = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -283,6 +295,16 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.HF_TEMPLATE:
+            messages = self.to_openai_api_messages()
+
+            ret = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -423,9 +445,31 @@ def register_conv_template(template: Conversation, override: bool = False):
     conv_templates[template.name] = template
 
 
+@cache
+def huggingface_chat_template_exists(model_path: str) -> bool:
+    try:
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        if hasattr(tokenizer, "chat_template") and tokenizer.chat_template is not None:
+            return True
+    except Exception as e:  # Could not find valid tokenizer for this, so use one_shot template
+        warnings.warn(f"Get error in huggingface_chat_template_exists: {repr(e)}")
+        return False
+
+
 def get_conv_template(name: str) -> Conversation:
     """Get a conversation template."""
-    return conv_templates[name].copy()
+    if huggingface_chat_template_exists(name):
+        conv_template = conv_templates["huggingface"].copy()
+        conv_template.tokenizer = AutoTokenizer.from_pretrained(name)
+        warnings.warn(f"USING APPLY CHAT TEMPLATE for {name}")
+
+        return conv_template
+    elif name in conv_templates:
+        return conv_templates[name].copy()
+
+    raise ValueError(f"Unknown name: {name}. Could not find either chat_template or conv_template")
 
 
 # An empty template for raw conversation.
@@ -436,6 +480,14 @@ register_conv_template(
         roles=("", ""),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="huggingface",
+        roles=("User", "Assistant"),
+        sep_style=SeparatorStyle.HF_TEMPLATE
     )
 )
 
