@@ -52,6 +52,8 @@ def build_single_vision_language_model_ui(
     promotion = (
         """
 | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+
+Note: You can only chat with one image per conversation. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
         if add_promotion_links
         else ""
@@ -217,6 +219,6 @@ def build_single_vision_language_model_ui(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
-        )
+        ).then(clear_history_example, None, [state, chatbot] + btn_list)
 
     return [state, model_selector]

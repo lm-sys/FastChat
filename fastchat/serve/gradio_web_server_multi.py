@@ -59,6 +59,8 @@ def load_demo(url_params, request: gr.Request):
         selected = 3
     elif "leaderboard" in url_params:
         selected = 4
+    elif "about" in url_params:
+        selected = 5
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
@@ -117,18 +119,18 @@ window.__gradio_mode__ = "app";
         head=head_js,
     ) as demo:
         with gr.Tabs() as tabs:
-            with gr.Tab("Arena (battle)", id=0):
+            with gr.Tab("⚔️  Arena (battle)", id=0):
                 side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("Arena (side-by-side)", id=1):
+            with gr.Tab("⚔️  Arena (side-by-side)", id=1):
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("Direct Chat", id=2):
+            with gr.Tab("💬 Direct Chat", id=2):
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
 
-            with gr.Tab("Vision Direct Chat", id=3, visible=args.multimodal):
+            with gr.Tab("👀 Vision Direct Chat", id=3, visible=args.multimodal):
                 single_vision_language_model_list = (
                     build_single_vision_language_model_ui(
                         vl_models,
@@ -138,10 +140,12 @@ window.__gradio_mode__ = "app";
                 )
 
             if elo_results_file:
-                with gr.Tab("Leaderboard", id=4):
-                    build_leaderboard_tab(elo_results_file, leaderboard_table_file)
+                with gr.Tab("🏆 Leaderboard", id=4):
+                    build_leaderboard_tab(
+                        elo_results_file, leaderboard_table_file, show_plot=True
+                    )
 
-            with gr.Tab("About Us", id=5):
+            with gr.Tab("ℹ️  About Us", id=5):
                 about = build_about()
 
         url_params = gr.JSON(visible=False)
@@ -235,11 +239,17 @@ if __name__ == "__main__":
         help="the Google Analytics ID",
         default=None,
     )
+    parser.add_argument(
+        "--use-remote-storage",
+        action="store_true",
+        default=False,
+        help="Uploads image files to google cloud storage if set to true",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     # Set global variables
-    set_global_vars(args.controller_url, args.moderate)
+    set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
     models, all_models = get_model_list(
