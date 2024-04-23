@@ -78,24 +78,26 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Group(elem_id="share-region-named"):
-        with gr.Row():
-            with gr.Accordion(
-                f"🔍 Expand to see the descriptions of {len(models)} models", open=False
-            ):
-                model_description_md = get_model_description_md(models)
-                gr.Markdown(model_description_md, elem_id="model_description_markdown")
+    with gr.Row():
+        with gr.Column(scale=2):
+            imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
+            if random_questions:
+                global vqa_samples
+                with open(random_questions, "r") as f:
+                    vqa_samples = json.load(f)
+                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
 
-        with gr.Row():
-            with gr.Column(scale=0):
-                imagebox = gr.Image(type="pil")
-                if random_questions:
-                    global vqa_samples
-                    with open(random_questions, "r") as f:
-                        vqa_samples = json.load(f)
-                    random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+        with gr.Column(scale=5):
+            with gr.Group(elem_id="share-region-anony"):
+                with gr.Accordion(
+                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    open=False,
+                ):
+                    model_description_md = get_model_description_md(models)
+                    gr.Markdown(
+                        model_description_md, elem_id="model_description_markdown"
+                    )
 
-            with gr.Column(scale=1):
                 with gr.Row():
                     for i in range(num_sides):
                         with gr.Column():
@@ -106,6 +108,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
                                 show_label=False,
                                 container=False,
                             )
+
                 with gr.Row():
                     for i in range(num_sides):
                         label = "Model A" if i == 0 else "Model B"

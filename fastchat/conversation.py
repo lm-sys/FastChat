@@ -543,6 +543,33 @@ class Conversation:
                     )
         return ret
 
+    def to_reka_api_messages(self):
+        ret = []
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) == tuple:
+                    text, images = msg
+                    for image in images:
+                        if image.startswith("https://") or image.startswith("http://"):
+                            ret.append(
+                                {"type": "human", "text": text, "media_url": image}
+                            )
+                        else:
+                            ret.append(
+                                {
+                                    "type": "human",
+                                    "text": text,
+                                    "media_url": f"data:image/jpeg;base64,{image}",
+                                }
+                            )
+                else:
+                    ret.append({"type": "human", "text": msg})
+            else:
+                if msg is not None:
+                    ret.append({"type": "model", "text": msg})
+
+        return ret
+
     def save_new_images(self, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
@@ -1955,7 +1982,7 @@ register_conv_template(
         name="reka",
         system_message="",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )

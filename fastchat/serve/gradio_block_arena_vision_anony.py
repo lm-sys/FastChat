@@ -75,6 +75,7 @@ SAMPLING_WEIGHTS = {
     "llava-v1.6-34b": 4,
     "llava-v1.6-13b": 4,
     "llava-v1.6-7b": 4,
+    "reka-flash-20240226": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -107,6 +108,11 @@ BATTLE_TARGETS = {
     },
     "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
     "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
+    "reka-flash-20240226": {
+        "gemini-1.0-pro-vision",
+        "claude-3-haiku-20240307",
+        "claude-3-sonnet-20240229",
+    },
 }
 
 # TODO(chris): Fill out models that require sampling boost
@@ -236,22 +242,26 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Group(elem_id="share-region-anony"):
-        with gr.Accordion(
-            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
-        ):
-            model_description_md = get_model_description_md(models)
-            gr.Markdown(model_description_md, elem_id="model_description_markdown")
-        with gr.Row():
-            with gr.Column(scale=0):
-                imagebox = gr.Image(type="pil")
-                if random_questions:
-                    global vqa_samples
-                    with open(random_questions, "r") as f:
-                        vqa_samples = json.load(f)
-                    random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+    with gr.Row():
+        with gr.Column(scale=2):
+            imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
+            if random_questions:
+                global vqa_samples
+                with open(random_questions, "r") as f:
+                    vqa_samples = json.load(f)
+                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
 
-            with gr.Column(scale=1):
+        with gr.Column(scale=5):
+            with gr.Group(elem_id="share-region-anony"):
+                with gr.Accordion(
+                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    open=False,
+                ):
+                    model_description_md = get_model_description_md(models)
+                    gr.Markdown(
+                        model_description_md, elem_id="model_description_markdown"
+                    )
+
                 with gr.Row():
                     for i in range(num_sides):
                         label = "Model A" if i == 0 else "Model B"
@@ -263,14 +273,14 @@ Find out who is the 🥇LLM Champion!
                                 show_copy_button=True,
                             )
 
-        with gr.Row():
-            for i in range(num_sides):
-                with gr.Column():
-                    model_selectors[i] = gr.Markdown(
-                        anony_names[i], elem_id="model_selector_md"
-                    )
-        with gr.Row():
-            slow_warning = gr.Markdown("", elem_id="notice_markdown")
+                with gr.Row():
+                    for i in range(num_sides):
+                        with gr.Column():
+                            model_selectors[i] = gr.Markdown(
+                                anony_names[i], elem_id="model_selector_md"
+                            )
+    with gr.Row():
+        slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
     with gr.Row():
         leftvote_btn = gr.Button(

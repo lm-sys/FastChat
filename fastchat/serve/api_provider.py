@@ -163,7 +163,7 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "reka":
-        messages = conv.to_openai_api_messages()
+        messages = conv.to_reka_api_messages()
         stream_iter = reka_api_stream_iter(
             model_name=model_api_dict["model_name"],
             messages=messages,
@@ -960,30 +960,35 @@ def reka_api_stream_iter(
 ):
     api_key = api_key or os.environ["REKA_API_KEY"]
 
-    OPENAI_TO_REKA_ROLE_MAP = {
-        "user": "human",
-        "assistant": "model",
-        # system prompt passed as a human round
-        "system": "human",
-    }
+    # OPENAI_TO_REKA_ROLE_MAP = {
+    #     "user": "human",
+    #     "assistant": "model",
+    #     # system prompt passed as a human round
+    #     "system": "human",
+    # }
 
-    chat_history = []
-    for message in messages:
-        message_type = OPENAI_TO_REKA_ROLE_MAP[message["role"]]
-        if not chat_history or chat_history[-1]["type"] != message_type:
-            chat_history.append(
-                dict(
-                    type=message_type,
-                    text=message["content"],
-                )
-            )
-        else:
-            # merge consecutive rounds with same role into one round
-            chat_history[-1]["text"] += "\n\n" + message["content"]
+    # chat_history = []
+    # for content_list in messages:
+    #     for message in content_list:
+
+    #         message_type = OPENAI_TO_REKA_ROLE_MAP[message["role"]]
+    #         if not chat_history or chat_history[-1]["type"] != message_type:
+    #             current_turn_dict = dict(
+    #                     type=message_type,
+    #                     text=message["content"],
+    #             )
+
+    #             if "media_url" in message:
+    #                 current_turn_dict["media_url"] = message["media_url"]
+
+    #             chat_history.append(current_turn_dict)
+    #         else:
+    #             # merge consecutive rounds with same role into one round
+    #             chat_history[-1]["text"] += "\n\n" + message["content"]
 
     request = dict(
         model_name=model_name,
-        conversation_history=chat_history,
+        conversation_history=messages,
         temperature=temperature,
         request_output_len=max_new_tokens,
         runtime_top_p=top_p,
