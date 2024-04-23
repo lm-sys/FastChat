@@ -989,11 +989,17 @@ if __name__ == "__main__":
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
     )
+    parser.add_argument(
+        "--use-remote-storage",
+        action="store_true",
+        default=False,
+        help="Uploads image files to google cloud storage if set to true",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     # Set global variables
-    set_global_vars(args.controller_url, args.moderate)
+    set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
     models, all_models = get_model_list(
         args.controller_url, args.register_api_endpoint_file, False
     )
