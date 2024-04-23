@@ -135,6 +135,16 @@ def load_demo_side_by_side_vision_anony(models_, url_params):
     return states + selector_updates
 
 
+def clear_history_example(request: gr.Request):
+    logger.info(f"clear_history_example (anony). ip: {get_ip(request)}")
+    return (
+        [None] * num_sides
+        + [None] * num_sides
+        + [invisible_btn] * 4
+        + [disable_btn] * 2
+    )
+
+
 def add_text(
     state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
 ):
@@ -401,6 +411,8 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
+    imagebox.upload(clear_history_example, None, states + chatbots + btn_list)
+
     textbox.submit(
         add_text,
         states + model_selectors + [textbox, imagebox],
@@ -432,6 +444,6 @@ function (a, b, c, d) {
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
-        )
+        ).then(clear_history_example, None, states + chatbots + btn_list)
 
     return states + model_selectors

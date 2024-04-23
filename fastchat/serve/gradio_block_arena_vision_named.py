@@ -59,6 +59,16 @@ num_sides = 2
 enable_moderation = False
 
 
+def clear_history_example(request: gr.Request):
+    logger.info(f"clear_history_example (named). ip: {get_ip(request)}")
+    return (
+        [None] * num_sides
+        + [None] * num_sides
+        + [invisible_btn] * 4
+        + [disable_btn] * 2
+    )
+
+
 def build_side_by_side_vision_ui_named(models, random_questions=None):
     notice_markdown = """
 # ⚔️  Vision Arena ⚔️ : Benchmarking VLMs in the Wild
@@ -241,6 +251,8 @@ function (a, b, c, d) {
             clear_history, None, states + chatbots + [textbox] + btn_list
         )
 
+    imagebox.upload(clear_history_example, None, states + chatbots + btn_list)
+
     textbox.submit(
         add_text,
         states + model_selectors + [textbox, imagebox],
@@ -269,6 +281,6 @@ function (a, b, c, d) {
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
-        )
+        ).then(clear_history_example, None, states + chatbots + btn_list)
 
     return states + model_selectors
