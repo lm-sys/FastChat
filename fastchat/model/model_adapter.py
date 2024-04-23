@@ -1979,6 +1979,9 @@ class CodeLlamaAdapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        # cf. https://huggingface.co/codellama/CodeLlama-70b-Instruct-hf#chat-prompt
+        if "70b" in model_path:
+            return get_conv_template("codellama-70b")
         return get_conv_template("llama-2")
 
 
