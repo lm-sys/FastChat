@@ -36,7 +36,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
-    return question, path
+    return "", path
 
 
 def clear_history_example(request: gr.Request):
