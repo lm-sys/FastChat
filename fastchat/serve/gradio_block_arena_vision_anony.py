@@ -140,6 +140,7 @@ def clear_history_example(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
+        + anony_names
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -411,7 +412,9 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    imagebox.upload(clear_history_example, None, states + chatbots + btn_list)
+    imagebox.upload(
+        clear_history_example, None, states + chatbots + model_selectors + btn_list
+    )
 
     textbox.submit(
         add_text,
@@ -444,6 +447,8 @@ function (a, b, c, d) {
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(clear_history_example, None, states + chatbots + btn_list)
+        ).then(
+            clear_history_example, None, states + chatbots + model_selectors + btn_list
+        )
 
     return states + model_selectors
