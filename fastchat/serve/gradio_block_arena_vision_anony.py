@@ -240,11 +240,8 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 
-## 🏆 Arena Elo&nbsp;[Leaderboard](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard)
-We collect **200K+** human votes to compute an Elo-based LLM leaderboard.
-Find out who is the 🥇LLM Champion!
-
 ## 👇 Chat now!
+Note: You can only chat with one image per conversation. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]

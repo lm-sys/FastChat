@@ -80,6 +80,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Click "Clear history" to start a new round.
 
 ## 🤖 Choose two models to compare
+Note: You can only chat with one image per conversation. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]
