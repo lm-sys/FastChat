@@ -189,12 +189,16 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
-                    if type(message) is tuple:
-                        message, images = message
-                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
-                    ret += role + "\n" + message + self.sep + "\n"
+                    if isinstance(message, tuple):
+                        message, images = message if len(message) > 1 else (message[0], [])
+                        images = images if images is not None else []
+                        message = (IMAGE_PLACEHOLDER_STR * len(images) if images else "") + (
+                            message if message is not None else "")
+                    else:
+                        message = message if message is not None else ""
+                    ret += f"{role}\n{message}{self.sep}\n"
                 else:
-                    ret += role + "\n"
+                    ret += f"{role}\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM3:
             ret = ""
