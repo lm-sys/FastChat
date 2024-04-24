@@ -66,8 +66,9 @@ class VLLMWorker(BaseModelWorker):
                 if model_names is None
                 else model_names
             )
-            lora_model_names = [lora.name for lora in lora_modules]
-            model_names += lora_model_names
+            if lora_modules:
+                lora_model_names = [lora.name for lora in lora_modules]
+                model_names += lora_model_names
 
         super().__init__(
             controller_addr,
@@ -99,7 +100,7 @@ class VLLMWorker(BaseModelWorker):
                 )
                 for i, lora in enumerate(lora_modules, start=1)
             ]
-            if VLLM_LORA_SUPPORTED
+            if VLLM_LORA_SUPPORTED and lora_modules
             else []
         )
 
