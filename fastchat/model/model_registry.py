@@ -50,7 +50,7 @@ register_model_info(
         "claude-1",
     ],
     "Claude",
-    "https://www.anthropic.com/index/claude-2",
+    "https://www.anthropic.com/news/claude-3-family",
     "Claude by Anthropic",
 )
 

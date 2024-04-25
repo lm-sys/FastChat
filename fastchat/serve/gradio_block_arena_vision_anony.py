@@ -80,13 +80,13 @@ SAMPLING_WEIGHTS = {
 
 # TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-turbo": {"gemini-1.5-pro-preview-0409", "claude-3-opus-20240229"},
-    "gemini-1.5-pro-preview-0409": {"gpt-4-turbo", "gemini-1.0-pro-vision"},
+    "gpt-4-turbo": {"gemini-1.5-pro-preview-0409", "claude-3-opus-20240229", "reka-flash-20240226"},
+    "gemini-1.5-pro-preview-0409": {"gpt-4-turbo", "gemini-1.0-pro-vision", "reka-flash-20240226"},
     "gemini-1.0-pro-vision": {
         "gpt-4-turbo",
         "gemini-1.5-pro-preview-0409",
     },
-    "claude-3-opus-20240229": {"gpt-4-turbo", "gemini-1.5-pro-preview-0409"},
+    "claude-3-opus-20240229": {"gpt-4-turbo", "gemini-1.5-pro-preview-0409", "reka-flash-20240226"},
     "claude-3-sonnet-20240229": {
         "claude-3-opus-20240229",
         "gpt-4-turbo",
@@ -176,7 +176,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [""]
+            + ["", None]
             + [
                 no_change_btn,
             ]
@@ -199,7 +199,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG]
+            + [CONVERSATION_LIMIT_MSG, None]
             + [
                 no_change_btn,
             ]
@@ -241,7 +241,7 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
 - Vote won't be counted if model identity is revealed during conversation.
 
 ## 👇 Chat now!
-Note: You can only chat with one image per conversation. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]
