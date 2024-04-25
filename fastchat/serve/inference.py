@@ -342,7 +342,7 @@ def make_stopping_criteria(tokenizer, stop_word_lst, stop_token_ids=[]):
     stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stops)])
     return stopping_criteria
 
-# a merge of `_generate_stream` above and `get_model_answers` from `llm_judge/get_model_answers.py` with stopping implemented by `StoppingCriteria`
+# a merge of `_generate_stream` above and `get_model_answers` from llm_judge/get_model_answers.py with stopping implemented by `StoppingCriteria`
 @torch.inference_mode()
 def generate_stream(
     model,
@@ -390,7 +390,9 @@ def generate_stream(
     if model.config.is_encoder_decoder:
         max_src_len = context_len
     else:  # truncate
-        max_src_len = context_len - max_new_tokens - 1
+        #-max_src_len = context_len - max_new_tokens - 1
+        # to be consistent with L172 of serve/openai_api_server.py to avoid removing leading token
+        max_src_len = context_len - max_new_tokens
 
     input_ids = input_ids[-max_src_len:]
     input_echo_len = len(input_ids)
