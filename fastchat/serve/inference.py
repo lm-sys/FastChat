@@ -351,16 +351,17 @@ class StoppingCriteriaSub(StoppingCriteria):
                     return True
         return False
 
-def make_stopping_criteria(tokenizer, stop_word_lst):
+def make_stopping_criteria(tokenizer, stop_word_lst, stop_token_ids=[]):
     stops = [
         tokenizer(stop_word, return_tensors="pt", add_special_tokens=False)[
             "input_ids"
         ].squeeze()
         for stop_word in stop_word_lst
-    ]
+    ] + stop_token_ids
     stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stops)])
     return stopping_criteria
 
+# a merge of `_generate_stream` above and `get_model_answers` from `llm_judge/get_model_answers.py` with stopping implemented by `StoppingCriteria`
 @torch.inference_mode()
 def generate_stream(
     model,
@@ -371,38 +372,66 @@ def generate_stream(
     stream_interval: int = 2,
     judge_sent_end: bool = False,
 ):
-    params["max_new_tokens"] = 1024
     print(f"{params=}")
-    ret_logprobs = None
-    finish_reason = "stop"
 
-    stopping_criteria = make_stopping_criteria(tokenizer, ['<|endoftext|>'])
+    if hasattr(model, "device"):
+        device = model.device
 
-    input_ids = tokenizer([params["prompt"]]).input_ids
+    # Read parameters
+    prompt = params["prompt"]
+    len_prompt = len(prompt)
+    temperature = float(params.get("temperature", 1.0))
+    repetition_penalty = float(params.get("repetition_penalty", 1.0))
+    top_p = float(params.get("top_p", 1.0))
+    top_k = int(params.get("top_k", -1))  # -1 means disable
+    max_new_tokens = int(params.get("max_new_tokens", 256))
+    logprobs = params.get("logprobs", None)  # FIXME: Support logprobs>1.
+    echo = bool(params.get("echo", True))
+    stop_str = params.get("stop", None)
+    stop_token_ids = params.get("stop_token_ids", None) or []
+    if tokenizer.eos_token_id not in stop_token_ids:
+        stop_token_ids.append(tokenizer.eos_token_id)
+    print(f"{prompt=}")
 
+    stop_word_lst = ['<|endoftext|>']
+    if stop_str:
+        stop_word_lst.append(stop_str)
+    stopping_criteria = make_stopping_criteria(
+        tokenizer, stop_word_lst, stop_token_ids=stop_token_ids
+    )
+    
     if params["temperature"] < 1e-4:
         do_sample = False
     else:
         do_sample = True
-    print(f"{do_sample=}  {stopping_criteria=} ")
+    input_ids = tokenizer(prompt).input_ids
+
+    if model.config.is_encoder_decoder:
+        max_src_len = context_len
+    else:  # truncate
+        max_src_len = context_len - max_new_tokens - 1
+
+    input_ids = input_ids[-max_src_len:]
+    input_echo_len = len(input_ids)
 
     output_ids = model.generate(
-        torch.as_tensor(input_ids).to(model.device),
+        torch.as_tensor([input_ids], device=device),
         do_sample=do_sample,
-        repetition_penalty=1.0,
-        temperature=params["temperature"],
-        max_new_tokens=params["max_new_tokens"],
+        temperature=temperature,
+        max_new_tokens=max_new_tokens,
+        repetition_penalty=repetition_penalty,
         stopping_criteria=stopping_criteria,
     )
-    print(f"{output_ids=}")
-
-    output_ids = output_ids[0][len(input_ids[0]) :]
-    print(f"{output_ids=}")
+    if model.config.is_encoder_decoder:
+        output_ids = output_ids[0]
+    else:
+        output_ids = output_ids[0][len(input_ids[0]) :]
 
     output = tokenizer.decode(
         output_ids,
         spaces_between_special_tokens=False,
-    ) #.replace('<|endoftext|>', '')
+    )
+
     for special_token in tokenizer.special_tokens_map.values():
         if isinstance(special_token, list):
             for special_tok in special_token:
@@ -412,14 +441,17 @@ def generate_stream(
     output = output.strip()
     print(f"{output=}")
 
+    ret_logprobs = None
+    i = len(output_ids)
+    finish_reason = "stop"
     yield {
         "text": output,
         "logprobs": ret_logprobs,
-        # "usage": {
-        #     "prompt_tokens": input_echo_len,
-        #     "completion_tokens": i,
-        #     "total_tokens": input_echo_len + i,
-        # },
+        "usage": {
+            "prompt_tokens": input_echo_len,
+            "completion_tokens": i,
+            "total_tokens": input_echo_len + i,
+        },
         "finish_reason": finish_reason,
     }
 
