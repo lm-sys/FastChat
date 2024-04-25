@@ -2405,6 +2405,33 @@ class RekaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("reka")
 
+class LabradoriteAdapter(BaseModelAdapter):
+    """The model adapter for ibm/labradorite-13b"""
+
+    def match(self, model_path: str):
+        return "labradorite" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ibm-chat")
+
+class MerliniteAdapter(BaseModelAdapter):
+    """The model adapter for ibm/merlinite-7b and instructlab/merlinite-7b-lab"""
+
+    def match(self, model_path: str):
+        return "merlinite" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ibm-generic")
+
+class GraniteAdapter(BaseModelAdapter):
+    """The model adapter for instructlab/granite-7b-lab"""
+
+    def match(self, model_path: str):
+        return "granite" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("ibm-generic")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -2505,6 +2532,9 @@ register_model_adapter(YandexGPTAdapter)
 register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
+register_model_adapter(LabradoriteAdapter)
+register_model_adapter(MerliniteAdapter)
+register_model_adapter(GraniteAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
