@@ -404,9 +404,9 @@ def generate_stream(
         stopping_criteria=stopping_criteria,
     )
     if model.config.is_encoder_decoder:
-        output_ids = output_ids[0]
+        output_ids = output_ids
     else:
-        output_ids = output_ids[0][len(input_ids[0]) :]
+        output_ids = output_ids[len(input_ids):]
 
     output = tokenizer.decode(
         output_ids,
