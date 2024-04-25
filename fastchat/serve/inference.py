@@ -315,25 +315,6 @@ def _generate_stream(
     if device == "npu":
         torch.npu.empty_cache()
 
-
-class ChatIO(abc.ABC):
-    @abc.abstractmethod
-    def prompt_for_input(self, role: str) -> str:
-        """Prompt for input from a role."""
-
-    @abc.abstractmethod
-    def prompt_for_output(self, role: str):
-        """Prompt for output from a role."""
-
-    @abc.abstractmethod
-    def stream_output(self, output_stream):
-        """Stream output."""
-
-    @abc.abstractmethod
-    def print_output(self, text: str):
-        """Print output."""
-
-
 from transformers import StoppingCriteria, StoppingCriteriaList
 
 class StoppingCriteriaSub(StoppingCriteria):
@@ -456,6 +437,24 @@ def generate_stream(
         torch.xpu.empty_cache()
     if device == "npu":
         torch.npu.empty_cache()
+
+
+class ChatIO(abc.ABC):
+    @abc.abstractmethod
+    def prompt_for_input(self, role: str) -> str:
+        """Prompt for input from a role."""
+
+    @abc.abstractmethod
+    def prompt_for_output(self, role: str):
+        """Prompt for output from a role."""
+
+    @abc.abstractmethod
+    def stream_output(self, output_stream):
+        """Stream output."""
+
+    @abc.abstractmethod
+    def print_output(self, text: str):
+        """Print output."""
 
 
 def chat_loop(
