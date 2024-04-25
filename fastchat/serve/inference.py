@@ -402,7 +402,7 @@ def generate_stream(
         max_new_tokens=max_new_tokens,
         repetition_penalty=repetition_penalty,
         stopping_criteria=stopping_criteria,
-    )
+    )[0]
     if model.config.is_encoder_decoder:
         output_ids = output_ids
     else:
