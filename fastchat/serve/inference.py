@@ -429,16 +429,10 @@ def generate_stream(
 
     output = tokenizer.decode(
         output_ids,
+        skip_special_tokens=True,
         spaces_between_special_tokens=False,
+        clean_up_tokenization_spaces=True,
     )
-
-    for special_token in tokenizer.special_tokens_map.values():
-        if isinstance(special_token, list):
-            for special_tok in special_token:
-                output = output.replace(special_tok, "")
-        else:
-            output = output.replace(special_token, "")
-    output = output.strip()
     print(f"{output=}")
 
     ret_logprobs = None
