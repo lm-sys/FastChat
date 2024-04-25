@@ -2429,6 +2429,10 @@ class GraniteAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "granite" in model_path.lower()
 
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("ibm-generic")
 
