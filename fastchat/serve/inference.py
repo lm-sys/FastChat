@@ -59,7 +59,7 @@ def prepare_logits_processor(
 
 
 @torch.inference_mode()
-def generate_stream(
+def _generate_stream(
     model,
     tokenizer,
     params: Dict,
@@ -332,6 +332,104 @@ class ChatIO(abc.ABC):
     @abc.abstractmethod
     def print_output(self, text: str):
         """Print output."""
+
+
+from transformers import StoppingCriteria, StoppingCriteriaList
+
+class StoppingCriteriaSub(StoppingCriteria):
+
+    def __init__(self, stops=[], encounters=1):
+        super().__init__()
+        self.stops = [stop for stop in stops]
+
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
+        for seq in input_ids:
+            for stop in self.stops:
+                if stop == seq[-1]:
+                    return True
+        return False
+
+def make_stopping_criteria(tokenizer, stop_word_lst):
+    stops = [
+        tokenizer(stop_word, return_tensors="pt", add_special_tokens=False)[
+            "input_ids"
+        ].squeeze()
+        for stop_word in stop_word_lst
+    ]
+    stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stops)])
+    return stopping_criteria
+
+@torch.inference_mode()
+def generate_stream(
+    model,
+    tokenizer,
+    params: Dict,
+    device: str,
+    context_len: int,
+    stream_interval: int = 2,
+    judge_sent_end: bool = False,
+):
+    params["max_new_tokens"] = 1024
+    print(f"{params=}")
+    ret_logprobs = None
+    finish_reason = "stop"
+
+    stopping_criteria = make_stopping_criteria(tokenizer, ['<|endoftext|>'])
+
+    input_ids = tokenizer([params["prompt"]]).input_ids
+
+    if params["temperature"] < 1e-4:
+        do_sample = False
+    else:
+        do_sample = True
+    print(f"{do_sample=}  {stopping_criteria=} ")
+
+    output_ids = model.generate(
+        torch.as_tensor(input_ids).to(model.device),
+        do_sample=do_sample,
+        repetition_penalty=1.0,
+        temperature=params["temperature"],
+        max_new_tokens=params["max_new_tokens"],
+        stopping_criteria=stopping_criteria,
+    )
+    print(f"{output_ids=}")
+
+    output_ids = output_ids[0][len(input_ids[0]) :]
+    print(f"{output_ids=}")
+
+    output = tokenizer.decode(
+        output_ids,
+        spaces_between_special_tokens=False,
+    ) #.replace('<|endoftext|>', '')
+    for special_token in tokenizer.special_tokens_map.values():
+        if isinstance(special_token, list):
+            for special_tok in special_token:
+                output = output.replace(special_tok, "")
+        else:
+            output = output.replace(special_token, "")
+    output = output.strip()
+    print(f"{output=}")
+
+    yield {
+        "text": output,
+        "logprobs": ret_logprobs,
+        # "usage": {
+        #     "prompt_tokens": input_echo_len,
+        #     "completion_tokens": i,
+        #     "total_tokens": input_echo_len + i,
+        # },
+        "finish_reason": finish_reason,
+    }
+
+    # Clean
+    gc.collect()
+    torch.cuda.empty_cache()
+    if device == "xpu":
+        torch.xpu.empty_cache()
+    if device == "npu":
+        torch.npu.empty_cache()
 
 
 def chat_loop(
