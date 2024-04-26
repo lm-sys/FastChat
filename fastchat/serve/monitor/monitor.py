@@ -33,7 +33,6 @@ leader_component_values = [None] * 5
 
 
 def make_default_md(arena_df, elo_results, mirror=False):
-
     mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org).</span>"
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard
@@ -393,7 +392,9 @@ cat_name_to_explanation = {
 }
 
 
-def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=False, mirror=False):
+def build_leaderboard_tab(
+    elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
+):
     arena_dfs = {}
     category_elo_results = {}
     if elo_results_file is None:  # Do live update
@@ -416,7 +417,9 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         p3 = category_elo_results["Overall"]["bootstrap_elo_rating"]
         p4 = category_elo_results["Overall"]["average_win_rate_bar"]
         arena_df = arena_dfs["Overall"]
-        default_md = make_default_md(arena_df, category_elo_results["Overall"], mirror=mirror)
+        default_md = make_default_md(
+            arena_df, category_elo_results["Overall"], mirror=mirror
+        )
 
     md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
@@ -727,7 +730,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
                     elo_results_file,
                     leaderboard_table_file,
                     show_plot=True,
-                    mirror=False
+                    mirror=False,
                 )
 
             with gr.Tab("Basic Stats", id=1):
