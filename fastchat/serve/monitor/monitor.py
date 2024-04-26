@@ -38,7 +38,7 @@ def make_default_md(arena_df, elo_results):
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
-We've collected over **500,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
+We've collected over **700,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
 You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
 """
     return leaderboard_md
@@ -50,11 +50,15 @@ def make_arena_leaderboard_md(arena_df):
     space = "&nbsp;&nbsp;&nbsp;"
 
     leaderboard_md = f"""
-Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: April 13, 2024.
+Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: April 22, 2024.
 
-📣 **NEW!** View leaderboard for different categories (e.g., coding, long user query)!
+📣 **NEW!** View leaderboard for different categories (e.g., coding, long user query)! This is still in preview and subject to change.
 
 Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote 🗳️ at [chat.lmsys.org](https://chat.lmsys.org)!
+
+***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
+Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
+See Figure 3 below for visualization of the confidence intervals of model scores.
 """
     return leaderboard_md
 
@@ -272,7 +276,6 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
-    arena_df = arena_df[arena_df["num_battles"] > 1000]
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
     arena_df = arena_df.sort_values(by=["final_ranking"], ascending=True)
 
@@ -370,7 +373,7 @@ key_to_category_name = {
     "chinese": "Chinese",
     "french": "French",
     "no_tie": "Exclude Ties",
-    "no_short": "Exclude Short",
+    "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
 }
 cat_name_to_explanation = {
@@ -381,7 +384,7 @@ cat_name_to_explanation = {
     "Chinese": "Chinese Prompts",
     "French": "French Prompts",
     "Exclude Ties": "Exclude Ties and Bothbad",
-    "Exclude Short": "User Query >= 5 tokens",
+    "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
 }
 
@@ -396,12 +399,13 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
             if "full" in elo_results:
-                for k in elo_results.keys():
-                    for k in key_to_category_name:
-                        arena_dfs[key_to_category_name[k]] = elo_results[k][
-                            "leaderboard_table_df"
-                        ]
-                        category_elo_results[key_to_category_name[k]] = elo_results[k]
+                for k in key_to_category_name.keys():
+                    if k not in elo_results:
+                        continue
+                    arena_dfs[key_to_category_name[k]] = elo_results[k][
+                        "leaderboard_table_df"
+                    ]
+                    category_elo_results[key_to_category_name[k]] = elo_results[k]
 
         p1 = category_elo_results["Overall"]["win_fraction_heatmap"]
         p2 = category_elo_results["Overall"]["battle_count_heatmap"]
@@ -438,7 +442,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
 
                 elo_display_df = gr.Dataframe(
                     headers=[
-                        "Rank",
+                        "Rank* (UB)",
                         "🤖 Model",
                         "⭐ Arena Elo",
                         "📊 95% CI",
@@ -460,15 +464,11 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                     value=arena_table_vals,
                     elem_id="arena_leaderboard_dataframe",
                     height=700,
-                    column_widths=[70, 190, 130, 100, 90, 130, 150, 140],
+                    column_widths=[70, 190, 100, 100, 90, 130, 150, 100],
                     wrap=True,
                 )
                 gr.Markdown(
-                    f"""Note: we take the 95% confidence interval into account when determining a model's ranking.
-            A model is ranked higher only if its lower bound of model score is higher than the upper bound of the other model's score.
-            See Figure 3 below for visualization of the confidence intervals. In each category, we remove models with fewer than 500 votes.
-            More details in the [paper](https://arxiv.org/abs/2403.04132) and [notebook]({notebook_url}).
-            """,
+                    f"""Note: in each category, we exclude models with fewer than 500 votes as their confidence intervals can be large.""",
                     elem_id="leaderboard_markdown",
                 )
 
@@ -542,7 +542,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         elo_datarame = pd.DataFrame(
             arena_table_vals,
             columns=[
-                "Rank",
+                "Rank* (UB)",
                 "Delta",
                 "🤖 Model",
                 "⭐ Arena Elo",
@@ -576,7 +576,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 for v in s
             ]
 
-        return elo_datarame.style.apply(highlight_max, subset=["Rank"]).apply(
+        return elo_datarame.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
             highlight_rank_max, subset=["Delta"]
         )
 
@@ -594,7 +594,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
             arena_values = update_leaderboard_df(arena_values)
             arena_values = gr.Dataframe(
                 headers=[
-                    "Rank",
+                    "Rank* (UB)",
                     "Delta",
                     "🤖 Model",
                     "⭐ Arena Elo",
@@ -618,13 +618,13 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=700,
-                column_widths=[60, 70, 190, 110, 100, 90, 160, 150, 140],
+                column_widths=[70, 70, 200, 90, 100, 90, 120, 150, 100],
                 wrap=True,
             )
         else:
             arena_values = gr.Dataframe(
                 headers=[
-                    "Rank",
+                    "Rank* (UB)",
                     "🤖 Model",
                     "⭐ Arena Elo",
                     "📊 95% CI",
@@ -646,7 +646,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=700,
-                column_widths=[70, 190, 110, 100, 90, 160, 150, 140],
+                column_widths=[70, 190, 100, 100, 90, 140, 150, 100],
                 wrap=True,
             )
 
@@ -714,7 +714,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
-        theme=gr.themes.Base(text_size=text_size),
+        theme=gr.themes.Default(text_size=text_size),
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
@@ -775,5 +775,5 @@ if __name__ == "__main__":
         status_update_rate=10,
         api_open=False,
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200
+        server_name=args.host, server_port=args.port, share=args.share, max_threads=200,
     )
