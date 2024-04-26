@@ -38,7 +38,7 @@ def make_default_md(arena_df, elo_results):
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
-We've collected over **700,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
+We've collected over **800,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
 You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
 """
     return leaderboard_md
@@ -50,7 +50,7 @@ def make_arena_leaderboard_md(arena_df):
     space = "&nbsp;&nbsp;&nbsp;"
 
     leaderboard_md = f"""
-Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: April 22, 2024.
+Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: April 26, 2024.
 
 📣 **NEW!** View leaderboard for different categories (e.g., coding, long user query)! This is still in preview and subject to change.
 
