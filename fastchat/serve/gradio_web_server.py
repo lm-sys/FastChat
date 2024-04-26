@@ -53,6 +53,7 @@ invisible_btn = gr.Button(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
+use_remote_storage = False
 
 acknowledgment_md = """
 ### Terms of Service
@@ -131,10 +132,11 @@ class State:
         return base
 
 
-def set_global_vars(controller_url_, enable_moderation_):
-    global controller_url, enable_moderation
+def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
+    global controller_url, enable_moderation, use_remote_storage
     controller_url = controller_url_
     enable_moderation = enable_moderation_
+    use_remote_storage = use_remote_storage_
 
 
 def get_conv_log_filename():
@@ -385,6 +387,25 @@ def is_limit_reached(model_name, ip):
         return None
 
 
+def upload_image_file_to_gcs(image, filename):
+    from google.cloud import storage
+    import io
+
+    storage_client = storage.Client()
+    # upload file to GCS
+    bucket = storage_client.get_bucket("arena_user_content")
+
+    blob = bucket.blob(f"{filename}")
+    if not blob.exists():
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+        blob.upload_from_file(buffer, content_type="image/png")
+
+    blob.make_public()
+    return blob.public_url
+
+
 def bot_response(
     state,
     temperature,
@@ -544,16 +565,24 @@ def bot_response(
     # We load the image because gradio accepts base64 but that increases file size by ~1.33x
     loaded_images = [load_image(image) for image in images]
     images_hash = [hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images]
+    image_filenames = []
     for image, hash_str in zip(loaded_images, images_hash):
         t = datetime.datetime.now()
         filename = os.path.join(
-            LOGDIR,
             "serve_images",
             f"{hash_str}.jpg",
         )
-        if not os.path.isfile(filename):
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            image.save(filename)
+
+        if use_remote_storage:
+            image_url = upload_image_file_to_gcs(image, filename)
+            image_filenames.append(image_url)
+        else:
+            filename = os.path.join(LOGDIR, filename)
+            if not os.path.isfile(filename):
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+                image.save(filename)
+
+            image_filenames.append(hash_str)
 
     filename = get_conv_log_filename()
     if "llava" in model_name:
@@ -573,7 +602,7 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
-            "images": images_hash,
+            "images": image_filenames,
         }
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
@@ -591,10 +620,17 @@ block_css = """
     padding-bottom: 6px;
 }
 #arena_leaderboard_dataframe table {
+<<<<<<< HEAD
     font-size: 110%;
 }
 #full_leaderboard_dataframe table {
     font-size: 110%;
+=======
+    font-size: 115%;
+}
+#full_leaderboard_dataframe table {
+    font-size: 115%;
+>>>>>>> main
 }
 #model_description_markdown {
     font-size: 110% !important;
@@ -614,6 +650,12 @@ block_css = """
 }
 #ack_markdown .prose {
     font-size: 110% !important;
+<<<<<<< HEAD
+=======
+}
+#chatbot .prose {
+    font-size: 105% !important;
+>>>>>>> main
 }
 #chatbot .prose {
     font-size: 105% !important;
@@ -962,11 +1004,17 @@ if __name__ == "__main__":
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
     )
+    parser.add_argument(
+        "--use-remote-storage",
+        action="store_true",
+        default=False,
+        help="Uploads image files to google cloud storage if set to true",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     # Set global variables
-    set_global_vars(args.controller_url, args.moderate)
+    set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
     models, all_models = get_model_list(
         args.controller_url, args.register_api_endpoint_file, False
     )

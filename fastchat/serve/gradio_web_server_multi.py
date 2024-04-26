@@ -239,11 +239,17 @@ if __name__ == "__main__":
         help="the Google Analytics ID",
         default=None,
     )
+    parser.add_argument(
+        "--use-remote-storage",
+        action="store_true",
+        default=False,
+        help="Uploads image files to google cloud storage if set to true",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     # Set global variables
-    set_global_vars(args.controller_url, args.moderate)
+    set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
     set_global_vars_named(args.moderate)
     set_global_vars_anony(args.moderate)
     models, all_models = get_model_list(
