@@ -1198,6 +1198,19 @@ class GeminiAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemini")
+
+
+class GeminiDevAdapter(BaseModelAdapter):
+    """The model adapter for Gemini 1.5 Pro"""
+
+    def match(self, model_path: str):
+        return "gemini-1.5-pro" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemini-dev")
 
 
@@ -2431,6 +2444,7 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(GeminiAdapter)
+register_model_adapter(GeminiDevAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
