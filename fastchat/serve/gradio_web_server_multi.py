@@ -114,7 +114,7 @@ window.__gradio_mode__ = "app";
 
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Default(text_size=text_size, primary_hue="orange"),
+        theme=gr.themes.Default(text_size=text_size),
         css=block_css,
         head=head_js,
     ) as demo:
