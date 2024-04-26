@@ -274,7 +274,7 @@ BATTLE_TARGETS = {
         "mistral-large-2402",
         "command-r-plus",
         "claude-3-haiku-20240307",
-    }
+    },
 }
 
 SAMPLING_BOOST_MODELS = []
