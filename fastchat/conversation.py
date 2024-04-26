@@ -1057,7 +1057,7 @@ register_conv_template(
             "When presented with inquiries seeking information, provide answers that reflect a deep understanding of the field, guaranteeing their correctness.\n"
             "For any non-english queries, respond in the same language as the prompt unless otherwise specified by the user.\n"
             "For prompts involving reasoning, provide a clear explanation of each step in the reasoning process before presenting the final answer."
-        )
+        ),
     )
 )
 

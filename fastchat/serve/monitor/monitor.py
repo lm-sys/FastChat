@@ -775,5 +775,8 @@ if __name__ == "__main__":
         status_update_rate=10,
         api_open=False,
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200,
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
     )

@@ -492,7 +492,9 @@ def bot_response(
             if recommended_config is not None:
                 temperature = recommended_config.get("temperature", temperature)
                 top_p = recommended_config.get("top_p", top_p)
-                max_new_tokens = recommended_config.get("max_new_tokens", max_new_tokens)
+                max_new_tokens = recommended_config.get(
+                    "max_new_tokens", max_new_tokens
+                )
 
         stream_iter = get_api_provider_stream_iter(
             conv,
