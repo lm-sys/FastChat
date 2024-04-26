@@ -730,7 +730,6 @@ def build_demo(elo_results_file, leaderboard_table_file):
                     elo_results_file,
                     leaderboard_table_file,
                     show_plot=True,
-                    mirror=False,
                 )
 
             with gr.Tab("Basic Stats", id=1):
