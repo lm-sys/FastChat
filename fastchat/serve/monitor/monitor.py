@@ -32,15 +32,18 @@ basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
 
-def make_default_md(arena_df, elo_results):
+def make_default_md(arena_df, elo_results, mirror=False):
+    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org).</span>"
     leaderboard_md = f"""
-# 🏆 LMSYS Chatbot Arena Leaderboard
-| [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+    # 🏆 LMSYS Chatbot Arena Leaderboard
+    | [Website](https://lmsys.org) | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
-We've collected over **800,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
-You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
-"""
+    {mirror_str if mirror else ""}
+    
+    LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals. We've collected over **800,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
+    You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
+    """
+
     return leaderboard_md
 
 
@@ -389,7 +392,9 @@ cat_name_to_explanation = {
 }
 
 
-def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=False):
+def build_leaderboard_tab(
+    elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
+):
     arena_dfs = {}
     category_elo_results = {}
     if elo_results_file is None:  # Do live update
@@ -412,7 +417,9 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
         p3 = category_elo_results["Overall"]["bootstrap_elo_rating"]
         p4 = category_elo_results["Overall"]["average_win_rate_bar"]
         arena_df = arena_dfs["Overall"]
-        default_md = make_default_md(arena_df, category_elo_results["Overall"])
+        default_md = make_default_md(
+            arena_df, category_elo_results["Overall"], mirror=mirror
+        )
 
     md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
