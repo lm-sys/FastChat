@@ -1283,7 +1283,7 @@ class WizardLMAdapter(BaseModelAdapter):
         else:
             # TODO: use the recommended template for 7B
             # (https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
-            return get_conv_template("api_based_default")
+            return get_conv_template("one_shot")
 
 
 class ManticoreAdapter(BaseModelAdapter):

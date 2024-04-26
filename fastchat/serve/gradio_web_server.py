@@ -622,17 +622,10 @@ block_css = """
     padding-bottom: 6px;
 }
 #arena_leaderboard_dataframe table {
-<<<<<<< HEAD
     font-size: 110%;
 }
 #full_leaderboard_dataframe table {
     font-size: 110%;
-=======
-    font-size: 115%;
-}
-#full_leaderboard_dataframe table {
-    font-size: 115%;
->>>>>>> main
 }
 #model_description_markdown {
     font-size: 110% !important;
@@ -652,12 +645,6 @@ block_css = """
 }
 #ack_markdown .prose {
     font-size: 110% !important;
-<<<<<<< HEAD
-=======
-}
-#chatbot .prose {
-    font-size: 105% !important;
->>>>>>> main
 }
 #chatbot .prose {
     font-size: 105% !important;

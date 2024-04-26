@@ -182,8 +182,6 @@ SAMPLING_WEIGHTS = {
     "dbrx-instruct": 1,
     "command-r-plus": 4,
     "command-r": 2,
-    "gemini-pro-dev-api": 12,
-    "wizardlm-2-8x22b": 2,
     "reka-flash": 4,
     "reka-flash-online": 4,
     "qwen1.5-72b-chat": 2,
@@ -276,37 +274,13 @@ BATTLE_TARGETS = {
         "mistral-large-2402",
         "command-r-plus",
         "claude-3-haiku-20240307",
-    },
-    "wizardlm-2-8x22b": {
-        "qwen1.5-72b-chat",
-        "command-r-plus",
-        "claude-3-haiku-20240307",
-        "claude-3-sonnet-20240229",
-    },
+    }
 }
 
-SAMPLING_BOOST_MODELS = [
-    # "gpt-4-1106-preview",
-    # "gpt-4-0125-preview",
-    "claude-3-opus-20240229",
-    # "claude-3-sonnet-20240229",
-    # "claude-3-haiku-20240307",
-    "reka-flash",
-    "reka-flash-online",
-    "gemini-pro-dev-api",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-    "gemini-pro-dev-api",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model):
