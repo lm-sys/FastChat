@@ -33,10 +33,6 @@ leader_component_values = [None] * 5
 
 
 def make_default_md(arena_df, elo_results, mirror=False):
-<<<<<<< HEAD
-=======
-
->>>>>>> 4524c32 (added mirroring to hf leaderboard)
     mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org).</span>"
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard
@@ -424,7 +420,7 @@ def build_leaderboard_tab(
         default_md = make_default_md(
             arena_df, category_elo_results["Overall"], mirror=mirror
         )
-        
+
     md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
         data = load_leaderboard_table_csv(leaderboard_table_file)
@@ -734,7 +730,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
                     elo_results_file,
                     leaderboard_table_file,
                     show_plot=True,
-                    mirror=False
+                    mirror=False,
                 )
 
             with gr.Tab("Basic Stats", id=1):
