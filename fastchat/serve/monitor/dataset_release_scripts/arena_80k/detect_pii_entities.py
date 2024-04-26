@@ -102,6 +102,7 @@ language_codes = {
     "Faroese": "fo",
     "Yoruba": "yo",
     "Māori": "n/a",
+    "unknown": "en", # this is set to en because we don't know the language
 }
 
 ENTITIES_TO_IGNORE = ["Organization", "PersonType", "DateTime", "Person", "Quantity"]
@@ -143,6 +144,7 @@ client = authenticate_client()
 
 
 def redact_text(text, entities):
+    redacted = False
     new_text = text
     for entity in entities:
         if entity["category"] in ENTITIES_TO_IGNORE:
@@ -152,7 +154,8 @@ def redact_text(text, entities):
         start = entity["offset"]
         end = entity["offset"] + entity["length"]
         new_text = new_text[:start] + "#" * (end - start) + new_text[end:]
-    return new_text
+        redacted = True
+    return new_text, redacted
 
 
 # Function to redact PII and return entities in a single text
@@ -172,12 +175,12 @@ def redact_pii_and_extract_entities(text, client, language="en"):
             }
             for entity in result[0].entities
         ]
-        redacted_text = redact_text(
+        redacted_text, redacted = redact_text(
             text, entities
         )  # redact text from entities we want to remove
-        return redacted_text, entities
+        return redacted_text, entities, redacted
     else:
-        return text, []
+        return text, [], False
 
 
 # Function to redact PII in user responses and extract entities
@@ -186,12 +189,12 @@ def redact_user_pii_and_extract_entities(conversation, client, language="en"):
     new_conversation = copy.deepcopy(conversation)
     for message in new_conversation:
         if message["role"] == "user":
-            redacted_text, entities = redact_pii_and_extract_entities(
+            redacted_text, entities, redacted = redact_pii_and_extract_entities(
                 message["content"], client, language=language
             )
             message["content"] = redacted_text
             all_entities.extend(entities)
-    return new_conversation, all_entities
+    return new_conversation, all_entities, redacted
 
 
 def remove_toxic_rows(df):
@@ -211,13 +214,28 @@ def remove_toxic_chat(toxic_chat_tag):
             return True
     return False
 
+def replace_user_entries(original, redacted):
+    for i, item in enumerate(original):
+        if item['role'] == 'user':
+            original[i] = redacted[i]
+    return original
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--input_json", type=str, help="Input file path")
+parser.add_argument("--csv_output", type=str, help="Output file path")
+parser.add_argument("--test", action="store_true", help="Test mode")
+args = parser.parse_args()
 
 # If the dataset is gated/private, make sure you have run huggingface-cli login
-df = pd.read_json(
-    "./fastchat/serve/monitor/dataset_release_scripts/arena_80k/clean_battle_conv_20240222_80k.json"
-)
+df = pd.read_json(args.input_json)
 old_df_len = len(df)
-
+if args.test:
+    df = df.head(50)
+output_file = args.input_json.replace(".json", "_redacted.csv") if not args.csv_output else args.csv_output
+if args.test:
+    output_file = output_file.replace(".csv", "_test.csv")
+    
 # uncomment if you want to remove toxic rows
 # df = remove_toxic_rows(df)
 # print(f"Removed {old_df_len - len(df)} toxic rows")
@@ -225,49 +243,44 @@ old_df_len = len(df)
 # Define your columns
 columns = [
     "redacted_conversation_a",
-    "entities_a",
+    "entities",
+    "redacted_entities",
     "redacted_conversation_b",
-    "entities_b",
-    "unknown_language",
+    "pii_detection_succeeded",
+    "redacted",
 ]
+columns = list(df.columns) + columns 
 
 # Open a CSV file to write
-with open("redacted_conversations-80k.csv", "w", newline="", encoding="utf-8") as file:
+with open(output_file, "w", newline="", encoding="utf-8") as file:
     writer = csv.DictWriter(file, fieldnames=columns)
     writer.writeheader()
 
     for i, row in df.iterrows():
         csv_row = {}
-        try:
-            if (
-                row["language"] in language_codes.keys()
-                and language_codes[row["language"]] != "n/a"
-            ):
-                redacted_conversation, entities = redact_user_pii_and_extract_entities(
-                    row["conversation_a"], client, language_codes[row["language"]]
-                )
-                csv_row["redacted_conversation_a"] = redacted_conversation
-                csv_row["entities_a"] = entities
-                redacted_conversation, entities = redact_user_pii_and_extract_entities(
-                    row["conversation_b"], client, language_codes[row["language"]]
-                )
-                csv_row["redacted_conversation_b"] = redacted_conversation
-                csv_row["entities_b"] = entities
-                csv_row["unknown_language"] = False
-            else:
-                csv_row["redacted_conversation_a"] = row["conversation_a"]
-                csv_row["entities_a"] = []
-                csv_row["redacted_conversation_b"] = row["conversation_b"]
-                csv_row["entities_b"] = []
-                csv_row["unknown_language"] = True
-                print(f"Unknown language: {row['language']}")
-        except Exception as e:
-            print(f"Error in row {i}: {e}")
+        for k, v in row.items():
+            csv_row[k] = v
+        if (
+            row["language"] in language_codes.keys()
+            and language_codes[row["language"]] != "n/a"
+        ):
+            redacted_conversation, entities, redacted = redact_user_pii_and_extract_entities(
+                row["conversation_a"], client, language_codes[row["language"]]
+            )
+            csv_row["redacted_conversation_a"] = redacted_conversation
+            csv_row["entities"] = entities
+            csv_row["redacted_entities"] = [e for e in entities if e["category"] not in ENTITIES_TO_IGNORE]
+            csv_row["redacted_conversation_b"] = replace_user_entries(copy.deepcopy(row["conversation_b"]), redacted_conversation)
+            csv_row["pii_detection_succeeded"] = True
+            csv_row["redacted"] = redacted
+        else:
             csv_row["redacted_conversation_a"] = row["conversation_a"]
-            csv_row["entities_a"] = []
+            csv_row["entities"] = []
+            csv_row["redacted_entities"] = []
             csv_row["redacted_conversation_b"] = row["conversation_b"]
-            csv_row["entities_b"] = []
-            csv_row["unknown_language"] = True
+            csv_row["pii_detection_succeeded"] = False
+            csv_row["redacted"] = False
+            print(f"Unknown language: {row['language']}")
 
         # Write the processed row to the CSV
         writer.writerow(csv_row)
