@@ -130,6 +130,10 @@ def get_prompt_separator(conv):
         user_turn_separator = conv.sep2
         assistant_turn_separator = conv.roles[1] + " "
 
+    elif conv.sep_style == SeparatorStyle.LLAMA3:
+        user_turn_separator = f"<|start_header_id|>{conv.roles[0]}<|end_header_id|>"
+        assistant_turn_separator = f"<|start_header_id|>{conv.roles[1]}<|end_header_id|>"
+
     elif conv.sep_style == SeparatorStyle.CHATML:
         if conv.sep2 is None:
             user_turn_separator = conv.sep + "\n"
@@ -159,6 +163,9 @@ def mask_targets(conversations, targets, tokenizer, conv):
                 i < len(turns) - 1 and turn == ""
             ):  # Last turn is the user_turn_separator
                 break
+
+            if i == 0 and tokenizer.bos_token is not None and turn == tokenizer.bos_token: # Already masked
+                continue
 
             if i != 0:
                 turn = user_turn_separator + turn
