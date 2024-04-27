@@ -132,7 +132,9 @@ def get_prompt_separator(conv):
 
     elif conv.sep_style == SeparatorStyle.LLAMA3:
         user_turn_separator = f"<|start_header_id|>{conv.roles[0]}<|end_header_id|>"
-        assistant_turn_separator = f"<|start_header_id|>{conv.roles[1]}<|end_header_id|>"
+        assistant_turn_separator = (
+            f"<|start_header_id|>{conv.roles[1]}<|end_header_id|>"
+        )
 
     elif conv.sep_style == SeparatorStyle.CHATML:
         if conv.sep2 is None:
@@ -164,7 +166,9 @@ def mask_targets(conversations, targets, tokenizer, conv):
             ):  # Last turn is the user_turn_separator
                 break
 
-            if i == 0 and tokenizer.bos_token is not None and turn == tokenizer.bos_token: # Already masked
+            if (
+                tokenizer.bos_token is not None and turn == tokenizer.bos_token
+            ):  # Already masked
                 continue
 
             if i != 0:
@@ -404,7 +408,9 @@ def train():
     if trainer.is_deepspeed_enabled:
         trainer.save_model()
     else:
-        safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+        safe_save_model_for_hf_trainer(
+            trainer=trainer, output_dir=training_args.output_dir
+        )
 
 
 if __name__ == "__main__":
