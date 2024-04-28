@@ -46,7 +46,7 @@ leader_component_values = [None] * 5
 
 #     return leaderboard_md
 def make_default_md(arena_df, elo_results, mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org). Citation instructions below.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org). Please cite [https://leaderboard.lmsys.org](https://leaderboard.lmsys.org) for leaderboard reference.</span>"
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard 
