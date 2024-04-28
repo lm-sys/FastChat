@@ -32,22 +32,10 @@ basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
 
-# def make_default_md(arena_df, elo_results, mirror=False):
-#     mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org). Contribute by casting your [vote!](https://chat.lmsys.org)</span>"
-#     leaderboard_md = f"""
-#     # 🏆 LMSYS Chatbot Arena Leaderboard 
-#     **Contribute by casting your vote [here!](https://chat.lmsys.org)** &nbsp;&nbsp; [[Blog](https://lmsys.org/blog/2023-05-03-arena/)][[Paper](https://arxiv.org/abs/2403.04132)][[GitHub](https://github.com/lm-sys/FastChat)][[Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md)][[Twitter](https://twitter.com/lmsysorg)][[Discord](https://discord.gg/HSWAKCrnFx)]
-
-#     {mirror_str if mirror else ""}
-    
-#     LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals. We've collected over **800,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
-#     You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
-#     """
-
-#     return leaderboard_md
 def make_default_md(arena_df, elo_results, mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the [LMSYS Organization](https://lmsys.org). Please cite [https://leaderboard.lmsys.org](https://leaderboard.lmsys.org) for leaderboard reference.</span>"
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
+    darker_red_link_color = "#B71C1C"
+    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard 
     <a href='https://lmsys.org/blog/2023-05-03-arena/' style='color: {link_color}; text-decoration: none;'>Blog</a> |
@@ -65,7 +53,34 @@ def make_default_md(arena_df, elo_results, mirror=False):
 
     return leaderboard_md
 
+def make_default_md_1(arena_df, elo_results, mirror=False):
+    link_color = "#1976D2"  # This color should be clear in both light and dark mode
+    darker_red_link_color = "#B71C1C"
+    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
+    leaderboard_md = f"""
+    # 🏆 LMSYS Chatbot Arena Leaderboard 
+    <a href='https://lmsys.org/blog/2023-05-03-arena/' style='color: {link_color}; text-decoration: none;'>Blog</a> |
+    <a href='https://arxiv.org/abs/2403.04132' style='color: {link_color}; text-decoration: none;'>Paper</a> |
+    <a href='https://github.com/lm-sys/FastChat' style='color: {link_color}; text-decoration: none;'>GitHub</a> |
+    <a href='https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md' style='color: {link_color}; text-decoration: none;'>Dataset</a> |
+    <a href='https://twitter.com/lmsysorg' style='color: {link_color}; text-decoration: none;'>Twitter</a> |
+    <a href='https://discord.gg/HSWAKCrnFx' style='color: {link_color}; text-decoration: none;'>Discord</a>
+    """
 
+    return leaderboard_md
+
+def make_default_md_2(arena_df, elo_results, mirror=False):
+    link_color = "#1976D2"  # This color should be clear in both light and dark mode
+    darker_red_link_color = "#B71C1C"
+    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
+    leaderboard_md = f"""
+    {mirror_str if mirror else ""}
+    
+    LMSYS Chatbot Arena is a crowdsourced open platform for LLM evals. We've collected over 800,000 human pairwise comparisons to rank LLMs with the Bradley-Terry model and display the model ratings in Elo-scale.
+    You can find more details in our paper. **Chatbot arena is dependent on community participation, please contribute by casting your vote!**
+    """
+
+    return leaderboard_md
 
 
 
@@ -444,11 +459,21 @@ def build_leaderboard_tab(
         p3 = category_elo_results["Overall"]["bootstrap_elo_rating"]
         p4 = category_elo_results["Overall"]["average_win_rate_bar"]
         arena_df = arena_dfs["Overall"]
-        default_md = make_default_md(
+        # default_md = make_default_md(
+        #     arena_df, category_elo_results["Overall"], mirror=mirror
+        # )
+        default_md = make_default_md_1(
+            arena_df, category_elo_results["Overall"], mirror=mirror
+        )
+        default_md_2= make_default_md_2(
             arena_df, category_elo_results["Overall"], mirror=mirror
         )
 
-    md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
+    with gr.Row():
+        # md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
+        md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
+        vote_button = gr.Button("Vote!", link="https://chat.lmsys.org")
+    md2 = gr.Markdown(default_md_2, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
         data = load_leaderboard_table_csv(leaderboard_table_file)
         model_table_df = pd.DataFrame(data)
@@ -508,7 +533,8 @@ def build_leaderboard_tab(
                         "str",
                         "str",
                     ],
-                    value=highlight_top_models(arena_vals.style),
+                    # value=highlight_top_models(arena_vals.style),
+                    value=arena_vals.style,
                     elem_id="arena_leaderboard_dataframe",
                     height=700,
                     column_widths=[70, 190, 100, 100, 90, 130, 150, 100],
@@ -639,7 +665,7 @@ def build_leaderboard_tab(
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
-            arena_values = highlight_top_models(arena_values)
+            # arena_values = highlight_top_models(arena_values)
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
@@ -670,16 +696,16 @@ def build_leaderboard_tab(
                 wrap=True,
             )
         else:
-            not_arena_values = pd.DataFrame(arena_values, columns=["Rank* (UB)",
-                    "Model",
-                    "Arena Elo",
-                    "95% CI",
-                    "Votes",
-                    "Organization",
-                    "License",
-                    "Knowledge Cutoff",],
-                    )
-            arena_values = highlight_top_models(not_arena_values.style)
+            # not_arena_values = pd.DataFrame(arena_values, columns=["Rank* (UB)",
+            #         "Model",
+            #         "Arena Elo",
+            #         "95% CI",
+            #         "Votes",
+            #         "Organization",
+            #         "License",
+            #         "Knowledge Cutoff",],
+            #         )
+            # arena_values = highlight_top_models(not_arena_values.style)
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
@@ -781,6 +807,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
                     elo_results_file,
                     leaderboard_table_file,
                     show_plot=True,
+                    mirror=True,
                 )
 
             with gr.Tab("Basic Stats", id=1):
