@@ -55,8 +55,6 @@ def make_default_md(arena_df, elo_results, mirror=False):
 
 def make_default_md_1(arena_df, elo_results, mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
-    darker_red_link_color = "#B71C1C"
-    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard 
     <a href='https://lmsys.org/blog/2023-05-03-arena/' style='color: {link_color}; text-decoration: none;'>Blog</a> |
@@ -70,9 +68,7 @@ def make_default_md_1(arena_df, elo_results, mirror=False):
     return leaderboard_md
 
 def make_default_md_2(arena_df, elo_results, mirror=False):
-    link_color = "#1976D2"  # This color should be clear in both light and dark mode
-    darker_red_link_color = "#B71C1C"
-    mirror_str = "<span style='color: red; font-weight: bold;'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
     leaderboard_md = f"""
     {mirror_str if mirror else ""}
     
@@ -794,6 +790,25 @@ def build_demo(elo_results_file, leaderboard_table_file):
     theme = gr.themes.Base.load("theme.json")
     # set text size to large
     theme.text_size = text_size
+    theme.set(
+            button_large_text_size="35px",
+            button_small_text_size="35px",
+            button_large_text_weight= "800",
+            button_small_text_weight= "800",
+            button_shadow="*shadow_drop_lg",
+            button_shadow_hover="*shadow_drop_lg",
+            checkbox_label_shadow="*shadow_drop_lg",
+            button_shadow_active="*shadow_inset",
+            button_secondary_background_fill="*primary_200",
+            button_secondary_background_fill_dark="*primary_700",
+            button_secondary_background_fill_hover="*primary_300",
+            button_secondary_background_fill_hover_dark="*primary_500",
+            button_primary_border_color_dark="*primary_600",
+            button_primary_border_color="*primary_200",
+            button_secondary_text_color="*primary_800",
+            button_cancel_background_fill="*button_secondary_background_fill",
+            button_secondary_text_color_dark="white",
+        )
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
