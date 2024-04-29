@@ -80,13 +80,25 @@ SAMPLING_WEIGHTS = {
 
 # TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-turbo": {"gemini-1.5-pro-preview-0409", "claude-3-opus-20240229", "reka-flash-20240226"},
-    "gemini-1.5-pro-preview-0409": {"gpt-4-turbo", "gemini-1.0-pro-vision", "reka-flash-20240226"},
+    "gpt-4-turbo": {
+        "gemini-1.5-pro-preview-0409",
+        "claude-3-opus-20240229",
+        "reka-flash-20240226",
+    },
+    "gemini-1.5-pro-preview-0409": {
+        "gpt-4-turbo",
+        "gemini-1.0-pro-vision",
+        "reka-flash-20240226",
+    },
     "gemini-1.0-pro-vision": {
         "gpt-4-turbo",
         "gemini-1.5-pro-preview-0409",
     },
-    "claude-3-opus-20240229": {"gpt-4-turbo", "gemini-1.5-pro-preview-0409", "reka-flash-20240226"},
+    "claude-3-opus-20240229": {
+        "gpt-4-turbo",
+        "gemini-1.5-pro-preview-0409",
+        "reka-flash-20240226",
+    },
     "claude-3-sonnet-20240229": {
         "claude-3-opus-20240229",
         "gpt-4-turbo",
