@@ -54,6 +54,7 @@ def make_default_md_2(arena_df, elo_results, mirror=False):
     
     LMSYS Chatbot Arena is a crowdsourced open platform for LLM evals. We've collected over 800,000 human pairwise comparisons to rank LLMs with the Bradley-Terry model and display the model ratings in Elo-scale.
     You can find more details in our paper. **Chatbot arena is dependent on community participation, please contribute by casting your vote!**
+    """
 
     return leaderboard_md
 
