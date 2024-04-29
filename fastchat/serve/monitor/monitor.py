@@ -48,7 +48,7 @@ def make_default_md_1(arena_df, elo_results, mirror=False):
 
 
 def make_default_md_2(arena_df, elo_results, mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://leaderboard.lmsys.org' style='color: #B00020; text-decoration: none;'>leaderboard.lmsys.org</a> for citation purposes.</span>"
     leaderboard_md = f"""
     {mirror_str if mirror else ""}
     
@@ -73,7 +73,7 @@ Code to recreate leaderboard tables and plots in this [notebook]({notebook_url})
 
 ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
 Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
-See Figure 3 below for visualization of the confidence intervals of model scores.
+See Figure 1 below for visualization of the confidence intervals of model scores.
 """
     return leaderboard_md
 
