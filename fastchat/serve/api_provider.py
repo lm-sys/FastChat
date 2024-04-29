@@ -76,9 +76,10 @@ def get_api_provider_stream_iter(
             vertex_ai=True,
         )
     elif model_api_dict["api_type"] == "gemini":
+        prompt = conv.to_openai_api_messages()
         stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
-            conv,
+            prompt,
             temperature,
             top_p,
             max_new_tokens,
@@ -517,9 +518,15 @@ def anthropic_message_api_stream_iter(
 
 
 def gemini_api_stream_iter(
-    model_name, conv, temperature, top_p, max_new_tokens, api_key=None
+    model_name, messages, temperature, top_p, max_new_tokens, api_key=None
 ):
     import google.generativeai as genai  # pip install google-generativeai
+
+    OPENAI_TO_GEMINI_ROLE_MAP = {
+        "user": "user",
+        "assistant": "model",
+        "system": "system",
+    }
 
     if api_key is None:
         api_key = os.environ["GEMINI_API_KEY"]
@@ -532,7 +539,7 @@ def gemini_api_stream_iter(
     }
     params = {
         "model": model_name,
-        "prompt": conv,
+        "prompt": messages,
     }
     params.update(generation_config)
     logger.info(f"==== request ====\n{params}")
@@ -543,16 +550,24 @@ def gemini_api_stream_iter(
         {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
     ]
+
+    history = []
+    system_prompt = None
+    for message in messages[:-1]:
+        role = OPENAI_TO_GEMINI_ROLE_MAP[message["role"]]
+        if role == "system":
+            system_prompt = message["content"]
+            continue
+        history.append({"role": role, "parts": message["content"]})
+
     model = genai.GenerativeModel(
         model_name=model_name,
+        system_instruction=system_prompt,
         generation_config=generation_config,
         safety_settings=safety_settings,
     )
-    history = []
-    for role, message in conv.messages[:-2]:
-        history.append({"role": role, "parts": message})
     convo = model.start_chat(history=history)
-    response = convo.send_message(conv.messages[-2][1], stream=True)
+    response = convo.send_message(messages[-1]["content"], stream=True)
 
     try:
         text = ""
@@ -980,40 +995,21 @@ def reka_api_stream_iter(
 ):
     api_key = api_key or os.environ["REKA_API_KEY"]
 
-    # OPENAI_TO_REKA_ROLE_MAP = {
-    #     "user": "human",
-    #     "assistant": "model",
-    #     # system prompt passed as a human round
-    #     "system": "human",
-    # }
+    use_search_engine = False
+    if "-online" in model_name:
+        model_name = model_name.replace("-online", "")
+        use_search_engine = True
+    request = {
+        "model_name": model_name,
+        "conversation_history": messages,
+        "temperature": temperature,
+        "request_output_len": max_new_tokens,
+        "runtime_top_p": top_p,
+        "stream": True,
+        "use_search_engine": use_search_engine,
+    }
+    logger.info(f"==== request ====\n{request}")
 
-    # chat_history = []
-    # for content_list in messages:
-    #     for message in content_list:
-
-    #         message_type = OPENAI_TO_REKA_ROLE_MAP[message["role"]]
-    #         if not chat_history or chat_history[-1]["type"] != message_type:
-    #             current_turn_dict = dict(
-    #                     type=message_type,
-    #                     text=message["content"],
-    #             )
-
-    #             if "media_url" in message:
-    #                 current_turn_dict["media_url"] = message["media_url"]
-
-    #             chat_history.append(current_turn_dict)
-    #         else:
-    #             # merge consecutive rounds with same role into one round
-    #             chat_history[-1]["text"] += "\n\n" + message["content"]
-
-    request = dict(
-        model_name=model_name,
-        conversation_history=messages,
-        temperature=temperature,
-        request_output_len=max_new_tokens,
-        runtime_top_p=top_p,
-        stream=True,
-    )
     response = requests.post(
         api_base,
         stream=True,

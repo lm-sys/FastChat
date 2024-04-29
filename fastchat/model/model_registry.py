@@ -55,6 +55,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["reka-flash", "reka-flash-online"],
+    "Reka Flash",
+    "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
+    "Multimodal model by Reka",
+)
+
+register_model_info(
     ["command-r-plus"],
     "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
@@ -606,6 +613,13 @@ register_model_info(
     "Llama2-Chinese",
     "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
     "A multi-language large-scale language model (LLM), developed by FlagAlpha.",
+)
+
+register_model_info(
+    ["Meta-Llama-3-8B-Instruct", "Meta-Llama-3-70B-Instruct"],
+    "llama-3",
+    "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct",
+    "Meta developed and released the Meta Llama 3 family of large language models (LLMs), a collection of pretrained and instruction tuned generative text models in 8 and 70B sizes.",
 )
 
 register_model_info(

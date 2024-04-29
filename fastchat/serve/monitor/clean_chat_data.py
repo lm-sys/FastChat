@@ -89,7 +89,7 @@ def clean_chat_data(log_files, action_type):
         if not isinstance(model, str):
             ct_invalid += 1
             continue
-        model = replace_model_name(model)
+        model = replace_model_name(model, row["tstamp"])
 
         try:
             lang_code = detect_language(state["messages"][state["offset"]][1])
