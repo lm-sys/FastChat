@@ -903,7 +903,8 @@ def cohere_api_stream_iter(
 
 def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
     import vertexai
-    from vertexai.preview.generative_models import (
+    from vertexai import generative_models
+    from vertexai.generative_models import (
         GenerationConfig,
         GenerativeModel,
         Image,
@@ -927,12 +928,31 @@ def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tok
     }
     logger.info(f"==== request ====\n{gen_params}")
 
+    safety_settings = [
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+    ]
     generator = GenerativeModel(model_name).generate_content(
         messages,
         stream=True,
         generation_config=GenerationConfig(
             top_p=top_p, max_output_tokens=max_new_tokens, temperature=temperature
         ),
+        safety_settings=safety_settings,
     )
 
     ret = ""

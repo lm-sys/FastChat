@@ -51,6 +51,7 @@ from fastchat.serve.gradio_block_arena_anony import (
 from fastchat.serve.gradio_block_arena_vision import (
     get_vqa_sample,
 )
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -80,13 +81,25 @@ SAMPLING_WEIGHTS = {
 
 # TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-turbo": {"gemini-1.5-pro-preview-0409", "claude-3-opus-20240229", "reka-flash-20240226"},
-    "gemini-1.5-pro-preview-0409": {"gpt-4-turbo", "gemini-1.0-pro-vision", "reka-flash-20240226"},
+    "gpt-4-turbo": {
+        "gemini-1.5-pro-preview-0409",
+        "claude-3-opus-20240229",
+        "reka-flash-20240226",
+    },
+    "gemini-1.5-pro-preview-0409": {
+        "gpt-4-turbo",
+        "gemini-1.0-pro-vision",
+        "reka-flash-20240226",
+    },
     "gemini-1.0-pro-vision": {
         "gpt-4-turbo",
         "gemini-1.5-pro-preview-0409",
     },
-    "claude-3-opus-20240229": {"gpt-4-turbo", "gemini-1.5-pro-preview-0409", "reka-flash-20240226"},
+    "claude-3-opus-20240229": {
+        "gpt-4-turbo",
+        "gemini-1.5-pro-preview-0409",
+        "reka-flash-20240226",
+    },
     "claude-3-sonnet-20240229": {
         "claude-3-opus-20240229",
         "gpt-4-turbo",
@@ -146,9 +159,110 @@ def clear_history_example(request: gr.Request):
     )
 
 
-def add_text(
-    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
+def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
+    with open(get_conv_log_filename(), "a") as fout:
+        data = {
+            "tstamp": round(time.time(), 4),
+            "type": vote_type,
+            "models": [x for x in model_selectors],
+            "states": [x.dict() for x in states],
+            "ip": get_ip(request),
+        }
+        fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
+
+    if ":" not in model_selectors[0]:
+        for i in range(5):
+            names = (
+                "### Model A: " + states[0].model_name,
+                "### Model B: " + states[1].model_name,
+            )
+            yield names + (None,) + (disable_btn,) * 4
+            time.sleep(0.1)
+    else:
+        names = (
+            "### Model A: " + states[0].model_name,
+            "### Model B: " + states[1].model_name,
+        )
+        yield names + (None,) + (disable_btn,) * 4
+
+
+def leftvote_last_response(
+    state0, state1, model_selector0, model_selector1, request: gr.Request
 ):
+    logger.info(f"leftvote (anony). ip: {get_ip(request)}")
+    for x in vote_last_response(
+        [state0, state1], "leftvote", [model_selector0, model_selector1], request
+    ):
+        yield x
+
+
+def rightvote_last_response(
+    state0, state1, model_selector0, model_selector1, request: gr.Request
+):
+    logger.info(f"rightvote (anony). ip: {get_ip(request)}")
+    for x in vote_last_response(
+        [state0, state1], "rightvote", [model_selector0, model_selector1], request
+    ):
+        yield x
+
+
+def tievote_last_response(
+    state0, state1, model_selector0, model_selector1, request: gr.Request
+):
+    logger.info(f"tievote (anony). ip: {get_ip(request)}")
+    for x in vote_last_response(
+        [state0, state1], "tievote", [model_selector0, model_selector1], request
+    ):
+        yield x
+
+
+def bothbad_vote_last_response(
+    state0, state1, model_selector0, model_selector1, request: gr.Request
+):
+    logger.info(f"bothbad_vote (anony). ip: {get_ip(request)}")
+    for x in vote_last_response(
+        [state0, state1], "bothbad_vote", [model_selector0, model_selector1], request
+    ):
+        yield x
+
+
+def regenerate(state0, state1, request: gr.Request):
+    logger.info(f"regenerate (anony). ip: {get_ip(request)}")
+    states = [state0, state1]
+    if state0.regen_support and state1.regen_support:
+        for i in range(num_sides):
+            states[i].conv.update_last_message(None)
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [None]
+            + [disable_btn] * 6
+        )
+    states[0].skip_next = True
+    states[1].skip_next = True
+    return (
+        states + [x.to_gradio_chatbot() for x in states] + [None] + [no_change_btn] * 6
+    )
+
+
+def clear_history(request: gr.Request):
+    logger.info(f"clear_history (anony). ip: {get_ip(request)}")
+    return (
+        [None] * num_sides
+        + [None] * num_sides
+        + anony_names
+        + [None]
+        + [invisible_btn] * 4
+        + [disable_btn] * 2
+        + [""]
+    )
+
+
+def add_text(
+    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+):
+    text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -176,7 +290,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + ["", None]
+            + [None]
             + [
                 no_change_btn,
             ]
@@ -199,7 +313,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG, None]
+            + [{"text": CONVERSATION_LIMIT_MSG}]
             + [
                 no_change_btn,
             ]
@@ -209,7 +323,7 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, image)
+        post_processed_text = _prepare_text_with_image(states[i], text, images)
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -221,7 +335,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + ["", None]
+        + [None]
         + [
             disable_btn,
         ]
@@ -251,13 +365,8 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Row():
-        with gr.Column(scale=2):
-            imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
-            if random_questions:
-                global vqa_samples
-                with open(random_questions, "r") as f:
-                    vqa_samples = json.load(f)
-                random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+        # with gr.Column(scale=2):
+        # imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
 
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
@@ -303,14 +412,21 @@ Note: You can only chat with **one image per conversation**. You can upload imag
         )
 
     with gr.Row():
-        textbox = gr.Textbox(
+        textbox = gr.MultimodalTextbox(
+            file_types=["image"],
             show_label=False,
-            placeholder="👉 Enter your prompt and press ENTER",
+            container=True,
+            placeholder="Click add or drop your image here",
             elem_id="input_box",
         )
-        send_btn = gr.Button(value="Send", variant="primary", scale=0)
+        # send_btn = gr.Button(value="Send", variant="primary", scale=0)
 
     with gr.Row() as button_row:
+        if random_questions:
+            global vqa_samples
+            with open(random_questions, "r") as f:
+                vqa_samples = json.load(f)
+            random_btn = gr.Button(value="🎲 Random Example", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
@@ -409,14 +525,14 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    imagebox.upload(
-        clear_history_example, None, states + chatbots + model_selectors + btn_list
-    )
+    # imagebox.upload(
+    #     clear_history_example, None, states + chatbots + model_selectors + btn_list
+    # )
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list + [slow_warning],
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -427,23 +543,23 @@ function (a, b, c, d) {
         btn_list,
     )
 
-    send_btn.click(
-        add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
-    ).then(
-        bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
-        states + chatbots + btn_list,
-    ).then(
-        flash_buttons, [], btn_list
-    )
+    # send_btn.click(
+    #     add_text,
+    #     states + model_selectors + [textbox],
+    #     states + chatbots + [textbox] + btn_list,
+    # ).then(
+    #     bot_response_multi,
+    #     states + [temperature, top_p, max_output_tokens],
+    #     states + chatbots + btn_list,
+    # ).then(
+    #     flash_buttons, [], btn_list
+    # )
 
     if random_questions:
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
+            [textbox],  # Outputs are textbox and imagebox
         ).then(
             clear_history_example, None, states + chatbots + model_selectors + btn_list
         )

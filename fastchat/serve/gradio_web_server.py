@@ -281,8 +281,10 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def _prepare_text_with_image(state, text, image):
-    if image is not None:
+def _prepare_text_with_image(state, text, images):
+    if images is not None and len(images) > 0:
+        image = images[0]
+
         if len(state.conv.get_images()) > 0:
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
