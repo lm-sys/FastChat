@@ -55,6 +55,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["reka-flash", "reka-flash-online"],
+    "Reka Flash",
+    "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
+    "Multimodal model by Reka",
+)
+
+register_model_info(
     ["command-r-plus"],
     "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
