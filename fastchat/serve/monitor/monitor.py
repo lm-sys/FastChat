@@ -441,8 +441,10 @@ def build_leaderboard_tab(
         )
 
     with gr.Row():
-        md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
-        vote_button = gr.Button("Vote!", link="https://chat.lmsys.org")
+        with gr.Column(scale=4):
+            md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
+        with gr.Column(scale=1):
+            vote_button = gr.Button("Vote!", link="https://chat.lmsys.org")
     md2 = gr.Markdown(default_md_2, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
         data = load_leaderboard_table_csv(leaderboard_table_file)
@@ -526,7 +528,20 @@ def build_leaderboard_tab(
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 1: Fraction of Model A Wins for All Non-tied A vs. B Battles",
+                                "#### Figure 1: Confidence Intervals on Model Strength (via Bootstrapping)",
+                                elem_id="plot-title",
+                            )
+                            plot_3 = gr.Plot(p3, show_label=False)
+                        with gr.Column():
+                            gr.Markdown(
+                                "#### Figure 2: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)",
+                                elem_id="plot-title",
+                            )
+                            plot_4 = gr.Plot(p4, show_label=False)
+                    with gr.Row():
+                        with gr.Column():
+                            gr.Markdown(
+                                "#### Figure 3: Fraction of Model A Wins for All Non-tied A vs. B Battles",
                                 elem_id="plot-title",
                             )
                             plot_1 = gr.Plot(
@@ -534,24 +549,10 @@ def build_leaderboard_tab(
                             )
                         with gr.Column():
                             gr.Markdown(
-                                "#### Figure 2: Battle Count for Each Combination of Models (without Ties)",
+                                "#### Figure 4: Battle Count for Each Combination of Models (without Ties)",
                                 elem_id="plot-title",
                             )
                             plot_2 = gr.Plot(p2, show_label=False)
-                    with gr.Row():
-                        with gr.Column():
-                            gr.Markdown(
-                                "#### Figure 3: Confidence Intervals on Model Strength (via Bootstrapping)",
-                                elem_id="plot-title",
-                            )
-                            plot_3 = gr.Plot(p3, show_label=False)
-                        with gr.Column():
-                            gr.Markdown(
-                                "#### Figure 4: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)",
-                                elem_id="plot-title",
-                            )
-                            plot_4 = gr.Plot(p4, show_label=False)
-
             with gr.Tab("Full Leaderboard", id=1):
                 md = make_full_leaderboard_md(elo_results)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
@@ -761,26 +762,23 @@ def build_demo(elo_results_file, leaderboard_table_file):
 
     text_size = gr.themes.sizes.text_lg
     # load theme from theme.json
-    theme = gr.themes.Base.load("theme.json")
+    theme = gr.themes.Default.load("theme.json")
     # set text size to large
     theme.text_size = text_size
     theme.set(
-            button_large_text_size="35px",
-            button_small_text_size="35px",
-            button_large_text_weight= "800",
-            button_small_text_weight= "800",
+            button_large_text_size="40px",
+            button_small_text_size="40px",
+            button_large_text_weight= "1000",
+            button_small_text_weight= "1000",
             button_shadow="*shadow_drop_lg",
             button_shadow_hover="*shadow_drop_lg",
             checkbox_label_shadow="*shadow_drop_lg",
             button_shadow_active="*shadow_inset",
-            button_secondary_background_fill="*primary_200",
+            button_secondary_background_fill="*primary_300",
             button_secondary_background_fill_dark="*primary_700",
-            button_secondary_background_fill_hover="*primary_300",
+            button_secondary_background_fill_hover="*primary_200",
             button_secondary_background_fill_hover_dark="*primary_500",
-            button_primary_border_color_dark="*primary_600",
-            button_primary_border_color="*primary_200",
             button_secondary_text_color="*primary_800",
-            button_cancel_background_fill="*button_secondary_background_fill",
             button_secondary_text_color_dark="white",
         )
 
