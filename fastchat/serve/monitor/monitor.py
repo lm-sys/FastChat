@@ -31,6 +31,7 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
+
 def make_default_md_1(arena_df, elo_results, mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
@@ -45,6 +46,7 @@ def make_default_md_1(arena_df, elo_results, mirror=False):
 
     return leaderboard_md
 
+
 def make_default_md_2(arena_df, elo_results, mirror=False):
     mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please cite <a href='https://leaderboard.lmsys.org' style='color: red; text-decoration: none;'>leaderboard.lmsys.org</a> for leaderboard reference.</span>"
     leaderboard_md = f"""
@@ -55,7 +57,6 @@ def make_default_md_2(arena_df, elo_results, mirror=False):
     """
 
     return leaderboard_md
-
 
 
 def make_arena_leaderboard_md(arena_df):
@@ -283,17 +284,18 @@ def recompute_final_ranking(arena_df):
                 ranking[model_a] += 1
     return list(ranking.values())
 
+
 def highlight_top_models(df):
     def highlight_max_rank(s):
         # Pastel Yellow with transparency, rgba(red, green, blue, alpha)
         highlight_color = "rgba(255, 255, 128, 0.2)"  # 50% transparent
         if int(s["Rank* (UB)"].replace("↑", "").replace("↓", "")) == 1:
-            return [f'background-color: {highlight_color}' for _ in s]
+            return [f"background-color: {highlight_color}" for _ in s]
         else:
-            return ['' for _ in s]
+            return ["" for _ in s]
+
     # Apply and return the styled DataFrame
     return df.apply(highlight_max_rank, axis=1)
-
 
 
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
@@ -436,7 +438,7 @@ def build_leaderboard_tab(
         default_md = make_default_md_1(
             arena_df, category_elo_results["Overall"], mirror=mirror
         )
-        default_md_2= make_default_md_2(
+        default_md_2 = make_default_md_2(
             arena_df, category_elo_results["Overall"], mirror=mirror
         )
 
@@ -622,7 +624,8 @@ def build_leaderboard_tab(
             ]
 
         return elo_datarame.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
-            highlight_rank_max, subset=["Delta"])
+            highlight_rank_max, subset=["Delta"]
+        )
 
     def update_leaderboard_and_plots(category):
         arena_subset_df = arena_dfs[category]
@@ -766,21 +769,21 @@ def build_demo(elo_results_file, leaderboard_table_file):
     # set text size to large
     theme.text_size = text_size
     theme.set(
-            button_large_text_size="40px",
-            button_small_text_size="40px",
-            button_large_text_weight= "1000",
-            button_small_text_weight= "1000",
-            button_shadow="*shadow_drop_lg",
-            button_shadow_hover="*shadow_drop_lg",
-            checkbox_label_shadow="*shadow_drop_lg",
-            button_shadow_active="*shadow_inset",
-            button_secondary_background_fill="*primary_300",
-            button_secondary_background_fill_dark="*primary_700",
-            button_secondary_background_fill_hover="*primary_200",
-            button_secondary_background_fill_hover_dark="*primary_500",
-            button_secondary_text_color="*primary_800",
-            button_secondary_text_color_dark="white",
-        )
+        button_large_text_size="40px",
+        button_small_text_size="40px",
+        button_large_text_weight="1000",
+        button_small_text_weight="1000",
+        button_shadow="*shadow_drop_lg",
+        button_shadow_hover="*shadow_drop_lg",
+        checkbox_label_shadow="*shadow_drop_lg",
+        button_shadow_active="*shadow_inset",
+        button_secondary_background_fill="*primary_300",
+        button_secondary_background_fill_dark="*primary_700",
+        button_secondary_background_fill_hover="*primary_200",
+        button_secondary_background_fill_hover_dark="*primary_500",
+        button_secondary_text_color="*primary_800",
+        button_secondary_text_color_dark="white",
+    )
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
