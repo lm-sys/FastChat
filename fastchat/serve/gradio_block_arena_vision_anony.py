@@ -50,6 +50,9 @@ from fastchat.serve.gradio_block_arena_anony import (
 )
 from fastchat.serve.gradio_block_arena_vision import (
     get_vqa_sample,
+    set_invisible_image,
+    set_visible_image,
+    add_image,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -365,8 +368,13 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Row():
-        # with gr.Column(scale=2):
-        # imagebox = gr.Image(type="pil", sources=["upload", "clipboard"])
+        with gr.Column(scale=2, visible=False) as image_column:
+            imagebox = gr.Image(
+                type="pil",
+                label="Here is a picture of your image!",
+                show_label=True,
+                interactive=False,
+            )
 
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
@@ -529,11 +537,15 @@ function (a, b, c, d) {
     #     clear_history_example, None, states + chatbots + model_selectors + btn_list
     # )
 
+    textbox.input(add_image, [textbox], [imagebox]).then(
+        set_visible_image, [textbox], [image_column]
+    )
+
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
         states + chatbots + [textbox] + btn_list + [slow_warning],
-    ).then(
+    ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
@@ -542,7 +554,6 @@ function (a, b, c, d) {
         [],
         btn_list,
     )
-
     # send_btn.click(
     #     add_text,
     #     states + model_selectors + [textbox],
@@ -559,8 +570,8 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox],  # Outputs are textbox and imagebox
-        ).then(
+            [textbox, imagebox],  # Outputs are textbox and imagebox
+        ).then(set_visible_image, [textbox], [image_column]).then(
             clear_history_example, None, states + chatbots + model_selectors + btn_list
         )
 

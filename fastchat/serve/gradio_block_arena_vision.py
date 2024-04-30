@@ -43,13 +43,35 @@ no_change_btn = gr.Button()
 enable_btn = gr.Button(interactive=True, visible=True)
 disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
+visible_image_column = gr.Image(visible=True)
+invisible_image_column = gr.Image(visible=False)
 
 
 def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     res = {"text": "", "files": [path]}
-    return res
+    return (res, path)
+
+
+def set_visible_image(textbox):
+    images = textbox["files"]
+    if len(images) == 0:
+        return invisible_image_column
+
+    return visible_image_column
+
+
+def set_invisible_image():
+    return invisible_image_column
+
+
+def add_image(textbox):
+    images = textbox["files"]
+    if len(images) == 0:
+        return None
+
+    return images[0]
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -196,70 +218,76 @@ Note: You can only chat with **one image per conversation**. You can upload imag
             elem_id="input_box",
         )
 
+        with gr.Column(scale=2, visible=False) as image_column:
+            imagebox = gr.Image(
+                type="pil",
+                label="Here is a picture of your image!",
+                show_label=True,
+                interactive=False,
+            )
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
                 elem_id="chatbot", label="Scroll down and start chatting", height=550
             )
 
-            with gr.Row():
-                with gr.Column(scale=8):
-                    textbox.render()
-                # with gr.Column(scale=1, min_width=50):
-                #     send_btn = gr.Button(value="Send", variant="primary")
+    with gr.Row():
+        textbox.render()
+        # with gr.Column(scale=1, min_width=50):
+        #     send_btn = gr.Button(value="Send", variant="primary")
 
-            with gr.Row(elem_id="buttons"):
-                if random_questions:
-                    global vqa_samples
-                    with open(random_questions, "r") as f:
-                        vqa_samples = json.load(f)
-                    random_btn = gr.Button(value="🎲 Random Example", interactive=True)
-                upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
-                downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
-                flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
-                regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-                clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
+    with gr.Row(elem_id="buttons"):
+        if random_questions:
+            global vqa_samples
+            with open(random_questions, "r") as f:
+                vqa_samples = json.load(f)
+            random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+        upvote_btn = gr.Button(value="👍  Upvote", interactive=False)
+        downvote_btn = gr.Button(value="👎  Downvote", interactive=False)
+        flag_btn = gr.Button(value="⚠️  Flag", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
+        clear_btn = gr.Button(value="🗑️  Clear", interactive=False)
 
-            cur_dir = os.path.dirname(os.path.abspath(__file__))
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-            examples = gr.Examples(
-                examples=[
-                    {
-                        "text": "How can I prepare a delicious meal using these ingredients?",
-                        "files": [f"{cur_dir}/example_images/fridge.jpg"],
-                    },
-                    {
-                        "text": "What might the woman on the right be thinking about?",
-                        "files": [f"{cur_dir}/example_images/distracted.jpg"],
-                    },
-                ],
-                inputs=[textbox],
-            )
+    examples = gr.Examples(
+        examples=[
+            {
+                "text": "How can I prepare a delicious meal using these ingredients?",
+                "files": [f"{cur_dir}/example_images/fridge.jpg"],
+            },
+            {
+                "text": "What might the woman on the right be thinking about?",
+                "files": [f"{cur_dir}/example_images/distracted.jpg"],
+            },
+        ],
+        inputs=[textbox],
+    )
 
-            with gr.Accordion("Parameters", open=False) as parameter_row:
-                temperature = gr.Slider(
-                    minimum=0.0,
-                    maximum=1.0,
-                    value=0.2,
-                    step=0.1,
-                    interactive=True,
-                    label="Temperature",
-                )
-                top_p = gr.Slider(
-                    minimum=0.0,
-                    maximum=1.0,
-                    value=0.7,
-                    step=0.1,
-                    interactive=True,
-                    label="Top P",
-                )
-                max_output_tokens = gr.Slider(
-                    minimum=0,
-                    maximum=2048,
-                    value=1024,
-                    step=64,
-                    interactive=True,
-                    label="Max output tokens",
-                )
+    with gr.Accordion("Parameters", open=False) as parameter_row:
+        temperature = gr.Slider(
+            minimum=0.0,
+            maximum=1.0,
+            value=0.2,
+            step=0.1,
+            interactive=True,
+            label="Temperature",
+        )
+        top_p = gr.Slider(
+            minimum=0.0,
+            maximum=1.0,
+            value=0.7,
+            step=0.1,
+            interactive=True,
+            label="Top P",
+        )
+        max_output_tokens = gr.Slider(
+            minimum=0,
+            maximum=2048,
+            value=1024,
+            step=64,
+            interactive=True,
+            label="Max output tokens",
+        )
 
     if add_promotion_links:
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
@@ -291,11 +319,15 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
     examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
+    textbox.input(add_image, [textbox], [imagebox]).then(
+        set_visible_image, [textbox], [image_column]
+    )
+
     textbox.submit(
         add_text,
         [state, model_selector, textbox],
         [state, chatbot, textbox] + btn_list,
-    ).then(
+    ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
@@ -305,7 +337,9 @@ Note: You can only chat with **one image per conversation**. You can upload imag
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox],  # Outputs are textbox and imagebox
-        ).then(clear_history_example, None, [state, chatbot] + btn_list)
+            [textbox, imagebox],  # Outputs are textbox and imagebox
+        ).then(set_visible_image, [textbox], [image_column]).then(
+            clear_history_example, None, [state, chatbot] + btn_list
+        )
 
     return [state, model_selector]
