@@ -245,7 +245,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
+    parser.add_argument("--worker-address", type=str, default=None)
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
@@ -281,6 +281,8 @@ if __name__ == "__main__":
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
+    if args.worker_address is None:
+        args.worker_address = f"http://localhost:{args.port}"
     if args.model_path:
         args.model = args.model_path
     if args.num_gpus > 1:
