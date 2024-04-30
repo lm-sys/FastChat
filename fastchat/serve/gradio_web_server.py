@@ -38,6 +38,7 @@ from fastchat.utils import (
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     moderation_filter,
+    image_moderation_filter,
     parse_gradio_auth_creds,
     load_image,
 )
@@ -314,6 +315,8 @@ def add_text(state, model_selector, text, image, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
     flagged = moderation_filter(all_conv_text, [state.model_name])
+    if image is not None:
+        flagged = image_moderation_filter(image)
     # flagged = moderation_filter(text, [state.model_name])
     if flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
@@ -946,6 +949,11 @@ if __name__ == "__main__":
         help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
+        "--register-azure-api-endpoint-file",
+        type=str,
+        help="Register API-based azure endpoints from a JSON file",
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
@@ -969,6 +977,13 @@ if __name__ == "__main__":
     models, all_models = get_model_list(
         args.controller_url, args.register_api_endpoint_file, vision_arena=False
     )
+
+    if args.register_azure_api_endpoint_file:
+        azure_api_endpoint_info = json.load(
+            open(args.register_azure_api_endpoint_file)
+        )
+        for item, value in azure_api_endpoint_info.items():
+            os.environ[item] = value
 
     # Set authorization credentials
     auth = None

@@ -35,6 +35,7 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -129,6 +130,8 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
     flagged = moderation_filter(all_conv_text, [state.model_name])
+    if len(images) > 0:
+        flagged = image_moderation_filter(images[0])
     # flagged = moderation_filter(text, [state.model_name])
     if flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")

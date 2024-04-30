@@ -193,6 +193,33 @@ def moderation_filter(text, model_list, do_moderation=False):
         return oai_moderation(text, custom_thresholds)
     return False
 
+def pil_image_to_byte_array(pil_image, format='JPEG'):
+    img_byte_arr = BytesIO()
+    pil_image.save(img_byte_arr, format=format)
+    img_byte_arr = img_byte_arr.getvalue()
+    return img_byte_arr
+
+def image_moderation_filter(image):
+    print(f"moderating image: {image}")
+    # Set the content type to the appropriate image format
+    endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
+    api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
+    headers = {
+        'Content-Type': 'image/jpeg',  
+        'Ocp-Apim-Subscription-Key': api_key
+    }
+
+    # Specify the API URL
+    url = f'{endpoint}contentmoderator/moderate/v1.0/ProcessImage/Evaluate'
+    if type(image) == str:
+        with open(image, 'rb') as image_data:
+            image_bytes = image_data.read()
+    else:
+        image_bytes = pil_image_to_byte_array(image, format='JPEG')  # Use 'PNG' or other formats as needed
+    response = requests.post(url, headers=headers, data=image_bytes).json()
+    print(response)
+    return response['IsImageAdultClassified'] or response['IsImageRacyClassified']
+
 
 def clean_flant5_ckpt(ckpt_path):
     """

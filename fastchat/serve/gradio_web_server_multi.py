@@ -6,6 +6,8 @@ It supports chatting with a single model or chatting with two models side-by-sid
 import argparse
 import pickle
 import time
+import json
+import os
 
 import gradio as gr
 
@@ -261,6 +263,11 @@ if __name__ == "__main__":
         help="Register API-based model endpoints from a JSON file",
     )
     parser.add_argument(
+        "--register-azure-api-endpoint-file",
+        type=str,
+        help="Register API-based azure endpoints from a JSON file",
+    )
+    parser.add_argument(
         "--gradio-auth-path",
         type=str,
         help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
@@ -312,6 +319,14 @@ if __name__ == "__main__":
     auth = None
     if args.gradio_auth_path is not None:
         auth = parse_gradio_auth_creds(args.gradio_auth_path)
+
+    if args.register_azure_api_endpoint_file:
+        azure_api_endpoint_info = json.load(
+            open(args.register_azure_api_endpoint_file)
+        )
+        for item, value in azure_api_endpoint_info.items():
+            os.environ[item] = value
+
 
     # Launch the demo
     demo = build_demo(

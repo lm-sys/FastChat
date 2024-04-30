@@ -55,6 +55,7 @@ from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -300,6 +301,8 @@ def add_text(
 
     model_list = [states[i].model_name for i in range(num_sides)]
     flagged = moderation_filter(text, model_list)
+    if len(images) > 0:
+        flagged = image_moderation_filter(images[0])
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
