@@ -41,6 +41,22 @@ WORKER_API_EMBEDDING_BATCH_SIZE = int(
     os.getenv("FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE", 4)
 )
 
+link_color = "#1976D2"  
+SOCIAL_LINKS="""<a href='https://github.com/lm-sys/FastChat' style='color: #1976D2; text-decoration: none;'>GitHub</a> |
+<a href='https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md' style='color: #1976D2; text-decoration: none;'>Dataset</a> |
+<a href='https://twitter.com/lmsysorg' style='color: #1976D2; text-decoration: none;'>Twitter</a> |
+<a href='https://discord.gg/HSWAKCrnFx' style='color: #1976D2; text-decoration: none;'>Discord</a>"""
+
+VISION_SOCIAL_LINKS="""<a href='https://github.com/lm-sys/FastChat' style='color: #1976D2; text-decoration: none;'>GitHub</a> |
+<a href='https://twitter.com/lmsysorg' style='color: #1976D2; text-decoration: none;'>Twitter</a> |
+<a href='https://discord.gg/HSWAKCrnFx' style='color: #1976D2; text-decoration: none;'>Discord</a>"""
+
+ACADEMIC_AND_SOCIAL_LINKS="""<a href='https://lmsys.org/blog/2023-05-03-arena/' style='color: #1976D2; text-decoration: none;'>Blog</a> |
+<a href='https://arxiv.org/abs/2403.04132' style='color: #1976D2; text-decoration: none;'>Paper</a> |
+<a href='https://github.com/lm-sys/FastChat' style='color: #1976D2; text-decoration: none;'>GitHub</a> |
+<a href='https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md' style='color: #1976D2; text-decoration: none;'>Dataset</a> |
+<a href='https://twitter.com/lmsysorg' style='color: #1976D2; text-decoration: none;'>Twitter</a> |
+<a href='https://discord.gg/HSWAKCrnFx' style='color: #1976D2; text-decoration: none;'>Discord</a>"""
 
 class ErrorCode(IntEnum):
     """
