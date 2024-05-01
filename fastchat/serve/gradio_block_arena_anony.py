@@ -487,7 +487,7 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
