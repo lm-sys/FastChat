@@ -131,9 +131,14 @@ window.__gradio_mode__ = "app";
 </script>
         """
 
+    theme = gr.themes.Default.load("theme.json")
+    theme.text_size = text_size
+    
+
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Default(text_size=text_size),
+        # theme=gr.themes.Default(text_size=text_size),
+        theme=theme,
         css=block_css,
         head=head_js,
     ) as demo:
@@ -158,7 +163,7 @@ window.__gradio_mode__ = "app";
             )
 
             if args.vision_arena:
-                with gr.Tab("Vision Arena", id=3):
+                with gr.Tab("⭐️⭐️ Vision Arena ⭐️⭐️", id=3):
                     with gr.Tab("⚔️  Vision Arena (battle)", id=3):
                         side_by_side_vision_anony_list = (
                             build_side_by_side_vision_ui_anony(

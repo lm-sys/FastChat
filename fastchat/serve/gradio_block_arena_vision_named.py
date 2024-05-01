@@ -16,6 +16,7 @@ from fastchat.constants import (
     SLOW_MODEL_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    VISION_SOCIAL_LINKS,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import (
@@ -223,9 +224,9 @@ def add_text(
 
 
 def build_side_by_side_vision_ui_named(models, random_questions=None):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  Vision Arena ⚔️ : Benchmarking VLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+{VISION_SOCIAL_LINKS}
 
 ## 📜 Rules
 - Chat with any two models side-by-side and vote!
@@ -233,7 +234,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Click "Clear history" to start a new round.
 
 ## 🤖 Choose two models to compare
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]

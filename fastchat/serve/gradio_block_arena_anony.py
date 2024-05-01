@@ -15,6 +15,7 @@ from fastchat.constants import (
     SLOW_MODEL_MSG,
     BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    ACADEMIC_AND_SOCIAL_LINKS,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import flash_buttons
@@ -500,9 +501,9 @@ def bot_response_multi(
 
 
 def build_side_by_side_ui_anony(models):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+{ACADEMIC_AND_SOCIAL_LINKS}
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!

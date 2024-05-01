@@ -26,6 +26,7 @@ from fastchat.constants import (
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
+    SOCIAL_LINKS,
 )
 from fastchat.model.model_adapter import (
     get_conversation_template,
@@ -614,6 +615,12 @@ block_css = """
 #chatbot .prose {
     font-size: 105% !important;
 }
+
+.app {
+  max-width: 100% !important;
+  padding: 0px !important;               
+}
+
 .sponsor-image-about img {
     margin: 0 20px;
     margin-top: 20px;
@@ -653,6 +660,16 @@ block_css = """
     background-color: black;
     vertical-align: middle;
     animation: blink 1s infinite;
+}
+
+a {
+    color: #1976D2; /* Your current link color, a shade of blue */
+    text-decoration: none; /* Removes underline from links */
+}
+
+a:hover {
+    color: #63A4FF; /* This can be any color you choose for hover */
+    text-decoration: underline; /* Adds underline on hover */
 }
 
 .dark .cursor {
@@ -703,6 +720,9 @@ We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at Git
 ## Arena Core Team
 - [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
 
+## Vision Arena Team
+- [Lisa Dunlap]((https://lisabdunlap.com/) (co-lead), [Christopher Chou](https://github.com/BabyChouSr#:~:text=https%3A//chrischou.netlify.app/) (co-lead) + Arena Core Team
+
 ## Past Members
 - [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
 
@@ -735,8 +755,8 @@ We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https
 
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
-        """
-- | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+        f"""
+{SOCIAL_LINKS}
 - Introducing Llama 2: The Next Generation Open Source Large Language Model. [[Website]](https://ai.meta.com/llama/)
 - Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
 
@@ -875,9 +895,14 @@ def build_single_model_ui(models, add_promotion_links=False):
 
 
 def build_demo(models):
+    text_size = gr.themes.sizes.text_md
+    theme = gr.themes.Default.load("theme.json")
+    theme.text_size = text_size
+    
     with gr.Blocks(
         title="Chat with Open Large Language Models",
-        theme=gr.themes.Default(),
+        # theme=gr.themes.Default(),
+        theme=theme,
         css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)

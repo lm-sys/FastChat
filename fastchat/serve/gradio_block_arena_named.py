@@ -14,6 +14,7 @@ from fastchat.constants import (
     CONVERSATION_LIMIT_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    ACADEMIC_AND_SOCIAL_LINKS,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_web_server import (
@@ -298,9 +299,9 @@ def flash_buttons():
 
 
 def build_side_by_side_ui_named(models):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+{ACADEMIC_AND_SOCIAL_LINKS}
 
 ## 📜 Rules
 - Chat with any two models side-by-side and vote!

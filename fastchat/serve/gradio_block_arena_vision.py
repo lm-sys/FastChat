@@ -20,6 +20,8 @@ from fastchat.constants import (
     CONVERSATION_LIMIT_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SOCIAL_LINKS,
+    VISION_SOCIAL_LINKS
 )
 from fastchat.serve.gradio_web_server import (
     get_model_description_md,
@@ -156,10 +158,10 @@ def build_single_vision_language_model_ui(
     models, add_promotion_links=False, random_questions=None
 ):
     promotion = (
-        """
-| [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+        f"""
+{VISION_SOCIAL_LINKS}
 
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
         if add_promotion_links
         else ""
