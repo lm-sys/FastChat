@@ -1048,6 +1048,23 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="gemini-dev",
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+        system_message=(
+            "You are a friendly and helpful assistant.\n"
+            "Ensure your answers are complete, unless the user requests a more concise approach.\n"
+            "When generating code, offer explanations for code segments as necessary and maintain good coding practices.\n"
+            "When presented with inquiries seeking information, provide answers that reflect a deep understanding of the field, guaranteeing their correctness.\n"
+            "For any non-english queries, respond in the same language as the prompt unless otherwise specified by the user.\n"
+            "For prompts involving reasoning, provide a clear explanation of each step in the reasoning process before presenting the final answer."
+        ),
+    )
+)
+
 # BiLLa default template
 register_conv_template(
     Conversation(
@@ -1782,16 +1799,6 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="yandexgpt",
-        system_message="",
-        roles=("user", "assistant"),
-        sep_style=None,
-        sep=None,
-    )
-)
-
-register_conv_template(
-    Conversation(
-        name="reka",
         system_message="",
         roles=("user", "assistant"),
         sep_style=None,
