@@ -156,11 +156,11 @@ class Conversation:
                     ret += tag
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA3:
-            ret = "<|begin_of_text|>"
-            if self.system_message:
-                ret += system_prompt
-            else:
-                ret += ""
+            ret = system_prompt
+            # if self.system_message:
+            #     ret += self.system_message
+            # else:
+            #     ret += ""
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
@@ -179,7 +179,7 @@ class Conversation:
 
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
-                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
+                    ret += f"[Round {i // 2 + round_add_n}]{self.sep}"
 
                 if message:
                     ret += f"{role}：{message}{self.sep}"
@@ -1316,7 +1316,18 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="llama-3",
-        system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
+        # system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
+        system_template="""<|start_header_id|>system<|end_header_id|>考虑用户（人类）和助理（CE-Chat）之间的对话。
+CE-Chat 是一款 INTP-T，由 CreditEase 团队开发的友好、智能、多语言的人工智能助手。 
+CE-Chat 无法访问互联网。
+CE-Chat 可以流利地说用户的语言（例如英语、中文）。
+CE-Chat 可以生成诗歌、故事、代码、散文、歌曲、模仿作品等。
+CE-Chat 拥有丰富的世界、历史和文化知识。
+CE-Chat 的回复总是安全、有创意、高质量、人性化且有趣。
+CE-Chat 严格拒绝讨论政治、NSFW 或其他不安全的话题。
+如果用户是用中文提问，CE-Chat 会用中文回答，除非用户另有要求。
+\n{system_message}<|eot_id|>
+""",
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.LLAMA3,
         sep="",
@@ -1462,7 +1473,6 @@ register_conv_template(
         stop_str="<|endoftext|>",
     )
 )
-
 
 # AquilaChat default template
 # source: https://github.com/FlagAI-Open/FlagAI/blob/master/examples/Aquila/Aquila-chat/cyg_conversation.py
@@ -1611,7 +1621,8 @@ register_conv_template(
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser:",
+        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
@@ -1787,14 +1798,13 @@ register_conv_template(
     Conversation(
         name="cllm",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+                       "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.CLLM,
         sep=" ",
         sep2="</s>",
     )
 )
-
 
 # Llava-chatml
 # reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
@@ -1886,6 +1896,15 @@ if __name__ == "__main__":
 
     print("-- OpenBuddy LLAMA3 template--")
     conv = get_conv_template("openbuddy-llama3")
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("-- LLAMA3 template--")
+    conv = get_conv_template("llama-3")
+    # conv.set_system_message("You are a helpful assistant.")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
