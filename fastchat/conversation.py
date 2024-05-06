@@ -179,7 +179,7 @@ class Conversation:
 
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
-                    ret += f"[Round {i // 2 + round_add_n}]{self.sep}"
+                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
 
                 if message:
                     ret += f"{role}：{message}{self.sep}"
@@ -191,15 +191,11 @@ class Conversation:
             for role, message in self.messages:
                 if message:
                     if isinstance(message, tuple):
-                        # 确保 message 是一个元组并且包含至少一个元素
                         message, images = message if len(message) > 1 else (message[0], [])
-                        # 如果 images 是 None，将其转换为一个空列表
                         images = images if images is not None else []
-                        # 如果 message 是 None，将其转换为一个空字符串
                         message = (IMAGE_PLACEHOLDER_STR * len(images) if images else "") + (
                             message if message is not None else "")
                     else:
-                        # 如果 message 是 None，将其转换为一个空字符串
                         message = message if message is not None else ""
                     ret += f"{role}\n{message}{self.sep}\n"
                 else:
@@ -1081,6 +1077,23 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="gemini-dev",
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+        system_message=(
+            "You are a friendly and helpful assistant.\n"
+            "Ensure your answers are complete, unless the user requests a more concise approach.\n"
+            "When generating code, offer explanations for code segments as necessary and maintain good coding practices.\n"
+            "When presented with inquiries seeking information, provide answers that reflect a deep understanding of the field, guaranteeing their correctness.\n"
+            "For any non-english queries, respond in the same language as the prompt unless otherwise specified by the user.\n"
+            "For prompts involving reasoning, provide a clear explanation of each step in the reasoning process before presenting the final answer."
+        ),
+    )
+)
+
 # BiLLa default template
 register_conv_template(
     Conversation(
@@ -1450,6 +1463,7 @@ register_conv_template(
     )
 )
 
+
 # AquilaChat default template
 # source: https://github.com/FlagAI-Open/FlagAI/blob/master/examples/Aquila/Aquila-chat/cyg_conversation.py
 register_conv_template(
@@ -1597,8 +1611,7 @@ register_conv_template(
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser:",
-        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
@@ -1774,13 +1787,14 @@ register_conv_template(
     Conversation(
         name="cllm",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.CLLM,
         sep=" ",
         sep2="</s>",
     )
 )
+
 
 # Llava-chatml
 # reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
