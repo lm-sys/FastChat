@@ -703,6 +703,20 @@ block_css = """
     0%, 50% { opacity: 1; }
     50.1%, 100% { opacity: 0; }
 }
+
+.app {
+  max-width: 100% !important;
+  padding: 20px !important;               
+}
+
+a {
+    color: #1976D2; /* Your current link color, a shade of blue */
+    text-decoration: none; /* Removes underline from links */
+}
+a:hover {
+    color: #63A4FF; /* This can be any color you choose for hover */
+    text-decoration: underline; /* Adds underline on hover */
+}
 """
 
 
