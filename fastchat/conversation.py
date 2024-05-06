@@ -1046,7 +1046,7 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
-        name="gemini-dev",
+        name="gemini-1.5-pro",
         roles=("user", "model"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,

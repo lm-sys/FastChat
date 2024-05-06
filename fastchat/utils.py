@@ -175,7 +175,7 @@ def oai_moderation(text, custom_thresholds=None):
 
 def moderation_filter(text, model_list, do_moderation=False):
     # Apply moderation for below models
-    MODEL_KEYWORDS = ["claude", "gpt", "bard", "mistral-large", "command-r", "dbrx"]
+    MODEL_KEYWORDS = ["claude", "gpt", "bard", "mistral-large", "command-r", "dbrx", "gemini", "reka"]
 
     custom_thresholds = {"sexual": 0.3}
     # set a stricter threshold for claude

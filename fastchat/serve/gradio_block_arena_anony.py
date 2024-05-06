@@ -168,119 +168,97 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4-0314": 4,
-    "gpt-4-0613": 4,
+    "gpt-4-0314": 2,
+    "gpt-4-0613": 2,
     "gpt-4-1106-preview": 2,
-    "gpt-4-0125-preview": 4,
+    "gpt-4-0125-preview": 2,
     "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
-    "claude-3-opus-20240229": 4,
+    "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
-    "claude-2.1": 1,
-    "zephyr-orpo-141b-A35b-v0.1": 2,
+    "llama-3-70b-instruct": 4,
+    "llama-3-8b-instruct": 4,
+    "phi-3-mini-128k-instruct": 2,
+    "snowflake-arctic-instruct": 2,
+    "mixtral-8x22b-instruct-v0.1": 4,
     "dbrx-instruct": 1,
     "command-r-plus": 4,
     "command-r": 2,
-    "reka-flash": 4,
-    "reka-flash-online": 4,
+    "gemini-1.5-pro-api-0409-preview": 6,
+    "reka-core-20240501": 6,
+    "reka-flash": 2,
+    "reka-flash-online": 2,
+    "qwen-max-0403": 4,
+    "qwen1.5-110b-chat": 4,
     "qwen1.5-72b-chat": 2,
     "qwen1.5-32b-chat": 2,
-    "qwen1.5-14b-chat": 2,
-    "qwen1.5-7b-chat": 2,
-    "gemma-1.1-7b-it": 2,
+    "qwen1.5-14b-chat": 1,
+    "gemma-1.1-7b-it": 1,
     "gemma-1.1-2b-it": 1,
-    "mixtral-8x7b-instruct-v0.1": 4,
-    "mistral-7b-instruct-v0.2": 2,
-    "mistral-large-2402": 4,
-    "mistral-medium": 2,
-    "starling-lm-7b-beta": 2,
+    "mixtral-8x7b-instruct-v0.1": 2,
+    "mistral-7b-instruct-v0.2": 1,
+    "mistral-large-2402": 2,
+    "mistral-medium": 1,
     # tier 1
-    "deluxe-chat-v1.3": 2,
-    "llama-2-70b-chat": 2,
-    "llama-2-13b-chat": 1,
-    "llama-2-7b-chat": 1,
-    "vicuna-33b": 1,
-    "vicuna-13b": 1,
+    "deluxe-chat-v1.3": 1,
+    "llama-2-70b-chat": 1,
     "yi-34b-chat": 1,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "gpt-4-turbo-2024-04-09": {
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "claude-3-opus-20240229",
-        "gemini-pro-dev-api",
-    },
-    "gemini-pro-dev-api": {
-        "gpt-4-turbo-2024-04-09",
-        "claude-3-opus-20240229",
-        "gpt-4-0125-preview",
-        "claude-3-sonnet-20240229",
-    },
-    "reka-flash": {
-        "qwen1.5-72b-chat",
-        "claude-3-haiku-20240307",
-        "command-r-plus",
-        "command-r",
-    },
-    "reka-flash-online": {
-        "qwen1.5-72b-chat",
-        "claude-3-haiku-20240307",
-        "command-r-plus",
-        "command-r",
-    },
     "deluxe-chat-v1.3": {
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
     },
-    "qwen1.5-32b-chat": {
-        "gpt-3.5-turbo-0125",
-        "gpt-4-0613",
-        "gpt-4-0125-preview",
-        "llama-2-70b-chat",
-        "mixtral-8x7b-instruct-v0.1",
-        "mistral-large-2402",
-        "yi-34b-chat",
+    "reka-core-20240501": {
+        "claude-3-opus-20240229",
+        "gpt-4-turbo-2024-04-09",
+        "gemini-1.5-pro-api-0409-preview",
+        "llama-3-70b-instruct",
     },
-    "qwen1.5-14b-chat": {
-        "starling-lm-7b-alpha",
-        "claude-3-haiku-20240307",
-        "gpt-3.5-turbo-0125",
-        "openchat-3.5-0106",
-        "mixtral-8x7b-instruct-v0.1",
+    "qwen-max-0403": {
+        "claude-3-opus-20240229",
+        "gpt-4-turbo-2024-04-09",
+        "gemini-1.5-pro-api-0409-preview",
+        "llama-3-70b-instruct",
     },
-    "mistral-large-2402": {
-        "gpt-4-0125-preview",
-        "gpt-4-0613",
-        "mixtral-8x7b-instruct-v0.1",
-        "mistral-medium",
-        "mistral-next",
-        "claude-3-sonnet-20240229",
-    },
-    "gemma-1.1-2b-it": {
-        "gpt-3.5-turbo-0125",
-        "mixtral-8x7b-instruct-v0.1",
-        "starling-lm-7b-beta",
-        "llama-2-7b-chat",
-        "mistral-7b-instruct-v0.2",
-        "gemma-1.1-7b-it",
-    },
-    "zephyr-orpo-141b-A35b-v0.1": {
+    "qwen1.5-110b-chat": {
+        "llama-3-70b-instruct",
+        "mixtral-8x22b-instruct-v0.1",
         "qwen1.5-72b-chat",
-        "mistral-large-2402",
-        "command-r-plus",
-        "claude-3-haiku-20240307",
     },
 }
 
-SAMPLING_BOOST_MODELS = []
+SAMPLING_BOOST_MODELS = [
+    # "gpt-4-1106-preview",
+    # "gpt-4-0125-preview",
+    # "claude-3-opus-20240229",
+    # "claude-3-sonnet-20240229",
+    # "claude-3-haiku-20240307",
+    #"reka-flash-online",
+    # "gemini-1.5-pro-api-0409-preview",
+    "llama-3-70b-instruct",
+    "reka-core-20240501",
+    "qwen-max-0403",
+    "qwen1.5-110b-chat",
+    # "gpt2-chatbot",
+]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = [
+    "zephyr-7b-beta",
+    "pplx-70b-online",
+    "wizardlm-70b",
+    "deepseek-llm-67b-chat",
+    "nous-hermes-2-mixtral-8x7b-dpo",
+    "openhermes-2.5-mistral-7b",
+    "claude-2.0",
+    "deluxe-chat-v1.3",
+]
 
 
 def get_sample_weight(model):
@@ -453,17 +431,24 @@ def bot_response_multi(
             )
         )
 
-    is_stream_batch = []
+    model_tpy = []
     for i in range(num_sides):
-        is_stream_batch.append(
-            states[i].model_name
-            in [
-                "gemini-pro",
-                "gemini-pro-dev-api",
-                "gemma-1.1-2b-it",
-                "gemma-1.1-7b-it",
-            ]
-        )
+        token_per_yield = 1
+        if states[i].model_name in [
+            "gemini-pro",
+            "gemma-1.1-2b-it",
+            "gemma-1.1-7b-it",
+            "phi-3-mini-128k-instruct",
+            "snowflake-arctic-instruct",
+        ]:
+            token_per_yield = 30
+        elif states[i].model_name in [
+            "qwen-max-0403",
+            "qwen1.5-110b-chat",
+        ]:
+            token_per_yield = 7
+        model_tpy.append(token_per_yield)
+
     chatbots = [None] * num_sides
     iters = 0
     while True:
@@ -471,9 +456,8 @@ def bot_response_multi(
         iters += 1
         for i in range(num_sides):
             try:
-                # yield gemini fewer times as its chunk size is larger
-                # otherwise, gemini will stream too fast
-                if not is_stream_batch[i] or (iters % 30 == 1 or iters < 3):
+                # yield fewer times if chunk size is larger
+                if model_tpy[i] == 1 or (iters % model_tpy[i] == 1 or iters < 3):
                     ret = next(gen[i])
                     states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
@@ -487,18 +471,18 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+- [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
-- You can continue chatting until you identify a winner.
-- Vote won't be counted if model identity is revealed during conversation.
+- You can chat for multiple turns until you identify a winner.
+- Votes won't be counted if model identities are revealed during the conversation.
 
-## 🏆 LMSYS Arena [Leaderboard](https://leaderboard.lmsys.org)
-We've collected **500K+** human votes to compute an LLM Elo leaderboard.
-Find out who is the 🥇LLM Champion!
+## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
+- We've collected **800,000+** human votes to compute an Elo leaderboard for 90+ LLMs. Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
+- <span style='color: red; font-weight: bold'>gpt2-chatbot is currently unavailable.</span> See our model evaluation policy [here](https://lmsys.org/blog/2024-03-01-policy/).
 """
 
     states = [gr.State() for _ in range(num_sides)]

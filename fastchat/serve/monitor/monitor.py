@@ -44,13 +44,13 @@ You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
     return leaderboard_md
 
 
-def make_arena_leaderboard_md(arena_df):
+def make_arena_leaderboard_md(arena_df, last_updated_time):
     total_votes = sum(arena_df["num_battles"]) // 2
     total_models = len(arena_df)
     space = "&nbsp;&nbsp;&nbsp;"
 
     leaderboard_md = f"""
-Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: April 26, 2024.
+Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: {last_updated_time}.
 
 📣 **NEW!** View leaderboard for different categories (e.g., coding, long user query)! This is still in preview and subject to change.
 
@@ -398,7 +398,11 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
     else:
         with open(elo_results_file, "rb") as fin:
             elo_results = pickle.load(fin)
+            last_updated_time = None
             if "full" in elo_results:
+                last_updated_time = elo_results["full"]["last_updated_datetime"].split(
+                    " "
+                )[0]
                 for k in key_to_category_name.keys():
                     if k not in elo_results:
                         continue
@@ -423,7 +427,7 @@ def build_leaderboard_tab(elo_results_file, leaderboard_table_file, show_plot=Fa
             # arena table
             arena_table_vals = get_arena_table(arena_df, model_table_df)
             with gr.Tab("Arena", id=0):
-                md = make_arena_leaderboard_md(arena_df)
+                md = make_arena_leaderboard_md(arena_df, last_updated_time)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
                 with gr.Row():
                     with gr.Column(scale=2):

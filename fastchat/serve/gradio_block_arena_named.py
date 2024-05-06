@@ -253,17 +253,23 @@ def bot_response_multi(
             )
         )
 
-    is_stream_batch = []
+    model_tpy = []
     for i in range(num_sides):
-        is_stream_batch.append(
-            states[i].model_name
-            in [
-                "gemini-pro",
-                "gemini-pro-dev-api",
-                "gemma-1.1-2b-it",
-                "gemma-1.1-7b-it",
-            ]
-        )
+        token_per_yield = 1
+        if states[i].model_name in [
+            "gemini-pro",
+            "gemma-1.1-2b-it",
+            "gemma-1.1-7b-it",
+            "phi-3-mini-128k-instruct",
+            "snowflake-arctic-instruct",
+        ]:
+            token_per_yield = 30
+        elif states[i].model_name in [
+            "qwen-max-0403",
+            "qwen1.5-110b-chat",
+        ]:
+            token_per_yield = 7
+        model_tpy.append(token_per_yield)
 
     chatbots = [None] * num_sides
     iters = 0
@@ -272,9 +278,8 @@ def bot_response_multi(
         iters += 1
         for i in range(num_sides):
             try:
-                # yield gemini fewer times as its chunk size is larger
-                # otherwise, gemini will stream too fast
-                if not is_stream_batch[i] or (iters % 30 == 1 or iters < 3):
+                # yield fewer times if chunk size is larger
+                if model_tpy[i] == 1 or (iters % model_tpy[i] == 1 or iters < 3):
                     ret = next(gen[i])
                     states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
@@ -297,15 +302,14 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = """
-# ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+# ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
+- [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 📜 Rules
-- Chat with any two models side-by-side and vote!
-- You can continue chatting for multiple rounds.
-- Click "Clear history" to start a new round.
+- Ask any question to two chosen models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
+- You can chat for multiple turns until you identify a winner.
 
-## 🤖 Choose two models to compare
+## 👇 Choose two models to compare
 """
 
     states = [gr.State() for _ in range(num_sides)]

@@ -73,6 +73,17 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "gemini_no_stream":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = gemini_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_key=model_api_dict["api_key"],
+            use_stream=False,
+        )
     elif model_api_dict["api_type"] == "bard":
         prompt = conv.to_openai_api_messages()
         stream_iter = bard_api_stream_iter(
@@ -85,7 +96,7 @@ def get_api_provider_stream_iter(
     elif model_api_dict["api_type"] == "mistral":
         prompt = conv.to_openai_api_messages()
         stream_iter = mistral_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
+            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "nvidia":
         prompt = conv.to_openai_api_messages()
@@ -96,6 +107,7 @@ def get_api_provider_stream_iter(
             top_p,
             max_new_tokens,
             model_api_dict["api_base"],
+            model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "ai2":
         prompt = conv.to_openai_api_messages()
@@ -476,7 +488,7 @@ def anthropic_message_api_stream_iter(
 
 
 def gemini_api_stream_iter(
-    model_name, messages, temperature, top_p, max_new_tokens, api_key=None
+    model_name, messages, temperature, top_p, max_new_tokens, api_key=None, use_stream=True,
 ):
     import google.generativeai as genai  # pip install google-generativeai
 
@@ -525,24 +537,45 @@ def gemini_api_stream_iter(
         safety_settings=safety_settings,
     )
     convo = model.start_chat(history=history)
-    response = convo.send_message(messages[-1]["content"], stream=True)
-
-    try:
-        text = ""
-        for chunk in response:
-            text += chunk.text
-            data = {
-                "text": text,
-                "error_code": 0,
+    
+    if use_stream:
+        response = convo.send_message(messages[-1]["content"], stream=True)
+        try:
+            text = ""
+            for chunk in response:
+                text += chunk.text
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            reason = chunk.candidates
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: {reason}.",
+                "error_code": 1,
             }
-            yield data
-    except Exception as e:
-        logger.error(f"==== error ====\n{e}")
-        reason = chunk.candidates
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {reason}.",
-            "error_code": 1,
-        }
+    else:
+        try:
+            response = convo.send_message(messages[-1]["content"], stream=False)
+            text = response.text
+            pos = 0
+            while pos < len(text):
+                # simulate token streaming
+                pos += random.randint(2, 5)
+                time.sleep(0.002)
+                data = {
+                    "text": text[:pos],
+                    "error_code": 0,
+                }
+                yield data
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: {e}.",
+                "error_code": 1,
+            }
 
 
 def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
@@ -729,8 +762,8 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
             yield data
 
 
-def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base):
-    api_key = os.environ["NVIDIA_API_KEY"]
+def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base, api_key=None):
+    api_key = api_key or os.environ["NVIDIA_API_KEY"]
     headers = {
         "Authorization": f"Bearer {api_key}",
         "accept": "text/event-stream",

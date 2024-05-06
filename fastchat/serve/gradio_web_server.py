@@ -57,7 +57,6 @@ use_remote_storage = False
 
 acknowledgment_md = """
 ### Terms of Service
-
 Users are required to agree to the following terms before using the service:
 
 The service is a research preview. It only provides limited safety measures and may generate offensive content.
@@ -487,6 +486,11 @@ def bot_response(
             images,
         )
     else:
+        # Remove system prompt for API-based models unless specified
+        custom_system_prompt = model_api_dict.get("custom_system_prompt", False)
+        if not custom_system_prompt:
+            conv.set_system_message("")
+
         if use_recommended_config:
             recommended_config = model_api_dict.get("recommended_config", None)
             if recommended_config is not None:
@@ -517,8 +521,8 @@ def bot_response(
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                # conv.update_last_message(output + "▌")
-                conv.update_last_message(output + html_code)
+                conv.update_last_message(output + "▌")
+                # conv.update_last_message(output + html_code)
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
@@ -736,10 +740,10 @@ Chatbot Arena is an open-source research project developed by members from [LMSY
 We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback dataset. We invite everyone to join us!
 
 ## Arena Core Team
-- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
+- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
 
 ## Past Members
-- [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
+- [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
 
 ## Learn more
 - Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch blog](https://lmsys.org/blog/2023-05-03-arena/), [dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [policy](https://lmsys.org/blog/2024-03-01-policy/)
@@ -771,18 +775,17 @@ We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
         """
-- | [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
-- Introducing Llama 2: The Next Generation Open Source Large Language Model. [[Website]](https://ai.meta.com/llama/)
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog]](https://lmsys.org/blog/2023-03-30-vicuna/)
+- [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
-## 🤖 Choose any model to chat
+## 👇 Choose any model to chat
+- <span style='color: red; font-weight: bold'>gpt2-chatbot is currently unavailable.</span> See our model evaluation policy [here](https://lmsys.org/blog/2024-03-01-policy/).
 """
         if add_promotion_links
         else ""
     )
 
     notice_markdown = f"""
-# 🏔️ Chat with Open Large Language Models
+# 🏔️ Chat with Large Language Models
 {promotion}
 """
 

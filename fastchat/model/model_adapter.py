@@ -80,6 +80,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0125-preview",
     "gpt-4-turbo-browsing",
     "gpt-4-turbo-2024-04-09",
+    "gpt2-chatbot",
 )
 
 
@@ -1110,6 +1111,8 @@ class ChatGPTAdapter(BaseModelAdapter):
         if "browsing" in model_path:
             return get_conv_template("api_based_default")
         if "gpt-4-turbo-2024-04-09" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt2-chatbot" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
         return get_conv_template("chatgpt")
 
@@ -2179,6 +2182,20 @@ class DeepseekChatAdapter(BaseModelAdapter):
         return get_conv_template("deepseek-chat")
 
 
+class GeminiAdapter(BaseModelAdapter):
+    """The model adapter for Gemini"""
+
+    def match(self, model_path: str):
+        return "gemini" in model_path.lower() or "bard" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "gemini-1.5-pro" in model_path:
+            return get_conv_template("gemini-1.5-pro")
+        return get_conv_template("gemini")
+
 class Yuan2Adapter(BaseModelAdapter):
     """The model adapter for Yuan2.0"""
 
@@ -2470,7 +2487,6 @@ register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
-register_model_adapter(Llama3Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(DolphinAdapter)
@@ -2519,6 +2535,7 @@ register_model_adapter(YandexGPTAdapter)
 register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
+register_model_adapter(Llama3Adapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
