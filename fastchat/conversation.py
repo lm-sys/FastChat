@@ -22,6 +22,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
     LLAMA2 = auto()
+    LLAMA3 = auto()
     CHATGLM = auto()
     CHATML = auto()
     CHATINTERN = auto()
@@ -34,7 +35,9 @@ class SeparatorStyle(IntEnum):
     DEEPSEEK_CHAT = auto()
     METAMATH = auto()
     YUAN2 = auto()
+    GEMMA = auto()
     CLLM = auto()
+    DEFAULT = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -150,6 +153,19 @@ class Conversation:
                         ret += tag + " " + message + seps[i % 2]
                 else:
                     ret += tag
+            return ret
+        elif self.sep_style == SeparatorStyle.LLAMA3:
+            ret = "<|begin_of_text|>"
+            if self.system_message:
+                ret += system_prompt
+            else:
+                ret += ""
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
+                    ret += f"{message.strip()}<|eot_id|>"
+                else:
+                    ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
             # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
@@ -271,6 +287,14 @@ class Conversation:
                     ret += ""
             ret = ret.rstrip("<n>") + seps[0]
             return ret
+        elif self.sep_style == SeparatorStyle.GEMMA:
+            ret = "<bos>"
+            for role, message in self.messages:
+                if message:
+                    ret += "<start_of_turn>" + role + "\n" + message + self.sep
+                else:
+                    ret += "<start_of_turn>" + role + "\n"
+            return ret
         elif self.sep_style == SeparatorStyle.CLLM:
             seps = [self.sep, self.sep2]
             ret = system_prompt + seps[0]
@@ -280,6 +304,14 @@ class Conversation:
                         message, images = message
                         message = IMAGE_PLACEHOLDER_STR * len(images) + message
                     ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.DEFAULT:
+            ret = system_prompt + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
             return ret
@@ -299,6 +331,10 @@ class Conversation:
     def set_system_message(self, system_message: str):
         """Set the system message."""
         self.system_message = system_message
+
+    def get_system_message(self):
+        """return the system message."""
+        return self.system_message
 
     def append_message(self, role: str, message: str):
         """Append a new message."""
@@ -495,6 +531,17 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep=" ",
         sep2="</s>",
+    )
+)
+
+# api-based default template
+register_conv_template(
+    Conversation(
+        name="api_based_default",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
     )
 )
 
@@ -782,7 +829,23 @@ register_conv_template(
         name="chatgpt",
         system_message="You are a helpful assistant.",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gpt-4-turbo-2024-04-09",
+        system_message=(
+            "You are ChatGPT, a large language model trained by OpenAI, based on the GPT-4 architecture.\n"
+            "Knowledge cutoff: 2023-11\n"
+            "Current date: {{currentDateTime}}\n\n"
+            "Image input capabilities: Enabled\n"
+            "Personality: v2"
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -793,7 +856,7 @@ register_conv_template(
         name="pplxai",
         system_message="Be precise and concise.",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -805,6 +868,84 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-haiku-20240307",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated in "
+            "August 2023 and it answers user questions about events before "
+            "August 2023 and after August 2023 the same way a highly informed "
+            "individual from August 2023 would if they were talking to someone "
+            "from {{currentDateTime}}. It should give concise responses to very "
+            "simple questions, but provide thorough responses to more complex "
+            "and open-ended questions. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly "
+            "pertinent to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-sonnet-20240229",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated in "
+            "August 2023 and it answers user questions about events before "
+            "August 2023 and after August 2023 the same way a highly informed "
+            "individual from August 2023 would if they were talking to someone "
+            "from {{currentDateTime}}. It should give concise responses to very "
+            "simple questions, but provide thorough responses to more complex "
+            "and open-ended questions. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly "
+            "pertinent to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="claude-3-opus-20240229",
+        system_message=(
+            "The assistant is Claude, created by Anthropic. The current date is "
+            "{{currentDateTime}}. Claude's knowledge base was last updated on "
+            "August 2023. It answers questions about events prior to and after "
+            "August 2023 the way a highly informed individual in August 2023 "
+            "would if they were talking to someone from the above date, and can "
+            "let the human know this when relevant. It should give concise "
+            "responses to very simple questions, but provide thorough responses "
+            "to more complex and open-ended questions. If it is asked to assist "
+            "with tasks involving the expression of views held by a significant "
+            "number of people, Claude provides assistance with the task even if "
+            "it personally disagrees with the views being expressed, but follows "
+            "this with a discussion of broader perspectives. Claude doesn't "
+            "engage in stereotyping, including the negative stereotyping of "
+            "majority groups. If asked about controversial topics, Claude tries "
+            "to provide careful thoughts and objective information without "
+            "downplaying its harmful content or implying that there are reasonable "
+            "perspectives on both sides. It is happy to help with writing, "
+            "analysis, question answering, math, coding, and all sorts of other "
+            "tasks. It uses markdown for coding. It does not mention this "
+            "information about itself unless the information is directly pertinent "
+            "to the human's query."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
     )
 )
 
@@ -889,7 +1030,7 @@ register_conv_template(
     Conversation(
         name="bard",
         roles=("0", "1"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -898,8 +1039,25 @@ register_conv_template(
     Conversation(
         name="gemini",
         roles=("user", "model"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gemini-dev",
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+        system_message=(
+            "You are a friendly and helpful assistant.\n"
+            "Ensure your answers are complete, unless the user requests a more concise approach.\n"
+            "When generating code, offer explanations for code segments as necessary and maintain good coding practices.\n"
+            "When presented with inquiries seeking information, provide answers that reflect a deep understanding of the field, guaranteeing their correctness.\n"
+            "For any non-english queries, respond in the same language as the prompt unless otherwise specified by the user.\n"
+            "For prompts involving reasoning, provide a clear explanation of each step in the reasoning process before presenting the final answer."
+        ),
     )
 )
 
@@ -1115,6 +1273,21 @@ register_conv_template(
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
         sep2=" </s><s>",
+    )
+)
+
+# llama3 template
+# reference: https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct/blob/main/tokenizer_config.json
+# reference: https://github.com/meta-llama/llama3/blob/0cee08ec68f4cfc0c89fe4a9366d82679aaa2a66/llama/tokenizer.py#L222
+register_conv_template(
+    Conversation(
+        name="llama-3",
+        system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.LLAMA3,
+        sep="",
+        stop_str="<|eot_id|>",
+        stop_token_ids=[128001, 128009],
     )
 )
 
@@ -1559,7 +1732,7 @@ register_conv_template(
         name="steerlm",
         system_message="",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
@@ -1612,11 +1785,20 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="gemma",
-        system_message="<bos>",
-        roles=("<start_of_turn>user\n", "<start_of_turn>model\n"),
-        sep_style=SeparatorStyle.NO_COLON_SINGLE,
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.GEMMA,
         sep="<end_of_turn>\n",
         stop_str="<end_of_turn>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="yandexgpt",
+        system_message="",
+        roles=("user", "assistant"),
+        sep_style=None,
+        sep=None,
     )
 )
 

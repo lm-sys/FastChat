@@ -42,8 +42,61 @@ register_model_info(
 
 register_model_info(
     [
+        "claude-3-haiku-20240307",
+        "claude-3-sonnet-20240229",
+        "claude-3-opus-20240229",
+        "claude-2.1",
+        "claude-2.0",
+        "claude-1",
+    ],
+    "Claude",
+    "https://www.anthropic.com/index/claude-2",
+    "Claude by Anthropic",
+)
+
+register_model_info(
+    ["reka-flash", "reka-flash-online"],
+    "Reka Flash",
+    "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
+    "Multimodal model by Reka",
+)
+
+register_model_info(
+    ["command-r-plus"],
+    "Command-R-Plus",
+    "https://txt.cohere.com/command-r-plus-microsoft-azure/",
+    "Command-R Plus by Cohere",
+)
+
+register_model_info(
+    ["command-r"],
+    "Command-R",
+    "https://txt.cohere.com/command-r/",
+    "Command-R by Cohere",
+)
+
+register_model_info(
+    [
+        "zephyr-orpo-141b-A35b-v0.1",
+    ],
+    "Zephyr 141B-A35B",
+    "https://huggingface.co/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1",
+    "ORPO fine-tuned of Mixtral-8x22B-v0.1",
+)
+
+register_model_info(
+    ["gemma-1.1-7b-it", "gemma-1.1-2b-it", "gemma-7b-it", "gemma-2b-it"],
+    "Gemma",
+    "https://blog.google/technology/developers/gemma-open-models/",
+    "Gemma by Google",
+)
+
+register_model_info(
+    [
         "mixtral-8x7b-instruct-v0.1",
+        "mistral-large-2402",
         "mistral-medium",
+        "mistral-next",
         "mistral-7b-instruct-v0.2",
         "mistral-7b-instruct",
     ],
@@ -55,6 +108,7 @@ register_model_info(
 register_model_info(
     [
         "qwen1.5-72b-chat",
+        "qwen1.5-32b-chat",
         "qwen1.5-14b-chat",
         "qwen1.5-7b-chat",
         "qwen1.5-4b-chat",
@@ -65,6 +119,21 @@ register_model_info(
     "Qwen 1.5",
     "https://qwenlm.github.io/blog/qwen1.5/",
     "A large language model by Alibaba Cloud",
+)
+
+
+register_model_info(
+    ["dbrx-instruct"],
+    "DBRX Instruct",
+    "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
+    "DBRX by Databricks Mosaic AI",
+)
+
+register_model_info(
+    ["starling-lm-7b-beta", "starling-lm-7b-alpha"],
+    "Starling-LM-7B",
+    "https://starling.cs.berkeley.edu/",
+    "An open model trained using RLAIF by Berkeley",
 )
 
 register_model_info(
@@ -89,13 +158,6 @@ register_model_info(
 )
 
 register_model_info(
-    ["deepseek-llm-67b-chat"],
-    "DeepSeek LLM",
-    "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
-    "An advanced language model by DeepSeek",
-)
-
-register_model_info(
     ["stripedhyena-nous-7b"],
     "StripedHyena-Nous",
     "https://huggingface.co/togethercomputer/StripedHyena-Nous-7B",
@@ -110,10 +172,22 @@ register_model_info(
 )
 
 register_model_info(
-    ["gpt-4-turbo", "gpt-4-1106-preview", "gpt-4-0125-preview"],
+    [
+        "gpt-4-turbo",
+        "gpt-4-turbo-2024-04-09",
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+    ],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
+)
+
+register_model_info(
+    ["gpt-4-turbo-browsing"],
+    "GPT-4-Turbo with browsing",
+    "https://platform.openai.com/docs/assistants/overview",
+    "GPT-4-Turbo with browsing by OpenAI",
 )
 
 register_model_info(
@@ -137,20 +211,6 @@ register_model_info(
 )
 
 register_model_info(
-    ["claude-2.1", "claude-2.0"],
-    "Claude",
-    "https://www.anthropic.com/index/claude-2",
-    "Claude 2 by Anthropic",
-)
-
-register_model_info(
-    ["claude-1"],
-    "Claude",
-    "https://www.anthropic.com/index/introducing-claude",
-    "Claude 1 by Anthropic",
-)
-
-register_model_info(
     ["claude-instant-1", "claude-instant-1.2"],
     "Claude Instant",
     "https://www.anthropic.com/index/introducing-claude",
@@ -158,10 +218,50 @@ register_model_info(
 )
 
 register_model_info(
-    ["nous-hermes-2-mixtral-8x7b-dpo"],
-    "Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
-    "Nous Hermes finetuned from Mixtral 8x7B",
+    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
+    "Llama 2",
+    "https://ai.meta.com/llama/",
+    "Open foundation and fine-tuned chat models by Meta",
+)
+
+register_model_info(
+    ["olmo-7b-instruct"],
+    "OLMo-7B",
+    "https://huggingface.co/allenai/OLMo-7B-Instruct",
+    "OLMo by Allen AI",
+)
+
+register_model_info(
+    [
+        "vicuna-33b",
+        "vicuna-33b-v1.3",
+        "vicuna-13b",
+        "vicuna-13b-v1.5",
+        "vicuna-7b",
+        "vicuna-7b-v1.5",
+    ],
+    "Vicuna",
+    "https://lmsys.org/blog/2023-03-30-vicuna/",
+    "A chat assistant fine-tuned on user-shared conversations by LMSYS",
+)
+
+register_model_info(
+    ["yi-34b-chat", "yi-6b-chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai/Yi-34B-Chat",
+    "A large language model by 01 AI",
+)
+
+register_model_info(
+    [
+        "codellama-70b-instruct",
+        "codellama-34b-instruct",
+        "codellama-13b-instruct",
+        "codellama-7b-instruct",
+    ],
+    "Code Llama",
+    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
+    "Open foundation models for code by Meta",
 )
 
 register_model_info(
@@ -186,6 +286,14 @@ register_model_info(
 )
 
 register_model_info(
+    ["nous-hermes-2-mixtral-8x7b-dpo"],
+    "Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "Nous Hermes finetuned from Mixtral 8x7B",
+)
+
+
+register_model_info(
     ["llama2-70b-steerlm-chat"],
     "Llama2-70B-SteerLM-Chat",
     "https://huggingface.co/nvidia/Llama2-70B-SteerLM-Chat",
@@ -207,45 +315,10 @@ register_model_info(
 )
 
 register_model_info(
-    ["starling-lm-7b-alpha"],
-    "Starling-LM-7B-alpha",
-    "https://huggingface.co/berkeley-nest/Starling-LM-7B-alpha",
-    "An open model trained using RLAIF by Berkeley",
-)
-
-register_model_info(
     ["tulu-2-dpo-70b"],
     "Tulu 2",
     "https://huggingface.co/allenai/tulu-2-dpo-70b",
     "An instruction and RLHF model by UW/AllenAI",
-)
-
-register_model_info(
-    ["yi-34b-chat", "yi-6b-chat"],
-    "Yi-Chat",
-    "https://huggingface.co/01-ai/Yi-34B-Chat",
-    "A large language model by 01 AI",
-)
-
-register_model_info(
-    ["llama-2-70b-chat", "llama-2-34b-chat", "llama-2-13b-chat", "llama-2-7b-chat"],
-    "Llama 2",
-    "https://ai.meta.com/llama/",
-    "Open foundation and fine-tuned chat models by Meta",
-)
-
-register_model_info(
-    [
-        "vicuna-33b",
-        "vicuna-33b-v1.3",
-        "vicuna-13b",
-        "vicuna-13b-v1.5",
-        "vicuna-7b",
-        "vicuna-7b-v1.5",
-    ],
-    "Vicuna",
-    "https://lmsys.org/blog/2023-03-30-vicuna/",
-    "A chat assistant fine-tuned on user-shared conversations by LMSYS",
 )
 
 register_model_info(
@@ -288,18 +361,6 @@ register_model_info(
     "TinyLlama",
     "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     "The TinyLlama project is an open endeavor to pretrain a 1.1B Llama model on 3 trillion tokens.",
-)
-
-register_model_info(
-    [
-        "codellama-70b-instruct",
-        "codellama-34b-instruct",
-        "codellama-13b-instruct",
-        "codellama-7b-instruct",
-    ],
-    "Code Llama",
-    "https://ai.meta.com/blog/code-llama-large-language-model-coding/",
-    "Open foundation models for code by Meta",
 )
 
 register_model_info(
@@ -536,10 +597,24 @@ register_model_info(
 )
 
 register_model_info(
+    ["smaug-2-72b"],
+    "Smaug-2-72B",
+    "https://huggingface.co/abacusai/Smaug-2-72B",
+    "An open model trained by Abacus.AI.",
+)
+
+register_model_info(
     ["Llama2-Chinese-13b-Chat", "LLama2-Chinese-13B"],
     "Llama2-Chinese",
     "https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat",
     "A multi-language large-scale language model (LLM), developed by FlagAlpha.",
+)
+
+register_model_info(
+    ["Meta-Llama-3-8B-Instruct", "Meta-Llama-3-70B-Instruct"],
+    "llama-3",
+    "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct",
+    "Meta developed and released the Meta Llama 3 family of large language models (LLMs), a collection of pretrained and instruction tuned generative text models in 8 and 70B sizes.",
 )
 
 register_model_info(
@@ -571,7 +646,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["deluxe-chat-v1", "deluxe-chat-v1.1", "deluxe-chat-v1.2"],
+    ["deluxe-chat-v1", "deluxe-chat-v1.1", "deluxe-chat-v1.2", "deluxe-chat-v1.3"],
     "DeluxeChat",
     "",
     "Deluxe Chat",
@@ -662,13 +737,6 @@ register_model_info(
     "Gemma",
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
-)
-
-register_model_info(
-    ["cohere-command-r"],
-    "Command-R",
-    "https://txt.cohere.com/command-r/",
-    "Command-R by Cohere",
 )
 
 register_model_info(
