@@ -665,6 +665,11 @@ block_css = """
     0%, 50% { opacity: 1; }
     50.1%, 100% { opacity: 0; }
 }
+
+.gradio-container .thumbnail-item {
+    height: 200px;
+    width: 200px;
+}
 """
 
 
