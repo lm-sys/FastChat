@@ -1283,7 +1283,7 @@ register_conv_template(
     Conversation(
         name="llama-3",
         system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
-        roles=("user", "assistant"),
+        roles=("<|start_header_id|>user<|end_header_id|>\n\n", "<|start_header_id|>assistant<|end_header_id|>\n\n"),
         sep_style=SeparatorStyle.LLAMA3,
         sep="",
         stop_str="<|eot_id|>",
