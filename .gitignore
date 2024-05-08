@@ -33,3 +33,4 @@ build
 # Image data
 serve_images
 val2014
+vqa_examples

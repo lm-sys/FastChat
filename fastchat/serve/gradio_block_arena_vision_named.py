@@ -246,7 +246,6 @@ Note: You can only chat with **one image per conversation**. You can upload imag
         with gr.Column(scale=2, visible=False) as image_column:
             imagebox = gr.Image(
                 type="pil",
-                label="Here is a picture of your image!",
                 show_label=True,
                 interactive=False,
             )
