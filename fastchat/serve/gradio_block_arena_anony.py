@@ -474,7 +474,7 @@ def bot_response_multi(
                 "gemini-pro",
                 "gemini-pro-dev-api",
                 "gemini-1.0-pro-vision",
-                "gemini-1.5-pro-vision",
+                "gemini-1.5-pro-preview-0409",
                 "gemma-1.1-2b-it",
                 "gemma-1.1-7b-it",
             ]

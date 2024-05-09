@@ -75,10 +75,7 @@ def add_image(textbox):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    filename = get_conv_log_filename()
-    if "llava" in model_selector:
-        filename = filename.replace("2024", "vision-tmp-2024")
-
+    filename = get_conv_log_filename(state.is_vision)
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -142,7 +139,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
-        state = State(model_selector)
+        state = State(model_selector, is_vision=True)
 
     if len(text) <= 0:
         state.skip_next = True
@@ -221,7 +218,7 @@ Note: You can only chat with **one image per conversation**. You can upload imag
         with gr.Column(scale=2, visible=False) as image_column:
             imagebox = gr.Image(
                 type="pil",
-                show_label=True,
+                show_label=False,
                 interactive=False,
             )
         with gr.Column(scale=8):

@@ -98,12 +98,13 @@ api_endpoint_info = {}
 
 
 class State:
-    def __init__(self, model_name):
+    def __init__(self, model_name, is_vision=False):
         self.conv = get_conversation_template(model_name)
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
         self.oai_thread_id = None
+        self.is_vision = is_vision
 
         self.regen_support = True
         if "browsing" in model_name:
@@ -139,9 +140,14 @@ def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
     use_remote_storage = use_remote_storage_
 
 
-def get_conv_log_filename():
+def get_conv_log_filename(is_vision=False):
     t = datetime.datetime.now()
-    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
+    conv_log_filename = f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
+    if is_vision:
+        name = os.path.join(LOGDIR, f"vision-tmp-{conv_log_filename}")
+    else:
+        name = os.path.join(LOGDIR, conv_log_filename)
+
     return name
 
 
@@ -549,9 +555,7 @@ def bot_response(
 
     conv.save_new_images(use_remote_storage=use_remote_storage)
 
-    filename = get_conv_log_filename()
-    if "llava" in model_name:
-        filename = filename.replace("2024", "vision-tmp-2024")
+    filename = get_conv_log_filename(is_vision=state.is_vision)
 
     with open(filename, "a") as fout:
         data = {
@@ -664,11 +668,6 @@ block_css = """
 @keyframes blink {
     0%, 50% { opacity: 1; }
     50.1%, 100% { opacity: 0; }
-}
-
-.gradio-container .thumbnail-item {
-    height: 200px;
-    width: 200px;
 }
 """
 

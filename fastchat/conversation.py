@@ -609,7 +609,8 @@ class Conversation:
 
                 if use_remote_storage:
                     image_url = upload_image_file_to_gcs(loaded_image, filename)
-                    images[i] = image_url
+                    # NOTE(chris): If the URL were public, then we set it here so future model uses the link directly
+                    # images[i] = image_url
                 else:
                     filename = os.path.join(LOGDIR, filename)
                     if not os.path.isfile(filename):

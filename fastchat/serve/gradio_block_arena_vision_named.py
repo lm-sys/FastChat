@@ -68,7 +68,8 @@ def clear_history_example(request: gr.Request):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    with open(get_conv_log_filename(), "a") as fout:
+    filename = get_conv_log_filename(states[0].is_vision)
+    with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
@@ -162,7 +163,7 @@ def add_text(
     # Init states if necessary
     for i in range(num_sides):
         if states[i] is None:
-            states[i] = State(model_selectors[i])
+            states[i] = State(model_selectors[i], is_vision=True)
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -246,7 +247,7 @@ Note: You can only chat with **one image per conversation**. You can upload imag
         with gr.Column(scale=2, visible=False) as image_column:
             imagebox = gr.Image(
                 type="pil",
-                show_label=True,
+                show_label=False,
                 interactive=False,
             )
 
