@@ -164,7 +164,7 @@ def clear_history_example(request: gr.Request):
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
     filename = get_conv_log_filename(states[0].is_vision)
-    
+
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -534,13 +534,9 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    # imagebox.upload(
-    #     clear_history_example, None, states + chatbots + model_selectors + btn_list
-    # )
-
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    )
+    ).then(clear_history_example, None, states + chatbots + model_selectors + btn_list)
 
     textbox.submit(
         add_text,
@@ -555,17 +551,6 @@ function (a, b, c, d) {
         [],
         btn_list,
     )
-    # send_btn.click(
-    #     add_text,
-    #     states + model_selectors + [textbox],
-    #     states + chatbots + [textbox] + btn_list,
-    # ).then(
-    #     bot_response_multi,
-    #     states + [temperature, top_p, max_output_tokens],
-    #     states + chatbots + btn_list,
-    # ).then(
-    #     flash_buttons, [], btn_list
-    # )
 
     if random_questions:
         random_btn.click(

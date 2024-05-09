@@ -405,9 +405,10 @@ def upload_image_file_to_gcs(image, filename):
 
     return blob.public_url
 
+
 def get_image_file_from_gcs(filename):
     from google.cloud import storage
-    
+
     storage_client = storage.Client()
     bucket = storage_client.get_bucket("arena_user_content")
     blob = bucket.blob(f"{filename}")

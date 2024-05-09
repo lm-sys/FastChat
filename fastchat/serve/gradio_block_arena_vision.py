@@ -58,6 +58,10 @@ def set_visible_image(textbox):
     images = textbox["files"]
     if len(images) == 0:
         return invisible_image_column
+    elif len(images) > 1:
+        gr.Warning(
+            "You can only submit one image for the conversation. Your first image will be used."
+        )
 
     return visible_image_column
 
@@ -317,7 +321,7 @@ Note: You can only chat with **one image per conversation**. You can upload imag
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    )
+    ).then(clear_history_example, None, [state, chatbot] + btn_list)
 
     textbox.submit(
         add_text,

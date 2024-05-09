@@ -412,7 +412,7 @@ function (a, b, c, d) {
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    )
+    ).then(clear_history_example, None, states + chatbots + btn_list)
 
     textbox.submit(
         add_text,
