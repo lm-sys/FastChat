@@ -60,7 +60,7 @@ def set_visible_image(textbox):
         return invisible_image_column
     elif len(images) > 1:
         gr.Warning(
-            "You can only submit one image for the conversation. Your first image will be used."
+            "We only support single image conversations. Please start a new round if you would like to chat using this image."
         )
 
     return visible_image_column
