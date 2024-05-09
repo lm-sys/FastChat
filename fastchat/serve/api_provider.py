@@ -157,6 +157,17 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "tenyx":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = tenyx_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
     else:
         raise NotImplementedError()
 
@@ -947,3 +958,47 @@ def reka_api_stream_iter(
             continue
         gen = json.loads(line[6:])
         yield {"text": gen["text"], "error_code": 0}
+
+def tenyx_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+):
+    import openai
+
+    client = openai.OpenAI(
+        base_url=api_base,
+        api_key=api_key,
+        timeout=180,
+    )
+
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_new_tokens,
+        stream=True,
+        stop=["<|end_of_text|>", "<|eot_id|>"],
+    )
+    text = ""
+    for chunk in res:
+        if len(chunk.choices) > 0:
+            text += chunk.choices[0].delta.content or ""
+            data = {
+                "text": text.replace("<|eot_id|>", "").replace("<|end_of_text|>", ""),
+                "error_code": 0,
+            }
+            yield data

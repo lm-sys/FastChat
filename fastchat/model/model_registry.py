@@ -329,10 +329,10 @@ register_model_info(
 )
 
 register_model_info(
-    ["tenyxchat-7b-v1"],
-    "TenyxChat-7B",
-    "https://huggingface.co/tenyx/TenyxChat-7B-v1",
-    "An open model DPO trained on top of OpenChat-3.5 using Tenyx fine-tuning",
+    ["llama3-tenyxchat-70b"],
+    "Llama3-TenyxChat-70B",
+    "https://huggingface.co/tenyx/Llama3-TenyxChat-70B",
+    "Open chat model based on Llama3 by Tenyx",
 )
 
 register_model_info(
