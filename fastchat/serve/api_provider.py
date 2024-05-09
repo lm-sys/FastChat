@@ -959,6 +959,7 @@ def reka_api_stream_iter(
         gen = json.loads(line[6:])
         yield {"text": gen["text"], "error_code": 0}
 
+
 def tenyx_api_stream_iter(
     model_name,
     messages,
