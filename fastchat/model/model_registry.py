@@ -55,6 +55,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["reka-flash", "reka-flash-online"],
+    "Reka Flash",
+    "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
+    "Multimodal model by Reka",
+)
+
+register_model_info(
     ["command-r-plus"],
     "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
@@ -604,6 +611,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["Meta-Llama-3-8B-Instruct", "Meta-Llama-3-70B-Instruct"],
+    "llama-3",
+    "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct",
+    "Meta developed and released the Meta Llama 3 family of large language models (LLMs), a collection of pretrained and instruction tuned generative text models in 8 and 70B sizes.",
+)
+
+register_model_info(
     ["Chinese-Alpaca-2-7B", "Chinese-Alpaca-2-13B"],
     "Chinese-Alpaca",
     "https://huggingface.co/hfl/chinese-alpaca-2-13b",
@@ -735,11 +749,4 @@ register_model_info(
     "consistency-llm",
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
-)
-
-register_model_info(
-    ["reka-flash"],
-    "Reka Flash",
-    "https://reka.ai/reka-flash",
-    "Multimodal model by Reka",
 )

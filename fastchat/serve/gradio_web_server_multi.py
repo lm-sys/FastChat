@@ -287,4 +287,5 @@ if __name__ == "__main__":
         max_threads=200,
         auth=auth,
         root_path=args.gradio_root_path,
+        show_api=False,
     )
