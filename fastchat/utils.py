@@ -386,3 +386,32 @@ def load_image(image_file):
         image = Image.open(BytesIO(base64.b64decode(image_file)))
 
     return image
+
+
+def upload_image_file_to_gcs(image, filename):
+    from google.cloud import storage
+    import io
+
+    storage_client = storage.Client()
+    # upload file to GCS
+    bucket = storage_client.get_bucket("arena_user_content")
+
+    blob = bucket.blob(f"{filename}")
+    if not blob.exists():
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+        blob.upload_from_file(buffer, content_type="image/png")
+
+    return blob.public_url
+
+
+def get_image_file_from_gcs(filename):
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket("arena_user_content")
+    blob = bucket.blob(f"{filename}")
+    contents = blob.download_as_bytes()
+
+    return contents
