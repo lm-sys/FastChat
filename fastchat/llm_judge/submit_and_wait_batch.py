@@ -33,8 +33,8 @@ def main(file_path, file_path_out, batch_id=None):
 
     if batch.status == "completed":
        print("batch completed!!!")
-       content = client.files.content(batch.output_file_id)
-       with open(file_path_out, "w") as fout:
+       content = client.files.content(batch.output_file_id) # HttpxBinaryResponseContent
+       with open(file_path_out, "wb") as fout:
             fout.write(content)
 
 
