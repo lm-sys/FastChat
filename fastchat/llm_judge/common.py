@@ -220,6 +220,7 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
                 "url": "/v1/chat/completions", 
                 "body": body,
             }
+            create_batch = True
         else:
             score, user_prompt, judgment = retval
 
@@ -245,6 +246,8 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
 
     if output_file:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        if do_batch and create_batch:
+            output_file = output_file.replace(".jsonl", "-batch.jsonl")
         with open(output_file, "a") as fout:
             fout.write(json.dumps(result) + "\n")
 
