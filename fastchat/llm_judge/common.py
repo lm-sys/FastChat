@@ -205,7 +205,7 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
         match.multi_turn,
     )
     if do_batch:
-        batch_output_file = batch_output_file.replace(".jsonl", "-batch-output.jsonl")
+        batch_output_file = output_file.replace(".jsonl", "-batch-output.jsonl")
         if os.path.isfile(batch_output_file):
             create_batch = False
         else:
