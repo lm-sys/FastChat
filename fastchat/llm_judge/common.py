@@ -132,7 +132,9 @@ def load_judge_prompts(prompt_file: str):
     return prompts
 
 
-def run_judge_single(question, answer, judge, ref_answer, multi_turn=False, do_batch=False):
+def run_judge_single(
+    question, answer, judge, ref_answer, multi_turn=False, do_batch=False, judgment=None
+):
     kwargs = {}
     model = judge.model_name
     if ref_answer is not None:
@@ -166,14 +168,15 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False, do_b
     if do_batch:
         return conv
 
-    if model in OPENAI_MODEL_LIST:
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
-    elif model in ANTHROPIC_MODEL_LIST:
-        judgment = chat_completion_anthropic(
-            model, conv, temperature=0, max_tokens=1024
-        )
-    else:
-        raise ValueError(f"Invalid judge model name: {model}")
+    if judgment is None:
+        if model in OPENAI_MODEL_LIST:
+            judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        elif model in ANTHROPIC_MODEL_LIST:
+            judgment = chat_completion_anthropic(
+                model, conv, temperature=0, max_tokens=1024
+            )
+        else:
+            raise ValueError(f"Invalid judge model name: {model}")
 
     if judge.prompt_template["output_format"] == "[[rating]]":
         match = re.search(one_score_pattern, judgment)
@@ -201,12 +204,27 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
         match.ref_answer,
         match.multi_turn,
     )
+    if do_batch:
+        batch_output_file = batch_output_file.replace(".jsonl", "-batch-output.jsonl")
+        if os.path.isfile(batch_output_file):
+            create_batch = False
+        else:
+            create_batch = True
 
     if judge.prompt_template["type"] == "single":
+        judgment = None
+        if do_batch and not create_batch:
+            question_id = question["question_id"]
+            turn = 1 if not multi_turn else 2
+            with open(batch_output_file) as f:
+                for line in f:
+                    data = json.loads(line)
+                    if data["custom_id"] == f"{model}-question_id={question_id}-turn={turn}":
+                        judgment = data["body"]["choices"][0]["message"]["content"]
         retval = run_judge_single(
-            question, answer, judge, ref_answer, multi_turn=multi_turn, do_batch=do_batch
+            question, answer, judge, ref_answer, multi_turn=multi_turn, do_batch=do_batch, judgment=judgment
         )
-        if do_batch:
+        if do_batch and create_batch:
             conv = retval
             body = {
                 "model": judge.model_name,
@@ -222,7 +240,6 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
                 "url": "/v1/chat/completions", 
                 "body": body,
             }
-            create_batch = True
         else:
             score, user_prompt, judgment = retval
 
