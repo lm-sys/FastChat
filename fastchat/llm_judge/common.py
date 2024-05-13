@@ -215,7 +215,7 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
                 "max_tokens": 2048,
             }
             result = {
-                "custom_id": model + "-" + question["question_id"], 
+                "custom_id": model + "-" + str(question["question_id"]), 
                 "method": "POST", 
                 "url": "/v1/chat/completions", 
                 "body": body,
