@@ -55,6 +55,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
     set_visible_image,
     add_image,
+    moderate_input,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -307,21 +308,7 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    text_flagged = moderation_filter(text, model_list)
-    nsfw_flagged, csam_flagged = False, False
-    if len(images) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
-
-    image_flagged = nsfw_flagged or csam_flagged
-    if text_flagged or image_flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        if text_flagged and not image_flagged:
-            # overwrite the original text
-            text = TEXT_MODERATION_MSG
-        elif not text_flagged and image_flagged:
-            text = IMAGE_MODERATION_MSG
-        elif text_flagged and image_flagged:
-            text = MODERATION_MSG
+    text, csam_flag = moderate_input(text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -342,7 +329,7 @@ def add_text(
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
-            states[i], text, images, csam_flag=csam_flagged
+            states[i], text, images, csam_flag=csam_flag
         )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)

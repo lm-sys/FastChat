@@ -140,21 +140,8 @@ def clear_history_example(request: gr.Request):
     return (state, []) + (disable_btn,) * 5
 
 
-def add_text(state, model_selector, chat_input, request: gr.Request):
-    text, images = chat_input["text"], chat_input["files"]
-    ip = get_ip(request)
-    logger.info(f"add_text. ip: {ip}. len: {len(text)}")
-
-    if state is None:
-        state = State(model_selector, is_vision=True)
-
-    if len(text) <= 0:
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
-
-    all_conv_text = state.conv.get_prompt()
-    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    text_flagged = moderation_filter(all_conv_text, [state.model_name])
+def moderate_input(text, model_list, images, ip):
+    text_flagged = moderation_filter(text, model_list)
     # flagged = moderation_filter(text, [state.model_name])
     nsfw_flagged, csam_flagged = False, False
     if len(images) > 0:
@@ -171,6 +158,26 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         elif text_flagged and image_flagged:
             text = MODERATION_MSG
 
+    return text, csam_flagged
+
+
+def add_text(state, model_selector, chat_input, request: gr.Request):
+    text, images = chat_input["text"], chat_input["files"]
+    ip = get_ip(request)
+    logger.info(f"add_text. ip: {ip}. len: {len(text)}")
+
+    if state is None:
+        state = State(model_selector, is_vision=True)
+
+    if len(text) <= 0:
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
+
+    all_conv_text = state.conv.get_prompt()
+    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
+
+    text, csam_flag = moderate_input(all_conv_text, [state.model_name], images, ip)
+
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
@@ -179,7 +186,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, images, csam_flag=csam_flagged)
+    text = _prepare_text_with_image(state, text, images, csam_flag=csam_flag)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
