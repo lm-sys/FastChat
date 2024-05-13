@@ -25,7 +25,10 @@ def get_api_provider_stream_iter(
     state,
 ):
     if model_api_dict["api_type"] == "openai":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_openai_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -44,17 +47,26 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "anthropic":
-        prompt = conv.get_prompt()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_message_api_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message_vertex":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict["vision-arena"]:
+            prompt = conv.to_anthropic_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_message_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -109,6 +121,11 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "vertex":
+        prompt = conv.to_vertex_api_messages()
+        stream_iter = vertex_api_stream_iter(
+            model_name, prompt, temperature, top_p, max_new_tokens
+        )
     elif model_api_dict["api_type"] == "yandexgpt":
         # note: top_p parameter is unused by yandexgpt
 
@@ -147,7 +164,7 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "reka":
-        messages = conv.to_openai_api_messages()
+        messages = conv.to_reka_api_messages()
         stream_iter = reka_api_stream_iter(
             model_name=model_api_dict["model_name"],
             messages=messages,
@@ -189,13 +206,22 @@ def openai_api_stream_iter(
             timeout=180,
         )
 
-    if model_name == "gpt-4-turbo":
-        model_name = "gpt-4-1106-preview"
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
 
-    # Make requests
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
@@ -441,10 +467,23 @@ def anthropic_message_api_stream_iter(
             api_key=os.environ["ANTHROPIC_API_KEY"],
             max_retries=5,
         )
-    # Make requests
+
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    # Make requests for logging
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
@@ -453,7 +492,10 @@ def anthropic_message_api_stream_iter(
 
     system_prompt = ""
     if messages[0]["role"] == "system":
-        system_prompt = messages[0]["content"]
+        if type(messages[0]["content"]) == dict:
+            system_prompt = messages[0]["content"]["text"]
+        elif type(messages[0]["content"]) == str:
+            system_prompt = messages[0]["content"]
         # remove system prompt
         messages = messages[1:]
 
@@ -874,6 +916,72 @@ def cohere_api_stream_iter(
         }
 
 
+def vertex_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+    import vertexai
+    from vertexai import generative_models
+    from vertexai.generative_models import (
+        GenerationConfig,
+        GenerativeModel,
+        Image,
+    )
+
+    project_id = os.environ.get("GCP_PROJECT_ID", None)
+    location = os.environ.get("GCP_LOCATION", None)
+    vertexai.init(project=project_id, location=location)
+
+    text_messages = []
+    for message in messages:
+        if type(message) == str:
+            text_messages.append(message)
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    safety_settings = [
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+        generative_models.SafetySetting(
+            category=generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold=generative_models.HarmBlockThreshold.BLOCK_NONE,
+        ),
+    ]
+    generator = GenerativeModel(model_name).generate_content(
+        messages,
+        stream=True,
+        generation_config=GenerationConfig(
+            top_p=top_p, max_output_tokens=max_new_tokens, temperature=temperature
+        ),
+        safety_settings=safety_settings,
+    )
+
+    ret = ""
+    for chunk in generator:
+        # NOTE(chris): This may be a vertex api error, below is HOTFIX: https://github.com/googleapis/python-aiplatform/issues/3129
+        ret += chunk.candidates[0].content.parts[0]._raw_part.text
+        # ret += chunk.text
+        data = {
+            "text": ret,
+            "error_code": 0,
+        }
+        yield data
+
+
 def reka_api_stream_iter(
     model_name: str,
     messages: list,
@@ -887,34 +995,13 @@ def reka_api_stream_iter(
 ):
     api_key = api_key or os.environ["REKA_API_KEY"]
 
-    OPENAI_TO_REKA_ROLE_MAP = {
-        "user": "human",
-        "assistant": "model",
-        # system prompt passed as a human round
-        "system": "human",
-    }
-
-    chat_history = []
-    for message in messages:
-        message_type = OPENAI_TO_REKA_ROLE_MAP[message["role"]]
-        if not chat_history or chat_history[-1]["type"] != message_type:
-            chat_history.append(
-                dict(
-                    type=message_type,
-                    text=message["content"],
-                )
-            )
-        else:
-            # merge consecutive rounds with same role into one round
-            chat_history[-1]["text"] += "\n\n" + message["content"]
-
     use_search_engine = False
     if "-online" in model_name:
         model_name = model_name.replace("-online", "")
         use_search_engine = True
     request = {
         "model_name": model_name,
-        "conversation_history": chat_history,
+        "conversation_history": messages,
         "temperature": temperature,
         "request_output_len": max_new_tokens,
         "runtime_top_p": top_p,
