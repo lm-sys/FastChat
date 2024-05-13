@@ -220,7 +220,7 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
                 for line in f:
                     data = json.loads(line)
                     if data["custom_id"] == f"{model}-question_id={question_id}-turn={turn}":
-                        judgment = data["body"]["choices"][0]["message"]["content"]
+                        judgment = data["response"]["body"]["choices"][0]["message"]["content"]
         retval = run_judge_single(
             question, answer, judge, ref_answer, multi_turn=multi_turn, do_batch=do_batch, judgment=judgment
         )
