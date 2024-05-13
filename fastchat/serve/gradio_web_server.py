@@ -289,7 +289,11 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def _prepare_text_with_image(state, text, images):
+def report_csam_image(state, image):
+    pass
+
+
+def _prepare_text_with_image(state, text, images, csam_flag):
     if images is not None and len(images) > 0:
         image = images[0]
 
@@ -300,6 +304,10 @@ def _prepare_text_with_image(state, text, images):
         image = state.conv.convert_image_to_base64(
             image
         )  # PIL type is not JSON serializable
+
+        if csam_flag:
+            report_csam_image(state, image)
+            return text
 
         text = text, [image]
 
@@ -334,7 +342,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, image)
+    text = _prepare_text_with_image(state, text, image, csam_flag=False)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5

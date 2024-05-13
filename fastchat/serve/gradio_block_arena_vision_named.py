@@ -11,6 +11,8 @@ import gradio as gr
 import numpy as np
 
 from fastchat.constants import (
+    TEXT_MODERATION_MSG,
+    IMAGE_MODERATION_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -185,14 +187,21 @@ def add_text(
     all_conv_text = (
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
-    flagged = moderation_filter(all_conv_text, model_list)
-    if not flagged and len(images) > 0:
-        flagged = image_moderation_filter(images[0])
+    text_flagged = moderation_filter(all_conv_text, model_list)
+    nsfw_flagged, csam_flagged = False, False
+    if len(images) > 0:
+        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
 
-    if flagged:
-        logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+    image_flagged = nsfw_flagged or csam_flagged
+    if text_flagged or image_flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        if text_flagged and not image_flagged:
+            # overwrite the original text
+            text = TEXT_MODERATION_MSG
+        elif not text_flagged and image_flagged:
+            text = IMAGE_MODERATION_MSG
+        elif text_flagged and image_flagged:
+            text = MODERATION_MSG
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -211,7 +220,9 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, images)
+        post_processed_text = _prepare_text_with_image(
+            states[i], text, images, csam_flag=csam_flagged
+        )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -236,9 +247,11 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Chat with any two models side-by-side and vote!
 - You can continue chatting for multiple rounds.
 - Click "Clear history" to start a new round.
+- You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+
+**❗️ For research purposes, we log user prompt and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
 ## 🤖 Choose two models to compare
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]

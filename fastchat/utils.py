@@ -466,6 +466,6 @@ def image_moderation_provider(image, api_type):
 
 
 def image_moderation_filter(image):
-    return image_moderation_provider(image, "nsfw") or image_moderation_provider(
-        image, "csam"
-    )
+    nsfw_flagged = image_moderation_provider(image, "nsfw")
+    csam_flagged = image_moderation_provider(image, "csam")
+    return nsfw_flagged, csam_flagged
