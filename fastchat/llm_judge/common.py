@@ -214,8 +214,10 @@ def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=Fal
                 "temperature": 0,
                 "max_tokens": 2048,
             }
+            question_id = question["question_id"]
+            turn = 1 if not multi_turn else 2
             result = {
-                "custom_id": f"""{model}-question_id={question["question_id"]}""", 
+                "custom_id": f"{model}-question_id={question_id}-turn={turn}", 
                 "method": "POST", 
                 "url": "/v1/chat/completions", 
                 "body": body,
