@@ -189,7 +189,6 @@ def moderation_filter(text, model_list, do_moderation=False):
                 do_moderation = True
                 break
 
-    moderation_results = False
     if do_moderation:
         return oai_moderation(text, custom_thresholds)
     return False
