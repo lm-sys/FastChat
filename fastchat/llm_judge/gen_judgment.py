@@ -16,6 +16,7 @@ from fastchat.llm_judge.common import (
     check_data,
     play_a_match_pair,
     play_a_match_single,
+    play_a_match_single_batch,
     get_model_list,
     Judge,
     MatchPair,
@@ -208,6 +209,7 @@ if __name__ == "__main__":
         "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
     )
     parser.add_argument("--yes", action="store_true")
+    parser.add_argument("--batch", action="store_true")
     args = parser.parse_args()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
@@ -234,7 +236,7 @@ if __name__ == "__main__":
 
     if args.mode == "single":
         judges = make_judge_single(args.judge_model, judge_prompts)
-        play_a_match_func = play_a_match_single
+        play_a_match_func = play_a_match_single_batch if args.batch else play_a_match_single
         output_file = (
             f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
         )

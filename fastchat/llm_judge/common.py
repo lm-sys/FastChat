@@ -132,7 +132,7 @@ def load_judge_prompts(prompt_file: str):
     return prompts
 
 
-def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
+def run_judge_single(question, answer, judge, ref_answer, multi_turn=False, do_batch=False):
     kwargs = {}
     model = judge.model_name
     if ref_answer is not None:
@@ -163,6 +163,9 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
+    if do_batch:
+        return conv
+
     if model in OPENAI_MODEL_LIST:
         judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
     elif model in ANTHROPIC_MODEL_LIST:
@@ -189,7 +192,7 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     return rating, user_prompt, judgment
 
 
-def play_a_match_single(match: MatchSingle, output_file: str):
+def play_a_match_single(match: MatchSingle, output_file: str, do_batch: bool=False):
     question, model, answer, judge, ref_answer, multi_turn = (
         match.question,
         match.model,
@@ -200,27 +203,43 @@ def play_a_match_single(match: MatchSingle, output_file: str):
     )
 
     if judge.prompt_template["type"] == "single":
-        score, user_prompt, judgment = run_judge_single(
-            question, answer, judge, ref_answer, multi_turn=multi_turn
+        retval = run_judge_single(
+            question, answer, judge, ref_answer, multi_turn=multi_turn, do_batch=do_batch
         )
+        if do_batch:
+            conv = retval
+            body = {
+                "model": judge.model_name,
+                "messages": conv.to_openai_api_messages(),
+                "temperature": 0,
+                "max_tokens": 2048,
+            }
+            result = {
+                "custom_id": model + "-" + question["question_id"], 
+                "method": "POST", 
+                "url": "/v1/chat/completions", 
+                "body": body,
+            }
+        else:
+            score, user_prompt, judgment = retval
 
-        question_id = question["question_id"]
-        turn = 1 if not multi_turn else 2
-        result = {
-            "question_id": question_id,
-            "model": model,
-            "judge": (judge.model_name, judge.prompt_template["name"]),
-            "user_prompt": user_prompt,
-            "judgment": judgment,
-            "score": score,
-            "turn": turn,
-            "tstamp": time.time(),
-        }
-        print(
-            f"question: {question_id}, turn: {turn}, model: {model}, "
-            f"score: {score}, "
-            f"judge: {(judge.model_name, judge.prompt_template['name'])}"
-        )
+            question_id = question["question_id"]
+            turn = 1 if not multi_turn else 2
+            result = {
+                "question_id": question_id,
+                "model": model,
+                "judge": (judge.model_name, judge.prompt_template["name"]),
+                "user_prompt": user_prompt,
+                "judgment": judgment,
+                "score": score,
+                "turn": turn,
+                "tstamp": time.time(),
+            }
+            print(
+                f"question: {question_id}, turn: {turn}, model: {model}, "
+                f"score: {score}, "
+                f"judge: {(judge.model_name, judge.prompt_template['name'])}"
+            )
     else:
         raise ValueError(f"invalid judge type: {judge['type']}")
 
@@ -230,6 +249,10 @@ def play_a_match_single(match: MatchSingle, output_file: str):
             fout.write(json.dumps(result) + "\n")
 
     return result
+
+
+def play_a_match_single_batch(match: MatchSingle, output_file: str):
+    return play_a_match_single(match, output_file, do_batch=True)
 
 
 def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=False):
