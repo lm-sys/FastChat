@@ -201,8 +201,7 @@ def build_single_vision_language_model_ui(
 
 **❗️ For research purposes, we log user prompt and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
-"""
+Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image."""
         if add_promotion_links
         else ""
     )

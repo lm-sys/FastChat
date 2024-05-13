@@ -360,7 +360,7 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
 - Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
-- You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 
 **❗️ For research purposes, we log user prompt and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 

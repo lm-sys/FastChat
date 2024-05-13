@@ -235,7 +235,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Chat with any two models side-by-side and vote!
 - You can continue chatting for multiple rounds.
 - Click "Clear history" to start a new round.
-- You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 
 **❗️ For research purposes, we log user prompt and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
