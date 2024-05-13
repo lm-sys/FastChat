@@ -26,3 +26,10 @@ Example command:
 ```
 python3 -m fastchat.serve.gradio_web_server_multi --share --register-api-endpoint-file api_endpoints.json --vision-arena
 ```
+
+### NSFW and CSAM Detection
+1. Adding NSFW Endpoint and API key: Please add the following environment variables to run the NSFW moderation filter for images: 
+  - `AZURE_IMG_MODERATION_ENDPOINT`: This is the endpoint that the NSFW moderator is hosted (e.g. https://{endpoint}/contentmoderator/moderate/v1.0/ProcessImage/Evaluate). Change the `endpoint` to your own.
+  - `AZURE_IMG_MODERATION_API_KEY`: Your API key to run this endpoint.
+2. Adding CSAM API key:
+  - `PHOTODNA_API_KEY`: The API key that runs the CSAM detector endpoint.

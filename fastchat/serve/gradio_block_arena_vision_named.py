@@ -46,6 +46,7 @@ from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter,
 )
 
 
@@ -185,6 +186,9 @@ def add_text(
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
     flagged = moderation_filter(all_conv_text, model_list)
+    if not flagged and len(images) > 0:
+        flagged = image_moderation_filter(images[0])
+
     if flagged:
         logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
         # overwrite the original text

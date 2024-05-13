@@ -189,6 +189,7 @@ def moderation_filter(text, model_list, do_moderation=False):
                 do_moderation = True
                 break
 
+    moderation_results = False
     if do_moderation:
         return oai_moderation(text, custom_thresholds)
     return False
@@ -415,3 +416,57 @@ def get_image_file_from_gcs(filename):
     contents = blob.download_as_bytes()
 
     return contents
+
+
+def pil_image_to_byte_array(pil_image, format="JPEG"):
+    img_byte_arr = BytesIO()
+    pil_image.save(img_byte_arr, format=format)
+    img_byte_arr = img_byte_arr.getvalue()
+    return img_byte_arr
+
+
+def convert_image_to_byte_array(image):
+    if type(image) == str:
+        with open(image, "rb") as image_data:
+            image_bytes = image_data.read()
+    else:
+        image_bytes = pil_image_to_byte_array(
+            image, format="JPEG"
+        )  # Use 'PNG' or other formats as needed
+
+    return image_bytes
+
+
+def image_moderation_request(image, endpoint, api_key):
+    print(f"moderating image: {image}")
+    # Set the content type to the appropriate image format
+
+    headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
+
+    # Specify the API URL
+    image_bytes = convert_image_to_byte_array(image)
+    response = requests.post(endpoint, headers=headers, data=image_bytes).json()
+    print(response)
+
+    return response
+
+
+def image_moderation_provider(image, api_type):
+    if api_type == "nsfw":
+        endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
+        api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
+        response = image_moderation_request(image, endpoint, api_key)
+        return response["IsImageAdultClassified"] or response["IsImageRacyClassified"]
+    elif api_type == "csam":
+        endpoint = (
+            "https://api.microsoftmoderator.com/photodna/v1.0/Match?enhance=false"
+        )
+        api_key = os.environ["PHOTODNA_API_KEY"]
+        response = image_moderation_request(image, endpoint, api_key)
+        return response["IsMatch"]
+
+
+def image_moderation_filter(image):
+    return image_moderation_provider(image, "nsfw") or image_moderation_provider(
+        image, "csam"
+    )
