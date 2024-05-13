@@ -165,10 +165,10 @@ def run_judge_single(
     conv.append_message(conv.roles[0], user_prompt)
     conv.append_message(conv.roles[1], None)
 
-    if do_batch:
-        return conv
-
     if judgment is None:
+        if do_batch:
+            return conv
+        
         if model in OPENAI_MODEL_LIST:
             judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
         elif model in ANTHROPIC_MODEL_LIST:
