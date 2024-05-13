@@ -23,11 +23,12 @@ def main(file_path, file_path_out, batch_id=None):
         batch_id = batch.id
     print(f"working with batch (id={batch_id})")
 
+    t_start = time.time()
     while True:
        batch = client.batches.retrieve(batch_id)
        if batch.status in ["failed", "completed", "expired", "cancelled"]:
           break
-       print("waiting for batch to finish...")
+       print(f"waiting for batch to finish... (elapsed = {time.time() - t_start})")
        time.sleep(10)
 
     if batch.status == "completed":
