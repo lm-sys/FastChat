@@ -55,6 +55,45 @@ register_model_info(
 )
 
 register_model_info(
+    [
+        "gpt-4o-2024-05-13",
+    ],
+    "GPT-4o",
+    "https://openai.com/index/hello-gpt-4o/",
+    "The flagship model across audio, vision, and text by OpenAI",
+)
+
+register_model_info(
+    [
+        "gpt-4-turbo",
+        "gpt-4o-2024-05-13",
+        "gpt-4-turbo-2024-04-09",
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "gpt2-chatbot",
+        "im-also-a-good-gpt2-chatbot",
+        "im-a-good-gpt2-chatbot",
+    ],
+    "GPT-4-Turbo",
+    "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
+    "GPT-4-Turbo by OpenAI",
+)
+
+register_model_info(
+    ["llama-3-70b-instruct", "llama-3-8b-instruct"],
+    "Llama 3",
+    "https://ai.meta.com/blog/meta-llama-3/",
+    "Open foundation and chat models by Meta",
+)
+
+register_model_info(
+    ["gemini-1.5-pro-api-0409-preview", "gemini-1.5-pro-api-preview"],
+    "Gemini",
+    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
+    "Gemini by Google",
+)
+
+register_model_info(
     ["reka-core-20240501"],
     "Reka Core",
     "https://www.reka.ai/news/reka-core-our-frontier-class-multimodal-language-model",
@@ -62,8 +101,16 @@ register_model_info(
 )
 
 register_model_info(
+    ["gemini-pro", "gemini-pro-dev-api"],
+    "Gemini",
+    "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
+    "Gemini by Google",
+)
+
+register_model_info(
     [
         "qwen-max-0403",
+        "qwen-max-0428",
     ],
     "Qwen Max",
     "https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction",
@@ -77,27 +124,6 @@ register_model_info(
     "Qwen 1.5",
     "https://qwenlm.github.io/blog/qwen1.5-110b/",
     "The First 100B+ Model of the Qwen1.5 Series",
-)
-
-register_model_info(
-    ["llama-3-70b-instruct", "llama-3-8b-instruct"],
-    "Llama 3",
-    "https://ai.meta.com/blog/meta-llama-3/",
-    "Open foundation and chat models by Meta",
-)
-
-register_model_info(
-    ["gemini-1.5-pro-api-0409-preview"],
-    "Gemini",
-    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
-    "Gemini by Google",
-)
-
-register_model_info(
-    ["gemini-pro", "gemini-pro-dev-api"],
-    "Gemini",
-    "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
-    "Gemini by Google",
 )
 
 register_model_info(
@@ -121,19 +147,6 @@ register_model_info(
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-8x22b/",
     "A Mixture-of-Experts model by Mistral AI",
-)
-
-register_model_info(
-    [
-        "gpt-4-turbo",
-        "gpt-4-turbo-2024-04-09",
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "gpt2-chatbot",
-    ],
-    "GPT-4-Turbo",
-    "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
-    "GPT-4-Turbo by OpenAI",
 )
 
 register_model_info(

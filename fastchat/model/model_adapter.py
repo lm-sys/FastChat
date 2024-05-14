@@ -81,6 +81,9 @@ OPENAI_MODEL_LIST = (
     "gpt-4-turbo-browsing",
     "gpt-4-turbo-2024-04-09",
     "gpt2-chatbot",
+    "im-also-a-good-gpt2-chatbot",
+    "im-a-good-gpt2-chatbot",
+    "gpt-4o-2024-05-13",
 )
 
 
@@ -1113,6 +1116,8 @@ class ChatGPTAdapter(BaseModelAdapter):
         if "gpt-4-turbo-2024-04-09" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
         if "gpt2-chatbot" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-4o" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
         return get_conv_template("chatgpt")
 

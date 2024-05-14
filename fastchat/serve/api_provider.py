@@ -297,6 +297,7 @@ def openai_assistant_api_stream_iter(
     offset_idx = 0
     full_ret_text = ""
     idx_mapping = {}
+    cur_offset = 0
     for line in res.iter_lines():
         if not line:
             continue
@@ -325,6 +326,7 @@ def openai_assistant_api_stream_iter(
             continue
 
         for delta in data["delta"]["content"]:
+            logger.info(f"[debug]: {delta}")
             text_index = delta["index"] + offset_idx
             if len(list_of_text) <= text_index:
                 list_of_text.append("")
@@ -339,14 +341,23 @@ def openai_assistant_api_stream_iter(
                 if "annotations" in content and len(content["annotations"]) > 0:
                     annotations = content["annotations"]
 
-                    cur_offset = 0
-                    raw_text_copy = raw_text
+                    raw_text_copy = text
                     for anno in annotations:
-                        if anno["type"] == "url_citation":
-                            anno_text = anno["text"]
-                            if anno_text not in idx_mapping:
-                                continue
-                            citation_number = idx_mapping[anno_text]
+                        if anno["type"] == "url_citation":                            
+                            pattern = r"【\d+†source】"
+                            matches = re.findall(pattern, content["value"])
+                            if len(matches) > 0:
+                                for match in matches:
+                                    print(match)
+                                    if match not in idx_mapping:
+                                        idx_mapping[match] = len(idx_mapping) + 1
+                                    citation_number = idx_mapping[match]
+                            
+                            # anno_text = anno["text"]
+                            # if anno_text not in idx_mapping:
+                            #     idx_mapping[anno_text] = len(idx_mapping) + 1
+                            # citation_number = idx_mapping[anno_text]                            
+                            # citation_number = anno["index"] + 1
 
                             start_idx = anno["start_index"] + cur_offset
                             end_idx = anno["end_index"] + cur_offset
@@ -369,19 +380,19 @@ def openai_assistant_api_stream_iter(
                     text = raw_text_copy
                 else:
                     text_content = content["value"]
-                    raw_text += text_content
+                    # raw_text += text_content
 
                     # re-index citation number
-                    pattern = r"【\d+】"
-                    matches = re.findall(pattern, content["value"])
-                    if len(matches) > 0:
-                        for match in matches:
-                            if match not in idx_mapping:
-                                idx_mapping[match] = len(idx_mapping) + 1
-                            citation_number = idx_mapping[match]
-                            text_content = text_content.replace(
-                                match, f" [{citation_number}]"
-                            )
+                    # pattern = r"【\d+】"
+                    # matches = re.findall(pattern, content["value"])
+                    # if len(matches) > 0:
+                    #     for match in matches:
+                    #         if match not in idx_mapping:
+                    #             idx_mapping[match] = len(idx_mapping) + 1
+                    #         citation_number = idx_mapping[match]
+                    #         text_content = text_content.replace(
+                    #             match, f" [{citation_number}]"
+                    #         )
                     text += text_content
                     # yield {"text": text, "error_code": 0}
             elif delta["type"] == "image_file":

@@ -38,7 +38,7 @@ def make_default_md(arena_df, elo_results):
 | [Vote](https://chat.lmsys.org) | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 LMSYS [Chatbot Arena](https://lmsys.org/blog/2023-05-03-arena/) is a crowdsourced open platform for LLM evals.
-We've collected over **800,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
+We've collected over **1,000,000** human pairwise comparisons to rank LLMs with the [Bradley-Terry model](https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model) and display the model ratings in Elo-scale.
 You can find more details in our [paper](https://arxiv.org/abs/2403.04132).
 """
     return leaderboard_md
@@ -277,7 +277,10 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
         by=["final_ranking", "rating"], ascending=[True, False]
     )
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-    arena_df = arena_df.sort_values(by=["final_ranking"], ascending=True)
+    # sort by final_ranking, if the same, then by rating
+    arena_df = arena_df.sort_values(
+        by=["final_ranking", "rating"], ascending=[True, False]
+    )
 
     # arena_df["final_ranking"] = range(1, len(arena_df) + 1)
     # sort by rating
@@ -375,6 +378,7 @@ key_to_category_name = {
     "no_tie": "Exclude Ties",
     "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
+    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
@@ -386,6 +390,7 @@ cat_name_to_explanation = {
     "Exclude Ties": "Exclude Ties and Bothbad",
     "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
+    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
 }
 
 
@@ -755,6 +760,7 @@ if __name__ == "__main__":
     parser.add_argument("--leaderboard-table-file", type=str)
     parser.add_argument("--ban-ip-file", type=str)
     parser.add_argument("--exclude-model-names", type=str, nargs="+")
+    parser.add_argument("--password", type=str, default=None)
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")
@@ -783,4 +789,5 @@ if __name__ == "__main__":
         server_port=args.port,
         share=args.share,
         max_threads=200,
+        auth=(args.password, args.password) if args.password else None,
     )

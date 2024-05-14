@@ -26,6 +26,8 @@ from fastchat.serve.gradio_web_server import (
     enable_btn,
     disable_btn,
     invisible_btn,
+    enable_text,
+    disable_text,
     acknowledgment_md,
     get_ip,
     get_model_description_md,
@@ -75,20 +77,23 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
 
+    gr.Info("🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY!")
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
                 "### Model A: " + states[0].model_name,
                 "### Model B: " + states[1].model_name,
             )
-            yield names + ("",) + (disable_btn,) * 4
+            # yield names + ("",) + (disable_btn,) * 4
+            yield names + (disable_text,) + (disable_btn,) * 5
             time.sleep(0.1)
     else:
         names = (
             "### Model A: " + states[0].model_name,
             "### Model B: " + states[1].model_name,
         )
-        yield names + ("",) + (disable_btn,) * 4
+        # yield names + ("",) + (disable_btn,) * 4
+        yield names + (disable_text,) + (disable_btn,) * 5
 
 
 def leftvote_last_response(
@@ -151,10 +156,11 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [""]
+        + [enable_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [""]
+        + [enable_btn]
     )
 
 
@@ -174,35 +180,38 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0125-preview": 2,
     "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
+    "gpt-4o-2024-05-13": 10,
+    "im-a-good-gpt2-chatbot": 4,
+    "im-also-a-good-gpt2-chatbot": 4,
+    "gemini-1.5-pro-api-preview": 4,
+    "gemini-1.5-pro-api-0409-preview": 4,
     "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "llama-3-70b-instruct": 4,
     "llama-3-8b-instruct": 4,
-    "phi-3-mini-128k-instruct": 2,
-    "snowflake-arctic-instruct": 2,
-    "mixtral-8x22b-instruct-v0.1": 4,
-    "dbrx-instruct": 1,
+    "mixtral-8x22b-instruct-v0.1": 2,
     "command-r-plus": 4,
     "command-r": 2,
-    "gemini-1.5-pro-api-0409-preview": 6,
     "reka-core-20240501": 6,
     "reka-flash": 2,
-    "reka-flash-online": 2,
-    "qwen-max-0403": 4,
+    "reka-flash-online": 1,
+    "qwen-max-0428": 4,
     "qwen1.5-110b-chat": 4,
-    "qwen1.5-72b-chat": 2,
-    "qwen1.5-32b-chat": 2,
-    "qwen1.5-14b-chat": 1,
+    "qwen1.5-72b-chat": 1,
+    "qwen1.5-32b-chat": 1,
     "gemma-1.1-7b-it": 1,
     "gemma-1.1-2b-it": 1,
-    "mixtral-8x7b-instruct-v0.1": 2,
+    "mixtral-8x7b-instruct-v0.1": 1,
     "mistral-7b-instruct-v0.2": 1,
     "mistral-large-2402": 2,
     "mistral-medium": 1,
+    "llama-2-70b-chat": 1,
+    "llama-2-13b-chat": 1,
+    "snowflake-arctic-instruct": 1,
+    "phi-3-mini-128k-instruct": 1,
     # tier 1
     "deluxe-chat-v1.3": 1,
-    "llama-2-70b-chat": 1,
     "yi-34b-chat": 1,
 }
 
@@ -214,23 +223,21 @@ BATTLE_TARGETS = {
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
     },
-    "reka-core-20240501": {
+    "im-also-a-good-gpt2-chatbot": {
         "claude-3-opus-20240229",
         "gpt-4-turbo-2024-04-09",
-        "gemini-1.5-pro-api-0409-preview",
         "llama-3-70b-instruct",
     },
-    "qwen-max-0403": {
+    "im-a-good-gpt2-chatbot": {
         "claude-3-opus-20240229",
         "gpt-4-turbo-2024-04-09",
-        "gemini-1.5-pro-api-0409-preview",
         "llama-3-70b-instruct",
     },
-    "qwen1.5-110b-chat": {
+    "gpt-4o-2024-05-13": {
+        "claude-3-opus-20240229",
+        "gpt-4-turbo-2024-04-09",
         "llama-3-70b-instruct",
-        "mixtral-8x22b-instruct-v0.1",
-        "qwen1.5-72b-chat",
-    },
+    }
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -242,10 +249,12 @@ SAMPLING_BOOST_MODELS = [
     #"reka-flash-online",
     # "gemini-1.5-pro-api-0409-preview",
     "llama-3-70b-instruct",
-    "reka-core-20240501",
-    "qwen-max-0403",
-    "qwen1.5-110b-chat",
-    # "gpt2-chatbot",
+    # "reka-core-20240501",
+    # "qwen-max-0428",
+    # "qwen1.5-110b-chat",
+    "im-also-a-good-gpt2-chatbot",
+    "gemini-1.5-pro-api-preview",
+    "gpt-4o-2024-05-13",
 ]
 
 # outage models won't be sampled.
@@ -443,7 +452,7 @@ def bot_response_multi(
         ]:
             token_per_yield = 30
         elif states[i].model_name in [
-            "qwen-max-0403",
+            "qwen-max-0428",
             "qwen1.5-110b-chat",
         ]:
             token_per_yield = 7
@@ -479,10 +488,9 @@ def build_side_by_side_ui_anony(models):
 - Votes won't be counted if model identities are revealed during the conversation.
 
 ## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
-- We've collected **800,000+** human votes to compute an Elo leaderboard for 90+ LLMs. Find out who is the 🥇LLM Champion!
+- We've collected **1,000,000+** human votes to compute an Elo leaderboard for 90+ LLMs. Find out who is the 🥇LLM Champion!
 
 ## 👇 Chat now!
-- <span style='color: red; font-weight: bold'>gpt2-chatbot is currently unavailable.</span> See our model evaluation policy [here](https://lmsys.org/blog/2024-03-01-policy/).
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -582,22 +590,22 @@ def build_side_by_side_ui_anony(models):
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     bothbad_btn.click(
         bothbad_vote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
@@ -611,7 +619,7 @@ def build_side_by_side_ui_anony(models):
     clear_btn.click(
         clear_history,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
+        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning] + [send_btn],
     )
 
     share_js = """

@@ -50,6 +50,8 @@ no_change_btn = gr.Button()
 enable_btn = gr.Button(interactive=True, visible=True)
 disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
+enable_text = gr.Textbox(interactive=True, visible=True, placeholder="👉 Enter your prompt and press ENTER")
+disable_text = gr.Textbox(interactive=False, visible=True, placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)')
 
 controller_url = None
 enable_moderation = False
@@ -739,8 +741,8 @@ def build_about():
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/). Our mission is to build an open platform to evaluate LLMs by human preference in the real-world.
 We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback dataset. We invite everyone to join us!
 
-## Arena Core Team
-- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
+## Arena Team
+- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Tianle Li](https://codingwithtim.github.io/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
 
 ## Past Members
 - [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
@@ -778,7 +780,6 @@ def build_single_model_ui(models, add_promotion_links=False):
 - [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 👇 Choose any model to chat
-- <span style='color: red; font-weight: bold'>gpt2-chatbot is currently unavailable.</span> See our model evaluation policy [here](https://lmsys.org/blog/2024-03-01-policy/).
 """
         if add_promotion_links
         else ""
