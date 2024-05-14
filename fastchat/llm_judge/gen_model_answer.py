@@ -17,6 +17,8 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
 
 def run_eval(
     model_path,
@@ -55,7 +57,7 @@ def run_eval(
             get_answers_func(
                 model_path,
                 model_id,
-                questions[i : i + chunk_size],
+                questions[i: i + chunk_size],
                 answer_file,
                 max_new_token,
                 num_choices,
@@ -95,6 +97,19 @@ def get_model_answers(
         debug=False,
     )
 
+    print("Loading model and tokenizer..")
+    # tokenizer.chat_template = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"  # noqa
+    # tokenizer.pad_token = tokenizer.unk_token
+    # tokenizer = AutoTokenizer.from_pretrained(model_path)
+    # tokenizer.chat_template = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"  # noqa
+    # tokenizer.pad_token = tokenizer.unk_token
+
+    # model = AutoModelForCausalLM.from_pretrained(
+    #     model_path, device_map="cuda"
+    # )
+
+    model.generation_config.pad_token_id = tokenizer.pad_token_id
+
     for question in tqdm(questions):
         if question["category"] in temperature_config:
             temperature = temperature_config[question["category"]]
@@ -104,7 +119,8 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            # conv = get_conversation_template(model_id)
+            conv = get_conversation_template("zephyr")
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
@@ -129,7 +145,7 @@ def get_model_answers(
                     if model.config.is_encoder_decoder:
                         output_ids = output_ids[0]
                     else:
-                        output_ids = output_ids[0][len(input_ids[0]) :]
+                        output_ids = output_ids[0][len(input_ids[0]):]
 
                     # be consistent with the template's stop_token_ids
                     if conv.stop_token_ids:
@@ -229,7 +245,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--question-end", type=int, help="A debug option. The end index of questions."
     )
-    parser.add_argument("--answer-file", type=str, help="The output answer file.")
+    parser.add_argument("--answer-file", type=str,
+                        help="The output answer file.")
     parser.add_argument(
         "--max-new-token",
         type=int,
