@@ -227,7 +227,13 @@ Note: You can only chat with **one image per conversation**. You can upload imag
             )
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
-                elem_id="chatbot", label="Scroll down and start chatting", height=550
+                elem_id="chatbot", label="Scroll down and start chatting", height=550,
+                latex_delimiters=[
+                    {"left": '$$', "right": '$$', "display": True},
+                    {"left": '$', "right": '$', "display": False},
+                    {"left": '\\(', "right": '\\)', "display": False},
+                    {"left": '\\[', "right": '\\]', "display": True}
+                ],
             )
 
     with gr.Row():
