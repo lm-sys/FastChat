@@ -129,7 +129,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
-                "has_csam_image" : self.has_csam_image,
+                "has_csam_image": self.has_csam_image,
             }
         )
         return base

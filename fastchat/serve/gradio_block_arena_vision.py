@@ -176,7 +176,9 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
 
-    text, csam_flag = moderate_input(text, all_conv_text, [state.model_name], images, ip)
+    text, csam_flag = moderate_input(
+        text, all_conv_text, [state.model_name], images, ip
+    )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
