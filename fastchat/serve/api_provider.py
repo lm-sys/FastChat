@@ -1008,7 +1008,15 @@ def reka_api_stream_iter(
         "stream": True,
         "use_search_engine": use_search_engine,
     }
-    logger.info(f"==== request ====\n{request}")
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        text_messages.append({"type": message["type"], "text": message["text"]})
+    logged_request = dict(request)
+    logged_request["conversation_history"] = text_messages
+
+    logger.info(f"==== request ====\n{logged_request}")
 
     response = requests.post(
         api_base,
