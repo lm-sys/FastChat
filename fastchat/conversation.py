@@ -584,7 +584,7 @@ class Conversation:
 
         return ret
 
-    def save_new_images(self, use_remote_storage=False):
+    def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
         from fastchat.utils import load_image, upload_image_file_to_gcs
@@ -598,16 +598,16 @@ class Conversation:
                 hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
             ]
 
-            image_filenames = []
+            image_directory_name = "csam_images" if has_csam_images else "serve_images"
             for i, (loaded_image, hash_str) in enumerate(
                 zip(loaded_images, image_hashes)
             ):
                 filename = os.path.join(
-                    "serve_images",
+                    image_directory_name,
                     f"{hash_str}.jpg",
                 )
 
-                if use_remote_storage:
+                if use_remote_storage and not has_csam_images:
                     image_url = upload_image_file_to_gcs(loaded_image, filename)
                     # NOTE(chris): If the URL were public, then we set it here so future model uses the link directly
                     # images[i] = image_url

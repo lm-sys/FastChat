@@ -105,6 +105,8 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
+
+        # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
 
         self.regen_support = True
@@ -291,6 +293,7 @@ def get_ip(request: gr.Request):
     return ip
 
 
+# TODO(Chris): At some point, we would like this to be a live-reporting feature.
 def report_csam_image(state, image):
     pass
 
@@ -310,7 +313,6 @@ def _prepare_text_with_image(state, text, images, csam_flag):
         if csam_flag:
             state.has_csam_image = True
             report_csam_image(state, image)
-            return text
 
         text = text, [image]
 
@@ -564,7 +566,9 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
-    conv.save_new_images(use_remote_storage=use_remote_storage)
+    conv.save_new_images(
+        has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
+    )
 
     filename = get_conv_log_filename(is_vision=state.is_vision)
 
