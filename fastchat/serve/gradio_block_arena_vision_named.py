@@ -189,7 +189,7 @@ def add_text(
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
 
-    text, csam_flag = moderate_input(all_conv_text, model_list, images, ip)
+    text, csam_flag = moderate_input(text, all_conv_text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:

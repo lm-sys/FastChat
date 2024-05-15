@@ -140,8 +140,8 @@ def clear_history_example(request: gr.Request):
     return (state, []) + (disable_btn,) * 5
 
 
-def moderate_input(text, model_list, images, ip):
-    text_flagged = moderation_filter(text, model_list)
+def moderate_input(text, all_conv_text, model_list, images, ip):
+    text_flagged = moderation_filter(all_conv_text, model_list)
     # flagged = moderation_filter(text, [state.model_name])
     nsfw_flagged, csam_flagged = False, False
     if len(images) > 0:
@@ -149,7 +149,7 @@ def moderate_input(text, model_list, images, ip):
 
     image_flagged = nsfw_flagged or csam_flagged
     if text_flagged or image_flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        logger.info(f"violate moderation. ip: {ip}. text: {all_conv_text}")
         if text_flagged and not image_flagged:
             # overwrite the original text
             text = TEXT_MODERATION_MSG
@@ -176,7 +176,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
 
-    text, csam_flag = moderate_input(all_conv_text, [state.model_name], images, ip)
+    text, csam_flag = moderate_input(text, all_conv_text, [state.model_name], images, ip)
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

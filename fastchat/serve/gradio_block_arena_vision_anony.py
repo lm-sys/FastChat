@@ -308,7 +308,7 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    text, csam_flag = moderate_input(text, model_list, images, ip)
+    text, csam_flag = moderate_input(text, text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:

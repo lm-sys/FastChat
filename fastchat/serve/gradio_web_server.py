@@ -105,6 +105,7 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
+        self.has_csam_image = False
 
         self.regen_support = True
         if "browsing" in model_name:
@@ -128,6 +129,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
+                "has_csam_image" : self.has_csam_image,
             }
         )
         return base
@@ -306,6 +308,7 @@ def _prepare_text_with_image(state, text, images, csam_flag):
         )  # PIL type is not JSON serializable
 
         if csam_flag:
+            state.has_csam_image = True
             report_csam_image(state, image)
             return text
 
