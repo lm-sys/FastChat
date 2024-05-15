@@ -136,6 +136,7 @@ def get_answer(
 
     # Dump answers
     question["criteria_tag"] = {name: bool(i in criteria) for i, name in TAGS.items()}
+    question.drop("prompt")
 
     with LOCK:
         with open(answer_file, "a") as fout:
@@ -147,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--input-file", type=str, required=True)
     parser.add_argument("--cache-file", type=str, default=None)
     parser.add_argument("--output-file", type=str, required=True)
+    parser.add_argument("--convert-to-json", action="store_true")
     args = parser.parse_args()
 
     print("loading input data (might take min)")
@@ -154,7 +156,7 @@ if __name__ == "__main__":
     print(f"{len(input_data)}# of input data just loaded")
     if args.cache_file:
         print("loading cache data")
-        cache_data = pd.read_json(args.cache_file, lines=True)
+        cache_data = pd.read_json(args.cache_file)
         print(f"{len(cache_data)}# of cache data just loaded")
 
         assert "criteria_tag" in cache_data.columns and len(
@@ -163,7 +165,7 @@ if __name__ == "__main__":
 
         not_labeled = input_data[
             ~input_data["question_id"].isin(cache_data["question_id"])
-        ]
+        ].copy()
     else:
         not_labeled = input_data.copy()
 
@@ -204,3 +206,9 @@ if __name__ == "__main__":
             concurrent.futures.as_completed(futures), total=len(futures)
         ):
             future.result()
+
+    if args.convert_to_json:
+        temp = pd.read_json(args.output_file, lines=True)
+        temp.to_json(
+            args.output_file[:-1], orient="records", indent=4, force_ascii=False
+        )
