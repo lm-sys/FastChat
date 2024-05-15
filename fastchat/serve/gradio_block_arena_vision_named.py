@@ -237,7 +237,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Click "Clear history" to start a new round.
 - You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 
-**❗️ For research purposes, we log user prompt and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
+**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
 ## 🤖 Choose two models to compare
 """

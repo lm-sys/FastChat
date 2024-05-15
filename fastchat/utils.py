@@ -438,7 +438,6 @@ def convert_image_to_byte_array(image):
 
 def image_moderation_request(image, endpoint, api_key):
     print(f"moderating image: {image}")
-    # Set the content type to the appropriate image format
 
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
 
