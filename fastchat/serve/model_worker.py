@@ -25,11 +25,9 @@ from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.base_model_worker import BaseModelWorker, app
-from fastchat.utils import (
-    build_logger,
-    get_context_length,
-    str_to_torch_dtype,
-)
+from fastchat.utils.logger import build_logger
+from fastchat.utils.inference import get_context_length
+from fastchat.utils.torch import str_to_torch_dtype
 
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")

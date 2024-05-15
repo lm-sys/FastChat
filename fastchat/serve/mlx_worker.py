@@ -27,7 +27,7 @@ from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length, is_partial_stop
+from fastchat.utils.inference import is_partial_stop
 
 import mlx.core as mx
 from mlx_lm import load, generate

@@ -21,7 +21,8 @@ import numpy as np
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
-from fastchat.utils import build_logger, get_window_url_params_js
+from fastchat.utils.logger import build_logger
+from fastchat.utils.gradio import get_window_url_params_js
 
 
 notebook_url = (

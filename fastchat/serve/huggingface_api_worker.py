@@ -36,7 +36,7 @@ from huggingface_hub import InferenceClient
 
 from fastchat.constants import SERVER_ERROR_MSG, ErrorCode
 from fastchat.serve.base_model_worker import BaseModelWorker
-from fastchat.utils import build_logger
+from fastchat.utils.logger import build_logger
 
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")

@@ -7,7 +7,7 @@ python3 launch_openai_api_test_server.py
 import warnings
 
 import openai
-from fastchat.utils import run_cmd
+from fastchat.utils.misc import run_cmd
 
 
 openai.api_key = "EMPTY"  # Not support yet

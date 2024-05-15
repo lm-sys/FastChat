@@ -40,8 +40,8 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
-from fastchat.utils import (
-    build_logger,
+from fastchat.utils.logger import build_logger
+from fastchat.utils.gradio import (
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
     parse_gradio_auth_creds,

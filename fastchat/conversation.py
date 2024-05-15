@@ -612,7 +612,7 @@ class Conversation:
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
-        from fastchat.utils import load_image, upload_image_file_to_gcs
+        from fastchat.utils.storage import load_image, upload_image_file_to_gcs
 
         _, last_user_message = self.messages[-2]
 
@@ -644,7 +644,7 @@ class Conversation:
 
     def extract_text_and_image_hashes_from_messages(self):
         import hashlib
-        from fastchat.utils import load_image
+        from fastchat.utils.storage import load_image
 
         messages = []
 

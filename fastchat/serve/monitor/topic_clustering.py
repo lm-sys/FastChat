@@ -18,7 +18,7 @@ import torch
 from tqdm import tqdm
 from openai import OpenAI
 
-from fastchat.utils import detect_language
+from fastchat.utils.misc import detect_language
 
 
 def remove_punctuation(input_string):

@@ -45,20 +45,11 @@ import torch.nn.functional as F
 import uvicorn
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL, ErrorCode, SERVER_ERROR_MSG
-from fastchat.model.model_adapter import (
-    load_model,
-    add_model_args,
-    get_conversation_template,
-)
-from fastchat.model.model_chatglm import generate_stream_chatglm
-from fastchat.model.model_falcon import generate_stream_falcon
-from fastchat.model.model_codet5p import generate_stream_codet5p
+from fastchat.model.model_adapter import add_model_args
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
-from fastchat.serve.inference import generate_stream
 from fastchat.serve.model_worker import ModelWorker, worker_id, logger
-from fastchat.utils import build_logger, pretty_print_semaphore, get_context_length
 
 
 # We store both the underlying workers and a mapping from their model names to

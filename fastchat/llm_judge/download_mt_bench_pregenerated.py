@@ -3,7 +3,7 @@ Download the pre-generated model answers and judgments for MT-bench.
 """
 import os
 
-from fastchat.utils import run_cmd
+from fastchat.utils.misc import run_cmd
 
 filenames = [
     "data/mt_bench/model_answer/alpaca-13b.jsonl",

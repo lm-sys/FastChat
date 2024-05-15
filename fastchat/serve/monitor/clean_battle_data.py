@@ -18,7 +18,7 @@ from collections import Counter
 import shortuuid
 
 from fastchat.serve.monitor.basic_stats import get_log_files, NUM_SERVERS
-from fastchat.utils import detect_language
+from fastchat.utils.misc import detect_language
 
 
 VOTES = ["tievote", "leftvote", "rightvote", "bothbad_vote"]

@@ -7,7 +7,7 @@ python3 launch_openai_api_test_server.py --multimodal
 
 import openai
 
-from fastchat.utils import run_cmd
+from fastchat.utils.misc import run_cmd
 
 openai.api_key = "EMPTY"  # Not support yet
 openai.base_url = "http://localhost:8000/v1/"

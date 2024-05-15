@@ -58,11 +58,9 @@ from fastchat.serve.gradio_block_arena_vision import (
     moderate_input,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.utils import (
-    build_logger,
-    moderation_filter,
-    image_moderation_filter,
-)
+from fastchat.utils.logger import build_logger
+from fastchat.utils.moderation import moderation_filter, image_moderation_filter
+
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 

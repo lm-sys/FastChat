@@ -18,7 +18,7 @@ from fastchat.serve.monitor.clean_battle_data import (
     to_openai_format,
     replace_model_name,
 )
-from fastchat.utils import detect_language
+from fastchat.utils.misc import detect_language
 
 
 NETWORK_ERROR_MSG = (
