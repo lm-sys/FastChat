@@ -319,7 +319,9 @@ async def get_gen_params(
                         if item["type"] == "text"
                     ]
 
-                    text = "\n".join(text_list)
+                    # TODO(chris): This only applies to LLaVA model. Implement an image_token string in the conv template.
+                    text = "<image>\n" * len(image_list)
+                    text += "\n".join(text_list)
                     conv.append_message(conv.roles[0], (text, image_list))
                 else:
                     conv.append_message(conv.roles[0], message["content"])
@@ -446,7 +448,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         return error_check_ret
 
     gen_params["max_new_tokens"] = max_new_tokens
-    print(gen_params)
+
     if request.stream:
         generator = chat_completion_stream_generator(
             request.model, gen_params, request.n, worker_addr
@@ -879,7 +881,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
 ### END GENERAL API - NOT OPENAI COMPATIBLE ###
 
 
-def  create_openai_api_server():
+def create_openai_api_server():
     parser = argparse.ArgumentParser(
         description="FastChat ChatGPT-Compatible RESTful API server."
     )

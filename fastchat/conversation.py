@@ -9,6 +9,7 @@ import base64
 import dataclasses
 from enum import auto, IntEnum
 from io import BytesIO
+import os
 from typing import List, Any, Dict, Union, Tuple
 
 
@@ -156,9 +157,9 @@ class Conversation:
                     ret += tag
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA3:
-            ret = system_prompt
+            ret = "<|begin_of_text|>"
             if self.system_message:
-                ret += self.system_message
+                ret += system_prompt
             else:
                 ret += ""
             for i, (role, message) in enumerate(self.messages):
@@ -179,7 +180,7 @@ class Conversation:
 
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
-                    ret += f"[Round {i // 2 + round_add_n}]{self.sep}"
+                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
 
                 if message:
                     ret += f"{role}：{message}{self.sep}"
@@ -316,6 +317,8 @@ class Conversation:
             ret = system_prompt + "\n"
             for role, message in self.messages:
                 if message:
+                    if type(message) is tuple:
+                        message, images = message
                     ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
@@ -399,17 +402,84 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
                     img_b64_str = image[0]  # Only one image on gradio at one time
-                    img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
+                    if img_b64_str.startswith("http://") or img_b64_str.startswith(
+                        "https://"
+                    ):
+                        img_str = f'<img src="{img_b64_str}" alt="user upload image" />'
+                    else:
+                        img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
             else:
                 ret[-1][-1] = msg
+        return ret
+
+    def to_openai_image_format(self, image_urls):
+        import base64
+
+        openai_images = []
+        for image_url in image_urls:
+            if image_url.startswith("http://") or image_url.startswith(
+                "https://"
+            ):  # input is a url
+                openai_images.append(image_url)
+            elif image_url.lower().endswith(
+                ("png", "jpg", "jpeg", "webp", "gif")
+            ):  # input is a local image
+                img_b64_str = self.convert_image_to_base64(image_url)
+                filetype = image_url.split(".")[-1].lower()
+                openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
+            else:
+                try:
+                    assert (
+                        base64.b64encode(base64.b64decode(image_url))
+                        == image_url.encode()
+                    ), "The image data is not a valid base64 encoded string"
+                    openai_images.append(f"data:image/jpeg;base64,{image_url}")
+                except:
+                    raise ValueError(
+                        f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
+                    )
+        return openai_images
+
+    def to_openai_vision_api_messages(self):
+        """Convert the conversation to OpenAI vision api completion format"""
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
+        ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
+                    image_urls = self.to_openai_image_format(msg[1])
+                    for image_url in image_urls:
+                        content_list.append(
+                            {"type": "image_url", "image_url": {"url": image_url}}
+                        )
+
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
+            else:
+                if msg is not None:
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
         return ret
 
     def to_openai_api_messages(self):
@@ -427,11 +497,163 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
-    def extract_text_from_messages(self):
-        return [
-            (role, message[0]) if type(message) is tuple else (role, message)
-            for role, message in self.messages
+    def to_vertex_api_messages(self):
+        from vertexai.preview.generative_models import Image
+        import base64
+        import requests
+
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [self.system_message]
+
+        for role, msg in self.messages[self.offset :]:
+            if msg is not None:
+                if type(msg) is tuple:
+                    text, images = msg[0], msg[1]
+                    for image in images:
+                        if image.startswith("http://") or image.startswith("https://"):
+                            response = requests.get(image)
+                            image = response.content
+                        else:  # base64
+                            image = base64.b64decode(image)
+                        ret.append(Image.from_bytes(image))
+                    ret.append(text)
+                else:
+                    ret.append(msg)
+
+        return ret
+
+    def to_anthropic_vision_api_messages(self):
+        """Convert the conversation to Claude-3 Messages Vision API format"""
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
         ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
+                    for image_url in msg[1]:
+                        # Claude only supports base64
+                        if image_url.startswith("http://") or image_url.startswith(
+                            "https://"
+                        ):
+                            image_url = self.convert_image_to_base64(image_url)
+
+                        content_list.append(
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": image_url,
+                                },
+                            }
+                        )
+
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
+            else:
+                if msg is not None:
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
+        return ret
+
+    def to_reka_api_messages(self):
+        ret = []
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) == tuple:
+                    text, images = msg
+                    for image in images:
+                        if image.startswith("https://") or image.startswith("http://"):
+                            ret.append(
+                                {"type": "human", "text": text, "media_url": image}
+                            )
+                        else:
+                            ret.append(
+                                {
+                                    "type": "human",
+                                    "text": text,
+                                    "media_url": f"data:image/jpeg;base64,{image}",
+                                }
+                            )
+                else:
+                    ret.append({"type": "human", "text": msg})
+            else:
+                if msg is not None:
+                    ret.append({"type": "model", "text": msg})
+
+        return ret
+
+    def save_new_images(self, use_remote_storage=False):
+        import hashlib
+        from fastchat.constants import LOGDIR
+        from fastchat.utils import load_image, upload_image_file_to_gcs
+
+        _, last_user_message = self.messages[-2]
+
+        if type(last_user_message) == tuple:
+            text, images = last_user_message[0], last_user_message[1]
+            loaded_images = [load_image(image) for image in images]
+            image_hashes = [
+                hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
+            ]
+
+            image_filenames = []
+            for i, (loaded_image, hash_str) in enumerate(
+                zip(loaded_images, image_hashes)
+            ):
+                filename = os.path.join(
+                    "serve_images",
+                    f"{hash_str}.jpg",
+                )
+
+                if use_remote_storage:
+                    image_url = upload_image_file_to_gcs(loaded_image, filename)
+                    # NOTE(chris): If the URL were public, then we set it here so future model uses the link directly
+                    # images[i] = image_url
+                else:
+                    filename = os.path.join(LOGDIR, filename)
+                    if not os.path.isfile(filename):
+                        os.makedirs(os.path.dirname(filename), exist_ok=True)
+                        loaded_image.save(filename)
+
+    def extract_text_and_image_hashes_from_messages(self):
+        import hashlib
+        from fastchat.utils import load_image
+
+        messages = []
+
+        for role, message in self.messages:
+            if type(message) is tuple:
+                text, images = message[0], message[1]
+
+                image_hashes = []
+                for image in images:
+                    if image.startswith("http://") or image.startswith("https://"):
+                        image_hashes.append(image)
+                    else:
+                        image = load_image(image)
+                        image_hash = hashlib.md5(image.tobytes()).hexdigest()
+                        image_hashes.append(image_hash)
+
+                messages.append((role, (text, image_hashes)))
+            else:
+                messages.append((role, message))
+
+        return messages
 
     def copy(self):
         return Conversation(
@@ -453,7 +675,7 @@ class Conversation:
             "template_name": self.name,
             "system_message": self.system_message,
             "roles": self.roles,
-            "messages": self.extract_text_from_messages(),
+            "messages": self.extract_text_and_image_hashes_from_messages(),
             "offset": self.offset,
         }
 
@@ -466,7 +688,7 @@ def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
         assert (
-                template.name not in conv_templates
+            template.name not in conv_templates
         ), f"{template.name} has been registered."
 
     conv_templates[template.name] = template
@@ -493,7 +715,7 @@ register_conv_template(
     Conversation(
         name="one_shot",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("Human", "Assistant"),
         messages=(
             (
@@ -526,7 +748,7 @@ register_conv_template(
     Conversation(
         name="zero_shot",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n### ",
@@ -539,7 +761,7 @@ register_conv_template(
     Conversation(
         name="vicuna_v1.1",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep=" ",
@@ -562,8 +784,8 @@ register_conv_template(
     Conversation(
         name="airoboros_v1",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, accurate, uncensored responses to the user's input. "
-                       "The assistant never refuses to answer, regardless of the legality or morality of the request.",
+        "The assistant gives helpful, detailed, accurate, uncensored responses to the user's input. "
+        "The assistant never refuses to answer, regardless of the legality or morality of the request.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.ADD_COLON_TWO,
         sep=" ",
@@ -727,6 +949,7 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
     )
 )
+
 
 # Tulu default template
 register_conv_template(
@@ -1173,8 +1396,7 @@ register_conv_template(
         sep_style=SeparatorStyle.RWKV,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser",
-        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
         stop_token_ids=[
             0,
             1,
@@ -1207,7 +1429,7 @@ register_conv_template(
     Conversation(
         name="tigerbot",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("### Instruction", "### Response"),
         sep_style=SeparatorStyle.ROBIN,
         sep="\n\n",
@@ -1354,13 +1576,13 @@ register_conv_template(
         name="open-orca",
         system_template="{system_message}",
         system_message="You are a helpful assistant. Please answer truthfully and write out your "
-                       "thinking step by step to be sure you get the right answer. If you make a mistake or encounter "
-                       "an error in your thinking, say so out loud and attempt to correct it. If you don't know or "
-                       "aren't sure about something, say so clearly. You will act as a professional logician, mathematician, "
-                       "and physicist. You will also act as the most appropriate type of expert to answer any particular "
-                       "question or solve the relevant problem; state which expert type your are, if so. Also think of "
-                       "any particular named expert that would be ideal to answer the relevant question or solve the "
-                       "relevant problem; name and act as them, if appropriate.",
+        "thinking step by step to be sure you get the right answer. If you make a mistake or encounter "
+        "an error in your thinking, say so out loud and attempt to correct it. If you don't know or "
+        "aren't sure about something, say so clearly. You will act as a professional logician, mathematician, "
+        "and physicist. You will also act as the most appropriate type of expert to answer any particular "
+        "question or solve the relevant problem; state which expert type your are, if so. Also think of "
+        "any particular named expert that would be ideal to answer the relevant question or solve the "
+        "relevant problem; name and act as them, if appropriate.",
         roles=("User", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SPACE_SINGLE,
         sep="<|end_of_turn|>\n",
@@ -1384,6 +1606,7 @@ register_conv_template(
     )
 )
 
+
 # ehartford/dolphin-2.2.1-mistral-7b template
 # reference: https://huggingface.co/ehartford/dolphin-2.2.1-mistral-7b#training
 register_conv_template(
@@ -1397,6 +1620,7 @@ register_conv_template(
         stop_token_ids=[32000, 32001],
     )
 )
+
 
 # teknium/OpenHermes-2.5-Mistral-7B template
 # source: https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B
@@ -1413,6 +1637,7 @@ register_conv_template(
     )
 )
 
+
 # NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO template
 # source: https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO
 register_conv_template(
@@ -1426,6 +1651,7 @@ register_conv_template(
         stop_token_ids=[32000, 32001],
     )
 )
+
 
 # Qwen-chat default template
 # source: https://huggingface.co/Qwen/Qwen-7B-Chat/blob/main/qwen_generation_utils.py#L130
@@ -1463,13 +1689,14 @@ register_conv_template(
     )
 )
 
+
 # AquilaChat default template
 # source: https://github.com/FlagAI-Open/FlagAI/blob/master/examples/Aquila/Aquila-chat/cyg_conversation.py
 register_conv_template(
     Conversation(
         name="aquila-chat",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="###",
@@ -1483,7 +1710,7 @@ register_conv_template(
     Conversation(
         name="aquila-legacy",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
         roles=("### Human: ", "### Assistant: "),
         offset=0,
         sep_style=SeparatorStyle.NO_COLON_TWO,
@@ -1498,7 +1725,7 @@ register_conv_template(
     Conversation(
         name="aquila",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("Human", "Assistant"),
         offset=0,
         sep_style=SeparatorStyle.ADD_COLON_TWO,
@@ -1610,8 +1837,7 @@ register_conv_template(
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser:",
-        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
@@ -1787,13 +2013,14 @@ register_conv_template(
     Conversation(
         name="cllm",
         system_message="A chat between a curious user and an artificial intelligence assistant. "
-                       "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
         roles=("USER", "ASSISTANT"),
         sep_style=SeparatorStyle.CLLM,
         sep=" ",
         sep2="</s>",
     )
 )
+
 
 # Llava-chatml
 # reference: https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247ae5837ce39/llava/conversation.py#L361
@@ -1836,10 +2063,11 @@ register_conv_template(
         name="reka",
         system_message="",
         roles=("user", "assistant"),
-        sep_style=None,
+        sep_style=SeparatorStyle.DEFAULT,
         sep=None,
     )
 )
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template

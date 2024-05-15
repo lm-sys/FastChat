@@ -29,7 +29,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    api_endpoint_info,
+    _prepare_text_with_image,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -283,22 +283,26 @@ SAMPLING_BOOST_MODELS = []
 OUTAGE_MODELS = []
 
 
-def get_sample_weight(model):
-    if model in OUTAGE_MODELS:
+def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models):
+    if model in outage_models:
         return 0
-    weight = SAMPLING_WEIGHTS.get(model, 0)
-    if model in SAMPLING_BOOST_MODELS:
+    weight = sampling_weights.get(model, 0)
+    if model in sampling_boost_models:
         weight *= 5
     return weight
 
 
-def get_battle_pair():
+def get_battle_pair(
+    models, battle_targets, outage_models, sampling_weights, sampling_boost_models
+):
     if len(models) == 1:
         return models[0], models[0]
 
     model_weights = []
     for model in models:
-        weight = get_sample_weight(model)
+        weight = get_sample_weight(
+            model, outage_models, sampling_weights, sampling_boost_models
+        )
         model_weights.append(weight)
     total_weight = np.sum(model_weights)
     model_weights = model_weights / total_weight
@@ -312,14 +316,16 @@ def get_battle_pair():
     for model in models:
         if model == chosen_model:
             continue
-        weight = get_sample_weight(model)
+        weight = get_sample_weight(
+            model, outage_models, sampling_weights, sampling_boost_models
+        )
         if (
             weight != 0
-            and chosen_model in BATTLE_TARGETS
-            and model in BATTLE_TARGETS[chosen_model]
+            and chosen_model in battle_targets
+            and model in battle_targets[chosen_model]
         ):
             # boost to 50% chance
-            weight = total_weight / len(BATTLE_TARGETS[chosen_model])
+            weight = total_weight / len(battle_targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -336,7 +342,7 @@ def get_battle_pair():
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
@@ -347,7 +353,13 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        model_left, model_right = get_battle_pair()
+        model_left, model_right = get_battle_pair(
+            models,
+            BATTLE_TARGETS,
+            OUTAGE_MODELS,
+            SAMPLING_WEIGHTS,
+            SAMPLING_BOOST_MODELS,
+        )
         states = [
             State(model_left),
             State(model_right),
@@ -359,7 +371,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [""]
+            + ["", None]
             + [
                 no_change_btn,
             ]
@@ -388,7 +400,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG]
+            + [CONVERSATION_LIMIT_MSG, None]
             + [
                 no_change_btn,
             ]
@@ -398,7 +410,8 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        states[i].conv.append_message(states[i].conv.roles[0], text)
+        post_processed_text = _prepare_text_with_image(states[i], text, image)
+        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
@@ -409,7 +422,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [""]
+        + ["", None]
         + [
             disable_btn,
         ]
@@ -460,6 +473,8 @@ def bot_response_multi(
             in [
                 "gemini-pro",
                 "gemini-pro-dev-api",
+                "gemini-1.0-pro-vision",
+                "gemini-1.5-pro-preview-0409",
                 "gemma-1.1-2b-it",
                 "gemma-1.1-7b-it",
             ]
@@ -586,6 +601,7 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
+    imagebox = gr.State(None)
     # Register listeners
     btn_list = [
         leftvote_btn,
@@ -654,8 +670,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list + [slow_warning],
+        states + model_selectors + [textbox, imagebox],
+        states + chatbots + [textbox, imagebox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -668,8 +684,8 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + model_selectors + [textbox, imagebox],
+        states + chatbots + [textbox, imagebox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
