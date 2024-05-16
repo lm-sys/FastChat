@@ -7,7 +7,7 @@ import requests
 from scipy.spatial.distance import cosine
 
 
-def get_embedding_from_api(word, model="vicuna-7b-v1.1"):
+def get_embedding_from_api(word, model="vicuna-7b-v1.5"):
     if "ada" in model:
         resp = openai.Embedding.create(
             model=model,

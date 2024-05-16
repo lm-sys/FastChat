@@ -13,48 +13,58 @@ from tqdm import tqdm
 
 
 NUM_SERVERS = 14
+LOG_ROOT_DIR = "~/fastchat_logs"
 
 
 def get_log_files(max_num_files=None):
-    dates = []
-    for month in range(4, 12):
-        for day in range(1, 33):
-            dates.append(f"2023-{month:02d}-{day:02d}")
-
+    log_root = os.path.expanduser(LOG_ROOT_DIR)
     filenames = []
-    for d in dates:
-        for i in range(NUM_SERVERS):
-            name = os.path.expanduser(f"~/fastchat_logs/server{i}/{d}-conv.json")
-            if os.path.exists(name):
-                filenames.append(name)
+    for i in range(NUM_SERVERS):
+        for filename in os.listdir(f"{log_root}/server{i}"):
+            if filename.endswith("-conv.json"):
+                filepath = f"{log_root}/server{i}/{filename}"
+                name_tstamp_tuple = (filepath, os.path.getmtime(filepath))
+                filenames.append(name_tstamp_tuple)
+    # sort by tstamp
+    filenames = sorted(filenames, key=lambda x: x[1])
+    filenames = [x[0] for x in filenames]
+
     max_num_files = max_num_files or len(filenames)
     filenames = filenames[-max_num_files:]
     return filenames
 
 
-def load_log_files(log_files):
+def load_log_files(filename):
     data = []
-    for filename in tqdm(log_files, desc="read files"):
-        for retry in range(5):
-            try:
-                lines = open(filename).readlines()
-                break
-            except FileNotFoundError:
-                time.sleep(2)
+    for retry in range(5):
+        try:
+            lines = open(filename).readlines()
+            break
+        except FileNotFoundError:
+            time.sleep(2)
 
-        for l in lines:
-            row = json.loads(l)
-
-            data.append(
-                dict(
-                    type=row["type"],
-                    tstamp=row["tstamp"],
-                    model=row.get("model", ""),
-                    models=row.get("models", ["", ""]),
-                )
+    for l in lines:
+        row = json.loads(l)
+        data.append(
+            dict(
+                type=row["type"],
+                tstamp=row["tstamp"],
+                model=row.get("model", ""),
+                models=row.get("models", ["", ""]),
             )
-
+        )
     return data
+
+
+def load_log_files_parallel(log_files, num_threads=16):
+    data_all = []
+    from multiprocessing import Pool
+
+    with Pool(num_threads) as p:
+        ret_all = list(tqdm(p.imap(load_log_files, log_files), total=len(log_files)))
+        for ret in ret_all:
+            data_all.extend(ret)
+    return data_all
 
 
 def get_anony_vote_df(df):
@@ -77,7 +87,7 @@ def merge_counts(series, on, names):
 
 
 def report_basic_stats(log_files):
-    df_all = load_log_files(log_files)
+    df_all = load_log_files_parallel(log_files)
     df_all = pd.DataFrame(df_all)
     now_t = df_all["tstamp"].max()
     df_1_hour = df_all[df_all["tstamp"] > (now_t - 3600)]

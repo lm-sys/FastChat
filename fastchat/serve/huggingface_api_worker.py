@@ -4,12 +4,18 @@ A model worker that calls huggingface inference endpoint.
 Register models in a JSON file with the following format:
 {
     "falcon-180b-chat": {
-        "model_path": "tiiuae/falcon-180B-chat",
+        "model_name": "falcon-180B-chat",
         "api_base": "https://api-inference.huggingface.co/models",
-        "token": "hf_xxx",
-        "context_length": 2048,
-        "model_names": "falcon-180b-chat",
-        "conv_template": null
+        "model_path": "tiiuae/falcon-180B-chat",
+        "token": "hf_XXX",
+        "context_length": 2048
+    },
+    "zephyr-7b-beta": {
+        "model_name": "zephyr-7b-beta",
+        "model_path": "",
+        "api_base": "xxx",
+        "token": "hf_XXX",
+        "context_length": 4096
     }
 }
 

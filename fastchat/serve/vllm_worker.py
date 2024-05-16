@@ -22,7 +22,7 @@ from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length
+from fastchat.utils import get_context_length, is_partial_stop
 
 
 app = FastAPI()
@@ -55,6 +55,10 @@ class VLLMWorker(BaseModelWorker):
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
         self.tokenizer = llm_engine.engine.tokenizer
+        # This is to support vllm >= 0.2.7 where TokenizerGroup was introduced
+        # and llm_engine.engine.tokenizer was no longer a raw tokenizer
+        if hasattr(self.tokenizer, "tokenizer"):
+            self.tokenizer = llm_engine.engine.tokenizer.tokenizer
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:
@@ -79,6 +83,8 @@ class VLLMWorker(BaseModelWorker):
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
 
+        request = params.get("request", None)
+
         # Handle stop_str
         stop = set()
         if isinstance(stop_str, str) and stop_str != "":
@@ -88,7 +94,9 @@ class VLLMWorker(BaseModelWorker):
 
         for tid in stop_token_ids:
             if tid is not None:
-                stop.add(self.tokenizer.decode(tid))
+                s = self.tokenizer.decode(tid)
+                if s != "":
+                    stop.add(s)
 
         # make sampling params in vllm
         top_p = max(top_p, 1e-5)
@@ -119,7 +127,20 @@ class VLLMWorker(BaseModelWorker):
             else:
                 text_outputs = [output.text for output in request_output.outputs]
             text_outputs = " ".join(text_outputs)
-            # Note: usage is not supported yet
+
+            partial_stop = any(is_partial_stop(text_outputs, i) for i in stop)
+            # prevent yielding partial stop sequence
+            if partial_stop:
+                continue
+
+            aborted = False
+            if request and await request.is_disconnected():
+                await engine.abort(request_id)
+                request_output.finished = True
+                aborted = True
+                for output in request_output.outputs:
+                    output.finish_reason = "abort"
+
             prompt_tokens = len(request_output.prompt_token_ids)
             completion_tokens = sum(
                 len(output.token_ids) for output in request_output.outputs
@@ -139,7 +160,14 @@ class VLLMWorker(BaseModelWorker):
                 if len(request_output.outputs) == 1
                 else [output.finish_reason for output in request_output.outputs],
             }
+            # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
+            # This aligns with the behavior of model_worker.
+            if request_output.finished:
+                yield (json.dumps({**ret, **{"finish_reason": None}}) + "\0").encode()
             yield (json.dumps(ret) + "\0").encode()
+
+            if aborted:
+                break
 
     async def generate(self, params):
         async for x in self.generate_stream(params):
@@ -173,6 +201,7 @@ async def api_generate_stream(request: Request):
     await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
+    params["request"] = request
     generator = worker.generate_stream(params)
     background_tasks = create_background_tasks(request_id)
     return StreamingResponse(generator, background=background_tasks)
@@ -184,6 +213,7 @@ async def api_generate(request: Request):
     await acquire_worker_semaphore()
     request_id = random_uuid()
     params["request_id"] = request_id
+    params["request"] = request
     output = await worker.generate(params)
     release_worker_semaphore()
     await engine.abort(request_id)
