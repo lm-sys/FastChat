@@ -156,7 +156,7 @@ window.__gradio_mode__ = "app";
             )
 
             if args.vision_arena:
-                with gr.Tab("⭐⭐ Vision Arena ⭐⭐", id=3):
+                with gr.Tab("Vision Arena (📣 NEW!)", id=3):
                     with gr.Tab("⚔️  Vision Arena (battle)", id=3):
                         side_by_side_vision_anony_list = (
                             build_side_by_side_vision_ui_anony(
