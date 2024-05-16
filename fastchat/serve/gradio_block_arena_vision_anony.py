@@ -74,9 +74,10 @@ models = []
 # TODO(chris): fix sampling weights
 SAMPLING_WEIGHTS = {
     # tier 0
+    "gpt-4o": 4,
     "gpt-4-turbo": 4,
-    "gemini-1.5-pro-preview-0409": 4,
-    "gemini-1.0-pro-vision": 4,
+    "gemini-1.5-flash": 4,
+    "gemini-1.5-pro": 4,
     "claude-3-opus-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
@@ -88,51 +89,51 @@ SAMPLING_WEIGHTS = {
 
 # TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-turbo": {
-        "gemini-1.5-pro-preview-0409",
-        "claude-3-opus-20240229",
-        "reka-flash-20240226",
-    },
-    "gemini-1.5-pro-preview-0409": {
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "reka-flash-20240226",
-    },
-    "gemini-1.0-pro-vision": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "claude-3-opus-20240229": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-        "reka-flash-20240226",
-    },
-    "claude-3-sonnet-20240229": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "claude-3-haiku-20240307": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "llava-v1.6-34b": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
-    },
-    "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
-    "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
-    "reka-flash-20240226": {
-        "gemini-1.0-pro-vision",
-        "claude-3-haiku-20240307",
-        "claude-3-sonnet-20240229",
-    },
+    # "gpt-4-turbo": {
+    #     "gemini-1.5-pro-preview-0409",
+    #     "claude-3-opus-20240229",
+    #     "reka-flash-20240226",
+    # },
+    # "gemini-1.5-pro-preview-0409": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "reka-flash-20240226",
+    # },
+    # "gemini-1.0-pro-vision": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "claude-3-opus-20240229": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    #     "reka-flash-20240226",
+    # },
+    # "claude-3-sonnet-20240229": {
+    #     "claude-3-opus-20240229",
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "claude-3-haiku-20240307": {
+    #     "claude-3-opus-20240229",
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "llava-v1.6-34b": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    #     "claude-3-opus-20240229",
+    #     "claude-3-sonnet-20240229",
+    #     "claude-3-haiku-20240307",
+    # },
+    # "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
+    # "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
+    # "reka-flash-20240226": {
+    #     "gemini-1.0-pro-vision",
+    #     "claude-3-haiku-20240307",
+    #     "claude-3-sonnet-20240229",
+    # },
 }
 
 # TODO(chris): Fill out models that require sampling boost
