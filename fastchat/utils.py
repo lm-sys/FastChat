@@ -443,8 +443,12 @@ def image_moderation_request(image, endpoint, api_key):
 
     # Specify the API URL
     image_bytes = convert_image_to_byte_array(image)
-    response = requests.post(endpoint, headers=headers, data=image_bytes).json()
-    print(response)
+
+    MAX_RETRIES = 3
+    for _ in range(MAX_RETRIES):
+        response = requests.post(endpoint, headers=headers, data=image_bytes).json()
+        if response["Status"] == 3000:
+            break
 
     return response
 

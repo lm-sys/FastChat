@@ -26,7 +26,7 @@ If you have a model hosted by a 3rd party API provider or yourself, please give 
 
 Example command:
 ```
-python3 -m fastchat.serve.gradio_web_server_multi --share --register-api-endpoint-file api_endpoints.json --vision-arena --use-remote-storage --random-questions random_questions.json
+python3 -m fastchat.serve.gradio_web_server_multi --share --register-api-endpoint-file api_endpoints.json --vision-arena --use-remote-storage --random-questions metadata_sampled.json
 ```
 
 ### NSFW and CSAM Detection
