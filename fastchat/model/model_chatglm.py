@@ -44,7 +44,7 @@ def apply_stopping_string(reply, stop_strings):
 
     stop_found = False
 
-    for string in stop_strings[:4]:
+    for string in stop_strings:
         if isinstance(string, str):
             idx = reply.find(string)
             if idx != -1:
