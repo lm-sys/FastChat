@@ -10,6 +10,7 @@ import logging.handlers
 import os
 import platform
 import sys
+import time
 from typing import AsyncGenerator, Generator
 import warnings
 
@@ -449,6 +450,8 @@ def image_moderation_request(image, endpoint, api_key):
         response = requests.post(endpoint, headers=headers, data=image_bytes).json()
         if response["Status"] == 3000:
             break
+        else:
+            time.sleep(0.5)
 
     return response
 
