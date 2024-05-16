@@ -735,6 +735,9 @@ We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at Git
 ## Arena Core Team
 - [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
 
+## Vision Arena Team
+- [Lisa Dunlap]((https://lisabdunlap.com/) (co-lead), [Christopher Chou](https://chrischou.netlify.app/) (co-lead), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/) + Arena Core Team
+
 ## Past Members
 - [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
 
