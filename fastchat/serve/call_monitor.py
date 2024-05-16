@@ -7,7 +7,7 @@ from fastapi import FastAPI
 import hashlib
 import asyncio
 
-REFRESH_INTERVAL_SEC = 60
+REFRESH_INTERVAL_SEC = 300
 LOG_DIR_LIST = [
     "/home/gcpuser/fastchat_logs/server0",
     "/home/gcpuser/fastchat_logs/server1",
@@ -50,7 +50,11 @@ class Monitor:
             "dbrx-instruct": 1000,
             "command-r-plus": 2000,
             "gemini-1.5-pro-api-0409-preview": 2000,
+            "gemini-1.5-pro-api-preview": 3000,
             "gpt2-chatbot": 1000,
+            "im-a-good-gpt2-chatbot": 6000,
+            "im-also-a-good-gpt2-chatbot": 6000,
+            "gpt-4o-2024-05-13": 1000,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
@@ -62,7 +66,11 @@ class Monitor:
             "claude-3-sonnet-20240229": 64,
             "command-r-plus": 32,
             "gemini-1.5-pro-api-0409-preview": 32,
+            "gemini-1.5-pro-api-preview": 32,
             "gpt2-chatbot": 8,
+            "im-a-good-gpt2-chatbot": 32,
+            "im-also-a-good-gpt2-chatbot": 32,
+            "gpt-4o-2024-05-13": 16,
         }
 
     async def update_stats(self, num_file=1) -> None:

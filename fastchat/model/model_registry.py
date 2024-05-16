@@ -108,6 +108,20 @@ register_model_info(
 )
 
 register_model_info(
+    ["glm-4-0116"],
+    "GLM-4",
+    "https://zhipuai.cn/devday",
+    "Next-Gen Foundation Model by Zhipu AI",
+)
+
+register_model_info(
+    ["yi-large-preview"],
+    "Yi-Large",
+    "https://x.com/01AI_Yi/status/1789894091620458667",
+    "State-of-the-art model by 01 AI",
+)
+
+register_model_info(
     [
         "qwen-max-0403",
         "qwen-max-0428",
@@ -134,7 +148,10 @@ register_model_info(
 )
 
 register_model_info(
-    ["phi-3-mini-128k-instruct"],
+    [
+        "phi-3-mini-4k-instruct",
+        "phi-3-mini-128k-instruct",
+    ],
     "Phi-3",
     "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
     "A capable and cost-effective small language models (SLMs) by Microsoft",

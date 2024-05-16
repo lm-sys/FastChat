@@ -180,7 +180,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0125-preview": 2,
     "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
-    "gpt-4o-2024-05-13": 10,
+    "gpt-4o-2024-05-13": 4,
     "im-a-good-gpt2-chatbot": 4,
     "im-also-a-good-gpt2-chatbot": 4,
     "gemini-1.5-pro-api-preview": 4,
@@ -189,7 +189,7 @@ SAMPLING_WEIGHTS = {
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "llama-3-70b-instruct": 4,
-    "llama-3-8b-instruct": 4,
+    "llama-3-8b-instruct": 6,
     "mixtral-8x22b-instruct-v0.1": 2,
     "command-r-plus": 4,
     "command-r": 2,
@@ -203,13 +203,15 @@ SAMPLING_WEIGHTS = {
     "gemma-1.1-7b-it": 1,
     "gemma-1.1-2b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 1,
-    "mistral-7b-instruct-v0.2": 1,
     "mistral-large-2402": 2,
     "mistral-medium": 1,
     "llama-2-70b-chat": 1,
     "llama-2-13b-chat": 1,
     "snowflake-arctic-instruct": 1,
+    "phi-3-mini-4k-instruct": 6,
     "phi-3-mini-128k-instruct": 1,
+    "glm-4-0116": 8,
+    "yi-large-preview": 4,
     # tier 1
     "deluxe-chat-v1.3": 1,
     "yi-34b-chat": 1,
@@ -223,21 +225,23 @@ BATTLE_TARGETS = {
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
     },
-    "im-also-a-good-gpt2-chatbot": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo-2024-04-09",
-        "llama-3-70b-instruct",
-    },
-    "im-a-good-gpt2-chatbot": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo-2024-04-09",
-        "llama-3-70b-instruct",
+    "phi-3-mini-4k-instruct": {
+        "llama-3-8b-instruct",
+        "gemma-1.1-7b-it",
+        "gpt-3.5-turbo-0125",
     },
     "gpt-4o-2024-05-13": {
         "claude-3-opus-20240229",
         "gpt-4-turbo-2024-04-09",
         "llama-3-70b-instruct",
-    }
+        "gemini-1.5-pro-api-preview",
+    },
+    "glm-4-0116": {
+        "gpt-4-turbo-2024-04-09",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "llama-3-70b-instruct",
+    },
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -255,6 +259,8 @@ SAMPLING_BOOST_MODELS = [
     "im-also-a-good-gpt2-chatbot",
     "gemini-1.5-pro-api-preview",
     "gpt-4o-2024-05-13",
+    "yi-large-preview",
+    "phi-3-mini-4k-instruct",
 ]
 
 # outage models won't be sampled.
@@ -267,6 +273,7 @@ OUTAGE_MODELS = [
     "openhermes-2.5-mistral-7b",
     "claude-2.0",
     "deluxe-chat-v1.3",
+    "glm-4-0116",
 ]
 
 
@@ -447,6 +454,7 @@ def bot_response_multi(
             "gemini-pro",
             "gemma-1.1-2b-it",
             "gemma-1.1-7b-it",
+            "phi-3-mini-4k-instruct",
             "phi-3-mini-128k-instruct",
             "snowflake-arctic-instruct",
         ]:
@@ -570,7 +578,7 @@ def build_side_by_side_ui_anony(models):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1024,
+            value=1600,
             step=64,
             interactive=True,
             label="Max output tokens",

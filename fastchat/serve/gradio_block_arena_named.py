@@ -260,6 +260,7 @@ def bot_response_multi(
             "gemini-pro",
             "gemma-1.1-2b-it",
             "gemma-1.1-7b-it",
+            "phi-3-mini-4k-instruct",
             "phi-3-mini-128k-instruct",
             "snowflake-arctic-instruct",
         ]:
