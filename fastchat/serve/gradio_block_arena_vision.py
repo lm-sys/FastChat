@@ -82,7 +82,7 @@ def add_image(textbox):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    filename = get_conv_log_filename(state.is_vision)
+    filename = get_conv_log_filename(state.is_vision, state.has_csam_image)
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),

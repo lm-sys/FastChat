@@ -168,7 +168,7 @@ def clear_history_example(request: gr.Request):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    filename = get_conv_log_filename(states[0].is_vision)
+    filename = get_conv_log_filename(states[0].is_vision, states[0].has_csam_image)
 
     with open(filename, "a") as fout:
         data = {

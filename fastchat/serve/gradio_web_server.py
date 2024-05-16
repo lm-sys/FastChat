@@ -144,11 +144,13 @@ def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
     use_remote_storage = use_remote_storage_
 
 
-def get_conv_log_filename(is_vision=False):
+def get_conv_log_filename(is_vision=False, has_csam_image=False):
     t = datetime.datetime.now()
     conv_log_filename = f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
-    if is_vision:
+    if is_vision and not has_csam_image:
         name = os.path.join(LOGDIR, f"vision-tmp-{conv_log_filename}")
+    elif is_vision and has_csam_image:
+        name = os.path.join(LOGDIR, f"vision-flag-{conv_log_filename}")
     else:
         name = os.path.join(LOGDIR, conv_log_filename)
 
@@ -572,7 +574,9 @@ def bot_response(
         has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
     )
 
-    filename = get_conv_log_filename(is_vision=state.is_vision)
+    filename = get_conv_log_filename(
+        is_vision=state.is_vision, has_csam_image=state.has_csam_image
+    )
 
     with open(filename, "a") as fout:
         data = {
