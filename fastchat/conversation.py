@@ -485,6 +485,30 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
+    def to_gemini_api_messages(self):
+        from fastchat.utils import load_image
+
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "content": self.system_message}]
+
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    text, images = msg[0], msg[1]
+                    content_list = [text]
+                    for image in images:
+                        pil_image = load_image(image)
+                        content_list.append(pil_image)
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append({"role": "user", "content": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "model", "content": msg})
+        return ret
+
     def to_vertex_api_messages(self):
         from vertexai.preview.generative_models import Image
         import base64

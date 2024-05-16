@@ -413,7 +413,7 @@ function (a, b, c, d) {
     for i in range(num_sides):
         model_selectors[i].change(
             clear_history, None, states + chatbots + [textbox] + btn_list
-        )
+        ).then(set_visible_image, [textbox], [image_column])
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]

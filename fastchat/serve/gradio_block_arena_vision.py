@@ -339,7 +339,9 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+    model_selector.change(
+        clear_history, None, [state, chatbot, textbox] + btn_list
+    ).then(set_visible_image, [textbox], [image_column])
     examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
     textbox.input(add_image, [textbox], [imagebox]).then(
