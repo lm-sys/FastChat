@@ -1,3 +1,5 @@
+# ref: https://platform.openai.com/docs/guides/batch/getting-started
+
 import fire, time
 from openai import OpenAI
 
