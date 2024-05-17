@@ -304,7 +304,7 @@ if __name__ == "__main__":
     # Show match stats and prompt enter to continue
     print("Stats:")
     print(json.dumps(match_stat, indent=4))
-    if not args.yes:
+    if not args.yes and not args.batch:
         input("Press Enter to confirm...")
 
     # Play matches
