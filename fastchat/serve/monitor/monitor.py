@@ -414,11 +414,12 @@ cat_name_to_explanation = {
     "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "dedup": "dedup",
+    "dedup": "De-duplication (99% percentile)",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
 }
+
 
 def build_leaderboard_tab(
     elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
