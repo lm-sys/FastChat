@@ -40,7 +40,7 @@ from fastchat.utils import (
     image_moderation_filter,
 )
 
-logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 no_change_btn = gr.Button()
 enable_btn = gr.Button(interactive=True, visible=True)

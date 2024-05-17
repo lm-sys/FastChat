@@ -53,9 +53,7 @@ from fastchat.utils import (
 )
 
 
-logger = build_logger(
-    "gradio_web_server_vision_multi", "gradio_web_server_vision_multi.log"
-)
+logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False

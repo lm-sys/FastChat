@@ -438,12 +438,16 @@ class Conversation:
 
     def to_openai_vision_api_messages(self):
         """Convert the conversation to OpenAI vision api completion format"""
-        ret = [
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": self.system_message}],
-            }
-        ]
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [
+                {
+                    "role": "system",
+                    "content": [{"type": "text", "text": self.system_message}],
+                }
+            ]
+
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
