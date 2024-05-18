@@ -2427,7 +2427,10 @@ class GraniteAdapter(BaseModelAdapter):
     """The model adapter for instructlab/granite-7b-lab"""
 
     def match(self, model_path: str):
-        return "granite" in model_path.lower()
+        return "granite" in model_path.lower() and \
+            "granite-old" not in model_path.lower() and \
+            "granite-chat" not in model_path.lower() and \
+            "granite-code" not in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         import ibm_models
@@ -2435,12 +2438,37 @@ class GraniteAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("ibm-generic")
+    
+class IBMOldAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "granite-old" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("granite-old")
+
+class GraniteCodeAdapter(BaseModelAdapter):
+    """The model adapter for instructlab/granite-7b-lab"""
+
+    def match(self, model_path: str):
+        return "granite-code" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("granite-code")
 
 class LabradorAdapter(BaseModelAdapter):
     """The model adapter for ibm/labradorite-13b"""
 
     def match(self, model_path: str):
-        return "labrador" in model_path.lower() and "labradorite" not in model_path.lower()
+        return ("granite-chat" in model_path.lower()) or \
+            ("labrador" in model_path.lower() and "labradorite" not in model_path.lower())
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         import ibm_models
@@ -2551,6 +2579,8 @@ register_model_adapter(SmaugChatAdapter)
 register_model_adapter(LabradoriteAdapter)
 register_model_adapter(MerliniteAdapter)
 register_model_adapter(GraniteAdapter)
+register_model_adapter(GraniteCodeAdapter)
+register_model_adapter(IBMOldAdapter)
 register_model_adapter(LabradorAdapter)
 
 # After all adapters, try the default base adapter.
