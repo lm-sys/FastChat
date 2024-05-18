@@ -34,10 +34,13 @@ def main(file_path, file_path_out, batch_id=None):
        time.sleep(10)
 
     if batch.status == "completed":
-       print("batch completed!!!")
+       print("batch completed!")
        content = client.files.content(batch.output_file_id) # HttpxBinaryResponseContent
        with open(file_path_out, "wb") as fout:
             fout.write(content.read())
+    else:
+       print("batch NOT completed!!!")
+       print(batch)
 
 
 if __name__ == '__main__':
