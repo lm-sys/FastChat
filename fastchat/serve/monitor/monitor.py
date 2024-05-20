@@ -388,6 +388,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
 
 key_to_category_name = {
     "full": "Overall",
+    "dedup": "De-duplicate over-represented queries (soon to be Default)",
     "coding": "Coding",
     "hard_6": "Hard Prompts (Overall)",
     "hard_english_6": "Hard Prompts (English)",
@@ -399,10 +400,10 @@ key_to_category_name = {
     "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "dedup": "dedup",
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
+    "De-duplicate over-represented queries (soon to be Default)": "De-duplicate over-represented (top 0.01%) queries",
     "Coding": "Coding: whether conversation contains code snippets",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
@@ -414,7 +415,6 @@ cat_name_to_explanation = {
     "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "dedup": "De-duplication (99% percentile)",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
