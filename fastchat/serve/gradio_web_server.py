@@ -514,7 +514,9 @@ def bot_response(
         data = {"text": ""}
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
-                output = wrap_output(data["text"], strip=True, add_html_code=True, escape_backslash=True)
+                output = wrap_output(
+                    data["text"], strip=True, add_html_code=True, escape_backslash=True
+                )
                 # conv.update_last_message(output + "▌")
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
@@ -528,7 +530,9 @@ def bot_response(
                     enable_btn,
                 )
                 return
-        output = wrap_output(data["text"], strip=True, add_html_code=False, escape_backslash=True)
+        output = wrap_output(
+            data["text"], strip=True, add_html_code=False, escape_backslash=True
+        )
         conv.update_last_message(output)
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
@@ -800,10 +804,10 @@ def build_single_model_ui(models, add_promotion_links=False):
             height=550,
             show_copy_button=True,
             latex_delimiters=[
-                {"left": '$$', "right": '$$', "display": True},
-                {"left": '$', "right": '$', "display": False},
-                {"left": '\\(', "right": '\\)', "display": False},
-                {"left": '\\[', "right": '\\]', "display": True}
+                {"left": "$$", "right": "$$", "display": True},
+                {"left": "$", "right": "$", "display": False},
+                {"left": "\\(", "right": "\\)", "display": False},
+                {"left": "\\[", "right": "\\]", "display": True},
             ],
         )
     with gr.Row():

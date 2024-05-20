@@ -344,10 +344,10 @@ def build_side_by_side_ui_named(models):
                         height=550,
                         show_copy_button=True,
                         latex_delimiters=[
-                            {"left": '$$', "right": '$$', "display": True},
-                            {"left": '$', "right": '$', "display": False},
-                            {"left": '\\(', "right": '\\)', "display": False},
-                            {"left": '\\[', "right": '\\]', "display": True}
+                            {"left": "$$", "right": "$$", "display": True},
+                            {"left": "$", "right": "$", "display": False},
+                            {"left": "\\(", "right": "\\)", "display": False},
+                            {"left": "\\[", "right": "\\]", "display": True},
                         ],
                     )
 

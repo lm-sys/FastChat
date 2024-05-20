@@ -538,10 +538,10 @@ Find out who is the 🥇LLM Champion!
                         height=550,
                         show_copy_button=True,
                         latex_delimiters=[
-                            {"left": '$$', "right": '$$', "display": True},
-                            {"left": '$', "right": '$', "display": False},
-                            {"left": '\\(', "right": '\\)', "display": False},
-                            {"left": '\\[', "right": '\\]', "display": True}
+                            {"left": "$$", "right": "$$", "display": True},
+                            {"left": "$", "right": "$", "display": False},
+                            {"left": "\\(", "right": "\\)", "display": False},
+                            {"left": "\\[", "right": "\\]", "display": True},
                         ],
                     )
 

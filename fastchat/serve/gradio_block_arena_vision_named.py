@@ -283,10 +283,10 @@ Note: You can only chat with **one image per conversation**. You can upload imag
                                 height=550,
                                 show_copy_button=True,
                                 latex_delimiters=[
-                                    {"left": '$$', "right": '$$', "display": True},
-                                    {"left": '$', "right": '$', "display": False},
-                                    {"left": '\\(', "right": '\\)', "display": False},
-                                    {"left": '\\[', "right": '\\]', "display": True}
+                                    {"left": "$$", "right": "$$", "display": True},
+                                    {"left": "$", "right": "$", "display": False},
+                                    {"left": "\\(", "right": "\\)", "display": False},
+                                    {"left": "\\[", "right": "\\]", "display": True},
                                 ],
                             )
 
