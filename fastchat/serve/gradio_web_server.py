@@ -501,13 +501,21 @@ def bot_response(
     conv.update_last_message(html_code)
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
+    def wrap_output(output, strip=True, add_html_code=True, escape_backslash=False):
+        if strip:
+            output = output.strip()
+        if escape_backslash:
+            output = output.replace("\\", "\\\\")
+        if add_html_code:
+            output += html_code
+        return output
+
     try:
         data = {"text": ""}
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
-                output = data["text"].strip()
+                output = wrap_output(data["text"], strip=True, add_html_code=True, escape_backslash=True)
                 # conv.update_last_message(output + "▌")
-                conv.update_last_message(output + html_code)
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
@@ -520,7 +528,7 @@ def bot_response(
                     enable_btn,
                 )
                 return
-        output = data["text"].strip()
+        output = wrap_output(data["text"], strip=True, add_html_code=False, escape_backslash=True)
         conv.update_last_message(output)
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
