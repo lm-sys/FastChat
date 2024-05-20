@@ -403,7 +403,7 @@ key_to_category_name = {
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
-    "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.01%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
+    "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Coding": "Coding: whether conversation contains code snippets",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
