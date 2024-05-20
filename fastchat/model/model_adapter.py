@@ -671,6 +671,13 @@ class PeftModelAdapter:
         base_model, tokenizer = base_adapter.load_model(
             base_model_path, from_pretrained_kwargs
         )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=True,  # Trust in remote code of tokenizer
+        )
+        base_model.resize_token_embeddings(
+            len(tokenizer)
+        )  # Resize new tokens from fine-tuning model
         model = PeftModel.from_pretrained(base_model, model_path)
         return model, tokenizer
 

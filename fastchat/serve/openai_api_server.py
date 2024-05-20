@@ -505,12 +505,27 @@ async def chat_completion_stream_generator(
         chunk = ChatCompletionStreamResponse(
             id=id, choices=[choice_data], model=model_name
         )
-        yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+        # Convert the chunk to a dictionary
+        chunk_dict = chunk.model_dump()
+
+        # Convert the dictionary to a JSON string
+        sorted_json = json.dumps(chunk_dict, sort_keys=True, ensure_ascii=False)
+
+        # Use the JSON string in your response
+        yield f"data: {sorted_json}\n\n"
 
         previous_text = ""
         async for content in generate_completion_stream(gen_params, worker_addr):
             if content["error_code"] != 0:
-                yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
+                # Convert the content to a dictionary
+                content_dict = content.model_dump()
+
+                # Convert the dictionary to a JSON string
+                sorted_json = json.dumps(
+                    content_dict, sort_keys=True, ensure_ascii=False
+                )
+
+                yield f"data: {sorted_json}\n\n"
                 yield "data: [DONE]\n\n"
                 return
             decoded_unicode = content["text"].replace("\ufffd", "")
@@ -535,10 +550,24 @@ async def chat_completion_stream_generator(
                 if content.get("finish_reason", None) is not None:
                     finish_stream_events.append(chunk)
                 continue
-            yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+            # Convert the chunk to a dictionary
+            chunk_dict = chunk.dict(exclude_unset=True)
+
+            # Convert the dictionary to a JSON string
+            sorted_json = json.dumps(chunk_dict, ensure_ascii=False)
+
+            # Use the JSON string in your response
+            yield f"data: {sorted_json}\n\n"
     # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
     for finish_chunk in finish_stream_events:
-        yield f"data: {finish_chunk.json(exclude_none=True, ensure_ascii=False)}\n\n"
+        # Convert the finish_chunk to a dictionary
+        finish_chunk_dict = finish_chunk.dict(exclude_none=True)
+
+        # Convert the dictionary to a JSON string
+        sorted_json = json.dumps(finish_chunk_dict, ensure_ascii=False)
+
+        # Use the JSON string in your response
+        yield f"data: {sorted_json}\n\n"
     yield "data: [DONE]\n\n"
 
 
@@ -646,7 +675,16 @@ async def generate_completion_stream_generator(
             )
             async for content in generate_completion_stream(gen_params, worker_addr):
                 if content["error_code"] != 0:
-                    yield f"data: {json.dumps(content, ensure_ascii=False)}\n\n"
+                    # Convert the content to a dictionary
+                    content_dict = content.model_dump()
+
+                    # Convert the dictionary to a JSON string
+                    sorted_json = json.dumps(
+                        content_dict, sort_keys=True, ensure_ascii=False
+                    )
+
+                    # Use the JSON string in your response
+                    yield f"data: {sorted_json}\n\n"
                     yield "data: [DONE]\n\n"
                     return
                 decoded_unicode = content["text"].replace("\ufffd", "")
@@ -673,10 +711,24 @@ async def generate_completion_stream_generator(
                     if content.get("finish_reason", None) is not None:
                         finish_stream_events.append(chunk)
                     continue
-                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+                # Convert the chunk to a dictionary
+                chunk_dict = chunk.model_dump()
+
+                # Convert the dictionary to a JSON string
+                sorted_json = json.dumps(chunk_dict, sort_keys=True, ensure_ascii=False)
+
+                # Use the JSON string in your response
+                yield f"data: {sorted_json}\n\n"
     # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
     for finish_chunk in finish_stream_events:
-        yield f"data: {finish_chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+        # Convert the finish_chunk to a dictionary
+        finish_chunk_dict = finish_chunk.model_dump()
+
+        # Convert the dictionary to a JSON string
+        sorted_json = json.dumps(finish_chunk_dict, sort_keys=True, ensure_ascii=False)
+
+        # Use the JSON string in your response
+        yield f"data: {sorted_json}\n\n"
     yield "data: [DONE]\n\n"
 
 
