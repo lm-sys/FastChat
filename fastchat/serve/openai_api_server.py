@@ -300,7 +300,7 @@ async def get_gen_params(
             conv_stop_token_ids = conv.get("eos_token_id")
             if isinstance(conv_stop_token_ids, int):
                 conv_stop_token_ids = [conv_stop_token_ids]
-            
+
             if temperature is None:
                 temperature = generation_config.get("temperature")
             if top_p is None:
@@ -359,7 +359,6 @@ async def get_gen_params(
             images = conv.get_images()
             conv_stop_str = conv.stop_str
             conv_stop_token_ids = conv.stop_token_ids
-
 
     gen_params = {
         "model": model_name,
@@ -426,11 +425,13 @@ async def get_conv(model_name: str, worker_addr: str):
 
 async def apply_chat_template(worker_addr: str, conversation):
     prompt = await fetch_remote(
-        worker_addr + "/apply_chat_template", {
+        worker_addr + "/apply_chat_template",
+        {
             "conversation": conversation,
             "tokenize": False,
             "add_generation_prompt": True,
-        }, "prompt"
+        },
+        "prompt",
     )
     return prompt
 

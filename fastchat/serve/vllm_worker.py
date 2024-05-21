@@ -83,24 +83,22 @@ class VLLMWorker(BaseModelWorker):
             except OSError as e:
                 JINJA_CHARS = "{}\n"
                 if not any(c in chat_template for c in JINJA_CHARS):
-                    msg = (f"The supplied chat template ({chat_template}) "
-                           f"looks like a file path, but it failed to be "
-                           f"opened. Reason: {e}")
+                    msg = (
+                        f"The supplied chat template ({chat_template}) "
+                        f"looks like a file path, but it failed to be "
+                        f"opened. Reason: {e}"
+                    )
                     raise ValueError(msg) from e
 
                 # If opening a file fails, set chat template to be args to
                 # ensure we decode so our escape are interpreted correctly
-                tokenizer.chat_template = codecs.decode(
-                    chat_template, "unicode_escape")
+                tokenizer.chat_template = codecs.decode(chat_template, "unicode_escape")
 
-            logger.info("Using supplied chat template:\n%s",
-                        tokenizer.chat_template)
+            logger.info("Using supplied chat template:\n%s", tokenizer.chat_template)
         elif tokenizer.chat_template is not None:
-            logger.info("Using default chat template:\n%s",
-                        tokenizer.chat_template)
+            logger.info("Using default chat template:\n%s", tokenizer.chat_template)
         else:
             tokenizer.chat_template = ""
-
 
     async def generate_stream(self, params):
         self.call_ct += 1
@@ -213,7 +211,9 @@ class VLLMWorker(BaseModelWorker):
                 "chat_template": {
                     "chat_template": self.tokenizer.chat_template,
                     "eos_token": self.tokenizer.eos_token,
-                    "generation_config": self.generation_config.to_diff_dict() if self.generation_config else None,
+                    "generation_config": self.generation_config.to_diff_dict()
+                    if self.generation_config
+                    else None,
                 }
             }
         else:
