@@ -9,7 +9,7 @@ import time
 
 import requests
 
-from fastchat.utils import build_logger
+from fastchat.utils.logger import build_logger
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")

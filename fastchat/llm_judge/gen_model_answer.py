@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
-from fastchat.utils import str_to_torch_dtype
+from fastchat.utils.torch import str_to_torch_dtype
 
 
 def run_eval(

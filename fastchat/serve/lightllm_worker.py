@@ -33,7 +33,7 @@ from lightllm.server.req_id_generator import ReqIDGenerator
 
 from lightllm.utils.net_utils import alloc_can_use_network_port
 from lightllm.utils.start_utils import start_submodule_processes
-from fastchat.utils import get_context_length, is_partial_stop
+from fastchat.utils.inference import get_context_length, is_partial_stop
 
 app = FastAPI()
 g_id_gen = ReqIDGenerator()

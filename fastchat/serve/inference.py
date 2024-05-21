@@ -39,7 +39,11 @@ from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
-from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
+from fastchat.utils.inference import (
+    is_partial_stop,
+    is_sentence_complete,
+    get_context_length,
+)
 
 
 def prepare_logits_processor(

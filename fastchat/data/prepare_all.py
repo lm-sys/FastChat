@@ -3,7 +3,7 @@
 import argparse
 import os
 
-from fastchat.utils import run_cmd
+from fastchat.utils.misc import run_cmd
 
 
 if __name__ == "__main__":

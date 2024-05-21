@@ -9,7 +9,8 @@ import requests
 
 from fastchat.constants import WORKER_HEART_BEAT_INTERVAL
 from fastchat.conversation import Conversation
-from fastchat.utils import pretty_print_semaphore, build_logger
+from fastchat.utils.logger import build_logger
+from fastchat.utils.misc import pretty_print_semaphore
 
 
 worker = None

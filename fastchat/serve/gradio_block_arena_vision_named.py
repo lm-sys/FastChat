@@ -46,11 +46,8 @@ from fastchat.serve.gradio_web_server import (
     _prepare_text_with_image,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.utils import (
-    build_logger,
-    moderation_filter,
-    image_moderation_filter,
-)
+from fastchat.utils.logger import build_logger
+from fastchat.utils.moderation import moderation_filter, image_moderation_filter
 
 
 logger = build_logger(

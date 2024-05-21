@@ -34,7 +34,7 @@ from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.serve.inference import ChatIO, chat_loop
-from fastchat.utils import str_to_torch_dtype
+from fastchat.utils.torch import str_to_torch_dtype
 
 
 class SimpleChatIO(ChatIO):
