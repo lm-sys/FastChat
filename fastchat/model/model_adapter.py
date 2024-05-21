@@ -96,6 +96,7 @@ class BaseModelAdapter:
                 model_path,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
+                attn_implementation="flash_attention_2",
                 **from_pretrained_kwargs,
             )
         except NameError:
