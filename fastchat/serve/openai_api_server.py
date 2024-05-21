@@ -301,10 +301,14 @@ async def get_gen_params(
             if isinstance(conv_stop_token_ids, int):
                 conv_stop_token_ids = [conv_stop_token_ids]
             
-            temperature = temperature or generation_config.get("temperature")
-            top_p = top_p or generation_config.get("top_p")
-            top_k = top_k or generation_config.get("top_k")
-            max_tokens = max_tokens or generation_config.get("max_tokens")
+            if temperature is None:
+                temperature = generation_config.get("temperature")
+            if top_p is None:
+                top_p = generation_config.get("top_p")
+            if top_k is None:
+                top_k = generation_config.get("top_k")
+            if max_tokens is None:
+                max_tokens = generation_config.get("max_tokens")
     else:
         conv = conv["conv"]
         conv = Conversation(
