@@ -32,9 +32,9 @@ def preprocess_record(r: dict, minimum_voting_time: float):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Clean battle data")
-    parser.add_argument("input", type=str, help="Input JSONL file")
-    parser.add_argument("output", type=str, help="Output JSONL file", default=None)
-    parser.add_argument("--minimum-voting-time", type=float, help="The minimum time required for voting", default=0.0)
+    parser.add_argument("--input", "-i", type=str, help="Input JSONL file")
+    parser.add_argument("--output", "-o", type=str, help="Output JSONL file", default=None)
+    parser.add_argument("--minimum-voting-time", "-m", type=float, help="The minimum time required for voting", default=0.0)
     args = parser.parse_args()
 
     if args.output is None:
