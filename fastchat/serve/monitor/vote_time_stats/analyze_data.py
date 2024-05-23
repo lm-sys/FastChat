@@ -1,6 +1,7 @@
 from collections import deque
 import datetime
 import glob
+import hashlib
 import json
 from multiprocessing import Pool
 import os
@@ -69,7 +70,7 @@ def preprocess_record(r: dict):
 
     assert mtype in types
     if mtype == "chat":
-        key = _serialize_json(r["state"])
+        key = state2key(r["state"])
         last_message = r["state"]["messages"][-1][-1]
         if last_message is None or last_message.strip() == "":
             return
@@ -91,8 +92,8 @@ def preprocess_record(r: dict):
             return
         lang_code = detect_language(left_state["messages"][left_state["offset"]][1])
 
-        left_key = _serialize_json(left_state)
-        right_key = _serialize_json(right_state)
+        left_key = state2key(left_state)
+        right_key = state2key(right_state)
         return {
             "timestamp": tstamp,
             "type": mtype,
@@ -162,6 +163,11 @@ def parallel_read_jsonlines(file_path: str, num_chunks: int, pool):
 def _serialize_json(data):
     # Serialize JSON with sorted keys and no whitespace
     return json.dumps(data, sort_keys=True, separators=(',', ':')).encode('utf-8')
+
+
+def state2key(state: dict) -> str:
+    # NOTE: we use md5 hash here to accelerate the process, assuming the context is not adversarial.
+    return hashlib.md5(_serialize_json(state)).hexdigest()
 
 
 def process_record(r):
