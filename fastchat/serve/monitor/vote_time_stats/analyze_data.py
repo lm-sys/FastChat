@@ -38,6 +38,22 @@ def replace_model_name(old_name, tstamp):
     return old_name
 
 
+def detect_language(text: str) -> str:
+    """Detect the langauge of a string."""
+    import polyglot  # pip3 install polyglot pyicu pycld2
+    from polyglot.detect import Detector
+    from polyglot.detect.base import logger as polyglot_logger
+    import pycld2
+
+    polyglot_logger.setLevel("ERROR")
+
+    try:
+        lang_code = Detector(text).language.name
+    except (pycld2.error, polyglot.detect.base.UnknownLanguage):
+        lang_code = "unknown"
+    return lang_code
+
+
 def preprocess_record(r: dict):
     # Features
     # chat: state, battle: states[0] & states[1]
@@ -70,6 +86,11 @@ def preprocess_record(r: dict):
         left_state = r["states"][0]
         right_state = r["states"][1]
 
+        # Detect langauge
+        if left_state["offset"] >= len(left_state["messages"]):
+            return
+        lang_code = detect_language(left_state["messages"][left_state["offset"]][1])
+
         left_key = _serialize_json(left_state)
         right_key = _serialize_json(right_state)
         return {
@@ -82,6 +103,7 @@ def preprocess_record(r: dict):
                 replace_model_name(right_state["model_name"], tstamp)
             ],
             "ip": ip,
+            "language": lang_code,
         }
     return None
 
