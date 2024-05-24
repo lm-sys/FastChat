@@ -12,6 +12,7 @@ import random
 import time
 import uuid
 
+import fsspec
 import gradio as gr
 import requests
 
@@ -174,7 +175,9 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
 
     # Add models from the API providers
     if register_api_endpoint_file:
-        api_endpoint_info = json.load(open(register_api_endpoint_file))
+        fs, fspath = fsspec.url_to_fs(register_api_endpoint_file)
+        with fs.open(fspath, "r") as file:
+            api_endpoint_info = json.loads(file.read())
         for mdl, mdl_dict in api_endpoint_info.items():
             mdl_vision = mdl_dict.get("vision-arena", False)
             mdl_text = mdl_dict.get("text-arena", True)
@@ -413,6 +416,7 @@ def is_limit_reached(model_name, ip):
 
 def bot_response(
     state,
+    system_message,
     temperature,
     top_p,
     max_new_tokens,
@@ -427,10 +431,14 @@ def bot_response(
     top_p = float(top_p)
     max_new_tokens = int(max_new_tokens)
 
+    if system_message:
+        state.conv.set_system_message(system_message)
+    system_message = state.conv.get_system_message()
+
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
-        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+        yield (state, state.to_gradio_chatbot(), system_message) + (no_change_btn,) * 5
         return
 
     if apply_rate_limit:
@@ -439,7 +447,9 @@ def bot_response(
             error_msg = RATE_LIMIT_MSG + "\n\n" + ret["reason"]
             logger.info(f"rate limit reached. ip: {ip}. error_msg: {ret['reason']}")
             state.conv.update_last_message(error_msg)
-            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+            yield (state, state.to_gradio_chatbot(), system_message) + (
+                no_change_btn,
+            ) * 5
             return
 
     conv, model_name = state.conv, state.model_name
@@ -462,6 +472,7 @@ def bot_response(
             yield (
                 state,
                 state.to_gradio_chatbot(),
+                system_message,
                 disable_btn,
                 disable_btn,
                 disable_btn,
@@ -514,7 +525,7 @@ def bot_response(
 
     # conv.update_last_message("▌")
     conv.update_last_message(html_code)
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+    yield (state, state.to_gradio_chatbot(), system_message) + (disable_btn,) * 5
 
     try:
         data = {"text": ""}
@@ -523,11 +534,13 @@ def bot_response(
                 output = data["text"].strip()
                 # conv.update_last_message(output + "▌")
                 conv.update_last_message(output + html_code)
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                yield (state, state.to_gradio_chatbot(), system_message) + (
+                    disable_btn,
+                ) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 conv.update_last_message(output)
-                yield (state, state.to_gradio_chatbot()) + (
+                yield (state, state.to_gradio_chatbot(), system_message) + (
                     disable_btn,
                     disable_btn,
                     disable_btn,
@@ -537,13 +550,13 @@ def bot_response(
                 return
         output = data["text"].strip()
         conv.update_last_message(output)
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        yield (state, state.to_gradio_chatbot(), system_message) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
         conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
         )
-        yield (state, state.to_gradio_chatbot()) + (
+        yield (state, state.to_gradio_chatbot(), system_message) + (
             disable_btn,
             disable_btn,
             disable_btn,
@@ -556,7 +569,7 @@ def bot_response(
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
         )
-        yield (state, state.to_gradio_chatbot()) + (
+        yield (state, state.to_gradio_chatbot(), system_message) + (
             disable_btn,
             disable_btn,
             disable_btn,
@@ -825,6 +838,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
     with gr.Accordion("Parameters", open=False) as parameter_row:
+        system_message = gr.Textbox(
+            label="System Message",
+            max_lines=6,
+        )
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -875,10 +892,13 @@ def build_single_model_ui(models, add_promotion_links=False):
         regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
     ).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
+        [state, system_message, temperature, top_p, max_output_tokens],
+        [state, chatbot, system_message] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
+    system_message.change(
+        clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+    )
 
     model_selector.change(
         clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
@@ -890,8 +910,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
+        [state, system_message, temperature, top_p, max_output_tokens],
+        [state, chatbot, system_message] + btn_list,
     )
     send_btn.click(
         add_text,
@@ -899,8 +919,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot, textbox, imagebox] + btn_list,
     ).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
+        [state, system_message, temperature, top_p, max_output_tokens],
+        [state, chatbot, system_message] + btn_list,
     )
 
     return [state, model_selector]

@@ -11,7 +11,6 @@ ROOT="$(git rev-parse --show-toplevel)"
 builtin cd "$ROOT" || exit 1
 
 BLACK_VERSION=$(black --version | head -n 1 | awk '{print $2}')
-PYLINT_VERSION=$(pylint --version | head -n 1 | awk '{print $2}')
 
 # # params: tool name, tool version, required version
 tool_version_check() {
@@ -22,7 +21,6 @@ tool_version_check() {
 }
 
 tool_version_check "black" $BLACK_VERSION "23.3.0"
-tool_version_check "pylint" $PYLINT_VERSION "2.8.2"
 
 # Format files that differ from main branch. Ignores dirs that are not slated
 # for autoformat yet.
@@ -54,12 +52,6 @@ else
    format_changed
 fi
 echo 'FastChat Black: Done'
-
-# Run Pylint
-echo 'FastChat Pylint:'
-pylint fastchat
-# TODO(suquark): disable 'pylint_quotes' for now due to too many inconsistent quotes
-# pylint --load-plugins pylint_quotes fastchat
 
 if ! git diff --quiet &>/dev/null; then
     echo 'Reformatted files. Please review and stage the changes.'

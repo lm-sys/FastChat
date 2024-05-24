@@ -24,8 +24,11 @@ def get_api_provider_stream_iter(
     max_new_tokens,
     state,
 ):
+    api_key = model_api_dict.get("api_key")
+    if api_key and api_key.startswith("env:"):
+        api_key = os.environ.get(api_key.removeprefix("env:").strip())
     if model_api_dict["api_type"] == "openai":
-        if model_api_dict["vision-arena"]:
+        if model_api_dict.get("vision-arena"):
             prompt = conv.to_openai_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
@@ -36,7 +39,7 @@ def get_api_provider_stream_iter(
             top_p,
             max_new_tokens,
             api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
@@ -44,7 +47,7 @@ def get_api_provider_stream_iter(
             state,
             last_prompt,
             assistant_id=model_api_dict["assistant_id"],
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "anthropic":
         if model_api_dict["vision-arena"]:
@@ -83,7 +86,7 @@ def get_api_provider_stream_iter(
             temperature,
             top_p,
             max_new_tokens,
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "bard":
         prompt = conv.to_openai_api_messages()
@@ -92,7 +95,7 @@ def get_api_provider_stream_iter(
             prompt,
             temperature,
             top_p,
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "mistral":
         prompt = conv.to_openai_api_messages()
@@ -119,7 +122,7 @@ def get_api_provider_stream_iter(
             top_p,
             max_new_tokens,
             api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "vertex":
         prompt = conv.to_vertex_api_messages()
@@ -148,7 +151,7 @@ def get_api_provider_stream_iter(
             temperature=temperature,
             max_tokens=max_new_tokens,
             api_base=model_api_dict["api_base"],
-            api_key=model_api_dict.get("api_key"),
+            api_key=api_key,
             folder_id=model_api_dict.get("folder_id"),
         )
     elif model_api_dict["api_type"] == "cohere":
@@ -161,7 +164,7 @@ def get_api_provider_stream_iter(
             top_p=top_p,
             max_new_tokens=max_new_tokens,
             api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     elif model_api_dict["api_type"] == "reka":
         messages = conv.to_reka_api_messages()
@@ -172,7 +175,7 @@ def get_api_provider_stream_iter(
             top_p=top_p,
             max_new_tokens=max_new_tokens,
             api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
+            api_key=api_key,
         )
     else:
         raise NotImplementedError()
