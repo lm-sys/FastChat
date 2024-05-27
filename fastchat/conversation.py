@@ -39,6 +39,7 @@ class SeparatorStyle(IntEnum):
     GEMMA = auto()
     CLLM = auto()
     DEFAULT = auto()
+    OPENBUDDY_LLAMA3 = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -131,9 +132,9 @@ class Conversation:
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     ret += (
-                        role
-                        + ": "
-                        + message.replace("\r\n", "\n").replace("\n\n", "\n")
+                            role
+                            + ": "
+                            + message.replace("\r\n", "\n").replace("\n\n", "\n")
                     )
                     ret += "\n\n"
                 else:
@@ -190,12 +191,16 @@ class Conversation:
             ret = "" if system_prompt == "" else system_prompt + self.sep + "\n"
             for role, message in self.messages:
                 if message:
-                    if type(message) is tuple:
-                        message, images = message
-                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
-                    ret += role + "\n" + message + self.sep + "\n"
+                    if isinstance(message, tuple):
+                        message, images = message if len(message) > 1 else (message[0], [])
+                        images = images if images is not None else []
+                        message = (IMAGE_PLACEHOLDER_STR * len(images) if images else "") + (
+                            message if message is not None else "")
+                    else:
+                        message = message if message is not None else ""
+                    ret += f"{role}\n{message}{self.sep}\n"
                 else:
-                    ret += role + "\n"
+                    ret += f"{role}\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM3:
             ret = ""
@@ -318,12 +323,20 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
+        elif self.sep_style == SeparatorStyle.OPENBUDDY_LLAMA3:
+            ret = system_prompt + "\n"
+            for role, message in self.messages:
+                if message:
+                    ret += f"<|role|>{role}<|says|>{message}<|end|>\n"
+                else:
+                    ret += f"<|role|>{role}<|says|>\n"
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
     def get_images(self):
         images = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     for image in msg[1]:
@@ -390,7 +403,7 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
@@ -477,7 +490,7 @@ class Conversation:
         else:
             ret = [{"role": "system", "content": self.system_message}]
 
-        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+        for i, (_, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
             else:
@@ -700,7 +713,7 @@ def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
         assert (
-            template.name not in conv_templates
+                template.name not in conv_templates
         ), f"{template.name} has been registered."
 
     conv_templates[template.name] = template
@@ -1048,6 +1061,27 @@ Assistant: Hi, I'm Buddy, your AI assistant. How can I help you today?""",
     )
 )
 
+# Buddy default template
+register_conv_template(
+    Conversation(
+        name="openbuddy-llama3",
+        system_message="""<|role|>system<|says|>You(assistant) are a helpful, respectful and honest INTP-T AI Assistant named Buddy. You are talking to a human(user).
+Always answer as helpfully and logically as possible, while being safe. Your answers should not include any harmful, political, religious, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
+You cannot access the internet, but you have vast knowledge, cutoff: 2023-04.
+You are trained by OpenBuddy team, (https://openbuddy.ai, https://github.com/OpenBuddy/OpenBuddy), not related to GPT or OpenAI.<|end|>
+<|role|>user<|says|>History input 1<|end|>
+<|role|>assistant<|says|>History output 1<|end|>
+<|role|>user<|says|>History input 2<|end|>
+<|role|>assistant<|says|>History output 2<|end|>
+<|role|>user<|says|>Current input<|end|>
+<|role|>assistant<|says|>
+""",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.OPENBUDDY_LLAMA3,
+        sep="\n",
+    )
+)
+
 # Phoenix default template
 register_conv_template(
     Conversation(
@@ -1387,7 +1421,8 @@ register_conv_template(
         sep_style=SeparatorStyle.RWKV,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser",
+        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
         stop_token_ids=[
             0,
             1,
@@ -1828,7 +1863,8 @@ register_conv_template(
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser:",
+        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
