@@ -29,7 +29,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    api_endpoint_info,
+    _prepare_text_with_image,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -182,21 +182,22 @@ SAMPLING_WEIGHTS = {
     "dbrx-instruct": 1,
     "command-r-plus": 4,
     "command-r": 2,
-    "gemini-pro-dev-api": 2,
+    "reka-flash": 4,
+    "reka-flash-online": 4,
     "qwen1.5-72b-chat": 2,
     "qwen1.5-32b-chat": 2,
     "qwen1.5-14b-chat": 2,
     "qwen1.5-7b-chat": 2,
     "gemma-1.1-7b-it": 2,
-    "gemma-1.1-2b-it": 2,
+    "gemma-1.1-2b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 4,
     "mistral-7b-instruct-v0.2": 2,
     "mistral-large-2402": 4,
     "mistral-medium": 2,
     "starling-lm-7b-beta": 2,
     # tier 1
-    "deluxe-chat-v1.3": 3,
-    "llama-2-70b-chat": 4,
+    "deluxe-chat-v1.3": 2,
+    "llama-2-70b-chat": 2,
     "llama-2-13b-chat": 1,
     "llama-2-7b-chat": 1,
     "vicuna-33b": 1,
@@ -210,32 +211,31 @@ BATTLE_TARGETS = {
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "mistral-large-2402",
+        "gemini-pro-dev-api",
     },
-    "command-r-plus": {
-        "command-r",
-        "mixtral-8x7b-instruct-v0.1",
-        "gpt-4-0125-preview",
-        "gpt-4-1106-preview",
+    "gemini-pro-dev-api": {
+        "gpt-4-turbo-2024-04-09",
         "claude-3-opus-20240229",
+        "gpt-4-0125-preview",
         "claude-3-sonnet-20240229",
+    },
+    "reka-flash": {
+        "qwen1.5-72b-chat",
         "claude-3-haiku-20240307",
+        "command-r-plus",
+        "command-r",
+    },
+    "reka-flash-online": {
+        "qwen1.5-72b-chat",
+        "claude-3-haiku-20240307",
+        "command-r-plus",
+        "command-r",
     },
     "deluxe-chat-v1.3": {
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
-    },
-    "qwen1.5-72b-chat": {
-        "gpt-3.5-turbo-0125",
-        "gpt-4-0613",
-        "gpt-4-0125-preview",
-        "llama-2-70b-chat",
-        "mixtral-8x7b-instruct-v0.1",
-        "mistral-medium",
-        "yi-34b-chat",
     },
     "qwen1.5-32b-chat": {
         "gpt-3.5-turbo-0125",
@@ -261,13 +261,6 @@ BATTLE_TARGETS = {
         "mistral-next",
         "claude-3-sonnet-20240229",
     },
-    "gemma-1.1-7b-it": {
-        "gpt-3.5-turbo-0125",
-        "mixtral-8x7b-instruct-v0.1",
-        "starling-lm-7b-beta",
-        "llama-2-7b-chat",
-        "mistral-7b-instruct-v0.2",
-    },
     "gemma-1.1-2b-it": {
         "gpt-3.5-turbo-0125",
         "mixtral-8x7b-instruct-v0.1",
@@ -280,6 +273,7 @@ BATTLE_TARGETS = {
         "qwen1.5-72b-chat",
         "mistral-large-2402",
         "command-r-plus",
+        "claude-3-haiku-20240307",
     },
 }
 
@@ -289,22 +283,26 @@ SAMPLING_BOOST_MODELS = []
 OUTAGE_MODELS = []
 
 
-def get_sample_weight(model):
-    if model in OUTAGE_MODELS:
+def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models):
+    if model in outage_models:
         return 0
-    weight = SAMPLING_WEIGHTS.get(model, 0)
-    if model in SAMPLING_BOOST_MODELS:
+    weight = sampling_weights.get(model, 0)
+    if model in sampling_boost_models:
         weight *= 5
     return weight
 
 
-def get_battle_pair():
+def get_battle_pair(
+    models, battle_targets, outage_models, sampling_weights, sampling_boost_models
+):
     if len(models) == 1:
         return models[0], models[0]
 
     model_weights = []
     for model in models:
-        weight = get_sample_weight(model)
+        weight = get_sample_weight(
+            model, outage_models, sampling_weights, sampling_boost_models
+        )
         model_weights.append(weight)
     total_weight = np.sum(model_weights)
     model_weights = model_weights / total_weight
@@ -318,14 +316,16 @@ def get_battle_pair():
     for model in models:
         if model == chosen_model:
             continue
-        weight = get_sample_weight(model)
+        weight = get_sample_weight(
+            model, outage_models, sampling_weights, sampling_boost_models
+        )
         if (
             weight != 0
-            and chosen_model in BATTLE_TARGETS
-            and model in BATTLE_TARGETS[chosen_model]
+            and chosen_model in battle_targets
+            and model in battle_targets[chosen_model]
         ):
             # boost to 50% chance
-            weight = total_weight / len(BATTLE_TARGETS[chosen_model])
+            weight = total_weight / len(battle_targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -342,7 +342,7 @@ def get_battle_pair():
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
@@ -353,7 +353,13 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        model_left, model_right = get_battle_pair()
+        model_left, model_right = get_battle_pair(
+            models,
+            BATTLE_TARGETS,
+            OUTAGE_MODELS,
+            SAMPLING_WEIGHTS,
+            SAMPLING_BOOST_MODELS,
+        )
         states = [
             State(model_left),
             State(model_right),
@@ -365,7 +371,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [""]
+            + ["", None]
             + [
                 no_change_btn,
             ]
@@ -394,7 +400,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG]
+            + [CONVERSATION_LIMIT_MSG, None]
             + [
                 no_change_btn,
             ]
@@ -404,7 +410,10 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        states[i].conv.append_message(states[i].conv.roles[0], text)
+        post_processed_text = _prepare_text_with_image(
+            states[i], text, image, csam_flag=False
+        )
+        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
@@ -415,7 +424,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [""]
+        + ["", None]
         + [
             disable_btn,
         ]
@@ -466,6 +475,9 @@ def bot_response_multi(
             in [
                 "gemini-pro",
                 "gemini-pro-dev-api",
+                "gemini-1.0-pro-vision",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash",
                 "gemma-1.1-2b-it",
                 "gemma-1.1-7b-it",
             ]
@@ -493,7 +505,7 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
@@ -592,6 +604,7 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
+    imagebox = gr.State(None)
     # Register listeners
     btn_list = [
         leftvote_btn,
@@ -660,8 +673,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list + [slow_warning],
+        states + model_selectors + [textbox, imagebox],
+        states + chatbots + [textbox, imagebox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -674,8 +687,8 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + model_selectors + [textbox, imagebox],
+        states + chatbots + [textbox, imagebox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
