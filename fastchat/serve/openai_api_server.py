@@ -7,10 +7,13 @@
 Usage:
 python3 -m fastchat.serve.openai_api_server
 """
+
 import asyncio
 import argparse
+import copy
 import json
 import os
+import re
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import aiohttp
@@ -38,7 +41,9 @@ from fastchat.protocol.openai_api_protocol import (
     ChatCompletionResponse,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
-    ChatMessage,
+    AssistantMessage,
+    SystemMessage,
+    UserMessage,
     ChatCompletionResponseChoice,
     CompletionRequest,
     CompletionResponse,
@@ -263,6 +268,164 @@ def _add_to_set(s, new_stop):
         new_stop.update(s)
 
 
+def add_extra_stop_words(stop_words):
+    if stop_words:
+        _stop_words = []
+        _stop_words.extend(stop_words)
+        for x in stop_words:
+            s = x.lstrip("\n")
+            if s and (s not in _stop_words):
+                _stop_words.append(s)
+        return _stop_words
+    return stop_words
+
+
+def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionRequest:
+    messages = request.messages
+    if request.tools:
+        tools = request.tools.function
+    else:
+        tools = request.functions
+    logger.debug(f"request messages: {messages}")
+    logger.debug(f"request tools: {json.dumps(tools, ensure_ascii=False)}")
+    # 没有用户发出的消息，报错
+    if all(m.role != "user" for m in messages):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid request: Expecting at least one user message.",
+        )
+    tool_desc = """{name}: Call this tool to interact with the {name} API. What is the {name} API useful for? {description} Parameters: {parameters}"""
+    react_instruction = """Answer the following questions as best you can. You have access to the following APIs:
+
+    {tools_text}
+
+    Use the following format:
+
+    Question: the input question you must answer
+    Thought: you should always think about what to do
+    Action: the action to take, should be one of [{tools_name_text}]
+    Action Input: the input to the action
+    Observation: the result of the action
+    ... (this Thought/Action/Action Input/Observation can be repeated zero or more times)
+    Thought: I now know the final answer
+    Final Answer: the final answer to the original input question
+
+    Begin!"""
+    messages = copy.deepcopy(messages)
+    default_system = "You are a helpful assistant."
+    system = ""
+    if messages[0].role == "system":
+        system = messages.pop(0).content.lstrip("\n").rstrip()
+        if system == default_system:
+            system = ""
+    # 如果有 工具 调用 修改system prompt
+    if tools:
+        # add stop word
+        stop_words = add_extra_stop_words(request.stop)
+        stop_words = stop_words or []
+        if "Observation:" not in stop_words:
+            stop_words.append("Observation:")
+        request.stop = stop_words
+        # update message
+        tools_text = []
+        tools_name_text = []
+        for func_info in tools:
+            name = func_info["name"]
+            description = func_info["description"]
+            parameters = func_info["parameters"]
+            tool = tool_desc.format(
+                name=name,
+                description=description,
+                parameters=json.dumps(parameters, ensure_ascii=False),
+            )
+            tools_text.append(tool)
+            tools_name_text.append(name)
+        tools_text = "\n\n".join(tools_text)
+        tools_name_text = ", ".join(tools_name_text)
+        system += "\n\n" + react_instruction.format(
+            tools_text=tools_text,
+            tools_name_text=tools_name_text,
+        )
+        system = system.lstrip("\n").rstrip()
+
+    dummy_thought = {
+        "en": "\nThought: I now know the final answer.\nFinal answer: ",
+        "zh": "\nThought: 我会作答了。\nFinal answer: ",
+    }
+
+    _messages = messages
+    messages = []
+    # 将 工具调用的结果 组装到content
+    for m_idx, m in enumerate(_messages):
+        # 将历史message 拼装到 prompt中
+        if (len(messages) == 0) or (
+            messages[-1].role not in ("assistant", "tool", "function")
+        ):
+            # 如果历史消息的 第一个消息是 工具调用 抛出异常
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid request: Expecting role assistant before role function.",
+            )
+        # 先处理工具相关调用结果
+        if m.role in ("tool", "function"):
+            # 将工具调用结果 拼接为 Observation
+            messages[-1].content += f"\nObservation: {m.content}"
+            if m_idx == len(_messages) - 1:
+                # 如果是 工具调用 是 消息列表最后一个 ， 添加 Thought
+                messages[-1].content += "\nThought:"
+        elif m.role == "assistant":
+            # 助手消息回复
+            # 最后一条消息内容
+            last_msg = messages[-1].content
+            last_msg_has_zh = len(re.findall(r"[\u4e00-\u9fff]+", last_msg)) > 0
+
+            if m.function_calls is None or m.tool_calls == []:
+                # 助手消息  没有 工具调用，同时请求传递了工具调用参数， 则证明是工具调用结束，将 final answer 添加到prompt
+                if tools:
+                    content = (
+                        dummy_thought["zh" if last_msg_has_zh else "en"] + m.content
+                    )
+            else:
+                # 助手 消息中 有 工具调用
+                if m.function_calls:
+                    f_name, f_args = (
+                        m.function_calls.name,
+                        m.function_calls.arguments,
+                    )
+                else:
+                    f_name, f_args = (
+                        m.tool_calls[0].function_call.name,
+                        m.tool_calls[0].function_call.arguments,
+                    )
+                # todo
+                if not m.content:
+                    if last_msg_has_zh:
+                        tmp_content = f"Thought: 我可以使用 {f_name} API。"
+                    else:
+                        tmp_content = f"Thought: I can use {f_name}."
+                    content = (
+                        f"\n{tmp_content}\nAction: {f_name}\nAction Input: {f_args}"
+                    )
+            if messages[-1].role == "user":
+                messages.append(
+                    AssistantMessage(content=m.content.lstrip("\n").rstrip())
+                )
+            else:
+                messages[-1].content += m.content
+        elif m.role == "user":
+            messages.append(UserMessage(content=m.content.lstrip("\n").rstrip()))
+        elif m.role == "system":
+            messages.append(SystemMessage(content=m.content.lstrip("\n").rstrip()))
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid request: Incorrect role {m.role}."
+            )
+    # update latest message content
+    messages[-1].content = f"{system}\n\nQuestion: {messages[-1].content}"
+    request.messages = messages
+    return request
+
+
 async def get_gen_params(
     model_name: str,
     worker_addr: str,
@@ -281,6 +444,7 @@ async def get_gen_params(
     use_beam_search: Optional[bool] = None,
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
+    logger.debug(f"conv: {json.dumps(conv, ensure_ascii=False)}")
     conv = Conversation(
         name=conv["name"],
         system_template=conv["system_template"],
@@ -418,6 +582,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
+    request = parse_function_messages(request)
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -433,6 +598,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         echo=False,
         stop=request.stop,
     )
+    logger.debug(f"gen_params: {json.dumps(gen_params, ensure_ascii=False)}")
 
     max_new_tokens, error_check_ret = await check_length(
         request,
@@ -446,6 +612,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     gen_params["max_new_tokens"] = max_new_tokens
 
+    # todo  流式 后处理
     if request.stream:
         generator = chat_completion_stream_generator(
             request.model, gen_params, request.n, worker_addr
@@ -471,7 +638,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
+                message=AssistantMessage(content=content["text"]),
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
@@ -807,7 +974,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
-
+    request = parse_function_messages(request)
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -861,7 +1028,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
-                message=ChatMessage(role="assistant", content=content["text"]),
+                message=AssistantMessage(content=content["text"]),
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )

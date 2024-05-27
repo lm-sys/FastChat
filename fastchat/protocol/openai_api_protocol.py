@@ -48,6 +48,50 @@ class UsageInfo(BaseModel):
     completion_tokens: Optional[int] = 0
 
 
+class SystemMessage(BaseModel):
+    role: str = "system"
+    content: str
+    name: Optional[str] = None
+
+
+class UserMessage(BaseModel):
+    role: str = "user"
+    content: str
+    name: Optional[str] = None
+
+
+class ToolMessage(BaseModel):
+    role: str = "tool"
+    content: str
+    tool_call_id: str
+
+
+class FunctionMessage(BaseModel):
+    role: str = "function"
+    content: str
+    name: str
+
+
+class FunctionMessages(BaseModel):
+    name: str
+    arguments: str
+
+
+class ToolMessages(BaseModel):
+    index: int = 0
+    id: str
+    type: Literal["function"]
+    function_call: FunctionMessages
+
+
+class AssistantMessage(BaseModel):
+    role: str = "assistant"
+    content: str = None
+    name: Optional[str] = None
+    tool_calls: Optional[List[ToolMessages]] = []
+    function_calls: Optional[FunctionMessages] = None
+
+
 class LogProbs(BaseModel):
     text_offset: List[int] = Field(default_factory=list)
     token_logprobs: List[Optional[float]] = Field(default_factory=list)
@@ -55,12 +99,31 @@ class LogProbs(BaseModel):
     top_logprobs: List[Optional[Dict[str, float]]] = Field(default_factory=list)
 
 
+class FunctionBase(BaseModel):
+    name: str = Field(max_length=64, pattern=r"^[a-zA-Z0-9_]+$")
+
+
+class Function(FunctionBase):
+    description: str = None
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Tool(BaseModel):
+    type: Literal["function"]
+    function: Function
+
+
+class ToolChoice(BaseModel):
+    type: Literal["function"]
+    function: FunctionBase
+
+
 class ChatCompletionRequest(BaseModel):
     model: str
-    messages: Union[
-        str,
-        List[Dict[str, str]],
-        List[Dict[str, Union[str, List[Dict[str, Union[str, Dict[str, str]]]]]]],
+    messages: List[
+        Union[
+            SystemMessage, UserMessage, AssistantMessage, ToolMessage, FunctionMessage
+        ]
     ]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
@@ -72,17 +135,19 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
-
-
-class ChatMessage(BaseModel):
-    role: str
-    content: str
+    response_format: Literal["text", "json_object"]
+    tools: Tool = None
+    tool_choices: Optional[List[Tool]] = None
+    function_call: FunctionBase = None
+    functions: Function = None
 
 
 class ChatCompletionResponseChoice(BaseModel):
     index: int
-    message: ChatMessage
-    finish_reason: Optional[Literal["stop", "length"]] = None
+    message: AssistantMessage
+    finish_reason: Optional[
+        Literal["stop", "length", "tool_calls", "function_call"]
+    ] = None
 
 
 class ChatCompletionResponse(BaseModel):
@@ -97,12 +162,16 @@ class ChatCompletionResponse(BaseModel):
 class DeltaMessage(BaseModel):
     role: Optional[str] = None
     content: Optional[str] = None
+    tool_calls: Optional[List[ToolMessages]] = None
+    function_calls: Optional[FunctionMessage] = None
 
 
 class ChatCompletionResponseStreamChoice(BaseModel):
     index: int
     delta: DeltaMessage
-    finish_reason: Optional[Literal["stop", "length"]] = None
+    finish_reason: Optional[
+        Literal["stop", "length", "tool_calls", "function_call"]
+    ] = None
 
 
 class ChatCompletionStreamResponse(BaseModel):
