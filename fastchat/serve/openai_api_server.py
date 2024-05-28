@@ -327,7 +327,7 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
         # 如果没有system prompt 则 使用默认
         system_prompt = default_system_prompt
     else:
-        system_prompt = system_messages[-1].content
+        system_prompt = "\n".join([sm.content for sm in system_messages])
     # 如果请求体有 工具 调用 修改system prompt
     if tools:
         # add stop word
