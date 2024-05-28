@@ -106,6 +106,9 @@ class State:
         self.oai_thread_id = None
         self.is_vision = is_vision
 
+        # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
+        self.has_csam_image = False
+
         self.regen_support = True
         if "browsing" in model_name:
             self.regen_support = False
@@ -128,6 +131,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
+                "has_csam_image": self.has_csam_image,
             }
         )
         return base
@@ -289,7 +293,12 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def _prepare_text_with_image(state, text, images):
+# TODO(Chris): At some point, we would like this to be a live-reporting feature.
+def report_csam_image(state, image):
+    pass
+
+
+def _prepare_text_with_image(state, text, images, csam_flag):
     if images is not None and len(images) > 0:
         image = images[0]
 
@@ -297,9 +306,15 @@ def _prepare_text_with_image(state, text, images):
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
 
+        resize_image = "llava" in state.model_name
         image = state.conv.convert_image_to_base64(
-            image
+            image,
+            resize_image=resize_image,
         )  # PIL type is not JSON serializable
+
+        if csam_flag:
+            state.has_csam_image = True
+            report_csam_image(state, image)
 
         text = text, [image]
 
@@ -334,7 +349,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, image)
+    text = _prepare_text_with_image(state, text, image, csam_flag=False)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
@@ -553,7 +568,9 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
-    conv.save_new_images(use_remote_storage=use_remote_storage)
+    conv.save_new_images(
+        has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
+    )
 
     filename = get_conv_log_filename(is_vision=state.is_vision)
 

@@ -364,7 +364,7 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
-    def convert_image_to_base64(self, image):
+    def convert_image_to_base64(self, image, resize_image=False):
         """Given an image, return the base64 encoded image string."""
         from PIL import Image
         import requests
@@ -380,18 +380,19 @@ class Conversation:
             else:
                 image = Image.open(image).convert("RGB")
 
-        max_hw, min_hw = max(image.size), min(image.size)
-        aspect_ratio = max_hw / min_hw
-        max_len, min_len = 2048, 2048
-        shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
-        longest_edge = int(shortest_edge * aspect_ratio)
-        W, H = image.size
-        if longest_edge != max(image.size):
-            if H > W:
-                H, W = longest_edge, shortest_edge
-            else:
-                H, W = shortest_edge, longest_edge
-            image = image.resize((W, H))
+        if resize_image:
+            max_hw, min_hw = max(image.size), min(image.size)
+            aspect_ratio = max_hw / min_hw
+            max_len, min_len = 2048, 2048
+            shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+            longest_edge = int(shortest_edge * aspect_ratio)
+            W, H = image.size
+            if longest_edge != max(image.size):
+                if H > W:
+                    H, W = longest_edge, shortest_edge
+                else:
+                    H, W = shortest_edge, longest_edge
+                image = image.resize((W, H))
 
         buffered = BytesIO()
         image.save(buffered, format="PNG")
@@ -402,7 +403,7 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset :]):
+        for i, (role, msg) in enumerate(self.messages[self.offset:]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
@@ -482,6 +483,68 @@ class Conversation:
                     )
         return ret
 
+    def to_openai_image_format(self, image_urls):
+        import base64
+
+        openai_images = []
+        for image_url in image_urls:
+            if image_url.startswith("http://") or image_url.startswith(
+                "https://"
+            ):  # input is a url
+                openai_images.append(image_url)
+            elif image_url.lower().endswith(
+                ("png", "jpg", "jpeg", "webp", "gif")
+            ):  # input is a local image
+                img_b64_str = self.convert_image_to_base64(image_url)
+                filetype = image_url.split(".")[-1].lower()
+                openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
+            else:
+                try:
+                    assert (
+                        base64.b64encode(base64.b64decode(image_url))
+                        == image_url.encode()
+                    ), "The image data is not a valid base64 encoded string"
+                    openai_images.append(f"data:image/jpeg;base64,{image_url}")
+                except:
+                    raise ValueError(
+                        f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
+                    )
+        return openai_images
+
+    def to_openai_vision_api_messages(self):
+        """Convert the conversation to OpenAI vision api completion format"""
+        ret = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": self.system_message}],
+            }
+        ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    content_list = [{"type": "text", "text": msg[0]}]
+
+                    image_urls = self.to_openai_image_format(msg[1])
+                    for image_url in image_urls:
+                        content_list.append(
+                            {"type": "image_url", "image_url": {"url": image_url}}
+                        )
+
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append(
+                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                    )
+            else:
+                if msg is not None:
+                    ret.append(
+                        {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": msg}],
+                        }
+                    )
+        return ret
+
     def to_openai_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
         if self.system_message == "":
@@ -495,6 +558,30 @@ class Conversation:
             else:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
+        return ret
+
+    def to_gemini_api_messages(self):
+        from fastchat.utils import load_image
+
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "content": self.system_message}]
+
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    text, images = msg[0], msg[1]
+                    content_list = [text]
+                    for image in images:
+                        pil_image = load_image(image)
+                        content_list.append(pil_image)
+                    ret.append({"role": "user", "content": content_list})
+                else:
+                    ret.append({"role": "user", "content": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "model", "content": msg})
         return ret
 
     def to_vertex_api_messages(self):
@@ -597,7 +684,7 @@ class Conversation:
 
         return ret
 
-    def save_new_images(self, use_remote_storage=False):
+    def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
         from fastchat.utils import load_image, upload_image_file_to_gcs
@@ -611,16 +698,16 @@ class Conversation:
                 hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
             ]
 
-            image_filenames = []
+            image_directory_name = "csam_images" if has_csam_images else "serve_images"
             for i, (loaded_image, hash_str) in enumerate(
                 zip(loaded_images, image_hashes)
             ):
                 filename = os.path.join(
-                    "serve_images",
+                    image_directory_name,
                     f"{hash_str}.jpg",
                 )
 
-                if use_remote_storage:
+                if use_remote_storage and not has_csam_images:
                     image_url = upload_image_file_to_gcs(loaded_image, filename)
                     # NOTE(chris): If the URL were public, then we set it here so future model uses the link directly
                     # images[i] = image_url
@@ -688,7 +775,7 @@ def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
         assert (
-            template.name not in conv_templates
+                template.name not in conv_templates
         ), f"{template.name} has been registered."
 
     conv_templates[template.name] = template
@@ -715,7 +802,7 @@ register_conv_template(
     Conversation(
         name="one_shot",
         system_message="A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+                       "The assistant gives helpful, detailed, and polite answers to the human's questions.",
         roles=("Human", "Assistant"),
         messages=(
             (
@@ -1396,7 +1483,8 @@ register_conv_template(
         sep_style=SeparatorStyle.RWKV,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser",
+        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
         stop_token_ids=[
             0,
             1,
@@ -1837,7 +1925,8 @@ register_conv_template(
         sep_style=SeparatorStyle.FALCON_CHAT,
         sep="\n",
         sep2="<|endoftext|>",
-        stop_str="\nUser:",  # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
+        stop_str="\nUser:",
+        # use stop_str to stop generation after stop_token_ids, it will also remove stop_str from the generated text
     )
 )
 
@@ -2105,32 +2194,6 @@ if __name__ == "__main__":
 
     print("-- Claude template --")
     conv = get_conv_template("claude")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.get_prompt())
-
-    print("-- OpenBuddy LLAMA3 template--")
-    conv = get_conv_template("openbuddy-llama3")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.get_prompt())
-
-    print("-- LLAMA3 template--")
-    conv = get_conv_template("llama-3")
-    # conv.set_system_message("You are a helpful assistant.")
-    conv.append_message(conv.roles[0], "Hello!")
-    conv.append_message(conv.roles[1], "Hi!")
-    conv.append_message(conv.roles[0], "How are you?")
-    conv.append_message(conv.roles[1], None)
-    print(conv.get_prompt())
-
-    print("-- Qwen template--")
-    conv = get_conv_template("qwen-7b-chat")
-    conv.set_system_message("You are a helpful assistant.")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")

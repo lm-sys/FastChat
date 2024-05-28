@@ -11,6 +11,8 @@ import gradio as gr
 import numpy as np
 
 from fastchat.constants import (
+    TEXT_MODERATION_MSG,
+    IMAGE_MODERATION_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -28,6 +30,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
     set_visible_image,
     add_image,
+    moderate_input,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -46,6 +49,7 @@ from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter,
 )
 
 
@@ -184,11 +188,8 @@ def add_text(
     all_conv_text = (
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
-    flagged = moderation_filter(all_conv_text, model_list)
-    if flagged:
-        logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+
+    text, csam_flag = moderate_input(text, all_conv_text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -207,7 +208,9 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, images)
+        post_processed_text = _prepare_text_with_image(
+            states[i], text, images, csam_flag=csam_flag
+        )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -232,9 +235,11 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 - Chat with any two models side-by-side and vote!
 - You can continue chatting for multiple rounds.
 - Click "Clear history" to start a new round.
+- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+
+**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
 ## 🤖 Choose two models to compare
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -408,7 +413,7 @@ function (a, b, c, d) {
     for i in range(num_sides):
         model_selectors[i].change(
             clear_history, None, states + chatbots + [textbox] + btn_list
-        )
+        ).then(set_visible_image, [textbox], [image_column])
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]

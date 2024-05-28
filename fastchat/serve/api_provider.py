@@ -76,7 +76,7 @@ def get_api_provider_stream_iter(
             vertex_ai=True,
         )
     elif model_api_dict["api_type"] == "gemini":
-        prompt = conv.to_openai_api_messages()
+        prompt = conv.to_gemini_api_messages()
         stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -522,12 +522,6 @@ def gemini_api_stream_iter(
 ):
     import google.generativeai as genai  # pip install google-generativeai
 
-    OPENAI_TO_GEMINI_ROLE_MAP = {
-        "user": "user",
-        "assistant": "model",
-        "system": "system",
-    }
-
     if api_key is None:
         api_key = os.environ["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
@@ -554,11 +548,10 @@ def gemini_api_stream_iter(
     history = []
     system_prompt = None
     for message in messages[:-1]:
-        role = OPENAI_TO_GEMINI_ROLE_MAP[message["role"]]
-        if role == "system":
+        if message["role"] == "system":
             system_prompt = message["content"]
             continue
-        history.append({"role": role, "parts": message["content"]})
+        history.append({"role": message["role"], "parts": message["content"]})
 
     model = genai.GenerativeModel(
         model_name=model_name,
@@ -572,7 +565,7 @@ def gemini_api_stream_iter(
     try:
         text = ""
         for chunk in response:
-            text += chunk.text
+            text += chunk.candidates[0].content.parts[0].text
             data = {
                 "text": text,
                 "error_code": 0,
@@ -1008,7 +1001,15 @@ def reka_api_stream_iter(
         "stream": True,
         "use_search_engine": use_search_engine,
     }
-    logger.info(f"==== request ====\n{request}")
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        text_messages.append({"type": message["type"], "text": message["text"]})
+    logged_request = dict(request)
+    logged_request["conversation_history"] = text_messages
+
+    logger.info(f"==== request ====\n{logged_request}")
 
     response = requests.post(
         api_base,

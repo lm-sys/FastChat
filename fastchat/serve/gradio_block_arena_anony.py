@@ -410,7 +410,9 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, image)
+        post_processed_text = _prepare_text_with_image(
+            states[i], text, image, csam_flag=False
+        )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -474,7 +476,8 @@ def bot_response_multi(
                 "gemini-pro",
                 "gemini-pro-dev-api",
                 "gemini-1.0-pro-vision",
-                "gemini-1.5-pro-preview-0409",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash",
                 "gemma-1.1-2b-it",
                 "gemma-1.1-7b-it",
             ]
