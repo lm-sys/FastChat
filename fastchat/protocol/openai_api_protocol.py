@@ -80,15 +80,15 @@ class FunctionMessages(BaseModel):
 class ToolMessages(BaseModel):
     index: int = 0
     id: str
-    type: Literal["function"]
-    function_call: FunctionMessages
+    type: Literal["function"] = "function"
+    function: FunctionMessages
 
 
 class AssistantMessage(BaseModel):
     role: str = "assistant"
-    content: str = None
+    content: Optional[str] = None
     name: Optional[str] = None
-    tool_calls: Optional[List[ToolMessages]] = []
+    tool_calls: Optional[List[ToolMessages]] = None
     function_calls: Optional[FunctionMessages] = None
 
 
@@ -118,6 +118,11 @@ class ToolChoice(BaseModel):
     function: FunctionBase
 
 
+class ToolChoices(BaseModel):
+    type: Literal["function"]
+    function: FunctionBase
+
+
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[
@@ -135,11 +140,11 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
-    response_format: Literal["text", "json_object"]
-    tools: Tool = None
-    tool_choices: Optional[List[Tool]] = None
-    function_call: FunctionBase = None
-    functions: Function = None
+    response_format: Literal["text", "json_object"] = "text"
+    tools: Optional[List[Tool]] = None
+    tool_choices: Optional[Union[str, ToolChoices]] = None
+    function_call: Optional[Union[str, FunctionBase]] = None
+    functions: Optional[List[Function]] = None
 
 
 class ChatCompletionResponseChoice(BaseModel):
