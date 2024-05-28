@@ -123,6 +123,10 @@ class ToolChoices(BaseModel):
     function: FunctionBase
 
 
+class ResponseFormat(BaseModel):
+    type: Literal["text", "json_object"] = "text"
+
+
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[
@@ -140,7 +144,7 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
-    response_format: Literal["text", "json_object"] = "text"
+    response_format: Optional[ResponseFormat] = None
     tools: Optional[List[Tool]] = None
     tool_choices: Optional[Union[str, ToolChoices]] = None
     function_call: Optional[Union[str, FunctionBase]] = None

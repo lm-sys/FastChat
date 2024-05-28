@@ -14,6 +14,7 @@ import copy
 import json
 import os
 import uuid
+from datetime import datetime
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import aiohttp
@@ -291,19 +292,18 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
         tools = [func.function for func in request.tools]
     else:
         tools = request.functions
-    print(f"request messages: {messages}")
-    print(
-        f"request tools: {json.dumps([t.model_dump() for t in tools], ensure_ascii=False)}"
-    )
     # 没有用户发出的消息，报错
     if all(m.role != "user" for m in messages):
         raise HTTPException(
             status_code=400,
             detail="Invalid request: Expecting at least one user message.",
         )
+
     tool_desc = """{name}: {name} API。{description} 输入参数: {parameters} Format the arguments as a JSON object."""
 
-    react_instruction = """# 工具
+    react_instruction = """
+# 当前日期是: {date}
+# 工具
 
 ## 你拥有如下工具：
 
@@ -353,6 +353,7 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
         tools_text = "\n\n".join(tools_text)
         tools_name_text = ", ".join(tools_name_text)
         system_prompt += "\n\n" + react_instruction.format(
+            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             tools_text=tools_text,
             tools_name_text=tools_name_text,
         )
@@ -398,7 +399,6 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
             result_messages.append(m)
 
     request.messages = result_messages
-    print(f"result_messages： {result_messages}")
     return request
 
 
@@ -642,7 +642,6 @@ def parse_response(response, index):
                 role="assistant",
                 tool_calls=[tool],
             ),
-            # todo  不清楚 langchain 是否 全部修改为了 检测 tool_calls
             finish_reason="tool_calls",
         )
         print(f"choice_data: {choice_data}")
