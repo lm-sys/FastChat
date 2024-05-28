@@ -1821,6 +1821,18 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="codelab",
+        system_template="<|system|>\n{system_message}",
+        system_message="""You are an AI code model developed by IBM Research. You are an expert in programming in various languages. You carefully follow instructions. You are helpful and harmless and you follow ethical guidelines and promote positive behavior.""",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
+        stop_str="<|endoftext|>",
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="granite-old",
         system_template="{system_message}",
         system_message="",

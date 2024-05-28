@@ -2477,6 +2477,19 @@ class LabradorAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("granite-chat")
 
+class CodeLabAdapter(BaseModelAdapter):
+    """The model adapter for instructlab/granite-7b-lab"""
+
+    def match(self, model_path: str):
+        return "codelab" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("codelab")
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2582,6 +2595,7 @@ register_model_adapter(GraniteAdapter)
 register_model_adapter(GraniteCodeAdapter)
 register_model_adapter(IBMOldAdapter)
 register_model_adapter(LabradorAdapter)
+register_model_adapter(CodeLabAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
