@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY . /app/
 RUN pip3 install -e .
-RUN pip3 install pydantic==1.10.13
+RUN pip3 install pydantic
 
 CMD ["python3", "-m", "fastchat.serve.controller", "--host", "0.0.0.0"]
