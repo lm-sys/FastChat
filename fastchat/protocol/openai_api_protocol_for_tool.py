@@ -39,7 +39,7 @@ class ToolChoices(ToolBase):
 
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant", "tool", "function"]
-    content: str
+    content: Optional[str] = None
     name: Optional[str] = None
     tool_call_id: str = None
     tool_calls: Optional[List[ToolCallsMessage]] = None

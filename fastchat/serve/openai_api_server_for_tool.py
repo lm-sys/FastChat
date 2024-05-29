@@ -8,6 +8,7 @@ Usage:
 python3 -m fastchat.serve.openai_api_server
 """
 
+import asyncio
 import copy
 import json
 import os
@@ -376,8 +377,6 @@ async def create_chat_completion_for_tool(request: ChatCompletionRequest):
     choices = []
     chat_completions = []
     for i in range(request.n):
-        import asyncio
-
         content = asyncio.create_task(generate_completion(gen_params, worker_addr))
         chat_completions.append(content)
     try:
@@ -386,7 +385,7 @@ async def create_chat_completion_for_tool(request: ChatCompletionRequest):
         return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
     usage = UsageInfo()
     for i, content in enumerate(all_tasks):
-        logger.debug(f"llm response: {content}")
+        logger.info(f"llm response: {content}")
         if isinstance(content, str):
             content = json.loads(content)
 
