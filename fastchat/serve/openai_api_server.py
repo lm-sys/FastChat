@@ -14,7 +14,6 @@ import copy
 import json
 import os
 import uuid
-from datetime import datetime
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import aiohttp
@@ -287,7 +286,6 @@ def add_extra_stop_words(stop_words):
 
 def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionRequest:
     messages = request.messages
-    print(request)
     if request.tools:
         tools = [func.function for func in request.tools]
     else:
@@ -301,9 +299,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
 
     tool_desc = """{name}: {name} API。{description} 输入参数: {parameters} Format the arguments as a JSON object."""
 
-    react_instruction = """
-# 当前日期是: {date}
-# 工具
+    react_instruction = """# 工具
 
 ## 你拥有如下工具：
 
@@ -353,7 +349,6 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
         tools_text = "\n\n".join(tools_text)
         tools_name_text = ", ".join(tools_name_text)
         system_prompt += "\n\n" + react_instruction.format(
-            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             tools_text=tools_text,
             tools_name_text=tools_name_text,
         )
@@ -543,6 +538,8 @@ async def create_chat_completion(request: ChatCompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
+
+    print(f"interface request: {request}")
 
     request = parse_function_messages(request)
     worker_addr = await get_worker_address(request.model)
