@@ -71,7 +71,7 @@ class ChatCompletionRequest(BaseModel):
 
 
 class ChatCompletionResponseMessage(BaseModel):
-    content: Optional[str]
+    content: Optional[str] = None
     role: Literal["assistant", "tool"] = "assistant"
     tool_calls: Optional[List[ToolCallsMessage]] = None
     function_call: Optional[FunctionCallsMessage] = None
