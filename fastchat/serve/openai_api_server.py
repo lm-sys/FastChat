@@ -316,7 +316,11 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
 Action: 工具的名称，必须是[{tools_name_text}]之一
 Action Input: 工具的输入
 Observation: <result>工具返回的结果</result>
-Answer: 根据Observation总结本次工具调用返回的结果，如果结果中出现url，请使用如下格式展示出来：![图片](url)
+Answer: 根据Observation总结本次工具调用返回的结果
+
+# 指令
+你可以使用工具：[{tools_name_text}]
+请注意：你具有使用工具获取实时信息的能力，不要在回复中说你做不到或无法预测。
 """
     messages = copy.deepcopy(messages)
     # 设置默认system prompt
@@ -392,7 +396,7 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
         elif m.role in ("tool", "function"):
             # 工具调用结果信息回填 Observation: <result>工具返回的结果</result> 包括
             t_content = m.content.lstrip("\n").rstrip()
-            tool_content = f"Observation: <result>{t_content}</result>"
+            tool_content = f"\nObservation: <result>{t_content}</result>"
             result_messages.append(AssistantMessage(content=tool_content))
         else:
             logger.warning("未知角色")
