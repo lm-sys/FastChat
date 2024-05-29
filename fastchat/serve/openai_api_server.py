@@ -78,6 +78,11 @@ conv_template_map = {}
 
 fetch_timeout = aiohttp.ClientTimeout(total=3 * 3600)
 
+ACTION_TOKEN = "Action:"
+ARGS_TOKEN = "Action Input:"
+OBSERVATION_TOKEN = "Observation:"
+ANSWER_TOKEN = "Answer:"
+
 
 async def fetch_remote(url, pload=None, name=None):
     async with aiohttp.ClientSession(timeout=fetch_timeout) as session:
@@ -616,17 +621,17 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
 def parse_response(response, index):
     func_name, func_args = "", ""
-    i = response.rfind("\nAction:")
-    j = response.rfind("\nAction Input:")
-    k = response.rfind("\nObservation:")
+    i = response.rfind(ACTION_TOKEN)
+    j = response.rfind(ARGS_TOKEN)
+    k = response.rfind(OBSERVATION_TOKEN)
     if 0 <= i < j:  # If the text has `Action` and `Action input`,
         if k < j:  # but does not contain `Observation`,
             # then it is likely that `Observation` is omitted by the LLM,
             # because the output text may have discarded the stop word.
-            response = response.rstrip() + "\nObservation:"  # Add it back.
-        k = response.rfind("\nObservation:")
-        func_name = response[i + len("\nAction:") : j].strip()
-        func_args = response[j + len("\nAction Input:") : k].strip()
+            response = response.rstrip() + OBSERVATION_TOKEN  # Add it back.
+        k = response.rfind(OBSERVATION_TOKEN)
+        func_name = response[i + len(ACTION_TOKEN) : j].strip()
+        func_args = response[j + len(ARGS_TOKEN) : k].strip()
     if func_name:
         tool = ToolMessages(
             id=str(uuid.uuid4()),
@@ -644,9 +649,9 @@ def parse_response(response, index):
         print(f"choice_data: {choice_data}")
         return choice_data
     # 有最终答案 不在调用工具
-    z = response.rfind("\nAnswer: ")
+    z = response.rfind(ANSWER_TOKEN)
     if z >= 0:
-        response = response[z + len("\nAnswer: ") :]
+        response = response[z + len(ANSWER_TOKEN) :]
     choice_data = ChatCompletionResponseChoice(
         index=index,
         message=AssistantMessage(content=response),
