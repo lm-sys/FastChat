@@ -342,7 +342,7 @@ Answer: 根据Observation总结本次工具调用返回的结果，如果结果�
             tool = tool_desc.format(
                 name=name,
                 description=description,
-                parameters=json.dumps(parameters, ensure_ascii=False),
+                parameters=parameters,
             )
             tools_text.append(tool)
             tools_name_text.append(name)
@@ -605,6 +605,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
                     finish_reason=content.get("finish_reason", "stop"),
                 )
             )
+        print(f"choices: {choices}")
         if "usage" in content:
             task_usage = UsageInfo.model_validate(content["usage"])
             for usage_key, usage_value in task_usage.model_dump().items():
@@ -614,7 +615,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
 
 def parse_response(response, index):
-    print(f"llm response: {response}")
     func_name, func_args = "", ""
     i = response.rfind("\nAction:")
     j = response.rfind("\nAction Input:")
