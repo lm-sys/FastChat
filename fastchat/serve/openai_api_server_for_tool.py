@@ -235,8 +235,7 @@ def parse_response(response, index):
         choice_data = ChatCompletionResponseChoice(
             index=0,
             message=ChatCompletionResponseMessage(
-                # todo  此处的角色 未明
-                role="tool",
+                role="assistant",
                 tool_calls=[tool],
             ),
             finish_reason="tool_calls",
