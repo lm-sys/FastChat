@@ -269,7 +269,7 @@ async def get_gen_params(
     stop: Optional[Union[str, List[str]]],
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
-    logger.info(f"model conv: {conv}")
+    logger.debug(f"model conv: {conv}")
     conv = Conversation(
         name=conv["name"],
         system_template=conv["system_template"],
