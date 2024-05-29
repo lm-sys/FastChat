@@ -10,11 +10,8 @@ python3 -m fastchat.serve.openai_api_server
 
 import asyncio
 import argparse
-import copy
 import json
 import os
-import uuid
-from datetime import datetime
 from typing import Generator, Optional, Union, Dict, List, Any
 
 import aiohttp
@@ -42,9 +39,7 @@ from fastchat.protocol.openai_api_protocol import (
     ChatCompletionResponse,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
-    AssistantMessage,
-    SystemMessage,
-    UserMessage,
+    ChatMessage,
     ChatCompletionResponseChoice,
     CompletionRequest,
     CompletionResponse,
@@ -60,10 +55,6 @@ from fastchat.protocol.openai_api_protocol import (
     ModelList,
     ModelPermission,
     UsageInfo,
-    ToolMessage,
-    FunctionMessage,
-    ToolMessages,
-    FunctionMessages,
 )
 from fastchat.protocol.api_protocol import (
     APIChatCompletionRequest,
@@ -78,11 +69,6 @@ logger = build_logger("openai_api_server", "openai_api_server.log")
 conv_template_map = {}
 
 fetch_timeout = aiohttp.ClientTimeout(total=3 * 3600)
-
-ACTION_TOKEN = "Action:"
-ARGS_TOKEN = "Action Input:"
-OBSERVATION_TOKEN = "Observation:"
-ANSWER_TOKEN = "Answer:"
 
 
 async def fetch_remote(url, pload=None, name=None):
@@ -278,147 +264,10 @@ def _add_to_set(s, new_stop):
         new_stop.update(s)
 
 
-def add_extra_stop_words(stop_words):
-    if stop_words:
-        _stop_words = []
-        _stop_words.extend(stop_words)
-        for x in stop_words:
-            s = x.lstrip("\n")
-            if s and (s not in _stop_words):
-                _stop_words.append(s)
-        return _stop_words
-    return stop_words
-
-
-def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionRequest:
-    messages = request.messages
-    if request.tools:
-        tools = [func.function for func in request.tools]
-    else:
-        tools = request.functions
-    # 没有用户发出的消息，报错
-    if all(m.role != "user" for m in messages):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid request: Expecting at least one user message.",
-        )
-
-    tool_desc = """{name}: {name} API。{description} 输入参数: {parameters} Format the arguments as a JSON object."""
-
-    react_instruction = """
-# 基本信息
-当前时间: {date}
-# 工具
-
-## 你拥有如下工具：
-
-{tools_text}
-
-## 当你需要调用工具时，请在你的回复中穿插如下的工具调用命令，可以根据需求调用零次或多次：
-
-工具调用
-Action: 工具的名称，必须是[{tools_name_text}]之一
-Action Input: 工具的输入
-Observation: <result>工具返回的结果</result>
-Answer: 根据Observation总结本次工具调用返回的结果
-
-# 指令
-你可以使用工具：[{tools_name_text}]
-请注意：你具有使用工具获取实时信息的能力，不要在回复中说你做不到或无法预测。
-"""
-    messages = copy.deepcopy(messages)
-    # 设置默认system prompt
-    default_system_prompt = "You are a helpful assistant."
-    # 每次 请求 替换 最新的system prompt
-    # 找到 最新的system prompt
-    system_messages = [i for i in messages if i.role == "system"]
-    if len(system_messages) == 0:
-        # 如果没有system prompt 则 使用默认
-        system_prompt = default_system_prompt
-    else:
-        system_prompt = "\n".join([sm.content for sm in system_messages])
-    # 如果请求体有 工具 调用 修改system prompt
-    if tools:
-        # add stop word
-        stop_words = add_extra_stop_words(request.stop)
-        stop_words = stop_words or []
-        if "Observation:" not in stop_words:
-            stop_words.append("Observation:")
-        request.stop = stop_words
-        # update message
-        tools_text = []
-        tools_name_text = []
-        for func_info in tools:
-            name = func_info.name
-            description = func_info.description
-            parameters = func_info.parameters
-            tool = tool_desc.format(
-                name=name,
-                description=description,
-                parameters=parameters,
-            )
-            tools_text.append(tool)
-            tools_name_text.append(name)
-        tools_text = "\n\n".join(tools_text)
-        tools_name_text = ", ".join(tools_name_text)
-        system_prompt += "\n\n" + react_instruction.format(
-            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            tools_text=tools_text,
-            tools_name_text=tools_name_text,
-        )
-        system_prompt = system_prompt.lstrip("\n").rstrip()
-    # 消息列表中 剔除 所有 system
-    messages = [m for m in messages if m.role != "system"]
-
-    # 将修改后的system prompt 作为第一条 加入
-    result_messages = [SystemMessage(content=system_prompt)]
-    # 将 工具调用的结果 组装到content
-    for m_idx, m in enumerate(messages):
-        # 将历史message 拼装到 prompt中
-        if m.role == "user":
-            result_messages.append(UserMessage(content=m.content))
-        elif m.role == "assistant":
-            # 助手 消息 有工具调用 信息 回填
-            as_content = m.content
-            if as_content:
-                # 有content，则 不填充 工具调用
-                as_content = m.content.lstrip("\n").rstrip()
-                result_messages.append(AssistantMessage(content=as_content))
-            else:
-                as_content = ""
-                if m.function_calls:
-                    f_name, f_args = (
-                        m.function_calls.name,
-                        m.function_calls.arguments,
-                    )
-                else:
-                    f_name, f_args = (
-                        m.tool_calls[0].function.name,
-                        m.tool_calls[0].function.arguments,
-                    )
-                as_content += f"Action:{f_name}\n Action Input:{f_args}"
-                result_messages.append(AssistantMessage(content=as_content))
-        elif m.role in ("tool", "function"):
-            # 工具调用结果信息回填 Observation: <result>工具返回的结果</result> 包括
-            t_content = m.content.lstrip("\n").rstrip()
-            tool_content = f"\nObservation: <result>{t_content}</result>"
-            result_messages.append(AssistantMessage(content=tool_content))
-        else:
-            logger.warning("未知角色")
-            result_messages.append(m)
-
-    request.messages = result_messages
-    return request
-
-
 async def get_gen_params(
     model_name: str,
     worker_addr: str,
-    messages: List[
-        Union[
-            SystemMessage, UserMessage, AssistantMessage, ToolMessage, FunctionMessage
-        ]
-    ],
+    messages: Union[str, List[Dict[str, str]]],
     *,
     temperature: float,
     top_p: float,
@@ -433,11 +282,6 @@ async def get_gen_params(
     use_beam_search: Optional[bool] = None,
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
-    # print(f"conv: {conv}")
-    # {'name': 'qwen-7b-chat', 'system_template': '<|im_start|>system\n{system_message}',
-    #  'system_message': 'You are a helpful assistant.', 'roles': ['<|im_start|>user', '<|im_start|>assistant'],
-    #  'messages': [], 'offset': 0, 'sep_style': 10, 'sep': '<|im_end|>', 'sep2': None, 'stop_str': '<|endoftext|>',
-    #  'stop_token_ids': [151643, 151644, 151645]}
     conv = Conversation(
         name=conv["name"],
         system_template=conv["system_template"],
@@ -454,21 +298,40 @@ async def get_gen_params(
 
     if isinstance(messages, str):
         prompt = messages
+        images = []
     else:
         for message in messages:
-            msg_role = message.role
+            msg_role = message["role"]
             if msg_role == "system":
-                conv.set_system_message(message.content)
+                conv.set_system_message(message["content"])
             elif msg_role == "user":
-                conv.append_message(conv.roles[0], message.content)
+                if type(message["content"]) == list:
+                    image_list = [
+                        item["image_url"]["url"]
+                        for item in message["content"]
+                        if item["type"] == "image_url"
+                    ]
+                    text_list = [
+                        item["text"]
+                        for item in message["content"]
+                        if item["type"] == "text"
+                    ]
+
+                    # TODO(chris): This only applies to LLaVA model. Implement an image_token string in the conv template.
+                    text = "<image>\n" * len(image_list)
+                    text += "\n".join(text_list)
+                    conv.append_message(conv.roles[0], (text, image_list))
+                else:
+                    conv.append_message(conv.roles[0], message["content"])
             elif msg_role == "assistant":
-                conv.append_message(conv.roles[1], message.content)
+                conv.append_message(conv.roles[1], message["content"])
             else:
                 raise ValueError(f"Unknown role: {msg_role}")
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+        images = conv.get_images()
 
     gen_params = {
         "model": model_name,
@@ -483,6 +346,9 @@ async def get_gen_params(
         "echo": echo,
         "stop_token_ids": conv.stop_token_ids,
     }
+
+    if len(images) > 0:
+        gen_params["images"] = images
 
     if best_of is not None:
         gen_params.update({"best_of": best_of})
@@ -553,9 +419,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
     if error_check_ret is not None:
         return error_check_ret
 
-    print(f"interface request: {request}")
-
-    request = parse_function_messages(request)
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -571,7 +434,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
         echo=False,
         stop=request.stop,
     )
-    print(f"gen_params: {json.dumps(gen_params, ensure_ascii=False)}")
 
     max_new_tokens, error_check_ret = await check_length(
         request,
@@ -585,7 +447,6 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     gen_params["max_new_tokens"] = max_new_tokens
 
-    # todo  流式 后处理
     if request.stream:
         generator = chat_completion_stream_generator(
             request.model, gen_params, request.n, worker_addr
@@ -603,70 +464,24 @@ async def create_chat_completion(request: ChatCompletionRequest):
         return create_error_response(ErrorCode.INTERNAL_ERROR, str(e))
     usage = UsageInfo()
     for i, content in enumerate(all_tasks):
-        print(f"response: {content}")
         if isinstance(content, str):
             content = json.loads(content)
 
         if content["error_code"] != 0:
             return create_error_response(content["error_code"], content["text"])
-        if request.functions or request.tools:
-            choices.append(parse_response(content["text"], i))
-        else:
-            choices.append(
-                ChatCompletionResponseChoice(
-                    index=i,
-                    message=AssistantMessage(content=content["text"]),
-                    finish_reason=content.get("finish_reason", "stop"),
-                )
+        choices.append(
+            ChatCompletionResponseChoice(
+                index=i,
+                message=ChatMessage(role="assistant", content=content["text"]),
+                finish_reason=content.get("finish_reason", "stop"),
             )
-        print(f"choices: {choices}")
+        )
         if "usage" in content:
             task_usage = UsageInfo.model_validate(content["usage"])
             for usage_key, usage_value in task_usage.model_dump().items():
                 setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
     return ChatCompletionResponse(model=request.model, choices=choices, usage=usage)
-
-
-def parse_response(response, index):
-    func_name, func_args = "", ""
-    i = response.rfind(ACTION_TOKEN)
-    j = response.rfind(ARGS_TOKEN)
-    k = response.rfind(OBSERVATION_TOKEN)
-    if 0 <= i < j:  # If the text has `Action` and `Action input`,
-        if k < j:  # but does not contain `Observation`,
-            # then it is likely that `Observation` is omitted by the LLM,
-            # because the output text may have discarded the stop word.
-            response = response.rstrip() + OBSERVATION_TOKEN  # Add it back.
-        k = response.rfind(OBSERVATION_TOKEN)
-        func_name = response[i + len(ACTION_TOKEN) : j].strip()
-        func_args = response[j + len(ARGS_TOKEN) : k].strip()
-    if func_name:
-        tool = ToolMessages(
-            id=str(uuid.uuid4()),
-            type="function",
-            function=FunctionMessages(name=func_name, arguments=func_args),
-        )
-        choice_data = ChatCompletionResponseChoice(
-            index=0,
-            message=AssistantMessage(
-                role="assistant",
-                tool_calls=[tool],
-            ),
-            finish_reason="tool_calls",
-        )
-        print(f"choice_data: {choice_data}")
-        return choice_data
-    # 有最终答案 不在调用工具
-    z = response.rfind(ANSWER_TOKEN)
-    if z >= 0:
-        response = response[z + len(ANSWER_TOKEN) :]
-    choice_data = ChatCompletionResponseChoice(
-        index=index,
-        message=AssistantMessage(content=response),
-        finish_reason="stop",
-    )
-    return choice_data
 
 
 async def chat_completion_stream_generator(
@@ -993,7 +808,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
-    request = parse_function_messages(request)
+
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -1047,7 +862,7 @@ async def create_chat_completion(request: APIChatCompletionRequest):
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
-                message=AssistantMessage(content=content["text"]),
+                message=ChatMessage(role="assistant", content=content["text"]),
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
@@ -1122,4 +937,4 @@ if __name__ == "__main__":
             ssl_certfile=os.environ["SSL_CERTFILE"],
         )
     else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="debug")
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
