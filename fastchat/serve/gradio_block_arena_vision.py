@@ -16,6 +16,8 @@ from gradio.data_classes import FileData
 import numpy as np
 
 from fastchat.constants import (
+    TEXT_MODERATION_MSG,
+    IMAGE_MODERATION_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     INPUT_CHAR_LEN_LIMIT,
@@ -35,6 +37,7 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -137,6 +140,27 @@ def clear_history_example(request: gr.Request):
     return (state, []) + (disable_btn,) * 5
 
 
+def moderate_input(text, all_conv_text, model_list, images, ip):
+    text_flagged = moderation_filter(all_conv_text, model_list)
+    # flagged = moderation_filter(text, [state.model_name])
+    nsfw_flagged, csam_flagged = False, False
+    if len(images) > 0:
+        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
+
+    image_flagged = nsfw_flagged or csam_flagged
+    if text_flagged or image_flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {all_conv_text}")
+        if text_flagged and not image_flagged:
+            # overwrite the original text
+            text = TEXT_MODERATION_MSG
+        elif not text_flagged and image_flagged:
+            text = IMAGE_MODERATION_MSG
+        elif text_flagged and image_flagged:
+            text = MODERATION_MSG
+
+    return text, csam_flagged
+
+
 def add_text(state, model_selector, chat_input, request: gr.Request):
     text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
@@ -151,12 +175,10 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
-    # flagged = moderation_filter(text, [state.model_name])
-    if flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+
+    text, csam_flag = moderate_input(
+        text, all_conv_text, [state.model_name], images, ip
+    )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -166,7 +188,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, images)
+    text = _prepare_text_with_image(state, text, images, csam_flag=csam_flag)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
@@ -179,8 +201,9 @@ def build_single_vision_language_model_ui(
         """
 - | [GitHub](https://github.com/lm-sys/FastChat) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
 
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
-"""
+**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
+
+Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image."""
         if add_promotion_links
         else ""
     )
@@ -316,7 +339,9 @@ Note: You can only chat with **one image per conversation**. You can upload imag
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+    model_selector.change(
+        clear_history, None, [state, chatbot, textbox] + btn_list
+    ).then(set_visible_image, [textbox], [image_column])
     examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
 
     textbox.input(add_image, [textbox], [imagebox]).then(

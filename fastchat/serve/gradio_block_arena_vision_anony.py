@@ -10,6 +10,8 @@ import gradio as gr
 import numpy as np
 
 from fastchat.constants import (
+    TEXT_MODERATION_MSG,
+    IMAGE_MODERATION_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -53,11 +55,13 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
     set_visible_image,
     add_image,
+    moderate_input,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     moderation_filter,
+    image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -70,9 +74,10 @@ models = []
 # TODO(chris): fix sampling weights
 SAMPLING_WEIGHTS = {
     # tier 0
+    "gpt-4o": 4,
     "gpt-4-turbo": 4,
-    "gemini-1.5-pro-preview-0409": 4,
-    "gemini-1.0-pro-vision": 4,
+    "gemini-1.5-flash": 4,
+    "gemini-1.5-pro": 4,
     "claude-3-opus-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
@@ -84,51 +89,51 @@ SAMPLING_WEIGHTS = {
 
 # TODO(chris): Find battle targets that make sense
 BATTLE_TARGETS = {
-    "gpt-4-turbo": {
-        "gemini-1.5-pro-preview-0409",
-        "claude-3-opus-20240229",
-        "reka-flash-20240226",
-    },
-    "gemini-1.5-pro-preview-0409": {
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "reka-flash-20240226",
-    },
-    "gemini-1.0-pro-vision": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "claude-3-opus-20240229": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-        "reka-flash-20240226",
-    },
-    "claude-3-sonnet-20240229": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "claude-3-haiku-20240307": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo",
-        "gemini-1.0-pro-vision",
-        "gemini-1.5-pro-preview-0409",
-    },
-    "llava-v1.6-34b": {
-        "gpt-4-turbo",
-        "gemini-1.5-pro-preview-0409",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "claude-3-haiku-20240307",
-    },
-    "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
-    "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
-    "reka-flash-20240226": {
-        "gemini-1.0-pro-vision",
-        "claude-3-haiku-20240307",
-        "claude-3-sonnet-20240229",
-    },
+    # "gpt-4-turbo": {
+    #     "gemini-1.5-pro-preview-0409",
+    #     "claude-3-opus-20240229",
+    #     "reka-flash-20240226",
+    # },
+    # "gemini-1.5-pro-preview-0409": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "reka-flash-20240226",
+    # },
+    # "gemini-1.0-pro-vision": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "claude-3-opus-20240229": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    #     "reka-flash-20240226",
+    # },
+    # "claude-3-sonnet-20240229": {
+    #     "claude-3-opus-20240229",
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "claude-3-haiku-20240307": {
+    #     "claude-3-opus-20240229",
+    #     "gpt-4-turbo",
+    #     "gemini-1.0-pro-vision",
+    #     "gemini-1.5-pro-preview-0409",
+    # },
+    # "llava-v1.6-34b": {
+    #     "gpt-4-turbo",
+    #     "gemini-1.5-pro-preview-0409",
+    #     "claude-3-opus-20240229",
+    #     "claude-3-sonnet-20240229",
+    #     "claude-3-haiku-20240307",
+    # },
+    # "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
+    # "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
+    # "reka-flash-20240226": {
+    #     "gemini-1.0-pro-vision",
+    #     "claude-3-haiku-20240307",
+    #     "claude-3-sonnet-20240229",
+    # },
 }
 
 # TODO(chris): Fill out models that require sampling boost
@@ -304,11 +309,7 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    flagged = moderation_filter(text, model_list)
-    if flagged:
-        logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+    text, csam_flag = moderate_input(text, text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -328,7 +329,9 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, images)
+        post_processed_text = _prepare_text_with_image(
+            states[i], text, images, csam_flag=csam_flag
+        )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -358,9 +361,11 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
 - Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
+- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+
+**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
 ## 👇 Chat now!
-Note: You can only chat with **one image per conversation**. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 """
 
     states = [gr.State() for _ in range(num_sides)]
