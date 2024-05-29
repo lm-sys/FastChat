@@ -15,6 +15,18 @@ agent_executor = create_react_agent(llm, tools, messages_modifier=prompt)
 ## 支持模型
 Qwen
 
+## 使用方式
+
+替换
+```python
+python -m fastchat.serve.openai_api_server --controller-address http://127.0.0.1:21001
+
+```
+为
+```python
+python -m fastchat.serve.openai_api_server_for_tool --controller-address http://127.0.0.1:21001
+```
+
 ## 声明
 
 只在Qwen1.5 72B 模型上进行过测试，其他模型不保证能够正常使用。
