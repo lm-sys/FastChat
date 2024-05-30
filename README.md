@@ -1,9 +1,19 @@
+# FastChat for tool
 项目clone自 https://github.com/lm-sys/FastChat
 
-在[openai_api_server.py](fastchat%2Fserve%2Fopenai_api_server.py)中增加了tools(function)能力
+在[openai_api_server.py](fastchat%2Fserve%2Fopenai_api_server.py)中增加了tools(function)能力，可在其他需要调用工具的场景下使用。
 
-可使用langgraph调用
+如 langgraph调用
 ```python
+from langchain_core.pydantic_v1 import SecretStr
+from langchain_openai import ChatOpenAI
+
+class LocalChat(ChatOpenAI):
+    openai_api_base = "http://127.0.0.1:8002/v1"
+    openai_api_key = SecretStr("123456")
+    model_name = "Qwen1.5-72B-Chat-GPTQ-Int8"
+    temperature = 0.0
+
 prompt = hub.pull("wfh/react-agent-executor")
 prompt.pretty_print()
 
@@ -13,19 +23,30 @@ agent_executor = create_react_agent(llm, tools, messages_modifier=prompt)
 
 ```
 ## 支持模型
-Qwen
+Qwen(已测试)
 
 ## 使用方式
-
-替换
+#### Launch the controller
 ```python
-python -m fastchat.serve.openai_api_server --controller-address http://127.0.0.1:21001
-
+python3 -m fastchat.serve.controller
 ```
-为
+#### Launch the model worker(s)
+```python
+python3 -m fastchat.serve.model_worker --model-path /models/qwen/Qwen1.5-72B-Chat-GPTQ-Int8
+```
+
+#### Launch the API
+
 ```python
 python -m fastchat.serve.openai_api_server_for_tool --controller-address http://127.0.0.1:21001
 ```
+## 安装方式
+
+Option1: 直接clone项目`git clone https://github.com/bluechanel/FastChat`，
+
+其他步骤 https://github.com/lm-sys/FastChat?tab=readme-ov-file#install
+
+Option2: `python -m build` 打包whl包后pip安装
 
 ## 声明
 
