@@ -116,12 +116,21 @@ For custom protocols, implementation of a streaming generator in [fastchat/serve
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
     "api_key": "sk-******",
-    "anony_only": false
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.7,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
   }
 }
 ```
   - "api_type" can be one of the following: openai, anthropic, gemini, mistral, yandexgpt or reka. For custom APIs, add a new type and implement it accordingly.
   - "anony_only" indicates whether to display this model in anonymous mode only.
+  - "recommended_config" indicates the recommended generation parameters for temperature and top_p.
+  - "text-arena" indicates whether the model should be displayed in the Text Arena.
+  - "vision-arena" indicates whether the model should be displayed in the Vision Arena.
 
 2. Launch the Gradio web server with the argument `--register api_endpoints.json`:
 ```

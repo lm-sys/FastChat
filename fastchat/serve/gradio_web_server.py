@@ -32,6 +32,7 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
+from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -40,7 +41,6 @@ from fastchat.utils import (
     parse_gradio_auth_creds,
     load_image,
 )
-
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -53,6 +53,7 @@ invisible_btn = gr.Button(interactive=False, visible=False)
 
 controller_url = None
 enable_moderation = False
+use_remote_storage = False
 
 acknowledgment_md = """
 ### Terms of Service
@@ -65,13 +66,15 @@ Please do not upload any private information.
 The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
 
 ### Acknowledgment
-We thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
+We thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
 
 <div class="sponsor-image-about">
+    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
     <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
     <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
     <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
     <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
     <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
     <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
@@ -95,11 +98,29 @@ api_endpoint_info = {}
 
 
 class State:
-    def __init__(self, model_name):
+    def __init__(self, model_name, is_vision=False):
         self.conv = get_conversation_template(model_name)
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
+        self.oai_thread_id = None
+        self.is_vision = is_vision
+
+        # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
+        self.has_csam_image = False
+
+        self.regen_support = True
+        if "browsing" in model_name:
+            self.regen_support = False
+        self.init_system_prompt(self.conv)
+
+    def init_system_prompt(self, conv):
+        system_prompt = conv.get_system_message()
+        if len(system_prompt) == 0:
+            return
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        system_prompt = system_prompt.replace("{{currentDateTime}}", current_date)
+        conv.set_system_message(system_prompt)
 
     def to_gradio_chatbot(self):
         return self.conv.to_gradio_chatbot()
@@ -110,24 +131,31 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
+                "has_csam_image": self.has_csam_image,
             }
         )
         return base
 
 
-def set_global_vars(controller_url_, enable_moderation_):
-    global controller_url, enable_moderation
+def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
+    global controller_url, enable_moderation, use_remote_storage
     controller_url = controller_url_
     enable_moderation = enable_moderation_
+    use_remote_storage = use_remote_storage_
 
 
-def get_conv_log_filename():
+def get_conv_log_filename(is_vision=False):
     t = datetime.datetime.now()
-    name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
+    conv_log_filename = f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
+    if is_vision:
+        name = os.path.join(LOGDIR, f"vision-tmp-{conv_log_filename}")
+    else:
+        name = os.path.join(LOGDIR, conv_log_filename)
+
     return name
 
 
-def get_model_list(controller_url, register_api_endpoint_file, multimodal):
+def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     global api_endpoint_info
 
     # Add models from the controller
@@ -135,7 +163,7 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
         ret = requests.post(controller_url + "/refresh_all_workers")
         assert ret.status_code == 200
 
-        if multimodal:
+        if vision_arena:
             ret = requests.post(controller_url + "/list_multimodal_models")
             models = ret.json()["models"]
         else:
@@ -148,16 +176,17 @@ def get_model_list(controller_url, register_api_endpoint_file, multimodal):
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         for mdl, mdl_dict in api_endpoint_info.items():
-            mdl_multimodal = mdl_dict.get("multimodal", False)
-            if multimodal and mdl_multimodal:
-                models += [mdl]
-            elif not multimodal and not mdl_multimodal:
-                models += [mdl]
+            mdl_vision = mdl_dict.get("vision-arena", False)
+            mdl_text = mdl_dict.get("text-arena", True)
+            if vision_arena and mdl_vision:
+                models.append(mdl)
+            if not vision_arena and mdl_text:
+                models.append(mdl)
 
     # Remove anonymous models
     models = list(set(models))
     visible_models = models.copy()
-    for mdl in visible_models:
+    for mdl in models:
         if mdl not in api_endpoint_info:
             continue
         mdl_dict = api_endpoint_info[mdl]
@@ -193,14 +222,18 @@ def load_demo(url_params, request: gr.Request):
 
     if args.model_list_mode == "reload":
         models, all_models = get_model_list(
-            controller_url, args.register_api_endpoint_file, False
+            controller_url, args.register_api_endpoint_file, vision_arena=False
         )
 
     return load_demo_single(models, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    with open(get_conv_log_filename(), "a") as fout:
+    filename = get_conv_log_filename()
+    if "llava" in model_selector:
+        filename = filename.replace("2024", "vision-tmp-2024")
+
+    with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
             "type": vote_type,
@@ -209,6 +242,7 @@ def vote_last_response(state, vote_type, model_selector, request: gr.Request):
             "ip": get_ip(request),
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
 
 def upvote_last_response(state, model_selector, request: gr.Request):
@@ -235,6 +269,9 @@ def flag_last_response(state, model_selector, request: gr.Request):
 def regenerate(state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"regenerate. ip: {ip}")
+    if not state.regen_support:
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
 
@@ -249,20 +286,35 @@ def clear_history(request: gr.Request):
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
         ip = request.headers["cf-connecting-ip"]
+    elif "x-forwarded-for" in request.headers:
+        ip = request.headers["x-forwarded-for"]
     else:
         ip = request.client.host
     return ip
 
 
-def _prepare_text_with_image(state, text, image):
-    if image is not None:
+# TODO(Chris): At some point, we would like this to be a live-reporting feature.
+def report_csam_image(state, image):
+    pass
+
+
+def _prepare_text_with_image(state, text, images, csam_flag):
+    if images is not None and len(images) > 0:
+        image = images[0]
+
         if len(state.conv.get_images()) > 0:
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
 
+        resize_image = "llava" in state.model_name
         image = state.conv.convert_image_to_base64(
-            image
+            image,
+            resize_image=resize_image,
         )  # PIL type is not JSON serializable
+
+        if csam_flag:
+            state.has_csam_image = True
+            report_csam_image(state, image)
 
         text = text, [image]
 
@@ -280,7 +332,10 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
-    flagged = moderation_filter(text, [state.model_name])
+    all_conv_text = state.conv.get_prompt()
+    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
+    flagged = moderation_filter(all_conv_text, [state.model_name])
+    # flagged = moderation_filter(text, [state.model_name])
     if flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
@@ -294,7 +349,7 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, image)
+    text = _prepare_text_with_image(state, text, image, csam_flag=False)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
@@ -418,7 +473,6 @@ def bot_response(
         # Construct prompt.
         # We need to call it here, so it will not be affected by "▌".
         prompt = conv.get_prompt()
-
         # Set repetition_penalty
         if "t5" in model_name:
             repetition_penalty = 1.2
@@ -442,6 +496,9 @@ def bot_response(
             if recommended_config is not None:
                 temperature = recommended_config.get("temperature", temperature)
                 top_p = recommended_config.get("top_p", top_p)
+                max_new_tokens = recommended_config.get(
+                    "max_new_tokens", max_new_tokens
+                )
 
         stream_iter = get_api_provider_stream_iter(
             conv,
@@ -450,16 +507,22 @@ def bot_response(
             temperature,
             top_p,
             max_new_tokens,
+            state,
         )
 
-    conv.update_last_message("▌")
+    html_code = ' <span class="cursor"></span> '
+
+    # conv.update_last_message("▌")
+    conv.update_last_message(html_code)
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
     try:
+        data = {"text": ""}
         for i, data in enumerate(stream_iter):
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                conv.update_last_message(output + "▌")
+                # conv.update_last_message(output + "▌")
+                conv.update_last_message(output + html_code)
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
@@ -505,21 +568,13 @@ def bot_response(
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
-    # We load the image because gradio accepts base64 but that increases file size by ~1.33x
-    loaded_images = [load_image(image) for image in images]
-    images_hash = [hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images]
-    for image, hash_str in zip(loaded_images, images_hash):
-        t = datetime.datetime.now()
-        filename = os.path.join(
-            LOGDIR,
-            "serve_images",
-            f"{hash_str}.jpg",
-        )
-        if not os.path.isfile(filename):
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            image.save(filename)
+    conv.save_new_images(
+        has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
+    )
 
-    with open(get_conv_log_filename(), "a") as fout:
+    filename = get_conv_log_filename(is_vision=state.is_vision)
+
+    with open(filename, "a") as fout:
         data = {
             "tstamp": round(finish_tstamp, 4),
             "type": "chat",
@@ -533,14 +588,14 @@ def bot_response(
             "finish": round(finish_tstamp, 4),
             "state": state.dict(),
             "ip": get_ip(request),
-            "images": images_hash,
         }
         fout.write(json.dumps(data) + "\n")
+    get_remote_logger().log(data)
 
 
 block_css = """
 #notice_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #notice_markdown th {
     display: none;
@@ -549,11 +604,17 @@ block_css = """
     padding-top: 6px;
     padding-bottom: 6px;
 }
+#arena_leaderboard_dataframe table {
+    font-size: 110%;
+}
+#full_leaderboard_dataframe table {
+    font-size: 110%;
+}
 #model_description_markdown {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #leaderboard_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #leaderboard_markdown td {
     padding-top: 6px;
@@ -563,13 +624,13 @@ block_css = """
     line-height: 0.1em;
 }
 #about_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
 #ack_markdown .prose {
-    font-size: 120% !important;
+    font-size: 110% !important;
 }
-footer {
-    display:none !important;
+#chatbot .prose {
+    font-size: 105% !important;
 }
 .sponsor-image-about img {
     margin: 0 20px;
@@ -578,6 +639,66 @@ footer {
     max-height: 100%;
     width: auto;
     float: left;
+}
+
+.chatbot h1, h2, h3 {
+    margin-top: 8px; /* Adjust the value as needed */
+    margin-bottom: 0px; /* Adjust the value as needed */
+    padding-bottom: 0px;
+}
+
+.chatbot h1 {
+    font-size: 130%;
+}
+.chatbot h2 {
+    font-size: 120%;
+}
+.chatbot h3 {
+    font-size: 110%;
+}
+.chatbot p:not(:first-child) {
+    margin-top: 8px;
+}
+
+.typing {
+    display: inline-block;
+}
+
+.cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1em;
+    background-color: black;
+    vertical-align: middle;
+    animation: blink 1s infinite;
+}
+
+.dark .cursor {
+    display: inline-block;
+    width: 7px;
+    height: 1em;
+    background-color: white;
+    vertical-align: middle;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.1%, 100% { opacity: 0; }
+}
+
+.app {
+  max-width: 100% !important;
+  padding: 20px !important;               
+}
+
+a {
+    color: #1976D2; /* Your current link color, a shade of blue */
+    text-decoration: none; /* Removes underline from links */
+}
+a:hover {
+    color: #63A4FF; /* This can be any color you choose for hover */
+    text-decoration: underline; /* Adds underline on hover */
 }
 """
 
@@ -608,32 +729,35 @@ def get_model_description_md(models):
 def build_about():
     about_markdown = """
 # About Us
-Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org/about/) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/).  Our mission is to build an open crowdsourced platform to collect human feedback and evaluate LLMs under real-world scenarios. We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback datasets [here](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md). We invite everyone to join us in this journey!
+Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/). Our mission is to build an open platform to evaluate LLMs by human preference in the real-world.
+We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback dataset. We invite everyone to join us!
 
-## Read More
-- Chatbot Arena [launch post](https://lmsys.org/blog/2023-05-03-arena/), [data release](https://lmsys.org/blog/2023-07-20-dataset/)
-- LMSYS-Chat-1M [report](https://arxiv.org/abs/2309.11998)
+## Arena Core Team
+- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
 
-## Core Members
-[Lianmin Zheng](https://lmzheng.net/), [Wei-Lin Chiang](https://infwinston.github.io/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ)
+## Past Members
+- [Siyuan Zhuang](https://scholar.google.com/citations?user=KSZmI5EAAAAJ), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
 
-## Advisors
-[Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
+## Learn more
+- Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch blog](https://lmsys.org/blog/2023-05-03-arena/), [dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [policy](https://lmsys.org/blog/2024-03-01-policy/)
+- LMSYS-Chat-1M dataset [paper](https://arxiv.org/abs/2309.11998), LLM Judge [paper](https://arxiv.org/abs/2306.05685)
 
 ## Contact Us
-- Follow our [Twitter](https://twitter.com/lmsysorg), [Discord](https://discord.gg/HSWAKCrnFx) or email us at lmsys.org@gmail.com
+- Follow our [X](https://x.com/lmsysorg), [Discord](https://discord.gg/HSWAKCrnFx) or email us at lmsys.org@gmail.com
 - File issues on [GitHub](https://github.com/lm-sys/FastChat)
 - Download our datasets and models on [HuggingFace](https://huggingface.co/lmsys)
 
 ## Acknowledgment
 We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
+We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
 
 <div class="sponsor-image-about">
+    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
     <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
     <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
     <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
     <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
+    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
     <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
     <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
 </div>
@@ -866,13 +990,19 @@ if __name__ == "__main__":
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
     )
+    parser.add_argument(
+        "--use-remote-storage",
+        action="store_true",
+        default=False,
+        help="Uploads image files to google cloud storage if set to true",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
     # Set global variables
-    set_global_vars(args.controller_url, args.moderate)
+    set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
     models, all_models = get_model_list(
-        args.controller_url, args.register_api_endpoint_file, False
+        args.controller_url, args.register_api_endpoint_file, vision_arena=False
     )
 
     # Set authorization credentials

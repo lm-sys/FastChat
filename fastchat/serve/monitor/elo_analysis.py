@@ -14,8 +14,6 @@ import plotly.express as px
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sklearn.linear_model import LogisticRegression
-
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
@@ -59,6 +57,8 @@ def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
 def compute_elo_mle_with_tie(
     df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None
 ):
+    from sklearn.linear_model import LogisticRegression
+
     ptbl_a_win = pd.pivot_table(
         df[df["winner"] == "model_a"],
         index="model_a",
