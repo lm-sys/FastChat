@@ -3,6 +3,7 @@
 Usage:
 python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 """
+
 import argparse
 import json
 import os
@@ -57,7 +58,7 @@ def run_eval(
             get_answers_func(
                 model_path,
                 model_id,
-                questions[i: i + chunk_size],
+                questions[i : i + chunk_size],
                 answer_file,
                 max_new_token,
                 num_choices,
@@ -145,7 +146,7 @@ def get_model_answers(
                     if model.config.is_encoder_decoder:
                         output_ids = output_ids[0]
                     else:
-                        output_ids = output_ids[0][len(input_ids[0]):]
+                        output_ids = output_ids[0][len(input_ids[0]) :]
 
                     # be consistent with the template's stop_token_ids
                     if conv.stop_token_ids:
@@ -245,8 +246,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--question-end", type=int, help="A debug option. The end index of questions."
     )
-    parser.add_argument("--answer-file", type=str,
-                        help="The output answer file.")
+    parser.add_argument("--answer-file", type=str, help="The output answer file.")
     parser.add_argument(
         "--max-new-token",
         type=int,
