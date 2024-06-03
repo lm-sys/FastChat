@@ -1,7 +1,7 @@
 # FastChat for tool
 项目clone自 https://github.com/lm-sys/FastChat
 
-在[openai_api_server.py](fastchat%2Fserve%2Fopenai_api_server.py)中增加了tools(function)能力，可在其他需要调用工具的场景下使用。
+在[openai_api_server.py](fastchat%2Fserve%2Fopenai_api_server.py)中增加了tools(function)能力，可在其他需要调用工具的场景下使用。(如果对您有用，麻烦点个star🙇‍♂️)
 
 如 langgraph调用
 ```python
