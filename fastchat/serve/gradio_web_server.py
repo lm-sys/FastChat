@@ -308,10 +308,8 @@ def _prepare_text_with_image(state, text, images, csam_flag):
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
 
-        resize_image = "llava" in state.model_name
         image = state.conv.convert_image_to_base64(
-            image,
-            resize_image=resize_image,
+            image, resize_image=True, max_image_size_mb=state.conv.max_image_size_mb
         )  # PIL type is not JSON serializable
 
         if csam_flag:
