@@ -541,7 +541,7 @@ def build_leaderboard_tab(
                 )
 
                 gr.Markdown(
-                    f"""Note: in each category, we exclude models with fewer than 500 votes as their confidence intervals can be large.""",
+                    f"""Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.""",
                     elem_id="leaderboard_markdown",
                 )
 
@@ -654,7 +654,7 @@ def build_leaderboard_tab(
 
     def update_leaderboard_and_plots(category):
         arena_subset_df = arena_dfs[category]
-        arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 500]
+        arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 300]
         elo_subset_results = category_elo_results[category]
 
         baseline_category = cat_name_to_baseline.get(category, "Overall")
