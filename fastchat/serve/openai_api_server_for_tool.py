@@ -99,7 +99,6 @@ SPECIAL_PREFIX_TEMPLATE_TOOL = "。你可以使用工具：[{tool_names}]"
 
 SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT = "。你必须使用工具：[{tool_names}]"
 
-
 app_settings = AppSettings()
 app = fastapi.FastAPI()
 headers = {"User-Agent": "FastChat API Server"}
@@ -171,7 +170,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             tools_name_text=tools_name_text,
         )
         # 用户强制调用工具
-        if messages[-1].role == "user":
+        if request.tool_choice is not None and messages[-1].role == "user":
             if isinstance(request.tool_choice, str):
                 if request.tool_choice == "auto":
                     messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
@@ -356,9 +355,9 @@ async def create_chat_completion_for_tool(request: ChatCompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
-    logger.debug(f"origin request: {request}")
+    logger.info(f"origin request: {request}")
     request = parse_function_messages(request)
-    logger.debug(f"parse request: {request}")
+    logger.info(f"parse request: {request}")
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -473,4 +472,4 @@ if __name__ == "__main__":
             ssl_certfile=os.environ["SSL_CERTFILE"],
         )
     else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="debug")
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
