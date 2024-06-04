@@ -91,19 +91,14 @@ Observation: <result>工具返回的结果</result>
 Answer: 根据Observation总结本次工具调用返回的结果
 
 """
-PROMPT_TEMPLATE_TOOL = """# 指令
-
-你可以使用工具：[{tool_names}]
+PROMPT_TEMPLATE = """# 指令
 
 请注意：你具有工具调用能力，也具有运行代码的能力，不要在回复中说你做不到。
 """
-PROMPT_TEMPLATE_TOOL_MUST = """# 指令
+SPECIAL_PREFIX_TEMPLATE_TOOL = "。你可以使用工具：[{tool_names}]"
 
+SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT = "。你必须使用工具：[{tool_names}]"
 
-
-请注意：你具有工具调用能力，也具有运行代码的能力，不要在回复中说你做不到。
-"""
-# 你必须使用工具：[{tool_names}]
 
 app_settings = AppSettings()
 app = fastapi.FastAPI()
@@ -147,7 +142,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
     else:
         system_prompt = "\n".join([sm.content for sm in system_messages])
     # 如果请求体有 工具 调用 修改system prompt
-    if tools and request.tool_choice:
+    if tools:
         # add stop word
         stop_words = add_extra_stop_words(request.stop)
         stop_words = stop_words or []
@@ -175,15 +170,21 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             tools_text=tools_text,
             tools_name_text=tools_name_text,
         )
-        if isinstance(request.tool_choice, str):
-            if request.tool_choice == "auto":
-                system_prompt += PROMPT_TEMPLATE_TOOL.format(tool_names=tools_name_text)
-        elif isinstance(request.tool_choice, ToolChoice):
-            system_prompt += PROMPT_TEMPLATE_TOOL_MUST.format(
-                tool_names=request.tool_choice.function.name
-            )
-        else:
-            logger.error("Invalid request: tool_choices must be str or ToolChoices.")
+        # 用户强制调用工具
+        if messages[-1].role == "user":
+            if isinstance(request.tool_choice, str):
+                if request.tool_choice == "auto":
+                    messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
+                        tool_names=tools_name_text
+                    )
+            elif isinstance(request.tool_choice, ToolChoice):
+                messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT.format(
+                    tool_names=request.tool_choice.function.name
+                )
+            else:
+                logger.error(
+                    "Invalid request: tool_choices must be str or ToolChoices."
+                )
         system_prompt = system_prompt.lstrip("\n").rstrip()
     # 消息列表中 剔除 所有 system
     messages = [m for m in messages if m.role != "system"]
