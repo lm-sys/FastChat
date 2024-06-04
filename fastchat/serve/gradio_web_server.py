@@ -152,7 +152,7 @@ def get_conv_log_filename(is_vision=False, has_csam_image=False):
     if is_vision and not has_csam_image:
         name = os.path.join(LOGDIR, f"vision-tmp-{conv_log_filename}")
     elif is_vision and has_csam_image:
-        name = os.path.join(LOGDIR, f"vision-flag-{conv_log_filename}")
+        name = os.path.join(LOGDIR, f"vision-csam-{conv_log_filename}")
     else:
         name = os.path.join(LOGDIR, conv_log_filename)
 
