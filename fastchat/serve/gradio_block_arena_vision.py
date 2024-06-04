@@ -40,7 +40,7 @@ from fastchat.utils import (
     image_moderation_filter,
 )
 
-logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
 no_change_btn = gr.Button()
 enable_btn = gr.Button(interactive=True, visible=True)
@@ -82,7 +82,7 @@ def add_image(textbox):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
-    filename = get_conv_log_filename(state.is_vision)
+    filename = get_conv_log_filename(state.is_vision, state.has_csam_image)
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -158,7 +158,7 @@ def moderate_input(text, all_conv_text, model_list, images, ip):
         elif text_flagged and image_flagged:
             text = MODERATION_MSG
 
-    return text, csam_flagged
+    return text, image_flagged, csam_flagged
 
 
 def add_text(state, model_selector, chat_input, request: gr.Request):
@@ -176,9 +176,16 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
 
-    text, csam_flag = moderate_input(
+    text, image_flagged, csam_flag = moderate_input(
         text, all_conv_text, [state.model_name], images, ip
     )
+
+    if image_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), {"text": IMAGE_MODERATION_MSG}) + (
+            no_change_btn,
+        ) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

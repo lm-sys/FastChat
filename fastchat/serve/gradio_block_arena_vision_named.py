@@ -53,9 +53,7 @@ from fastchat.utils import (
 )
 
 
-logger = build_logger(
-    "gradio_web_server_vision_multi", "gradio_web_server_vision_multi.log"
-)
+logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False
@@ -72,7 +70,7 @@ def clear_history_example(request: gr.Request):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    filename = get_conv_log_filename(states[0].is_vision)
+    filename = get_conv_log_filename(states[0].is_vision, states[0].has_csam_image)
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -189,7 +187,9 @@ def add_text(
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
 
-    text, csam_flag = moderate_input(text, all_conv_text, model_list, images, ip)
+    text, image_flagged, csam_flag = moderate_input(
+        text, all_conv_text, model_list, images, ip
+    )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -200,6 +200,20 @@ def add_text(
             states
             + [x.to_gradio_chatbot() for x in states]
             + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    if image_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [{"text": IMAGE_MODERATION_MSG}]
             + [
                 no_change_btn,
             ]

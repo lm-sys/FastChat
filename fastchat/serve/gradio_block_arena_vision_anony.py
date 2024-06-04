@@ -168,7 +168,7 @@ def clear_history_example(request: gr.Request):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    filename = get_conv_log_filename(states[0].is_vision)
+    filename = get_conv_log_filename(states[0].is_vision, states[0].has_csam_image)
 
     with open(filename, "a") as fout:
         data = {
@@ -309,7 +309,7 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    text, csam_flag = moderate_input(text, text, model_list, images, ip)
+    text, image_flagged, csam_flag = moderate_input(text, text, model_list, images, ip)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -320,6 +320,21 @@ def add_text(
             states
             + [x.to_gradio_chatbot() for x in states]
             + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [
+                no_change_btn,
+            ]
+            * 6
+            + [""]
+        )
+
+    if image_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [{"text": IMAGE_MODERATION_MSG}]
             + [
                 no_change_btn,
             ]
