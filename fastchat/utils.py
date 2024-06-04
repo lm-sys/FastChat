@@ -444,16 +444,16 @@ def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
     return image_bytes
 
 
-def convert_image_to_byte_array(image):
+def convert_image_to_byte_array(image, max_image_size_mb):
     from PIL import Image
 
     if type(image) == str:
         pil_image = Image.open(image).convert("RGB")
         image_bytes = resize_image_and_return_image_in_bytes(
-            pil_image, max_image_size_mb=4
+            pil_image, max_image_size_mb
         )
     else:
-        image_bytes = resize_image_and_return_image_in_bytes(image, max_image_size_mb=4)
+        image_bytes = resize_image_and_return_image_in_bytes(image, max_image_size_mb)
 
     image_byte_array = image_bytes.getvalue()
     return image_byte_array
@@ -490,7 +490,8 @@ def image_moderation_provider(image, api_type):
 
 def image_moderation_filter(image):
     print(f"moderating image: {image}")
-    image_bytes = convert_image_to_byte_array(image)
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 4
+    image_bytes = convert_image_to_byte_array(image, MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
 
     nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
     csam_flagged = False
