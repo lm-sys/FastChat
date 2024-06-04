@@ -418,12 +418,12 @@ def get_image_file_from_gcs(filename):
     return contents
 
 
-def resize_image_and_return_image_in_bytes(image, resize_image, max_image_size_mb):
+def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
     from PIL import Image
     import math
 
     image_bytes = BytesIO()
-    if resize_image and not max_image_size_mb is None:
+    if not max_image_size_mb is None:
         image.save(image_bytes, format="PNG")
         target_size_bytes = max_image_size_mb * 1024 * 1024
         current_size_bytes = image_bytes.tell()
@@ -450,12 +450,10 @@ def convert_image_to_byte_array(image):
     if type(image) == str:
         pil_image = Image.open(image).convert("RGB")
         image_bytes = resize_image_and_return_image_in_bytes(
-            pil_image, resize_image=True, max_image_size_mb=4
+            pil_image, max_image_size_mb=4
         )
     else:
-        image_bytes = resize_image_and_return_image_in_bytes(
-            image, resize_image=True, max_image_size_mb=4
-        )
+        image_bytes = resize_image_and_return_image_in_bytes(image, max_image_size_mb=4)
 
     image_byte_array = image_bytes.getvalue()
     return image_byte_array
@@ -480,7 +478,7 @@ def image_moderation_provider(image, api_type):
         endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
         api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
         response = image_moderation_request(image, endpoint, api_key)
-        return response["IsImageAdultClassified"] or response["IsImageRacyClassified"]
+        return response["IsImageAdultClassified"]
     elif api_type == "csam":
         endpoint = (
             "https://api.microsoftmoderator.com/photodna/v1.0/Match?enhance=false"

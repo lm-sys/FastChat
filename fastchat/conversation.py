@@ -353,9 +353,7 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
-    def convert_image_to_base64(
-        self, image, resize_image=False, max_image_size_mb=None
-    ):
+    def convert_image_to_base64(self, image, max_image_size_mb=None):
         """Given an image, return the base64 encoded image string."""
         from PIL import Image
         import requests
@@ -372,9 +370,7 @@ class Conversation:
             else:
                 image = Image.open(image).convert("RGB")
 
-        image_bytes = resize_image_and_return_image_in_bytes(
-            image, resize_image, max_image_size_mb
-        )
+        image_bytes = resize_image_and_return_image_in_bytes(image, max_image_size_mb)
         img_b64_str = base64.b64encode(image_bytes.getvalue()).decode()
 
         return img_b64_str
@@ -552,7 +548,6 @@ class Conversation:
                         ):
                             image_url = self.convert_image_to_base64(
                                 image_url,
-                                resize_image=True,
                                 max_image_size_mb=self.max_image_size_mb,
                             )
 
