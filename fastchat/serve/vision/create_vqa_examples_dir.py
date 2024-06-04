@@ -50,7 +50,7 @@ def download_images_and_create_json(
                 "path": image_path,
             }
             json_data.append(json_entry)
-            
+
         with open(os.path.join(dataset_dir, "data.json"), "w") as json_file:
             json.dump(json_data, json_file, indent=4)
         # Delete the cache directory for the dataset
