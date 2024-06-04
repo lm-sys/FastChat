@@ -33,7 +33,7 @@ class Tool(ToolBase):
     function: Function
 
 
-class ToolChoices(ToolBase):
+class ToolChoice(ToolBase):
     function: FunctionBase
 
 
@@ -65,7 +65,7 @@ class ChatCompletionRequest(BaseModel):
     user: Optional[str] = None
     response_format: Optional[ResponseFormat] = None
     tools: Optional[List[Tool]] = None
-    tool_choices: Optional[Union[str, ToolChoices]] = None
+    tool_choice: Optional[Union[str, ToolChoice]] = None
     function_call: Optional[Union[str, FunctionBase]] = None
     functions: Optional[List[Function]] = None
 

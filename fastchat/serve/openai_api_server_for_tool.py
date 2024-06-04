@@ -42,6 +42,7 @@ from fastchat.protocol.openai_api_protocol_for_tool import (
     ToolCallsMessage,
     FunctionCallsMessage,
     ChatCompletionResponseMessage,
+    ToolChoice,
 )
 from fastchat.serve.openai_api_server import (
     AppSettings,
@@ -70,6 +71,33 @@ ACTION_TOKEN = "Action:"
 ARGS_TOKEN = "Action Input:"
 OBSERVATION_TOKEN = "Observation:"
 ANSWER_TOKEN = "Answer:"
+
+TOOL_DESC = """{name}: {name} API。{description} 输入参数: {parameters} Format the arguments as a JSON object."""
+
+TOOL_TEMPLATE = """# 基本信息
+当前时间: {date}
+# 工具
+
+## 你拥有如下工具：
+
+{tools_text}
+
+## 当你需要调用工具时，请在你的回复中穿插如下的工具调用命令，可以根据需求调用零次或多次：
+
+工具调用
+Action: 工具的名称，必须是[{tools_name_text}]之一
+Action Input: 工具的输入
+Observation: <result>工具返回的结果</result>
+Answer: 根据Observation总结本次工具调用返回的结果
+
+"""
+PROMPT_TEMPLATE = """# 指令
+
+请注意：你具有工具调用能力，也具有运行代码的能力，不要在回复中说你做不到。
+"""
+SPECIAL_PREFIX_TEMPLATE_TOOL = "。你可以使用工具：[{tool_names}]"
+
+SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT = "。你必须使用工具：[{tool_names}]"
 
 app_settings = AppSettings()
 app = fastapi.FastAPI()
@@ -101,30 +129,6 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             status_code=400,
             detail="Invalid request: Expecting at least one user message.",
         )
-
-    tool_desc = """{name}: {name} API。{description} 输入参数: {parameters} Format the arguments as a JSON object."""
-
-    react_instruction = """
-# 基本信息
-当前时间: {date}
-# 工具
-
-## 你拥有如下工具：
-
-{tools_text}
-
-## 当你需要调用工具时，请在你的回复中穿插如下的工具调用命令，可以根据需求调用零次或多次：
-
-工具调用
-Action: 工具的名称，必须是[{tools_name_text}]之一
-Action Input: 工具的输入
-Observation: <result>工具返回的结果</result>
-Answer: 根据Observation总结本次工具调用返回的结果
-
-# 指令
-你可以使用工具：[{tools_name_text}]
-请注意：你具有使用工具获取实时信息的能力，不要在回复中说你做不到或无法预测。
-"""
     messages = copy.deepcopy(messages)
     # 设置默认system prompt
     default_system_prompt = "You are a helpful assistant."
@@ -151,7 +155,7 @@ Answer: 根据Observation总结本次工具调用返回的结果
             name = func_info.name
             description = func_info.description
             parameters = func_info.parameters
-            tool = tool_desc.format(
+            tool = TOOL_DESC.format(
                 name=name,
                 description=description,
                 parameters=parameters,
@@ -160,11 +164,26 @@ Answer: 根据Observation总结本次工具调用返回的结果
             tools_name_text.append(name)
         tools_text = "\n\n".join(tools_text)
         tools_name_text = ", ".join(tools_name_text)
-        system_prompt += "\n\n" + react_instruction.format(
+        system_prompt += "\n\n" + TOOL_TEMPLATE.format(
             date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             tools_text=tools_text,
             tools_name_text=tools_name_text,
         )
+        # 用户强制调用工具
+        if request.tool_choice is not None and messages[-1].role == "user":
+            if isinstance(request.tool_choice, str):
+                if request.tool_choice == "auto":
+                    messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
+                        tool_names=tools_name_text
+                    )
+            elif isinstance(request.tool_choice, ToolChoice):
+                messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT.format(
+                    tool_names=request.tool_choice.function.name
+                )
+            else:
+                logger.error(
+                    "Invalid request: tool_choices must be str or ToolChoices."
+                )
         system_prompt = system_prompt.lstrip("\n").rstrip()
     # 消息列表中 剔除 所有 system
     messages = [m for m in messages if m.role != "system"]
@@ -336,9 +355,9 @@ async def create_chat_completion_for_tool(request: ChatCompletionRequest):
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
-    logger.debug(f"origin request: {request}")
+    logger.info(f"origin request: {request}")
     request = parse_function_messages(request)
-    logger.debug(f"parse request: {request}")
+    logger.info(f"parse request: {request}")
     worker_addr = await get_worker_address(request.model)
 
     gen_params = await get_gen_params(
@@ -453,4 +472,4 @@ if __name__ == "__main__":
             ssl_certfile=os.environ["SSL_CERTFILE"],
         )
     else:
-        uvicorn.run(app, host=args.host, port=args.port, log_level="debug")
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
