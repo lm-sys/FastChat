@@ -418,41 +418,58 @@ def get_image_file_from_gcs(filename):
     return contents
 
 
-def pil_image_to_byte_array(pil_image, format="JPEG"):
-    img_byte_arr = BytesIO()
-    pil_image.save(img_byte_arr, format=format)
-    img_byte_arr = img_byte_arr.getvalue()
-    return img_byte_arr
+def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
+    from PIL import Image
+    import math
 
+    image_bytes = BytesIO()
+    if not max_image_size_mb is None:
+        image.save(image_bytes, format="PNG")
+        target_size_bytes = max_image_size_mb * 1024 * 1024
+        current_size_bytes = image_bytes.tell()
 
-def convert_image_to_byte_array(image):
-    if type(image) == str:
-        with open(image, "rb") as image_data:
-            image_bytes = image_data.read()
+        if current_size_bytes > target_size_bytes:
+            resize_factor = (target_size_bytes / current_size_bytes) ** 0.5
+            new_width = math.floor(image.width * resize_factor)
+            new_height = math.floor(image.height * resize_factor)
+            resized_image = image.resize((new_width, new_height))
+
+            image_bytes = BytesIO()
+            resized_image.save(image_bytes, format="PNG")
+
+        image_bytes.seek(0)
     else:
-        image_bytes = pil_image_to_byte_array(
-            image, format="JPEG"
-        )  # Use 'PNG' or other formats as needed
+        image.save(image_bytes, format="PNG")
 
     return image_bytes
 
 
-def image_moderation_request(image, endpoint, api_key):
-    print(f"moderating image: {image}")
+def convert_image_to_byte_array(image, max_image_size_mb):
+    from PIL import Image
 
+    if type(image) == str:
+        pil_image = Image.open(image).convert("RGB")
+        image_bytes = resize_image_and_return_image_in_bytes(
+            pil_image, max_image_size_mb
+        )
+    else:
+        image_bytes = resize_image_and_return_image_in_bytes(image, max_image_size_mb)
+
+    image_byte_array = image_bytes.getvalue()
+    return image_byte_array
+
+
+def image_moderation_request(image_bytes, endpoint, api_key):
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
-
-    # Specify the API URL
-    image_bytes = convert_image_to_byte_array(image)
 
     MAX_RETRIES = 3
     for _ in range(MAX_RETRIES):
         response = requests.post(endpoint, headers=headers, data=image_bytes).json()
-        if response["Status"] == 3000:
-            break
-        else:
+        try:
+            if response["Status"]["Code"] == 3000:
+                break
+        except:
             time.sleep(0.5)
-
     return response
 
 
@@ -461,7 +478,7 @@ def image_moderation_provider(image, api_type):
         endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
         api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
         response = image_moderation_request(image, endpoint, api_key)
-        return response["IsImageAdultClassified"] or response["IsImageRacyClassified"]
+        return response["IsImageAdultClassified"]
     elif api_type == "csam":
         endpoint = (
             "https://api.microsoftmoderator.com/photodna/v1.0/Match?enhance=false"
@@ -472,6 +489,14 @@ def image_moderation_provider(image, api_type):
 
 
 def image_moderation_filter(image):
-    nsfw_flagged = image_moderation_provider(image, "nsfw")
-    csam_flagged = image_moderation_provider(image, "csam")
+    print(f"moderating image: {image}")
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 4
+    image_bytes = convert_image_to_byte_array(image, MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
+
+    nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
+    csam_flagged = False
+
+    if nsfw_flagged:
+        csam_flagged = image_moderation_provider(image_bytes, "csam")
+
     return nsfw_flagged, csam_flagged
