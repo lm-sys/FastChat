@@ -200,8 +200,15 @@ class ModelWorker(BaseModelWorker):
 
             if model_type_dict.get("is_gritlm"):
                 instruction = "<|embed|>\n"
+                instruction_tokens = tokenizer.encode_plus(
+                    instruction,
+                    padding=False,
+                    truncation=True,
+                    max_length=self.context_len,
+                )
             else:
                 instruction = ""
+                instruction_tokens = []
 
             if self.embed_in_truncate:
                 encoding = tokenizer.batch_encode_plus(
@@ -219,6 +226,7 @@ class ModelWorker(BaseModelWorker):
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
+            attention_mask[:, :len(instruction_tokens)] = 0
 
             base64_encode = params.get("encoding_format", None)
 
