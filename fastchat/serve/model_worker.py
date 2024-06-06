@@ -151,7 +151,11 @@ class ModelWorker(BaseModelWorker):
     def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
         if model_type_dict.get("is_bert") or model_type_dict.get("is_gritlm"):
             if model_type_dict.get("is_gritlm"):
-                model_output = self.model.model(input_ids, is_causal=False)
+                model_output = self.model.model(
+                    input_ids,
+                    attention_mask=attention_mask,
+                    is_causal=False,
+                )
             else:
                 model_output = self.model(input_ids)
             if model_type_dict.get("is_robert"):
