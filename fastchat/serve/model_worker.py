@@ -149,7 +149,7 @@ class ModelWorker(BaseModelWorker):
         return json.loads(x[:-1].decode())
 
     def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
-        if model_type_dict.get("is_bert"):
+        if model_type_dict.get("is_bert") or model_type_dict.get("is_gritlm"):
             model_output = self.model(input_ids)
             if model_type_dict.get("is_robert"):
                 data = model_output.last_hidden_state
@@ -195,11 +195,17 @@ class ModelWorker(BaseModelWorker):
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
                 "is_robert": "robert" in str(type(self.model)),
+                "is_gritlm": "gritlm" in str(type(self.model)).lower(),
             }
+
+            if model_type_dict.get("is_gritlm"):
+                instruction = "<|embed|>\n"
+            else:
+                instruction = ""
 
             if self.embed_in_truncate:
                 encoding = tokenizer.batch_encode_plus(
-                    params["input"],
+                    [instruction + text for text in params["input"]],
                     padding=True,
                     truncation="longest_first",
                     return_tensors="pt",
@@ -207,7 +213,9 @@ class ModelWorker(BaseModelWorker):
                 )
             else:
                 encoding = tokenizer.batch_encode_plus(
-                    params["input"], padding=True, return_tensors="pt"
+                    [instruction + text for text in params["input"]],
+                    padding=True,
+                    return_tensors="pt",
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id

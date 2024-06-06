@@ -39,6 +39,7 @@ class SeparatorStyle(IntEnum):
     GEMMA = auto()
     CLLM = auto()
     DEFAULT = auto()
+    GRITLM = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -320,6 +321,24 @@ class Conversation:
                     ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
+            return ret
+        # source: https://github.com/ContextualAI/gritlm#inference
+        #         and https://huggingface.co/GritLM/GritLM-7B/blob/main/tokenizer_config.json
+        elif self.sep_style == SeparatorStyle.GRITLM:
+            seps = [self.sep, self.sep2]
+            if self.system_message:
+                ret = system_prompt
+            else:
+                ret = self.roles[0] + "\n"
+            for i, (role, message) in enumerate(self.messages):
+                tag = self.roles[i % 2]
+                if message:
+                    if i == 0:
+                        ret += message + seps[i % 2]
+                    else:
+                        ret += tag + "\n" + message + seps[i % 2]
+                else:
+                    ret += tag
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -1530,6 +1549,24 @@ register_conv_template(
         roles=("[INST]", "[/INST]"),
         sep_style=SeparatorStyle.LLAMA2,
         sep=" ",
+        sep2="</s>",
+    )
+)
+
+# GritLM template
+# source: https://github.com/ContextualAI/gritlm#inference
+#         and https://huggingface.co/GritLM/GritLM-7B/blob/main/tokenizer_config.json
+register_conv_template(
+    Conversation(
+        name="gritlm",
+        system_template="<|user|>\n{system_message}\n",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.GRITLM,
+        # The HF tokenizer chat template does not add a newline after
+        # the user's message, but that does not agree with README
+        # examples. Maybe they assume that user messages are always
+        # supplied ending in '\n'.
+        sep="\n",
         sep2="</s>",
     )
 )
