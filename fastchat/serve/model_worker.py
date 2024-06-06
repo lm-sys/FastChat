@@ -34,6 +34,8 @@ from fastchat.utils import (
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
+GRITLM_EMBED_INSTRUCTION = "<|embed|>\n"
+
 
 class ModelWorker(BaseModelWorker):
     def __init__(
@@ -156,6 +158,15 @@ class ModelWorker(BaseModelWorker):
                     attention_mask=attention_mask,
                     is_causal=False,
                 )
+
+                instruction = GRITLM_EMBED_INSTRUCTION
+                instruction_tokens = self.tokenizer.encode_plus(
+                    instruction,
+                    padding=False,
+                    truncation=True,
+                    max_length=self.context_len,
+                )
+                attention_mask[:, :len(instruction_tokens)] = 0
             else:
                 model_output = self.model(input_ids)
             if model_type_dict.get("is_robert"):
@@ -206,16 +217,9 @@ class ModelWorker(BaseModelWorker):
             }
 
             if model_type_dict.get("is_gritlm"):
-                instruction = "<|embed|>\n"
-                instruction_tokens = tokenizer.encode_plus(
-                    instruction,
-                    padding=False,
-                    truncation=True,
-                    max_length=self.context_len,
-                )
+                instruction = GRITLM_EMBED_INSTRUCTION
             else:
                 instruction = ""
-                instruction_tokens = []
 
             if self.embed_in_truncate:
                 encoding = tokenizer.batch_encode_plus(
@@ -233,7 +237,6 @@ class ModelWorker(BaseModelWorker):
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
-            attention_mask[:, :len(instruction_tokens)] = 0
 
             base64_encode = params.get("encoding_format", None)
 
