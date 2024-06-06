@@ -235,19 +235,30 @@ function() {
     }
 """
 
-
 get_window_url_params_with_tos_js = """
 function() {
     const params = new URLSearchParams(window.location.search);
-    url_params = Object.fromEntries(params);
+    const url_params = Object.fromEntries(params);
     console.log("url_params", url_params);
 
-    msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license."
-    alert(msg);
+    const urlContainsLeaderboard = Object.keys(url_params).some(key => key.toLowerCase().includes("leaderboard"));
+    const msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.";
+    if (!urlContainsLeaderboard) {
+        alert(msg);
+        window.alerted_before = true;
+    }
     return url_params;
     }
 """
 
+alert_js = """
+() => {
+    if (window.alerted_before) return;
+    const msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.";
+    alert(msg);
+    window.alerted_before = true;
+}
+"""
 
 def iter_over_async(
     async_gen: AsyncGenerator, event_loop: AbstractEventLoop

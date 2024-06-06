@@ -42,6 +42,21 @@ register_model_info(
 
 register_model_info(
     [
+        "gemini-1.5-pro-api-0409-preview",
+        "gemini-1.5-pro-tuned",
+        "gemini-1.5-pro-api-preview",
+        "gemini-1.5-flash-api-preview",
+        "gemini-1.5-flash-api-0514",
+        "gemini-1.5-pro-api-0514",
+        "gemini-advanced-0514",
+    ],
+    "Gemini",
+    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
+    "Gemini by Google",
+)
+
+register_model_info(
+    [
         "claude-3-haiku-20240307",
         "claude-3-sonnet-20240229",
         "claude-3-opus-20240229",
@@ -52,6 +67,24 @@ register_model_info(
     "Claude",
     "https://www.anthropic.com/news/claude-3-family",
     "Claude by Anthropic",
+)
+
+register_model_info(
+    ["llama-3-70b-instruct", "llama-3-8b-instruct"],
+    "Llama 3",
+    "https://ai.meta.com/blog/meta-llama-3/",
+    "Open foundation and chat models by Meta",
+)
+
+register_model_info(
+    [
+        "qwen2-72b-instruct",
+        "qwen-max-0403",
+        "qwen-max-0428",
+    ],
+    "Qwen Max",
+    "https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction",
+    "The Frontier Qwen Model by Alibaba",
 )
 
 register_model_info(
@@ -80,17 +113,52 @@ register_model_info(
 )
 
 register_model_info(
-    ["llama-3-70b-instruct", "llama-3-8b-instruct"],
-    "Llama 3",
-    "https://ai.meta.com/blog/meta-llama-3/",
-    "Open foundation and chat models by Meta",
+    [
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-0125",
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-0314",
+        "gpt-3.5-turbo-0613",
+    ],
+    "GPT-3.5",
+    "https://platform.openai.com/docs/models/gpt-3-5",
+    "GPT-3.5-Turbo by OpenAI",
 )
 
 register_model_info(
-    ["gemini-1.5-pro-api-0409-preview", "gemini-1.5-pro-api-preview"],
-    "Gemini",
-    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
-    "Gemini by Google",
+    [
+        "codestral-2405",
+        "mixtral-8x22b-instruct-v0.1",
+    ],
+    "Mixtral of experts",
+    "https://mistral.ai/news/mixtral-8x22b/",
+    "A Mixture-of-Experts model by Mistral AI",
+)
+
+register_model_info(
+    ["yi-large-preview", "yi-large"],
+    "Yi-Large",
+    "https://x.com/01AI_Yi/status/1789894091620458667",
+    "State-of-the-art model by 01 AI",
+)
+
+register_model_info(
+    ["yi-1.5-34b-chat", "yi-34b-chat", "yi-6b-chat"],
+    "Yi-Chat",
+    "https://huggingface.co/01-ai/",
+    "A large language model by 01 AI",
+)
+
+register_model_info(
+    [
+        "phi-3-medium-4k-instruct",
+        "phi-3-small-8k-instruct",
+        "phi-3-mini-4k-instruct",
+        "phi-3-mini-128k-instruct",
+    ],
+    "Phi-3",
+    "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
+    "A capable and cost-effective small language models (SLMs) by Microsoft",
 )
 
 register_model_info(
@@ -105,78 +173,6 @@ register_model_info(
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
     "Gemini by Google",
-)
-
-register_model_info(
-    ["glm-4-0116"],
-    "GLM-4",
-    "https://zhipuai.cn/devday",
-    "Next-Gen Foundation Model by Zhipu AI",
-)
-
-register_model_info(
-    ["yi-large-preview"],
-    "Yi-Large",
-    "https://x.com/01AI_Yi/status/1789894091620458667",
-    "State-of-the-art model by 01 AI",
-)
-
-register_model_info(
-    [
-        "qwen-max-0403",
-        "qwen-max-0428",
-    ],
-    "Qwen Max",
-    "https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction",
-    "The Frontier Qwen Model by Alibaba",
-)
-
-register_model_info(
-    [
-        "qwen1.5-110b-chat",
-    ],
-    "Qwen 1.5",
-    "https://qwenlm.github.io/blog/qwen1.5-110b/",
-    "The First 100B+ Model of the Qwen1.5 Series",
-)
-
-register_model_info(
-    ["snowflake-arctic-instruct"],
-    "Snowflake Arctic Instruct",
-    "https://www.snowflake.com/blog/arctic-open-efficient-foundation-language-models-snowflake/",
-    "Dense-MoE transformer by Snowflake AI",
-)
-
-register_model_info(
-    [
-        "phi-3-mini-4k-instruct",
-        "phi-3-mini-128k-instruct",
-    ],
-    "Phi-3",
-    "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
-    "A capable and cost-effective small language models (SLMs) by Microsoft",
-)
-
-register_model_info(
-    [
-        "mixtral-8x22b-instruct-v0.1",
-    ],
-    "Mixtral of experts",
-    "https://mistral.ai/news/mixtral-8x22b/",
-    "A Mixture-of-Experts model by Mistral AI",
-)
-
-register_model_info(
-    [
-        "gpt-3.5-turbo",
-        "gpt-3.5-turbo-0125",
-        "gpt-3.5-turbo-1106",
-        "gpt-3.5-turbo-0314",
-        "gpt-3.5-turbo-0613",
-    ],
-    "GPT-3.5",
-    "https://platform.openai.com/docs/models/gpt-3-5",
-    "GPT-3.5-Turbo by OpenAI",
 )
 
 register_model_info(
@@ -223,6 +219,15 @@ register_model_info(
 
 register_model_info(
     [
+        "qwen1.5-110b-chat",
+    ],
+    "Qwen 1.5",
+    "https://qwenlm.github.io/blog/qwen1.5-110b/",
+    "The First 100B+ Model of the Qwen1.5 Series",
+)
+
+register_model_info(
+    [
         "qwen1.5-72b-chat",
         "qwen1.5-32b-chat",
         "qwen1.5-14b-chat",
@@ -238,12 +243,17 @@ register_model_info(
 )
 
 register_model_info(
-    [
-        "zephyr-orpo-141b-A35b-v0.1",
-    ],
-    "Zephyr 141B-A35B",
-    "https://huggingface.co/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1",
-    "ORPO fine-tuned of Mixtral-8x22B-v0.1",
+    ["glm-4-0116"],
+    "GLM-4",
+    "https://zhipuai.cn/devday",
+    "Next-Gen Foundation Model by Zhipu AI",
+)
+
+register_model_info(
+    ["snowflake-arctic-instruct"],
+    "Snowflake Arctic Instruct",
+    "https://www.snowflake.com/blog/arctic-open-efficient-foundation-language-models-snowflake/",
+    "Dense-MoE transformer by Snowflake AI",
 )
 
 register_model_info(
@@ -251,6 +261,15 @@ register_model_info(
     "DBRX Instruct",
     "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
     "DBRX by Databricks Mosaic AI",
+)
+
+register_model_info(
+    [
+        "zephyr-orpo-141b-A35b-v0.1",
+    ],
+    "Zephyr 141B-A35B",
+    "https://huggingface.co/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1",
+    "ORPO fine-tuned of Mixtral-8x22B-v0.1",
 )
 
 register_model_info(
@@ -335,13 +354,6 @@ register_model_info(
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
     "A chat assistant fine-tuned on user-shared conversations by LMSYS",
-)
-
-register_model_info(
-    ["yi-34b-chat", "yi-6b-chat"],
-    "Yi-Chat",
-    "https://huggingface.co/01-ai/Yi-34B-Chat",
-    "A large language model by 01 AI",
 )
 
 register_model_info(

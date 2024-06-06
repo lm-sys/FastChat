@@ -174,47 +174,45 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4-0314": 2,
     "gpt-4-0613": 2,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 2,
     "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
-    "gpt-4o-2024-05-13": 4,
-    "im-a-good-gpt2-chatbot": 4,
-    "im-also-a-good-gpt2-chatbot": 4,
-    "gemini-1.5-pro-api-preview": 4,
-    "gemini-1.5-pro-api-0409-preview": 4,
+    "gpt-4o-2024-05-13": 6,
+    "gemini-1.5-pro-api-0514": 6,
+    "gemini-1.5-flash-api-0514": 6,
+    "gemini-advanced-0514": 6,
     "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
-    "llama-3-70b-instruct": 4,
-    "llama-3-8b-instruct": 6,
-    "mixtral-8x22b-instruct-v0.1": 2,
+    "llama-3-70b-instruct": 6,
+    "llama-3-8b-instruct": 4,
     "command-r-plus": 4,
     "command-r": 2,
     "reka-core-20240501": 6,
-    "reka-flash": 2,
-    "reka-flash-online": 1,
-    "qwen-max-0428": 4,
+    "reka-flash": 1,
+    "qwen-max-0428": 2,
+    "qwen2-72b-instruct": 4,
     "qwen1.5-110b-chat": 4,
     "qwen1.5-72b-chat": 1,
     "qwen1.5-32b-chat": 1,
-    "gemma-1.1-7b-it": 1,
+    "gemma-1.1-7b-it": 2,
     "gemma-1.1-2b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 1,
+    "mixtral-8x22b-instruct-v0.1": 2,    
     "mistral-large-2402": 2,
-    "mistral-medium": 1,
-    "llama-2-70b-chat": 1,
-    "llama-2-13b-chat": 1,
+    "codestral-2405": 2,
     "snowflake-arctic-instruct": 1,
-    "phi-3-mini-4k-instruct": 6,
-    "phi-3-mini-128k-instruct": 1,
-    "glm-4-0116": 8,
+    "dbrx-instruct": 1,
+    "phi-3-mini-4k-instruct": 2,
+    "phi-3-medium-4k-instruct": 2,
+    "phi-3-small-8k-instruct": 2,
+    "glm-4-0116": 4,
     "yi-large-preview": 4,
-    # tier 1
-    "deluxe-chat-v1.3": 1,
-    "yi-34b-chat": 1,
+    "yi-large": 2,
+    "yi-1.5-34b-chat": 6,
+    "anon-leopard": 2,
 }
 
 # target model sampling weights will be boosted.
@@ -224,24 +222,7 @@ BATTLE_TARGETS = {
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
-    },
-    "phi-3-mini-4k-instruct": {
-        "llama-3-8b-instruct",
-        "gemma-1.1-7b-it",
-        "gpt-3.5-turbo-0125",
-    },
-    "gpt-4o-2024-05-13": {
-        "claude-3-opus-20240229",
-        "gpt-4-turbo-2024-04-09",
-        "llama-3-70b-instruct",
-        "gemini-1.5-pro-api-preview",
-    },
-    "glm-4-0116": {
-        "gpt-4-turbo-2024-04-09",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-        "llama-3-70b-instruct",
-    },
+    }
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -252,15 +233,21 @@ SAMPLING_BOOST_MODELS = [
     # "claude-3-haiku-20240307",
     #"reka-flash-online",
     # "gemini-1.5-pro-api-0409-preview",
-    "llama-3-70b-instruct",
+    # "llama-3-70b-instruct",
     # "reka-core-20240501",
     # "qwen-max-0428",
     # "qwen1.5-110b-chat",
-    "im-also-a-good-gpt2-chatbot",
-    "gemini-1.5-pro-api-preview",
-    "gpt-4o-2024-05-13",
-    "yi-large-preview",
-    "phi-3-mini-4k-instruct",
+    # "gemini-1.5-pro-api-0514",
+    # "gemini-1.5-flash-api-0514",
+    # "gemini-advanced-0514",
+    # "yi-large-preview",
+    # "gpt-4o-2024-05-13",
+    # "phi-3-mini-4k-instruct",
+    "qwen2-72b-instruct",
+    "phi-3-medium-4k-instruct",
+    "phi-3-small-8k-instruct",
+    "anon-leopard",
+    "codestral-2405",
 ]
 
 # outage models won't be sampled.
@@ -464,6 +451,10 @@ def bot_response_multi(
             "qwen1.5-110b-chat",
         ]:
             token_per_yield = 7
+        elif states[i].model_name in [
+            "qwen2-72b-instruct",
+        ]:
+            token_per_yield = 4
         model_tpy.append(token_per_yield)
 
     chatbots = [None] * num_sides

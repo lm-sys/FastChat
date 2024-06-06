@@ -2440,6 +2440,13 @@ class RekaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
 
+class LeopardAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "leopard" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("leopard")
+
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
@@ -2541,6 +2548,7 @@ register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
 register_model_adapter(Llama3Adapter)
+register_model_adapter(LeopardAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

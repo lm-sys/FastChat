@@ -50,7 +50,7 @@ def load_demo_side_by_side_named(models, url_params):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8] * 4 + [4] * 8 + [1] * 32)[: len(models) - 1]
+        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
@@ -270,6 +270,10 @@ def bot_response_multi(
             "qwen1.5-110b-chat",
         ]:
             token_per_yield = 7
+        elif states[i].model_name in [
+            "qwen2-72b-instruct",
+        ]:
+            token_per_yield = 4
         model_tpy.append(token_per_yield)
 
     chatbots = [None] * num_sides
