@@ -609,8 +609,8 @@ def gemini_api_stream_iter(
             pos = 0
             while pos < len(text):
                 # simulate token streaming
-                pos += random.randint(2, 5)
-                time.sleep(0.002)
+                pos += 1
+                time.sleep(0.001)
                 data = {
                     "text": text[:pos],
                     "error_code": 0,
@@ -655,7 +655,7 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
                     "messages": conv_bard,
                 },
             },
-            timeout=30,
+            timeout=60,
         )
     except Exception as e:
         logger.error(f"==== error ====\n{e}")
@@ -684,8 +684,8 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
     pos = 0
     while pos < len(response):
         # simulate token streaming
-        pos += random.randint(3, 6)
-        time.sleep(0.002)
+        pos += 1
+        time.sleep(0.001)
         data = {
             "text": response[:pos],
             "error_code": 0,

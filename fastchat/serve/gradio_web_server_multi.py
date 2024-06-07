@@ -44,6 +44,7 @@ from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
+    alert_js,
     parse_gradio_auth_creds,
 )
 
@@ -190,6 +191,30 @@ window.__gradio_mode__ = "app";
                     + side_by_side_vision_named_list
                     + single_vision_language_model_list
                 )
+        # with gr.Tabs() as tabs:
+        #     with gr.Tab("⚔️  Arena (battle)", id=0) as arena_tab:
+        #         arena_tab.select(None, None, None, js=alert_js)
+        #         side_by_side_anony_list = build_side_by_side_ui_anony(models)
+
+        #     with gr.Tab("⚔️  Arena (side-by-side)", id=1) as side_by_side_tab:
+        #         side_by_side_tab.select(None, None, None, js=alert_js)
+        #         side_by_side_named_list = build_side_by_side_ui_named(models)
+
+        #     with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
+        #         direct_tab.select(None, None, None, js=alert_js)
+        #         single_model_list = build_single_model_ui(
+        #             models, add_promotion_links=True
+        #         )
+
+        #     with gr.Tab("👀 Vision Direct Chat", id=3, visible=args.multimodal) as vision_tab:
+        #         vision_tab.select(None, None, None, js=alert_js)
+        #         single_vision_language_model_list = (
+        #             build_single_vision_language_model_ui(
+        #                 vl_models,
+        #                 add_promotion_links=True,
+        #                 random_questions=args.random_questions,
+        #             )
+        #        )
 
             if elo_results_file:
                 with gr.Tab("Leaderboard", id=2):
