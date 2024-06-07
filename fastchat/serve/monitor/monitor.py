@@ -396,10 +396,15 @@ key_to_category_name = {
     "english": "English",
     "chinese": "Chinese",
     "french": "French",
+    "german": "German",
+    "spanish": "Spanish",
+    "russian": "Russian",
+    "japanese": "Japanese",
     "no_tie": "Exclude Ties",
     "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
+    "full_old": "Overall (Deprecated)",
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
@@ -411,10 +416,15 @@ cat_name_to_explanation = {
     "English": "English Prompts",
     "Chinese": "Chinese Prompts",
     "French": "French Prompts",
+    "German": "German Prompts",
+    "Spanish": "Spanish Prompts",
+    "Russian": "Russian Prompts",
+    "Japanese": "Japanese Prompts",
     "Exclude Ties": "Exclude Ties and Bothbad",
     "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
+    "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
@@ -531,7 +541,7 @@ def build_leaderboard_tab(
                 )
 
                 gr.Markdown(
-                    f"""Note: in each category, we exclude models with fewer than 500 votes as their confidence intervals can be large.""",
+                    f"""Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.""",
                     elem_id="leaderboard_markdown",
                 )
 
@@ -644,7 +654,7 @@ def build_leaderboard_tab(
 
     def update_leaderboard_and_plots(category):
         arena_subset_df = arena_dfs[category]
-        arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 500]
+        arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 300]
         elo_subset_results = category_elo_results[category]
 
         baseline_category = cat_name_to_baseline.get(category, "Overall")
