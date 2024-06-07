@@ -165,7 +165,7 @@ class ModelWorker(BaseModelWorker):
                     padding=False,
                     truncation=True,
                     max_length=self.context_len,
-                )
+                )["input_ids"]
                 attention_mask[:, :len(instruction_tokens)] = 0
             else:
                 model_output = self.model(input_ids)
@@ -237,6 +237,12 @@ class ModelWorker(BaseModelWorker):
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
+            if (
+                    model_type_dict.get("is_gritlm")
+                    and tokenizer.pad_token_id == tokenizer.bos_token_id
+            ):
+                # BOS == PAD here, so fix it up.
+                attention_mask[:, 0] = 1
 
             base64_encode = params.get("encoding_format", None)
 
