@@ -213,7 +213,7 @@ class ModelWorker(BaseModelWorker):
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
                 "is_robert": "robert" in str(type(self.model)),
-                "is_gritlm": "gritlm" in str(type(self.model)).lower(),
+                "is_gritlm": "gritlm" in str(type(self.model)),
             }
 
             if model_type_dict.get("is_gritlm"):
