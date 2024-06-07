@@ -152,11 +152,11 @@ class ModelWorker(BaseModelWorker):
         return json.loads(x[:-1].decode())
 
     def __process_embed_chunk(
-            self,
-            input_ids,
-            attention_mask,
-            instruction_lengths=None,
-            **model_type_dict,
+        self,
+        input_ids,
+        attention_mask,
+        instruction_lengths=None,
+        **model_type_dict,
     ):
         if model_type_dict.get("is_bert") or model_type_dict.get("is_gritlm"):
             if model_type_dict.get("is_gritlm"):
@@ -169,8 +169,8 @@ class ModelWorker(BaseModelWorker):
                 if instruction_lengths:
                     # The list contains the first index after the embedding
                     # instruction for each sequence.
-                    for (i, instruction_length) in enumerate(
-                            instruction_lengths,
+                    for i, instruction_length in enumerate(
+                        instruction_lengths,
                     ):
                         attention_mask[i, :instruction_length] = 0
             else:
@@ -208,7 +208,7 @@ class ModelWorker(BaseModelWorker):
     def _gritlm_prepare_embedding_prompts(self, texts):
         instruction_lengths = []
 
-        for (i, text) in enumerate(texts):
+        for i, text in enumerate(texts):
             # Custom embedding instruction as supplied by user.
             if text.startswith(GRITLM_USER_INSTRUCTION):
                 embed_instr_start_index = text.find(
@@ -220,9 +220,8 @@ class ModelWorker(BaseModelWorker):
                     instruction = GRITLM_EMBED_INSTRUCTION
                     texts[i] = instruction + text
                 else:
-                    after_embed_instr_index = (
-                        embed_instr_start_index
-                        + len(GRITLM_EMBED_INSTRUCTION)
+                    after_embed_instr_index = embed_instr_start_index + len(
+                        GRITLM_EMBED_INSTRUCTION
                     )
                     instruction = text[:after_embed_instr_index]
             # Standard embedding instruction as supplied by user.
@@ -263,7 +262,8 @@ class ModelWorker(BaseModelWorker):
 
             if model_type_dict.get("is_gritlm"):
                 instruction_lengths = self._gritlm_prepare_embedding_prompts(
-                    params["input"])
+                    params["input"]
+                )
             else:
                 instruction_lengths = None
 
@@ -284,8 +284,8 @@ class ModelWorker(BaseModelWorker):
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
             if (
-                    model_type_dict.get("is_gritlm")
-                    and tokenizer.pad_token_id == tokenizer.bos_token_id
+                model_type_dict.get("is_gritlm")
+                and tokenizer.pad_token_id == tokenizer.bos_token_id
             ):
                 # BOS == PAD here, so fix it up.
                 attention_mask[:, 0] = 1
