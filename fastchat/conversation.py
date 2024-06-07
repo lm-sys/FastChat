@@ -69,6 +69,8 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # Stops generation if meeting any token in this list
     stop_token_ids: List[int] = None
+    # The maximum image size in megabytes that this model takes in. None means we do not resize the image.
+    max_image_size_mb: int = None
 
     def get_prompt(self) -> str:
         """Get the prompt for generation."""
@@ -351,10 +353,11 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
-    def convert_image_to_base64(self, image, resize_image=False):
+    def convert_image_to_base64(self, image):
         """Given an image, return the base64 encoded image string."""
         from PIL import Image
         import requests
+        from fastchat.utils import resize_image_and_return_image_in_bytes
 
         # Load image if it has not been loaded in yet
         if type(image) == str:
@@ -367,23 +370,10 @@ class Conversation:
             else:
                 image = Image.open(image).convert("RGB")
 
-        if resize_image:
-            max_hw, min_hw = max(image.size), min(image.size)
-            aspect_ratio = max_hw / min_hw
-            max_len, min_len = 2048, 2048
-            shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
-            longest_edge = int(shortest_edge * aspect_ratio)
-            W, H = image.size
-            if longest_edge != max(image.size):
-                if H > W:
-                    H, W = longest_edge, shortest_edge
-                else:
-                    H, W = shortest_edge, longest_edge
-                image = image.resize((W, H))
-
-        buffered = BytesIO()
-        image.save(buffered, format="PNG")
-        img_b64_str = base64.b64encode(buffered.getvalue()).decode()
+        image_bytes = resize_image_and_return_image_in_bytes(
+            image, self.max_image_size_mb
+        )
+        img_b64_str = base64.b64encode(image_bytes.getvalue()).decode()
 
         return img_b64_str
 
@@ -400,7 +390,7 @@ class Conversation:
                     ):
                         img_str = f'<img src="{img_b64_str}" alt="user upload image" />'
                     else:
-                        img_str = f'<img src="data:image/jpeg;base64,{img_b64_str}" alt="user upload image" />'
+                        img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
@@ -429,7 +419,7 @@ class Conversation:
                         base64.b64encode(base64.b64decode(image_url))
                         == image_url.encode()
                     ), "The image data is not a valid base64 encoded string"
-                    openai_images.append(f"data:image/jpeg;base64,{image_url}")
+                    openai_images.append(f"data:image/png;base64,{image_url}")
                 except:
                     raise ValueError(
                         f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
@@ -438,12 +428,16 @@ class Conversation:
 
     def to_openai_vision_api_messages(self):
         """Convert the conversation to OpenAI vision api completion format"""
-        ret = [
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": self.system_message}],
-            }
-        ]
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [
+                {
+                    "role": "system",
+                    "content": [{"type": "text", "text": self.system_message}],
+                }
+            ]
+
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
@@ -598,7 +592,7 @@ class Conversation:
                                 {
                                     "type": "human",
                                     "text": text,
-                                    "media_url": f"data:image/jpeg;base64,{image}",
+                                    "media_url": f"data:image/png;base64,{image}",
                                 }
                             )
                 else:
@@ -680,6 +674,7 @@ class Conversation:
             sep2=self.sep2,
             stop_str=self.stop_str,
             stop_token_ids=self.stop_token_ids,
+            max_image_size_mb=self.max_image_size_mb,
         )
 
     def dict(self):
@@ -1078,6 +1073,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+        max_image_size_mb=None,  # OpenAI does auto-resizing
     )
 )
 
@@ -1115,6 +1111,7 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
+        max_image_size_mb=5 / 1.35,
     )
 )
 
@@ -1138,6 +1135,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+        max_image_size_mb=5 / 1.35,
     )
 )
 
@@ -1161,6 +1159,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+        max_image_size_mb=5 / 1.35,
     )
 )
 
@@ -1193,6 +1192,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+        max_image_size_mb=5 / 1.35,
     )
 )
 
@@ -1288,6 +1288,7 @@ register_conv_template(
         roles=("user", "model"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+        max_image_size_mb=20,
     )
 )
 
