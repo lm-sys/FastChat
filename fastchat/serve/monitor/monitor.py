@@ -303,7 +303,6 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
         by=["final_ranking", "rating"], ascending=[True, False]
     )
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-    # sort by final_ranking, if the same, then by rating
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
