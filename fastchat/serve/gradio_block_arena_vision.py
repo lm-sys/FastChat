@@ -48,6 +48,9 @@ disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
+enable_text = gr.MultimodalTextbox(
+    interactive=True, visible=True, placeholder="Click add or drop your image here"
+)
 
 
 def get_vqa_sample():
@@ -137,7 +140,7 @@ def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, []) + (disable_btn,) * 5
+    return (state, [], enable_text) + (disable_btn,) * 5
 
 
 def moderate_input(text, all_conv_text, model_list, images, ip):
@@ -206,7 +209,7 @@ def build_single_vision_language_model_ui(
 ):
     promotion = (
         """
-- [GitHub](https://github.com/lm-sys/FastChat) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+- [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 **❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
@@ -257,7 +260,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             )
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
-                elem_id="chatbot", label="Scroll down and start chatting", height=550
+                elem_id="chatbot", label="Scroll down and start chatting", height=650
             )
 
     with gr.Row():
@@ -349,11 +352,13 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     model_selector.change(
         clear_history, None, [state, chatbot, textbox] + btn_list
     ).then(set_visible_image, [textbox], [image_column])
-    examples.dataset.click(clear_history_example, None, [state, chatbot] + btn_list)
+    examples.dataset.click(
+        clear_history_example, None, [state, chatbot, textbox] + btn_list
+    )
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    ).then(clear_history_example, None, [state, chatbot] + btn_list)
+    ).then(clear_history_example, None, [state, chatbot, textbox] + btn_list)
 
     textbox.submit(
         add_text,
@@ -371,7 +376,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
-            clear_history_example, None, [state, chatbot] + btn_list
+            clear_history_example, None, [state, chatbot, textbox] + btn_list
         )
 
     return [state, model_selector]

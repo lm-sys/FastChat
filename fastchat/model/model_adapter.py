@@ -2201,6 +2201,7 @@ class GeminiAdapter(BaseModelAdapter):
             return get_conv_template("gemini-1.5-pro")
         return get_conv_template("gemini")
 
+
 class Yuan2Adapter(BaseModelAdapter):
     """The model adapter for Yuan2.0"""
 
@@ -2439,6 +2440,7 @@ class RekaAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
+
 
 class LeopardAdapter(BaseModelAdapter):
     def match(self, model_path: str):
