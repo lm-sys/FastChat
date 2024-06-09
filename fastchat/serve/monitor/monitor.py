@@ -303,7 +303,6 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
         by=["final_ranking", "rating"], ascending=[True, False]
     )
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-    # sort by final_ranking, if the same, then by rating
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
@@ -433,6 +432,7 @@ cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
 }
 
+
 def build_leaderboard_tab(
     elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
 ):
@@ -560,13 +560,13 @@ def build_leaderboard_tab(
                                 "#### Figure 1: Confidence Intervals on Model Strength (via Bootstrapping)",
                                 elem_id="plot-title",
                             )
-                            plot_3 = gr.Plot(p3, show_label=False)
+                            plot_3 = gr.Plot(p3, show_label=False, scale=0.95)
                         with gr.Column():
                             gr.Markdown(
                                 "#### Figure 2: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)",
                                 elem_id="plot-title",
                             )
-                            plot_4 = gr.Plot(p4, show_label=False)
+                            plot_4 = gr.Plot(p4, show_label=False, scale=0.95)
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown(

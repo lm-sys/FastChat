@@ -312,7 +312,7 @@ def flash_buttons():
 def build_side_by_side_ui_named(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-- [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 📜 Rules
 - Ask any question to two chosen models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
@@ -352,7 +352,7 @@ def build_side_by_side_ui_named(models):
                     chatbots[i] = gr.Chatbot(
                         label=label,
                         elem_id=f"chatbot",
-                        height=550,
+                        height=650,
                         show_copy_button=True,
                     )
 

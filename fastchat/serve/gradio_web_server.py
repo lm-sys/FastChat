@@ -50,8 +50,14 @@ no_change_btn = gr.Button()
 enable_btn = gr.Button(interactive=True, visible=True)
 disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
-enable_text = gr.Textbox(interactive=True, visible=True, placeholder="👉 Enter your prompt and press ENTER")
-disable_text = gr.Textbox(interactive=False, visible=True, placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)')
+enable_text = gr.Textbox(
+    interactive=True, visible=True, placeholder="👉 Enter your prompt and press ENTER"
+)
+disable_text = gr.Textbox(
+    interactive=False,
+    visible=True,
+    placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)',
+)
 
 controller_url = None
 enable_moderation = False
@@ -605,57 +611,15 @@ def bot_response(
 
 
 block_css = """
-#notice_markdown .prose {
-    font-size: 110% !important;
-}
-#notice_markdown th {
-    display: none;
-}
-#notice_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#arena_leaderboard_dataframe table {
-    font-size: 110%;
-}
-#full_leaderboard_dataframe table {
-    font-size: 110%;
-}
-#model_description_markdown {
-    font-size: 110% !important;
-}
-#leaderboard_markdown .prose {
-    font-size: 110% !important;
-}
-#leaderboard_markdown td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-#leaderboard_dataframe td {
-    line-height: 0.1em;
-}
-#about_markdown .prose {
-    font-size: 110% !important;
-}
-#ack_markdown .prose {
-    font-size: 110% !important;
-}
-#chatbot .prose {
+.prose {
     font-size: 105% !important;
 }
-.sponsor-image-about img {
-    margin: 0 20px;
-    margin-top: 20px;
-    height: 40px;
-    max-height: 100%;
-    width: auto;
-    float: left;
-}
 
-.chatbot h1, h2, h3 {
-    margin-top: 8px; /* Adjust the value as needed */
-    margin-bottom: 0px; /* Adjust the value as needed */
-    padding-bottom: 0px;
+#arena_leaderboard_dataframe table {
+    font-size: 115%;
+}
+#full_leaderboard_dataframe table {
+    font-size: 115%;
 }
 
 .chatbot h1 {
@@ -667,12 +631,18 @@ block_css = """
 .chatbot h3 {
     font-size: 110%;
 }
-.chatbot p:not(:first-child) {
-    margin-top: 8px;
+
+#chatbot .prose {
+    font-size: 100% !important;
 }
 
-.typing {
-    display: inline-block;
+.sponsor-image-about img {
+    margin: 0 20px;
+    margin-top: 20px;
+    height: 40px;
+    max-height: 100%;
+    width: auto;
+    float: left;
 }
 
 .cursor {
@@ -700,7 +670,7 @@ block_css = """
 
 .app {
   max-width: 100% !important;
-  padding: 20px !important;               
+  padding: 50px;
 }
 
 a {
@@ -712,6 +682,84 @@ a:hover {
     text-decoration: underline; /* Adds underline on hover */
 }
 """
+
+
+# block_css = """
+# #notice_markdown .prose {
+#     font-size: 110% !important;
+# }
+# #notice_markdown th {
+#     display: none;
+# }
+# #notice_markdown td {
+#     padding-top: 6px;
+#     padding-bottom: 6px;
+# }
+# #arena_leaderboard_dataframe table {
+#     font-size: 110%;
+# }
+# #full_leaderboard_dataframe table {
+#     font-size: 110%;
+# }
+# #model_description_markdown {
+#     font-size: 110% !important;
+# }
+# #leaderboard_markdown .prose {
+#     font-size: 110% !important;
+# }
+# #leaderboard_markdown td {
+#     padding-top: 6px;
+#     padding-bottom: 6px;
+# }
+# #leaderboard_dataframe td {
+#     line-height: 0.1em;
+# }
+# #about_markdown .prose {
+#     font-size: 110% !important;
+# }
+# #ack_markdown .prose {
+#     font-size: 110% !important;
+# }
+# #chatbot .prose {
+#     font-size: 105% !important;
+# }
+# .sponsor-image-about img {
+#     margin: 0 20px;
+#     margin-top: 20px;
+#     height: 40px;
+#     max-height: 100%;
+#     width: auto;
+#     float: left;
+# }
+
+# body {
+#     --body-text-size: 14px;
+# }
+
+# .chatbot h1, h2, h3 {
+#     margin-top: 8px; /* Adjust the value as needed */
+#     margin-bottom: 0px; /* Adjust the value as needed */
+#     padding-bottom: 0px;
+# }
+
+# .chatbot h1 {
+#     font-size: 130%;
+# }
+# .chatbot h2 {
+#     font-size: 120%;
+# }
+# .chatbot h3 {
+#     font-size: 110%;
+# }
+# .chatbot p:not(:first-child) {
+#     margin-top: 8px;
+# }
+
+# .typing {
+#     display: inline-block;
+# }
+
+# """
 
 
 def get_model_description_md(models):
@@ -816,7 +864,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         chatbot = gr.Chatbot(
             elem_id="chatbot",
             label="Scroll down and start chatting",
-            height=550,
+            height=650,
             show_copy_button=True,
         )
     with gr.Row():

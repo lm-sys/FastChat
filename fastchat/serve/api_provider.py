@@ -86,7 +86,7 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "gemini_no_stream":
-        prompt = conv.to_openai_api_messages()
+        prompt = conv.to_gemini_api_messages()
         stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -108,7 +108,12 @@ def get_api_provider_stream_iter(
     elif model_api_dict["api_type"] == "mistral":
         prompt = conv.to_openai_api_messages()
         stream_iter = mistral_api_stream_iter(
-            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_key=model_api_dict.get("api_key"),
         )
     elif model_api_dict["api_type"] == "nvidia":
         prompt = conv.to_openai_api_messages()
@@ -369,7 +374,7 @@ def openai_assistant_api_stream_iter(
 
                     raw_text_copy = text
                     for anno in annotations:
-                        if anno["type"] == "url_citation":                            
+                        if anno["type"] == "url_citation":
                             pattern = r"【\d+†source】"
                             matches = re.findall(pattern, content["value"])
                             if len(matches) > 0:
@@ -378,11 +383,11 @@ def openai_assistant_api_stream_iter(
                                     if match not in idx_mapping:
                                         idx_mapping[match] = len(idx_mapping) + 1
                                     citation_number = idx_mapping[match]
-                            
+
                             # anno_text = anno["text"]
                             # if anno_text not in idx_mapping:
                             #     idx_mapping[anno_text] = len(idx_mapping) + 1
-                            # citation_number = idx_mapping[anno_text]                            
+                            # citation_number = idx_mapping[anno_text]
                             # citation_number = anno["index"] + 1
 
                             start_idx = anno["start_index"] + cur_offset
@@ -541,7 +546,13 @@ def anthropic_message_api_stream_iter(
 
 
 def gemini_api_stream_iter(
-    model_name, messages, temperature, top_p, max_new_tokens, api_key=None, use_stream=True,
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key=None,
+    use_stream=True,
 ):
     import google.generativeai as genai  # pip install google-generativeai
 
@@ -583,13 +594,13 @@ def gemini_api_stream_iter(
         safety_settings=safety_settings,
     )
     convo = model.start_chat(history=history)
-    
+
     if use_stream:
         response = convo.send_message(messages[-1]["content"], stream=True)
         try:
             text = ""
             for chunk in response:
-                text += chunk.text
+                text += chunk.candidates[0].content.parts[0].text
                 data = {
                     "text": text,
                     "error_code": 0,
@@ -605,7 +616,7 @@ def gemini_api_stream_iter(
     else:
         try:
             response = convo.send_message(messages[-1]["content"], stream=False)
-            text = response.text
+            text = response.candidates[0].content.parts[0].text
             pos = 0
             while pos < len(text):
                 # simulate token streaming
@@ -766,11 +777,14 @@ def ai2_api_stream_iter(
             yield data
 
 
-def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
+def mistral_api_stream_iter(
+    model_name, messages, temperature, top_p, max_new_tokens, api_key=None
+):
     from mistralai.client import MistralClient
     from mistralai.models.chat_completion import ChatMessage
 
-    api_key = os.environ["MISTRAL_API_KEY"]
+    if api_key is None:
+        api_key = os.environ["MISTRAL_API_KEY"]
 
     client = MistralClient(api_key=api_key, timeout=5)
 
@@ -808,7 +822,9 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
             yield data
 
 
-def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base, api_key=None):
+def nvidia_api_stream_iter(
+    model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
+):
     api_key = api_key or os.environ["NVIDIA_API_KEY"]
     headers = {
         "Authorization": f"Bearer {api_key}",

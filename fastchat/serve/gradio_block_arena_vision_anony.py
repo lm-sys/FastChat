@@ -32,6 +32,8 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
     _prepare_text_with_image,
+    disable_text,
+    enable_text,
 )
 from fastchat.serve.gradio_block_arena_anony import (
     flash_buttons,
@@ -56,6 +58,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_visible_image,
     add_image,
     moderate_input,
+    enable_text,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -74,14 +77,24 @@ models = []
 # TODO(chris): fix sampling weights
 SAMPLING_WEIGHTS = {
     # tier 0
-    "gpt-4o-2024-05-13-vision": 4,
-    "gpt-4-turbo-2024-04-09-vision": 4,
-    "gemini-1.5-flash-latest-vision": 4,
-    "gemini-1.5-pro-latest-vision": 4,
-    "claude-3-opus-20240229-vision": 4,
-    "claude-3-haiku-20240307-vision": 4,
-    "claude-3-sonnet-20240229-vision": 4,
-    "reka-flash-20240226-vision": 4,
+    # "gpt-4o-2024-05-13-vision": 4,
+    # "gpt-4-turbo-2024-04-09-vision": 4,
+    # "gemini-1.5-flash-latest-vision": 4,
+    # "gemini-1.5-pro-latest-vision": 4,
+    # "claude-3-opus-20240229-vision": 4,
+    # "claude-3-haiku-20240307-vision": 4,
+    # "claude-3-sonnet-20240229-vision": 4,
+    # "reka-flash-20240226-vision": 4,
+    "gpt-4o-2024-05-13": 4,
+    "gpt-4-turbo-2024-04-09": 4,
+    "claude-3-haiku-20240307": 4,
+    "claude-3-sonnet-20240229": 4,
+    "claude-3-opus-20240229": 4,
+    "gemini-1.5-flash-api-0514": 4,
+    "gemini-1.5-pro-api-0514": 4,
+    "reka-core-20240501": 4,
+    "reka-flash": 4,
+    "reka-flash-online": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -159,6 +172,7 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
+        + [enable_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -178,20 +192,23 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
 
+    gr.Info(
+        "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
+    )
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
                 "### Model A: " + states[0].model_name,
                 "### Model B: " + states[1].model_name,
             )
-            yield names + (None,) + (disable_btn,) * 4
+            yield names + (disable_text,) + (disable_btn,) * 4
             time.sleep(0.1)
     else:
         names = (
             "### Model A: " + states[0].model_name,
             "### Model B: " + states[1].model_name,
         )
-        yield names + (None,) + (disable_btn,) * 4
+        yield names + (disable_text,) + (disable_btn,) * 4
 
 
 def leftvote_last_response(
@@ -259,7 +276,7 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [None]
+        + [enable_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [""]
@@ -331,11 +348,13 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": IMAGE_MODERATION_MSG}]
             + [
-                no_change_btn,
+                {
+                    "text": IMAGE_MODERATION_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                }
             ]
-            * 6
+            + [no_change_btn] * 6
             + [""]
         )
 
@@ -366,14 +385,14 @@ def add_text(
 
 def build_side_by_side_vision_ui_anony(models, random_questions=None):
     notice_markdown = """
-# ⚔️  Vision Arena ⚔️: Benchmarking VLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+# ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
-- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+- **NEW** Image Support: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 
 **❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
@@ -412,7 +431,7 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
                             chatbots[i] = gr.Chatbot(
                                 label=label,
                                 elem_id="chatbot",
-                                height=550,
+                                height=650,
                                 show_copy_button=True,
                             )
 
@@ -553,7 +572,11 @@ function (a, b, c, d) {
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    ).then(clear_history_example, None, states + chatbots + model_selectors + btn_list)
+    ).then(
+        clear_history_example,
+        None,
+        states + chatbots + model_selectors + [textbox] + btn_list,
+    )
 
     textbox.submit(
         add_text,
@@ -575,7 +598,9 @@ function (a, b, c, d) {
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
-            clear_history_example, None, states + chatbots + model_selectors + btn_list
+            clear_history_example,
+            None,
+            states + chatbots + model_selectors + [textbox] + btn_list,
         )
 
     return states + model_selectors

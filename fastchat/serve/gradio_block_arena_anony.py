@@ -77,7 +77,9 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
 
-    gr.Info("🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY!")
+    gr.Info(
+        "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
+    )
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
@@ -200,7 +202,7 @@ SAMPLING_WEIGHTS = {
     "gemma-1.1-7b-it": 2,
     "gemma-1.1-2b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 1,
-    "mixtral-8x22b-instruct-v0.1": 2,    
+    "mixtral-8x22b-instruct-v0.1": 2,
     "mistral-large-2402": 2,
     "codestral-2405": 2,
     "snowflake-arctic-instruct": 1,
@@ -231,7 +233,7 @@ SAMPLING_BOOST_MODELS = [
     # "claude-3-opus-20240229",
     # "claude-3-sonnet-20240229",
     # "claude-3-haiku-20240307",
-    #"reka-flash-online",
+    # "reka-flash-online",
     # "gemini-1.5-pro-api-0409-preview",
     # "llama-3-70b-instruct",
     # "reka-core-20240501",
@@ -494,7 +496,9 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-- [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+
+### NEW❗️ Chatbot Arena is now supporting images in beta. Check it out [here](https://chat.lmsys.org/?vision)
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
@@ -526,7 +530,7 @@ def build_side_by_side_ui_anony(models):
                     chatbots[i] = gr.Chatbot(
                         label=label,
                         elem_id="chatbot",
-                        height=550,
+                        height=650,
                         show_copy_button=True,
                     )
 
@@ -605,22 +609,26 @@ def build_side_by_side_ui_anony(models):
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     bothbad_btn.click(
         bothbad_vote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
@@ -634,7 +642,13 @@ def build_side_by_side_ui_anony(models):
     clear_btn.click(
         clear_history,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning] + [send_btn],
+        states
+        + chatbots
+        + model_selectors
+        + [textbox]
+        + btn_list
+        + [slow_warning]
+        + [send_btn],
     )
 
     share_js = """
