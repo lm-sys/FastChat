@@ -184,7 +184,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4o-2024-05-13": 6,
     "gemini-1.5-pro-api-0514": 6,
     "gemini-1.5-flash-api-0514": 6,
-    "gemini-advanced-0514": 6,
+    "gemini-advanced-0514": 4,
     "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
@@ -246,8 +246,6 @@ SAMPLING_BOOST_MODELS = [
     # "gpt-4o-2024-05-13",
     # "phi-3-mini-4k-instruct",
     "qwen2-72b-instruct",
-    "phi-3-medium-4k-instruct",
-    "phi-3-small-8k-instruct",
     "anon-leopard",
     "codestral-2405",
 ]
@@ -263,6 +261,8 @@ OUTAGE_MODELS = [
     "claude-2.0",
     "deluxe-chat-v1.3",
     "glm-4-0116",
+    "anon-leopard",
+    "codestral-2405",
 ]
 
 
