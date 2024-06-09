@@ -53,7 +53,6 @@ from fastchat.serve.gradio_block_arena_anony import (
     get_battle_pair,
 )
 from fastchat.serve.gradio_block_arena_vision import (
-    get_vqa_sample,
     set_invisible_image,
     set_visible_image,
     add_image,
@@ -94,7 +93,6 @@ SAMPLING_WEIGHTS = {
     "gemini-1.5-pro-api-0514": 4,
     "reka-core-20240501": 4,
     "reka-flash": 4,
-    "reka-flash-online": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -151,6 +149,12 @@ SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 OUTAGE_MODELS = []
+
+def get_vqa_sample():
+    random_sample = np.random.choice(vqa_samples)
+    question, path = random_sample["question"], random_sample["path"]
+    res = {"text": "", "files": [path]}
+    return (res, path)
 
 
 def load_demo_side_by_side_vision_anony(models_, url_params):

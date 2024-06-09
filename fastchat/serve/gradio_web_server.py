@@ -633,7 +633,7 @@ block_css = """
 }
 
 #chatbot .prose {
-    font-size: 100% !important;
+    font-size: 90% !important;
 }
 
 .sponsor-image-about img {

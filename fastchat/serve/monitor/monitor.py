@@ -560,13 +560,13 @@ def build_leaderboard_tab(
                                 "#### Figure 1: Confidence Intervals on Model Strength (via Bootstrapping)",
                                 elem_id="plot-title",
                             )
-                            plot_3 = gr.Plot(p3, show_label=False, scale=0.95)
+                            plot_3 = gr.Plot(p3, show_label=False)
                         with gr.Column():
                             gr.Markdown(
                                 "#### Figure 2: Average Win Rate Against All Other Models (Assuming Uniform Sampling and No Ties)",
                                 elem_id="plot-title",
                             )
-                            plot_4 = gr.Plot(p4, show_label=False, scale=0.95)
+                            plot_4 = gr.Plot(p4, show_label=False)
                     with gr.Row():
                         with gr.Column():
                             gr.Markdown(
