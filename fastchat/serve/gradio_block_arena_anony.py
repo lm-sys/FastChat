@@ -214,6 +214,7 @@ SAMPLING_WEIGHTS = {
     "yi-large": 2,
     "yi-1.5-34b-chat": 6,
     "anon-leopard": 2,
+    "dbrx-next": 4,
 }
 
 # target model sampling weights will be boosted.
@@ -223,7 +224,7 @@ BATTLE_TARGETS = {
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
-    }
+    },
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -244,9 +245,6 @@ SAMPLING_BOOST_MODELS = [
     # "yi-large-preview",
     # "gpt-4o-2024-05-13",
     # "phi-3-mini-4k-instruct",
-    "qwen2-72b-instruct",
-    "anon-leopard",
-    "codestral-2405",
 ]
 
 # outage models won't be sampled.
