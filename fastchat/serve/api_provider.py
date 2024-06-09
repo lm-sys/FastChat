@@ -35,6 +35,18 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "openai_no_stream":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            stream=False,
+        )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
         stream_iter = openai_assistant_api_stream_iter(
@@ -183,6 +195,7 @@ def openai_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
+    stream=True,
 ):
     import openai
 
@@ -214,19 +227,39 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_new_tokens,
-        stream=True,
-    )
-    text = ""
-    for chunk in res:
-        if len(chunk.choices) > 0:
-            text += chunk.choices[0].delta.content or ""
+    if stream:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=True,
+        )
+        text = ""
+        for chunk in res:
+            if len(chunk.choices) > 0:
+                text += chunk.choices[0].delta.content or ""
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    else:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=False,
+        )
+        text = res.choices[0].message.content
+        pos = 0
+        while pos < len(text):
+            # simulate token streaming
+            pos += 2
+            time.sleep(0.001)
             data = {
-                "text": text,
+                "text": text[:pos],
                 "error_code": 0,
             }
             yield data
