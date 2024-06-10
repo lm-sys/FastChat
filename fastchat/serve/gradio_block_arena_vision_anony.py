@@ -64,6 +64,7 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
+    convert_image_to_byte_array,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -149,6 +150,7 @@ SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 OUTAGE_MODELS = []
+
 
 def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
@@ -327,7 +329,18 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    text, image_flagged, csam_flag = moderate_input(text, text, model_list, images, ip)
+
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
+    image_bytes_list = []
+    image_format = ""
+    if len(images) > 0:
+        image_format, image_bytes = convert_image_to_byte_array(
+            images[0], MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB
+        )  # NOTE(chris): take multiple images later on
+        image_bytes_list.append((image_format, image_bytes))
+    text, image_flagged, csam_flag = moderate_input(
+        text, text, model_list, image_bytes_list, ip
+    )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -363,6 +376,10 @@ def add_text(
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    images = [
+        states[0].conv.convert_image_to_base64(image_bytes, image_format)
+        for image_format, image_bytes in image_bytes_list
+    ]  # NOTE(chris): the state does not matter since we resize for everyone, take multiple images later on
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
