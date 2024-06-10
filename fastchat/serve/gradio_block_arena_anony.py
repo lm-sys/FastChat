@@ -214,7 +214,7 @@ SAMPLING_WEIGHTS = {
     "yi-large": 2,
     "yi-1.5-34b-chat": 6,
     "anon-leopard": 2,
-    "dbrx-next": 4,
+    "dbrx-next": 6,
 }
 
 # target model sampling weights will be boosted.

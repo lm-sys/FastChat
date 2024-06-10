@@ -653,7 +653,7 @@ def gemini_api_stream_iter(
             pos = 0
             while pos < len(text):
                 # simulate token streaming
-                pos += 1
+                pos += 3
                 time.sleep(0.001)
                 data = {
                     "text": text[:pos],
