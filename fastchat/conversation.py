@@ -549,12 +549,6 @@ class Conversation:
                     content_list = [{"type": "text", "text": msg[0]}]
 
                     for image_format, image_url in msg[1]:
-                        # Claude only supports base64
-                        # if image_url.startswith("http://") or image_url.startswith(
-                        #     "https://"
-                        # ):
-                        #     image_url = self.convert_image_to_base64(image_url)
-
                         content_list.append(
                             {
                                 "type": "image",
