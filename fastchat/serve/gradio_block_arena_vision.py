@@ -143,12 +143,12 @@ def clear_history_example(request: gr.Request):
     return (state, [], enable_text) + (disable_btn,) * 5
 
 
-def moderate_input(text, all_conv_text, model_list, images, ip):
+def moderate_input(text, all_conv_text, model_list, image_bytes_list, ip):
     text_flagged = moderation_filter(all_conv_text, model_list)
     # flagged = moderation_filter(text, [state.model_name])
     nsfw_flagged, csam_flagged = False, False
-    if len(images) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
+    if len(image_bytes_list) > 0:
+        nsfw_flagged, csam_flagged = image_moderation_filter(image_bytes_list[0][1])
 
     image_flagged = nsfw_flagged or csam_flagged
     if text_flagged or image_flagged:

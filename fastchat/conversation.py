@@ -353,7 +353,7 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
-    def convert_image_to_base64(self, image):
+    def convert_image_to_base64(self, image, image_format=None):
         """Given an image, return the base64 encoded image string."""
         from PIL import Image
         import requests
@@ -370,12 +370,15 @@ class Conversation:
             else:
                 image = Image.open(image).convert("RGB")
 
-        image_bytes = resize_image_and_return_image_in_bytes(
-            image, self.max_image_size_mb
-        )
-        img_b64_str = base64.b64encode(image_bytes.getvalue()).decode()
+            image_format, image_bytes = resize_image_and_return_image_in_bytes(
+                image, 5 / 1.5
+            )
+        elif type(image) == bytes:
+            image_bytes = image
 
-        return img_b64_str
+        img_b64_str = base64.b64encode(image_bytes).decode()
+
+        return image_format, img_b64_str
 
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
@@ -384,13 +387,15 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, image = msg
-                    img_b64_str = image[0]  # Only one image on gradio at one time
+                    image_format, img_b64_str = image[
+                        0
+                    ]  # Only one image on gradio at one time
                     if img_b64_str.startswith("http://") or img_b64_str.startswith(
                         "https://"
                     ):
                         img_str = f'<img src="{img_b64_str}" alt="user upload image" />'
                     else:
-                        img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
+                        img_str = f'<img src="data:image/{image_format};base64,{img_b64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
@@ -402,7 +407,7 @@ class Conversation:
         import base64
 
         openai_images = []
-        for image_url in image_urls:
+        for image_format, image_url in image_urls:
             if image_url.startswith("http://") or image_url.startswith(
                 "https://"
             ):  # input is a url
@@ -410,7 +415,7 @@ class Conversation:
             elif image_url.lower().endswith(
                 ("png", "jpg", "jpeg", "webp", "gif")
             ):  # input is a local image
-                img_b64_str = self.convert_image_to_base64(image_url)
+                image_format, img_b64_str = self.convert_image_to_base64(image_url)
                 filetype = image_url.split(".")[-1].lower()
                 openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
             else:
@@ -492,7 +497,7 @@ class Conversation:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
                     content_list = [text]
-                    for image in images:
+                    for image_format, image in images:
                         pil_image = load_image(image)
                         content_list.append(pil_image)
                     ret.append({"role": "user", "content": content_list})
@@ -517,7 +522,7 @@ class Conversation:
             if msg is not None:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
-                    for image in images:
+                    for image_format, image in images:
                         if image.startswith("http://") or image.startswith("https://"):
                             response = requests.get(image)
                             image = response.content
@@ -543,19 +548,13 @@ class Conversation:
                 if type(msg) is tuple:
                     content_list = [{"type": "text", "text": msg[0]}]
 
-                    for image_url in msg[1]:
-                        # Claude only supports base64
-                        if image_url.startswith("http://") or image_url.startswith(
-                            "https://"
-                        ):
-                            image_url = self.convert_image_to_base64(image_url)
-
+                    for image_format, image_url in msg[1]:
                         content_list.append(
                             {
                                 "type": "image",
                                 "source": {
                                     "type": "base64",
-                                    "media_type": "image/png",
+                                    "media_type": f"image/{image_format}",
                                     "data": image_url,
                                 },
                             }
@@ -582,7 +581,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) == tuple:
                     text, images = msg
-                    for image in images:
+                    for image_format, image in images:
                         if image.startswith("https://") or image.startswith("http://"):
                             ret.append(
                                 {"type": "human", "text": text, "media_url": image}
@@ -592,7 +591,7 @@ class Conversation:
                                 {
                                     "type": "human",
                                     "text": text,
-                                    "media_url": f"data:image/png;base64,{image}",
+                                    "media_url": f"data:image/{image_format};base64,{image}",
                                 }
                             )
                 else:
@@ -612,7 +611,7 @@ class Conversation:
 
         if type(last_user_message) == tuple:
             text, images = last_user_message[0], last_user_message[1]
-            loaded_images = [load_image(image) for image in images]
+            loaded_images = [load_image(image) for image_format, image in images]
             image_hashes = [
                 hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
             ]
@@ -647,7 +646,7 @@ class Conversation:
                 text, images = message[0], message[1]
 
                 image_hashes = []
-                for image in images:
+                for image_format, image in images:
                     if image.startswith("http://") or image.startswith("https://"):
                         image_hashes.append(image)
                     else:
@@ -1111,7 +1110,7 @@ register_conv_template(
         roles=("Human", "Assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n\n",
-        max_image_size_mb=5 / 1.35,
+        max_image_size_mb=5 / 1.5,
     )
 )
 
@@ -1135,7 +1134,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
-        max_image_size_mb=5 / 1.35,
+        max_image_size_mb=5 / 1.5,
     )
 )
 
@@ -1159,7 +1158,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
-        max_image_size_mb=5 / 1.35,
+        max_image_size_mb=5 / 1.5,
     )
 )
 
@@ -1192,7 +1191,7 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
-        max_image_size_mb=5 / 1.35,
+        max_image_size_mb=5 / 1.5,
     )
 )
 
