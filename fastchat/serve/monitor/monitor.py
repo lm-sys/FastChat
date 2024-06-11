@@ -402,6 +402,7 @@ key_to_category_name = {
     "spanish": "Spanish",
     "russian": "Russian",
     "japanese": "Japanese",
+    "korean": "Korean",
     "no_tie": "Exclude Ties",
     "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
