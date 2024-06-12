@@ -88,6 +88,11 @@ def generate_stream_chatglm(
         inputs = tokenizer.build_chat_input(
             query=message_list[-1]["content"], history=message_list[:-1], role="user"
         ).to(model.device)
+    elif "glm-4" in model_type:
+        message_list = recover_message_list(prompt)
+        inputs = tokenizer.apply_chat_template(
+            message_list, tokenize=True, return_tensors="pt", return_dict=True, add_generation_prompt=True
+        ).to(model.device)
     else:
         inputs = tokenizer([prompt], return_tensors="pt").to(model.device)
     input_echo_len = len(inputs["input_ids"][0])
@@ -110,7 +115,7 @@ def generate_stream_chatglm(
             output_ids = total_ids
         else:
             output_ids = total_ids[input_echo_len:]
-        response = tokenizer.decode(output_ids)
+        response = tokenizer.decode(output_ids, skip_special_tokens=True)
         response = process_response(response)
 
         yield {
