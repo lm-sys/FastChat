@@ -178,6 +178,16 @@ register_model_info(
 
 register_model_info(
     [
+        "gpt-4o", 
+        "gpt-4o-2024-05-13",
+    ], 
+    "GPT-4o",
+    "https://platform.openai.com/docs/models/gpt-4o", 
+    "GPT-4o by OpenAI",
+)
+
+register_model_info(
+    [
         "gpt-4-turbo",
         "gpt-4-turbo-2024-04-09",
         "gpt-4-1106-preview",
