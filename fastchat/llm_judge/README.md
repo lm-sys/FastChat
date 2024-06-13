@@ -74,6 +74,15 @@ python gen_judgment.py --model-list vicuna-13b-v1.3 alpaca-13b llama-13b claude-
 ```
 The judgments will be saved to `data/mt_bench/model_judgment/gpt-4_single.jsonl`
 
+> You can also use GPT-4o as a judge, for faster and cheaper grading. <br>
+> Also the results coming from GPT-4o should be slightly better compared to GPT-4. <br>
+> To switch the judge model, simply add the parameter: --judge-model gpt-4o. <br>
+> e.g., <br>
+
+```
+python gen_judgment.py --model-list vicuna-13b-v1.3 gpt-3.5-turbo gpt-4 llama-3-8B-Instruct --judge-model gpt-4o
+```
+
 #### Step 3. Show MT-bench scores
 
 - Show the scores for selected models
