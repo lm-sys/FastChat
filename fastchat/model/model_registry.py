@@ -762,3 +762,17 @@ register_model_info(
     "https://reka.ai/reka-flash",
     "Multimodal model by Reka",
 )
+
+register_model_info(
+    ["labradorite-13b"],
+    "Labradorite",
+    "https://huggingface.co/ibm/labradorite-13b",
+    "Labradorite by IBM",
+)
+
+register_model_info(
+    ["merlinite-7b"],
+    "Merlinite",
+    "https://huggingface.co/ibm/merlinite-7b",
+    "Merlinite by IBM",
+)
