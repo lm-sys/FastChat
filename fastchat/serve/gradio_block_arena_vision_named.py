@@ -301,6 +301,12 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
                                 elem_id=f"chatbot",
                                 height=550,
                                 show_copy_button=True,
+                                latex_delimiters=[
+                                    {"left": "$$", "right": "$$", "display": True},
+                                    {"left": "$", "right": "$", "display": False},
+                                    {"left": "\\(", "right": "\\)", "display": False},
+                                    {"left": "\\[", "right": "\\]", "display": True},
+                                ],
                             )
 
     with gr.Row():

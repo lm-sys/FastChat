@@ -540,6 +540,12 @@ Find out who is the 🥇LLM Champion!
                         elem_id="chatbot",
                         height=550,
                         show_copy_button=True,
+                        latex_delimiters=[
+                            {"left": "$$", "right": "$$", "display": True},
+                            {"left": "$", "right": "$", "display": False},
+                            {"left": "\\(", "right": "\\)", "display": False},
+                            {"left": "\\[", "right": "\\]", "display": True},
+                        ],
                     )
 
         with gr.Row():
