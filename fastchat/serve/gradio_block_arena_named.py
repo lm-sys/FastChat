@@ -26,7 +26,6 @@ from fastchat.serve.gradio_web_server import (
     invisible_btn,
     acknowledgment_md,
     get_ip,
-    _prepare_text_with_image,
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
@@ -152,7 +151,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
+    state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
@@ -197,7 +196,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG, None]
+            + [CONVERSATION_LIMIT_MSG]
             + [
                 no_change_btn,
             ]
@@ -206,17 +205,14 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(
-            states[i], text, image, csam_flag=False
-        )
-        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
+        states[i].conv.append_message(states[i].conv.roles[0], text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + ["", None]
+        + [""]
         + [
             disable_btn,
         ]
@@ -410,7 +406,6 @@ def build_side_by_side_ui_named(models):
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
-    imagebox = gr.State(None)
     btn_list = [
         leftvote_btn,
         rightvote_btn,
@@ -479,8 +474,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -490,8 +485,8 @@ function (a, b, c, d) {
     )
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],

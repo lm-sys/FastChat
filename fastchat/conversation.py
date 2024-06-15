@@ -353,49 +353,20 @@ class Conversation:
         """
         self.messages[-1][1] = message
 
-    def convert_image_to_base64(self, image, image_format=None):
-        """Given an image, return the base64 encoded image string."""
-        from PIL import Image
-        import requests
-        from fastchat.utils import resize_image_and_return_image_in_bytes
-
-        # Load image if it has not been loaded in yet
-        if type(image) == str:
-            if image.startswith("http://") or image.startswith("https://"):
-                response = requests.get(image)
-                image = Image.open(BytesIO(response.content)).convert("RGB")
-            elif "base64" in image:
-                # OpenAI format is: data:image/jpeg;base64,{base64_encoded_image_str}
-                return image.split(",")[1]
-            else:
-                image = Image.open(image).convert("RGB")
-
-            image_format, image_bytes = resize_image_and_return_image_in_bytes(
-                image, 5 / 1.5
-            )
-        elif type(image) == bytes:
-            image_bytes = image
-
-        img_b64_str = base64.b64encode(image_bytes).decode()
-
-        return image_format, img_b64_str
-
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
+        from fastchat.serve.vision.image import ImageFormat
+
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
-                    msg, image = msg
-                    image_format, img_b64_str = image[
-                        0
-                    ]  # Only one image on gradio at one time
-                    if img_b64_str.startswith("http://") or img_b64_str.startswith(
-                        "https://"
-                    ):
-                        img_str = f'<img src="{img_b64_str}" alt="user upload image" />'
-                    else:
-                        img_str = f'<img src="data:image/{image_format};base64,{img_b64_str}" alt="user upload image" />'
+                    msg, images = msg
+                    image = images[0]  # Only one image on gradio at one time
+                    if image.image_format == ImageFormat.URL:
+                        img_str = f'<img src="{image.url}" alt="user upload image" />'
+                    elif image.image_format == ImageFormat.BYTES:
+                        img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
                     msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
@@ -403,33 +374,6 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
-    def to_openai_image_format(self, image_urls):
-        import base64
-
-        openai_images = []
-        for image_format, image_url in image_urls:
-            if image_url.startswith("http://") or image_url.startswith(
-                "https://"
-            ):  # input is a url
-                openai_images.append(image_url)
-            elif image_url.lower().endswith(
-                ("png", "jpg", "jpeg", "webp", "gif")
-            ):  # input is a local image
-                image_format, img_b64_str = self.convert_image_to_base64(image_url)
-                filetype = image_url.split(".")[-1].lower()
-                openai_images.append(f"data:image/{filetype};base64,{img_b64_str}")
-            else:
-                try:
-                    assert (
-                        base64.b64encode(base64.b64decode(image_url))
-                        == image_url.encode()
-                    ), "The image data is not a valid base64 encoded string"
-                    openai_images.append(f"data:image/png;base64,{image_url}")
-                except:
-                    raise ValueError(
-                        f"This file is not valid or not currently supported by the OpenAI API: {image_url}"
-                    )
-        return openai_images
 
     def to_openai_vision_api_messages(self):
         """Convert the conversation to OpenAI vision api completion format"""
@@ -447,9 +391,9 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     content_list = [{"type": "text", "text": msg[0]}]
-
-                    image_urls = self.to_openai_image_format(msg[1])
-                    for image_url in image_urls:
+                    image_urls = msg[1]
+                    for image in image_urls:
+                        image_url = image.to_openai_image_format()
                         content_list.append(
                             {"type": "image_url", "image_url": {"url": image_url}}
                         )
@@ -497,8 +441,8 @@ class Conversation:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
                     content_list = [text]
-                    for image_format, image in images:
-                        pil_image = load_image(image)
+                    for image in images:
+                        pil_image = load_image(image.base64_str)
                         content_list.append(pil_image)
                     ret.append({"role": "user", "content": content_list})
                 else:
@@ -512,6 +456,7 @@ class Conversation:
         from vertexai.preview.generative_models import Image
         import base64
         import requests
+        from fastchat.serve.vision.image import ImageFormat
 
         if self.system_message == "":
             ret = []
@@ -522,12 +467,12 @@ class Conversation:
             if msg is not None:
                 if type(msg) is tuple:
                     text, images = msg[0], msg[1]
-                    for image_format, image in images:
-                        if image.startswith("http://") or image.startswith("https://"):
-                            response = requests.get(image)
+                    for image in images:
+                        if image.image_format == ImageFormat.URL:
+                            response = requests.get(image.url)
                             image = response.content
-                        else:  # base64
-                            image = base64.b64decode(image)
+                        elif image.image_format == ImageFormat.BYTES:  # base64
+                            image = base64.b64decode(image.base64_str)
                         ret.append(Image.from_bytes(image))
                     ret.append(text)
                 else:
@@ -548,14 +493,14 @@ class Conversation:
                 if type(msg) is tuple:
                     content_list = [{"type": "text", "text": msg[0]}]
 
-                    for image_format, image_url in msg[1]:
+                    for image in msg[1]:
                         content_list.append(
                             {
                                 "type": "image",
                                 "source": {
                                     "type": "base64",
-                                    "media_type": f"image/{image_format}",
-                                    "data": image_url,
+                                    "media_type": f"image/{image.filetype}",
+                                    "data": image.base64_str,
                                 },
                             }
                         )
@@ -576,22 +521,24 @@ class Conversation:
         return ret
 
     def to_reka_api_messages(self):
+        from fastchat.serve.vision.image import ImageFormat
+
         ret = []
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) == tuple:
                     text, images = msg
-                    for image_format, image in images:
-                        if image.startswith("https://") or image.startswith("http://"):
+                    for image in images:
+                        if image.image_format == ImageFormat.URL:
                             ret.append(
-                                {"type": "human", "text": text, "media_url": image}
+                                {"type": "human", "text": text, "media_url": image.url}
                             )
-                        else:
+                        elif image.image_format == ImageFormat.BYTES:
                             ret.append(
                                 {
                                     "type": "human",
                                     "text": text,
-                                    "media_url": f"data:image/{image_format};base64,{image}",
+                                    "media_url": f"data:image/{image.filetype};base64,{image.base64_str}",
                                 }
                             )
                 else:
@@ -611,7 +558,7 @@ class Conversation:
 
         if type(last_user_message) == tuple:
             text, images = last_user_message[0], last_user_message[1]
-            loaded_images = [load_image(image) for image_format, image in images]
+            loaded_images = [load_image(image.base64_str) for image in images]
             image_hashes = [
                 hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
             ]
@@ -638,6 +585,7 @@ class Conversation:
     def extract_text_and_image_hashes_from_messages(self):
         import hashlib
         from fastchat.utils import load_image
+        from fastchat.serve.vision.image import ImageFormat
 
         messages = []
 
@@ -646,11 +594,11 @@ class Conversation:
                 text, images = message[0], message[1]
 
                 image_hashes = []
-                for image_format, image in images:
-                    if image.startswith("http://") or image.startswith("https://"):
+                for image in images:
+                    if image.image_format == ImageFormat.URL:
                         image_hashes.append(image)
-                    else:
-                        image = load_image(image)
+                    elif image.image_format == ImageFormat.BYTES:
+                        image = load_image(image.base64_str)
                         image_hash = hashlib.md5(image.tobytes()).hexdigest()
                         image_hashes.append(image_hash)
 

@@ -285,14 +285,14 @@ def regenerate(state, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
-    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], "", None) + (disable_btn,) * 5
+    return (state, [], "") + (disable_btn,) * 5
 
 
 def get_ip(request: gr.Request):
@@ -304,30 +304,7 @@ def get_ip(request: gr.Request):
         ip = request.client.host
     return ip
 
-
-# TODO(Chris): At some point, we would like this to be a live-reporting feature.
-def report_csam_image(state, image):
-    pass
-
-
-def _prepare_text_with_image(state, text, images, csam_flag):
-    if len(images) > 0:
-        image = images[0]
-
-        if len(state.conv.get_images()) > 0:
-            # reset convo with new image
-            state.conv = get_conversation_template(state.model_name)
-
-        if csam_flag:
-            state.has_csam_image = True
-            report_csam_image(state, image)
-
-        text = text, [image]
-
-    return text
-
-
-def add_text(state, model_selector, text, image, request: gr.Request):
+def add_text(state, model_selector, text, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -355,7 +332,6 @@ def add_text(state, model_selector, text, image, request: gr.Request):
         ) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, image, csam_flag=False)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
@@ -908,7 +884,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
-    imagebox = gr.State(None)
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
@@ -926,22 +901,22 @@ def build_single_model_ui(models, add_promotion_links=False):
         [textbox, upvote_btn, downvote_btn, flag_btn],
     )
     regenerate_btn.click(
-        regenerate, state, [state, chatbot, textbox, imagebox] + btn_list
+        regenerate, state, [state, chatbot, textbox] + btn_list
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox, imagebox] + btn_list)
+    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
     model_selector.change(
-        clear_history, None, [state, chatbot, textbox, imagebox] + btn_list
+        clear_history, None, [state, chatbot, textbox] + btn_list
     )
 
     textbox.submit(
         add_text,
-        [state, model_selector, textbox, imagebox],
-        [state, chatbot, textbox, imagebox] + btn_list,
+        [state, model_selector, textbox],
+        [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -949,8 +924,8 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
     send_btn.click(
         add_text,
-        [state, model_selector, textbox, imagebox],
-        [state, chatbot, textbox, imagebox] + btn_list,
+        [state, model_selector, textbox],
+        [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],

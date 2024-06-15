@@ -445,11 +445,24 @@ def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
     import math
 
     image_format = "png"
+    max_hw, min_hw = max(image.size), min(image.size)
+    aspect_ratio = max_hw / min_hw
+    max_len, min_len = 1024, 1024
+    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
+    longest_edge = int(shortest_edge * aspect_ratio)
+    W, H = image.size
+    if longest_edge != max(image.size):
+        if H > W:
+            H, W = longest_edge, shortest_edge
+        else:
+            H, W = shortest_edge, longest_edge
+        image = image.resize((W, H))
+
+    image_bytes = BytesIO()
+    image.save(image_bytes, format="PNG")
     if max_image_size_mb:
         target_size_bytes = max_image_size_mb * 1024 * 1024
 
-        image_bytes = BytesIO()
-        image.save(image_bytes, format="PNG")
         current_size_bytes = image_bytes.tell()
         if current_size_bytes > target_size_bytes:
             resize_factor = (target_size_bytes / current_size_bytes) ** 0.5
@@ -458,22 +471,22 @@ def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
             image = image.resize((new_width, new_height))
 
             image_bytes = BytesIO()
-            image.save(image_bytes, format="JPEG")
+            image.save(image_bytes, format="PNG")
             current_size_bytes = image_bytes.tell()
-            image_format = "jpeg"
+    #         image_format = "jpeg"
 
-            quality = 90
-            while current_size_bytes > target_size_bytes or quality == 0:
-                image_format = "jpeg"
-                image_bytes = BytesIO()
-                image.save(image_bytes, format="JPEG", quality=quality)
-                current_size_bytes = image_bytes.tell()
-                quality -= 10
+    #         quality = 90
+    #         while current_size_bytes > target_size_bytes or quality == 0:
+    #             image_format = "jpeg"
+    #             image_bytes = BytesIO()
+    #             image.save(image_bytes, format="JPEG", quality=quality)
+    #             current_size_bytes = image_bytes.tell()
+    #             quality -= 10
 
         image_bytes.seek(0)
-    else:
-        image_bytes = BytesIO()
-        image.save(image_bytes, format="PNG")
+    # else:
+    #     image_bytes = BytesIO()
+    #     image.save(image_bytes, format="PNG")
 
     return image_format, image_bytes
 
@@ -482,7 +495,7 @@ def convert_image_to_byte_array(image, max_image_size_mb):
     from PIL import Image
 
     if type(image) == str:
-        pil_image = Image.open(image).convert("RGB")
+        pil_image = Image.open(image).convert("RGBA")
         image_format, image_bytes = resize_image_and_return_image_in_bytes(
             pil_image, max_image_size_mb
         )

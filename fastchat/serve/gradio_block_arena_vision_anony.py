@@ -31,7 +31,6 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
     disable_text,
     enable_text,
 )
@@ -58,6 +57,8 @@ from fastchat.serve.gradio_block_arena_vision import (
     add_image,
     moderate_input,
     enable_text,
+    _prepare_text_with_image,
+    convert_images_to_conversation_format,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -288,7 +289,6 @@ def clear_history(request: gr.Request):
         + [""]
     )
 
-
 def add_text(
     state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
 ):
@@ -330,16 +330,10 @@ def add_text(
 
     model_list = [states[i].model_name for i in range(num_sides)]
 
-    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
-    image_bytes_list = []
-    image_format = ""
-    if len(images) > 0:
-        image_format, image_bytes = convert_image_to_byte_array(
-            images[0], MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB
-        )  # NOTE(chris): take multiple images later on
-        image_bytes_list.append((image_format, image_bytes))
+    images = convert_images_to_conversation_format(images)
+
     text, image_flagged, csam_flag = moderate_input(
-        text, text, model_list, image_bytes_list, ip
+        state0, text, text, model_list, images, ip
     )
 
     conv = states[0].conv
@@ -376,10 +370,6 @@ def add_text(
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    images = [
-        states[0].conv.convert_image_to_base64(image_bytes, image_format)
-        for image_format, image_bytes in image_bytes_list
-    ]  # NOTE(chris): the state does not matter since we resize for everyone, take multiple images later on
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag

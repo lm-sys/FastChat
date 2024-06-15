@@ -32,6 +32,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     add_image,
     moderate_input,
     enable_text,
+    _prepare_text_with_image,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -44,7 +45,6 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
     enable_text,
 )
 from fastchat.serve.remote_logger import get_remote_logger
@@ -191,7 +191,7 @@ def add_text(
     )
 
     text, image_flagged, csam_flag = moderate_input(
-        text, all_conv_text, model_list, images, ip
+       state0, text, all_conv_text, model_list, images, ip
     )
 
     conv = states[0].conv

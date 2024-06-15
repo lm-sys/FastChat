@@ -93,7 +93,7 @@ def load_demo(url_params, request: gr.Request):
     #     vl_models, url_params
     # )
     side_by_side_vision_anony_updates = load_demo_side_by_side_vision_anony(
-        vl_models, url_params
+        all_vl_models, url_params
     )
 
     return (
