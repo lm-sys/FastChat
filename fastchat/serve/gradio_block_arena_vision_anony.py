@@ -50,6 +50,10 @@ from fastchat.serve.gradio_block_arena_anony import (
     load_demo_side_by_side_anony,
     get_sample_weight,
     get_battle_pair,
+    SAMPLING_WEIGHTS,
+    BATTLE_TARGETS,
+    SAMPLING_BOOST_MODELS,
+    OUTAGE_MODELS
 )
 from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
@@ -73,10 +77,11 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 num_sides = 2
 enable_moderation = False
 anony_names = ["", ""]
-models = []
+text_models = []
+vl_models = []
 
 # TODO(chris): fix sampling weights
-SAMPLING_WEIGHTS = {
+VISION_SAMPLING_WEIGHTS = {
     # tier 0
     # "gpt-4o-2024-05-13-vision": 4,
     # "gpt-4-turbo-2024-04-09-vision": 4,
@@ -98,7 +103,7 @@ SAMPLING_WEIGHTS = {
 }
 
 # TODO(chris): Find battle targets that make sense
-BATTLE_TARGETS = {
+VISION_BATTLE_TARGETS = {
     # "gpt-4-turbo": {
     #     "gemini-1.5-pro-preview-0409",
     #     "claude-3-opus-20240229",
@@ -147,10 +152,10 @@ BATTLE_TARGETS = {
 }
 
 # TODO(chris): Fill out models that require sampling boost
-SAMPLING_BOOST_MODELS = []
+VISION_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+VISION_OUTAGE_MODELS = []
 
 
 def get_vqa_sample():
@@ -160,9 +165,10 @@ def get_vqa_sample():
     return (res, path)
 
 
-def load_demo_side_by_side_vision_anony(models_, url_params):
-    global models
-    models = models_
+def load_demo_side_by_side_vision_anony(all_text_models, all_vl_models, url_params):
+    global text_models, vl_models
+    text_models = all_text_models
+    vl_models = all_vl_models
 
     states = (None,) * num_sides
     selector_updates = (
@@ -302,17 +308,31 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        model_left, model_right = get_battle_pair(
-            models,
-            BATTLE_TARGETS,
-            OUTAGE_MODELS,
-            SAMPLING_WEIGHTS,
-            SAMPLING_BOOST_MODELS,
-        )
-        states = [
-            State(model_left, is_vision=True),
-            State(model_right, is_vision=True),
-        ]
+        if len(images) > 0:
+            model_left, model_right = get_battle_pair(
+                vl_models,
+                VISION_BATTLE_TARGETS,
+                VISION_OUTAGE_MODELS,
+                VISION_SAMPLING_WEIGHTS,
+                VISION_SAMPLING_BOOST_MODELS,
+            )
+            states = [
+                State(model_left, is_vision=True),
+                State(model_right, is_vision=True),
+            ]
+        else:
+            model_left, model_right = get_battle_pair(
+                text_models,
+                BATTLE_TARGETS,
+                OUTAGE_MODELS,
+                SAMPLING_WEIGHTS,
+                SAMPLING_BOOST_MODELS,
+            )
+        
+            states = [
+                State(model_left, is_vision=False),
+                State(model_right, is_vision=False),
+            ]
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -394,7 +414,7 @@ def add_text(
     )
 
 
-def build_side_by_side_vision_ui_anony(models, random_questions=None):
+def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
@@ -427,10 +447,10 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_models) + len(vl_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(models)
+                    model_description_md = get_model_description_md(text_models + vl_models)
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )

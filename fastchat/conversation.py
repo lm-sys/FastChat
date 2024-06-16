@@ -552,24 +552,21 @@ class Conversation:
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
-        from fastchat.utils import load_image, upload_image_file_to_gcs
+        from fastchat.utils import upload_image_file_to_gcs
+        from PIL import Image
 
         _, last_user_message = self.messages[-2]
 
         if type(last_user_message) == tuple:
             text, images = last_user_message[0], last_user_message[1]
-            loaded_images = [load_image(image.base64_str) for image in images]
-            image_hashes = [
-                hashlib.md5(image.tobytes()).hexdigest() for image in loaded_images
-            ]
 
             image_directory_name = "csam_images" if has_csam_images else "serve_images"
-            for i, (loaded_image, hash_str) in enumerate(
-                zip(loaded_images, image_hashes)
-            ):
+            for image in images:
+                loaded_image = Image.open(BytesIO(image.data)).convert("RGBA")
+                hash_str = hashlib.md5(image.data).hexdigest()
                 filename = os.path.join(
                     image_directory_name,
-                    f"{hash_str}.jpg",
+                    f"{hash_str}.{image.filetype}",
                 )
 
                 if use_remote_storage and not has_csam_images:

@@ -52,7 +52,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models, all_models, vl_models
+    global models, all_models, vl_models, all_vl_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -93,7 +93,7 @@ def load_demo(url_params, request: gr.Request):
     #     vl_models, url_params
     # )
     side_by_side_vision_anony_updates = load_demo_side_by_side_vision_anony(
-        all_vl_models, url_params
+        all_models, all_vl_models, url_params
     )
 
     return (
@@ -145,6 +145,7 @@ window.__gradio_mode__ = "app";
             with gr.Tab("👀 Arena (Multimodal)", id=1) as vision_tab:
                 vision_tab.select(None, None, None, js=load_js)
                 side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
+                    models,
                     vl_models,
                     random_questions=args.random_questions,
                 )
