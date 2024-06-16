@@ -41,7 +41,7 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
-    convert_image_to_byte_array
+    convert_image_to_byte_array,
 )
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -146,6 +146,7 @@ def clear_history_example(request: gr.Request):
     state = None
     return (state, [], enable_text) + (disable_btn,) * 5
 
+
 # TODO(Chris): At some point, we would like this to be a live-reporting feature.
 def report_csam_image(state, image):
     pass
@@ -161,6 +162,7 @@ def _prepare_text_with_image(state, text, images, csam_flag):
 
     return text
 
+
 # NOTE(chris): take multiple images later on
 def convert_images_to_conversation_format(images):
     import base64
@@ -171,7 +173,7 @@ def convert_images_to_conversation_format(images):
         conv_image = Image(url=images[0])
         conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
         conv_images.append(conv_image)
-    
+
     return conv_images
 
 
@@ -192,7 +194,7 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
             text = IMAGE_MODERATION_MSG
         elif text_flagged and image_flagged:
             text = MODERATION_MSG
-    
+
     if csam_flagged:
         state.has_csam_image = True
         report_csam_image(state, images[0])

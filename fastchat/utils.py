@@ -473,15 +473,15 @@ def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
             image_bytes = BytesIO()
             image.save(image_bytes, format="PNG")
             current_size_bytes = image_bytes.tell()
-    #         image_format = "jpeg"
+        #         image_format = "jpeg"
 
-    #         quality = 90
-    #         while current_size_bytes > target_size_bytes or quality == 0:
-    #             image_format = "jpeg"
-    #             image_bytes = BytesIO()
-    #             image.save(image_bytes, format="JPEG", quality=quality)
-    #             current_size_bytes = image_bytes.tell()
-    #             quality -= 10
+        #         quality = 90
+        #         while current_size_bytes > target_size_bytes or quality == 0:
+        #             image_format = "jpeg"
+        #             image_bytes = BytesIO()
+        #             image.save(image_bytes, format="JPEG", quality=quality)
+        #             current_size_bytes = image_bytes.tell()
+        #             quality -= 10
 
         image_bytes.seek(0)
     # else:

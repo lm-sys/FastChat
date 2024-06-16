@@ -191,7 +191,7 @@ def add_text(
     )
 
     text, image_flagged, csam_flag = moderate_input(
-       state0, text, all_conv_text, model_list, images, ip
+        state0, text, all_conv_text, model_list, images, ip
     )
 
     conv = states[0].conv

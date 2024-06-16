@@ -304,6 +304,7 @@ def get_ip(request: gr.Request):
         ip = request.client.host
     return ip
 
+
 def add_text(state, model_selector, text, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
@@ -900,18 +901,14 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, model_selector],
         [textbox, upvote_btn, downvote_btn, flag_btn],
     )
-    regenerate_btn.click(
-        regenerate, state, [state, chatbot, textbox] + btn_list
-    ).then(
+    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
 
-    model_selector.change(
-        clear_history, None, [state, chatbot, textbox] + btn_list
-    )
+    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
 
     textbox.submit(
         add_text,

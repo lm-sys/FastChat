@@ -53,7 +53,7 @@ from fastchat.serve.gradio_block_arena_anony import (
     SAMPLING_WEIGHTS,
     BATTLE_TARGETS,
     SAMPLING_BOOST_MODELS,
-    OUTAGE_MODELS
+    OUTAGE_MODELS,
 )
 from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
@@ -295,6 +295,7 @@ def clear_history(request: gr.Request):
         + [""]
     )
 
+
 def add_text(
     state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
 ):
@@ -328,7 +329,7 @@ def add_text(
                 SAMPLING_WEIGHTS,
                 SAMPLING_BOOST_MODELS,
             )
-        
+
             states = [
                 State(model_left, is_vision=False),
                 State(model_right, is_vision=False),
@@ -450,7 +451,9 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
                     f"🔍 Expand to see the descriptions of {len(text_models) + len(vl_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(text_models + vl_models)
+                    model_description_md = get_model_description_md(
+                        text_models + vl_models
+                    )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )

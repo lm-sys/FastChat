@@ -374,7 +374,6 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
-
     def to_openai_vision_api_messages(self):
         """Convert the conversation to OpenAI vision api completion format"""
         if self.system_message == "":

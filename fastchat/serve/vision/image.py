@@ -3,6 +3,7 @@ import dataclasses
 from enum import auto, IntEnum
 from io import BytesIO
 
+
 class ImageFormat(IntEnum):
     """Image formats."""
 
@@ -11,6 +12,7 @@ class ImageFormat(IntEnum):
     PIL_IMAGE = auto()
     BYTES = auto()
     DEFAULT = auto()
+
 
 @dataclasses.dataclass
 class Image:
@@ -54,7 +56,7 @@ class Image:
             raise ValueError(
                 f"This file is not valid or not currently supported by the OpenAI API: {self.url}"
             )
-        
+
     def resize_image_and_return_image_in_bytes(self, image, max_image_size_mb):
         import math
 
@@ -91,7 +93,7 @@ class Image:
             image_bytes.seek(0)
 
         return image_format, image_bytes
-    
+
     def convert_url_to_image_bytes(self, max_image_size_mb):
         from PIL import Image
 
@@ -115,7 +117,9 @@ class Image:
         return image_format, image_byte_array
 
     def to_conversation_format(self, max_image_size_mb):
-        image_format, image_bytes = self.convert_url_to_image_bytes(max_image_size_mb=max_image_size_mb)
+        image_format, image_bytes = self.convert_url_to_image_bytes(
+            max_image_size_mb=max_image_size_mb
+        )
 
         self.data = image_bytes
         self.filetype = image_format
