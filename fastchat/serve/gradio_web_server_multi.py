@@ -145,8 +145,8 @@ window.__gradio_mode__ = "app";
             with gr.Tab("👀 Arena (Multimodal)", id=1) as vision_tab:
                 vision_tab.select(None, None, None, js=load_js)
                 side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
-                    models,
-                    vl_models,
+                    all_models,
+                    all_vl_models,
                     random_questions=args.random_questions,
                 )
 
