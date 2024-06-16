@@ -69,7 +69,6 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
-    convert_image_to_byte_array,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -156,7 +155,6 @@ VISION_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
-
 
 
 def get_vqa_sample():
@@ -392,10 +390,6 @@ def add_text(
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    images = [
-        states[0].conv.convert_image_to_base64(image_bytes, image_format)
-        for image_format, image_bytes in image_bytes_list
-    ]  # NOTE(chris): the state does not matter since we resize for everyone, take multiple images later on
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag

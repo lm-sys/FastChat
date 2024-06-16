@@ -41,7 +41,6 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
-    convert_image_to_byte_array,
 )
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
