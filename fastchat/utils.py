@@ -470,8 +470,10 @@ def image_moderation_provider(image, api_type):
         return response["IsMatch"]
 
 
-def image_moderation_filter(image_bytes):
+def image_moderation_filter(image):
     print(f"moderating image")
+
+    image_bytes = base64.b64decode(image.base64_str)
 
     nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
     csam_flagged = False

@@ -181,7 +181,7 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
     # flagged = moderation_filter(text, [state.model_name])
     nsfw_flagged, csam_flagged = False, False
     if len(images) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(images[0].data)
+        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
 
     image_flagged = nsfw_flagged or csam_flagged
     if text_flagged or image_flagged:
@@ -215,6 +215,8 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
+
+    images = convert_images_to_conversation_format(images)
 
     text, image_flagged, csam_flag = moderate_input(
         state, text, all_conv_text, [state.model_name], images, ip

@@ -99,6 +99,7 @@ VISION_SAMPLING_WEIGHTS = {
     "gemini-1.5-pro-api-0514": 4,
     "reka-core-20240501": 4,
     "reka-flash": 4,
+    "llava-v1.6-34b": 4,
 }
 
 # TODO(chris): Find battle targets that make sense

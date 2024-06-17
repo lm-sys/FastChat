@@ -1,7 +1,8 @@
 import base64
-import dataclasses
 from enum import auto, IntEnum
 from io import BytesIO
+
+from pydantic import BaseModel
 
 
 class ImageFormat(IntEnum):
@@ -14,12 +15,10 @@ class ImageFormat(IntEnum):
     DEFAULT = auto()
 
 
-@dataclasses.dataclass
-class Image:
+class Image(BaseModel):
     url: str = ""
     filetype: str = ""
     image_format: ImageFormat = ImageFormat.BYTES
-    data: bytes = None
     base64_str: str = ""
 
     def convert_image_to_base64(self):
@@ -112,18 +111,25 @@ class Image:
             pil_image, max_image_size_mb
         )
 
-        image_byte_array = image_bytes.getvalue()
+        img_base64_str = base64.b64encode(image_bytes.getvalue()).decode()
 
-        return image_format, image_byte_array
+        return image_format, img_base64_str
 
     def to_conversation_format(self, max_image_size_mb):
         image_format, image_bytes = self.convert_url_to_image_bytes(
             max_image_size_mb=max_image_size_mb
         )
 
-        self.data = image_bytes
         self.filetype = image_format
         self.image_format = ImageFormat.BYTES
-        self.base64_str = base64.b64encode(image_bytes).decode()
+        self.base64_str = image_bytes
 
         return self
+
+
+if __name__ == "__main__":
+    image = Image(url="fastchat/serve/example_images/fridge.jpg")
+    image.to_conversation_format(max_image_size_mb=5 / 1.5)
+
+    json_str = image.model_dump_json()
+    print(json_str)

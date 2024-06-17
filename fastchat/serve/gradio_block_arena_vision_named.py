@@ -33,6 +33,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     moderate_input,
     enable_text,
     _prepare_text_with_image,
+    convert_images_to_conversation_format,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -189,6 +190,8 @@ def add_text(
     all_conv_text = (
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
+
+    images = convert_images_to_conversation_format(images)
 
     text, image_flagged, csam_flag = moderate_input(
         state0, text, all_conv_text, model_list, images, ip

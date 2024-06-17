@@ -329,7 +329,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     for image in msg[1]:
-                        images.append(image)
+                        images.append(image.base64_str)
 
         return images
 
@@ -551,7 +551,7 @@ class Conversation:
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
-        from fastchat.utils import upload_image_file_to_gcs
+        from fastchat.utils import load_image, upload_image_file_to_gcs
         from PIL import Image
 
         _, last_user_message = self.messages[-2]
@@ -561,8 +561,8 @@ class Conversation:
 
             image_directory_name = "csam_images" if has_csam_images else "serve_images"
             for image in images:
-                loaded_image = Image.open(BytesIO(image.data)).convert("RGBA")
-                hash_str = hashlib.md5(image.data).hexdigest()
+                loaded_image = load_image(image.base64_str)
+                hash_str = hashlib.md5(loaded_image.tobytes()).hexdigest()
                 filename = os.path.join(
                     image_directory_name,
                     f"{hash_str}.{image.filetype}",

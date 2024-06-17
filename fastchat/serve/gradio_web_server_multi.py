@@ -166,6 +166,7 @@ window.__gradio_mode__ = "app";
                 + side_by_side_anony_list
                 + side_by_side_named_list
                 + side_by_side_vision_anony_list
+                # + single_vision_language_model_list
             )
 
             # if args.vision_arena:
@@ -186,14 +187,14 @@ window.__gradio_mode__ = "app";
             #                 )
             #             )
 
-            #         with gr.Tab("👀 Direct Chat", id=2):
-            #             single_vision_language_model_list = (
-            #                 build_single_vision_language_model_ui(
-            #                     vl_models,
-            #                     add_promotion_links=True,
-            #                     random_questions=args.random_questions,
-            #                 )
-            #             )
+            # with gr.Tab("👀 Direct Chat", id=2):
+            #     single_vision_language_model_list = (
+            #         build_single_vision_language_model_ui(
+            #             vl_models,
+            #             add_promotion_links=True,
+            #             random_questions=args.random_questions,
+            #         )
+            #     )
             #     demo_tabs += (
             #         side_by_side_vision_anony_list
             #         + side_by_side_vision_named_list
