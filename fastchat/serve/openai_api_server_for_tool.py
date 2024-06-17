@@ -170,13 +170,17 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             tools_name_text=tools_name_text,
         )
         # 用户强制调用工具
-        if request.tool_choice is not None and messages[-1].role == "user":
-            if isinstance(request.tool_choice, str):
+        # if request.tool_choice is not None and messages[-1].role == "user":
+        if request.tool_choice is not None:
+            last_user_message = next(
+                (m for m in reversed(messages) if m.role == "user"), None
+            )
+            if isinstance(request.tool_choice, str) and last_user_message:
                 if request.tool_choice == "auto":
                     messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
                         tool_names=tools_name_text
                     )
-            elif isinstance(request.tool_choice, ToolChoice):
+            elif isinstance(request.tool_choice, ToolChoice) and last_user_message:
                 messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT.format(
                     tool_names=request.tool_choice.function.name
                 )
