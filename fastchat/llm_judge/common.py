@@ -9,6 +9,7 @@ import json
 import os
 import re
 import time
+import uuid
 from typing import Optional
 
 import openai
@@ -404,6 +405,7 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
+
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
@@ -424,6 +426,24 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
+
+    # Prepare the directory
+    output_dir = "gpt4judge-outputs"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Prepare the data to be saved
+    messages.append({"role": "assistant", "content": output})
+    output_data = {
+        "conversations": messages
+    }
+
+    # Generate a random UUID for the filename
+    filename = str(uuid.uuid4()) + ".json"
+    file_path = os.path.join(output_dir, filename)
+
+    # Write the data to the file
+    with open(file_path, 'w') as f:
+        json.dump(output_data, f, indent=4)
 
     return output
 
