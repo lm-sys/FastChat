@@ -177,12 +177,14 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             )
             if isinstance(request.tool_choice, str) and last_user_message:
                 if request.tool_choice == "auto":
-                    messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
+                    last_user_message.content += SPECIAL_PREFIX_TEMPLATE_TOOL.format(
                         tool_names=tools_name_text
                     )
             elif isinstance(request.tool_choice, ToolChoice) and last_user_message:
-                messages[-1].content += SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT.format(
-                    tool_names=request.tool_choice.function.name
+                last_user_message.content += (
+                    SPECIAL_PREFIX_TEMPLATE_TOOL_FOR_CHAT.format(
+                        tool_names=request.tool_choice.function.name
+                    )
                 )
             else:
                 logger.error(
