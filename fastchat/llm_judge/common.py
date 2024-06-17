@@ -406,7 +406,7 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
 
 
-def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
+def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None, model_being_judged=None):
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
@@ -428,7 +428,10 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
             time.sleep(API_RETRY_SLEEP)
 
     # Prepare the directory
-    output_dir = "gpt4judge-outputs"
+    if model_being_judged == None:
+        output_dir = "gpt4judge-outputs"
+    else:
+        output_dir = f"gpt4judge-outputs/{model_being_judged}"
     os.makedirs(output_dir, exist_ok=True)
 
     # Prepare the data to be saved
