@@ -148,7 +148,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
         if "Observation:" not in stop_words:
             stop_words.append("Observation:")
         request.stop = stop_words
-        # update message
+        # update system message
         tools_text = []
         tools_name_text = []
         for func_info in tools:
@@ -223,8 +223,10 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
         elif m.role in ("tool", "function"):
             # 工具调用结果信息回填 Observation: <result>工具返回的结果</result> 包括
             t_content = m.content.lstrip("\n").rstrip()
-            tool_content = f"\nObservation: <result>{t_content}</result>"
-            result_messages.append(ChatMessage(content=tool_content, role="assistant"))
+            tool_content = f"\nObservation: <result>{t_content}</result>\n"
+            assistant_message = result_messages[-1]
+            assistant_message.content += tool_content
+            # result_messages.append(ChatMessage(content=tool_content, role="assistant"))
         else:
             logger.warning("未知角色")
             result_messages.append(m)
