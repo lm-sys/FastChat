@@ -191,6 +191,7 @@ def clear_history_example(request: gr.Request):
         + [enable_multimodal, invisible_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [enable_btn]
     )
 
 
@@ -295,6 +296,7 @@ def clear_history(request: gr.Request):
         + [enable_multimodal, invisible_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [enable_btn]
         + [""]
     )
 
@@ -349,11 +351,11 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [None]
+            + [None, ""]
             + [
                 no_change_btn,
             ]
-            * 6
+            * 7
             + [""]
         )
 
@@ -373,11 +375,11 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [{"text": CONVERSATION_LIMIT_MSG}, ""]
             + [
                 no_change_btn,
             ]
-            * 6
+            * 7
             + [""]
         )
 
@@ -392,9 +394,10 @@ def add_text(
                 {
                     "text": IMAGE_MODERATION_MSG
                     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
-                }
+                },
+                "",
             ]
-            + [no_change_btn] * 6
+            + [no_change_btn] * 7
             + [""]
         )
 
@@ -418,7 +421,7 @@ def add_text(
         + [
             disable_btn,
         ]
-        * 6
+        * 7
         + [hint_msg]
     )
 
@@ -520,7 +523,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
             global vqa_samples
             with open(random_questions, "r") as f:
                 vqa_samples = json.load(f)
-            random_btn = gr.Button(value="🎲 Random Image", interactive=True)
+            random_btn = gr.Button(value="🔮 Random Image", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
@@ -599,6 +602,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         + model_selectors
         + [multimodal_textbox, textbox]
         + btn_list
+        + [random_btn]
         + [slow_warning],
     )
 
@@ -635,7 +639,12 @@ function (a, b, c, d) {
     multimodal_textbox.submit(
         add_text,
         states + model_selectors + [multimodal_textbox],
-        states + chatbots + [multimodal_textbox, textbox] + btn_list + [slow_warning],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -649,7 +658,12 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [multimodal_textbox, textbox] + btn_list + [slow_warning],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -672,7 +686,8 @@ function (a, b, c, d) {
             + chatbots
             + model_selectors
             + [multimodal_textbox, textbox]
-            + btn_list,
+            + btn_list
+            + [random_btn],
         )
 
     return states + model_selectors
