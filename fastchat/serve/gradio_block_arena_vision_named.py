@@ -31,9 +31,9 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_visible_image,
     add_image,
     moderate_input,
-    enable_text,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
+    enable_multimodal,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -67,7 +67,7 @@ def clear_history_example(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_text]
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -151,7 +151,7 @@ def clear_history(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_text]
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )

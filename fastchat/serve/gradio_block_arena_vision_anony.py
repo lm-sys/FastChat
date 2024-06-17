@@ -60,9 +60,12 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_visible_image,
     add_image,
     moderate_input,
-    enable_text,
+    enable_multimodal,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
+    invisible_text,
+    visible_text,
+    disable_multimodal,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -185,7 +188,7 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_text]
+        + [enable_multimodal, invisible_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -289,7 +292,7 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_text]
+        + [enable_multimodal, invisible_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [""]
@@ -299,7 +302,12 @@ def clear_history(request: gr.Request):
 def add_text(
     state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
 ):
-    text, images = chat_input["text"], chat_input["files"]
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text = chat_input
+        images = []
+
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -406,7 +414,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [None]
+        + [disable_multimodal, visible_text]
         + [
             disable_btn,
         ]
@@ -491,11 +499,18 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         )
 
     with gr.Row():
-        textbox = gr.MultimodalTextbox(
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            elem_id="input_box",
+            visible=False,
+        )
+
+        multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
             container=True,
-            placeholder="Click add or drop your image here",
+            placeholder="Enter your prompt or add image here",
             elem_id="input_box",
         )
         # send_btn = gr.Button(value="Send", variant="primary", scale=0)
@@ -505,7 +520,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
             global vqa_samples
             with open(random_questions, "r") as f:
                 vqa_samples = json.load(f)
-            random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+            random_btn = gr.Button(value="🎲 Random Image", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
@@ -579,7 +594,12 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
     clear_btn.click(
         clear_history,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
+        states
+        + chatbots
+        + model_selectors
+        + [multimodal_textbox, textbox]
+        + btn_list
+        + [slow_warning],
     )
 
     share_js = """
@@ -604,19 +624,33 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    textbox.input(add_image, [textbox], [imagebox]).then(
-        set_visible_image, [textbox], [image_column]
+    multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
+        set_visible_image, [multimodal_textbox], [image_column]
     ).then(
         clear_history_example,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list,
+        states + chatbots + model_selectors + [multimodal_textbox, textbox] + btn_list,
+    )
+
+    multimodal_textbox.submit(
+        add_text,
+        states + model_selectors + [multimodal_textbox],
+        states + chatbots + [multimodal_textbox, textbox] + btn_list + [slow_warning],
+    ).then(set_invisible_image, [], [image_column]).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons,
+        [],
+        btn_list,
     )
 
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list + [slow_warning],
-    ).then(set_invisible_image, [], [image_column]).then(
+        states + chatbots + [multimodal_textbox, textbox] + btn_list + [slow_warning],
+    ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
@@ -630,11 +664,15 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(set_visible_image, [textbox], [image_column]).then(
+            [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
+        ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
             clear_history_example,
             None,
-            states + chatbots + model_selectors + [textbox] + btn_list,
+            states
+            + chatbots
+            + model_selectors
+            + [multimodal_textbox, textbox]
+            + btn_list,
         )
 
     return states + model_selectors

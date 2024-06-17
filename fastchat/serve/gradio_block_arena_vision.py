@@ -51,9 +51,17 @@ disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
-enable_text = gr.MultimodalTextbox(
+enable_multimodal = gr.MultimodalTextbox(
     interactive=True, visible=True, placeholder="Click add or drop your image here"
 )
+invisible_text = gr.Textbox(visible=False, value="", interactive=False)
+visible_text = gr.Textbox(
+    visible=True,
+    value="",
+    interactive=True,
+    placeholder="👉 Enter your prompt and press ENTER",
+)
+disable_multimodal = gr.MultimodalTextbox(visible=False, value=None, interactive=False)
 
 
 def get_vqa_sample():
@@ -143,7 +151,7 @@ def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, [], enable_text) + (disable_btn,) * 5
+    return (state, [], enable_multimodal) + (disable_btn,) * 5
 
 
 # TODO(Chris): At some point, we would like this to be a live-reporting feature.
