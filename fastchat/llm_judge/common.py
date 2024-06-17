@@ -442,7 +442,7 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     file_path = os.path.join(output_dir, filename)
 
     # Write the data to the file
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(output_data, f, indent=4)
 
     return output
