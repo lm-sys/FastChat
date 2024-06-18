@@ -440,62 +440,6 @@ def get_image_file_from_gcs(filename):
     return contents
 
 
-def resize_image_and_return_image_in_bytes(image, max_image_size_mb):
-    from PIL import Image
-    import math
-
-    image_format = "png"
-    if max_image_size_mb:
-        target_size_bytes = max_image_size_mb * 1024 * 1024
-
-        image_bytes = BytesIO()
-        image.save(image_bytes, format="PNG")
-        current_size_bytes = image_bytes.tell()
-        if current_size_bytes > target_size_bytes:
-            resize_factor = (target_size_bytes / current_size_bytes) ** 0.5
-            new_width = math.floor(image.width * resize_factor)
-            new_height = math.floor(image.height * resize_factor)
-            image = image.resize((new_width, new_height))
-
-            image_bytes = BytesIO()
-            image.save(image_bytes, format="JPEG")
-            current_size_bytes = image_bytes.tell()
-            image_format = "jpeg"
-
-            quality = 90
-            while current_size_bytes > target_size_bytes or quality == 0:
-                image_format = "jpeg"
-                image_bytes = BytesIO()
-                image.save(image_bytes, format="JPEG", quality=quality)
-                current_size_bytes = image_bytes.tell()
-                quality -= 10
-
-        image_bytes.seek(0)
-    else:
-        image_bytes = BytesIO()
-        image.save(image_bytes, format="PNG")
-
-    return image_format, image_bytes
-
-
-def convert_image_to_byte_array(image, max_image_size_mb):
-    from PIL import Image
-
-    if type(image) == str:
-        pil_image = Image.open(image).convert("RGB")
-        image_format, image_bytes = resize_image_and_return_image_in_bytes(
-            pil_image, max_image_size_mb
-        )
-    else:
-        image_format, image_bytes = resize_image_and_return_image_in_bytes(
-            image, max_image_size_mb
-        )
-
-    image_byte_array = image_bytes.getvalue()
-
-    return image_format, image_byte_array
-
-
 def image_moderation_request(image_bytes, endpoint, api_key):
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
 
@@ -526,8 +470,10 @@ def image_moderation_provider(image, api_type):
         return response["IsMatch"]
 
 
-def image_moderation_filter(image_bytes):
+def image_moderation_filter(image):
     print(f"moderating image")
+
+    image_bytes = base64.b64decode(image.base64_str)
 
     nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
     csam_flagged = False

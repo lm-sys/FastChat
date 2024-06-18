@@ -31,7 +31,9 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_visible_image,
     add_image,
     moderate_input,
-    enable_text,
+    _prepare_text_with_image,
+    convert_images_to_conversation_format,
+    enable_multimodal,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -44,7 +46,6 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
     enable_text,
 )
 from fastchat.serve.remote_logger import get_remote_logger
@@ -66,7 +67,7 @@ def clear_history_example(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_text]
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -150,7 +151,7 @@ def clear_history(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_text]
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -190,8 +191,10 @@ def add_text(
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
 
+    images = convert_images_to_conversation_format(images)
+
     text, image_flagged, csam_flag = moderate_input(
-        text, all_conv_text, model_list, images, ip
+        state0, text, all_conv_text, model_list, images, ip
     )
 
     conv = states[0].conv

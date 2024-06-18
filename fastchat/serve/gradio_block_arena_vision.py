@@ -23,6 +23,9 @@ from fastchat.constants import (
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
+from fastchat.model.model_adapter import (
+    get_conversation_template,
+)
 from fastchat.serve.gradio_web_server import (
     get_model_description_md,
     acknowledgment_md,
@@ -30,10 +33,10 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     disable_btn,
     State,
-    _prepare_text_with_image,
     get_conv_log_filename,
     get_remote_logger,
 )
+from fastchat.serve.vision.image import ImageFormat, Image
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -48,9 +51,17 @@ disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
-enable_text = gr.MultimodalTextbox(
+enable_multimodal = gr.MultimodalTextbox(
     interactive=True, visible=True, placeholder="Click add or drop your image here"
 )
+invisible_text = gr.Textbox(visible=False, value="", interactive=False)
+visible_text = gr.Textbox(
+    visible=True,
+    value="",
+    interactive=True,
+    placeholder="👉 Enter your prompt and press ENTER",
+)
+disable_multimodal = gr.MultimodalTextbox(visible=False, value=None, interactive=False)
 
 
 def get_vqa_sample():
@@ -140,15 +151,45 @@ def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, [], enable_text) + (disable_btn,) * 5
+    return (state, [], enable_multimodal) + (disable_btn,) * 5
 
 
-def moderate_input(text, all_conv_text, model_list, image_bytes_list, ip):
+# TODO(Chris): At some point, we would like this to be a live-reporting feature.
+def report_csam_image(state, image):
+    pass
+
+
+def _prepare_text_with_image(state, text, images, csam_flag):
+    if len(images) > 0:
+        if len(state.conv.get_images()) > 0:
+            # reset convo with new image
+            state.conv = get_conversation_template(state.model_name)
+
+        text = text, [images[0]]
+
+    return text
+
+
+# NOTE(chris): take multiple images later on
+def convert_images_to_conversation_format(images):
+    import base64
+
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
+    conv_images = []
+    if len(images) > 0:
+        conv_image = Image(url=images[0])
+        conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
+        conv_images.append(conv_image)
+
+    return conv_images
+
+
+def moderate_input(state, text, all_conv_text, model_list, images, ip):
     text_flagged = moderation_filter(all_conv_text, model_list)
     # flagged = moderation_filter(text, [state.model_name])
     nsfw_flagged, csam_flagged = False, False
-    if len(image_bytes_list) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(image_bytes_list[0][1])
+    if len(images) > 0:
+        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
 
     image_flagged = nsfw_flagged or csam_flagged
     if text_flagged or image_flagged:
@@ -160,6 +201,10 @@ def moderate_input(text, all_conv_text, model_list, image_bytes_list, ip):
             text = IMAGE_MODERATION_MSG
         elif text_flagged and image_flagged:
             text = MODERATION_MSG
+
+    if csam_flagged:
+        state.has_csam_image = True
+        report_csam_image(state, images[0])
 
     return text, image_flagged, csam_flagged
 
@@ -179,8 +224,10 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
 
+    images = convert_images_to_conversation_format(images)
+
     text, image_flagged, csam_flag = moderate_input(
-        text, all_conv_text, [state.model_name], images, ip
+        state, text, all_conv_text, [state.model_name], images, ip
     )
 
     if image_flagged:

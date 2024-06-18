@@ -52,7 +52,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
 def load_demo(url_params, request: gr.Request):
-    global models, all_models, vl_models
+    global models, all_models, vl_models, all_vl_models
 
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -93,7 +93,7 @@ def load_demo(url_params, request: gr.Request):
     #     vl_models, url_params
     # )
     side_by_side_vision_anony_updates = load_demo_side_by_side_vision_anony(
-        vl_models, url_params
+        all_models, all_vl_models, url_params
     )
 
     return (
@@ -138,16 +138,18 @@ window.__gradio_mode__ = "app";
         # with gr.Tabs() as outer_tabs:
         # with gr.Tab("Chatbot Arena", id=0) as text_arena_tab:
         with gr.Tabs() as inner_tabs:
-            with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
-                arena_tab.select(None, None, None, js=load_js)
-                side_by_side_anony_list = build_side_by_side_ui_anony(models)
-
-            with gr.Tab("👀 Arena (Multimodal)", id=1) as vision_tab:
-                vision_tab.select(None, None, None, js=load_js)
-                side_by_side_vision_anony_list = build_side_by_side_vision_ui_anony(
-                    vl_models,
-                    random_questions=args.random_questions,
-                )
+            if args.vision_arena:
+                with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
+                    arena_tab.select(None, None, None, js=load_js)
+                    side_by_side_anony_list = build_side_by_side_vision_ui_anony(
+                        all_models,
+                        all_vl_models,
+                        random_questions=args.random_questions,
+                    )
+            else:
+                with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
+                    arena_tab.select(None, None, None, js=load_js)
+                    side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
             with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
                 side_by_side_tab.select(None, None, None, js=load_js)
@@ -164,7 +166,8 @@ window.__gradio_mode__ = "app";
                 + single_model_list
                 + side_by_side_anony_list
                 + side_by_side_named_list
-                + side_by_side_vision_anony_list
+                # + side_by_side_vision_anony_list
+                # + single_vision_language_model_list
             )
 
             # if args.vision_arena:
@@ -185,14 +188,14 @@ window.__gradio_mode__ = "app";
             #                 )
             #             )
 
-            #         with gr.Tab("👀 Direct Chat", id=2):
-            #             single_vision_language_model_list = (
-            #                 build_single_vision_language_model_ui(
-            #                     vl_models,
-            #                     add_promotion_links=True,
-            #                     random_questions=args.random_questions,
-            #                 )
-            #             )
+            # with gr.Tab("👀 Direct Chat", id=2):
+            #     single_vision_language_model_list = (
+            #         build_single_vision_language_model_ui(
+            #             vl_models,
+            #             add_promotion_links=True,
+            #             random_questions=args.random_questions,
+            #         )
+            #     )
             #     demo_tabs += (
             #         side_by_side_vision_anony_list
             #         + side_by_side_vision_named_list
