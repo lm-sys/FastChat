@@ -36,12 +36,7 @@ def make_default_md_1(arena_df, elo_results, mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
     # 🏆 LMSYS Chatbot Arena Leaderboard 
-    <a href='https://lmsys.org/blog/2023-05-03-arena/' style='color: {link_color}; text-decoration: none;'>Blog</a> |
-    <a href='https://arxiv.org/abs/2403.04132' style='color: {link_color}; text-decoration: none;'>Paper</a> |
-    <a href='https://github.com/lm-sys/FastChat' style='color: {link_color}; text-decoration: none;'>GitHub</a> |
-    <a href='https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md' style='color: {link_color}; text-decoration: none;'>Dataset</a> |
-    <a href='https://twitter.com/lmsysorg' style='color: {link_color}; text-decoration: none;'>Twitter</a> |
-    <a href='https://discord.gg/HSWAKCrnFx' style='color: {link_color}; text-decoration: none;'>Discord</a>
+    [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
     """
 
     return leaderboard_md
@@ -402,6 +397,7 @@ key_to_category_name = {
     "spanish": "Spanish",
     "russian": "Russian",
     "japanese": "Japanese",
+    "korean": "Korean",
     "no_tie": "Exclude Ties",
     "no_short": "Exclude Short Query (< 5 tokens)",
     "no_refusal": "Exclude Refusal",
@@ -422,6 +418,7 @@ cat_name_to_explanation = {
     "Spanish": "Spanish Prompts",
     "Russian": "Russian Prompts",
     "Japanese": "Japanese Prompts",
+    "Korean": "Korean Prompts",
     "Exclude Ties": "Exclude Ties and Bothbad",
     "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',

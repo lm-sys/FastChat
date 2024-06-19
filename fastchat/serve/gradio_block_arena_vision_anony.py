@@ -100,8 +100,6 @@ VISION_SAMPLING_WEIGHTS = {
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
     "gemini-1.5-pro-api-0514": 4,
-    "reka-core-20240501": 4,
-    "reka-flash": 4,
     "llava-v1.6-34b": 4,
 }
 
@@ -429,16 +427,14 @@ def add_text(
 def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
-- **NEW** Image Support: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
-
-**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
-
+- **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
 ## 👇 Chat now!
 """
 
@@ -528,7 +524,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -548,7 +544,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1024,
+            value=1800,
             step=64,
             interactive=True,
             label="Max output tokens",

@@ -858,6 +858,12 @@ def mistral_api_stream_iter(
 def nvidia_api_stream_iter(
     model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
 ):
+    model_2_api = {
+        "june-chatbot": "/b0fcd392-e905-4ab4-8eb9-aeae95c30b37",
+        "nemotron-4-340b": "/b0fcd392-e905-4ab4-8eb9-aeae95c30b37",
+    }
+    api_base += model_2_api[model_name]
+
     api_key = api_key or os.environ["NVIDIA_API_KEY"]
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -869,6 +875,7 @@ def nvidia_api_stream_iter(
         temp = 0.000001
 
     payload = {
+        "model": model_name,
         "messages": messages,
         "temperature": temp,
         "top_p": top_p,
@@ -878,9 +885,24 @@ def nvidia_api_stream_iter(
     }
     logger.info(f"==== request ====\n{payload}")
 
-    response = requests.post(
-        api_base, headers=headers, json=payload, stream=True, timeout=1
-    )
+    payload.pop("model")
+
+    # try 3 times
+    for i in range(3):
+        try:
+            response = requests.post(
+                api_base, headers=headers, json=payload, stream=True, timeout=3
+            )
+            break
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            if i == 2:
+                yield {
+                    "text": f"**API REQUEST ERROR** Reason: API timeout. please try again later.",
+                    "error_code": 1,
+                }
+                return
+
     text = ""
     for line in response.iter_lines():
         if line:

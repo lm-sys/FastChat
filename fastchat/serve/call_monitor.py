@@ -56,6 +56,7 @@ class Monitor:
             "im-also-a-good-gpt2-chatbot": 3000,
             "gpt-4o-2024-05-13": 100,
             "yi-large": 100,
+            "deepseek-coder-v2": 500,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
@@ -72,6 +73,7 @@ class Monitor:
             "im-a-good-gpt2-chatbot": 16,
             "im-also-a-good-gpt2-chatbot": 16,
             "gpt-4o-2024-05-13": 8,
+            "deepseek-coder-v2": 16,
         }
 
     async def update_stats(self, num_file=1) -> None:

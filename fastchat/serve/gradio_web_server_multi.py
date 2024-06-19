@@ -152,11 +152,11 @@ window.__gradio_mode__ = "app";
                     side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
             with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
-                side_by_side_tab.select(None, None, None, js=load_js)
+                side_by_side_tab.select(None, None, None, js=alert_js)
                 side_by_side_named_list = build_side_by_side_ui_named(models)
 
             with gr.Tab("💬 Direct Chat", id=3) as direct_tab:
-                direct_tab.select(None, None, None, js=load_js)
+                direct_tab.select(None, None, None, js=alert_js)
                 single_model_list = build_single_model_ui(
                     models, add_promotion_links=True
                 )
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     # Launch the demo
     demo = build_demo(
         models,
-        vl_models,
+        all_vl_models,
         args.elo_results_file,
         args.leaderboard_table_file,
     )

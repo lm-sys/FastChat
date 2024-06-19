@@ -191,30 +191,26 @@ SAMPLING_WEIGHTS = {
     "llama-3-8b-instruct": 4,
     "command-r-plus": 4,
     "command-r": 2,
-    "reka-core-20240501": 6,
-    "reka-flash": 1,
-    "qwen-max-0428": 2,
+    "reka-core-20240501": 4,
+    "reka-flash-preview-20240611": 12,
     "qwen2-72b-instruct": 4,
-    "qwen1.5-110b-chat": 4,
-    "qwen1.5-72b-chat": 1,
-    "qwen1.5-32b-chat": 1,
     "gemma-1.1-7b-it": 2,
-    "gemma-1.1-2b-it": 1,
     "mixtral-8x7b-instruct-v0.1": 1,
     "mixtral-8x22b-instruct-v0.1": 2,
     "mistral-large-2402": 2,
-    "codestral-2405": 2,
+    "codestral-2405": 4,
     "snowflake-arctic-instruct": 1,
     "dbrx-instruct": 1,
     "phi-3-mini-4k-instruct": 2,
     "phi-3-medium-4k-instruct": 2,
     "phi-3-small-8k-instruct": 2,
-    "glm-4-0116": 4,
     "yi-large-preview": 4,
-    "yi-large": 2,
+    "yi-large": 4,
     "yi-1.5-34b-chat": 6,
-    "anon-leopard": 2,
     "dbrx-next": 6,
+    "nemotron-4-340b": 16,
+    "glm-4-0520": 12,
+    "deepseek-coder-v2": 16,
 }
 
 # target model sampling weights will be boosted.
@@ -225,6 +221,9 @@ BATTLE_TARGETS = {
         "claude-3-opus-20240229",
         "claude-3-sonnet-20240229",
     },
+    "dbrx-next": {
+        "dbrx-instruct",
+    }
 }
 
 SAMPLING_BOOST_MODELS = [
@@ -259,7 +258,6 @@ OUTAGE_MODELS = [
     "deluxe-chat-v1.3",
     "glm-4-0116",
     "anon-leopard",
-    "codestral-2405",
 ]
 
 
@@ -304,8 +302,8 @@ def get_battle_pair(
             and chosen_model in battle_targets
             and model in battle_targets[chosen_model]
         ):
-            # boost to 50% chance
-            weight = total_weight / len(battle_targets[chosen_model])
+            # boost to 20% chance
+            weight = 0.25*total_weight / len(battle_targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -490,17 +488,18 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
-### NEW❗️ Chatbot Arena is now supporting images in beta. Check it out [here](https://chat.lmsys.org/?vision)
+## 📣 News
+- Chatbot Arena now supports images in beta. Check it out [here](https://chat.lmsys.org/?vision).
 
 ## 📜 Rules
-- Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
+- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can chat for multiple turns until you identify a winner.
 - Votes won't be counted if model identities are revealed during the conversation.
 
 ## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
-- We've collected **1,000,000+** human votes to compute an Elo leaderboard for 90+ LLMs. Find out who is the 🥇LLM Champion!
+- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
 
 ## 👇 Chat now!
 """

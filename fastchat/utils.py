@@ -417,7 +417,7 @@ def upload_image_file_to_gcs(image, filename):
 
     storage_client = storage.Client()
     # upload file to GCS
-    bucket = storage_client.get_bucket("arena_user_content")
+    bucket = storage_client.get_bucket("arena_service_data")
 
     blob = bucket.blob(f"{filename}")
     if not blob.exists():
@@ -433,7 +433,7 @@ def get_image_file_from_gcs(filename):
     from google.cloud import storage
 
     storage_client = storage.Client()
-    bucket = storage_client.get_bucket("arena_user_content")
+    bucket = storage_client.get_bucket("arena_service_data")
     blob = bucket.blob(f"{filename}")
     contents = blob.download_as_bytes()
 
