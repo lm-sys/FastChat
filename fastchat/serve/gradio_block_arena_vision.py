@@ -52,7 +52,7 @@ invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
 enable_multimodal = gr.MultimodalTextbox(
-    interactive=True, visible=True, placeholder="Click add or drop your image here"
+    interactive=True, visible=True, placeholder="Enter your prompt or add image here"
 )
 invisible_text = gr.Textbox(visible=False, value="", interactive=False)
 visible_text = gr.Textbox(
@@ -293,7 +293,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
-            placeholder="Click add or drop your image here",
+            placeholder="Enter your prompt or add image here",
             container=True,
             render=False,
             elem_id="input_box",

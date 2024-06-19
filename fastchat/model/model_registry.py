@@ -271,7 +271,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["dbrx-instruct"],
+    ["dbrx-instruct", "dbrx-next"],
     "DBRX Instruct",
     "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
     "DBRX by Databricks Mosaic AI",

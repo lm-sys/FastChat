@@ -325,7 +325,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
-            placeholder="Click add or drop your image here",
+            placeholder="Enter your prompt or add image here",
             container=True,
             elem_id="input_box",
         )

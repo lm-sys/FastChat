@@ -458,6 +458,7 @@ def bot_response_multi(
         elif states[i].model_name in [
             "qwen-max-0428",
             "qwen1.5-110b-chat",
+            "llava-v1.6-34b",
         ]:
             token_per_yield = 7
         elif states[i].model_name in [
