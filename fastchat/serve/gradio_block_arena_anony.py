@@ -247,18 +247,7 @@ SAMPLING_BOOST_MODELS = [
 ]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-    "deluxe-chat-v1.3",
-    "glm-4-0116",
-    "anon-leopard",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models):
