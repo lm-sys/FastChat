@@ -457,6 +457,11 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     for _ in range(API_MAX_RETRY):
         try:
             messages = conv.to_openai_api_messages()
+            if os.environ.get("ILAB_EVAL_MERGE_SYS_USR") and \
+                messages[0]["role"] == "system" and messages[1]["role"] == "user":
+                messages[1]["content"] = messages[0]["content"] + "\n" + messages[1]["content"]
+                messages = messages[1:]
+                print("merged system and 1st user messages")
             response = openai.ChatCompletion.create(
                 model=model,
                 messages=messages,
