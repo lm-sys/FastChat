@@ -431,10 +431,14 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
 
 
 ## 📜 Rules
-- Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
+- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
 - **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
+
+## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
+- We've collected **1,000,000+** human votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
+
 ## 👇 Chat now!
 """
 
