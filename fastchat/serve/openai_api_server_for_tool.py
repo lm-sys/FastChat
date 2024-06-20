@@ -9,7 +9,6 @@ python3 -m fastchat.serve.openai_api_server
 """
 
 import asyncio
-import copy
 import json
 import os
 import uuid
@@ -129,17 +128,6 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             status_code=400,
             detail="Invalid request: Expecting at least one user message.",
         )
-    messages = copy.deepcopy(messages)
-    # 设置默认system prompt
-    default_system_prompt = "You are a helpful assistant."
-    # 每次 请求 替换 最新的system prompt
-    # 找到 最新的system prompt
-    system_messages = [i for i in messages if i.role == "system"]
-    if len(system_messages) == 0:
-        # 如果没有system prompt 则 使用默认
-        system_prompt = default_system_prompt
-    else:
-        system_prompt = "\n".join([sm.content for sm in system_messages])
     # 如果请求体有 工具 调用 修改system prompt
     if tools:
         # add stop word
@@ -149,6 +137,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             stop_words.append("Observation:")
         request.stop = stop_words
         # update system message
+        tool_system = ""
         tools_text = []
         tools_name_text = []
         for func_info in tools:
@@ -164,7 +153,7 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
             tools_name_text.append(name)
         tools_text = "\n\n".join(tools_text)
         tools_name_text = ", ".join(tools_name_text)
-        system_prompt += "\n\n" + TOOL_TEMPLATE.format(
+        tool_system += "\n\n" + TOOL_TEMPLATE.format(
             date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             tools_text=tools_text,
             tools_name_text=tools_name_text,
@@ -190,16 +179,13 @@ def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionReq
                 logger.error(
                     "Invalid request: tool_choices must be str or ToolChoices."
                 )
-        system_prompt = system_prompt.lstrip("\n").rstrip()
-    # 消息列表中 剔除 所有 system
-    messages = [m for m in messages if m.role != "system"]
-
+        messages[0].content += tool_system.lstrip("\n").rstrip()
     # 将修改后的system prompt 作为第一条 加入
-    result_messages = [ChatMessage(content=system_prompt, role="system")]
+    result_messages = []
     # 将 工具调用的结果 组装到content
     for m_idx, m in enumerate(messages):
         # 将历史message 拼装到 prompt中
-        if m.role == "user":
+        if m.role in ("user", "system"):
             result_messages.append(m)
         elif m.role == "assistant":
             # 助手 消息 有工具调用 信息 回填
