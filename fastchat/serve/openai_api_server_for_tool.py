@@ -9,6 +9,7 @@ python3 -m fastchat.serve.openai_api_server
 """
 
 import asyncio
+import copy
 import json
 import os
 import uuid
@@ -117,7 +118,7 @@ def add_extra_stop_words(stop_words):
 
 
 def parse_function_messages(request: ChatCompletionRequest) -> ChatCompletionRequest:
-    messages = request.messages
+    messages = copy.deepcopy(request.messages)
     if request.tools:
         tools = [func.function for func in request.tools]
     else:
