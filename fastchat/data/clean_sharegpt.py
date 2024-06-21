@@ -71,6 +71,18 @@ def contain_blocked_words(val: str) -> bool:
     return False
 
 
+def contain_blocked_responses(role: str, val: str) -> bool:
+    if role == "gpt":
+        blocked_responses = [
+            "Too many requests in 1 hour. Try again later.",
+            "!Too many requests in 1 hour. Try again later.",
+        ]
+        for w in blocked_responses:
+            if val.startswith(w):
+                return True
+    return False
+
+
 def clean_html_one_sample(sample):
     roles = ["human", "gpt"]
 
@@ -101,6 +113,9 @@ def clean_html_one_sample(sample):
             new_val = html_to_markdown(c["value"])
         except (bs4.builder.ParserRejectedMarkup, AssertionError):
             return (sample, 4)
+
+        if contain_blocked_responses(c["from"], new_val):
+            return (sample, 3)
 
         # Filter empty answers like https://sharegpt.com/c/mrllZ6u
         if not new_val or not new_val[0].isprintable():
