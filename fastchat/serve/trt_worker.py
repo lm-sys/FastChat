@@ -180,6 +180,7 @@ class TensorRTWorker(BaseModelWorker):
                 temperature = float(params.get("temperature", 0.7))
                 top_k = int(params.get("top_k", -1))
                 top_p = float(params.get("top_p", 1.0))
+                top_k = 0 if top_k == -1 else top_k
 
                 assert top_k != -1, "Top_k in TensorRT should not be -1"
 
