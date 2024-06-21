@@ -1046,7 +1046,12 @@ def reka_api_stream_iter(
     api_key: Optional[str] = None,  # default is env var CO_API_KEY
     api_base: Optional[str] = None,
 ):
+    from reka.client import Reka
+    from reka import TypedText
+
     api_key = api_key or os.environ["REKA_API_KEY"]
+
+    client = Reka(api_key=api_key)
 
     use_search_engine = False
     if "-online" in model_name:
@@ -1064,34 +1069,27 @@ def reka_api_stream_iter(
 
     # Make requests for logging
     text_messages = []
-    for message in messages:
-        text_messages.append({"type": message["type"], "text": message["text"]})
+    for turn in messages:
+        for message in turn.content:
+            if isinstance(message, TypedText):
+                text_messages.append({"type": message.type, "text": message.text})
     logged_request = dict(request)
     logged_request["conversation_history"] = text_messages
 
     logger.info(f"==== request ====\n{logged_request}")
 
-    response = requests.post(
-        api_base,
-        stream=True,
-        json=request,
-        headers={
-            "X-Api-Key": api_key,
-        },
+    response = client.chat.create_stream(
+        messages=messages,
+        max_tokens=max_new_tokens,
+        top_p=top_p,
+        model=model_name,
     )
 
-    if response.status_code != 200:
-        error_message = response.text
-        logger.error(f"==== error from reka api: {error_message} ====")
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {error_message}",
-            "error_code": 1,
-        }
-        return
-
-    for line in response.iter_lines():
-        line = line.decode("utf8")
-        if not line.startswith("data: "):
-            continue
-        gen = json.loads(line[6:])
-        yield {"text": gen["text"], "error_code": 0}
+    for chunk in response:
+        try:
+            yield {"text": chunk.responses[0].chunk.content, "error_code": 0}
+        except:
+            yield {
+                "text": f"**API REQUEST ERROR** ",
+                "error_code": 1,
+            }
