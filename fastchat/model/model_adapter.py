@@ -61,6 +61,8 @@ ANTHROPIC_MODEL_LIST = (
     "claude-3-haiku-20240307-vertex",
     "claude-3-sonnet-20240229",
     "claude-3-sonnet-20240229-vertex",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-20240620-vertex",
     "claude-3-opus-20240229",
     "claude-instant-1",
     "claude-instant-1.2",

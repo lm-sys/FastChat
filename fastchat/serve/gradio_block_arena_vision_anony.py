@@ -78,6 +78,7 @@ SAMPLING_WEIGHTS = {
     "gpt-4-turbo": 4,
     "gemini-1.5-flash": 4,
     "gemini-1.5-pro": 4,
+    "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
