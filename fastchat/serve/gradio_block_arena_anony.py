@@ -174,8 +174,9 @@ SAMPLING_WEIGHTS = {
     "gpt-4-0125-preview": 4,
     "gpt-4-turbo-2024-04-09": 4,
     "gpt-3.5-turbo-0125": 2,
+    "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 4,
-    "claude-3-sonnet-20240229": 4,
+    "claude-3-sonnet-20240229": 1,
     "claude-3-haiku-20240307": 4,
     "claude-2.1": 1,
     "zephyr-orpo-141b-A35b-v0.1": 2,
@@ -217,7 +218,7 @@ BATTLE_TARGETS = {
         "gpt-4-turbo-2024-04-09",
         "claude-3-opus-20240229",
         "gpt-4-0125-preview",
-        "claude-3-sonnet-20240229",
+        "claude-3-5-sonnet-20240620",
     },
     "reka-flash": {
         "qwen1.5-72b-chat",
@@ -235,7 +236,7 @@ BATTLE_TARGETS = {
         "gpt-4-1106-preview",
         "gpt-4-0125-preview",
         "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
+        "claude-3-5-sonnet-20240620",
     },
     "qwen1.5-32b-chat": {
         "gpt-3.5-turbo-0125",
@@ -259,7 +260,7 @@ BATTLE_TARGETS = {
         "mixtral-8x7b-instruct-v0.1",
         "mistral-medium",
         "mistral-next",
-        "claude-3-sonnet-20240229",
+        "claude-3-5-sonnet-20240620",
     },
     "gemma-1.1-2b-it": {
         "gpt-3.5-turbo-0125",
