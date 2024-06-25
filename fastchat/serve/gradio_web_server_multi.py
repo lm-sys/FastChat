@@ -329,6 +329,11 @@ if __name__ == "__main__":
         default=False,
         help="Uploads image files to google cloud storage if set to true",
     )
+    parser.add_argument(
+        "--password",
+        type=str,
+        help="Set the password for the gradio web server",
+    )
     args = parser.parse_args()
     logger.info(f"args: {args}")
 

@@ -15,7 +15,7 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
-    INPUT_CHAR_LEN_LIMIT,
+    BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
 from fastchat.model.model_adapter import get_conversation_template
@@ -97,6 +97,7 @@ VISION_SAMPLING_WEIGHTS = {
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
+    "claude-3-5-sonnet-20240620": 16,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
     "gemini-1.5-pro-api-0514": 4,
@@ -399,7 +400,7 @@ def add_text(
             + [""]
         )
 
-    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag

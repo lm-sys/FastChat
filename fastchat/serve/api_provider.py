@@ -265,6 +265,7 @@ def openai_api_stream_iter(
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
+            extra_headers={"request-id": "test-request-id", "origin-id": "test-origin-id"},
         )
         text = ""
         for chunk in res:
@@ -885,7 +886,7 @@ def nvidia_api_stream_iter(
     }
     logger.info(f"==== request ====\n{payload}")
 
-    payload.pop("model")
+    # payload.pop("model")
 
     # try 3 times
     for i in range(3):

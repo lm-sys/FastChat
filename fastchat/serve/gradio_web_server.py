@@ -123,10 +123,10 @@ class State:
         self.regen_support = True
         if "browsing" in model_name:
             self.regen_support = False
-        self.init_system_prompt(self.conv)
+        self.init_system_prompt(self.conv, is_vision)
 
-    def init_system_prompt(self, conv):
-        system_prompt = conv.get_system_message()
+    def init_system_prompt(self, conv, is_vision):
+        system_prompt = conv.get_system_message(is_vision)
         if len(system_prompt) == 0:
             return
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -340,7 +340,7 @@ def add_text(state, model_selector, text, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def model_worker_stream_iter(

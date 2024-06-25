@@ -42,6 +42,21 @@ register_model_info(
 
 register_model_info(
     [
+        "claude-3-5-sonnet-20240620",
+        "claude-3-haiku-20240307",
+        "claude-3-sonnet-20240229",
+        "claude-3-opus-20240229",
+        "claude-2.1",
+        "claude-2.0",
+        "claude-1",
+    ],
+    "Claude",
+    "https://www.anthropic.com/news/claude-3-family",
+    "Claude by Anthropic",
+)
+
+register_model_info(
+    [
         "gemini-1.5-pro-api-0409-preview",
         "gemini-1.5-pro-tuned",
         "gemini-1.5-pro-api-preview",
@@ -67,20 +82,6 @@ register_model_info(
     "Nemotron-4 340B",
     "https://huggingface.co/nvidia/Nemotron-4-340B-Instruct",
     "Cutting-edge Open model by Nvidia",
-)
-
-register_model_info(
-    [
-        "claude-3-haiku-20240307",
-        "claude-3-sonnet-20240229",
-        "claude-3-opus-20240229",
-        "claude-2.1",
-        "claude-2.0",
-        "claude-1",
-    ],
-    "Claude",
-    "https://www.anthropic.com/news/claude-3-family",
-    "Claude by Anthropic",
 )
 
 register_model_info(
