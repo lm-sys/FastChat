@@ -212,7 +212,6 @@ SAMPLING_WEIGHTS = {
     "glm-4-0520": 6,
     "deepseek-coder-v2": 8,
     "claude-3-5-sonnet-20240620": 32,
-#     "im-a-kaiju": 2000,
 }
 
 # target model sampling weights will be boosted.
