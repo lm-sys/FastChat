@@ -164,7 +164,7 @@ export FASTCHAT_WORKER_API_EMBEDDING_BATCH_SIZE=1
 ## Todos
 Some features to be implemented:
 
-- [ ] Support more parameters like `logprobs`, `logit_bias`, `user`, `presence_penalty` and `frequency_penalty`
+- [ ] Support more parameters like `logit_bias`, `user`, `presence_penalty` and `frequency_penalty`
 - [ ] Model details (permissions, owner and create time)
 - [ ] Edits API
 - [ ] Rate Limitation Settings
