@@ -67,6 +67,7 @@ class ChatCompletionRequest(BaseModel):
     top_k: Optional[int] = -1
     n: Optional[int] = 1
     max_tokens: Optional[int] = None
+    logprobs: Optional[int] = None
     stop: Optional[Union[str, List[str]]] = None
     stream: Optional[bool] = False
     presence_penalty: Optional[float] = 0.0
