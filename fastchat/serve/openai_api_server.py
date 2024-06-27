@@ -430,6 +430,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         presence_penalty=request.presence_penalty,
         frequency_penalty=request.frequency_penalty,
         max_tokens=request.max_tokens,
+        logprobs=request.logprobs,
         echo=False,
         stop=request.stop,
     )
@@ -471,6 +472,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         choices.append(
             ChatCompletionResponseChoice(
                 index=i,
+                logprobs=create_openai_logprobs(content.get("logprobs", None)),
                 message=ChatMessage(role="assistant", content=content["text"]),
                 finish_reason=content.get("finish_reason", "stop"),
             )
