@@ -183,7 +183,10 @@ SAMPLING_WEIGHTS = {
     "gpt-4o-2024-05-13": 8,
     "gemini-1.5-pro-api-0514": 8,
     "gemini-1.5-flash-api-0514": 6,
+    "gemma-2-27b-it": 4,
+    "gemma-2-9b-it": 4,
     "gemini-advanced-0514": 6,
+    "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 6,
     "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 4,
@@ -192,63 +195,41 @@ SAMPLING_WEIGHTS = {
     "command-r-plus": 4,
     "command-r": 2,
     "reka-core-20240501": 4,
-    "reka-flash-preview-20240611": 6,
+    "reka-flash-preview-20240611": 4,
     "qwen2-72b-instruct": 4,
     "gemma-1.1-7b-it": 2,
-    "mixtral-8x7b-instruct-v0.1": 1,
+#    "mixtral-8x7b-instruct-v0.1": 1,
     "mixtral-8x22b-instruct-v0.1": 2,
     "mistral-large-2402": 2,
-    "codestral-2405": 4,
-    "snowflake-arctic-instruct": 1,
-    "dbrx-instruct": 1,
+#    "codestral-2405": 4,
+#    "snowflake-arctic-instruct": 1,
+#    "dbrx-instruct": 1,
     "phi-3-mini-4k-instruct": 2,
     "phi-3-medium-4k-instruct": 2,
     "phi-3-small-8k-instruct": 2,
     "yi-large-preview": 4,
     "yi-large": 4,
     "yi-1.5-34b-chat": 4,
-    "dbrx-next": 4,
-    "nemotron-4-340b": 8,
-    "glm-4-0520": 6,
-    "deepseek-coder-v2": 8,
-    "claude-3-5-sonnet-20240620": 32,
+#    "dbrx-next": 4,
+    "nemotron-4-340b": 4,
+    "glm-4-0520": 4,
+    "deepseek-coder-v2": 4,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {
-    "deluxe-chat-v1.3": {
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-    },
-    "dbrx-next": {
-        "dbrx-instruct",
-    },
     "claude-3-5-sonnet-20240620": {
         "gpt-4o-2024-05-13",
         "gemini-1.5-pro-api-0514",
     }
 }
 
+ANON_MODELS = []
+
 SAMPLING_BOOST_MODELS = [
-    # "gpt-4-1106-preview",
-    # "gpt-4-0125-preview",
-    # "claude-3-opus-20240229",
-    # "claude-3-sonnet-20240229",
-    # "claude-3-haiku-20240307",
-    # "reka-flash-online",
-    # "gemini-1.5-pro-api-0409-preview",
-    # "llama-3-70b-instruct",
-    # "reka-core-20240501",
-    # "qwen-max-0428",
-    # "qwen1.5-110b-chat",
-    # "gemini-1.5-pro-api-0514",
-    # "gemini-1.5-flash-api-0514",
-    # "gemini-advanced-0514",
-    # "yi-large-preview",
-    # "gpt-4o-2024-05-13",
-    # "phi-3-mini-4k-instruct",
+    "gemma-2-27b-it",
+    "gemma-2-9b-it",
+    "claude-3-5-sonnet-20240620",
 ]
 
 # outage models won't be sampled.
@@ -262,10 +243,11 @@ OUTAGE_MODELS = [
     "claude-2.0",
     "deluxe-chat-v1.3",
     "glm-4-0116",
+    "gemma-1.1-7b-it",
 ]
 
 
-def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models):
+def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
     if model in outage_models:
         return 0
     weight = sampling_weights.get(model, 0)
@@ -298,8 +280,10 @@ def get_battle_pair(
     for model in models:
         if model == chosen_model:
             continue
+        if model in ANON_MODELS and chosen_model in ANON_MODELS:
+            continue
         weight = get_sample_weight(
-            model, outage_models, sampling_weights, sampling_boost_models
+            model, outage_models, sampling_weights
         )
         if (
             weight != 0

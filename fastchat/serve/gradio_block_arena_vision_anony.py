@@ -97,64 +97,23 @@ VISION_SAMPLING_WEIGHTS = {
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
-    "claude-3-5-sonnet-20240620": 16,
+    "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
     "gemini-1.5-pro-api-0514": 4,
     "llava-v1.6-34b": 4,
+    "reka-core-20240501": 4,
+    "reka-flash-preview-20240611": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
-VISION_BATTLE_TARGETS = {
-    # "gpt-4-turbo": {
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.5-pro-preview-0409": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.0-pro-vision": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-opus-20240229": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "reka-flash-20240226",
-    # },
-    # "claude-3-sonnet-20240229": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-haiku-20240307": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "llava-v1.6-34b": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "claude-3-sonnet-20240229",
-    #     "claude-3-haiku-20240307",
-    # },
-    # "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
-    # "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
-    # "reka-flash-20240226": {
-    #     "gemini-1.0-pro-vision",
-    #     "claude-3-haiku-20240307",
-    #     "claude-3-sonnet-20240229",
-    # },
-}
+VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
-VISION_SAMPLING_BOOST_MODELS = []
+VISION_SAMPLING_BOOST_MODELS = [
+    "reka-core-20240501",
+    "reka-flash-preview-20240611",
+]
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []

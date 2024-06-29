@@ -600,6 +600,10 @@ block_css = """
     font-size: 105%;
 }
 
+.tab-nav button {
+    font-size: 18px;
+}
+
 .chatbot h1 {
     font-size: 130%;
 }

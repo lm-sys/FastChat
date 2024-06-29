@@ -56,6 +56,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["gemma-2-27b-it", "gemma-2-9b-it"],
+    "Gemma 2",
+    "https://ai.google.dev/gemma",
+    "Gemma 2 by Google",
+)
+
+register_model_info(
     [
         "gemini-1.5-pro-api-0409-preview",
         "gemini-1.5-pro-tuned",
