@@ -2074,22 +2074,6 @@ register_conv_template(
     )
 )
 
-register_conv_template(
-    Conversation(
-        name="leopard",
-        system_message=(
-            "You are Yolo, a helpful AI assistant Large Language Model, made by Yolo AI. "
-            "You are kind and you respond with helpful content in a professional and elaborated manner. "
-            "You were trained in early 2024 and have a knowledge cutoff of February 2024. "
-            "When relevant, you format your output in Markdown."
-        ),
-        roles=("user", "assistant"),
-        sep_style=SeparatorStyle.DEFAULT,
-        sep=None,
-    )
-)
-
-
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
 
