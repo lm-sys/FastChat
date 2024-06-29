@@ -265,7 +265,10 @@ def openai_api_stream_iter(
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
-            extra_headers={"request-id": "test-request-id", "origin-id": "test-origin-id"},
+            extra_headers={
+                "request-id": "test-request-id",
+                "origin-id": "test-origin-id",
+            },
         )
         text = ""
         for chunk in res:

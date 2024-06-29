@@ -198,19 +198,19 @@ SAMPLING_WEIGHTS = {
     "reka-flash-preview-20240611": 4,
     "qwen2-72b-instruct": 4,
     "gemma-1.1-7b-it": 2,
-#    "mixtral-8x7b-instruct-v0.1": 1,
+    #    "mixtral-8x7b-instruct-v0.1": 1,
     "mixtral-8x22b-instruct-v0.1": 2,
     "mistral-large-2402": 2,
-#    "codestral-2405": 4,
-#    "snowflake-arctic-instruct": 1,
-#    "dbrx-instruct": 1,
+    #    "codestral-2405": 4,
+    #    "snowflake-arctic-instruct": 1,
+    #    "dbrx-instruct": 1,
     "phi-3-mini-4k-instruct": 2,
     "phi-3-medium-4k-instruct": 2,
     "phi-3-small-8k-instruct": 2,
     "yi-large-preview": 4,
     "yi-large": 4,
     "yi-1.5-34b-chat": 4,
-#    "dbrx-next": 4,
+    #    "dbrx-next": 4,
     "nemotron-4-340b": 4,
     "glm-4-0520": 4,
     "deepseek-coder-v2": 4,
@@ -282,16 +282,14 @@ def get_battle_pair(
             continue
         if model in ANON_MODELS and chosen_model in ANON_MODELS:
             continue
-        weight = get_sample_weight(
-            model, outage_models, sampling_weights
-        )
+        weight = get_sample_weight(model, outage_models, sampling_weights)
         if (
             weight != 0
             and chosen_model in battle_targets
             and model in battle_targets[chosen_model]
         ):
             # boost to 20% chance
-            weight = 0.5*total_weight / len(battle_targets[chosen_model])
+            weight = 0.5 * total_weight / len(battle_targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):

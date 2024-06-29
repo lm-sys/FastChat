@@ -432,6 +432,7 @@ cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
 }
 
+
 def update_leaderboard_df(arena_table_vals):
     elo_datarame = pd.DataFrame(
         arena_table_vals,
@@ -496,9 +497,7 @@ def build_arena_tab(
     for k in key_to_category_name.keys():
         if k not in elo_results:
             continue
-        arena_dfs[key_to_category_name[k]] = elo_results[k][
-            "leaderboard_table_df"
-        ]
+        arena_dfs[key_to_category_name[k]] = elo_results[k]["leaderboard_table_df"]
         category_elo_results[key_to_category_name[k]] = elo_results[k]
 
     arena_df = arena_dfs["Overall"]
@@ -694,9 +693,7 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
                     "#### Figure 3: Fraction of Model A Wins for All Non-tied A vs. B Battles",
                     elem_id="plot-title",
                 )
-                plot_1 = gr.Plot(
-                    p1, show_label=False, elem_id="plot-container"
-                )
+                plot_1 = gr.Plot(p1, show_label=False, elem_id="plot-container")
             with gr.Column():
                 gr.Markdown(
                     "#### Figure 4: Battle Count for Each Combination of Models (without Ties)",
@@ -740,6 +737,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df):
         height=800,
         wrap=True,
     )
+
 
 def build_leaderboard_tab(
     elo_results_file, leaderboard_table_file, vision=True, show_plot=False, mirror=False
