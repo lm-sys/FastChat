@@ -173,78 +173,17 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {
-    # tier 0
-    "gpt-4-0613": 2,
-    "gpt-4-1106-preview": 2,
-    "gpt-4-0125-preview": 2,
-    "gpt-4-turbo-2024-04-09": 4,
-    "gpt-3.5-turbo-0125": 2,
-    "gpt-4o-2024-05-13": 8,
-    "gemini-1.5-pro-api-0514": 8,
-    "gemini-1.5-flash-api-0514": 6,
-    "gemma-2-27b-it": 4,
-    "gemma-2-9b-it": 4,
-    "gemini-advanced-0514": 6,
-    "claude-3-5-sonnet-20240620": 4,
-    "claude-3-opus-20240229": 6,
-    "claude-3-sonnet-20240229": 4,
-    "claude-3-haiku-20240307": 4,
-    "llama-3-70b-instruct": 8,
-    "llama-3-8b-instruct": 4,
-    "command-r-plus": 4,
-    "command-r": 2,
-    "reka-core-20240501": 4,
-    "reka-flash-preview-20240611": 4,
-    "qwen2-72b-instruct": 4,
-    "gemma-1.1-7b-it": 2,
-    #    "mixtral-8x7b-instruct-v0.1": 1,
-    "mixtral-8x22b-instruct-v0.1": 2,
-    "mistral-large-2402": 2,
-    #    "codestral-2405": 4,
-    #    "snowflake-arctic-instruct": 1,
-    #    "dbrx-instruct": 1,
-    "phi-3-mini-4k-instruct": 2,
-    "phi-3-medium-4k-instruct": 2,
-    "phi-3-small-8k-instruct": 2,
-    "yi-large-preview": 4,
-    "yi-large": 4,
-    "yi-1.5-34b-chat": 4,
-    #    "dbrx-next": 4,
-    "nemotron-4-340b": 4,
-    "glm-4-0520": 4,
-    "deepseek-coder-v2": 4,
-}
+SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
-BATTLE_TARGETS = {
-    "claude-3-5-sonnet-20240620": {
-        "gpt-4o-2024-05-13",
-        "gemini-1.5-pro-api-0514",
-    }
-}
+BATTLE_TARGETS = {}
 
 ANON_MODELS = []
 
-SAMPLING_BOOST_MODELS = [
-    "gemma-2-27b-it",
-    "gemma-2-9b-it",
-    "claude-3-5-sonnet-20240620",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-    "deluxe-chat-v1.3",
-    "glm-4-0116",
-    "gemma-1.1-7b-it",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
