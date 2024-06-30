@@ -84,15 +84,6 @@ vl_models = []
 
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {
-    # tier 0
-    # "gpt-4o-2024-05-13-vision": 4,
-    # "gpt-4-turbo-2024-04-09-vision": 4,
-    # "gemini-1.5-flash-latest-vision": 4,
-    # "gemini-1.5-pro-latest-vision": 4,
-    # "claude-3-opus-20240229-vision": 4,
-    # "claude-3-haiku-20240307-vision": 4,
-    # "claude-3-sonnet-20240229-vision": 4,
-    # "reka-flash-20240226-vision": 4,
     "gpt-4o-2024-05-13": 4,
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 4,
@@ -110,10 +101,7 @@ VISION_SAMPLING_WEIGHTS = {
 VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
-VISION_SAMPLING_BOOST_MODELS = [
-    "reka-core-20240501",
-    "reka-flash-preview-20240611",
-]
+VISION_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
