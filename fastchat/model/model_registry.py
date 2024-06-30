@@ -73,7 +73,7 @@ register_model_info(
         "gemini-advanced-0514",
     ],
     "Gemini",
-    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
+    "https://deepmind.google/technologies/gemini/",
     "Gemini by Google",
 )
 
