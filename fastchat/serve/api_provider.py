@@ -836,9 +836,7 @@ def mistral_api_stream_iter(
 def nvidia_api_stream_iter(
     model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
 ):
-    model_2_api = {
-        "nemotron-4-340b": "/b0fcd392-e905-4ab4-8eb9-aeae95c30b37",
-    }
+    model_2_api = {}
     api_base += model_2_api[model_name]
 
     api_key = api_key or os.environ["NVIDIA_API_KEY"]
