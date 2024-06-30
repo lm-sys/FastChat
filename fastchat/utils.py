@@ -176,7 +176,16 @@ def oai_moderation(text, custom_thresholds=None):
 
 def moderation_filter(text, model_list, do_moderation=False):
     # Apply moderation for below models
-    MODEL_KEYWORDS = ["claude", "gpt", "bard", "mistral-large", "command-r", "dbrx"]
+    MODEL_KEYWORDS = [
+        "claude",
+        "gpt",
+        "bard",
+        "mistral-large",
+        "command-r",
+        "dbrx",
+        "gemini",
+        "reka",
+    ]
 
     custom_thresholds = {"sexual": 0.3}
     # set a stricter threshold for claude
@@ -236,17 +245,30 @@ function() {
     }
 """
 
-
 get_window_url_params_with_tos_js = """
 function() {
     const params = new URLSearchParams(window.location.search);
-    url_params = Object.fromEntries(params);
+    const url_params = Object.fromEntries(params);
     console.log("url_params", url_params);
 
-    msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license."
-    alert(msg);
+    const urlContainsLeaderboard = Object.keys(url_params).some(key => key.toLowerCase().includes("leaderboard"));
+    const msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.";
+    if (!urlContainsLeaderboard) {
+        if (window.alerted_before) return;
+        alert(msg);
+        window.alerted_before = true;
+    }
     return url_params;
     }
+"""
+
+alert_js = """
+() => {
+    if (window.alerted_before) return;
+    const msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.";
+    alert(msg);
+    window.alerted_before = true;
+}
 """
 
 
@@ -395,7 +417,7 @@ def upload_image_file_to_gcs(image, filename):
 
     storage_client = storage.Client()
     # upload file to GCS
-    bucket = storage_client.get_bucket("arena_user_content")
+    bucket = storage_client.get_bucket("arena_service_data")
 
     blob = bucket.blob(f"{filename}")
     if not blob.exists():
@@ -411,48 +433,24 @@ def get_image_file_from_gcs(filename):
     from google.cloud import storage
 
     storage_client = storage.Client()
-    bucket = storage_client.get_bucket("arena_user_content")
+    bucket = storage_client.get_bucket("arena_service_data")
     blob = bucket.blob(f"{filename}")
     contents = blob.download_as_bytes()
 
     return contents
 
 
-def pil_image_to_byte_array(pil_image, format="JPEG"):
-    img_byte_arr = BytesIO()
-    pil_image.save(img_byte_arr, format=format)
-    img_byte_arr = img_byte_arr.getvalue()
-    return img_byte_arr
-
-
-def convert_image_to_byte_array(image):
-    if type(image) == str:
-        with open(image, "rb") as image_data:
-            image_bytes = image_data.read()
-    else:
-        image_bytes = pil_image_to_byte_array(
-            image, format="JPEG"
-        )  # Use 'PNG' or other formats as needed
-
-    return image_bytes
-
-
-def image_moderation_request(image, endpoint, api_key):
-    print(f"moderating image: {image}")
-
+def image_moderation_request(image_bytes, endpoint, api_key):
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
-
-    # Specify the API URL
-    image_bytes = convert_image_to_byte_array(image)
 
     MAX_RETRIES = 3
     for _ in range(MAX_RETRIES):
         response = requests.post(endpoint, headers=headers, data=image_bytes).json()
-        if response["Status"] == 3000:
-            break
-        else:
+        try:
+            if response["Status"]["Code"] == 3000:
+                break
+        except:
             time.sleep(0.5)
-
     return response
 
 
@@ -461,7 +459,8 @@ def image_moderation_provider(image, api_type):
         endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
         api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
         response = image_moderation_request(image, endpoint, api_key)
-        return response["IsImageAdultClassified"] or response["IsImageRacyClassified"]
+        print(response)
+        return response["IsImageAdultClassified"]
     elif api_type == "csam":
         endpoint = (
             "https://api.microsoftmoderator.com/photodna/v1.0/Match?enhance=false"
@@ -472,6 +471,14 @@ def image_moderation_provider(image, api_type):
 
 
 def image_moderation_filter(image):
-    nsfw_flagged = image_moderation_provider(image, "nsfw")
-    csam_flagged = image_moderation_provider(image, "csam")
+    print(f"moderating image")
+
+    image_bytes = base64.b64decode(image.base64_str)
+
+    nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
+    csam_flagged = False
+
+    if nsfw_flagged:
+        csam_flagged = image_moderation_provider(image_bytes, "csam")
+
     return nsfw_flagged, csam_flagged

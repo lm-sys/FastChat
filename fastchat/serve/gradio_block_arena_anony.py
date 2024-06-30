@@ -26,10 +26,11 @@ from fastchat.serve.gradio_web_server import (
     enable_btn,
     disable_btn,
     invisible_btn,
+    enable_text,
+    disable_text,
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -75,20 +76,25 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
 
+    gr.Info(
+        "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
+    )
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
                 "### Model A: " + states[0].model_name,
                 "### Model B: " + states[1].model_name,
             )
-            yield names + ("",) + (disable_btn,) * 4
+            # yield names + ("",) + (disable_btn,) * 4
+            yield names + (disable_text,) + (disable_btn,) * 5
             time.sleep(0.1)
     else:
         names = (
             "### Model A: " + states[0].model_name,
             "### Model B: " + states[1].model_name,
         )
-        yield names + ("",) + (disable_btn,) * 4
+        # yield names + ("",) + (disable_btn,) * 4
+        yield names + (disable_text,) + (disable_btn,) * 5
 
 
 def leftvote_last_response(
@@ -151,10 +157,11 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [""]
+        + [enable_text]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [""]
+        + [enable_btn]
     )
 
 
@@ -166,116 +173,12 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {
-    # tier 0
-    "gpt-4-0314": 4,
-    "gpt-4-0613": 4,
-    "gpt-4-1106-preview": 2,
-    "gpt-4-0125-preview": 4,
-    "gpt-4-turbo-2024-04-09": 4,
-    "gpt-3.5-turbo-0125": 2,
-    "claude-3-opus-20240229": 4,
-    "claude-3-sonnet-20240229": 4,
-    "claude-3-haiku-20240307": 4,
-    "claude-2.1": 1,
-    "zephyr-orpo-141b-A35b-v0.1": 2,
-    "dbrx-instruct": 1,
-    "command-r-plus": 4,
-    "command-r": 2,
-    "reka-flash": 4,
-    "reka-flash-online": 4,
-    "qwen1.5-72b-chat": 2,
-    "qwen1.5-32b-chat": 2,
-    "qwen1.5-14b-chat": 2,
-    "qwen1.5-7b-chat": 2,
-    "gemma-1.1-7b-it": 2,
-    "gemma-1.1-2b-it": 1,
-    "mixtral-8x7b-instruct-v0.1": 4,
-    "mistral-7b-instruct-v0.2": 2,
-    "mistral-large-2402": 4,
-    "mistral-medium": 2,
-    "starling-lm-7b-beta": 2,
-    # tier 1
-    "deluxe-chat-v1.3": 2,
-    "llama-2-70b-chat": 2,
-    "llama-2-13b-chat": 1,
-    "llama-2-7b-chat": 1,
-    "vicuna-33b": 1,
-    "vicuna-13b": 1,
-    "yi-34b-chat": 1,
-}
+SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
-BATTLE_TARGETS = {
-    "gpt-4-turbo-2024-04-09": {
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "claude-3-opus-20240229",
-        "gemini-pro-dev-api",
-    },
-    "gemini-pro-dev-api": {
-        "gpt-4-turbo-2024-04-09",
-        "claude-3-opus-20240229",
-        "gpt-4-0125-preview",
-        "claude-3-sonnet-20240229",
-    },
-    "reka-flash": {
-        "qwen1.5-72b-chat",
-        "claude-3-haiku-20240307",
-        "command-r-plus",
-        "command-r",
-    },
-    "reka-flash-online": {
-        "qwen1.5-72b-chat",
-        "claude-3-haiku-20240307",
-        "command-r-plus",
-        "command-r",
-    },
-    "deluxe-chat-v1.3": {
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "claude-3-opus-20240229",
-        "claude-3-sonnet-20240229",
-    },
-    "qwen1.5-32b-chat": {
-        "gpt-3.5-turbo-0125",
-        "gpt-4-0613",
-        "gpt-4-0125-preview",
-        "llama-2-70b-chat",
-        "mixtral-8x7b-instruct-v0.1",
-        "mistral-large-2402",
-        "yi-34b-chat",
-    },
-    "qwen1.5-14b-chat": {
-        "starling-lm-7b-alpha",
-        "claude-3-haiku-20240307",
-        "gpt-3.5-turbo-0125",
-        "openchat-3.5-0106",
-        "mixtral-8x7b-instruct-v0.1",
-    },
-    "mistral-large-2402": {
-        "gpt-4-0125-preview",
-        "gpt-4-0613",
-        "mixtral-8x7b-instruct-v0.1",
-        "mistral-medium",
-        "mistral-next",
-        "claude-3-sonnet-20240229",
-    },
-    "gemma-1.1-2b-it": {
-        "gpt-3.5-turbo-0125",
-        "mixtral-8x7b-instruct-v0.1",
-        "starling-lm-7b-beta",
-        "llama-2-7b-chat",
-        "mistral-7b-instruct-v0.2",
-        "gemma-1.1-7b-it",
-    },
-    "zephyr-orpo-141b-A35b-v0.1": {
-        "qwen1.5-72b-chat",
-        "mistral-large-2402",
-        "command-r-plus",
-        "claude-3-haiku-20240307",
-    },
-}
+BATTLE_TARGETS = {}
+
+ANON_MODELS = []
 
 SAMPLING_BOOST_MODELS = []
 
@@ -283,7 +186,7 @@ SAMPLING_BOOST_MODELS = []
 OUTAGE_MODELS = []
 
 
-def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models):
+def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
     if model in outage_models:
         return 0
     weight = sampling_weights.get(model, 0)
@@ -316,16 +219,16 @@ def get_battle_pair(
     for model in models:
         if model == chosen_model:
             continue
-        weight = get_sample_weight(
-            model, outage_models, sampling_weights, sampling_boost_models
-        )
+        if model in ANON_MODELS and chosen_model in ANON_MODELS:
+            continue
+        weight = get_sample_weight(model, outage_models, sampling_weights)
         if (
             weight != 0
             and chosen_model in battle_targets
             and model in battle_targets[chosen_model]
         ):
-            # boost to 50% chance
-            weight = total_weight / len(battle_targets[chosen_model])
+            # boost to 20% chance
+            weight = 0.5 * total_weight / len(battle_targets[chosen_model])
         rival_models.append(model)
         rival_weights.append(weight)
     # for p, w in zip(rival_models, rival_weights):
@@ -342,7 +245,7 @@ def get_battle_pair(
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
+    state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
@@ -400,7 +303,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG, None]
+            + [CONVERSATION_LIMIT_MSG]
             + [
                 no_change_btn,
             ]
@@ -410,10 +313,7 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(
-            states[i], text, image, csam_flag=False
-        )
-        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
+        states[i].conv.append_message(states[i].conv.roles[0], text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
@@ -424,7 +324,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + ["", None]
+        + [""]
         + [
             disable_btn,
         ]
@@ -468,20 +368,30 @@ def bot_response_multi(
             )
         )
 
-    is_stream_batch = []
+    model_tpy = []
     for i in range(num_sides):
-        is_stream_batch.append(
-            states[i].model_name
-            in [
-                "gemini-pro",
-                "gemini-pro-dev-api",
-                "gemini-1.0-pro-vision",
-                "gemini-1.5-pro",
-                "gemini-1.5-flash",
-                "gemma-1.1-2b-it",
-                "gemma-1.1-7b-it",
-            ]
-        )
+        token_per_yield = 1
+        if states[i].model_name in [
+            "gemini-pro",
+            "gemma-1.1-2b-it",
+            "gemma-1.1-7b-it",
+            "phi-3-mini-4k-instruct",
+            "phi-3-mini-128k-instruct",
+            "snowflake-arctic-instruct",
+        ]:
+            token_per_yield = 30
+        elif states[i].model_name in [
+            "qwen-max-0428",
+            "qwen1.5-110b-chat",
+            "llava-v1.6-34b",
+        ]:
+            token_per_yield = 7
+        elif states[i].model_name in [
+            "qwen2-72b-instruct",
+        ]:
+            token_per_yield = 4
+        model_tpy.append(token_per_yield)
+
     chatbots = [None] * num_sides
     iters = 0
     while True:
@@ -489,9 +399,8 @@ def bot_response_multi(
         iters += 1
         for i in range(num_sides):
             try:
-                # yield gemini fewer times as its chunk size is larger
-                # otherwise, gemini will stream too fast
-                if not is_stream_batch[i] or (iters % 30 == 1 or iters < 3):
+                # yield fewer times if chunk size is larger
+                if model_tpy[i] == 1 or (iters % model_tpy[i] == 1 or iters < 3):
                     ret = next(gen[i])
                     states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
@@ -505,16 +414,18 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+
+## 📣 News
+- Chatbot Arena now supports images in beta. Check it out [here](https://chat.lmsys.org/?vision).
 
 ## 📜 Rules
-- Ask any question to two anonymous models (e.g., ChatGPT, Claude, Llama) and vote for the better one!
-- You can continue chatting until you identify a winner.
-- Vote won't be counted if model identity is revealed during conversation.
+- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
+- You can chat for multiple turns until you identify a winner.
+- Votes won't be counted if model identities are revealed during the conversation.
 
-## 🏆 LMSYS Arena [Leaderboard](https://leaderboard.lmsys.org)
-We've collected **500K+** human votes to compute an LLM Elo leaderboard.
-Find out who is the 🥇LLM Champion!
+## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
+- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
 
 ## 👇 Chat now!
 """
@@ -538,7 +449,7 @@ Find out who is the 🥇LLM Champion!
                     chatbots[i] = gr.Chatbot(
                         label=label,
                         elem_id="chatbot",
-                        height=550,
+                        height=650,
                         show_copy_button=True,
                     )
 
@@ -596,7 +507,7 @@ Find out who is the 🥇LLM Champion!
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1024,
+            value=1600,
             step=64,
             interactive=True,
             label="Max output tokens",
@@ -604,7 +515,6 @@ Find out who is the 🥇LLM Champion!
 
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
-    imagebox = gr.State(None)
     # Register listeners
     btn_list = [
         leftvote_btn,
@@ -617,22 +527,26 @@ Find out who is the 🥇LLM Champion!
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     bothbad_btn.click(
         bothbad_vote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
@@ -646,7 +560,13 @@ Find out who is the 🥇LLM Champion!
     clear_btn.click(
         clear_history,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
+        states
+        + chatbots
+        + model_selectors
+        + [textbox]
+        + btn_list
+        + [slow_warning]
+        + [send_btn],
     )
 
     share_js = """
@@ -673,8 +593,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list + [slow_warning],
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -687,8 +607,8 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],

@@ -31,6 +31,9 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_visible_image,
     add_image,
     moderate_input,
+    _prepare_text_with_image,
+    convert_images_to_conversation_format,
+    enable_multimodal,
 )
 from fastchat.serve.gradio_web_server import (
     State,
@@ -43,7 +46,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
+    enable_text,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -53,9 +56,7 @@ from fastchat.utils import (
 )
 
 
-logger = build_logger(
-    "gradio_web_server_vision_multi", "gradio_web_server_vision_multi.log"
-)
+logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False
@@ -66,13 +67,14 @@ def clear_history_example(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    filename = get_conv_log_filename(states[0].is_vision)
+    filename = get_conv_log_filename(states[0].is_vision, states[0].has_csam_image)
     with open(filename, "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -149,7 +151,7 @@ def clear_history(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [None]
+        + [enable_multimodal]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -189,7 +191,11 @@ def add_text(
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
 
-    text, csam_flag = moderate_input(text, all_conv_text, model_list, images, ip)
+    images = convert_images_to_conversation_format(images)
+
+    text, image_flagged, csam_flag = moderate_input(
+        state0, text, all_conv_text, model_list, images, ip
+    )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -200,6 +206,20 @@ def add_text(
             states
             + [x.to_gradio_chatbot() for x in states]
             + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
+
+    if image_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [{"text": IMAGE_MODERATION_MSG}]
             + [
                 no_change_btn,
             ]
@@ -228,8 +248,8 @@ def add_text(
 
 def build_side_by_side_vision_ui_named(models, random_questions=None):
     notice_markdown = """
-# ⚔️  Vision Arena ⚔️ : Benchmarking VLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+# ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
 ## 📜 Rules
 - Chat with any two models side-by-side and vote!
@@ -285,7 +305,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
                             chatbots[i] = gr.Chatbot(
                                 label=label,
                                 elem_id=f"chatbot",
-                                height=550,
+                                height=650,
                                 show_copy_button=True,
                             )
 
@@ -305,7 +325,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
-            placeholder="Click add or drop your image here",
+            placeholder="Enter your prompt or add image here",
             container=True,
             elem_id="input_box",
         )
@@ -417,7 +437,7 @@ function (a, b, c, d) {
 
     textbox.input(add_image, [textbox], [imagebox]).then(
         set_visible_image, [textbox], [image_column]
-    ).then(clear_history_example, None, states + chatbots + btn_list)
+    ).then(clear_history_example, None, states + chatbots + [textbox] + btn_list)
 
     textbox.submit(
         add_text,
@@ -437,7 +457,7 @@ function (a, b, c, d) {
             [],  # Pass the path to the VQA samples
             [textbox, imagebox],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
-            clear_history_example, None, states + chatbots + btn_list
+            clear_history_example, None, states + chatbots + [textbox] + btn_list
         )
 
     return states + model_selectors

@@ -7,7 +7,7 @@ from fastapi import FastAPI
 import hashlib
 import asyncio
 
-REFRESH_INTERVAL_SEC = 60
+REFRESH_INTERVAL_SEC = 300
 LOG_DIR_LIST = []
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
