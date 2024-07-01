@@ -65,6 +65,7 @@ use_remote_storage = False
 
 acknowledgment_md = """
 ### Terms of Service
+
 Users are required to agree to the following terms before using the service:
 
 The service is a research preview. It only provides limited safety measures and may generate offensive content.

@@ -180,43 +180,10 @@ BATTLE_TARGETS = {}
 
 ANON_MODELS = []
 
-SAMPLING_BOOST_MODELS = [
-    # "gpt-4-1106-preview",
-    # "gpt-4-0125-preview",
-    # "claude-3-opus-20240229",
-    # "claude-3-sonnet-20240229",
-    # "claude-3-haiku-20240307",
-    # "reka-flash-online",
-    # "gemini-1.5-pro-api-0409-preview",
-    # "llama-3-70b-instruct",
-    # "reka-core-20240501",
-    # "qwen-max-0428",
-    # "qwen1.5-110b-chat",
-    # "gemini-1.5-pro-api-0514",
-    # "gemini-1.5-flash-api-0514",
-    # "gemini-advanced-0514",
-    # "yi-large-preview",
-    # "gpt-4o-2024-05-13",
-    # "phi-3-mini-4k-instruct",
-    "qwen2-72b-instruct",
-    "anon-leopard",
-    "codestral-2405",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-    "deluxe-chat-v1.3",
-    "glm-4-0116",
-    "anon-leopard",
-    "codestral-2405",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):

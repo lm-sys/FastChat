@@ -390,7 +390,6 @@ def openai_assistant_api_stream_iter(
             continue
 
         for delta in data["delta"]["content"]:
-            logger.info(f"[debug]: {delta}")
             text_index = delta["index"] + offset_idx
             if len(list_of_text) <= text_index:
                 list_of_text.append("")

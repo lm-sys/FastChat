@@ -158,8 +158,6 @@ window.__gradio_mode__ = "app";
                 + single_model_list
                 + side_by_side_anony_list
                 + side_by_side_named_list
-                # + side_by_side_vision_anony_list
-                # + single_vision_language_model_list
             )
 
             if elo_results_file:
