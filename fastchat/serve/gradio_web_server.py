@@ -72,6 +72,8 @@ It must not be used for any illegal, harmful, violent, racist, or sexual purpose
 Please do not upload any private information.
 The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
 
+#### Please report any bug or issue to our [Discord](https://discord.gg/HSWAKCrnFx)/arena-feedback.
+
 ### Acknowledgment
 We thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [RunPod](https://runpod.io), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
 
@@ -120,10 +122,10 @@ class State:
         self.regen_support = True
         if "browsing" in model_name:
             self.regen_support = False
-        self.init_system_prompt(self.conv)
+        self.init_system_prompt(self.conv, is_vision)
 
-    def init_system_prompt(self, conv):
-        system_prompt = conv.get_system_message()
+    def init_system_prompt(self, conv, is_vision):
+        system_prompt = conv.get_system_message(is_vision)
         if len(system_prompt) == 0:
             return
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -300,6 +302,8 @@ def get_ip(request: gr.Request):
         ip = request.headers["cf-connecting-ip"]
     elif "x-forwarded-for" in request.headers:
         ip = request.headers["x-forwarded-for"]
+        if "," in ip:
+            ip = ip.split(",")[0]
     else:
         ip = request.client.host
     return ip
@@ -335,7 +339,7 @@ def add_text(state, model_selector, text, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "", None) + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
 def model_worker_stream_iter(
@@ -589,10 +593,14 @@ block_css = """
 }
 
 #arena_leaderboard_dataframe table {
-    font-size: 115%;
+    font-size: 105%;
 }
 #full_leaderboard_dataframe table {
-    font-size: 115%;
+    font-size: 105%;
+}
+
+.tab-nav button {
+    font-size: 18px;
 }
 
 .chatbot h1 {
@@ -643,7 +651,8 @@ block_css = """
 
 .app {
   max-width: 100% !important;
-  padding: 50px;
+  padding-left: 5% !important;
+  padding-right: 5% !important;
 }
 
 a {
@@ -764,11 +773,9 @@ def build_about():
 Chatbot Arena is an open-source research project developed by members from [LMSYS](https://lmsys.org) and UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/). Our mission is to build an open platform to evaluate LLMs by human preference in the real-world.
 We open-source our [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release chat and human feedback dataset. We invite everyone to join us!
 
-## Arena Team
-- [Lianmin Zheng](https://lmzheng.net/) (co-lead), [Wei-Lin Chiang](https://infwinston.github.io/) (co-lead), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Tianle Li](https://codingwithtim.github.io/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/)
-
-## Past Members
-- [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/)
+## Open-source contributors
+- [Wei-Lin Chiang](https://infwinston.github.io/), [Lianmin Zheng](https://lmzheng.net/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Anastasios Angelopoulos](https://people.eecs.berkeley.edu/~angelopoulos/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Tianle Li](https://codingwithtim.github.io/), [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang)
+- Advisors: [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/)
 
 ## Learn more
 - Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch blog](https://lmsys.org/blog/2023-05-03-arena/), [dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [policy](https://lmsys.org/blog/2024-03-01-policy/)
@@ -801,7 +808,7 @@ We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
         """
-- [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 ## 👇 Choose any model to chat
 """

@@ -42,21 +42,7 @@ register_model_info(
 
 register_model_info(
     [
-        "gemini-1.5-pro-api-0409-preview",
-        "gemini-1.5-pro-tuned",
-        "gemini-1.5-pro-api-preview",
-        "gemini-1.5-flash-api-preview",
-        "gemini-1.5-flash-api-0514",
-        "gemini-1.5-pro-api-0514",
-        "gemini-advanced-0514",
-    ],
-    "Gemini",
-    "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/",
-    "Gemini by Google",
-)
-
-register_model_info(
-    [
+        "claude-3-5-sonnet-20240620",
         "claude-3-haiku-20240307",
         "claude-3-sonnet-20240229",
         "claude-3-opus-20240229",
@@ -67,6 +53,42 @@ register_model_info(
     "Claude",
     "https://www.anthropic.com/news/claude-3-family",
     "Claude by Anthropic",
+)
+
+register_model_info(
+    ["gemma-2-27b-it", "gemma-2-9b-it"],
+    "Gemma 2",
+    "https://ai.google.dev/gemma",
+    "Gemma 2 by Google",
+)
+
+register_model_info(
+    [
+        "gemini-1.5-pro-api-0409-preview",
+        "gemini-1.5-pro-tuned",
+        "gemini-1.5-pro-api-preview",
+        "gemini-1.5-flash-api-preview",
+        "gemini-1.5-flash-api-0514",
+        "gemini-1.5-pro-api-0514",
+        "gemini-advanced-0514",
+    ],
+    "Gemini",
+    "https://deepmind.google/technologies/gemini/",
+    "Gemini by Google",
+)
+
+register_model_info(
+    ["deepseek-coder-v2"],
+    "DeepSeek Coder v2",
+    "https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct",
+    "An advanced code model by DeepSeek",
+)
+
+register_model_info(
+    ["nemotron-4-340b"],
+    "Nemotron-4 340B",
+    "https://huggingface.co/nvidia/Nemotron-4-340B-Instruct",
+    "Cutting-edge Open model by Nvidia",
 )
 
 register_model_info(
@@ -126,16 +148,6 @@ register_model_info(
 )
 
 register_model_info(
-    [
-        "codestral-2405",
-        "mixtral-8x22b-instruct-v0.1",
-    ],
-    "Mixtral of experts",
-    "https://mistral.ai/news/mixtral-8x22b/",
-    "A Mixture-of-Experts model by Mistral AI",
-)
-
-register_model_info(
     ["yi-large-preview", "yi-large"],
     "Yi-Large",
     "https://x.com/01AI_Yi/status/1789894091620458667",
@@ -176,7 +188,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["reka-flash", "reka-flash-online"],
+    ["reka-flash-preview-20240611", "reka-flash", "reka-flash-online"],
     "Reka Flash",
     "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
     "Multimodal model by Reka",
@@ -201,6 +213,16 @@ register_model_info(
     "Gemma",
     "https://blog.google/technology/developers/gemma-open-models/",
     "Gemma by Google",
+)
+
+register_model_info(
+    [
+        "codestral-2405",
+        "mixtral-8x22b-instruct-v0.1",
+    ],
+    "Mixtral of experts",
+    "https://mistral.ai/news/mixtral-8x22b/",
+    "A Mixture-of-Experts model by Mistral AI",
 )
 
 register_model_info(
@@ -243,7 +265,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["glm-4-0116"],
+    ["glm-4-0520", "glm-4-0116"],
     "GLM-4",
     "https://zhipuai.cn/devday",
     "Next-Gen Foundation Model by Zhipu AI",
@@ -257,7 +279,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["dbrx-instruct"],
+    ["dbrx-instruct", "dbrx-next"],
     "DBRX Instruct",
     "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm",
     "DBRX by Databricks Mosaic AI",

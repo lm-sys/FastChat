@@ -8,26 +8,7 @@ import hashlib
 import asyncio
 
 REFRESH_INTERVAL_SEC = 300
-LOG_DIR_LIST = [
-    "/home/gcpuser/fastchat_logs/server0",
-    "/home/gcpuser/fastchat_logs/server1",
-    "/home/gcpuser/fastchat_logs/server2",
-    "/home/gcpuser/fastchat_logs/server3",
-    "/home/gcpuser/fastchat_logs/server4",
-    "/home/gcpuser/fastchat_logs/server5",
-    "/home/gcpuser/fastchat_logs/server6",
-    "/home/gcpuser/fastchat_logs/server7",
-    "/home/gcpuser/fastchat_logs/server8",
-    "/home/gcpuser/fastchat_logs/server9",
-    "/home/gcpuser/fastchat_logs/server10",
-    "/home/gcpuser/fastchat_logs/server11",
-    "/home/gcpuser/fastchat_logs/server12",
-    "/home/gcpuser/fastchat_logs/server13",
-    "/home/gcpuser/fastchat_logs/server14",
-    "/home/gcpuser/fastchat_logs/server15",
-    "/home/gcpuser/fastchat_logs/server16",
-    "/home/gcpuser/fastchat_logs/server17",
-]
+LOG_DIR_LIST = []
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
 

@@ -38,6 +38,18 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "openai_no_stream":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            stream=False,
+        )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
         stream_iter = openai_assistant_api_stream_iter(
@@ -205,6 +217,7 @@ def openai_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
+    stream=True,
 ):
     import openai
 
@@ -245,19 +258,39 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    res = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_new_tokens,
-        stream=True,
-    )
-    text = ""
-    for chunk in res:
-        if len(chunk.choices) > 0:
-            text += chunk.choices[0].delta.content or ""
+    if stream:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=True,
+        )
+        text = ""
+        for chunk in res:
+            if len(chunk.choices) > 0:
+                text += chunk.choices[0].delta.content or ""
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    else:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=False,
+        )
+        text = res.choices[0].message.content
+        pos = 0
+        while pos < len(text):
+            # simulate token streaming
+            pos += 2
+            time.sleep(0.001)
             data = {
-                "text": text,
+                "text": text[:pos],
                 "error_code": 0,
             }
             yield data
@@ -384,12 +417,6 @@ def openai_assistant_api_stream_iter(
                                         idx_mapping[match] = len(idx_mapping) + 1
                                     citation_number = idx_mapping[match]
 
-                            # anno_text = anno["text"]
-                            # if anno_text not in idx_mapping:
-                            #     idx_mapping[anno_text] = len(idx_mapping) + 1
-                            # citation_number = idx_mapping[anno_text]
-                            # citation_number = anno["index"] + 1
-
                             start_idx = anno["start_index"] + cur_offset
                             end_idx = anno["end_index"] + cur_offset
                             url = anno["url_citation"]["url"]
@@ -411,26 +438,11 @@ def openai_assistant_api_stream_iter(
                     text = raw_text_copy
                 else:
                     text_content = content["value"]
-                    # raw_text += text_content
-
-                    # re-index citation number
-                    # pattern = r"【\d+】"
-                    # matches = re.findall(pattern, content["value"])
-                    # if len(matches) > 0:
-                    #     for match in matches:
-                    #         if match not in idx_mapping:
-                    #             idx_mapping[match] = len(idx_mapping) + 1
-                    #         citation_number = idx_mapping[match]
-                    #         text_content = text_content.replace(
-                    #             match, f" [{citation_number}]"
-                    #         )
                     text += text_content
-                    # yield {"text": text, "error_code": 0}
             elif delta["type"] == "image_file":
                 image_public_url = upload_openai_file_to_gcs(
                     delta["image_file"]["file_id"]
                 )
-                # raw_text += f"![image]({image_public_url})"
                 text += f"![image]({image_public_url})"
 
             list_of_text[text_index] = text
@@ -620,7 +632,7 @@ def gemini_api_stream_iter(
             pos = 0
             while pos < len(text):
                 # simulate token streaming
-                pos += 1
+                pos += 3
                 time.sleep(0.001)
                 data = {
                     "text": text[:pos],
@@ -825,6 +837,9 @@ def mistral_api_stream_iter(
 def nvidia_api_stream_iter(
     model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
 ):
+    model_2_api = {}
+    api_base += model_2_api[model_name]
+
     api_key = api_key or os.environ["NVIDIA_API_KEY"]
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -836,6 +851,7 @@ def nvidia_api_stream_iter(
         temp = 0.000001
 
     payload = {
+        "model": model_name,
         "messages": messages,
         "temperature": temp,
         "top_p": top_p,
@@ -845,9 +861,24 @@ def nvidia_api_stream_iter(
     }
     logger.info(f"==== request ====\n{payload}")
 
-    response = requests.post(
-        api_base, headers=headers, json=payload, stream=True, timeout=1
-    )
+    # payload.pop("model")
+
+    # try 3 times
+    for i in range(3):
+        try:
+            response = requests.post(
+                api_base, headers=headers, json=payload, stream=True, timeout=3
+            )
+            break
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            if i == 2:
+                yield {
+                    "text": f"**API REQUEST ERROR** Reason: API timeout. please try again later.",
+                    "error_code": 1,
+                }
+                return
+
     text = ""
     for line in response.iter_lines():
         if line:

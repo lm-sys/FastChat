@@ -15,7 +15,7 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
-    INPUT_CHAR_LEN_LIMIT,
+    BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
 )
 from fastchat.model.model_adapter import get_conversation_template
@@ -84,75 +84,21 @@ vl_models = []
 
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {
-    # tier 0
-    # "gpt-4o-2024-05-13-vision": 4,
-    # "gpt-4-turbo-2024-04-09-vision": 4,
-    # "gemini-1.5-flash-latest-vision": 4,
-    # "gemini-1.5-pro-latest-vision": 4,
-    # "claude-3-opus-20240229-vision": 4,
-    # "claude-3-haiku-20240307-vision": 4,
-    # "claude-3-sonnet-20240229-vision": 4,
-    # "reka-flash-20240226-vision": 4,
     "gpt-4o-2024-05-13": 4,
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
+    "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
     "gemini-1.5-pro-api-0514": 4,
-    "reka-core-20240501": 4,
-    "reka-flash": 4,
     "llava-v1.6-34b": 4,
+    "reka-core-20240501": 4,
+    "reka-flash-preview-20240611": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
-VISION_BATTLE_TARGETS = {
-    # "gpt-4-turbo": {
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.5-pro-preview-0409": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.0-pro-vision": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-opus-20240229": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "reka-flash-20240226",
-    # },
-    # "claude-3-sonnet-20240229": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-haiku-20240307": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "llava-v1.6-34b": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "claude-3-sonnet-20240229",
-    #     "claude-3-haiku-20240307",
-    # },
-    # "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
-    # "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
-    # "reka-flash-20240226": {
-    #     "gemini-1.0-pro-vision",
-    #     "claude-3-haiku-20240307",
-    #     "claude-3-sonnet-20240229",
-    # },
-}
+VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = []
@@ -401,7 +347,7 @@ def add_text(
             + [""]
         )
 
-    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
@@ -429,15 +375,17 @@ def add_text(
 def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+
 
 ## 📜 Rules
-- Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
+- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can continue chatting until you identify a winner.
 - Vote won't be counted if model identity is revealed during conversation.
-- **NEW** Image Support: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+- **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
 
-**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
+## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
+- We've collected **1,000,000+** human votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
 
 ## 👇 Chat now!
 """
@@ -528,7 +476,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -548,7 +496,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1024,
+            value=1800,
             step=64,
             interactive=True,
             label="Max output tokens",
