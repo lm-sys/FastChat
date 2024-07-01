@@ -28,7 +28,7 @@ API_ERROR_OUTPUT = "$ERROR$"
 TIE_DELTA = 0.1
 
 # Categories that need reference answers
-NEED_REF_CATS = ["math", "reasoning", "coding", "arena-hard-200"]
+NEED_REF_CATS = ["taxonomy", "math", "reasoning", "coding", "arena-hard-200"]
 
 # Extract scores from judgments
 two_score_pattern = re.compile("\[\[(\d+\.?\d*),\s?(\d+\.?\d*)\]\]")
@@ -175,6 +175,8 @@ def run_judge_single(
             judgment = chat_completion_anthropic(
                 model, conv, temperature=0, max_tokens=1024
             )
+        elif model == "prometheus":
+            judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
         else:
             raise ValueError(f"Invalid judge model name: {model}")
 
