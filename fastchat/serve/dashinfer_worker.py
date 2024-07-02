@@ -6,6 +6,7 @@ See documentations at docs/dashinfer_integration.md
 
 import argparse
 import asyncio
+import copy
 import json
 import os
 import subprocess
@@ -108,12 +109,13 @@ class DashInferWorker(BaseModelWorker):
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
 
-        gen_cfg = self.engine_helper.default_gen_cfg or dict()
+        gen_cfg = copy.deepcopy(self.engine_helper.default_gen_cfg) or dict()
         if temperature is not None:
             gen_cfg["temperature"] = float(temperature)
         if top_k is not None:
-            gen_cfg["top_k"] = float(top_k)
-        if top_k is not None:
+            dashinfer_style_top_k = 0 if int(top_k) == -1 else int(top_k)
+            gen_cfg["top_k"] = dashinfer_style_top_k
+        if top_p is not None:
             gen_cfg["top_p"] = float(top_p)
         if frequency_penalty is not None:
             gen_cfg["repetition_penalty"] = float(frequency_penalty)
@@ -122,7 +124,9 @@ class DashInferWorker(BaseModelWorker):
         if max_tokens is not None:
             gen_cfg["max_length"] = int(max_tokens)
         if len(stop_token_ids) != 0:
-            gen_cfg["stop_words_ids"] = stop_token_ids
+            dashinfer_style_stop_token_ids = [[id] for id in set(stop_token_ids)]
+            logger.info(f"dashinfer_style_stop_token_ids = {dashinfer_style_stop_token_ids}")            
+            gen_cfg["stop_words_ids"] = dashinfer_style_stop_token_ids
         if seed is not None:
             gen_cfg["seed"] = int(seed)
         if stop is not None:
@@ -188,6 +192,12 @@ def acquire_worker_semaphore():
     return worker.semaphore.acquire()
 
 
+def create_background_tasks():
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(release_worker_semaphore)
+    return background_tasks
+
+
 
 
 @app.post("/worker_generate_stream")
@@ -195,7 +205,8 @@ async def api_generate_stream(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
     generator = worker.generate_stream(params)
-    return StreamingResponse(generator, background=None)
+    background_tasks = create_background_tasks()
+    return StreamingResponse(generator, background=background_tasks)
 
 
 @app.post("/worker_generate")
