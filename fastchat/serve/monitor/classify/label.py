@@ -92,7 +92,7 @@ def get_answer(
     answer_file: str,
     api_dict: dict,
     categories: list,
-):  
+):
     for category in categories:
         conv = category.pre_process(question["prompt"])
         output = chat_completion_openai(
@@ -104,7 +104,7 @@ def get_answer(
         )
         # Dump answers
         question[category.name_tag] = category.post_process(output)
-    
+
     question.drop(["prompt", "uid", "task_required"], inplace=True)
 
     with LOCK:
@@ -116,28 +116,36 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     args = parser.parse_args()
-    
-    enter = input("Make sure your config file is properly configured. Press enter to continue.")
-    if not enter == '':
+
+    enter = input(
+        "Make sure your config file is properly configured. Press enter to continue."
+    )
+    if not enter == "":
         exit()
-    
+
     config = make_config(args.config)
-    
+
     API_MAX_RETRY = config["max_retry"]
     API_RETRY_SLEEP = config["retry_sleep"]
     API_ERROR_OUTPUT = config["error_output"]
-    
+
     categories = [Category.create_category(name) for name in config["task_name"]]
-    print(f"Following categories will be labeled:\n{[category.name_tag for category in categories]}")
+    print(
+        f"Following categories will be labeled:\n{[category.name_tag for category in categories]}"
+    )
 
     print("loading input data (might take min)")
     with open(config["input_file"], "rb") as f:
         data = orjson.loads(f.read())
     input_data = pd.DataFrame(data)
     not_labeled = input_data.copy()
-    
-    not_labeled["uid"] = not_labeled.apply(lambda row: row["question_id"] + str(row["tstamp"]), axis=1)
-    not_labeled["task_required"] = [[category.name_tag for category in categories]] * len(not_labeled)
+
+    not_labeled["uid"] = not_labeled.apply(
+        lambda row: row["question_id"] + str(row["tstamp"]), axis=1
+    )
+    not_labeled["task_required"] = [
+        [category.name_tag for category in categories]
+    ] * len(not_labeled)
     print(f"{len(not_labeled)}# of input data just loaded")
 
     if config["cache_file"]:
@@ -145,44 +153,68 @@ if __name__ == "__main__":
         with open(config["cache_file"], "rb") as f:
             data = orjson.loads(f.read())
         cache_data = pd.DataFrame(data)
-        cache_data["uid"] = cache_data.apply(lambda row: row["question_id"] + str(row["tstamp"]), axis=1)
+        cache_data["uid"] = cache_data.apply(
+            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
+        )
         print(f"{len(cache_data)}# of cache data just loaded")
 
         for category in categories:
             if category.name_tag not in cache_data.columns:
                 continue
-            
+
             ids = cache_data[["uid", category.name_tag]].dropna(axis=0).uid.tolist()
             assert len(ids) == len(set(ids)), "qid + tstamp somehow not unique"
             ids = set(ids)
-            print(f"found {len(ids)} # of existing {category.name_tag} data in cache file.")
-            not_labeled["task_required"] = not_labeled.apply(lambda row: [name for name in row["task_required"] if name != category.name_tag] if row["uid"] in ids else row["task_required"], axis=1)
+            print(
+                f"found {len(ids)} # of existing {category.name_tag} data in cache file."
+            )
+            not_labeled["task_required"] = not_labeled.apply(
+                lambda row: [
+                    name for name in row["task_required"] if name != category.name_tag
+                ]
+                if row["uid"] in ids
+                else row["task_required"],
+                axis=1,
+            )
 
     if os.path.isfile(config["output_file"]):
         print("loading existing output")
         output_data = pd.read_json(config["output_file"], lines=True)
-        output_data["uid"] = output_data.apply(lambda row: row["question_id"] + str(row["tstamp"]), axis=1)
+        output_data["uid"] = output_data.apply(
+            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
+        )
         print(f"{len(output_data)}# of existing output just loaded")
 
         for category in categories:
             if category.name_tag not in output_data.columns:
                 continue
-            
+
             ids = output_data[["uid", category.name_tag]].dropna(axis=0).uid.tolist()
             assert len(ids) == len(set(ids)), "qid + tstamp somehow not unique"
             ids = set(ids)
-            print(f"found {len(ids)} # of existing {category.name_tag} data in output file.")
-            not_labeled["task_required"] = not_labeled.apply(lambda row: [name for name in row["task_required"] if name != category.name_tag] if row["uid"] in ids else row["task_required"], axis=1)
+            print(
+                f"found {len(ids)} # of existing {category.name_tag} data in output file."
+            )
+            not_labeled["task_required"] = not_labeled.apply(
+                lambda row: [
+                    name for name in row["task_required"] if name != category.name_tag
+                ]
+                if row["uid"] in ids
+                else row["task_required"],
+                axis=1,
+            )
 
-    not_labeled = not_labeled[not_labeled.task_required.map(lambda x: len(x) > 0)].copy()
-    
+    not_labeled = not_labeled[
+        not_labeled.task_required.map(lambda x: len(x) > 0)
+    ].copy()
+
     print(f"{len(not_labeled)} needs to be labeled")
 
     not_labeled["prompt"] = not_labeled.conversation_a.map(
         lambda convo: "\n".join([convo[i]["content"] for i in range(0, len(convo), 2)])
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
- 
+
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=config["parallel"]
     ) as executor:
@@ -196,7 +228,11 @@ if __name__ == "__main__":
                 config["temperature"],
                 config["output_file"],
                 get_endpoint(config["endpoints"]),
-                [category for category in categories if category.name_tag in row["task_required"]],
+                [
+                    category
+                    for category in categories
+                    if category.name_tag in row["task_required"]
+                ],
             )
             futures.append(future)
         for future in tqdm.tqdm(
@@ -208,27 +244,49 @@ if __name__ == "__main__":
         # merge two data frames, but only take the fields from the cache data to overwrite the input data
         merge_columns = [category.name_tag for category in categories]
         print(f"Columns to be merged:\n{merge_columns}")
-        
-        input_data["uid"] = input_data.apply(lambda row: row["question_id"] + str(row["tstamp"]), axis=1)
-        
+
+        input_data["uid"] = input_data.apply(
+            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
+        )
+
         if config["cache_file"]:
             input_data = pd.merge(
-                input_data, cache_data[["uid"] + [name for name in merge_columns if name in cache_data.columns]], on="uid", how="left"
+                input_data,
+                cache_data[
+                    ["uid"]
+                    + [name for name in merge_columns if name in cache_data.columns]
+                ],
+                on="uid",
+                how="left",
             )
-        input_data[[name for name in merge_columns if name not in input_data.columns]] = None
+        input_data[
+            [name for name in merge_columns if name not in input_data.columns]
+        ] = None
 
         if os.path.isfile(config["output_file"]):
             temp = pd.read_json(config["output_file"], lines=True)
-            temp["uid"] = temp.apply(lambda row: row["question_id"] + str(row["tstamp"]), axis=1)
-            input_data = pd.merge(
-                input_data, temp[["uid"] + [name for name in merge_columns if name in temp.columns]], on="uid", how="left"
+            temp["uid"] = temp.apply(
+                lambda row: row["question_id"] + str(row["tstamp"]), axis=1
             )
-            
+            input_data = pd.merge(
+                input_data,
+                temp[
+                    ["uid"] + [name for name in merge_columns if name in temp.columns]
+                ],
+                on="uid",
+                how="left",
+            )
+
             for category in categories:
                 if category.name_tag + "_x" not in input_data.columns:
                     continue
-                input_data[category.name_tag] = input_data[category.name_tag + "_x"].combine_first(input_data[category.name_tag + "_y"])
-                input_data.drop(columns=[category.name_tag + "_x", category.name_tag + "_y"], inplace=True)
+                input_data[category.name_tag] = input_data[
+                    category.name_tag + "_x"
+                ].combine_first(input_data[category.name_tag + "_y"])
+                input_data.drop(
+                    columns=[category.name_tag + "_x", category.name_tag + "_y"],
+                    inplace=True,
+                )
                 print("data filled")
 
         final_data = input_data.drop(columns=["prompt"], errors="ignore")
