@@ -104,6 +104,7 @@ class DashInferWorker(BaseModelWorker):
             stop_token_ids.append(self.tokenizer.eos_token_id)
         seed = params.get("seed")
         echo = params.get("echo", True)
+        logprobs = params.get("logprobs")
         # not supported parameters
         stop = params.get("stop")
         use_beam_search = params.get("use_beam_search", False)
@@ -129,6 +130,9 @@ class DashInferWorker(BaseModelWorker):
             gen_cfg["stop_words_ids"] = dashinfer_style_stop_token_ids
         if seed is not None:
             gen_cfg["seed"] = int(seed)
+        if logprobs is not None:
+            gen_cfg["logprobs"] = True
+            gen_cfg["top_logprobs"] = int(logprobs)
         if stop is not None:
             logger.warning("dashinfer worker does not support `stop` parameter")
         if use_beam_search == True:
