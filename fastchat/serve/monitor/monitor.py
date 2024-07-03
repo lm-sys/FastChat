@@ -107,6 +107,17 @@ Last updated: {elo_results["last_updated_datetime"]}
 """
     return leaderboard_md
 
+def arena_hard_title():
+    arena_hard_title = """
+Last Updated: 2024-06-23
+
+Leaderboard for [Arena-Hard-Auto v0.1](https://github.com/lm-sys/arena-hard-auto) - an automatic evaluation tool for instruction-tuned LLMs
+
+***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
+Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
+    """
+    return arena_hard_title
+
 
 def update_elo_components(
     max_num_files, elo_results_file, ban_ip_file, exclude_model_names
@@ -254,6 +265,36 @@ def get_full_table(arena_df, model_table_df):
     values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
     return values
 
+def arena_hard_process(leaderboard_table_file, filepath):
+    arena_hard = pd.read_csv(filepath) 
+    leaderboard_table = pd.read_csv(leaderboard_table_file)
+    links = leaderboard_table.get('Link')
+    display_name = leaderboard_table.get('Model')
+    model_name = leaderboard_table.get('key')
+    organization = leaderboard_table.get('Organization')
+
+    info = {}
+    for i in range(len(model_name)):
+        model_info = {}
+        model_info['display'] = display_name[i]
+        model_info['link'] = links[i]
+        model_info['org'] = organization[i]
+        info[model_name[i]] = model_info
+
+    info['glm-4-air'] = {'display': "GLM-4-Air", 'link':'https://open.bigmodel.cn/', 'org': 'Zhipu AI'}
+    info['snorkel-mistral-pairrm-dpo'] = {'display': 'Snorkel-Mistral-PairRM-DPO', 'link':'https://huggingface.co/snorkelai/Snorkel-Mistral-PairRM-DPO', 'org':'Snorkel AI'}
+    
+    organization = []
+    for i in range(len(arena_hard)):
+        assert arena_hard.loc[i, 'model'] in info, "update leaderboard_table info"
+        organization.append(info[arena_hard.loc[i, 'model']]['org'])
+        link = info[arena_hard.loc[i, 'model']]['link']
+        arena_hard.loc[i, 'model'] = model_hyperlink(info[arena_hard.loc[i, 'model']]['display'], link)
+
+    arena_hard.insert(loc=len(arena_hard.columns), column='Organization', value=organization)
+    rankings = recompute_final_ranking(arena_hard)
+    arena_hard.insert(loc=0, column='Rank* (UB)', value=rankings)
+    return arena_hard
 
 def create_ranking_str(ranking, ranking_difference):
     if ranking_difference > 0:
@@ -740,7 +781,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df):
 
 
 def build_leaderboard_tab(
-    elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
+    elo_results_file, leaderboard_table_file, arena_hard_leaderboard, show_plot=False, mirror=False
 ):
     if elo_results_file is None:  # Do live update
         default_md = "Loading ..."
@@ -786,6 +827,20 @@ def build_leaderboard_tab(
                 )
             with gr.Tab("Full Leaderboard", id=2):
                 build_full_leaderboard_tab(elo_results_text, model_table_df)
+            
+            with gr.Tab("Arena-Hard-Auto v0.1 Leaderboard", id=3):
+                dataFrame = arena_hard_process(leaderboard_table_file, arena_hard_leaderboard) 
+                dataFrame = dataFrame.drop(columns=["rating_q025", "rating_q975"])
+                dataFrame = dataFrame.rename(columns={"model": "Model", "score": "Score", "CI": "95% CI", "avg_tokens":"Average Tokens"})
+                md = arena_hard_title()
+                gr.Markdown(md, elem_id="leaderboard_markdown")
+                gr.DataFrame(dataFrame,
+                datatype=["markdown" if col == "Model" else "str" for col in dataFrame.columns],
+                elem_id="full_leaderboard_dataframe",
+                height=800,
+                wrap=True,
+                column_widths=[70, 190, 100, 100, 90, 130]
+                )
 
         if not show_plot:
             gr.Markdown(
@@ -822,7 +877,7 @@ def build_leaderboard_tab(
     return [md_1] + gr_plots
 
 
-def build_demo(elo_results_file, leaderboard_table_file):
+def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard):
     from fastchat.serve.gradio_web_server import block_css
 
     text_size = gr.themes.sizes.text_lg
@@ -858,6 +913,7 @@ def build_demo(elo_results_file, leaderboard_table_file):
                 leader_components = build_leaderboard_tab(
                     elo_results_file,
                     leaderboard_table_file,
+                    arena_hard_leaderboard,
                     show_plot=True,
                     mirror=False,
                 )
@@ -889,6 +945,7 @@ if __name__ == "__main__":
     parser.add_argument("--ban-ip-file", type=str)
     parser.add_argument("--exclude-model-names", type=str, nargs="+")
     parser.add_argument("--password", type=str, default=None, nargs="+")
+    parser.add_argument("--arena-hard-leaderboard", type=str)
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")
@@ -907,7 +964,7 @@ if __name__ == "__main__":
         )
         update_thread.start()
 
-    demo = build_demo(args.elo_results_file, args.leaderboard_table_file)
+    demo = build_demo(args.elo_results_file, args.leaderboard_table_file, args.arena_hard_leaderboard)
     demo.queue(
         default_concurrency_limit=args.concurrency_count,
         status_update_rate=10,
@@ -919,3 +976,4 @@ if __name__ == "__main__":
         max_threads=200,
         auth=(args.password[0], args.password[1]) if args.password else None,
     )
+
