@@ -380,17 +380,18 @@ async def create_chat_completion_for_tool(request: ChatCompletionRequest):
         return error_check_ret
 
     gen_params["max_new_tokens"] = max_new_tokens
+    n = request.m or 1
 
     # todo  流式 后处理
     if request.stream:
         generator = chat_completion_stream_generator(
-            request.model, gen_params, request.n, worker_addr
+            request.model, gen_params, n, worker_addr
         )
         return StreamingResponse(generator, media_type="text/event-stream")
 
     choices = []
     chat_completions = []
-    for i in range(request.n):
+    for i in range(n):
         content = asyncio.create_task(generate_completion(gen_params, worker_addr))
         chat_completions.append(content)
     try:
