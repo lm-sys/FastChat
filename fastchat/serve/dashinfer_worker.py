@@ -142,7 +142,9 @@ class DashInferWorker(BaseModelWorker):
             gen_cfg["logprobs"] = True
             gen_cfg["top_logprobs"] = int(logprobs)
         if frequency_penalty is not None:
-            logger.warning("dashinfer worker does not support `frequency_penalty` parameter")
+            logger.warning(
+                "dashinfer worker does not support `frequency_penalty` parameter"
+            )
         if stop is not None:
             logger.warning("dashinfer worker does not support `stop` parameter")
         if use_beam_search == True:
