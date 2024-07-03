@@ -155,30 +155,30 @@ class DashInferWorker(BaseModelWorker):
         logger.info(f"dashinfer is going to process one request in stream mode: {engine_req}")
         results_generator = self.engine_helper.process_one_request_stream(engine_req)
 
-        # try:
-        for generate_text in results_generator:
-            if echo:
-                output_text = context + generate_text
-            else:
-                output_text = generate_text
-            prompt_tokens = engine_req.in_tokens_len
-            completion_tokens = engine_req.out_tokens_len
+        try:
+            for generate_text in results_generator:
+                if echo:
+                    output_text = context + generate_text
+                else:
+                    output_text = generate_text
+                prompt_tokens = engine_req.in_tokens_len
+                completion_tokens = engine_req.out_tokens_len
+                ret = {
+                    "text": output_text,
+                    "error_code": 0,
+                    "usage": {
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": prompt_tokens + completion_tokens,
+                    },
+                }
+                yield (json.dumps(ret) + "\0").encode()
+        except Exception as e:
             ret = {
-                "text": output_text,
-                "error_code": 0,
-                "usage": {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                    "total_tokens": prompt_tokens + completion_tokens,
-                },
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
             }
-            yield (json.dumps(ret) + "\0").encode()
-        # except Exception as e:
-        #     ret = {
-        #         "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-        #         "error_code": ErrorCode.INTERNAL_ERROR,
-        #     }
-        #     yield json.dumps(ret).encode() + b"\0"
+            yield json.dumps(ret).encode() + b"\0"
 
 
     async def generate(self, params):
