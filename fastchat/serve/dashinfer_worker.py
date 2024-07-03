@@ -101,7 +101,7 @@ class DashInferWorker(BaseModelWorker):
         temperature = params.get("temperature")
         top_k = params.get("top_k")
         top_p = params.get("top_p")
-        frequency_penalty = params.get("repetition_penalty")
+        repetition_penalty = params.get("repetition_penalty")
         presence_penalty = params.get("presence_penalty")
         max_tokens = params.get("max_new_tokens")
         stop_token_ids = params.get("stop_token_ids") or []
@@ -111,6 +111,7 @@ class DashInferWorker(BaseModelWorker):
         echo = params.get("echo", True)
         logprobs = params.get("logprobs")
         # not supported parameters
+        frequency_penalty = params.get("frequency_penalty")
         stop = params.get("stop")
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
@@ -123,8 +124,8 @@ class DashInferWorker(BaseModelWorker):
             gen_cfg["top_k"] = dashinfer_style_top_k
         if top_p is not None:
             gen_cfg["top_p"] = float(top_p)
-        if frequency_penalty is not None:
-            gen_cfg["repetition_penalty"] = float(frequency_penalty)
+        if repetition_penalty is not None:
+            gen_cfg["repetition_penalty"] = float(repetition_penalty)
         if presence_penalty is not None:
             gen_cfg["presence_penalty"] = float(presence_penalty)
         if max_tokens is not None:
@@ -140,6 +141,8 @@ class DashInferWorker(BaseModelWorker):
         if logprobs is not None:
             gen_cfg["logprobs"] = True
             gen_cfg["top_logprobs"] = int(logprobs)
+        if frequency_penalty is not None:
+            logger.warning("dashinfer worker does not support `frequency_penalty` parameter")
         if stop is not None:
             logger.warning("dashinfer worker does not support `stop` parameter")
         if use_beam_search == True:
