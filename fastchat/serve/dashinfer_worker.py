@@ -29,6 +29,7 @@ from fastchat.utils import build_logger, get_context_length, is_partial_stop
 
 app = FastAPI()
 
+
 def download_model(model_id, revision):
     source = "huggingface"
     if os.environ.get("FASTCHAT_USE_MODELSCOPE", "False").lower() == "true":
@@ -37,9 +38,11 @@ def download_model(model_id, revision):
     logger.info(f"Downloading model {model_id} (revision: {revision}) from {source}")
     if source == "modelscope":
         from modelscope import snapshot_download
+
         model_dir = snapshot_download(model_id, revision=revision)
     elif source == "huggingface":
         from huggingface_hub import snapshot_download
+
         model_dir = snapshot_download(repo_id=model_id)
     else:
         raise ValueError("Unknown source")
@@ -47,6 +50,7 @@ def download_model(model_id, revision):
     logger.info(f"Save model to path {model_dir}")
 
     return model_dir
+
 
 class DashInferWorker(BaseModelWorker):
     def __init__(
@@ -82,7 +86,7 @@ class DashInferWorker(BaseModelWorker):
         engine_helper.init_tokenizer(model_path)
         engine_helper.convert_model(model_path)
         engine_helper.init_engine()
-        
+
         self.context_len = engine_helper.engine_config["engine_max_length"]
         self.tokenizer = engine_helper.tokenizer
         self.engine_helper = engine_helper
@@ -127,7 +131,9 @@ class DashInferWorker(BaseModelWorker):
             gen_cfg["max_length"] = int(max_tokens)
         if len(stop_token_ids) != 0:
             dashinfer_style_stop_token_ids = [[id] for id in set(stop_token_ids)]
-            logger.info(f"dashinfer_style_stop_token_ids = {dashinfer_style_stop_token_ids}")            
+            logger.info(
+                f"dashinfer_style_stop_token_ids = {dashinfer_style_stop_token_ids}"
+            )
             gen_cfg["stop_words_ids"] = dashinfer_style_stop_token_ids
         if seed is not None:
             gen_cfg["seed"] = int(seed)
@@ -137,22 +143,22 @@ class DashInferWorker(BaseModelWorker):
         if stop is not None:
             logger.warning("dashinfer worker does not support `stop` parameter")
         if use_beam_search == True:
-            logger.warning("dashinfer worker does not support `use_beam_search` parameter")
+            logger.warning(
+                "dashinfer worker does not support `use_beam_search` parameter"
+            )
         if best_of is not None:
             logger.warning("dashinfer worker does not support `best_of` parameter")
-            
 
         logger.info(
-                   f"dashinfer engine helper creates request with context: {context}, gen_cfg: {gen_cfg}"
-                )
-        
+            f"dashinfer engine helper creates request with context: {context}, gen_cfg: {gen_cfg}"
+        )
 
         request_list = self.engine_helper.create_request([context], gen_cfg=[gen_cfg])
-        
- 
-        
+
         engine_req = request_list[0]
-        logger.info(f"dashinfer is going to process one request in stream mode: {engine_req}")
+        logger.info(
+            f"dashinfer is going to process one request in stream mode: {engine_req}"
+        )
         results_generator = self.engine_helper.process_one_request_stream(engine_req)
 
         try:
@@ -180,7 +186,6 @@ class DashInferWorker(BaseModelWorker):
             }
             yield json.dumps(ret).encode() + b"\0"
 
-
     async def generate(self, params):
         async for x in self.generate_stream(params):
             pass
@@ -201,8 +206,6 @@ def create_background_tasks():
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_worker_semaphore)
     return background_tasks
-
-
 
 
 @app.post("/worker_generate_stream")
@@ -258,7 +261,7 @@ if __name__ == "__main__":
         type=lambda s: s.split(","),
         help="Optional display comma separated names",
     )
-    
+
     parser.add_argument("--limit-worker-concurrency", type=int, default=1024)
     parser.add_argument("--no-register", action="store_true")
     parser.add_argument(
@@ -270,19 +273,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
-    parser.add_argument("config_file", metavar="config-file", type=str, default="config_qwen_v10_7b.json", help="A model config file which dash-inferread")
+    parser.add_argument(
+        "config_file",
+        metavar="config-file",
+        type=str,
+        default="config_qwen_v10_7b.json",
+        help="A model config file which dash-inferread",
+    )
 
-
-    
     args = parser.parse_args()
     config = ConfigManager.get_config_from_json(args.config_file)
-    
+
     cmd = f"pip show dashinfer | grep 'Location' | cut -d ' ' -f 2"
-    package_location = subprocess.run(cmd,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      shell=True,
-                                      text=True)
+    package_location = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True
+    )
     package_location = package_location.stdout.strip()
     os.environ["AS_DAEMON_PATH"] = package_location + "/dashinfer/allspark/bin"
     os.environ["AS_NUMA_NUM"] = str(len(config["device_ids"]))
