@@ -10,7 +10,7 @@ import copy
 import json
 import os
 import subprocess
-from typing import List
+from typing import List, Optional
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -75,11 +75,12 @@ class DashInferWorker(BaseModelWorker):
         logger.info(
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: dash-infer worker..."
         )
-
-        model_download_path = download_model(model_path, revision)
+        # check if model_path is existed at local path
+        if not os.path.exists(model_path):
+            model_path = download_model(model_path, revision)
         engine_helper = EngineHelper(config)
-        engine_helper.init_tokenizer(model_download_path)
-        engine_helper.convert_model(model_download_path)
+        engine_helper.init_tokenizer(model_path)
+        engine_helper.convert_model(model_path)
         engine_helper.init_engine()
         
         self.context_len = engine_helper.engine_config["engine_max_length"]
