@@ -2614,6 +2614,7 @@ register_model_adapter(GraniteCodeAdapter)
 register_model_adapter(IBMOldAdapter)
 register_model_adapter(LabradorAdapter)
 register_model_adapter(CodeLabAdapter)
+register_model_adapter(GraniteRhelAIAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
