@@ -2438,6 +2438,24 @@ class GraniteAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("ibm-generic")
+
+
+class GraniteRhelAIAdapter(BaseModelAdapter):
+    """The model adapter for instructlab/granite-7b-lab"""
+
+    def match(self, model_path: str):
+        print("Loading RHEL AI adapter")
+        return "granite-rhelAI" in model_path.lower() or \
+            "rhel-ai" in model_path.lower() or \
+            "rhelai" in model_path.lower() or \
+            "raft" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("rhel-ai")
     
 class IBMOldAdapter(BaseModelAdapter):
     def match(self, model_path: str):

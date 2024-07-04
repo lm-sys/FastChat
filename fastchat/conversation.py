@@ -1821,6 +1821,18 @@ register_conv_template(
 
 register_conv_template(
     Conversation(
+        name="rhel-ai",
+        system_template="<|system|>\n{system_message}",
+        system_message="""I am, Red Hat® Instruct Model based on Granite 7B, an AI language model developed by Red Hat and IBM Research, based on the Granite-7b-base language model. My primary function is to be a chat assistant.""",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
+        stop_str="<|endoftext|>",
+    )
+)
+
+register_conv_template(
+    Conversation(
         name="codelab",
         system_template="<|system|>\n{system_message}",
         system_message="""You are an AI code model developed by IBM Research. You are an expert in programming in various languages. You carefully follow instructions. You are helpful and harmless and you follow ethical guidelines and promote positive behavior.""",
