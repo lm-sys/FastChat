@@ -524,6 +524,7 @@ class Conversation:
 
     def to_reka_api_messages(self):
         from fastchat.serve.vision.image import ImageFormat
+        from reka import ChatMessage, TypedMediaContent, TypedText
 
         ret = []
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
@@ -531,23 +532,47 @@ class Conversation:
                 if type(msg) == tuple:
                     text, images = msg
                     for image in images:
-                        if image.image_format == ImageFormat.URL:
+                        if image.image_format == ImageFormat.BYTES:
                             ret.append(
-                                {"type": "human", "text": text, "media_url": image.url}
-                            )
-                        elif image.image_format == ImageFormat.BYTES:
-                            ret.append(
-                                {
-                                    "type": "human",
-                                    "text": text,
-                                    "media_url": f"data:image/{image.filetype};base64,{image.base64_str}",
-                                }
+                                ChatMessage(
+                                    content=[
+                                        TypedText(
+                                            type="text",
+                                            text=text,
+                                        ),
+                                        TypedMediaContent(
+                                            type="image_url",
+                                            image_url=f"data:image/{image.filetype};base64,{image.base64_str}",
+                                        ),
+                                    ],
+                                    role="user",
+                                )
                             )
                 else:
-                    ret.append({"type": "human", "text": msg})
+                    ret.append(
+                        ChatMessage(
+                            content=[
+                                TypedText(
+                                    type="text",
+                                    text=msg,
+                                )
+                            ],
+                            role="user",
+                        )
+                    )
             else:
                 if msg is not None:
-                    ret.append({"type": "model", "text": msg})
+                    ret.append(
+                        ChatMessage(
+                            content=[
+                                TypedText(
+                                    type="text",
+                                    text=msg,
+                                )
+                            ],
+                            role="assistant",
+                        )
+                    )
 
         return ret
 

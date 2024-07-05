@@ -134,7 +134,7 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal, invisible_text]
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -239,7 +239,7 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal, invisible_text]
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -297,7 +297,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [None, ""]
+            + [None, "", no_change_btn]
             + [
                 no_change_btn,
             ]
@@ -321,7 +321,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}, ""]
+            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
             + [
                 no_change_btn,
             ]
@@ -342,6 +342,7 @@ def add_text(
                     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
                 },
                 "",
+                no_change_btn,
             ]
             + [no_change_btn] * 7
             + [""]
@@ -363,7 +364,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [disable_multimodal, visible_text]
+        + [disable_multimodal, visible_text, enable_btn]
         + [
             disable_btn,
         ]
@@ -464,7 +465,9 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
             placeholder="Enter your prompt or add image here",
             elem_id="input_box",
         )
-        # send_btn = gr.Button(value="Send", variant="primary", scale=0)
+        send_btn = gr.Button(
+            value="Send", variant="primary", scale=0, visible=False, interactive=False
+        )
 
     with gr.Row() as button_row:
         if random_questions:
@@ -548,7 +551,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         states
         + chatbots
         + model_selectors
-        + [multimodal_textbox, textbox]
+        + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
         + [slow_warning],
@@ -581,7 +584,11 @@ function (a, b, c, d) {
     ).then(
         clear_history_example,
         None,
-        states + chatbots + model_selectors + [multimodal_textbox, textbox] + btn_list,
+        states
+        + chatbots
+        + model_selectors
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list,
     )
 
     multimodal_textbox.submit(
@@ -589,7 +596,7 @@ function (a, b, c, d) {
         states + model_selectors + [multimodal_textbox],
         states
         + chatbots
-        + [multimodal_textbox, textbox]
+        + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
         + [slow_warning],
@@ -608,7 +615,26 @@ function (a, b, c, d) {
         states + model_selectors + [textbox],
         states
         + chatbots
-        + [multimodal_textbox, textbox]
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
+    ).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons,
+        [],
+        btn_list,
+    )
+
+    send_btn.click(
+        add_text,
+        states + model_selectors + [textbox],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
         + [slow_warning],
@@ -633,7 +659,7 @@ function (a, b, c, d) {
             states
             + chatbots
             + model_selectors
-            + [multimodal_textbox, textbox]
+            + [multimodal_textbox, textbox, send_btn]
             + btn_list
             + [random_btn],
         )

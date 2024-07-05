@@ -490,6 +490,7 @@ def build_arena_tab(
         )
         return
 
+    round_digit = None if vision else None
     arena_dfs = {}
     category_elo_results = {}
     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
@@ -512,6 +513,7 @@ def build_arena_tab(
             arena_df,
             model_table_df,
             arena_subset_df=arena_subset_df if category != "Overall" else None,
+            round_digit=round_digit,
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
@@ -665,9 +667,7 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
         elem_id="leaderboard_markdown",
     )
 
-    if not vision:
-        # only live update the text tab
-        leader_component_values[:] = [default_md, p1, p2, p3, p4]
+    leader_component_values[:] = [default_md, p1, p2, p3, p4]
 
     if show_plot:
         more_stats_md = gr.Markdown(
@@ -740,7 +740,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df):
 
 
 def build_leaderboard_tab(
-    elo_results_file, leaderboard_table_file, show_plot=False, mirror=False
+    elo_results_file, leaderboard_table_file, vision=True, show_plot=False, mirror=False
 ):
     if elo_results_file is None:  # Do live update
         default_md = "Loading ..."
@@ -776,14 +776,15 @@ def build_leaderboard_tab(
                     default_md,
                     show_plot=show_plot,
                 )
-            with gr.Tab("📣 NEW: Arena (Vision)", id=1):
-                build_arena_tab(
-                    elo_results_vision,
-                    model_table_df,
-                    default_md,
-                    vision=True,
-                    show_plot=show_plot,
-                )
+            if vision:
+                with gr.Tab("📣 NEW: Arena (Vision)", id=1):
+                    build_arena_tab(
+                        elo_results_vision,
+                        model_table_df,
+                        default_md,
+                        vision=True,
+                        show_plot=show_plot,
+                    )
             with gr.Tab("Full Leaderboard", id=2):
                 build_full_leaderboard_tab(elo_results_text, model_table_df)
 
