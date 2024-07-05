@@ -87,7 +87,7 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
 
 def make_full_leaderboard_md():
     leaderboard_md = """
-Three benchmarks are displayed: **Arena Elo**, **MT-Bench** and **MMLU**.
+Three benchmarks are displayed: **Arena Score**, **MT-Bench** and **MMLU**.
 - [Chatbot Arena](https://chat.lmsys.org/?arena) - a crowdsourced, randomized battle platform. We use 500K+ user votes to compute model strength.
 - [MT-Bench](https://arxiv.org/abs/2306.05685): a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot): a test to measure a model's multitask accuracy on 57 tasks.
@@ -350,7 +350,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
             # model display name
             row.append(model_name)
             # elo rating
-            rating = f"{round(arena_df.iloc[i]['rating'])}"
+            rating = round(arena_df.iloc[i]['rating'])
             row.append(rating)
             upper_diff = round(
                 arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"]
@@ -440,7 +440,7 @@ def update_leaderboard_df(arena_table_vals):
             "Rank* (UB)",
             "Delta",
             "Model",
-            "Arena Elo",
+            "Arena Score",
             "95% CI",
             "Votes",
             "Organization",
@@ -558,7 +558,7 @@ def build_arena_tab(
                     "Knowledge Cutoff",
                 ],
                 datatype=[
-                    "str",
+                    "number",
                     "markdown",
                     "number",
                     "str",
@@ -629,7 +629,7 @@ def build_arena_tab(
         headers=[
             "Rank* (UB)",
             "🤖 Model",
-            "⭐ Arena Elo",
+            "⭐ Arena Score",
             "📊 95% CI",
             "🗳️ Votes",
             "Organization",
@@ -637,7 +637,7 @@ def build_arena_tab(
             "Knowledge Cutoff",
         ],
         datatype=[
-            "str",
+            "number",
             "markdown",
             "number",
             "str",
@@ -724,7 +724,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df):
     gr.Dataframe(
         headers=[
             "Model",
-            "Arena Elo",
+            "Arena Score",
             "MT-bench",
             "MMLU",
             "Organization",
