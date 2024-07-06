@@ -283,17 +283,6 @@ def arena_hard_process(leaderboard_table_file, filepath):
         model_info["org"] = organization[i]
         info[model_name[i]] = model_info
 
-    info["glm-4-air"] = {
-        "display": "GLM-4-Air",
-        "link": "https://open.bigmodel.cn/",
-        "org": "Zhipu AI",
-    }
-    info["snorkel-mistral-pairrm-dpo"] = {
-        "display": "Snorkel-Mistral-PairRM-DPO",
-        "link": "https://huggingface.co/snorkelai/Snorkel-Mistral-PairRM-DPO",
-        "org": "Snorkel AI",
-    }
-
     organization = []
     for i in range(len(arena_hard)):
         assert arena_hard.loc[i, "model"] in info, "update leaderboard_table info"
