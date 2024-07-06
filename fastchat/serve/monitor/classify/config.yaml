@@ -7,11 +7,11 @@ output_file: null # json line
 convert_to_json: True
 
 task_name:
-  - criteria_tag
-  - if_tag
-  - math_tag
+  - criteria_v0.1
+  - if_v0.1
+  - math_v0.1
 
-model_name: META-LLAMA/LLAMA-3-70B-CHAT-HF
+model_name: null
 name: llama-3-70b-instruct
 endpoints:
   - api_base: null

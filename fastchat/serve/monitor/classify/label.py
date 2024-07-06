@@ -15,6 +15,10 @@ from category import Category
 
 LOCK = threading.RLock()
 
+TASKS = None
+CACHE_DICT = None
+OUTPUT_DICT = None
+
 # API setting constants
 API_MAX_RETRY = None
 API_RETRY_SLEEP = None
@@ -93,6 +97,11 @@ def get_answer(
     api_dict: dict,
     categories: list,
 ):
+    if "category_tag" in question:
+        category_tag = question["category_tag"]
+    else:
+        category_tag = {}
+        
     for category in categories:
         conv = category.pre_process(question["prompt"])
         output = chat_completion_openai(
@@ -103,13 +112,44 @@ def get_answer(
             api_dict=api_dict,
         )
         # Dump answers
-        question[category.name_tag] = category.post_process(output)
+        category_tag[category.name_tag] = category.post_process(output)
+        
+    question["category_tag"] = category_tag
 
-    question.drop(["prompt", "uid", "task_required"], inplace=True)
+    question.drop(["prompt", "uid", "required_tasks"], inplace=True)
 
     with LOCK:
         with open(answer_file, "a") as fout:
             fout.write(json.dumps(question.to_dict()) + "\n")
+
+
+def category_merge(row):
+    id = row["uid"]
+    input_category = row["category_tag"] if "category_tag" in row else {}
+    cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
+    output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
+    
+    # tries to fill in missing categories using cache first, then output
+    for name in TASKS:
+        if name not in input_category:
+            if name in cache_category:
+                input_category[name] = cache_category[name]
+                continue
+            if name in output_category:
+                input_category[name] = output_category[name]
+        
+    return input_category
+
+
+def find_required_tasks(row):
+    id = row["uid"]
+    input_category = row["category_tag"] if "category_tag" in row else {}
+    cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
+    output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
+    
+    return [name for name in TASKS if not (name in input_category or 
+                                           name in cache_category or 
+                                           name in output_category)]
 
 
 if __name__ == "__main__":
@@ -130,6 +170,7 @@ if __name__ == "__main__":
     API_ERROR_OUTPUT = config["error_output"]
 
     categories = [Category.create_category(name) for name in config["task_name"]]
+    TASKS = config["task_name"]
     print(
         f"Following categories will be labeled:\n{[category.name_tag for category in categories]}"
     )
@@ -138,77 +179,54 @@ if __name__ == "__main__":
     with open(config["input_file"], "rb") as f:
         data = orjson.loads(f.read())
     input_data = pd.DataFrame(data)
-    not_labeled = input_data.copy()
 
-    not_labeled["uid"] = not_labeled.apply(
-        lambda row: row["question_id"] + str(row["tstamp"]), axis=1
-    )
-    not_labeled["task_required"] = [
-        [category.name_tag for category in categories]
-    ] * len(not_labeled)
-    print(f"{len(not_labeled)}# of input data just loaded")
+    # much faster than pd.apply
+    input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)
+    assert len(input_data) == len(input_data.uid.unique())
+    print(f"{len(input_data)}# of input data just loaded")
 
     if config["cache_file"]:
         print("loading cache data")
         with open(config["cache_file"], "rb") as f:
             data = orjson.loads(f.read())
         cache_data = pd.DataFrame(data)
-        cache_data["uid"] = cache_data.apply(
-            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
-        )
+        cache_data["uid"] = cache_data.question_id.map(str) + cache_data.tstamp.map(str)
+        assert len(cache_data) == len(cache_data.uid.unique())
+        
         print(f"{len(cache_data)}# of cache data just loaded")
-
-        for category in categories:
-            if category.name_tag not in cache_data.columns:
-                continue
-
-            ids = cache_data[["uid", category.name_tag]].dropna(axis=0).uid.tolist()
-            assert len(ids) == len(set(ids)), "qid + tstamp somehow not unique"
-            ids = set(ids)
-            print(
-                f"found {len(ids)} # of existing {category.name_tag} data in cache file."
-            )
-            not_labeled["task_required"] = not_labeled.apply(
-                lambda row: [
-                    name for name in row["task_required"] if name != category.name_tag
-                ]
-                if row["uid"] in ids
-                else row["task_required"],
-                axis=1,
-            )
+        
+        assert "category_tag" in cache_data.columns
+        cache_dict = cache_data[["uid", "category_tag"]].set_index("uid")
+        print("finalizing cache_dict (should take less than 30 sec)")
+        CACHE_DICT = cache_dict.to_dict('index')
+    else:
+        CACHE_DICT = {}
 
     if os.path.isfile(config["output_file"]):
         print("loading existing output")
         output_data = pd.read_json(config["output_file"], lines=True)
-        output_data["uid"] = output_data.apply(
-            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
-        )
+        output_data["uid"] = output_data.question_id.map(str) + output_data.tstamp.map(str)
+        assert len(output_data) == len(output_data.uid.unique())
+        
         print(f"{len(output_data)}# of existing output just loaded")
+        
+        assert "category_tag" in output_data.columns
+        output_dict = output_data[["uid", "category_tag"]].set_index("uid")
+        print("finalizing output_dict (should take less than 30 sec)")
+        OUTPUT_DICT = output_dict.to_dict('index')
+    else:
+        OUTPUT_DICT = {}
+    
+    print("finding tasks needed to run... (should take around 1 minute or less on large dataset)")
+    input_data["required_tasks"] = input_data.apply(find_required_tasks, axis=1)
 
-        for category in categories:
-            if category.name_tag not in output_data.columns:
-                continue
-
-            ids = output_data[["uid", category.name_tag]].dropna(axis=0).uid.tolist()
-            assert len(ids) == len(set(ids)), "qid + tstamp somehow not unique"
-            ids = set(ids)
-            print(
-                f"found {len(ids)} # of existing {category.name_tag} data in output file."
-            )
-            not_labeled["task_required"] = not_labeled.apply(
-                lambda row: [
-                    name for name in row["task_required"] if name != category.name_tag
-                ]
-                if row["uid"] in ids
-                else row["task_required"],
-                axis=1,
-            )
-
-    not_labeled = not_labeled[
-        not_labeled.task_required.map(lambda x: len(x) > 0)
+    not_labeled = input_data[
+        input_data.required_tasks.map(lambda x: len(x) > 0)
     ].copy()
 
-    print(f"{len(not_labeled)} needs to be labeled")
+    print(f"{len(not_labeled)} # of conversations needs to be labeled")
+    for name in TASKS:
+        print(f"{name}: {len(not_labeled[not_labeled.required_tasks.map(lambda tasks: name in tasks)])}")
 
     not_labeled["prompt"] = not_labeled.conversation_a.map(
         lambda convo: "\n".join([convo[i]["content"] for i in range(0, len(convo), 2)])
@@ -231,7 +249,7 @@ if __name__ == "__main__":
                 [
                     category
                     for category in categories
-                    if category.name_tag in row["task_required"]
+                    if category.name_tag in row["required_tasks"]
                 ],
             )
             futures.append(future)
@@ -245,51 +263,26 @@ if __name__ == "__main__":
         merge_columns = [category.name_tag for category in categories]
         print(f"Columns to be merged:\n{merge_columns}")
 
-        input_data["uid"] = input_data.apply(
-            lambda row: row["question_id"] + str(row["tstamp"]), axis=1
-        )
+        input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)
+        assert len(input_data) == len(input_data.uid.unique())
 
-        if config["cache_file"]:
-            input_data = pd.merge(
-                input_data,
-                cache_data[
-                    ["uid"]
-                    + [name for name in merge_columns if name in cache_data.columns]
-                ],
-                on="uid",
-                how="left",
-            )
-        input_data[
-            [name for name in merge_columns if name not in input_data.columns]
-        ] = None
+        # fastest way to merge
+        assert os.path.isfile(config["output_file"])
+        print("reading output file...")
+        temp = pd.read_json(config["output_file"], lines=True)
+        temp["uid"] = temp.question_id.map(str) + temp.tstamp.map(str)
+        assert len(temp) == len(temp.uid.unique())
+        
+        assert "category_tag" in temp.columns
+        output_dict = temp[["uid", "category_tag"]].set_index("uid")
+        print("finalizing output_dict (should take less than 30 sec)")
+        OUTPUT_DICT = output_dict.to_dict('index')
 
-        if os.path.isfile(config["output_file"]):
-            temp = pd.read_json(config["output_file"], lines=True)
-            temp["uid"] = temp.apply(
-                lambda row: row["question_id"] + str(row["tstamp"]), axis=1
-            )
-            input_data = pd.merge(
-                input_data,
-                temp[
-                    ["uid"] + [name for name in merge_columns if name in temp.columns]
-                ],
-                on="uid",
-                how="left",
-            )
-
-            for category in categories:
-                if category.name_tag + "_x" not in input_data.columns:
-                    continue
-                input_data[category.name_tag] = input_data[
-                    category.name_tag + "_x"
-                ].combine_first(input_data[category.name_tag + "_y"])
-                input_data.drop(
-                    columns=[category.name_tag + "_x", category.name_tag + "_y"],
-                    inplace=True,
-                )
-                print("data filled")
-
-        final_data = input_data.drop(columns=["prompt"], errors="ignore")
+        print("begin merging (should take around 1 minute or less on large dataset)")
+        input_data["category_tag"] = input_data.apply(category_merge, axis=1)
+        print("merge completed")
+        
+        final_data = input_data.drop(columns=["prompt", "uid", "required_tasks"], errors="ignore")
         final_data.to_json(
             config["output_file"][:-1], orient="records", indent=4, force_ascii=False
         )
