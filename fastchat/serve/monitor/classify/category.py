@@ -76,7 +76,8 @@ class CategoryIF(Category):
         super().__init__()
         self.name_tag = "if_v0.1"
         self.pattern = re.compile(r"<score>([012345])<\/score>")
-        self.prompt_template = "You are an AI assistant tasked with determining whether a given user prompt can effectively assess another AI's ability to follow instructions. Your goal is to analyze the prompt and decide if it contains specific, clear instructions that would test an AI's capability to understand and execute directions accurately.\n\nHere is the user prompt to analyze:\n<user_prompt>\n{PROMPT}\n</user_prompt>\n\nCarefully examine the prompt above. Consider the following aspects:\n1. Does it contain specific instructions or requirements?\n2. Are there multiple steps or elements the AI needs to address?\n3. Does it ask for a particular format or structure in the response?\n4. Is there a unique or challenging aspect that would test the AI's ability to follow directions precisely?\n\nIn your analysis, consider both the content and the structure of the instructions. A good prompt for assessing instruction-following capabilities should have clear, specific directions that can be objectively evaluated.\n\nProvide your reasoning for why this prompt does or does not effectively assess an AI's ability to follow instructions. Consider both the strengths and weaknesses of the prompt in this regard.\n\nAfter providing your analysis, assign a score from 0 to 5:\n0 = Does not evaluate instruction-following ability.\n1 = Ineffective at evaluating instruction-following ability.\n2 = Somewhat effective at evaluating instruction-following ability.\n3 = Effective at evaluating simple instruction-following ability.\n4 = Effective at evaluating more complex instruction-following ability.\n5 = Effective at evaluating advanced instruction-following ability.\n\nPresent your response in the following format:\n<analysis>\nYour detailed analysis and reasoning here.\n</analysis>\n\nPresent your score in the following format:\n<score>[Your score from 0 to 5]</score>\n\nEnsure that your justification is comprehensive and your score accurately reflects your analysis of the prompt's effectiveness."
+        self.system_prompt = "You are an AI assistant tasked with determining whether a given user prompt can effectively assess another AI's ability to follow instructions. Your goal is to analyze the prompt and decide if it contains specific, clear instructions that would test an AI's capability to understand and execute directions accurately. Carefully examine the user prompt and consider the following aspects:\n1. Does it contain specific instructions or requirements?\n2. Are there multiple steps or elements the AI needs to address?\n3. Does it ask for a particular format or structure in the response?\n4. Is there a unique or challenging aspect that would test the AI's ability to follow directions precisely?\n\nConsider both the content and the structure of the instructions. A good prompt for assessing instruction-following capabilities should have clear, specific directions that can be objectively evaluated. Think about why this prompt does or does not effectively assess an AI's ability to follow instructions. Consider both the strengths and weaknesses of the prompt in this regard. Output your verdict as a score from 0 to 5:\n0 = Does not evaluate instruction-following ability.\n1 = Ineffective at evaluating instruction-following ability.\n2 = Somewhat effective at evaluating instruction-following ability.\n3 = Effective at evaluating simple instruction-following ability.\n4 = Effective at evaluating more complex instruction-following ability.\n5 = Effective at evaluating advanced instruction-following ability.\n\nPresent your score in the following format:\n<score>[Your score from 0 to 5]</score>.\nDo NOT explain."
+        self.prompt_template = "<user_prompt>{PROMPT}</user_prompt>"
 
     def get_score(self, judgment):
         matches = self.pattern.findall(judgment)
@@ -90,7 +91,10 @@ class CategoryIF(Category):
 
     def pre_process(self, prompt):
         args = {"PROMPT": prompt}
-        conv = [{"role": "user", "content": self.prompt_template.format(**args)}]
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
         return conv
 
     def post_process(self, judgment):
@@ -106,7 +110,8 @@ class CategoryMath(Category):
         super().__init__()
         self.name_tag = "math_v0.1"
         self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
-        self.prompt_template = "You are tasked with determining whether a given user prompt requires an AI assistant to solve a math problem and apply mathematical logic and reasoning.\n\nHere is the user prompt to be evaluated:\n<user_prompt>\n{PROMPT}\n</user_prompt>\n\nCarefully analyze this prompt and consider whether it requires mathematical problem-solving skills to answer correctly. Think about the following aspects:\n\n1. Does it require the application of a specific mathematical concept or formula?\n2. Does the prompt involve numerical calculations or algebraic manipulation or logical reasoning?\n3. Is there a clear mathematical problem to be solved?\n4. Would answering this prompt demonstrate proficiency in a specific area in mathematics?\n\nAfter your analysis, provide your reasoning for why this prompt either can or cannot assess math problem-solving abilities. Consider both the content and the structure of the prompt in your explanation.\n\nBased on your analysis and reasoning, make a final decision on whether this prompt can effectively assess an AI assistant's ability to solve math problems.\n\nPresent your response in the following format:\n<analysis>\n[Your detailed analysis and reasoning here]\n</analysis>\n\n<decision>\n[yes/no]\n</decision>"
+        self.system_prompt = 'You are tasked with determining whether a given user prompt requires an AI assistant to solve a math problem and apply mathematical logic and reasoning.\n\nCarefully analyze the user prompt and consider whether it requires mathematical problem-solving skills to answer correctly. Think about the following aspects:\n\n1. Does it require the application of a specific mathematical concept or formula?\n2. Does the prompt involve numerical calculations or algebraic manipulation or logical reasoning?\n3. Is there a clear mathematical problem to be solved?\n4. Would answering this prompt demonstrate proficiency in a specific area in mathematics?\n\nOutput your verdict in the following format:"<decision>\n[yes/no]\n</decision>". Do NOT explain.'
+        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
 
     def get_score(self, judgment):
         matches = self.pattern.findall(judgment.replace("\n", "").lower())
@@ -120,7 +125,10 @@ class CategoryMath(Category):
 
     def pre_process(self, prompt):
         args = {"PROMPT": prompt}
-        conv = [{"role": "user", "content": self.prompt_template.format(**args)}]
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
         return conv
 
     def post_process(self, judgment):
