@@ -65,6 +65,7 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
                 # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
             )
             output = completion.choices[0].message.content
+            # print(output)
             break
         except openai.RateLimitError as e:
             print(type(e), e)
@@ -96,11 +97,14 @@ def get_answer(
     answer_file: str,
     api_dict: dict,
     categories: list,
+    testing: bool,
 ):
     if "category_tag" in question:
         category_tag = question["category_tag"]
     else:
         category_tag = {}
+
+    output_log = {}
 
     for category in categories:
         conv = category.pre_process(question["prompt"])
@@ -114,7 +118,12 @@ def get_answer(
         # Dump answers
         category_tag[category.name_tag] = category.post_process(output)
 
+        if testing:
+            output_log[category.name_tag] = output
+
     question["category_tag"] = category_tag
+    if testing:
+        question["output_log"] = output_log
 
     question.drop(["prompt", "uid", "required_tasks"], inplace=True)
 
@@ -159,6 +168,7 @@ def find_required_tasks(row):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--testing", action="store_true")
     args = parser.parse_args()
 
     enter = input(
@@ -259,6 +269,7 @@ if __name__ == "__main__":
                     for category in categories
                     if category.name_tag in row["required_tasks"]
                 ],
+                args.testing,
             )
             futures.append(future)
         for future in tqdm.tqdm(
