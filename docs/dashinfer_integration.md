@@ -12,7 +12,6 @@
    python3 -m fastchat.serve.dashinfer_worker --model-path qwen/Qwen-7B-Chat --revision=master /path/to/dashinfer-model-generation-config.json
    ```
 Here is an example:
-   If you see tokenizer errors, try
    ```
    python3 -m fastchat.serve.dashinfer_worker --model-path qwen/Qwen-7B-Chat --revision=master dash-infer/examples/python/model_config/config_qwen_v10_7b.json
    ```
