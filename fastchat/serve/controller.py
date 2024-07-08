@@ -263,7 +263,15 @@ class Controller:
         }
 
     def worker_get_info(self):
-        return self.worker_info
+        worker_info = self.worker_info
+        for w_name in worker_info:
+            worker_status = self.get_worker_status(w_name)
+            if worker_status is not None:
+                worker_info[w_name].model_names = worker_status["model_names"]
+                worker_info[w_name].speed = worker_status["speed"]
+                worker_info[w_name].queue_length = worker_status["queue_length"]
+
+        return worker_info
 
     def worker_api_generate_stream(self, params):
         worker_addr = self.get_worker_address(params["model"])
