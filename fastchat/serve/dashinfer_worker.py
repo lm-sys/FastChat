@@ -10,12 +10,11 @@ import copy
 import json
 import os
 import subprocess
-from typing import List, Optional
+from typing import List
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
-from dashinfer.allspark import Engine
 from dashinfer.helper import EngineHelper, ConfigManager
 
 from fastchat.constants import ErrorCode, SERVER_ERROR_MSG
@@ -103,7 +102,7 @@ class DashInferWorker(BaseModelWorker):
         top_p = params.get("top_p")
         repetition_penalty = params.get("repetition_penalty")
         presence_penalty = params.get("presence_penalty")
-        max_tokens = params.get("max_new_tokens")
+        max_new_tokens = params.get("max_new_tokens")
         stop_token_ids = params.get("stop_token_ids") or []
         if self.tokenizer.eos_token_id is not None:
             stop_token_ids.append(self.tokenizer.eos_token_id)
@@ -128,8 +127,6 @@ class DashInferWorker(BaseModelWorker):
             gen_cfg["repetition_penalty"] = float(repetition_penalty)
         if presence_penalty is not None:
             gen_cfg["presence_penalty"] = float(presence_penalty)
-        if max_tokens is not None:
-            gen_cfg["max_length"] = int(max_tokens)
         if len(stop_token_ids) != 0:
             dashinfer_style_stop_token_ids = [[id] for id in set(stop_token_ids)]
             logger.info(
@@ -161,35 +158,52 @@ class DashInferWorker(BaseModelWorker):
         request_list = self.engine_helper.create_request([context], gen_cfg=[gen_cfg])
 
         engine_req = request_list[0]
-        logger.info(
-            f"dashinfer is going to process one request in stream mode: {engine_req}"
-        )
-        results_generator = self.engine_helper.process_one_request_stream(engine_req)
 
-        try:
-            for generate_text in results_generator:
-                if echo:
-                    output_text = context + generate_text
-                else:
-                    output_text = generate_text
-                prompt_tokens = engine_req.in_tokens_len
-                completion_tokens = engine_req.out_tokens_len
-                ret = {
-                    "text": output_text,
-                    "error_code": 0,
-                    "usage": {
-                        "prompt_tokens": prompt_tokens,
-                        "completion_tokens": completion_tokens,
-                        "total_tokens": prompt_tokens + completion_tokens,
-                    },
-                }
-                yield (json.dumps(ret) + "\0").encode()
-        except Exception as e:
+        # check if prompt tokens exceed the max_tokens
+        max_tokens = (
+            gen_cfg["max_length"]
+            if max_new_tokens is None
+            else engine_req.in_tokens_len + max_new_tokens
+        )
+        if engine_req.in_tokens_len > max_tokens:
             ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.INTERNAL_ERROR,
+                "text": f"This model's maximum generated tokens include context are {max_tokens}, However, your context resulted in {engine_req.in_tokens_len} tokens",
+                "error_code": ErrorCode.CONTEXT_OVERFLOW,
             }
             yield json.dumps(ret).encode() + b"\0"
+        else:
+            gen_cfg["max_length"] = int(max_tokens)
+            logger.info(
+                f"dashinfer is going to process one request in stream mode: {engine_req}"
+            )
+            results_generator = self.engine_helper.process_one_request_stream(
+                engine_req
+            )
+
+            try:
+                for generate_text in results_generator:
+                    if echo:
+                        output_text = context + generate_text
+                    else:
+                        output_text = generate_text
+                    prompt_tokens = engine_req.in_tokens_len
+                    completion_tokens = engine_req.out_tokens_len
+                    ret = {
+                        "text": output_text,
+                        "error_code": 0,
+                        "usage": {
+                            "prompt_tokens": prompt_tokens,
+                            "completion_tokens": completion_tokens,
+                            "total_tokens": prompt_tokens + completion_tokens,
+                        },
+                    }
+                    yield (json.dumps(ret) + "\0").encode()
+            except Exception as e:
+                ret = {
+                    "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                    "error_code": ErrorCode.INTERNAL_ERROR,
+                }
+                yield json.dumps(ret).encode() + b"\0"
 
     async def generate(self, params):
         async for x in self.generate_stream(params):
