@@ -117,8 +117,9 @@ class State:
         self.oai_thread_id = None
         self.is_vision = is_vision
 
-        # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
+        # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should move this logic to the Image class to hold
         self.has_csam_image = False
+        self.preset_image = False
 
         self.regen_support = True
         if "browsing" in model_name:
@@ -147,6 +148,7 @@ class State:
 
         if self.is_vision:
             base.update({"has_csam_image": self.has_csam_image})
+            base.update({"preset_image": self.preset_image})
         return base
 
 
