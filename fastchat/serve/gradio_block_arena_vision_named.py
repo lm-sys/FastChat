@@ -169,7 +169,12 @@ def add_text(
     # Init states if necessary
     for i in range(num_sides):
         if states[i] is None:
+            preset_image = False
+            if len(images) > 0:
+                preset_image = "preset" in images[0]
+
             states[i] = State(model_selectors[i], is_vision=True)
+            states[i].preset_image = preset_image
 
     if len(text) <= 0:
         for i in range(num_sides):

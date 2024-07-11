@@ -273,10 +273,13 @@ def add_text(
                 VISION_SAMPLING_WEIGHTS,
                 VISION_SAMPLING_BOOST_MODELS,
             )
+
+            preset_image = "preset" in images[0]
             states = [
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
             ]
+            states[0].preset_image, states[1].preset_image = preset_image, preset_image
         else:
             model_left, model_right = get_battle_pair(
                 text_models,

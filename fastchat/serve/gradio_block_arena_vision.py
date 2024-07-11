@@ -215,7 +215,12 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
+        preset_image = False
+        if len(images) > 0:
+            preset_image = "preset" in images[0]
+
         state = State(model_selector, is_vision=True)
+        state.preset_image = preset_image
 
     if len(text) <= 0:
         state.skip_next = True
