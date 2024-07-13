@@ -156,7 +156,8 @@ class Conversation:
                     else:
                         ret += tag + " " + message + seps[i % 2]
                 else:
-                    ret += tag
+                    if i != 0:
+                        ret += tag
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA3:
             ret = "<|begin_of_text|>"
