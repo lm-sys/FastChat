@@ -108,11 +108,13 @@ Last updated: {elo_results["last_updated_datetime"]}
     return leaderboard_md
 
 
-def arena_hard_title():
-    arena_hard_title = """
-Last Updated: 2024-06-23
+def arena_hard_title(date):
+    arena_hard_title = f"""
+Last Updated: {date}
 
 Leaderboard for [Arena-Hard-Auto v0.1](https://github.com/lm-sys/arena-hard-auto) - an automatic evaluation tool for instruction-tuned LLMs
+
+Check out our [paper](https://arxiv.org/abs/2406.11939) for more details about how Arena-Hard-Auto v0.1 works 
 
 ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
 Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
@@ -242,7 +244,7 @@ def build_basic_stats_tab():
     return [md0, plot_1, md1, md2, md3, md4]
 
 
-def get_full_table(arena_df, model_table_df):
+def get_full_table(arena_df, model_table_df, model_to_score):
     values = []
     for i in range(len(model_table_df)):
         row = []
@@ -253,6 +255,10 @@ def get_full_table(arena_df, model_table_df):
         if model_key in arena_df.index:
             idx = arena_df.index.get_loc(model_key)
             row.append(round(arena_df.iloc[idx]["rating"]))
+        else:
+            row.append(np.nan)
+        if model_name in model_to_score:
+            row.append(model_to_score[model_name]) 
         else:
             row.append(np.nan)
         row.append(model_table_df.iloc[i]["MT-bench (score)"])
@@ -274,6 +280,7 @@ def arena_hard_process(leaderboard_table_file, filepath):
     display_name = leaderboard_table.get("Model")
     model_name = leaderboard_table.get("key")
     organization = leaderboard_table.get("Organization")
+    cutoff = leaderboard_table.get("Knowledge cutoff date")
 
     info = {}
     for i in range(len(model_name)):
@@ -281,20 +288,26 @@ def arena_hard_process(leaderboard_table_file, filepath):
         model_info["display"] = display_name[i]
         model_info["link"] = links[i]
         model_info["org"] = organization[i]
+        model_info["cutoff"] = cutoff[i]
         info[model_name[i]] = model_info
 
     organization = []
+    cutoff = []
     for i in range(len(arena_hard)):
         assert arena_hard.loc[i, "model"] in info, "update leaderboard_table info"
         organization.append(info[arena_hard.loc[i, "model"]]["org"])
+        if info[arena_hard.loc[i, "model"]]["cutoff"] == '-':
+            cutoff.append("Unknown")
+        else:
+            cutoff.append(info[arena_hard.loc[i, "model"]]["cutoff"])
         link = info[arena_hard.loc[i, "model"]]["link"]
         arena_hard.loc[i, "model"] = model_hyperlink(
             info[arena_hard.loc[i, "model"]]["display"], link
         )
+        
+    arena_hard.insert(loc=len(arena_hard.columns), column="Organization", value=organization)
+    arena_hard.insert(loc=len(arena_hard.columns), column="Knowledge Cutoff", value=cutoff)
 
-    arena_hard.insert(
-        loc=len(arena_hard.columns), column="Organization", value=organization
-    )
     rankings = recompute_final_ranking(arena_hard)
     arena_hard.insert(loc=0, column="Rank* (UB)", value=rankings)
     return arena_hard
@@ -761,24 +774,25 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
     return [plot_1, plot_2, plot_3, plot_4]
 
 
-def build_full_leaderboard_tab(elo_results, model_table_df):
+def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     arena_df = elo_results["full"]["leaderboard_table_df"]
     md = make_full_leaderboard_md()
     gr.Markdown(md, elem_id="leaderboard_markdown")
-    full_table_vals = get_full_table(arena_df, model_table_df)
+    full_table_vals = get_full_table(arena_df, model_table_df, model_to_score)
     gr.Dataframe(
         headers=[
             "Model",
             "Arena Elo",
+            "Arena-Hard-Auto Score",
             "MT-bench",
             "MMLU",
             "Organization",
             "License",
         ],
-        datatype=["markdown", "number", "number", "number", "str", "str"],
+        datatype=["markdown", "number", "number", "number", "number", "str", "str"],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
-        column_widths=[200, 100, 100, 100, 150, 150],
+        column_widths=[200, 100, 100, 100, 100, 150, 150],
         height=800,
         wrap=True,
     )
@@ -834,13 +848,11 @@ def build_leaderboard_tab(
                     show_plot=show_plot,
                 )
             with gr.Tab("Full Leaderboard", id=2):
-                build_full_leaderboard_tab(elo_results_text, model_table_df)
-
-            with gr.Tab("Arena-Hard-Auto v0.1 Leaderboard", id=3):
                 dataFrame = arena_hard_process(
                     leaderboard_table_file, arena_hard_leaderboard
                 )
-                dataFrame = dataFrame.drop(columns=["rating_q025", "rating_q975"])
+                date = dataFrame['date'][0]
+                dataFrame = dataFrame.drop(columns=["rating_q025", "rating_q975", "date"])
                 dataFrame = dataFrame.rename(
                     columns={
                         "model": "Model",
@@ -849,7 +861,13 @@ def build_leaderboard_tab(
                         "avg_tokens": "Average Tokens",
                     }
                 )
-                md = arena_hard_title()
+                model_to_score = {}
+                for i in range(len(dataFrame)):
+                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[i, "Score"]
+                build_full_leaderboard_tab(elo_results_text, model_table_df, model_to_score)
+
+            with gr.Tab("Arena-Hard-Auto v0.1 Leaderboard", id=3):
+                md = arena_hard_title(date)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
                 gr.DataFrame(
                     dataFrame,
@@ -857,10 +875,10 @@ def build_leaderboard_tab(
                         "markdown" if col == "Model" else "str"
                         for col in dataFrame.columns
                     ],
-                    elem_id="full_leaderboard_dataframe",
+                    elem_id="arena_hard_leaderboard",
                     height=800,
                     wrap=True,
-                    column_widths=[70, 190, 100, 100, 90, 130],
+                    column_widths=[70, 190, 80, 140, 70, 150, 100],
                 )
 
         if not show_plot:
