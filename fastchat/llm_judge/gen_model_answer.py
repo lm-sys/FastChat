@@ -3,6 +3,7 @@
 Usage:
 python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 """
+
 import argparse
 import json
 import os
@@ -16,6 +17,8 @@ from tqdm import tqdm
 from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 def run_eval(
@@ -95,6 +98,19 @@ def get_model_answers(
         debug=False,
     )
 
+    print("Loading model and tokenizer..")
+    # tokenizer.chat_template = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"  # noqa
+    # tokenizer.pad_token = tokenizer.unk_token
+    # tokenizer = AutoTokenizer.from_pretrained(model_path)
+    # tokenizer.chat_template = "{% for message in messages %}\n{% if message['role'] == 'user' %}\n{{ '<|user|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'system' %}\n{{ '<|system|>\n' + message['content'] + eos_token }}\n{% elif message['role'] == 'assistant' %}\n{{ '<|assistant|>\n'  + message['content'] + eos_token }}\n{% endif %}\n{% if loop.last and add_generation_prompt %}\n{{ '<|assistant|>' }}\n{% endif %}\n{% endfor %}"  # noqa
+    # tokenizer.pad_token = tokenizer.unk_token
+
+    # model = AutoModelForCausalLM.from_pretrained(
+    #     model_path, device_map="cuda"
+    # )
+
+    model.generation_config.pad_token_id = tokenizer.pad_token_id
+
     for question in tqdm(questions):
         if question["category"] in temperature_config:
             temperature = temperature_config[question["category"]]
@@ -104,7 +120,8 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            # conv = get_conversation_template(model_id)
+            conv = get_conversation_template("zephyr")
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
