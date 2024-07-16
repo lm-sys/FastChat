@@ -258,7 +258,7 @@ def get_full_table(arena_df, model_table_df, model_to_score):
         else:
             row.append(np.nan)
         if model_name in model_to_score:
-            row.append(model_to_score[model_name]) 
+            row.append(model_to_score[model_name])
         else:
             row.append(np.nan)
         row.append(model_table_df.iloc[i]["MT-bench (score)"])
@@ -280,7 +280,6 @@ def arena_hard_process(leaderboard_table_file, filepath):
     display_name = leaderboard_table.get("Model")
     model_name = leaderboard_table.get("key")
     organization = leaderboard_table.get("Organization")
-    cutoff = leaderboard_table.get("Knowledge cutoff date")
 
     info = {}
     for i in range(len(model_name)):
@@ -288,25 +287,20 @@ def arena_hard_process(leaderboard_table_file, filepath):
         model_info["display"] = display_name[i]
         model_info["link"] = links[i]
         model_info["org"] = organization[i]
-        model_info["cutoff"] = cutoff[i]
         info[model_name[i]] = model_info
 
     organization = []
-    cutoff = []
     for i in range(len(arena_hard)):
         assert arena_hard.loc[i, "model"] in info, "update leaderboard_table info"
         organization.append(info[arena_hard.loc[i, "model"]]["org"])
-        if info[arena_hard.loc[i, "model"]]["cutoff"] == '-':
-            cutoff.append("Unknown")
-        else:
-            cutoff.append(info[arena_hard.loc[i, "model"]]["cutoff"])
         link = info[arena_hard.loc[i, "model"]]["link"]
         arena_hard.loc[i, "model"] = model_hyperlink(
             info[arena_hard.loc[i, "model"]]["display"], link
         )
-        
-    arena_hard.insert(loc=len(arena_hard.columns), column="Organization", value=organization)
-    arena_hard.insert(loc=len(arena_hard.columns), column="Knowledge Cutoff", value=cutoff)
+
+    arena_hard.insert(
+        loc=len(arena_hard.columns), column="Organization", value=organization
+    )
 
     rankings = recompute_final_ranking(arena_hard)
     arena_hard.insert(loc=0, column="Rank* (UB)", value=rankings)
@@ -847,12 +841,14 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
-            with gr.Tab("Full Leaderboard", id=2):
+            with gr.Tab("Arena-Hard-Auto", id=2):
                 dataFrame = arena_hard_process(
                     leaderboard_table_file, arena_hard_leaderboard
                 )
-                date = dataFrame['date'][0]
-                dataFrame = dataFrame.drop(columns=["rating_q025", "rating_q975", "date"])
+                date = dataFrame["date"][0]
+                dataFrame = dataFrame.drop(
+                    columns=["rating_q025", "rating_q975", "date"]
+                )
                 dataFrame = dataFrame.rename(
                     columns={
                         "model": "Model",
@@ -863,10 +859,9 @@ def build_leaderboard_tab(
                 )
                 model_to_score = {}
                 for i in range(len(dataFrame)):
-                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[i, "Score"]
-                build_full_leaderboard_tab(elo_results_text, model_table_df, model_to_score)
-
-            with gr.Tab("Arena-Hard-Auto v0.1 Leaderboard", id=3):
+                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
+                        i, "Score"
+                    ]
                 md = arena_hard_title(date)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
                 gr.DataFrame(
@@ -878,7 +873,12 @@ def build_leaderboard_tab(
                     elem_id="arena_hard_leaderboard",
                     height=800,
                     wrap=True,
-                    column_widths=[70, 190, 80, 140, 70, 150, 100],
+                    column_widths=[70, 190, 80, 140, 70, 150],
+                )
+
+            with gr.Tab("Full Leaderboard", id=3):
+                build_full_leaderboard_tab(
+                    elo_results_text, model_table_df, model_to_score
                 )
 
         if not show_plot:
