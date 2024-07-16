@@ -783,7 +783,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         headers=[
             "Model",
             "Arena Elo",
-            "Arena-Hard-Auto Score",
+            "arena-hard-auto",
             "MT-bench",
             "MMLU",
             "Organization",
@@ -792,7 +792,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         datatype=["markdown", "number", "number", "number", "number", "str", "str"],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
-        column_widths=[200, 100, 100, 100, 100, 150, 150],
+        column_widths=[200, 100, 150, 100, 70, 130, 150],
         height=800,
         wrap=True,
     )
