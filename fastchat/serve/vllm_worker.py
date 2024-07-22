@@ -8,6 +8,7 @@ import argparse
 import asyncio
 import codecs
 import json
+from os import path
 from typing import List, Optional
 
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -26,6 +27,21 @@ from fastchat.serve.model_worker import (
 )
 from fastchat.utils import get_context_length, is_partial_stop
 
+# Add imports for vLLM LoRAs, prevent panic with older vllm versions which not support LoRAs
+# LoRA request only supports vLLM versions >= v0.3.2
+try:
+    from vllm.entrypoints.openai.serving_engine import LoRA
+    from vllm.lora.request import LoRARequest
+
+    VLLM_LORA_SUPPORTED = True
+except:
+    VLLM_LORA_SUPPORTED = False
+
+
+    # Fake LoRA class to compatible with old vLLM versions
+    class LoRA:
+        pass
+
 app = FastAPI()
 
 
@@ -41,7 +57,20 @@ class VLLMWorker(BaseModelWorker):
             no_register: bool,
             llm_engine: AsyncLLMEngine,
             conv_template: str,
+            lora_modules: List[LoRA] = [],
     ):
+        # Register LoRA model names
+        if VLLM_LORA_SUPPORTED:
+            # If model_names defined, use basename of model path by default
+            model_names = (
+                [path.basename(path.normpath(model_path))]
+                if model_names is None
+                else model_names
+            )
+            if lora_modules:
+                lora_model_names = [lora.name for lora in lora_modules]
+                model_names += lora_model_names
+
         super().__init__(
             controller_addr,
             worker_addr,
@@ -68,6 +97,20 @@ class VLLMWorker(BaseModelWorker):
         except Exception:
             self.generation_config = None
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
+
+        # Add LoRA requests, lora request will be forwarded to vLLM engine for generating with specific LoRA weights
+        self.lora_requests = (
+            [
+                LoRARequest(
+                    lora_name=lora.name,
+                    lora_int_id=i,
+                    lora_local_path=lora.local_path,
+                )
+                for i, lora in enumerate(lora_modules, start=1)
+            ]
+            if VLLM_LORA_SUPPORTED and lora_modules
+            else []
+        )
 
         if not no_register:
             self.init_heart_beat()
@@ -98,6 +141,12 @@ class VLLMWorker(BaseModelWorker):
             logger.info("Using default chat template:\n%s", tokenizer.chat_template)
         else:
             tokenizer.chat_template = ""
+
+    def get_model_lora_request(self, model_name):
+        for lora_req in self.lora_requests:
+            if lora_req.lora_name == model_name:
+                return lora_req
+        return None
 
     async def generate_stream(self, params):
         self.call_ct += 1
@@ -153,7 +202,14 @@ class VLLMWorker(BaseModelWorker):
             best_of=best_of,
             seed=seed,
         )
-        results_generator = engine.generate(context, sampling_params, request_id)
+
+        if VLLM_LORA_SUPPORTED:
+            lora_request = self.get_model_lora_request(params.get("model"))
+            results_generator = engine.generate(
+                context, sampling_params, request_id, lora_request=lora_request
+            )
+        else:
+            results_generator = engine.generate(context, sampling_params, request_id)
 
         async for request_output in results_generator:
             prompt = request_output.prompt
@@ -312,6 +368,22 @@ async def api_model_details(request: Request):
     return {"context_length": worker.context_len}
 
 
+# Add LoRAParserAction for supporting vLLM Multi-LoRA
+class LoRAParserAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if VLLM_LORA_SUPPORTED is False:
+            logger.warning(
+                "To use the vLLM LoRAs feature, please upgrade vLLM to version v0.3.2 or higher."
+            )
+            return
+
+        lora_list = []
+        for item in values:
+            name, path = item.split("=")
+            lora_list.append(LoRA(name, path))
+        setattr(namespace, self.dest, lora_list)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
@@ -350,6 +422,16 @@ if __name__ == "__main__":
              "memory (OOM) errors.",
     )
 
+    # Support parse LoRA modules
+    parser.add_argument(
+        "--lora-modules",
+        type=str,
+        default=None,
+        nargs="+",
+        action=LoRAParserAction,
+        help="LoRA module configurations in the format name=path. Multiple modules can be specified.",
+    )
+
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
     if args.model_path:
@@ -369,5 +451,6 @@ if __name__ == "__main__":
         args.no_register,
         engine,
         args.conv_template,
+        args.lora_modules,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
