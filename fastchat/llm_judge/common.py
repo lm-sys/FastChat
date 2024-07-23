@@ -436,13 +436,15 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
 
 def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
     openai.api_type = "azure"
-    openai.api_version = "2023-07-01-preview"
+    # openai.api_version = "2023-07-01-preview"
+    openai.api_version = "2024-02-01"
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
     else:
         openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
-        openai.api_key = os.environ["AZURE_OPENAI_KEY"]
+        # openai.api_key = os.environ["AZURE_OPENAI_KEY"]
+        openai.azure_ad_token_provider = os.environ["AZURE_OPENAI_TOKEN"]
 
     if "azure-" in model:
         model = model[6:]
