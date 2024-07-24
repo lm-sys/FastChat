@@ -8,9 +8,11 @@ import argparse
 import asyncio
 import codecs
 import json
+import time
 from os import path
 from typing import List, Optional
 
+import requests
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
@@ -43,6 +45,32 @@ except:
         pass
 
 app = FastAPI()
+
+
+# 定义一个新的 get 函数，添加限速功能
+def limited_get(url, stream=False, **kwargs):
+    response = original_get(url, stream=stream, **kwargs)
+    if not stream:
+        return response
+
+    # 如果是流式下载，则对内容进行限速处理
+    chunk_size = 1024  # 每次读取的块大小（字节）
+    max_speed = 20000  # 最大下载速度（KB/s）
+
+    def generate():
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            yield chunk
+            time.sleep(chunk_size / (max_speed * 1024))
+
+    response.iter_content = generate
+    return response
+
+
+# 保存原始的 requests.get 函数
+original_get = requests.get
+
+# 替换 requests.get 为新的函数
+requests.get = limited_get
 
 
 class VLLMWorker(BaseModelWorker):
