@@ -5,7 +5,6 @@ python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurren
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 import numpy as np
 from tqdm import tqdm
@@ -334,9 +333,6 @@ if __name__ == "__main__":
 
     # these get picked up in chat_completion_openai_azure
     os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aims-oai-research-inference-uks.openai.azure.com/"
-    os.environ["AZURE_OPENAI_TOKEN"] = get_bearer_token_provider(
-        DefaultAzureCredential(managed_identity_client_id=os.environ.get("DEFAULT_IDENTITY_CLIENT_ID")),
-        "https://cognitiveservices.azure.com/.default")
 
     # Play matches
     if args.parallel == 1:

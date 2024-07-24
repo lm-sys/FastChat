@@ -10,6 +10,7 @@ import os
 import re
 import time
 from typing import Optional
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 import openai
 import anthropic
@@ -444,7 +445,9 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
     else:
         openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
         # openai.api_key = os.environ["AZURE_OPENAI_KEY"]
-        openai.azure_ad_token_provider = os.environ["AZURE_OPENAI_TOKEN"]
+        openai.azure_ad_token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(managed_identity_client_id=os.environ.get("DEFAULT_IDENTITY_CLIENT_ID")),
+            "https://cognitiveservices.azure.com/.default")
 
     if "azure-" in model:
         model = model[6:]
