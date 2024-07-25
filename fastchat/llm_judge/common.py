@@ -55,6 +55,10 @@ reverse_model_map = {
     "model_2": "model_1",
 }
 
+azure_token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(managed_identity_client_id=os.environ.get("DEFAULT_IDENTITY_CLIENT_ID")),
+            "https://cognitiveservices.azure.com/.default")
+
 
 @dataclasses.dataclass
 class Judge:
@@ -436,34 +440,38 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
 
 
 def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
-    openai.api_type = "azure"
-    # openai.api_version = "2023-07-01-preview"
-    openai.api_version = "2024-02-01"
+    import openai
+    from openai import AzureOpenAI
+
+    api_version = "2024-02-01"
     if api_dict is not None:
-        openai.api_base = api_dict["api_base"]
-        openai.api_key = api_dict["api_key"]
+        api_base = api_dict["api_base"]
     else:
-        openai.api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
-        # openai.api_key = os.environ["AZURE_OPENAI_KEY"]
-        openai.azure_ad_token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(managed_identity_client_id=os.environ.get("DEFAULT_IDENTITY_CLIENT_ID")),
-            "https://cognitiveservices.azure.com/.default")
+        api_base = os.environ["AZURE_OPENAI_ENDPOINT"]
 
     if "azure-" in model:
         model = model[6:]
+
+    client = AzureOpenAI(
+        azure_endpoint = api_base,
+        azure_ad_token_provider = azure_token_provider,
+        api_version=api_version,
+        timeout=240,
+        max_retries=2
+    )
 
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
             messages = conv.to_openai_api_messages()
-            response = openai.ChatCompletion.create(
-                engine=model,
+            response = client.chat.completions.create(
+                model=model,
                 messages=messages,
                 n=1,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            output = response["choices"][0]["message"]["content"]
+            output = response.choices[0].message.content
             break
         except openai.error.OpenAIError as e:
             print(type(e), e)
