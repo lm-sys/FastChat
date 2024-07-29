@@ -31,18 +31,17 @@ from fastchat.utils import get_context_length, is_partial_stop
 
 # Add imports for vLLM LoRAs, prevent panic with older vllm versions which not support LoRAs
 # LoRA request only supports vLLM versions >= v0.3.2
-try:
-    from vllm.entrypoints.openai.serving_engine import LoRA
-    from vllm.lora.request import LoRARequest
+from vllm.lora.request import LoRARequest
 
-    VLLM_LORA_SUPPORTED = True
-except:
-    VLLM_LORA_SUPPORTED = False
+VLLM_LORA_SUPPORTED = True
 
 
-    # Fake LoRA class to compatible with old vLLM versions
-    class LoRA:
-        pass
+# Fake LoRA class to compatible with old vLLM versions
+class LoRA:
+    def __init__(self, name: str, local_path: str):
+        self.name: str = name
+        self.local_path: str = local_path
+
 
 app = FastAPI()
 
