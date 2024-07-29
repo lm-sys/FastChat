@@ -293,7 +293,6 @@ if __name__ == "__main__":
         trust_remote_code=args.trust_remote_code,
         mem_fraction_static=args.mem_fraction_static,
         tp_size=args.tp_size,
-        log_level="info",
     )
     sgl.set_default_backend(runtime)
 
