@@ -134,9 +134,7 @@ We can also use vLLM for answer generation, which can be faster for the models s
 
 1. Launch a vLLM worker
 ```
-python3 -m fastchat.serve.controller
-python3 -m fastchat.serve.vllm_worker --model-path [MODEL-PATH]
-python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
+vllm serve [MODEL-PATH] --dtype auto
 ```
   - Arguments:
     - `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.
