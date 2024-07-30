@@ -52,6 +52,16 @@ peft_share_base_weights = (
     os.environ.get("PEFT_SHARE_BASE_WEIGHTS", "false").lower() == "true"
 )
 
+try:
+    print ('instruct lab package detected: Registering Dolomite models')
+    from instructlab.dolomite import GPTDolomiteConfig, GPTDolomiteModel
+    from instructlab.dolomite.hf_models import GPTDolomiteForCausalLM
+    transformers.AutoConfig.register(GPTDolomiteConfig.model_type, GPTDolomiteConfig)
+    transformers.AutoModel.register(GPTDolomiteConfig, GPTDolomiteModel)
+    transformers.AutoModelForCausalLM.register(GPTDolomiteConfig, GPTDolomiteForCausalLM)
+except:
+    pass
+
 ANTHROPIC_MODEL_LIST = (
     "claude-1",
     "claude-2",
