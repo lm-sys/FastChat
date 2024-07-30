@@ -448,6 +448,12 @@ if __name__ == "__main__":
              "throughput. However, if the value is too high, it may cause out-of-"
              "memory (OOM) errors.",
     )
+    parser.add_argument(
+        "--max-model-len",
+        type=float,
+        default=None,
+        help="Model context length. If unspecified, will be automatically derived from the model config.",
+    )
 
     # Support parse LoRA modules
     parser.add_argument(
