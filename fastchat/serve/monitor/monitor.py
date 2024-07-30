@@ -387,6 +387,8 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
 key_to_category_name = {
     "full": "Overall",
     "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
+    "math": "Math",
+    "if": "Instruction Following",
     "multiturn": "Multi-Turn",
     "coding": "Coding",
     "hard_6": "Hard Prompts (Overall)",
@@ -409,6 +411,8 @@ key_to_category_name = {
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
     "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
+    "Math": "Math",
+    "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
