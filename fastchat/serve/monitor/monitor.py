@@ -112,12 +112,8 @@ def arena_hard_title(date):
     arena_hard_title = f"""
 Last Updated: {date}
 
-Leaderboard for [Arena-Hard-Auto v0.1](https://github.com/lm-sys/arena-hard-auto) - an automatic evaluation tool for instruction-tuned LLMs
-
-Check out our [paper](https://arxiv.org/abs/2406.11939) for more details about how Arena-Hard-Auto v0.1 works 
-
-***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
-Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
+**Arena-Hard-Auto v0.1** - leading automatic evaluation tool for instruction-tuned LLMs with 500 challenging user queries curated from Chatbot Arena. Check out our paper for more details about how Arena-Hard-Auto works as an fully automated data pipeline converting crowdsourced data into high-quality benchmarks.
+[[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
 
@@ -291,7 +287,7 @@ def arena_hard_process(leaderboard_table_file, filepath):
 
     organization = []
     for i in range(len(arena_hard)):
-        assert arena_hard.loc[i, "model"] in info, "update leaderboard_table info"
+        assert arena_hard.loc[i, "model"] in info, f"need to update leaderboard_table info by adding {arena_hard.loc[i, 'model']}"
         organization.append(info[arena_hard.loc[i, "model"]]["org"])
         link = info[arena_hard.loc[i, "model"]]["link"]
         arena_hard.loc[i, "model"] = model_hyperlink(
@@ -781,7 +777,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         headers=[
             "Model",
             "Arena Elo",
-            "arena-hard-auto",
+            "Arena-Hard-Auto",
             "MT-bench",
             "MMLU",
             "Organization",
@@ -790,7 +786,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         datatype=["markdown", "number", "number", "number", "number", "str", "str"],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
-        column_widths=[200, 100, 150, 100, 70, 130, 150],
+        column_widths=[200, 100, 110, 100, 70, 130, 150],
         height=800,
         wrap=True,
     )
