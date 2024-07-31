@@ -112,7 +112,7 @@ def arena_hard_title(date):
     arena_hard_title = f"""
 Last Updated: {date}
 
-**Arena-Hard-Auto v0.1** - leading automatic evaluation tool for instruction-tuned LLMs with 500 challenging user queries curated from Chatbot Arena. 
+**Arena-Hard-Auto v0.1** - an automatic evaluation tool for instruction-tuned LLMs with 500 challenging user queries curated from Chatbot Arena. 
 
 We prompt GPT-4-Turbo as judge to compare the models' responses against a baseline model (default: GPT-4-0314). If you are curious to see how well your model might perform on Chatbot Arena, we recommend trying Arena-Hard-Auto. Check out our paper for more details about how Arena-Hard-Auto works as an fully automated data pipeline converting crowdsourced data into high-quality benchmarks ->
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
