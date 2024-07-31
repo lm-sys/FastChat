@@ -2475,7 +2475,7 @@ class GraniteEmptyAdapter(BaseModelAdapter):
             "emptysystem" in model_path.lower()
         if output:
             print("Loading EMPTY prompt adapter")
-        return 
+        return output
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         import ibm_models
