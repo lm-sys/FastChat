@@ -112,7 +112,9 @@ def arena_hard_title(date):
     arena_hard_title = f"""
 Last Updated: {date}
 
-**Arena-Hard-Auto v0.1** - leading automatic evaluation tool for instruction-tuned LLMs with 500 challenging user queries curated from Chatbot Arena. Check out our paper for more details about how Arena-Hard-Auto works as an fully automated data pipeline converting crowdsourced data into high-quality benchmarks.
+**Arena-Hard-Auto v0.1** - leading automatic evaluation tool for instruction-tuned LLMs with 500 challenging user queries curated from Chatbot Arena. 
+
+We prompt GPT-4-Turbo as judge to compare the models' responses against a baseline model (default: GPT-4-0314). If you are curious to see how well your model might perform on Chatbot Arena, we recommend trying Arena-Hard-Auto. Check out our paper for more details about how Arena-Hard-Auto works as an fully automated data pipeline converting crowdsourced data into high-quality benchmarks ->
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
@@ -287,7 +289,9 @@ def arena_hard_process(leaderboard_table_file, filepath):
 
     organization = []
     for i in range(len(arena_hard)):
-        assert arena_hard.loc[i, "model"] in info, f"need to update leaderboard_table info by adding {arena_hard.loc[i, 'model']}"
+        assert (
+            arena_hard.loc[i, "model"] in info
+        ), f"need to update leaderboard_table info by adding {arena_hard.loc[i, 'model']}"
         organization.append(info[arena_hard.loc[i, "model"]]["org"])
         link = info[arena_hard.loc[i, "model"]]["link"]
         arena_hard.loc[i, "model"] = model_hyperlink(
@@ -505,21 +509,21 @@ def update_leaderboard_df(arena_table_vals):
     def highlight_max(s):
         # all items in S which contain up arrow should be green, down arrow should be red, otherwise black
         return [
-            "color: green; font-weight: bold"
-            if "\u2191" in v
-            else "color: red; font-weight: bold"
-            if "\u2193" in v
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if "\u2191" in v
+                else "color: red; font-weight: bold" if "\u2193" in v else ""
+            )
             for v in s
         ]
 
     def highlight_rank_max(s):
         return [
-            "color: green; font-weight: bold"
-            if v > 0
-            else "color: red; font-weight: bold"
-            if v < 0
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if v > 0
+                else "color: red; font-weight: bold" if v < 0 else ""
+            )
             for v in s
         ]
 
@@ -849,10 +853,12 @@ def build_leaderboard_tab(
                 dataFrame = dataFrame.drop(
                     columns=["rating_q025", "rating_q975", "date"]
                 )
+                dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
+                dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
                 dataFrame = dataFrame.rename(
                     columns={
                         "model": "Model",
-                        "score": "Score",
+                        "score": "Win-rate",
                         "CI": "95% CI",
                         "avg_tokens": "Average Tokens",
                     }
@@ -860,7 +866,7 @@ def build_leaderboard_tab(
                 model_to_score = {}
                 for i in range(len(dataFrame)):
                     model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
-                        i, "Score"
+                        i, "Win-rate"
                     ]
                 md = arena_hard_title(date)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
@@ -873,7 +879,7 @@ def build_leaderboard_tab(
                     elem_id="arena_hard_leaderboard",
                     height=800,
                     wrap=True,
-                    column_widths=[70, 190, 80, 140, 70, 150],
+                    column_widths=[70, 190, 80, 80, 90, 150],
                 )
 
             with gr.Tab("Full Leaderboard", id=3):
