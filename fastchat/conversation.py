@@ -1831,6 +1831,17 @@ register_conv_template(
     )
 )
 
+
+register_conv_template(
+    Conversation(
+        name="empty-system",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n",
+        stop_str="<|endoftext|>",
+    )
+)
+
 register_conv_template(
     Conversation(
         name="codelab",

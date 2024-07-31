@@ -2466,6 +2466,23 @@ class GraniteRhelAIAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("rhel-ai")
+
+class GraniteEmptyAdapter(BaseModelAdapter):
+    """The model adapter for instructlab/granite-7b-lab"""
+
+    def match(self, model_path: str):
+        output = "empty-system" in model_path.lower() or \
+            "emptysystem" in model_path.lower()
+        if output:
+            print("Loading EMPTY prompt adapter")
+        return 
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        import ibm_models
+        return super().load_model(model_path, from_pretrained_kwargs)
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("empty-system")
     
 class IBMOldAdapter(BaseModelAdapter):
     def match(self, model_path: str):
