@@ -271,6 +271,12 @@ def load_model(
             import torch_npu
         except ImportError:
             warnings.warn("Ascend Extension for PyTorch is not installed.")
+    elif device == "musa":
+        kwargs = {"torch_dtype": torch.float16}
+        try:
+            import torch_musa
+        except ImportError:
+            warnings.warn("Musa Extension for PyTorch is not installed.")
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -377,6 +383,7 @@ def load_model(
         "mps",
         "xpu",
         "npu",
+        "musa",
     ):
         model.to(device)
 
@@ -495,7 +502,7 @@ def add_model_args(parser):
     parser.add_argument(
         "--device",
         type=str,
-        choices=["cpu", "cuda", "mps", "xpu", "npu"],
+        choices=["cpu", "cuda", "mps", "xpu", "npu", "musa"],
         default="cuda",
         help="The device type",
     )
