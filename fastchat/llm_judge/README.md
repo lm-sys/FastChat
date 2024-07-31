@@ -57,6 +57,8 @@ To make sure FastChat loads the correct prompt template, see the supported model
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
+- Note: if you experience slow answer generation, please refer to the [Other Backends](#other-backends) section to use inference engine to speed up by 20x.
+
 #### Step 2. Generate GPT-4 judgments
 There are several options to use GPT-4 as a judge, such as pairwise winrate and single-answer grading.
 In MT-bench, we recommend single-answer grading as the default mode.
