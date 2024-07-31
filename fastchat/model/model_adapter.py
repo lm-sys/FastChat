@@ -2471,8 +2471,7 @@ class GraniteEmptyAdapter(BaseModelAdapter):
     """The model adapter for instructlab/granite-7b-lab"""
 
     def match(self, model_path: str):
-        output = "empty-system" in model_path.lower() or \
-            "emptysystem" in model_path.lower()
+        output = "hhhhhhhhh" in model_path.lower()
         if output:
             print("Loading EMPTY prompt adapter")
         return output
