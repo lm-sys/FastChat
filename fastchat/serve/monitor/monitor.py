@@ -848,42 +848,43 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
-            with gr.Tab("Arena-Hard-Auto", id=2):
-                dataFrame = arena_hard_process(
-                    leaderboard_table_file, arena_hard_leaderboard
-                )
-                date = dataFrame["date"][0]
-                dataFrame = dataFrame.drop(
-                    columns=["rating_q025", "rating_q975", "date"]
-                )
-                dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
-                dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
-                dataFrame = dataFrame.rename(
-                    columns={
-                        "model": "Model",
-                        "score": "Win-rate",
-                        "CI": "95% CI",
-                        "avg_tokens": "Average Tokens",
-                    }
-                )
-                model_to_score = {}
-                for i in range(len(dataFrame)):
-                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
-                        i, "Win-rate"
-                    ]
-                md = arena_hard_title(date)
-                gr.Markdown(md, elem_id="leaderboard_markdown")
-                gr.DataFrame(
-                    dataFrame,
-                    datatype=[
-                        "markdown" if col == "Model" else "str"
-                        for col in dataFrame.columns
-                    ],
-                    elem_id="arena_hard_leaderboard",
-                    height=800,
-                    wrap=True,
-                    column_widths=[70, 190, 80, 80, 90, 150],
-                )
+            if arena_hard_leaderboard is not None:
+                with gr.Tab("Arena-Hard-Auto", id=2):
+                    dataFrame = arena_hard_process(
+                        leaderboard_table_file, arena_hard_leaderboard
+                    )
+                    date = dataFrame["date"][0]
+                    dataFrame = dataFrame.drop(
+                        columns=["rating_q025", "rating_q975", "date"]
+                    )
+                    dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
+                    dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
+                    dataFrame = dataFrame.rename(
+                        columns={
+                            "model": "Model",
+                            "score": "Win-rate",
+                            "CI": "95% CI",
+                            "avg_tokens": "Average Tokens",
+                        }
+                    )
+                    model_to_score = {}
+                    for i in range(len(dataFrame)):
+                        model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
+                            i, "Win-rate"
+                        ]
+                    md = arena_hard_title(date)
+                    gr.Markdown(md, elem_id="leaderboard_markdown")
+                    gr.DataFrame(
+                        dataFrame,
+                        datatype=[
+                            "markdown" if col == "Model" else "str"
+                            for col in dataFrame.columns
+                        ],
+                        elem_id="arena_hard_leaderboard",
+                        height=800,
+                        wrap=True,
+                        column_widths=[70, 190, 80, 80, 90, 150],
+                    )
 
             with gr.Tab("Full Leaderboard", id=3):
                 build_full_leaderboard_tab(
