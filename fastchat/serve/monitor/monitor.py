@@ -49,6 +49,12 @@ def make_default_md_2(mirror=False):
     
     LMSYS Chatbot Arena is a crowdsourced open platform for LLM evals. We've collected over 1,000,000 human pairwise comparisons to rank LLMs with the Bradley-Terry model and display the model ratings in Elo-scale.
     You can find more details in our paper. **Chatbot arena is dependent on community participation, please contribute by casting your vote!**
+
+    <div style='text-align: center; margin: 20px 0;'>
+        <div style='display: inline-block; border: 2px solid #DE3163; padding: 10px; border-radius: 5px;'>
+            <span style='color: #DE3163; font-weight: bold;'>We would love your feedback! Fill out <a href='https://docs.google.com/forms/d/e/1FAIpQLSfKSxwFOW6qD05phh4fwYjk8q0YV1VQe_bmK0_qOVTbC66_MA/viewform?usp=sf_link' style='color: #DE3163; text-decoration: underline;'>this short survey</a> to tell us what you like about the arena, what you don't like, and what you want to see in the future.</span>
+        </div>
+    </div>
     """
 
     return leaderboard_md

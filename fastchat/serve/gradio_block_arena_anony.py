@@ -416,6 +416,12 @@ def build_side_by_side_ui_anony(models):
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
+<div style='text-align: center; margin: 20px 0;'>
+    <div style='display: inline-block; border: 2px solid #DE3163; padding: 10px; border-radius: 5px;'>
+        <span style='color: #DE3163; font-weight: bold;'>We would love your feedback! Fill out <a href='https://docs.google.com/forms/d/e/1FAIpQLSfKSxwFOW6qD05phh4fwYjk8q0YV1VQe_bmK0_qOVTbC66_MA/viewform?usp=sf_link' style='color: #DE3163; text-decoration: underline;'>this short survey</a> to tell us what you like about the arena, what you don't like, and what you want to see in the future.</span>
+    </div>
+</div>
+
 ## 📣 News
 - Chatbot Arena now supports images in beta. Check it out [here](https://chat.lmsys.org/?vision).
 
