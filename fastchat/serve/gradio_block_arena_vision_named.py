@@ -18,6 +18,7 @@ from fastchat.constants import (
     SLOW_MODEL_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import (
@@ -247,9 +248,11 @@ def add_text(
 
 
 def build_side_by_side_vision_ui_named(models, random_questions=None):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+
+{SURVEY_LINK}
 
 ## 📜 Rules
 - Chat with any two models side-by-side and vote!
