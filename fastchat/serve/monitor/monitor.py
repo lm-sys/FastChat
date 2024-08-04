@@ -668,11 +668,15 @@ def get_arena_category_table(elo_results, model_table_df, categories):
             category_df
         )
         if i == 0:
-            new_category_dfs.append(category_df[[key_to_category_name[category], "rating"]])
+            new_category_dfs.append(
+                category_df[[key_to_category_name[category], "rating"]]
+            )
         else:
             new_category_dfs.append(category_df[[key_to_category_name[category]]])
     category_df = pd.concat(new_category_dfs, axis=1)
-    category_df = category_df.sort_values(by=[category_df.columns[0], "rating"], ascending= [True, False])
+    category_df = category_df.sort_values(
+        by=[category_df.columns[0], "rating"], ascending=[True, False]
+    )
     category_df = category_df.drop(columns=["rating"])
 
     def get_model_name(model_key):
