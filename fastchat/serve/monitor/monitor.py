@@ -661,18 +661,19 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
 
 
 def get_arena_category_table(elo_results, model_table_df, categories):
-    print("Building category leaderboard table")
-    print(elo_results.keys())
     new_category_dfs = []
-    for category in categories:
+    for i, category in enumerate(categories):
         category_df = elo_results[category]["leaderboard_table_df"]
         category_df[key_to_category_name[category]] = recompute_final_ranking(
             category_df
         )
-        new_category_dfs.append(category_df[[key_to_category_name[category]]])
+        if i == 0:
+            new_category_dfs.append(category_df[[key_to_category_name[category], "rating"]])
+        else:
+            new_category_dfs.append(category_df[[key_to_category_name[category]]])
     category_df = pd.concat(new_category_dfs, axis=1)
-    print(category_df.columns[0])
-    category_df = category_df.sort_values(by=category_df.columns[0], ascending=True)
+    category_df = category_df.sort_values(by=[category_df.columns[0], "rating"], ascending= [True, False])
+    category_df = category_df.drop(columns=["rating"])
 
     def get_model_name(model_key):
         try:
@@ -719,14 +720,6 @@ def get_arena_category_table(elo_results, model_table_df, categories):
 def build_category_leaderboard_tab(
     elo_results, model_table_df, categories, categories_width
 ):
-    #     gr.Markdown(
-    #         f"""
-    # **We've updated the leaderboard to show model rank (UB) across categories for better performance comparison. For more categories, statistics, and model info, see the Arena tab.**
-    # """,
-    #         elem_id="leaderboard_markdown",
-    #     )
-    #     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
-    #     gr.Markdown(make_arena_leaderboard_md(elo_results["full"]["leaderboard_table_df"], last_updated_time), elem_id="leaderboard_markdown")
     full_table_vals = get_arena_category_table(elo_results, model_table_df, categories)
     gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
