@@ -25,7 +25,17 @@ from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
-from fastchat.serve.monitor.monitor_md import cat_name_to_baseline, key_to_category_name, arena_hard_title, make_default_md_1, make_default_md_2, make_arena_leaderboard_md, make_category_arena_leaderboard_md, make_full_leaderboard_md, make_leaderboard_md_live
+from fastchat.serve.monitor.monitor_md import (
+    cat_name_to_baseline,
+    key_to_category_name,
+    arena_hard_title,
+    make_default_md_1,
+    make_default_md_2,
+    make_arena_leaderboard_md,
+    make_category_arena_leaderboard_md,
+    make_full_leaderboard_md,
+    make_leaderboard_md_live,
+)
 
 
 notebook_url = (
@@ -34,6 +44,7 @@ notebook_url = (
 
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
+
 
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
@@ -49,7 +60,6 @@ def recompute_final_ranking(arena_df):
             ):
                 ranking[model_a] += 1
     return list(ranking.values())
-
 
 
 def update_elo_components(
@@ -247,6 +257,7 @@ def create_ranking_str(ranking, ranking_difference):
     else:
         return f"{int(ranking)}"
 
+
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
@@ -337,6 +348,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
             print(f"{model_key} - {e}")
     return values
 
+
 def update_leaderboard_df(arena_table_vals):
     elo_datarame = pd.DataFrame(
         arena_table_vals,
@@ -378,7 +390,7 @@ def update_leaderboard_df(arena_table_vals):
             )
             for v in s
         ]
-    
+
     return elo_datarame.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
         highlight_rank_max, subset=["Delta"]
     )
@@ -647,27 +659,30 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         wrap=True,
     )
 
+
 def get_arena_category_table(elo_results, model_table_df, categories):
     print("Building category leaderboard table")
     print(elo_results.keys())
-    new_category_dfs= []
+    new_category_dfs = []
     for category in categories:
         category_df = elo_results[category]["leaderboard_table_df"]
-        category_df[key_to_category_name[category]] = recompute_final_ranking(category_df)
+        category_df[key_to_category_name[category]] = recompute_final_ranking(
+            category_df
+        )
         new_category_dfs.append(category_df[[key_to_category_name[category]]])
     category_df = pd.concat(new_category_dfs, axis=1)
     print(category_df.columns[0])
     category_df = category_df.sort_values(by=category_df.columns[0], ascending=True)
-    
+
     def get_model_name(model_key):
         try:
             model_name = model_table_df[model_table_df["key"] == model_key][
-                        "Model"
-                    ].values[0]
+                "Model"
+            ].values[0]
             return model_name
         except:
             return None
-        
+
     category_df["Model"] = category_df.index
     category_df["Model"] = category_df["Model"].apply(get_model_name)
     # remove models that are not in the model table
@@ -695,36 +710,60 @@ def get_arena_category_table(elo_results, model_table_df, categories):
             )
             for v in s
         ]
-    
-    return category_df.style.apply(highlight_top_3, subset=[key_to_category_name[k] for k in categories])
 
-def build_category_leaderboard_tab(elo_results, model_table_df, categories, categories_width):
-    
-#     gr.Markdown(
-#         f"""
-# **We've updated the leaderboard to show model rank (UB) across categories for better performance comparison. For more categories, statistics, and model info, see the Arena tab.**
-# """,
-#         elem_id="leaderboard_markdown",
-#     )
-#     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
-#     gr.Markdown(make_arena_leaderboard_md(elo_results["full"]["leaderboard_table_df"], last_updated_time), elem_id="leaderboard_markdown")
+    return category_df.style.apply(
+        highlight_top_3, subset=[key_to_category_name[k] for k in categories]
+    )
+
+
+def build_category_leaderboard_tab(
+    elo_results, model_table_df, categories, categories_width
+):
+    #     gr.Markdown(
+    #         f"""
+    # **We've updated the leaderboard to show model rank (UB) across categories for better performance comparison. For more categories, statistics, and model info, see the Arena tab.**
+    # """,
+    #         elem_id="leaderboard_markdown",
+    #     )
+    #     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
+    #     gr.Markdown(make_arena_leaderboard_md(elo_results["full"]["leaderboard_table_df"], last_updated_time), elem_id="leaderboard_markdown")
     full_table_vals = get_arena_category_table(elo_results, model_table_df, categories)
     gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
-        column_widths=[250] + categories_width, # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
+        column_widths=[250]
+        + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
         height=800,
         wrap=True,
     )
 
 
-selected_categories = ['full', 'coding', 'if', 'math', 'hard_6', 'multiturn', 'long_user', 'no_refusal']
+selected_categories = [
+    "full",
+    "coding",
+    "if",
+    "math",
+    "hard_6",
+    "multiturn",
+    "long_user",
+    "no_refusal",
+]
 selected_categories_width = [85, 75, 120, 75, 125, 110, 100, 100]
 
-language_categories = ['english', 'chinese', 'german', 'french', 'spanish', 'russian', 'japanese', 'korean']
+language_categories = [
+    "english",
+    "chinese",
+    "german",
+    "french",
+    "spanish",
+    "russian",
+    "japanese",
+    "korean",
+]
 language_categories_width = [100] * len(language_categories)
+
 
 def build_leaderboard_tab(
     elo_results_file,
@@ -768,16 +807,28 @@ def build_leaderboard_tab(
                     </div>
                     """,
                 )
-                last_updated_time = elo_results_text["full"]["last_updated_datetime"].split(" ")[0]
-                gr.Markdown(make_arena_leaderboard_md(elo_results_text["full"]["leaderboard_table_df"], last_updated_time), elem_id="leaderboard_markdown")
-                gr.Markdown("""<span style='text-decoration:underline; font-size: 125%;'>Task Leaderboard</span>""")
+                last_updated_time = elo_results_text["full"][
+                    "last_updated_datetime"
+                ].split(" ")[0]
+                gr.Markdown(
+                    make_arena_leaderboard_md(
+                        elo_results_text["full"]["leaderboard_table_df"],
+                        last_updated_time,
+                    ),
+                    elem_id="leaderboard_markdown",
+                )
+                gr.Markdown(
+                    """<span style='text-decoration:underline; font-size: 125%;'>Task Leaderboard</span>"""
+                )
                 gr_plots = build_category_leaderboard_tab(
                     elo_results_text,
                     model_table_df,
                     selected_categories,
                     selected_categories_width,
                 )
-                gr.Markdown("""<span style='text-decoration:underline; font-size: 125%;'>Language Leaderboard</span>""")
+                gr.Markdown(
+                    """<span style='text-decoration:underline; font-size: 125%;'>Language Leaderboard</span>"""
+                )
                 build_category_leaderboard_tab(
                     elo_results_text,
                     model_table_df,
@@ -885,6 +936,7 @@ def build_leaderboard_tab(
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     return [md_1] + gr_plots
+
 
 def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard):
     from fastchat.serve.gradio_web_server import block_css

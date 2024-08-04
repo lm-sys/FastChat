@@ -148,4 +148,3 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
-
