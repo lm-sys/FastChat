@@ -7,6 +7,13 @@ import os
 
 REPO_PATH = os.path.dirname(os.path.dirname(__file__))
 
+# Survey Link URL (to be removed)
+SURVEY_LINK = """<div style='text-align: center; margin: 20px 0;'>
+    <div style='display: inline-block; border: 2px solid #DE3163; padding: 10px; border-radius: 5px;'>
+        <span style='color: #DE3163; font-weight: bold;'>We would love your feedback! Fill out <a href='https://docs.google.com/forms/d/e/1FAIpQLSfKSxwFOW6qD05phh4fwYjk8q0YV1VQe_bmK0_qOVTbC66_MA/viewform?usp=sf_link' style='color: #DE3163; text-decoration: underline;'>this short survey</a> to tell us what you like about the arena, what you don't like, and what you want to see in the future.</span>
+    </div>
+</div>"""
+
 ##### For the gradio web server
 SERVER_ERROR_MSG = (
     "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
