@@ -660,22 +660,37 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     )
 
 
-def get_arena_category_table(elo_results, model_table_df, categories):
+def get_arena_category_table(elo_results, model_table_df, categories, metric="final_ranking"):
+    assert metric in ["rating", "final_ranking"]
     new_category_dfs = []
+    top_rankings = {c: {} for c in categories}
     for i, category in enumerate(categories):
         category_df = elo_results[category]["leaderboard_table_df"]
-        category_df[key_to_category_name[category]] = recompute_final_ranking(
-            category_df
-        )
+        final_ranking = recompute_final_ranking(category_df)
+        rating = category_df[metric]
+        if metric =="final_ranking":
+            category_df[key_to_category_name[category]] = final_ranking
+        else:
+            # ranking to 0 if nan else turn into int
+            def get_ranking(r):
+                return 0 if np.isnan(r) else int(r)
+            category_df[key_to_category_name[category]] = [get_ranking(r) for r in rating]
+
+        # this is for toggling, need to figure out the final ranking for each metric
+        for j, r in enumerate(category_df[key_to_category_name[category]].tolist()):
+            top_rankings[category][r] = final_ranking[j]
+
         if i == 0:
             new_category_dfs.append(
                 category_df[[key_to_category_name[category], "rating"]]
             )
         else:
             new_category_dfs.append(category_df[[key_to_category_name[category]]])
+
     category_df = pd.concat(new_category_dfs, axis=1)
     category_df = category_df.sort_values(
-        by=[category_df.columns[0], "rating"], ascending=[True, False]
+        by=[category_df.columns[0], "rating"], 
+        ascending=[False, False] if metric == "rating" else [True, False]
     )
     category_df = category_df.drop(columns=["rating"])
 
@@ -702,30 +717,47 @@ def get_arena_category_table(elo_results, model_table_df, categories):
         columns=["Model"] + [key_to_category_name[k] for k in categories],
     )
 
-    def highlight_top_3(s):
+    def highlight_top_3(s, current_category):
+        # assert there are no nan values
+        assert not s.isnull().values.any(), f"There are nan values in the dataframe for {current_category}"
         return [
             (
                 "background-color: rgba(255, 215, 0, 0.3); text-align: center; font-size: 110%"
-                if int(v) == 1
+                if top_rankings[current_category][v] == 1 and v != 0
                 else "background-color: rgba(211, 211, 211, 0.4); text-align: center; font-size: 110%"
-                if int(v) == 2
+                if top_rankings[current_category][v] == 2 and v != 0
                 else "background-color: rgba(209, 139, 71, 0.2); text-align: center; font-size: 110%"
-                if int(v) == 3
+                if top_rankings[current_category][v] == 3 and v != 0
                 else "text-align: center; font-size: 110%"
             )
             for v in s
         ]
 
-    return category_df.style.apply(
-        highlight_top_3, subset=[key_to_category_name[k] for k in categories]
-    )
+    # Initialize the style
+    style = category_df.style
+
+    # Apply styling for each category
+    for category in categories:
+        style = style.apply(
+            highlight_top_3, 
+            subset=[key_to_category_name[category]], 
+            current_category=category
+        )
+
+    return style
 
 
 def build_category_leaderboard_tab(
     elo_results, model_table_df, categories, categories_width
 ):
     full_table_vals = get_arena_category_table(elo_results, model_table_df, categories)
-    gr.Dataframe(
+    with gr.Row():
+        rating_button = gr.Button("Sort by Rating")
+        ranking_button = gr.Button("Sort by Rank")
+        sort_ranking = lambda _: get_arena_category_table(elo_results, model_table_df, categories, "final_ranking")
+        sort_rating = lambda _: get_arena_category_table(elo_results, model_table_df, categories, "rating")
+    
+    overall_ranking_leaderboard = gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
@@ -735,6 +767,9 @@ def build_category_leaderboard_tab(
         height=800,
         wrap=True,
     )
+    ranking_button.click(sort_ranking, inputs=[ranking_button], outputs=[overall_ranking_leaderboard])
+    rating_button.click(sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard])
+
 
 
 selected_categories = [
@@ -815,7 +850,7 @@ def build_leaderboard_tab(
                     elem_id="leaderboard_markdown",
                 )
                 gr.Markdown(
-                    """<span style='text-decoration:underline; font-size: 125%;'>Task Leaderboard</span>"""
+                    """&emsp; <span style='text-decoration:underline; font-size: 125%;'>Task Leaderboard</span>"""
                 )
                 gr_plots = build_category_leaderboard_tab(
                     elo_results_text,
@@ -824,7 +859,7 @@ def build_leaderboard_tab(
                     selected_categories_width,
                 )
                 gr.Markdown(
-                    """<span style='text-decoration:underline; font-size: 125%;'>Language Leaderboard</span>"""
+                    """&emsp; <span style='text-decoration:underline; font-size: 125%;'>Language Leaderboard</span>"""
                 )
                 build_category_leaderboard_tab(
                     elo_results_text,
