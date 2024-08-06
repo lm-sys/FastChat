@@ -29,6 +29,7 @@ class SeparatorStyle(IntEnum):
     CHATINTERN = auto()
     DOLLY = auto()
     RWKV = auto()
+    RWKV5 = auto()
     PHOENIX = auto()
     ROBIN = auto()
     FALCON_CHAT = auto()
@@ -141,6 +142,20 @@ class Conversation:
                     ret += "\n\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.RWKV5:
+            ret = system_prompt
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += (
+                        role
+                        # + ": "
+                        + message.replace("\r\n", "\n").replace("\n\n", "\n")
+                        + "\x17"
+                    )
+                    ret += "\n"
+                else:
+                    ret += role  # + ":"
             return ret
         elif self.sep_style == SeparatorStyle.LLAMA2:
             seps = [self.sep, self.sep2]
@@ -966,6 +981,18 @@ register_conv_template(
         sep_style=SeparatorStyle.RWKV,
         sep="",
         stop_str="\n\n",
+    )
+)
+
+# Hermes-RWKV-5-Eagle default template
+register_conv_template(
+    Conversation(
+        name="hermes-rwkv-v5",
+        roles=("\x16user\n", "\x16assistant\n"),
+        offset=2,
+        sep_style=SeparatorStyle.RWKV5,
+        sep="\x17",
+        # stop_str="\n\n",
     )
 )
 
