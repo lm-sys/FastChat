@@ -787,8 +787,8 @@ register_conv_template(
     Conversation(
         name="alpaca",
         system_message="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
-        roles=("### Instruction", "### Response"),
-        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        roles=("### Instruction:", "### Response:"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="\n\n",
         sep2="</s>",
     )
