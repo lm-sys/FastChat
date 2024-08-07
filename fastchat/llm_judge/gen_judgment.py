@@ -332,7 +332,8 @@ if __name__ == "__main__":
     aml_run = True
 
     # these get picked up in chat_completion_openai_azure
-    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aims-oai-research-inference-uks.openai.azure.com/"
+    # os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aims-oai-research-inference-uks.openai.azure.com/"
+    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aoaiptswc.openai.azure.com/"
 
     # Play matches
     if args.parallel == 1:
