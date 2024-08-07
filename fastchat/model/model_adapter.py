@@ -200,6 +200,7 @@ def load_model(
     dtype: Optional[torch.dtype] = None,
     load_8bit: bool = False,
     cpu_offloading: bool = False,
+    attn_implementation: Optional[str] = None,
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
     exllama_config: Optional[ExllamaConfig] = None,
@@ -348,6 +349,9 @@ def load_model(
 
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
+    
+    if attn_implementation is not None:
+        kwargs["attn_implementation"] = attn_implementation
 
     if os.environ.get("FASTCHAT_USE_MODELSCOPE", "False").lower() == "true":
         # download model from ModelScope hub,
@@ -525,6 +529,11 @@ def add_model_args(parser):
         "--cpu-offloading",
         action="store_true",
         help="Only when using 8-bit quantization: Offload excess weights to the CPU that don't fit on the GPU",
+    )
+    parser.add_argument(
+        "--attn-implementation",
+        choices=["eager", "sdpa", "flash_attention_2"],
+        help="The attention implementation to use with Huggingface models.",
     )
     parser.add_argument(
         "--gptq-ckpt",
