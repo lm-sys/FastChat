@@ -822,10 +822,11 @@ register_conv_template(
         roles=("<|user|>", "<|assistant|>"),
         sep_style=SeparatorStyle.CHATGLM3,
         stop_token_ids=[
+            64796,
             64795,
             64797,
             2,
-        ],  # "<|user|>", "<|observation|>", "</s>"
+        ],  # "<|assistant|>","<|user|>", "<|observation|>", "</s>"
     )
 )
 
