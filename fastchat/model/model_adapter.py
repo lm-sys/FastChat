@@ -401,7 +401,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
 
     model_type = str(type(model)).lower()
     is_peft = "peft" in model_type
-    is_chatglm = "chatglm" in model_type
+    is_chatglm = ("chatglm" in model_type) or ("glm-4" in model_type)
     is_falcon = "rwforcausallm" in model_type
     is_codet5p = "codet5p" in model_type
     is_exllama = "exllama" in model_type
@@ -440,7 +440,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         ):
             model.set_adapter(model_path)
             base_model_type = str(type(model.base_model.model))
-            is_chatglm = "chatglm" in base_model_type
+            is_chatglm = ("chatglm" in base_model_type) or ("glm-4" in base_model_type)
             is_falcon = "rwforcausallm" in base_model_type
             is_codet5p = "codet5p" in base_model_type
             is_exllama = "exllama" in base_model_type
@@ -840,11 +840,11 @@ class ChatGLMAdapter(BaseModelAdapter):
     """The model adapter for THUDM/chatglm-6b, THUDM/chatglm2-6b"""
 
     def match(self, model_path: str):
-        return "chatglm" in model_path.lower()
+        return "chatglm" in model_path.lower() or "glm-4" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         revision = from_pretrained_kwargs.get("revision", "main")
-        if "chatglm3" in model_path.lower():
+        if "chatglm3" in model_path.lower() or 'glm-4' in model_path.lower():
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 encode_special_tokens=True,
@@ -866,6 +866,8 @@ class ChatGLMAdapter(BaseModelAdapter):
             return get_conv_template("chatglm2")
         if "chatglm3" in model_path.lower():
             return get_conv_template("chatglm3")
+        if "glm-4" in model_path.lower():
+            return get_conv_template("glm-4")
         return get_conv_template("chatglm")
 
 

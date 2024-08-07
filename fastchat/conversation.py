@@ -829,6 +829,21 @@ register_conv_template(
     )
 )
 
+# ChatGLM4 default template
+register_conv_template(
+    Conversation(
+        name="glm-4",
+        system_template="<|system|>\n{system_message}",
+        roles=("<|user|>", "<|assistant|>"),
+        sep_style=SeparatorStyle.CHATGLM3,
+        stop_token_ids=[
+            151329,
+            151336,
+            151338,
+        ],  # "<|user|>", "<|observation|>", "</s>"
+    )
+)
+
 # CodeGeex(2) Template
 register_conv_template(
     Conversation(
