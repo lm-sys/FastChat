@@ -1209,6 +1209,8 @@ class GeminiAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "gemini-1.5-pro" in model_path:
+            return get_conv_template("gemini-1.5-pro")
         return get_conv_template("gemini")
 
 
@@ -2188,21 +2190,6 @@ class DeepseekChatAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("deepseek-chat")
-
-
-class GeminiAdapter(BaseModelAdapter):
-    """The model adapter for Gemini"""
-
-    def match(self, model_path: str):
-        return "gemini" in model_path.lower() or "bard" in model_path.lower()
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        raise NotImplementedError()
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "gemini-1.5-pro" in model_path:
-            return get_conv_template("gemini-1.5-pro")
-        return get_conv_template("gemini")
 
 
 class Yuan2Adapter(BaseModelAdapter):
