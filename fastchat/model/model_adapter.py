@@ -67,6 +67,14 @@ ANTHROPIC_MODEL_LIST = (
     "claude-instant-1.2",
 )
 
+# See available Cohere models at https://docs.cohere.com/docs/models
+COHERE_MODEL_LIST = (
+    "command",
+    "command-light",
+    "command-nightly",
+    "command-nightly-light",
+)
+
 OPENAI_MODEL_LIST = (
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0301",
@@ -1171,6 +1179,19 @@ class ClaudeAdapter(BaseModelAdapter):
         if "claude-3-opus" in model_path:
             return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
+
+
+class CohereAdapter(BaseModelAdapter):
+    """The model adapter for Cohere"""
+
+    def match(self, model_path: str):
+        return model_path in COHERE_MODEL_LIST
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("cohere")
 
 
 class BardAdapter(BaseModelAdapter):
@@ -2475,6 +2496,7 @@ register_model_adapter(GemmaAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
 register_model_adapter(ClaudeAdapter)
+register_model_adapter(CohereAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
