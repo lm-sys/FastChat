@@ -203,6 +203,17 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "column":
+        messages = conv.to_openai_api_messages()
+        stream_iter = column_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_new_tokens=max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
     else:
         raise NotImplementedError()
 
@@ -265,6 +276,10 @@ def openai_api_stream_iter(
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
+            extra_headers={
+                "request-id": "test-request-id",
+                "origin-id": "test-origin-id",
+            },
         )
         text = ""
         for chunk in res:
@@ -294,6 +309,62 @@ def openai_api_stream_iter(
                 "error_code": 0,
             }
             yield data
+
+
+def column_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+):
+    try:
+        payload = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_new_tokens,
+            "seed": 42,
+            "stream": True,
+        }
+        logger.info(f"==== request ====\n{payload}")
+
+        # payload.pop("model")
+
+        # try 3 times
+        for i in range(3):
+            try:
+                response = requests.post(
+                    api_base, json=payload, stream=True, timeout=30
+                )
+                break
+            except Exception as e:
+                logger.error(f"==== error ====\n{e}")
+                if i == 2:
+                    yield {
+                        "text": f"**API REQUEST ERROR** Reason: API timeout. please try again later.",
+                        "error_code": 1,
+                    }
+                    return
+
+        text = ""
+        for line in response.iter_lines():
+            if line:
+                data = line.decode("utf-8")
+                if data.startswith("data:"):
+                    data = json.loads(data[6:])["message"]
+                    text += data
+                    yield {"text": text, "error_code": 0}
+
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
+            "error_code": 1,
+        }
 
 
 def upload_openai_file_to_gcs(file_id):
@@ -631,7 +702,7 @@ def gemini_api_stream_iter(
             pos = 0
             while pos < len(text):
                 # simulate token streaming
-                pos += 3
+                pos += 5
                 time.sleep(0.001)
                 data = {
                     "text": text[:pos],
@@ -836,7 +907,9 @@ def mistral_api_stream_iter(
 def nvidia_api_stream_iter(
     model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
 ):
-    model_2_api = {}
+    model_2_api = {
+        "nemotron-4-340b": "/b0fcd392-e905-4ab4-8eb9-aeae95c30b37",
+    }
     api_base += model_2_api[model_name]
 
     api_key = api_key or os.environ["NVIDIA_API_KEY"]

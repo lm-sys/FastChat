@@ -85,24 +85,35 @@ vl_models = []
 
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {
-    "gpt-4o-2024-05-13": 4,
+    "gpt-4o-2024-05-13": 6,
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 4,
     "claude-3-sonnet-20240229": 4,
-    "claude-3-5-sonnet-20240620": 4,
+    "claude-3-5-sonnet-20240620": 6,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
-    "gemini-1.5-pro-api-0514": 4,
-    "llava-v1.6-34b": 4,
+    "gemini-1.5-pro-api-0514": 6,
+    # "llava-v1.6-34b": 4,
     "reka-core-20240501": 4,
     "reka-flash-preview-20240611": 4,
+    # "cogvlm2-llama3-chat-19b": 4,
+    "gemini-test-2": 6,
+    "gpt-4o-mini-2024-07-18": 6,
+    "internvl2-26b": 2,
+    "gemini-test-3": 6,
 }
 
 # TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
-VISION_SAMPLING_BOOST_MODELS = []
+VISION_SAMPLING_BOOST_MODELS = [
+#    "reka-core-20240501",
+#    "reka-flash-preview-20240611",
+#    "cogvlm2-llama3-chat-19b",
+    # "internvl2-26b",
+    "gemini-test-3",
+]
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
@@ -155,18 +166,30 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
     gr.Info(
         "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
     )
+
+    model_name_1 = states[0].model_name
+    model_name_2 = states[1].model_name
+    if model_name_1 == "gemini-test-1" or model_name_1 == "gemini-test-2":
+        model_name_1 = "gemini-1.5-pro-exp-0801"
+    if model_name_2 == "gemini-test-1" or model_name_2 == "gemini-test-2":
+        model_name_2 = "gemini-1.5-pro-exp-0801"
+    if model_name_1 == "gemini-test-3":
+        model_name_1 = "gemini-test"
+    if model_name_2 == "gemini-test-3":
+        model_name_2 = "gemini-test"
+
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
+                "### Model A: " + model_name_1,
+                "### Model B: " + model_name_2,
             )
             yield names + (disable_text,) + (disable_btn,) * 4
             time.sleep(0.1)
     else:
         names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
+            "### Model A: " + model_name_1,
+            "### Model B: " + model_name_2,
         )
         yield names + (disable_text,) + (disable_btn,) * 4
 
@@ -460,6 +483,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             placeholder="👉 Enter your prompt and press ENTER",
             elem_id="input_box",
             visible=False,
+            scale=3,
         )
 
         multimodal_textbox = gr.MultimodalTextbox(
@@ -468,9 +492,10 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             container=True,
             placeholder="Enter your prompt or add image here",
             elem_id="input_box",
+            scale=3,
         )
         send_btn = gr.Button(
-            value="Send", variant="primary", scale=0, visible=False, interactive=False
+            value="Send", variant="primary", scale=1, visible=False, interactive=False
         )
 
     with gr.Row() as button_row:

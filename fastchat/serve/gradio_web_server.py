@@ -133,6 +133,9 @@ class State:
             return
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         system_prompt = system_prompt.replace("{{currentDateTime}}", current_date)
+
+        current_date_v2 = datetime.datetime.now().strftime("%d %b %Y")
+        system_prompt = system_prompt.replace("{{currentDateTimev2}}", current_date_v2)
         conv.set_system_message(system_prompt)
 
     def to_gradio_chatbot(self):

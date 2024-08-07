@@ -173,17 +173,111 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {}
+SAMPLING_WEIGHTS = {
+    # tier 0
+    "gpt-4-0613": 2,
+    "gpt-4-1106-preview": 2,
+    "gpt-4-0125-preview": 2,
+    "gpt-4-turbo-2024-04-09": 4,
+    # "gpt-3.5-turbo-0125": 2,
+    "gpt-4o-2024-05-13": 6,
+    "gemini-1.5-pro-api-0514": 6,
+    "gemini-1.5-flash-api-0514": 4,
+    "gemma-2-27b-it": 4,
+    "gemma-2-9b-it": 2,
+    "claude-3-5-sonnet-20240620": 6,
+    "claude-3-opus-20240229": 4,
+    # "claude-3-sonnet-20240229": 4,
+    "claude-3-haiku-20240307": 2,
+    "llama-3-70b-instruct": 2,
+    "llama-3-8b-instruct": 2,
+    # "command-r-plus": 2,
+    # "command-r": 2,
+    # "reka-core-20240501": 2,
+    # "reka-flash-preview-20240611": 2,
+    "reka-core-20240722": 6,
+    "reka-flash-20240722": 6,
+    "qwen2-72b-instruct": 2,
+    # "gemma-1.1-7b-it": 2,
+    # "mixtral-8x7b-instruct-v0.1": 2,
+    "mixtral-8x22b-instruct-v0.1": 2,
+    # "mistral-large-2402": 2,
+    #    "codestral-2405": 4,
+    #    "snowflake-arctic-instruct": 1,
+    #    "dbrx-instruct": 1,
+    "phi-3-mini-4k-instruct-june-2024": 2,
+    "phi-3-medium-4k-instruct": 2,
+    # "phi-3-small-8k-instruct": 2,
+    #"yi-large-preview": 2,
+    #"yi-large": 2,
+    # "yi-1.5-34b-chat": 2,
+    #    "dbrx-next": 4,
+    # "nemotron-4-340b": 4,
+    # "glm-4-0520": 4,
+    "deepseek-coder-v2": 2,
+    "deepseek-v2-api-0628": 4,
+    # "column-r": 2,
+    # "column-u": 2,
+#     "upcoming-gpt-mini": 8,
+    "eureka-chatbot": 4,
+    "gemma-2-2b-it": 4,
+    "athene-70b-0725": 4,
+    "gemini-1.5-pro-exp-0801": 6,
+    "gpt-4o-mini-2024-07-18": 4,
+    "llama-3.1-405b-instruct": 6,
+    "llama-3.1-70b-instruct": 6,
+    "llama-3.1-8b-instruct": 6,
+    "mistral-large-2407": 6,
+    "gemini-test-3": 7,
+    "sus-column-r": 10,
+    "anonymous-chatbot": 7,
+    "gpt-4o-2024-08-06": 4,
+}
 
 # target model sampling weights will be boosted.
-BATTLE_TARGETS = {}
+BATTLE_TARGETS = {
+}
 
-ANON_MODELS = []
+BATTLE_STRICT_TARGETS = {}
 
-SAMPLING_BOOST_MODELS = []
+ANON_MODELS = [
+    "column-r",
+    "column-u",
+    "eureka-chatbot",
+    "gemini-test-3",
+    "gemini-test-2",
+    "reka-core-20240722",
+    "reka-flash-20240722",
+    "sus-column-r",
+    "anonymous-chatbot",
+    "gpt-4o-2024-08-06",
+]
+
+SAMPLING_BOOST_MODELS = [
+    # "mistral-large-2407",
+    # "llama-3.1-405b-instruct",
+    # "llama-3.1-70b-instruct",
+    # "llama-3.1-8b-instruct",
+    # "gpt-4o-mini-2024-07-18",
+    "gemini-test-3",
+    "sus-column-r",
+    "anonymous-chatbot",
+    "gpt-4o-2024-08-06",
+]
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = [
+    "zephyr-7b-beta",
+    "pplx-70b-online",
+    "wizardlm-70b",
+    "deepseek-llm-67b-chat",
+    "nous-hermes-2-mixtral-8x7b-dpo",
+    "openhermes-2.5-mistral-7b",
+    "claude-2.0",
+    "deluxe-chat-v1.3",
+    "glm-4-0116",
+    "gemma-1.1-7b-it",
+]
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
@@ -209,6 +303,8 @@ def get_battle_pair(
         model_weights.append(weight)
     total_weight = np.sum(model_weights)
     model_weights = model_weights / total_weight
+    # print(models)
+    # print(model_weights)
     chosen_idx = np.random.choice(len(models), p=model_weights)
     chosen_model = models[chosen_idx]
     # for p, w in zip(models, model_weights):
@@ -220,6 +316,10 @@ def get_battle_pair(
         if model == chosen_model:
             continue
         if model in ANON_MODELS and chosen_model in ANON_MODELS:
+            continue
+        if chosen_model in BATTLE_STRICT_TARGETS and model not in BATTLE_STRICT_TARGETS[chosen_model]:
+            continue
+        if model in BATTLE_STRICT_TARGETS and chosen_model not in BATTLE_STRICT_TARGETS[model]:
             continue
         weight = get_sample_weight(model, outage_models, sampling_weights)
         if (
@@ -507,7 +607,7 @@ def build_side_by_side_ui_anony(models):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1600,
+            value=1800,
             step=64,
             interactive=True,
             label="Max output tokens",

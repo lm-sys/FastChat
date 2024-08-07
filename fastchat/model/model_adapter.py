@@ -84,7 +84,11 @@ OPENAI_MODEL_LIST = (
     "gpt2-chatbot",
     "im-also-a-good-gpt2-chatbot",
     "im-a-good-gpt2-chatbot",
+    "upcoming-gpt-mini",
+    "gpt-4o-mini-2024-07-18",
     "gpt-4o-2024-05-13",
+    "gpt-4o-2024-08-06",
+    "anonymous-chatbot",
 )
 
 
@@ -1118,8 +1122,16 @@ class ChatGPTAdapter(BaseModelAdapter):
             return get_conv_template("gpt-4-turbo-2024-04-09")
         if "gpt2-chatbot" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
-        if "gpt-4o" in model_path:
+        if "gpt-4o-2024-05-13" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-4o-2024-08-06" in model_path:
+            return get_conv_template("gpt-mini")
+        if "anonymous-chatbot" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-mini" in model_path:
+            return get_conv_template("gpt-mini")
+        if "gpt-4o-mini-2024-07-18" in model_path:
+            return get_conv_template("gpt-mini")
         return get_conv_template("chatgpt")
 
 
@@ -1167,7 +1179,7 @@ class ClaudeAdapter(BaseModelAdapter):
         if "claude-3-sonnet" in model_path:
             return get_conv_template("claude-3-sonnet-20240229")
         if "claude-3-5-sonnet" in model_path:
-            return get_conv_template("claude-3-5-sonnet-20240620")
+            return get_conv_template("claude-3-5-sonnet-20240620-v2")
         if "claude-3-opus" in model_path:
             return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
@@ -1575,7 +1587,7 @@ class Llama3Adapter(BaseModelAdapter):
     """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
 
     def match(self, model_path: str):
-        return "llama-3" in model_path.lower()
+        return "llama-3-" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1585,6 +1597,32 @@ class Llama3Adapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-3")
+
+
+class Llama31Adapter(BaseModelAdapter):
+    """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
+
+    def match(self, model_path: str):
+        return "llama-3.1" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        if model_path.lower() in ["llama-3.1-8b-instruct", "llama-3.1-70b-instruct"]:
+            return get_conv_template("meta-llama-3.1-sp")
+        return get_conv_template("meta-llama-3.1")
+
+
+class ColumnAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "sus-column-r" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("column-r")
 
 
 class CuteGPTAdapter(BaseModelAdapter):
@@ -2445,6 +2483,19 @@ class RekaAdapter(BaseModelAdapter):
         return get_conv_template("api_based_default")
 
 
+class NoSystemAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        keyword_list = ["athene-70b"]
+
+        for keyword in keyword_list:
+            if keyword == model_path.lower():
+                return True
+        return False
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
@@ -2545,6 +2596,9 @@ register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
 register_model_adapter(Llama3Adapter)
+register_model_adapter(Llama31Adapter)
+register_model_adapter(ColumnAdapter)
+register_model_adapter(NoSystemAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
