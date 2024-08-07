@@ -8,7 +8,26 @@ import hashlib
 import asyncio
 
 REFRESH_INTERVAL_SEC = 300
-LOG_DIR_LIST = []
+LOG_DIR_LIST = [
+    "/home/gcpuser/fastchat_logs/server0",
+    "/home/gcpuser/fastchat_logs/server1",
+    "/home/gcpuser/fastchat_logs/server2",
+    "/home/gcpuser/fastchat_logs/server3",
+    "/home/gcpuser/fastchat_logs/server4",
+    "/home/gcpuser/fastchat_logs/server5",
+    "/home/gcpuser/fastchat_logs/server6",
+    "/home/gcpuser/fastchat_logs/server7",
+    "/home/gcpuser/fastchat_logs/server8",
+    "/home/gcpuser/fastchat_logs/server9",
+    "/home/gcpuser/fastchat_logs/server10",
+    "/home/gcpuser/fastchat_logs/server11",
+    "/home/gcpuser/fastchat_logs/server12",
+    "/home/gcpuser/fastchat_logs/server13",
+    "/home/gcpuser/fastchat_logs/server14",
+    "/home/gcpuser/fastchat_logs/server15",
+    "/home/gcpuser/fastchat_logs/server16",
+    "/home/gcpuser/fastchat_logs/server17",
+]
 # LOG_DIR = "/home/vicuna/tmp/test_env"
 
 
@@ -22,10 +41,50 @@ class Monitor:
         self.model_call_limit_global = {
             "gpt-4-1106-preview": 100,
             "gpt-4-0125-preview": 100,
+            "gpt-4-turbo-browsing": 200,
+            "gpt-4-turbo-2024-04-09": 100,
+            "mistral-large-2402": 200,
+            "llama-3-70b-instruct": 2000,
+            "claude-3-opus-20240229": 1000,
+            "claude-3-sonnet-20240229": 1000,
+            "dbrx-instruct": 1000,
+            "command-r-plus": 1000,
+            "gemini-1.5-pro-api-0409-preview": 1000,
+            "gemini-1.5-pro-api-preview": 1000,
+            "gpt2-chatbot": 1000,
+            "im-a-good-gpt2-chatbot": 3000,
+            "im-also-a-good-gpt2-chatbot": 3000,
+            "gpt-4o-2024-05-13": 1000,
+            "gpt-4o-2024-08-06": 1000,
+            "yi-large": 300,
+            "deepseek-coder-v2": 500,
+            "deepseek-v2-api-0628": 300,
+            "claude-3-5-sonnet-20240620": 2000,
+            "experimental-mf-router": 100,
+            "experimental-causal-router": 100,
+            "llama-3.1-405b-instruct": 2000,
+            "gemini-1.5-pro-exp-0801": 800,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
             "gpt-4-0125-preview": 5,
+            "gpt-4-turbo-2024-04-09": 5,
+            "gpt-4-turbo-browsing": 8,
+            "mistral-large-2402": 8,
+            "claude-3-opus-20240229": 15,
+            "claude-3-sonnet-20240229": 32,
+            "command-r-plus": 32,
+            "gemini-1.5-pro-api-0409-preview": 16,
+            "gemini-1.5-pro-api-preview": 16,
+            "gpt2-chatbot": 8,
+            "im-a-good-gpt2-chatbot": 16,
+            "im-also-a-good-gpt2-chatbot": 16,
+            "gpt-4o-2024-05-13": 8,
+            "gpt-4o-2024-08-06": 8,
+            "deepseek-coder-v2": 16,
+            "claude-3-5-sonnet-20240620": 16,
+            "llama-3.1-405b-instruct": 16,
+            "gemini-1.5-pro-exp-0801": 8,
         }
 
     async def update_stats(self, num_file=1) -> None:
