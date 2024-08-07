@@ -82,7 +82,6 @@ After these steps, the new model should be compatible with most FastChat feature
 - [rishiraj/CatPPT](https://huggingface.co/rishiraj/CatPPT)
 - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
-- [tenyx/TenyxChat-7B-v1](https://huggingface.co/tenyx/TenyxChat-7B-v1)
 - [TinyLlama/TinyLlama-1.1B-Chat-v1.0](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)
 - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
 - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
