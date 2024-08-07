@@ -1866,7 +1866,7 @@ register_conv_template(
         roles=("### User Message", "### Assistant"),
         messages=(),
         offset=0,
-        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="\n\n",
     )
 )
