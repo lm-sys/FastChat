@@ -272,7 +272,7 @@ class Conversation:
             return ret
         elif self.sep_style == SeparatorStyle.DEEPSEEK_CHAT:
             seps = [self.sep, self.sep2]
-            ret = system_prompt
+            ret = system_prompt + self.sep if self.system_message else system_prompt
             for i, (role, message) in enumerate(self.messages):
                 if message:
                     ret += role + ": " + message + seps[i % 2]
@@ -1956,11 +1956,11 @@ register_conv_template(
 )
 
 # Deepseek-chat template
-# reference: https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat/blob/main/tokenizer_config.json
+# reference: https://huggingface.co/deepseek-ai/DeepSeek-V2-Chat/blob/main/tokenizer_config.json
 register_conv_template(
     Conversation(
         name="deepseek-chat",
-        system_message="<｜begin▁of▁sentence｜>",  # must add a bos token before first message
+        system_message="<｜begin▁of▁sentence｜>{system_message}",  # must add a bos token before first message
         roles=("User", "Assistant"),
         sep_style=SeparatorStyle.DEEPSEEK_CHAT,
         sep="\n\n",
