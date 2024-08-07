@@ -1555,6 +1555,26 @@ class MistralAdapter(BaseModelAdapter):
         return get_conv_template("mistral")
 
 
+class GritLMAdapter(BaseModelAdapter):
+    """The model adapter for Mistral AI models"""
+
+    def match(self, model_path: str):
+        return "gritlm" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+
+        # This is taken from the GritLM wrapper.
+        if not tokenizer.pad_token and tokenizer.eos_token:
+            tokenizer.pad_token = tokenizer.eos_token
+            print("Set pad token to eos token: " + tokenizer.pad_token)
+
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gritlm")
+
+
 class Llama2Adapter(BaseModelAdapter):
     """The model adapter for Llama-2 (e.g., meta-llama/Llama-2-7b-hf)"""
 
@@ -2503,6 +2523,7 @@ register_model_adapter(Hermes2Adapter)
 register_model_adapter(NousHermes2MixtralAdapter)
 register_model_adapter(NousHermesAdapter)
 register_model_adapter(MistralAdapter)
+register_model_adapter(GritLMAdapter)
 register_model_adapter(WizardCoderAdapter)
 register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
