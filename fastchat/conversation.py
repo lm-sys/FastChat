@@ -1479,6 +1479,25 @@ register_conv_template(
     )
 )
 
+
+# Internlm2-chat template
+register_conv_template(
+    Conversation(
+        name="internlm2-chat",
+        system_template="""<|im_start|>system
+{system_message}""",
+        system_message="""You are an AI assistant whose name is InternLM (书生·浦语).
+- InternLM (书生·浦语) is a conversational language model that is developed by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
+- InternLM (书生·浦语) can understand and communicate fluently in the language chosen by the user such as English and 中文.
+""",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.CHATML,
+        sep="<|im_end|>",
+        stop_token_ids=[1, 92540, 92542],
+        stop_str="<|im_end|>",
+    )
+)
+
 # StarChat template
 # reference: https://huggingface.co/spaces/HuggingFaceH4/starchat-playground/blob/main/dialogues.py
 register_conv_template(

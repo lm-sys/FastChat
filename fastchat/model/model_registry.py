@@ -719,7 +719,15 @@ register_model_info(
 )
 
 register_model_info(
-    ["internlm-chat-7b", "internlm-chat-7b-8k"],
+    [
+        "internlm-chat-7b",
+        "internlm-chat-7b-8k",
+        "internlm2-chat-7b",
+        "internlm2-chat-1_8b",
+        "internlm2-chat-20b",
+        "internlm2-math-7b",
+        "internlm2-math-20b",
+    ],
     "InternLM",
     "https://huggingface.co/internlm/internlm-chat-7b",
     "A multi-language large-scale language model (LLM), developed by SHLAB.",
