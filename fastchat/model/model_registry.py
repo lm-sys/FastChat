@@ -1,4 +1,5 @@
 """Additional information of the models."""
+
 from collections import namedtuple, OrderedDict
 from typing import List
 
@@ -637,6 +638,18 @@ register_model_info(
     "BiLLa-7B-SFT",
     "https://huggingface.co/Neutralzz/BiLLa-7B-SFT",
     "An instruction-tuned bilingual LLaMA with enhanced reasoning ability by an independent researcher",
+)
+
+register_model_info(
+    [
+        "h2o-danube-1.8b-chat",
+        "h2o-danube-1.8b-sft",
+        "h2o-danube2-1.8b-chat",
+        "h2o-danube2-1.8b-sft",
+    ],
+    "H2O-Danube",
+    "https://huggingface.co/h2oai/h2o-danube2-1.8b-chat",
+    "H2O-Danube by H2O.ai",
 )
 
 register_model_info(

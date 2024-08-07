@@ -1255,16 +1255,35 @@ class RedPajamaINCITEAdapter(BaseModelAdapter):
         return get_conv_template("redpajama-incite")
 
 
-class H2OGPTAdapter(BaseModelAdapter):
-    """The model adapter for h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b"""
+class H2OAdapter(BaseModelAdapter):
+    """The model adapter for H2O models"""
 
-    use_fast_tokenizer = False
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            use_fast=self.use_fast_tokenizer,
+            revision=revision,
+            trust_remote_code=True,
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+
+        return model, tokenizer
 
     def match(self, model_path: str):
-        return "h2ogpt" in model_path.lower()
+        return "h2o" in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("h2ogpt")
+        return get_conv_template("h2o-danube")
 
 
 class RobinAdapter(BaseModelAdapter):
@@ -2478,7 +2497,7 @@ register_model_adapter(ClaudeAdapter)
 register_model_adapter(MPTAdapter)
 register_model_adapter(BiLLaAdapter)
 register_model_adapter(RedPajamaINCITEAdapter)
-register_model_adapter(H2OGPTAdapter)
+register_model_adapter(H2OAdapter)
 register_model_adapter(RobinAdapter)
 register_model_adapter(SnoozyAdapter)
 register_model_adapter(WizardLMAdapter)
