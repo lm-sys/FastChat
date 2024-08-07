@@ -324,7 +324,11 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
+    if enable_moderation:
+        flagged = moderation_filter(all_conv_text, [state.model_name])
+        # flagged = moderation_filter(text, [state.model_name])
+    else:
+        flagged = False
     # flagged = moderation_filter(text, [state.model_name])
     if flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
