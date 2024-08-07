@@ -166,6 +166,7 @@ class CompletionRequest(BaseModel):
     user: Optional[str] = None
     use_beam_search: Optional[bool] = False
     best_of: Optional[int] = None
+    seed: Optional[int] = None
 
 
 class CompletionResponseChoice(BaseModel):
