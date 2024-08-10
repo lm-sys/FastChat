@@ -753,41 +753,28 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
     category_df = category_df.reset_index(drop=True)
 
     style = category_df.style
-    current_category = category_names[0]
-
-    ranking_df = category_df.copy()
-    # replace all model, category values with ranking from results_df
-    for category in category_names:
-        print(category)
-        def get_rank(model):
-            try:
-                return results_df[(results_df['category'] == category) & (results_df['Model'] == model)]['ranking'].values[0]
-            except:
-                return 1000000
-        ranking_df[category] = category_df['Model'].apply(get_rank)
 
     def highlight_top_3(s):
-        # return [
-        #     "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%" if v == 1 and v != 0
-        #     else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%" if v == 2 and v != 0
-        #     else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%" if v == 3 and v != 0
-        #     else "text-align: center; font-size: 110%"
-        #     for v in s
-        # ]
-         rankings = ranking_df[current_category].tolist()
-         print(rankings)
-         return [
-            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%" if rankings[i] == 1
-            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%" if rankings[i] == 2
-            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%" if rankings[i] == 3
+        return [
+            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%" if v == 1 and v != 0
+            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%" if v == 2 and v != 0
+            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%" if v == 3 and v != 0
             else "text-align: center; font-size: 110%"
-            for i in range(len(s))
+            for v in s
         ]
     
     # Apply styling for each category
     for category in category_names:
-        current_category = category
         style = style.apply(highlight_top_3, subset=[category])
+
+    if metric == "rating":
+        style = style.background_gradient(
+            cmap='Blues', 
+            subset=category_names,
+            # vmin=category_df[category_names].min().min(),
+            vmin=1150,
+            vmax=category_df[category_names].max().max()
+        )
     
     return style
 
