@@ -394,85 +394,121 @@ def create_ranking_str(ranking, ranking_difference):
 #     return elo_datarame.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
 #         highlight_rank_max, subset=["Delta"]
 #     )
-    
+
+
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
-    arena_df = arena_df.sort_values(by=["final_ranking", "rating"], ascending=[True, False])
+    arena_df = arena_df.sort_values(
+        by=["final_ranking", "rating"], ascending=[True, False]
+    )
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-    
+
     if arena_subset_df is not None:
         arena_subset_df = arena_subset_df[arena_subset_df.index.isin(arena_df.index)]
         arena_subset_df = arena_subset_df.sort_values(by=["rating"], ascending=False)
         arena_subset_df["final_ranking"] = recompute_final_ranking(arena_subset_df)
-        
+
         arena_df = arena_df[arena_df.index.isin(arena_subset_df.index)]
         arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-        
+
         arena_subset_df["final_ranking_no_tie"] = np.arange(1, len(arena_subset_df) + 1)
         arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
-        
-        arena_df = arena_subset_df.join(arena_df["final_ranking"], rsuffix="_global", how="inner")
-        arena_df["ranking_difference"] = arena_df["final_ranking_global"] - arena_df["final_ranking"]
-        
-        arena_df = arena_df.sort_values(by=["final_ranking", "rating"], ascending=[True, False])
+
+        arena_df = arena_subset_df.join(
+            arena_df["final_ranking"], rsuffix="_global", how="inner"
+        )
+        arena_df["ranking_difference"] = (
+            arena_df["final_ranking_global"] - arena_df["final_ranking"]
+        )
+
+        arena_df = arena_df.sort_values(
+            by=["final_ranking", "rating"], ascending=[True, False]
+        )
         arena_df["final_ranking"] = arena_df.apply(
             lambda x: create_ranking_str(x["final_ranking"], x["ranking_difference"]),
-            axis=1
+            axis=1,
         )
-    
+
     arena_df["final_ranking"] = arena_df["final_ranking"].astype(str)
-    
+
     # Handle potential duplicate keys in model_table_df
-    model_table_dict = model_table_df.groupby('key').first().to_dict(orient='index')
-    
+    model_table_dict = model_table_df.groupby("key").first().to_dict(orient="index")
+
     def process_row(row):
         model_key = row.name
         model_info = model_table_dict.get(model_key, {})
-        
+
         if not model_info:
             print(f"Warning: {model_key} not found in model table")
             return None
-        
+
         ranking = row.get("final_ranking") or row.name + 1
         result = [ranking]
-        
+
         if arena_subset_df is not None:
             result.append(row.get("ranking_difference", 0))
-        
-        result.extend([
-            model_info.get('Model', 'Unknown'),
-            f"{round(row['rating'])}",
-            f"+{round(row['rating_q975'] - row['rating'])}/-{round(row['rating'] - row['rating_q025'])}",
-            round(row['num_battles']),
-            model_info.get('Organization', 'Unknown'),
-            model_info.get('License', 'Unknown'),
-            'Unknown' if model_info.get('Knowledge cutoff date', '-') == '-' else model_info.get('Knowledge cutoff date', 'Unknown')
-        ])
-        
+
+        result.extend(
+            [
+                model_info.get("Model", "Unknown"),
+                f"{round(row['rating'])}",
+                f"+{round(row['rating_q975'] - row['rating'])}/-{round(row['rating'] - row['rating_q025'])}",
+                round(row["num_battles"]),
+                model_info.get("Organization", "Unknown"),
+                model_info.get("License", "Unknown"),
+                "Unknown"
+                if model_info.get("Knowledge cutoff date", "-") == "-"
+                else model_info.get("Knowledge cutoff date", "Unknown"),
+            ]
+        )
+
         return result
-    
-    values = [process_row(row) for _, row in arena_df.iterrows() if process_row(row) is not None]
-    
+
+    values = [
+        process_row(row)
+        for _, row in arena_df.iterrows()
+        if process_row(row) is not None
+    ]
+
     return values
+
 
 def update_leaderboard_df(arena_table_vals):
     columns = [
-        "Rank* (UB)", "Delta", "Model", "Arena Elo", "95% CI", "Votes",
-        "Organization", "License", "Knowledge Cutoff"
+        "Rank* (UB)",
+        "Delta",
+        "Model",
+        "Arena Elo",
+        "95% CI",
+        "Votes",
+        "Organization",
+        "License",
+        "Knowledge Cutoff",
     ]
     elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
-    
+
     def highlight_max(s):
-        return ['color: green; font-weight: bold' if '\u2191' in str(v) else
-                'color: red; font-weight: bold' if '\u2193' in str(v) else
-                '' for v in s]
-    
+        return [
+            "color: green; font-weight: bold"
+            if "\u2191" in str(v)
+            else "color: red; font-weight: bold"
+            if "\u2193" in str(v)
+            else ""
+            for v in s
+        ]
+
     def highlight_rank_max(s):
-        return ['color: green; font-weight: bold' if v > 0 else
-                'color: red; font-weight: bold' if v < 0 else
-                '' for v in s]
-    
-    return elo_dataframe.style.apply(highlight_max, subset=["Rank* (UB)"]) \
-                              .apply(highlight_rank_max, subset=["Delta"])
+        return [
+            "color: green; font-weight: bold"
+            if v > 0
+            else "color: red; font-weight: bold"
+            if v < 0
+            else ""
+            for v in s
+        ]
+
+    return elo_dataframe.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
+        highlight_rank_max, subset=["Delta"]
+    )
 
 
 def build_arena_tab(
@@ -738,45 +774,54 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         wrap=True,
     )
 
+
 def get_arena_category_table(results_df, categories, metric="ranking"):
     assert metric in ["rating", "ranking"]
-    
+
     category_names = [key_to_category_name[k] for k in categories]
-    filtered_df = results_df[results_df['category'].isin(category_names)][['category', metric]]
-    category_df = filtered_df.pivot(columns='category', values=metric)
+    filtered_df = results_df[results_df["category"].isin(category_names)][
+        ["category", metric]
+    ]
+    category_df = filtered_df.pivot(columns="category", values=metric)
     category_df = category_df.fillna(-1).astype(int)
-    
+
     # Reorder columns to match the input order of categories
     category_df = category_df.reindex(columns=category_names)
-    category_df.insert(0, 'Model', category_df.index)
-    category_df = category_df.sort_values(by=category_names[0], ascending=metric == "ranking")
+    category_df.insert(0, "Model", category_df.index)
+    category_df = category_df.sort_values(
+        by=category_names[0], ascending=metric == "ranking"
+    )
     category_df = category_df.reset_index(drop=True)
 
     style = category_df.style
 
     def highlight_top_3(s):
         return [
-            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%" if v == 1 and v != 0
-            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%" if v == 2 and v != 0
-            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%" if v == 3 and v != 0
+            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%"
+            if v == 1 and v != 0
+            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%"
+            if v == 2 and v != 0
+            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%"
+            if v == 3 and v != 0
             else "text-align: center; font-size: 110%"
             for v in s
         ]
-    
+
     # Apply styling for each category
     for category in category_names:
         style = style.apply(highlight_top_3, subset=[category])
 
     if metric == "rating":
         style = style.background_gradient(
-            cmap='Blues', 
+            cmap="Blues",
             subset=category_names,
             # vmin=category_df[category_names].min().min(),
             vmin=1150,
-            vmax=category_df[category_names].max().max()
+            vmax=category_df[category_names].max().max(),
         )
-    
+
     return style
+
 
 def build_category_leaderboard_tab(
     combined_elo_df, title, categories, categories_width
@@ -786,13 +831,15 @@ def build_category_leaderboard_tab(
     rating_table_vals = get_arena_category_table(combined_elo_df, categories, "rating")
     with gr.Row():
         gr.Markdown(
-                    f"""&emsp; <span style='text-decoration:underline; font-size: 125%;'>{title} Leaderboard</span>"""
-                )
+            f"""&emsp; <span style='text-decoration:underline; font-size: 125%;'>{title} Leaderboard</span>"""
+        )
         ranking_button = gr.Button("Sort by Rank")
         rating_button = gr.Button("Sort by Arena Score")
-        sort_rating = lambda _: get_arena_category_table(combined_elo_df, categories, "rating")
+        sort_rating = lambda _: get_arena_category_table(
+            combined_elo_df, categories, "rating"
+        )
         sort_ranking = lambda _: get_arena_category_table(combined_elo_df, categories)
-    
+
     overall_ranking_leaderboard = gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
@@ -803,9 +850,12 @@ def build_category_leaderboard_tab(
         height=800,
         wrap=True,
     )
-    ranking_button.click(sort_ranking, inputs=[ranking_button], outputs=[overall_ranking_leaderboard])
-    rating_button.click(sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard])
-
+    ranking_button.click(
+        sort_ranking, inputs=[ranking_button], outputs=[overall_ranking_leaderboard]
+    )
+    rating_button.click(
+        sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard]
+    )
 
 
 selected_categories = [
@@ -832,6 +882,7 @@ language_categories = [
 ]
 language_categories_width = [100] * len(language_categories)
 
+
 def get_combined_table(elo_results, model_table_df):
     def get_model_name(model_key):
         try:
@@ -841,12 +892,13 @@ def get_combined_table(elo_results, model_table_df):
             return model_name
         except:
             return None
+
     combined_table = []
     for category in elo_results.keys():
         df = elo_results[category]["leaderboard_table_df"]
         ranking = recompute_final_ranking(df)
         df["ranking"] = ranking
-        df['category'] = key_to_category_name[category]
+        df["category"] = key_to_category_name[category]
         df["Model"] = df.index
         try:
             df["Model"] = df["Model"].apply(get_model_name)
@@ -857,7 +909,7 @@ def get_combined_table(elo_results, model_table_df):
     combined_table["Model"] = combined_table.index
     # drop any rows with nan values
     combined_table = combined_table.dropna()
-    # remove 
+    # remove
     return combined_table
 
 
