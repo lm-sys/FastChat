@@ -209,11 +209,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
     )
-
-    # arguments added to make AML runs work.
-    parser.add_argument("--aoai_api_key_name",
-                    help="AOAI api key name stored in AML workspace key vault",
-                    default="AOAI-API-KEY-MTB")
     
     parser.add_argument(
         "--answer_dir",
@@ -335,21 +330,10 @@ if __name__ == "__main__":
     # input("Press Enter to confirm...")
 
     aml_run = True
-    if aml_run:
-        # for aml run, we get AOAI key from keyvault of the AMl workspace.
-        run = Run.get_context()
-        ws = run.experiment.workspace
-        keyvault = ws.get_default_keyvault()
-        aoai_api_key = keyvault.get_secret(args.aoai_api_key_name)
-    else:    
-        # for local run, replace aoai_api_key
-        aoai_api_key = ""
-
-    assert len(aoai_api_key) > 0, "cannot find the admin key"
 
     # these get picked up in chat_completion_openai_azure
+    # os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aims-oai-research-inference-uks.openai.azure.com/"
     os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aoaiptswc.openai.azure.com/"
-    os.environ["AZURE_OPENAI_KEY"] = aoai_api_key
 
     # Play matches
     if args.parallel == 1:
