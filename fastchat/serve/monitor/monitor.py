@@ -727,10 +727,10 @@ selected_categories = [
     "math",
     "hard_6",
     "multiturn",
-    "long_user",
+    "no_short",
     "no_refusal",
 ]
-selected_categories_width = [85, 75, 120, 75, 125, 110, 100, 100]
+selected_categories_width = [85, 75, 120, 75, 125, 100, 150, 100]
 
 language_categories = [
     "english",
@@ -813,7 +813,7 @@ def build_leaderboard_tab(
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">
-                        We've updated the leaderboard to show model rank (UB) across categories to provide a more holistic comparison. Check out the Arena tab for more categories, statistics, and model info.
+                        Fora more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
                     </div>
                     """,
                 )
