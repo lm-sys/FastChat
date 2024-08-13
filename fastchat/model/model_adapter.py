@@ -377,15 +377,16 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
-        "mps",
-        "xpu",
-        "npu",
-    ):
-        model.to(device)
+    if not load_4bit:
+        if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+            "mps",
+            "xpu",
+            "npu",
+        ):
+            model.to(device)
 
-    if device == "xpu":
-        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
+        if device == "xpu":
+            model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
