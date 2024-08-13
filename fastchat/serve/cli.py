@@ -231,6 +231,7 @@ def main(args):
             args.max_gpu_memory,
             str_to_torch_dtype(args.dtype),
             args.load_8bit,
+            args.load_4bit,
             args.cpu_offloading,
             args.conv_template,
             args.conv_system_msg,

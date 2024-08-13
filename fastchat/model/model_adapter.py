@@ -199,6 +199,7 @@ def load_model(
     max_gpu_memory: Optional[str] = None,
     dtype: Optional[torch.dtype] = None,
     load_8bit: bool = False,
+    load_4bit: bool = False,
     cpu_offloading: bool = False,
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
@@ -363,6 +364,9 @@ def load_model(
             )
             raise e
 
+    if load_4bit:
+        kwargs["load_in_4bit"] = load_4bit
+    
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
