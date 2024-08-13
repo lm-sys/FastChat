@@ -366,7 +366,7 @@ def load_model(
 
     if load_4bit:
         kwargs["load_in_4bit"] = load_4bit
-    
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
