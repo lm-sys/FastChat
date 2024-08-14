@@ -158,7 +158,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    preset_image_clicked: bool,
+    request: gr.Request,
 ):
     text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
@@ -170,6 +176,7 @@ def add_text(
     for i in range(num_sides):
         if states[i] is None:
             states[i] = State(model_selectors[i], is_vision=True)
+            states[i].preset_image = preset_image_clicked
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -182,6 +189,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [False]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
@@ -210,6 +218,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [False]
         )
 
     if image_flagged:
@@ -224,6 +233,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [False]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -243,6 +253,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [False]
     )
 
 
@@ -265,6 +276,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    preset_image_clicked = gr.State(False)
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -441,8 +453,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + model_selectors + [textbox, preset_image_clicked],
+        states + chatbots + [textbox] + btn_list + [preset_image_clicked],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -455,7 +467,11 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
+            [
+                textbox,
+                imagebox,
+                preset_image_clicked,
+            ],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
             clear_history_example, None, states + chatbots + [textbox] + btn_list
         )

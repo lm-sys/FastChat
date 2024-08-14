@@ -111,7 +111,7 @@ def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     res = {"text": "", "files": [path]}
-    return (res, path)
+    return (res, path, True)
 
 
 def load_demo_side_by_side_vision_anony(all_text_models, all_vl_models, url_params):
@@ -248,7 +248,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    preset_image_clicked: bool,
+    request: gr.Request,
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
@@ -273,10 +279,15 @@ def add_text(
                 VISION_SAMPLING_WEIGHTS,
                 VISION_SAMPLING_BOOST_MODELS,
             )
+
             states = [
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
             ]
+            states[0].preset_image, states[1].preset_image = (
+                preset_image_clicked,
+                preset_image_clicked,
+            )
         else:
             model_left, model_right = get_battle_pair(
                 text_models,
@@ -303,6 +314,7 @@ def add_text(
             ]
             * 7
             + [""]
+            + [False]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
@@ -327,6 +339,7 @@ def add_text(
             ]
             * 7
             + [""]
+            + [False]
         )
 
     if image_flagged:
@@ -346,6 +359,7 @@ def add_text(
             ]
             + [no_change_btn] * 7
             + [""]
+            + [False]
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -370,6 +384,7 @@ def add_text(
         ]
         * 7
         + [hint_msg]
+        + [False]
     )
 
 
@@ -392,6 +407,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
 """
 
     states = [gr.State() for _ in range(num_sides)]
+    preset_image_clicked = gr.State(False)
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
 
@@ -593,13 +609,14 @@ function (a, b, c, d) {
 
     multimodal_textbox.submit(
         add_text,
-        states + model_selectors + [multimodal_textbox],
+        states + model_selectors + [multimodal_textbox, preset_image_clicked],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [preset_image_clicked],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -612,13 +629,14 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, preset_image_clicked],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [preset_image_clicked],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -631,13 +649,14 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, preset_image_clicked],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [preset_image_clicked],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -652,7 +671,11 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
+            [
+                multimodal_textbox,
+                imagebox,
+                preset_image_clicked,
+            ],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
             clear_history_example,
             None,
