@@ -107,7 +107,7 @@ VISION_SAMPLING_BOOST_MODELS = []
 VISION_OUTAGE_MODELS = []
 
 
-def get_vqa_sample(preset_image_clicked: gr.State):
+def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     res = {"text": "", "files": [path]}
@@ -253,7 +253,7 @@ def add_text(
     model_selector0,
     model_selector1,
     chat_input,
-    preset_image_clicked: gr.State,
+    preset_image_clicked: bool,
     request: gr.Request,
 ):
     if isinstance(chat_input, dict):
@@ -280,7 +280,6 @@ def add_text(
                 VISION_SAMPLING_BOOST_MODELS,
             )
 
-            preset_image = "preset" in images[0]
             states = [
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
@@ -616,7 +615,8 @@ function (a, b, c, d) {
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [preset_image_clicked],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -635,7 +635,8 @@ function (a, b, c, d) {
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [preset_image_clicked],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -669,7 +670,7 @@ function (a, b, c, d) {
     if random_questions:
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
-            [preset_image_clicked],  # Pass the path to the VQA samples
+            [],  # Pass the path to the VQA samples
             [
                 multimodal_textbox,
                 imagebox,

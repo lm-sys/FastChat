@@ -163,7 +163,7 @@ def add_text(
     model_selector0,
     model_selector1,
     chat_input,
-    preset_image_clicked: gr.State,
+    preset_image_clicked: bool,
     request: gr.Request,
 ):
     text, images = chat_input["text"], chat_input["files"]
