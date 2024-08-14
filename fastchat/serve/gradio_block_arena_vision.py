@@ -68,7 +68,7 @@ def get_vqa_sample():
     random_sample = np.random.choice(vqa_samples)
     question, path = random_sample["question"], random_sample["path"]
     res = {"text": "", "files": [path]}
-    return (res, path)
+    return (res, path, True)
 
 
 def set_visible_image(textbox):
@@ -209,22 +209,18 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
     return text, image_flagged, csam_flagged
 
 
-def add_text(state, model_selector, chat_input, request: gr.Request):
+def add_text(state, model_selector, chat_input, preset_image_clicked: gr.State, request: gr.Request):
     text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
-        preset_image = False
-        if len(images) > 0:
-            preset_image = "preset" in images[0]
-
         state = State(model_selector, is_vision=True)
-        state.preset_image = preset_image
+        state.preset_image = preset_image_clicked
 
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
+        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5 + (preset_image_clicked,)
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
@@ -240,20 +236,20 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), {"text": IMAGE_MODERATION_MSG}) + (
             no_change_btn,
-        ) * 5
+        ) * 5 + (preset_image_clicked,)
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), {"text": CONVERSATION_LIMIT_MSG}) + (
             no_change_btn,
-        ) * 5
+        ) * 5 + (preset_image_clicked,)
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     text = _prepare_text_with_image(state, text, images, csam_flag=csam_flag)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5 + (preset_image_clicked,)
 
 
 def build_single_vision_language_model_ui(
@@ -276,6 +272,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 """
 
     state = gr.State()
+    preset_image_clicked = gr.State(False)
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Group():
@@ -414,8 +411,8 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 
     textbox.submit(
         add_text,
-        [state, model_selector, textbox],
-        [state, chatbot, textbox] + btn_list,
+        [state, model_selector, textbox, preset_image_clicked],
+        [state, chatbot, textbox] + btn_list + [preset_image_clicked],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -426,7 +423,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
+            [textbox, imagebox, preset_image_clicked],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
             clear_history_example, None, [state, chatbot, textbox] + btn_list
         )

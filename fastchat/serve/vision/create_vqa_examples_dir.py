@@ -43,7 +43,7 @@ def download_images_and_create_json(
             id_key = i if info["id_key"] == "index" else item[info["id_key"]]
             image_pil = item[info["image_key"]].convert("RGB")
             image_path = os.path.join(
-                dataset_dir, f"preset_{dataset_name}_{id_key}.jpg"
+                dataset_dir, f"{id_key}.jpg"
             )
             image_pil.save(image_path)
             json_entry = {
