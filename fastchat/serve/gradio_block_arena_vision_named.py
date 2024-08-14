@@ -158,7 +158,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, preset_image_clicked: gr.State, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    preset_image_clicked: gr.State,
+    request: gr.Request,
 ):
     text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
@@ -461,7 +467,11 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox, preset_image_clicked],  # Outputs are textbox and imagebox
+            [
+                textbox,
+                imagebox,
+                preset_image_clicked,
+            ],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [textbox], [image_column]).then(
             clear_history_example, None, states + chatbots + [textbox] + btn_list
         )

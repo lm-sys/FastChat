@@ -42,9 +42,7 @@ def download_images_and_create_json(
         for i, item in enumerate(tqdm.tqdm(dataset)):
             id_key = i if info["id_key"] == "index" else item[info["id_key"]]
             image_pil = item[info["image_key"]].convert("RGB")
-            image_path = os.path.join(
-                dataset_dir, f"{id_key}.jpg"
-            )
+            image_path = os.path.join(dataset_dir, f"{id_key}.jpg")
             image_pil.save(image_path)
             json_entry = {
                 "dataset": dataset_name,

@@ -248,7 +248,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, preset_image_clicked: gr.State, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    preset_image_clicked: gr.State,
+    request: gr.Request,
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
@@ -279,7 +285,10 @@ def add_text(
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
             ]
-            states[0].preset_image, states[1].preset_image = preset_image_clicked, preset_image_clicked
+            states[0].preset_image, states[1].preset_image = (
+                preset_image_clicked,
+                preset_image_clicked,
+            )
         else:
             model_left, model_right = get_battle_pair(
                 text_models,
@@ -661,7 +670,11 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [preset_image_clicked],  # Pass the path to the VQA samples
-            [multimodal_textbox, imagebox, preset_image_clicked],  # Outputs are textbox and imagebox
+            [
+                multimodal_textbox,
+                imagebox,
+                preset_image_clicked,
+            ],  # Outputs are textbox and imagebox
         ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
             clear_history_example,
             None,
