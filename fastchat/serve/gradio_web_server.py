@@ -26,6 +26,7 @@ from fastchat.constants import (
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
     SESSION_EXPIRATION_TIME,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import (
     get_conversation_template,
@@ -808,8 +809,10 @@ We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https
 
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
-        """
+        f"""
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+
+{SURVEY_LINK}
 
 ## 👇 Choose any model to chat
 """
