@@ -39,8 +39,8 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.serve.vision.image import ImageFormat, Image
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
-    image_moderation_filter,
+    # moderation_filter,
+    # image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -185,28 +185,29 @@ def convert_images_to_conversation_format(images):
 
 
 def moderate_input(state, text, all_conv_text, model_list, images, ip):
-    text_flagged = moderation_filter(all_conv_text, model_list)
-    # flagged = moderation_filter(text, [state.model_name])
-    nsfw_flagged, csam_flagged = False, False
-    if len(images) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
+    # text_flagged = moderation_filter(all_conv_text, model_list)
+    # # flagged = moderation_filter(text, [state.model_name])
+    # nsfw_flagged, csam_flagged = False, False
+    # if len(images) > 0:
+    #     nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
 
-    image_flagged = nsfw_flagged or csam_flagged
-    if text_flagged or image_flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {all_conv_text}")
-        if text_flagged and not image_flagged:
-            # overwrite the original text
-            text = TEXT_MODERATION_MSG
-        elif not text_flagged and image_flagged:
-            text = IMAGE_MODERATION_MSG
-        elif text_flagged and image_flagged:
-            text = MODERATION_MSG
+    # image_flagged = nsfw_flagged or csam_flagged
+    # if text_flagged or image_flagged:
+    #     logger.info(f"violate moderation. ip: {ip}. text: {all_conv_text}")
+    #     if text_flagged and not image_flagged:
+    #         # overwrite the original text
+    #         text = TEXT_MODERATION_MSG
+    #     elif not text_flagged and image_flagged:
+    #         text = IMAGE_MODERATION_MSG
+    #     elif text_flagged and image_flagged:
+    #         text = MODERATION_MSG
 
-    if csam_flagged:
-        state.has_csam_image = True
-        report_csam_image(state, images[0])
+    # if csam_flagged:
+    #     state.has_csam_image = True
+    #     report_csam_image(state, images[0])
 
-    return text, image_flagged, csam_flagged
+    # return text, image_flagged, csam_flagged
+    return "", False, False
 
 
 def add_text(state, model_selector, chat_input, request: gr.Request):

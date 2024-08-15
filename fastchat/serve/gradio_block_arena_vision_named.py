@@ -30,11 +30,11 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
     set_visible_image,
     add_image,
-    moderate_input,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
     enable_multimodal,
 )
+from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -51,8 +51,8 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
-    image_moderation_filter,
+    # moderation_filter,
+    # image_moderation_filter,
 )
 
 
@@ -265,6 +265,7 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    content_moderator = gr.State(AzureAndOpenAIContentModerator())
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 

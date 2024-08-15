@@ -67,11 +67,12 @@ from fastchat.serve.gradio_block_arena_vision import (
     visible_text,
     disable_multimodal,
 )
+from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
-    image_moderation_filter,
+    # moderation_filter,
+    # image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -248,7 +249,7 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0, state1, model_selector0, model_selector1, chat_input, content_moderator: BaseContentModerator, request: gr.Request
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
@@ -266,6 +267,7 @@ def add_text(
         assert states[1] is None
 
         if len(images) > 0:
+            print(vl_models)
             model_left, model_right = get_battle_pair(
                 vl_models,
                 VISION_BATTLE_TARGETS,
@@ -309,9 +311,29 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    text, image_flagged, csam_flag = moderate_input(
-        state0, text, text, model_list, images, ip
-    )
+    # text, image_flagged, csam_flag = moderate_input(
+    #     state0, text, text, model_list, images, ip
+    # )
+
+    text_flagged = content_moderator.text_moderation_filter(text, model_list)
+    if len(images) > 0:
+        nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
+        image_flagged = nsfw_flag or csam_flag
+        if csam_flag:
+            states[0].has_csam_image, states[1].has_csam_image = True, True
+    else:
+        image_flagged = False
+
+    if text_flagged or image_flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        if text_flagged:
+            text = TEXT_MODERATION_MSG
+        elif not text_flagged and image_flagged:
+            text = IMAGE_MODERATION_MSG
+        elif text_flagged and image_flagged:
+            text = MODERATION_MSG
+
+        content_moderator.write_to_json()
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -394,6 +416,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    content_moderator = gr.State(AzureAndOpenAIContentModerator())
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -593,7 +616,7 @@ function (a, b, c, d) {
 
     multimodal_textbox.submit(
         add_text,
-        states + model_selectors + [multimodal_textbox],
+        states + model_selectors + [multimodal_textbox, content_moderator],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
@@ -612,7 +635,7 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, content_moderator],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
@@ -631,7 +654,7 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, content_moderator],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]

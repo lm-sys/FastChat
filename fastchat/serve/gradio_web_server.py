@@ -32,12 +32,13 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
+from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
-    moderation_filter,
+    # moderation_filter,
     parse_gradio_auth_creds,
     load_image,
 )
@@ -310,7 +311,7 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def add_text(state, model_selector, text, request: gr.Request):
+def add_text(state, model_selector, text, content_moderator: BaseContentModerator, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -321,9 +322,9 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
-    all_conv_text = state.conv.get_prompt()
-    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
+    # all_conv_text = state.conv.get_prompt()
+    # all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
+    flagged = content_moderator.text_moderation_filter(text, [state.model_name])
     # flagged = moderation_filter(text, [state.model_name])
     if flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
@@ -823,6 +824,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 """
 
     state = gr.State()
+    content_moderator = gr.State(AzureAndOpenAIContentModerator())
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Group(elem_id="share-region-named"):
@@ -920,7 +922,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     textbox.submit(
         add_text,
-        [state, model_selector, textbox],
+        [state, model_selector, textbox, content_moderator],
         [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
@@ -929,7 +931,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
     send_btn.click(
         add_text,
-        [state, model_selector, textbox],
+        [state, model_selector, textbox, content_moderator],
         [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,

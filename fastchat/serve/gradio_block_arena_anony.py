@@ -35,7 +35,7 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
+    # moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
