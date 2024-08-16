@@ -32,7 +32,7 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
 )
-from fastchat.serve.content_moderator import AzureAndOpenAIContentModerator
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
