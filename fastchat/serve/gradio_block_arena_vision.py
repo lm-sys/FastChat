@@ -209,12 +209,12 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     images = convert_images_to_conversation_format(images)
 
     content_moderator = AzureAndOpenAIContentModerator()
-    text_flagged = content_moderator.text_moderation_filter(text, model_list)
+    text_flagged = content_moderator.text_moderation_filter(text, [state.model_name])
     if len(images) > 0:
         nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
         image_flagged = nsfw_flag or csam_flag
         if csam_flag:
-            states[0].has_csam_image, states[1].has_csam_image = True, True
+            state.has_csam_image = True
     else:
         image_flagged = False
 

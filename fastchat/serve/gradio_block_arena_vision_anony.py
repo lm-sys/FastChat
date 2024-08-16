@@ -314,7 +314,9 @@ def add_text(
     images = convert_images_to_conversation_format(images)
 
     content_moderator = AzureAndOpenAIContentModerator()
-    text_flagged = content_moderator.text_moderation_filter(text, model_list)
+    text_flagged = content_moderator.text_moderation_filter(
+        text, model_list, do_moderation=True
+    )
     if len(images) > 0:
         nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
         image_flagged = nsfw_flag or csam_flag

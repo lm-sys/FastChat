@@ -32,6 +32,7 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
 )
+from fastchat.serve.content_moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
@@ -294,7 +295,11 @@ def add_text(
     all_conv_text = (
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
-    flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
+
+    content_moderator = AzureAndOpenAIContentModerator()
+    flagged = content_moderator.text_moderation_filter(
+        all_conv_text, model_list, do_moderation=True
+    )
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
