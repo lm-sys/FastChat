@@ -21,7 +21,7 @@ from fastchat.model.model_adapter import (
 )
 
 # API setting constants
-API_MAX_RETRY = 16
+API_MAX_RETRY = 160
 API_RETRY_SLEEP = 10
 API_ERROR_OUTPUT = "$ERROR$"
 
