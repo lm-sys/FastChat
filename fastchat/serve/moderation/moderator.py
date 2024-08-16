@@ -7,8 +7,9 @@ import base64
 import requests
 from typing import Tuple, Dict, List, Union
 
+from fastchat.constants import LOGDIR
 from fastchat.serve.vision.image import Image
-
+from fastchat.utils import load_image, upload_image_file_to_gcs
 
 class BaseContentModerator:
     def __init__(self):
@@ -25,7 +26,7 @@ class BaseContentModerator:
 
 
 class AzureAndOpenAIContentModerator(BaseContentModerator):
-    def __init__(self):
+    def __init__(self, use_remote_storage: bool = False):
         """
         This class is used to moderate content using Azure and OpenAI.
 
@@ -35,6 +36,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         self.conv_to_moderation_responses: Dict[
             str, Dict[str, Union[str, Dict[str, float]]]
         ] = {}
+        self.use_remote_storage = use_remote_storage
 
     def write_to_json(self, ip):
         t = datetime.datetime.now()
@@ -81,7 +83,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         if flagged:
             image_md5_hash = hashlib.md5(image_bytes).hexdigest()
-            self.conv_to_moderation_responses["image_moderation"] = {
+            self.conv_to_moderation_responses[f"{api_type}_api_moderation"] = {
                 "image_hash": image_md5_hash,
                 "response": response,
             }
@@ -98,6 +100,22 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         if nsfw_flagged:
             csam_flagged = self._image_moderation_provider(image_bytes, "csam")
+    
+        if nsfw_flagged or csam_flagged:
+            image_md5_hash = hashlib.md5(image_bytes).hexdigest()
+            directory = "serve_images" if not csam_flagged else "csam_images"
+            filename = os.path.join(
+                directory,
+                f"{image_md5_hash}.{image.filetype}",
+            )
+            loaded_image = load_image(image.base64_str)
+            if self.use_remote_storage and not csam_flagged:
+                upload_image_file_to_gcs(loaded_image, filename)
+            else: 
+                filename = os.path.join(LOGDIR, filename)
+                if not os.path.isfile(filename):
+                    os.makedirs(os.path.dirname(filename), exist_ok=True)
+                    loaded_image.save(filename)
 
         return nsfw_flagged, csam_flagged
 

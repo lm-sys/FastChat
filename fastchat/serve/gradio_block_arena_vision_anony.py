@@ -33,6 +33,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
     disable_text,
     enable_text,
+    use_remote_storage
 )
 from fastchat.serve.gradio_block_arena_anony import (
     flash_buttons,
@@ -313,7 +314,7 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    content_moderator = AzureAndOpenAIContentModerator()
+    content_moderator = AzureAndOpenAIContentModerator(use_remote_storage)
     text_flagged = content_moderator.text_moderation_filter(
         text, model_list, do_moderation=True
     )
