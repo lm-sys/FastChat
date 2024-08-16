@@ -174,6 +174,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [True]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
@@ -194,6 +195,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [True]
         )
 
     conv = states[0].conv
@@ -209,6 +211,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [True]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -225,6 +228,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [False]
     )
 
 
@@ -333,6 +337,7 @@ def build_side_by_side_ui_named(models):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    dont_show_vote_buttons = gr.State(False)
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -488,24 +493,24 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [dont_show_vote_buttons], btn_list
     )
     send_btn.click(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [dont_show_vote_buttons], btn_list
     )
 
     return states + model_selectors
