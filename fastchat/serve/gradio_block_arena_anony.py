@@ -35,7 +35,6 @@ from fastchat.serve.gradio_web_server import (
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    # moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -173,7 +172,10 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {}
+SAMPLING_WEIGHTS = {
+    "gpt-4o-2024-05-13": 4,
+    "claude-3-5-sonnet-20240620": 4,
+}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -200,6 +202,9 @@ def get_battle_pair(
 ):
     if len(models) == 1:
         return models[0], models[0]
+
+    if len(models) == 0:
+        raise ValueError("There are no models provided. Cannot get battle pair.")
 
     model_weights = []
     for model in models:

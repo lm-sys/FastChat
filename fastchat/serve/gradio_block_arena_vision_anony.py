@@ -59,20 +59,18 @@ from fastchat.serve.gradio_block_arena_vision import (
     set_invisible_image,
     set_visible_image,
     add_image,
-    moderate_input,
-    enable_multimodal,
+    enable_multimodal_keep_input,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
     invisible_text,
     visible_text,
     disable_multimodal,
+    enable_multimodal_clear_input,
 )
 from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    # moderation_filter,
-    # image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -96,6 +94,7 @@ VISION_SAMPLING_WEIGHTS = {
     "llava-v1.6-34b": 4,
     "reka-core-20240501": 4,
     "reka-flash-preview-20240611": 4,
+    "reka-flash": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -135,7 +134,7 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal, invisible_text, invisible_btn]
+        + [enable_multimodal_keep_input, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -240,7 +239,7 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal, invisible_text, invisible_btn]
+        + [enable_multimodal_clear_input, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -249,7 +248,7 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, content_moderator: BaseContentModerator, request: gr.Request
+    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
@@ -267,7 +266,6 @@ def add_text(
         assert states[1] is None
 
         if len(images) > 0:
-            print(vl_models)
             model_left, model_right = get_battle_pair(
                 vl_models,
                 VISION_BATTLE_TARGETS,
@@ -305,16 +303,14 @@ def add_text(
             ]
             * 7
             + [""]
+            + [True]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
 
     images = convert_images_to_conversation_format(images)
 
-    # text, image_flagged, csam_flag = moderate_input(
-    #     state0, text, text, model_list, images, ip
-    # )
-
+    content_moderator = AzureAndOpenAIContentModerator()
     text_flagged = content_moderator.text_moderation_filter(text, model_list)
     if len(images) > 0:
         nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
@@ -326,14 +322,7 @@ def add_text(
 
     if text_flagged or image_flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        if text_flagged:
-            text = TEXT_MODERATION_MSG
-        elif not text_flagged and image_flagged:
-            text = IMAGE_MODERATION_MSG
-        elif text_flagged and image_flagged:
-            text = MODERATION_MSG
-
-        content_moderator.write_to_json()
+        content_moderator.write_to_json(get_ip(request))
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -349,31 +338,38 @@ def add_text(
             ]
             * 7
             + [""]
+            + [True]
         )
 
-    if image_flagged:
-        logger.info(f"image flagged. ip: {ip}. text: {text}")
+    if image_flagged or text_flagged:
+        input_that_was_flagged = "text" if text_flagged else "image"
+        logger.info(f"{input_that_was_flagged} flagged. ip: {ip}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
+        gr.Warning(MODERATION_MSG)
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
             + [
-                {
-                    "text": IMAGE_MODERATION_MSG
-                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
-                },
+                # {
+                #     "text": MODERATION_MSG
+                #     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                # },
+                # MODERATION_MSG + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION.",
+                None, 
                 "",
                 no_change_btn,
             ]
-            + [no_change_btn] * 7
+            + [disable_btn] * 4
+            + [no_change_btn] * 3
             + [""]
+            + [True]
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
-            states[i], text, images, csam_flag=csam_flag
+            states[i], text, images
         )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
@@ -392,6 +388,7 @@ def add_text(
         ]
         * 7
         + [hint_msg]
+        + [False]
     )
 
 
@@ -416,7 +413,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
-    content_moderator = gr.State(AzureAndOpenAIContentModerator())
+    dont_show_vote_buttons = gr.State(False)
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -616,58 +613,61 @@ function (a, b, c, d) {
 
     multimodal_textbox.submit(
         add_text,
-        states + model_selectors + [multimodal_textbox, content_moderator],
+        states + model_selectors + [multimodal_textbox],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [dont_show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [],
+        [dont_show_vote_buttons],
         btn_list,
     )
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox, content_moderator],
+        states + model_selectors + [textbox],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [],
+        [dont_show_vote_buttons],
         btn_list,
     )
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox, content_moderator],
+        states + model_selectors + [textbox],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
         + [random_btn]
-        + [slow_warning],
+        + [slow_warning]
+        + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [],
+        [dont_show_vote_buttons],
         btn_list,
     )
 

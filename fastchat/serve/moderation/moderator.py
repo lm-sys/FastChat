@@ -6,6 +6,7 @@ import time
 import base64
 import requests
 from typing import Tuple, Dict, List, Union
+
 from fastchat.serve.vision.image import Image
 
 class BaseContentModerator:
@@ -31,13 +32,17 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         """
         self.conv_to_moderation_responses: Dict[str, Dict[str, Union[str, Dict[str, float]]]] = {}
 
-    def write_to_json(self):
+    def write_to_json(self, ip):
         t = datetime.datetime.now()
         conv_log_filename = f"toxic-{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
         with open(conv_log_filename, "a") as f:
             if self.conv_to_moderation_responses:
-                json.dump(self.conv_to_moderation_responses, f)
-                f.write('\n')
+                res = {
+                    "tstamp": round(time.time(), 4),
+                    "ip": ip,
+                }
+                res.update(self.conv_to_moderation_responses)
+                f.write(json.dumps(res) + '\n')
         
         self.conv_to_moderation_responses = {}
 

@@ -32,13 +32,12 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
-from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
-    # moderation_filter,
     parse_gradio_auth_creds,
     load_image,
 )
@@ -311,7 +310,7 @@ def get_ip(request: gr.Request):
     return ip
 
 
-def add_text(state, model_selector, text, content_moderator: BaseContentModerator, request: gr.Request):
+def add_text(state, model_selector, text, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -324,12 +323,25 @@ def add_text(state, model_selector, text, content_moderator: BaseContentModerato
 
     # all_conv_text = state.conv.get_prompt()
     # all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = content_moderator.text_moderation_filter(text, [state.model_name])
+    content_moderator = AzureAndOpenAIContentModerator()
+    text_flagged = content_moderator.text_moderation_filter(text, [state.model_name])
+
     # flagged = moderation_filter(text, [state.model_name])
-    if flagged:
+    if text_flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
-        text = MODERATION_MSG
+        content_moderator.write_to_json(get_ip(request))
+        state.skip_next = True
+        gr.Warning(MODERATION_MSG)
+        return (
+            [state]
+            + [state.to_gradio_chatbot()]
+            + [""]
+            + [
+                no_change_btn,
+            ]
+            * 5
+        )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -824,7 +836,6 @@ def build_single_model_ui(models, add_promotion_links=False):
 """
 
     state = gr.State()
-    content_moderator = gr.State(AzureAndOpenAIContentModerator())
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Group(elem_id="share-region-named"):
@@ -922,7 +933,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     textbox.submit(
         add_text,
-        [state, model_selector, textbox, content_moderator],
+        [state, model_selector, textbox],
         [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,
@@ -931,7 +942,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
     send_btn.click(
         add_text,
-        [state, model_selector, textbox, content_moderator],
+        [state, model_selector, textbox],
         [state, chatbot, textbox] + btn_list,
     ).then(
         bot_response,

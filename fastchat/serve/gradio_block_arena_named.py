@@ -28,10 +28,10 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
 )
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    # moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -177,16 +177,24 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    all_conv_text_left = states[0].conv.get_prompt()
-    all_conv_text_right = states[1].conv.get_prompt()
-    all_conv_text = (
-        all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
-    )
-    flagged = moderation_filter(all_conv_text, model_list)
-    if flagged:
-        logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+    content_moderator = AzureAndOpenAIContentModerator()
+    text_flagged = content_moderator.text_moderation_filter(text, model_list)
+
+    if text_flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        content_moderator.write_to_json(get_ip(request))
+        for i in range(num_sides):
+            states[i].skip_next = True
+        gr.Warning(MODERATION_MSG)
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [""]
+            + [
+                no_change_btn,
+            ]
+            * 6
+        )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -295,7 +303,11 @@ def bot_response_multi(
             break
 
 
-def flash_buttons():
+def flash_buttons(dont_show_vote_buttons: bool = False):
+    if dont_show_vote_buttons:
+        yield [no_change_btn] * 4 + [enable_btn] * 2
+        return
+
     btn_updates = [
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
