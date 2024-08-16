@@ -67,7 +67,10 @@ from fastchat.serve.gradio_block_arena_vision import (
     disable_multimodal,
     enable_multimodal_clear_input,
 )
-from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
+from fastchat.serve.moderation.moderator import (
+    BaseContentModerator,
+    AzureAndOpenAIContentModerator,
+)
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
@@ -356,7 +359,7 @@ def add_text(
                 #     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
                 # },
                 # MODERATION_MSG + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION.",
-                None, 
+                None,
                 "",
                 no_change_btn,
             ]
@@ -368,9 +371,7 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(
-            states[i], text, images
-        )
+        post_processed_text = _prepare_text_with_image(states[i], text, images)
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False

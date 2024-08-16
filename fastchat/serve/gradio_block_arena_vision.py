@@ -51,10 +51,15 @@ invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
 enable_multimodal_keep_input = gr.MultimodalTextbox(
-    interactive=True, visible=True, placeholder="Enter your prompt or add image here",
+    interactive=True,
+    visible=True,
+    placeholder="Enter your prompt or add image here",
 )
 enable_multimodal_clear_input = gr.MultimodalTextbox(
-    interactive=True, visible=True, placeholder="Enter your prompt or add image here", value = {"text": "", "files": []}
+    interactive=True,
+    visible=True,
+    placeholder="Enter your prompt or add image here",
+    value={"text": "", "files": []},
 )
 invisible_text = gr.Textbox(visible=False, value="", interactive=False)
 visible_text = gr.Textbox(
@@ -185,6 +190,7 @@ def convert_images_to_conversation_format(images):
 
     return conv_images
 
+
 def add_text(state, model_selector, chat_input, request: gr.Request):
     text, images = chat_input["text"], chat_input["files"]
     ip = get_ip(request)
@@ -220,9 +226,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         logger.info(f"image flagged. ip: {ip}. text: {text}")
         state.skip_next = True
         gr.Warning(MODERATION_MSG)
-        return (state, state.to_gradio_chatbot(), None) + (
-            no_change_btn,
-        ) * 5
+        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

@@ -350,7 +350,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
             # model display name
             row.append(model_name)
             # elo rating
-            rating = round(arena_df.iloc[i]['rating'])
+            rating = round(arena_df.iloc[i]["rating"])
             row.append(rating)
             upper_diff = round(
                 arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"]

@@ -35,7 +35,10 @@ from fastchat.serve.gradio_block_arena_vision import (
     enable_multimodal_keep_input,
     enable_multimodal_clear_input,
 )
-from fastchat.serve.moderation.moderator import BaseContentModerator, AzureAndOpenAIContentModerator
+from fastchat.serve.moderation.moderator import (
+    BaseContentModerator,
+    AzureAndOpenAIContentModerator,
+)
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -239,7 +242,9 @@ def add_text(
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
-            states[i], text, images,
+            states[i],
+            text,
+            images,
         )
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)

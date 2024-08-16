@@ -9,18 +9,20 @@ from typing import Tuple, Dict, List, Union
 
 from fastchat.serve.vision.image import Image
 
+
 class BaseContentModerator:
     def __init__(self):
         raise NotImplementedError
 
     def image_moderation_filter(self, image: Image) -> Tuple[bool, bool]:
         raise NotImplementedError
-    
+
     def text_moderation_filter(self, text: str) -> bool:
         raise NotImplementedError
 
     def write_to_json(self):
         raise NotImplementedError
+
 
 class AzureAndOpenAIContentModerator(BaseContentModerator):
     def __init__(self):
@@ -30,7 +32,9 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         text_and_openai_moderation_responses is a list of dictionaries that holds content and OpenAI moderation responses
         image_and_azure_moderation_responses is a list of dictionaries that holds image and Azure moderation responses
         """
-        self.conv_to_moderation_responses: Dict[str, Dict[str, Union[str, Dict[str, float]]]] = {}
+        self.conv_to_moderation_responses: Dict[
+            str, Dict[str, Union[str, Dict[str, float]]]
+        ] = {}
 
     def write_to_json(self, ip):
         t = datetime.datetime.now()
@@ -42,11 +46,13 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
                     "ip": ip,
                 }
                 res.update(self.conv_to_moderation_responses)
-                f.write(json.dumps(res) + '\n')
-        
+                f.write(json.dumps(res) + "\n")
+
         self.conv_to_moderation_responses = {}
 
-    def _image_moderation_request(self, image_bytes: bytes, endpoint: str, api_key: str) -> dict:
+    def _image_moderation_request(
+        self, image_bytes: bytes, endpoint: str, api_key: str
+    ) -> dict:
         headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
 
         MAX_RETRIES = 3
@@ -77,7 +83,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
             image_md5_hash = hashlib.md5(image_bytes).hexdigest()
             self.conv_to_moderation_responses["image_moderation"] = {
                 "image_hash": image_md5_hash,
-                "response": response
+                "response": response,
             }
 
         return flagged
@@ -95,7 +101,9 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         return nsfw_flagged, csam_flagged
 
-    def _openai_moderation_filter(self, text: str, custom_thresholds: dict = None) -> bool:
+    def _openai_moderation_filter(
+        self, text: str, custom_thresholds: dict = None
+    ) -> bool:
         """
         Check whether the text violates OpenAI moderation API.
         """
@@ -112,11 +120,14 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
                 flagged = res.results[0].flagged
                 if custom_thresholds is not None:
                     for category, threshold in custom_thresholds.items():
-                        if getattr(res.results[0].category_scores, category) > threshold:
+                        if (
+                            getattr(res.results[0].category_scores, category)
+                            > threshold
+                        ):
                             flagged = True
                     self.conv_to_moderation_responses["text_moderation"] = {
                         "content": text,
-                        "response": dict(res.results[0].category_scores)
+                        "response": dict(res.results[0].category_scores),
                     }
                 break
             except (openai.OpenAIError, KeyError, IndexError) as e:
@@ -124,7 +135,9 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         return flagged
 
-    def text_moderation_filter(self, text: str, model_list: List[str], do_moderation: bool = False) -> bool:
+    def text_moderation_filter(
+        self, text: str, model_list: List[str], do_moderation: bool = False
+    ) -> bool:
         # Apply moderation for below models
         MODEL_KEYWORDS = [
             "claude",
