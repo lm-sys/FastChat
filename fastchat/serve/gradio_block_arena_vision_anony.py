@@ -33,7 +33,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
     disable_text,
     enable_text,
-    use_remote_storage
+    use_remote_storage,
 )
 from fastchat.serve.gradio_block_arena_anony import (
     flash_buttons,

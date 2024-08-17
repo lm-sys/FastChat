@@ -11,6 +11,7 @@ from fastchat.constants import LOGDIR
 from fastchat.serve.vision.image import Image
 from fastchat.utils import load_image, upload_image_file_to_gcs
 
+
 class BaseContentModerator:
     def __init__(self):
         raise NotImplementedError
@@ -100,7 +101,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         if nsfw_flagged:
             csam_flagged = self._image_moderation_provider(image_bytes, "csam")
-    
+
         if nsfw_flagged or csam_flagged:
             image_md5_hash = hashlib.md5(image_bytes).hexdigest()
             directory = "serve_images" if not csam_flagged else "csam_images"
@@ -111,7 +112,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
             loaded_image = load_image(image.base64_str)
             if self.use_remote_storage and not csam_flagged:
                 upload_image_file_to_gcs(loaded_image, filename)
-            else: 
+            else:
                 filename = os.path.join(LOGDIR, filename)
                 if not os.path.isfile(filename):
                     os.makedirs(os.path.dirname(filename), exist_ok=True)
