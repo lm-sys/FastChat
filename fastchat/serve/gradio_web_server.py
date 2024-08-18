@@ -152,11 +152,16 @@ class State:
         return base
 
 
-def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_,):
+def set_global_vars(
+    controller_url_,
+    enable_moderation_,
+    use_remote_storage_,
+):
     global controller_url, enable_moderation, use_remote_storage
     controller_url = controller_url_
     enable_moderation = enable_moderation_
     use_remote_storage = use_remote_storage_
+
 
 def get_conv_log_filename(is_vision=False, has_csam_image=False):
     t = datetime.datetime.now()

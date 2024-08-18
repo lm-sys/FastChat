@@ -245,7 +245,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, context: Context, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    context: Context,
+    request: gr.Request,
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]

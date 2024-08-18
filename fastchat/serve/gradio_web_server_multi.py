@@ -53,6 +53,7 @@ from fastchat.utils import (
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
+
 def load_demo(context: Context, url_params, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
@@ -86,27 +87,35 @@ def load_demo(context: Context, url_params, request: gr.Request):
 
     # Text models
     single_updates = load_demo_single(context.text_models, [], url_params)
-    side_by_side_anony_updates = load_demo_side_by_side_anony(context.all_text_models, url_params)
-    side_by_side_named_updates = load_demo_side_by_side_named(context.text_models, url_params)
-
+    side_by_side_anony_updates = load_demo_side_by_side_anony(
+        context.all_text_models, url_params
+    )
+    side_by_side_named_updates = load_demo_side_by_side_named(
+        context.text_models, url_params
+    )
 
     # Multimodal model support
     side_by_side_vision_anony_updates = load_demo_side_by_side_vision_anony(url_params)
 
-    side_by_side_vision_named_updates = load_demo_side_by_side_vision_named(context, url_params)
+    side_by_side_vision_named_updates = load_demo_side_by_side_vision_named(
+        context, url_params
+    )
 
     vision_direct_chat_updates = load_demo_single(context, url_params)
 
     tabs_list = []
     if args.vision_arena:
-        tabs_list = side_by_side_vision_anony_updates + side_by_side_vision_named_updates + vision_direct_chat_updates
+        tabs_list = (
+            side_by_side_vision_anony_updates
+            + side_by_side_vision_named_updates
+            + vision_direct_chat_updates
+        )
     else:
-        tabs_list = side_by_side_anony_updates + side_by_side_named_updates + single_updates
+        tabs_list = (
+            side_by_side_anony_updates + side_by_side_named_updates + single_updates
+        )
 
-    return (
-        (gr.Tabs(selected=inner_selected),)
-        + tabs_list
-    )
+    return (gr.Tabs(selected=inner_selected),) + tabs_list
 
 
 def build_demo(context: Context, elo_results_file: str, leaderboard_table_file):
@@ -149,22 +158,30 @@ window.__gradio_mode__ = "app";
                     )
                 with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
                     side_by_side_tab.select(None, None, None, js=alert_js)
-                    side_by_side_named_list = build_side_by_side_vision_ui_named(context, random_questions=args.random_questions)
+                    side_by_side_named_list = build_side_by_side_vision_ui_named(
+                        context, random_questions=args.random_questions
+                    )
 
                 with gr.Tab("💬 Direct Chat", id=3) as direct_tab:
                     direct_tab.select(None, None, None, js=alert_js)
                     single_model_list = build_single_vision_language_model_ui(
-                        context, add_promotion_links=True, random_questions=args.random_questions
+                        context,
+                        add_promotion_links=True,
+                        random_questions=args.random_questions,
                     )
-                
+
             else:
                 with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
                     arena_tab.select(None, None, None, js=load_js)
-                    side_by_side_anony_list = build_side_by_side_ui_anony(context.all_text_models)
+                    side_by_side_anony_list = build_side_by_side_ui_anony(
+                        context.all_text_models
+                    )
 
                 with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
                     side_by_side_tab.select(None, None, None, js=alert_js)
-                    side_by_side_named_list = build_side_by_side_ui_named(context.text_models)
+                    side_by_side_named_list = build_side_by_side_ui_named(
+                        context.text_models
+                    )
 
                 with gr.Tab("💬 Direct Chat", id=3) as direct_tab:
                     direct_tab.select(None, None, None, js=alert_js)

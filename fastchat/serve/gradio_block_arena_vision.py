@@ -211,10 +211,16 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
     return text, image_flagged, csam_flagged
 
 
-def add_text(state, model_selector: str, chat_input, context: Context, request: gr.Request):
+def add_text(
+    state, model_selector: str, chat_input, context: Context, request: gr.Request
+):
     text, images = chat_input["text"], chat_input["files"]
 
-    if len(images) > 0 and model_selector in context.text_models and model_selector not in context.vision_models:
+    if (
+        len(images) > 0
+        and model_selector in context.text_models
+        and model_selector not in context.vision_models
+    ):
         gr.Warning(f"{model_selector} is a text-only model. Image is ignored.")
         images = []
 
@@ -289,14 +295,17 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=text_and_vision_models,
-                value=text_and_vision_models[0] if len(text_and_vision_models) > 0 else "",
+                value=text_and_vision_models[0]
+                if len(text_and_vision_models) > 0
+                else "",
                 interactive=True,
                 show_label=False,
                 container=False,
             )
 
         with gr.Accordion(
-            f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models", open=False
+            f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
+            open=False,
         ):
             model_description_md = get_model_description_md(text_and_vision_models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")

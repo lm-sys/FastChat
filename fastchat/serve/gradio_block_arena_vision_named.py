@@ -63,9 +63,10 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 num_sides = 2
 enable_moderation = False
 
+
 def load_demo_side_by_side_vision_named(context: Context, url_params):
     states = (None,) * num_sides
-    
+
     # default to the text models
     models = context.text_models
 
@@ -83,6 +84,7 @@ def load_demo_side_by_side_vision_named(context: Context, url_params):
     )
 
     return states + selector_updates
+
 
 def clear_history_example(request: gr.Request):
     logger.info(f"clear_history_example (named). ip: {get_ip(request)}")
@@ -180,18 +182,30 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, context: Context, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input,
+    context: Context,
+    request: gr.Request,
 ):
     text, images = chat_input["text"], chat_input["files"]
 
     if len(images) > 0:
-        if model_selector0 in context.text_models and model_selector0 not in context.vision_models:
+        if (
+            model_selector0 in context.text_models
+            and model_selector0 not in context.vision_models
+        ):
             gr.Warning(f"{model_selector0} is a text-only model. Image is ignored.")
-        if model_selector1 in context.text_models and model_selector1 not in context.vision_models:
+        if (
+            model_selector1 in context.text_models
+            and model_selector1 not in context.vision_models
+        ):
             gr.Warning(f"{model_selector1} is a text-only model. Image is ignored.")
 
         images = []
-        
+
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -278,6 +292,7 @@ def add_text(
         * 6
     )
 
+
 def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
@@ -317,7 +332,9 @@ def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
                     f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(text_and_vision_models)
+                    model_description_md = get_model_description_md(
+                        text_and_vision_models
+                    )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )
@@ -327,7 +344,9 @@ def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
                         with gr.Column():
                             model_selectors[i] = gr.Dropdown(
                                 choices=text_and_vision_models,
-                                value=text_and_vision_models[i] if len(text_and_vision_models) > i else "",
+                                value=text_and_vision_models[i]
+                                if len(text_and_vision_models) > i
+                                else "",
                                 interactive=True,
                                 show_label=False,
                                 container=False,
