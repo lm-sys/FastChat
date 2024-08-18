@@ -399,6 +399,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     chatbots = [None] * num_sides
     context_state = gr.State(context)
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
 
     with gr.Row():
         with gr.Column(scale=2, visible=False) as image_column:
@@ -411,11 +412,11 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(context.text_models) + len(context.vision_models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
                     model_description_md = get_model_description_md(
-                        context.text_models + context.vision_models
+                        text_and_vision_models
                     )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
