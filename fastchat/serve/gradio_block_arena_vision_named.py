@@ -6,6 +6,7 @@ Users chat with two chosen models.
 import json
 import os
 import time
+from typing import List
 
 import gradio as gr
 import numpy as np
@@ -35,6 +36,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     convert_images_to_conversation_format,
     enable_multimodal,
 )
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -61,6 +63,26 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 num_sides = 2
 enable_moderation = False
 
+def load_demo_side_by_side_vision_named(context: Context, url_params):
+    states = (None,) * num_sides
+    
+    # default to the text models
+    models = context.text_models
+
+    model_left = models[0] if len(models) > 0 else ""
+    if len(models) > 1:
+        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
+        weights = weights / np.sum(weights)
+        model_right = np.random.choice(models[1:], p=weights)
+    else:
+        model_right = model_left
+
+    selector_updates = (
+        gr.Dropdown(choices=models, value=model_left, visible=True),
+        gr.Dropdown(choices=models, value=model_right, visible=True),
+    )
+
+    return states + selector_updates
 
 def clear_history_example(request: gr.Request):
     logger.info(f"clear_history_example (named). ip: {get_ip(request)}")
@@ -158,9 +180,18 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0, state1, model_selector0, model_selector1, chat_input, context: Context, request: gr.Request
 ):
     text, images = chat_input["text"], chat_input["files"]
+
+    if len(images) > 0:
+        if model_selector0 in context.text_models and model_selector0 not in context.vision_models:
+            gr.Warning(f"{model_selector0} is a text-only model. Image is ignored.")
+        if model_selector1 in context.text_models and model_selector1 not in context.vision_models:
+            gr.Warning(f"{model_selector1} is a text-only model. Image is ignored.")
+
+        images = []
+        
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -168,7 +199,9 @@ def add_text(
 
     # Init states if necessary
     for i in range(num_sides):
-        if states[i] is None:
+        if states[i] is None and len(images) == 0:
+            states[i] = State(model_selectors[i], is_vision=False)
+        elif states[i] is None and len(images) > 0:
             states[i] = State(model_selectors[i], is_vision=True)
 
     if len(text) <= 0:
@@ -245,8 +278,7 @@ def add_text(
         * 6
     )
 
-
-def build_side_by_side_vision_ui_named(models, random_questions=None):
+def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
@@ -268,6 +300,9 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
+    context_state = gr.State(context)
+
     with gr.Row():
         with gr.Column(scale=2, visible=False) as image_column:
             imagebox = gr.Image(
@@ -279,10 +314,10 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(models)
+                    model_description_md = get_model_description_md(text_and_vision_models)
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )
@@ -291,8 +326,8 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
                     for i in range(num_sides):
                         with gr.Column():
                             model_selectors[i] = gr.Dropdown(
-                                choices=models,
-                                value=models[i] if len(models) > i else "",
+                                choices=text_and_vision_models,
+                                value=text_and_vision_models[i] if len(text_and_vision_models) > i else "",
                                 interactive=True,
                                 show_label=False,
                                 container=False,
@@ -441,7 +476,7 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, context_state],
         states + chatbots + [textbox] + btn_list,
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,

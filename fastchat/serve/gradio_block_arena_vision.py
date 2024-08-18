@@ -10,6 +10,7 @@ python3 -m fastchat.serve.gradio_web_server_multi --share --vision-arena
 import json
 import os
 import time
+from typing import List
 
 import gradio as gr
 from gradio.data_classes import FileData
@@ -26,6 +27,7 @@ from fastchat.constants import (
 from fastchat.model.model_adapter import (
     get_conversation_template,
 )
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.gradio_web_server import (
     get_model_description_md,
     acknowledgment_md,
@@ -209,13 +211,21 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
     return text, image_flagged, csam_flagged
 
 
-def add_text(state, model_selector, chat_input, request: gr.Request):
+def add_text(state, model_selector: str, chat_input, context: Context, request: gr.Request):
     text, images = chat_input["text"], chat_input["files"]
+
+    if len(images) > 0 and model_selector in context.text_models and model_selector not in context.vision_models:
+        gr.Warning(f"{model_selector} is a text-only model. Image is ignored.")
+        images = []
+
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
     if state is None:
-        state = State(model_selector, is_vision=True)
+        if len(images) == 0:
+            state = State(model_selector, is_vision=False)
+        else:
+            state = State(model_selector, is_vision=True)
 
     if len(text) <= 0:
         state.skip_next = True
@@ -252,7 +262,7 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
 
 
 def build_single_vision_language_model_ui(
-    models, add_promotion_links=False, random_questions=None
+    context: Context, add_promotion_links=False, random_questions=None
 ):
     promotion = (
         """
@@ -272,21 +282,23 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
+    context_state = gr.State(context)
 
     with gr.Group():
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
-                choices=models,
-                value=models[0] if len(models) > 0 else "",
+                choices=text_and_vision_models,
+                value=text_and_vision_models[0] if len(text_and_vision_models) > 0 else "",
                 interactive=True,
                 show_label=False,
                 container=False,
             )
 
         with gr.Accordion(
-            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+            f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models", open=False
         ):
-            model_description_md = get_model_description_md(models)
+            model_description_md = get_model_description_md(text_and_vision_models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
     with gr.Row():
@@ -409,7 +421,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 
     textbox.submit(
         add_text,
-        [state, model_selector, textbox],
+        [state, model_selector, textbox, context_state],
         [state, chatbot, textbox] + btn_list,
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
