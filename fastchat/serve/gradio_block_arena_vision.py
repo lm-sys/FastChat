@@ -212,7 +212,11 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
 
 
 def add_text(
-    state, model_selector: str, chat_input: Union[str, dict], context: Context, request: gr.Request
+    state,
+    model_selector: str,
+    chat_input: Union[str, dict],
+    context: Context,
+    request: gr.Request,
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
