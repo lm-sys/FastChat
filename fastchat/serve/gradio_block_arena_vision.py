@@ -10,7 +10,7 @@ python3 -m fastchat.serve.gradio_web_server_multi --share --vision-arena
 import json
 import os
 import time
-from typing import List
+from typing import List, Union
 
 import gradio as gr
 from gradio.data_classes import FileData
@@ -212,9 +212,12 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
 
 
 def add_text(
-    state, model_selector: str, chat_input, context: Context, request: gr.Request
+    state, model_selector: str, chat_input: Union[str, dict], context: Context, request: gr.Request
 ):
-    text, images = chat_input["text"], chat_input["files"]
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text, images = chat_input, []
 
     if (
         len(images) > 0

@@ -8,6 +8,7 @@ import time
 
 import gradio as gr
 import numpy as np
+from typing import Union
 
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
@@ -249,7 +250,7 @@ def add_text(
     state1,
     model_selector0,
     model_selector1,
-    chat_input,
+    chat_input: Union[str, dict],
     context: Context,
     request: gr.Request,
 ):

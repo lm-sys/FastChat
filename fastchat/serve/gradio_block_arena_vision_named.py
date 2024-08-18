@@ -6,7 +6,7 @@ Users chat with two chosen models.
 import json
 import os
 import time
-from typing import List
+from typing import List, Union
 
 import gradio as gr
 import numpy as np
@@ -186,11 +186,14 @@ def add_text(
     state1,
     model_selector0,
     model_selector1,
-    chat_input,
+    chat_input: Union[str, dict],
     context: Context,
     request: gr.Request,
 ):
-    text, images = chat_input["text"], chat_input["files"]
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text, images = chat_input, []
 
     if len(images) > 0:
         if (
