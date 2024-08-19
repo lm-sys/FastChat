@@ -22,6 +22,7 @@ from fastchat.constants import (
     CONVERSATION_LIMIT_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import (
     get_conversation_template,
@@ -255,8 +256,10 @@ def build_single_vision_language_model_ui(
     models, add_promotion_links=False, random_questions=None
 ):
     promotion = (
-        """
+        f"""
 - [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+
+{SURVEY_LINK}
 
 **❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 
