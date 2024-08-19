@@ -64,7 +64,7 @@ num_sides = 2
 enable_moderation = False
 
 
-def load_demo_side_by_side_vision_named(context: Context, url_params):
+def load_demo_side_by_side_vision_named(context: Context):
     states = [None] * num_sides
 
     # default to the text models

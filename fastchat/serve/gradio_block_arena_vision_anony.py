@@ -115,7 +115,7 @@ def get_vqa_sample():
     return (res, path)
 
 
-def load_demo_side_by_side_vision_anony(url_params):
+def load_demo_side_by_side_vision_anony():
     states = [None] * num_sides
     selector_updates = [
         gr.Markdown(visible=True),

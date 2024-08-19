@@ -59,17 +59,17 @@ def load_demo(context: Context, url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
 
     inner_selected = 0
-    if "arena" in url_params:
+    if "arena" in request.query_params:
         inner_selected = 0
-    elif "vision" in url_params:
+    elif "vision" in request.query_params:
         inner_selected = 1
-    elif "compare" in url_params:
+    elif "compare" in request.query_params:
         inner_selected = 1
-    elif "direct" in url_params or "model" in url_params:
+    elif "direct" in request.query_params or "model" in request.query_params:
         inner_selected = 3
-    elif "leaderboard" in url_params:
+    elif "leaderboard" in request.query_params:
         inner_selected = 4
-    elif "about" in url_params:
+    elif "about" in request.query_params:
         inner_selected = 5
 
     if args.model_list_mode == "reload":
@@ -87,30 +87,33 @@ def load_demo(context: Context, url_params, request: gr.Request):
 
     # Text models
     if args.vision_arena:
-        side_by_side_anony_updates = load_demo_side_by_side_vision_anony(url_params)
+        side_by_side_anony_updates = load_demo_side_by_side_vision_anony()
 
         side_by_side_named_updates = load_demo_side_by_side_vision_named(
-            context, url_params
+            context,
         )
 
-        direct_chat_updates = load_demo_single(context, url_params)
+        direct_chat_updates = load_demo_single(context, request.query_params)
     else:
-        direct_chat_updates = load_demo_single(context.text_models, [], url_params)
+        direct_chat_updates = load_demo_single(context, request.query_params)
         side_by_side_anony_updates = load_demo_side_by_side_anony(
-            context.all_text_models, url_params
+            context.all_text_models, request.query_params
         )
         side_by_side_named_updates = load_demo_side_by_side_named(
-            context.text_models, url_params
+            context.text_models, request.query_params
         )
 
-    tabs_list = [gr.Tabs(selected=inner_selected)] + side_by_side_anony_updates + side_by_side_named_updates + direct_chat_updates
+    tabs_list = (
+        [gr.Tabs(selected=inner_selected)]
+        + side_by_side_anony_updates
+        + side_by_side_named_updates
+        + direct_chat_updates
+    )
 
     return tabs_list
 
 
 def build_demo(context: Context, elo_results_file: str, leaderboard_table_file):
-    context_state = gr.State(context)
-
     if args.show_terms_of_use:
         load_js = get_window_url_params_with_tos_js
     else:
@@ -179,7 +182,12 @@ window.__gradio_mode__ = "app";
                         context.text_models, add_promotion_links=True
                     )
 
-            demo_tabs = [inner_tabs] + side_by_side_anony_list + side_by_side_named_list + single_model_list
+            demo_tabs = (
+                [inner_tabs]
+                + side_by_side_anony_list
+                + side_by_side_named_list
+                + single_model_list
+            )
 
             if elo_results_file:
                 with gr.Tab("🏆 Leaderboard", id=3):
@@ -190,6 +198,7 @@ window.__gradio_mode__ = "app";
             with gr.Tab("ℹ️ About Us", id=4):
                 about = build_about()
 
+        context_state = gr.State(context)
         url_params = gr.JSON(visible=False)
 
         if args.model_list_mode not in ["once", "reload"]:

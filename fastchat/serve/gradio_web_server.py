@@ -223,13 +223,13 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     return visible_models, models
 
 
-def load_demo_single(context: Context, url_params):
+def load_demo_single(context: Context, query_params):
     # default to text models
     models = context.text_models
 
     selected_model = models[0] if len(models) > 0 else ""
-    if "model" in url_params:
-        model = url_params["model"]
+    if "model" in query_params:
+        model = query_params["model"]
         if model in models:
             selected_model = model
 
