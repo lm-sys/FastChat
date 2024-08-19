@@ -186,7 +186,7 @@ def add_text(
     state1,
     model_selector0,
     model_selector1,
-    chat_input,
+    chat_input: Union[str, dict],
     context: Context,
     request: gr.Request,
 ):
