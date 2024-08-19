@@ -65,7 +65,7 @@ enable_moderation = False
 
 
 def load_demo_side_by_side_vision_named(context: Context, url_params):
-    states = (None,) * num_sides
+    states = [None] * num_sides
 
     # default to the text models
     models = context.text_models
@@ -78,10 +78,10 @@ def load_demo_side_by_side_vision_named(context: Context, url_params):
     else:
         model_right = model_left
 
-    selector_updates = (
+    selector_updates = [
         gr.Dropdown(choices=models, value=model_left, visible=True),
         gr.Dropdown(choices=models, value=model_right, visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -186,7 +186,7 @@ def add_text(
     state1,
     model_selector0,
     model_selector1,
-    chat_input: Union[str, dict],
+    chat_input,
     context: Context,
     request: gr.Request,
 ):

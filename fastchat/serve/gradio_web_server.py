@@ -235,7 +235,7 @@ def load_demo_single(context: Context, url_params):
 
     dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
     state = None
-    return state, dropdown_update
+    return [state, dropdown_update]
 
 
 def load_demo(url_params, request: gr.Request):

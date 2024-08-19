@@ -45,7 +45,6 @@ from fastchat.serve.gradio_block_arena_anony import (
     regenerate,
     clear_history,
     share_click,
-    add_text,
     bot_response_multi,
     set_global_vars_anony,
     load_demo_side_by_side_anony,
@@ -117,11 +116,11 @@ def get_vqa_sample():
 
 
 def load_demo_side_by_side_vision_anony(url_params):
-    states = (None,) * num_sides
-    selector_updates = (
+    states = [None] * num_sides
+    selector_updates = [
         gr.Markdown(visible=True),
         gr.Markdown(visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -250,7 +249,7 @@ def add_text(
     state1,
     model_selector0,
     model_selector1,
-    chat_input: Union[str, dict],
+    chat_input,
     context: Context,
     request: gr.Request,
 ):

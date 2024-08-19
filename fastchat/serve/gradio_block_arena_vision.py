@@ -213,8 +213,8 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
 
 def add_text(
     state,
-    model_selector: str,
-    chat_input: Union[str, dict],
+    model_selector,
+    chat_input,
     context: Context,
     request: gr.Request,
 ):
