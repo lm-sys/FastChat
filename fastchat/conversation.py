@@ -886,9 +886,11 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="tenyxchat",
-        roles=("User", "Assistant"),
-        sep_style=SeparatorStyle.FALCON_CHAT,
-        sep="<|end_of_turn|>",
+        system_template="<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.LLAMA3,
+        sep="",
+        stop_str=["<|end_of_text|>", "<|eot_id|>"],
     )
 )
 
