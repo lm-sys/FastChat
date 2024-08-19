@@ -21,13 +21,15 @@ from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
+from vllm.inputs import TextPrompt
 
+from fastchat.conversation import IMAGE_PLACEHOLDER_STR
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length, is_partial_stop
+from fastchat.utils import get_context_length, is_partial_stop, load_image
 
 # Add imports for vLLM LoRAs, prevent panic with older vllm versions which not support LoRAs
 # LoRA request only supports vLLM versions >= v0.3.2
@@ -70,6 +72,20 @@ original_get = requests.get
 
 # 替换 requests.get 为新的函数
 requests.get = limited_get
+
+
+def replace_placeholders_with_images(prompt: str, placeholder: str, images: List[str]):
+    """
+    将多个占位符替换为实际的图片 URL。
+
+    :param prompt: 包含占位符的原始提示字符串
+    :param placeholder: 要替换的占位符
+    :param images: 替换占位符的实际图片 列表
+    :return: 替换后的提示字符串
+    """
+    for img in images:
+        prompt = prompt.replace(placeholder, img, 1)  # 只替换第一个出现的占位符
+    return prompt
 
 
 class VLLMWorker(BaseModelWorker):
@@ -178,7 +194,8 @@ class VLLMWorker(BaseModelWorker):
     async def generate_stream(self, params):
         self.call_ct += 1
 
-        context = params.pop("prompt")
+        prompt = params.pop("prompt")
+        images = params.get("images", [])
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
@@ -196,6 +213,25 @@ class VLLMWorker(BaseModelWorker):
         seed = params.get("seed", None)
 
         request = params.get("request", None)
+
+        # split prompt by image token
+        split_prompt = prompt.split("<image>")
+        if prompt.count("<image>") != len(images):
+            raise ValueError(
+                "The number of images passed in does not match the number of <image> tokens in the prompt!"
+            )
+
+        # context: List[TextPrompt] = []
+        # for i in range(len(split_prompt)):
+        #     img = ""
+        #     if i < len(images):
+        #         img = load_image(images[i])
+        #     context.append({"prompt": split_prompt[i], "multi_modal_data": {"image": img}})
+        context: TextPrompt = {
+            "prompt": prompt,
+        }
+        if len(images) > 0:
+            context["multi_modal_data"] = {"image": load_image(images[0])},
 
         # Handle stop_str
         stop = set()
@@ -447,12 +483,6 @@ if __name__ == "__main__":
              "values will increase the KV cache size and thus improve the model's"
              "throughput. However, if the value is too high, it may cause out-of-"
              "memory (OOM) errors.",
-    )
-    parser.add_argument(
-        "--max-model-len",
-        type=float,
-        default=None,
-        help="Model context length. If unspecified, will be automatically derived from the model config.",
     )
 
     # Support parse LoRA modules
