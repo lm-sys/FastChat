@@ -431,6 +431,12 @@ if __name__ == "__main__":
         action=LoRAParserAction,
         help="LoRA module configurations in the format name=path. Multiple modules can be specified.",
     )
+    parser.add_argument(
+        "--max-model-len",
+        type=float,
+        default=None,
+        help="Model context length. If unspecified, will be automatically derived from the model config.",
+    )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
