@@ -478,7 +478,11 @@ def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
     ).then(
         flash_buttons, [], btn_list
     )
-    clear_btn.click(clear_history, None, states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list)
+    clear_btn.click(
+        clear_history,
+        None,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+    )
 
     share_js = """
 function (a, b, c, d) {
