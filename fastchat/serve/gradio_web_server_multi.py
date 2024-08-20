@@ -62,15 +62,15 @@ def load_demo(context: Context, url_params, request: gr.Request):
     if "arena" in request.query_params:
         inner_selected = 0
     elif "vision" in request.query_params:
-        inner_selected = 1
+        inner_selected = 0
     elif "compare" in request.query_params:
         inner_selected = 1
     elif "direct" in request.query_params or "model" in request.query_params:
-        inner_selected = 3
+        inner_selected = 2
     elif "leaderboard" in request.query_params:
-        inner_selected = 4
+        inner_selected = 3
     elif "about" in request.query_params:
-        inner_selected = 5
+        inner_selected = 4
 
     if args.model_list_mode == "reload":
         context.text_models, context.all_text_models = get_model_list(
@@ -90,7 +90,7 @@ def load_demo(context: Context, url_params, request: gr.Request):
         side_by_side_anony_updates = load_demo_side_by_side_vision_anony()
 
         side_by_side_named_updates = load_demo_side_by_side_vision_named(
-            context,
+            context, 
         )
 
         direct_chat_updates = load_demo_single(context, request.query_params)
