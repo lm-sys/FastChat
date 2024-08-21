@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
 from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.model_executor.models import ModelRegistry
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
@@ -59,7 +60,7 @@ class VLLMWorker(BaseModelWorker):
         # and llm_engine.engine.tokenizer was no longer a raw tokenizer
         if hasattr(self.tokenizer, "tokenizer"):
             self.tokenizer = llm_engine.engine.tokenizer.tokenizer
-        self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
+        self.context_len = llm_engine.engine.model_config.max_model_len
 
         if not no_register:
             self.init_heart_beat()
@@ -260,23 +261,6 @@ if __name__ == "__main__":
     parser.add_argument("--num-gpus", type=int, default=1)
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
-    )
-    parser.add_argument(
-        "--trust_remote_code",
-        action="store_false",
-        default=True,
-        help="Trust remote code (e.g., from HuggingFace) when"
-        "downloading the model and tokenizer.",
-    )
-    parser.add_argument(
-        "--gpu_memory_utilization",
-        type=float,
-        default=0.9,
-        help="The ratio (between 0 and 1) of GPU memory to"
-        "reserve for the model weights, activations, and KV cache. Higher"
-        "values will increase the KV cache size and thus improve the model's"
-        "throughput. However, if the value is too high, it may cause out-of-"
-        "memory (OOM) errors.",
     )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
