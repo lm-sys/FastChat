@@ -190,6 +190,7 @@ def acquire_worker_semaphore():
 def create_background_tasks():
     background_tasks = BackgroundTasks()
     background_tasks.add_task(release_worker_semaphore)
+    background_tasks.add_task(worker.send_heart_beat)  # refrech queue_lens
     return background_tasks
 
 
@@ -208,6 +209,7 @@ async def api_generate(request: Request):
     await acquire_worker_semaphore()
     output = await asyncio.to_thread(worker.generate_gate, params)
     release_worker_semaphore()
+    worker.send_heart_beat()  # refrech queue_lens
     return JSONResponse(output)
 
 
