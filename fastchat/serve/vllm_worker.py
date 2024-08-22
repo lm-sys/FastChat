@@ -75,8 +75,12 @@ class VLLMWorker(BaseModelWorker):
 
     async def _conversation_to_vllm_format(self, messages: List[Dict[str, str]]):
         # tokenize
-        conversation, mm_futures = parse_chat_messages(messages, self.model_config, self.tokenizer)
-        prompt = apply_chat_template(self.tokenizer, conversation, chat_template=self.tokenizer.chat_template)
+        conversation, mm_futures = parse_chat_messages(
+            messages, self.model_config, self.tokenizer
+        )
+        prompt = apply_chat_template(
+            self.tokenizer, conversation, chat_template=self.tokenizer.chat_template
+        )
 
         # only one image
         mm_data = None
@@ -87,9 +91,7 @@ class VLLMWorker(BaseModelWorker):
         except Exception as e:
             print(f"Error in getting mulitmodal data: {e}")
 
-        engine_inputs: PromptInput = {
-            "prompt": prompt
-        }
+        engine_inputs: PromptInput = {"prompt": prompt}
 
         if mm_data is not None:
             engine_inputs["multi_modal_data"] = mm_data
