@@ -7,18 +7,22 @@ See documentations at docs/vllm_integration.md
 import argparse
 import asyncio
 import json
-from typing import List
+from typing import List, Dict
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
 from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.entrypoints.chat_utils import parse_chat_messages, apply_chat_template
 from vllm.model_executor.models import ModelRegistry
+from vllm.model_executor.model_loader.utils import get_architecture_class_name
+from vllm.multimodal.utils import load_image_from_base64
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
 from fastchat.serve.base_model_worker import BaseModelWorker
+from fastchat.conversation import Conversation
 from fastchat.serve.model_worker import (
     logger,
     worker_id,
@@ -42,6 +46,9 @@ class VLLMWorker(BaseModelWorker):
         llm_engine: AsyncLLMEngine,
         conv_template: str,
     ):
+        self.model_config = llm_engine.engine.model_config
+        self.model_arch = get_architecture_class_name(self.model_config)
+
         super().__init__(
             controller_addr,
             worker_addr,
@@ -50,6 +57,7 @@ class VLLMWorker(BaseModelWorker):
             model_names,
             limit_worker_concurrency,
             conv_template,
+            ModelRegistry.is_multimodal_model(self.model_arch),
         )
 
         logger.info(
@@ -65,14 +73,39 @@ class VLLMWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
+    async def _conversation_to_vllm_format(self, messages: List[Dict[str, str]]):
+        # tokenize
+        conversation, mm_futures = parse_chat_messages(messages, self.model_config, self.tokenizer)
+        prompt = apply_chat_template(self.tokenizer, conversation, chat_template=self.tokenizer.chat_template)
+
+        # only one image
+        mm_data = None
+        try:
+            if len(mm_futures):
+                assert len(mm_futures) == 1
+                mm_data = await mm_futures[0]
+        except Exception as e:
+            print(f"Error in getting mulitmodal data: {e}")
+
+        engine_inputs: PromptInput = {
+            "prompt": prompt
+        }
+
+        if mm_data is not None:
+            engine_inputs["multi_modal_data"] = mm_data
+
+        return engine_inputs
+
     async def generate_stream(self, params):
         self.call_ct += 1
 
-        context = params.pop("prompt")
+        # context = params.pop("prompt")
+        messages = params.pop("messages", None)
+        images = params.pop("images", None)
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
-        top_k = params.get("top_k", -1.0)
+        top_k = int(params.get("top_k", -1.0))
         presence_penalty = float(params.get("presence_penalty", 0.0))
         frequency_penalty = float(params.get("frequency_penalty", 0.0))
         max_new_tokens = params.get("max_new_tokens", 256)
@@ -117,7 +150,9 @@ class VLLMWorker(BaseModelWorker):
             frequency_penalty=frequency_penalty,
             best_of=best_of,
         )
-        results_generator = engine.generate(context, sampling_params, request_id)
+
+        engine_inputs = await self._conversation_to_vllm_format(messages)
+        results_generator = engine.generate(engine_inputs, sampling_params, request_id)
 
         async for request_output in results_generator:
             prompt = request_output.prompt

@@ -354,6 +354,7 @@ def model_worker_stream_iter(
     top_p,
     max_new_tokens,
     images,
+    messages_in_openai_format,
 ):
     # Make requests
     gen_params = {
@@ -368,10 +369,16 @@ def model_worker_stream_iter(
         "echo": False,
     }
 
-    logger.info(f"==== request ====\n{gen_params}")
+    # Don't log the messages in openai format because they will contain base64 encoded images
+    # which take up a lot of space
+    gen_params_to_log = gen_params
+
+    logger.info(f"==== request ====\n{gen_params_to_log}")
 
     if len(images) > 0:
         gen_params["images"] = images
+
+    gen_params["messages"] = messages_in_openai_format
 
     # Stream output
     response = requests.post(
@@ -468,6 +475,8 @@ def bot_response(
         else:
             repetition_penalty = 1.0
 
+        # We perform a deep copy here, so it will not be affected by "▌".
+        messages_in_openai_format = list(conv.to_openai_vision_api_messages())
         stream_iter = model_worker_stream_iter(
             conv,
             model_name,
@@ -478,6 +487,7 @@ def bot_response(
             top_p,
             max_new_tokens,
             images,
+            messages_in_openai_format,
         )
     else:
         # Remove system prompt for API-based models unless specified
