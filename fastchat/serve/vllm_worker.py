@@ -91,7 +91,7 @@ class VLLMWorker(BaseModelWorker):
         except Exception as e:
             print(f"Error in getting mulitmodal data: {e}")
 
-        engine_inputs: PromptInput = {"prompt": prompt}
+        engine_inputs = {"prompt": prompt}
 
         if mm_data is not None:
             engine_inputs["multi_modal_data"] = mm_data
