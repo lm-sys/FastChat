@@ -677,7 +677,6 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
         style = style.background_gradient(
             cmap="Blues",
             subset=category_names,
-            # vmin=category_df[category_names].min().min(),
             vmin=1150,
             vmax=category_df[category_names].max().max(),
         )
@@ -693,7 +692,7 @@ def build_category_leaderboard_tab(
     rating_table_vals = get_arena_category_table(combined_elo_df, categories, "rating")
     with gr.Row():
         gr.Markdown(
-            f"""&emsp; <span style='text-decoration:underline; font-size: 125%;'>{title} Leaderboard</span>"""
+            f"""&emsp; <span style='font-weight: bold; font-size: 125%;'>{title} Leaderboard</span>"""
         )
         ranking_button = gr.Button("Sort by Rank")
         rating_button = gr.Button("Sort by Arena Score")
@@ -727,10 +726,10 @@ selected_categories = [
     "math",
     "hard_6",
     "multiturn",
-    "no_short",
+    "long_user",
     "no_refusal",
 ]
-selected_categories_width = [85, 75, 120, 75, 125, 100, 150, 100]
+selected_categories_width = [95, 85, 130, 75, 150, 100, 95, 100]
 
 language_categories = [
     "english",
@@ -771,7 +770,6 @@ def get_combined_table(elo_results, model_table_df):
     combined_table["Model"] = combined_table.index
     # drop any rows with nan values
     combined_table = combined_table.dropna()
-    # remove
     return combined_table
 
 
