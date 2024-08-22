@@ -813,7 +813,7 @@ def build_leaderboard_tab(
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">
-                        Fora more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
+                        For a more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
                     </div>
                     """,
                 )
