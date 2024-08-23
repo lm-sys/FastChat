@@ -82,9 +82,10 @@ def load_demo_side_by_side_vision_named(context: Context):
     else:
         model_right = model_left
 
+    all_models = list(set(context.text_models + context.vision_models))
     selector_updates = [
-        gr.Dropdown(choices=models, value=model_left, visible=True),
-        gr.Dropdown(choices=models, value=model_right, visible=True),
+        gr.Dropdown(choices=all_models, value=model_left, visible=True),
+        gr.Dropdown(choices=all_models, value=model_right, visible=True),
     ]
 
     return states + selector_updates
