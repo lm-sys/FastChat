@@ -64,6 +64,8 @@ class Monitor:
             "experimental-causal-router": 100,
             "llama-3.1-405b-instruct": 2000,
             "gemini-1.5-pro-exp-0801": 800,
+            "sus-column-r": 3000,
+            "chatgpt-4o-latest": 2000,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
@@ -85,6 +87,8 @@ class Monitor:
             "claude-3-5-sonnet-20240620": 16,
             "llama-3.1-405b-instruct": 16,
             "gemini-1.5-pro-exp-0801": 8,
+            "sus-column-r": 16,
+            "chatgpt-4o-latest": 16,
         }
 
     async def update_stats(self, num_file=1) -> None:
