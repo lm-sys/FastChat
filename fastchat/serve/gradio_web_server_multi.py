@@ -90,7 +90,7 @@ def load_demo(context: Context, url_params, request: gr.Request):
         side_by_side_anony_updates = load_demo_side_by_side_vision_anony()
 
         side_by_side_named_updates = load_demo_side_by_side_vision_named(
-            context, 
+            context,
         )
 
         direct_chat_updates = load_demo_single(context, request.query_params)

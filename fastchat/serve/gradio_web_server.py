@@ -234,7 +234,9 @@ def load_demo_single(context: Context, query_params):
             selected_model = model
 
     all_models = list(set(context.text_models + context.vision_models))
-    dropdown_update = gr.Dropdown(choices=all_models, value=selected_model, visible=True)
+    dropdown_update = gr.Dropdown(
+        choices=all_models, value=selected_model, visible=True
+    )
     state = None
     return [state, dropdown_update]
 
