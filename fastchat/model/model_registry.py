@@ -202,7 +202,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["command-r", "command-r-04-2024", "command-r-08-2024"],
+    ["command-r", "command-r-03-2024", "command-r-08-2024"],
     "Command R",
     "https://txt.cohere.com/command-r/",
     "Command R by Cohere",
