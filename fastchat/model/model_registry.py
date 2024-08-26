@@ -195,17 +195,17 @@ register_model_info(
 )
 
 register_model_info(
-    ["command-r-plus"],
-    "Command-R-Plus",
+    ["command-r-plus", "command-r-plus-04-2024"],
+    "Command R+",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
-    "Command-R Plus by Cohere",
+    "Command R+ by Cohere",
 )
 
 register_model_info(
-    ["command-r"],
-    "Command-R",
+    ["command-r", "command-r-03-2024", "command-r-08-2024"],
+    "Command R",
     "https://txt.cohere.com/command-r/",
-    "Command-R by Cohere",
+    "Command R by Cohere",
 )
 
 register_model_info(
