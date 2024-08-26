@@ -64,22 +64,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     datasets_info = {
-        # "DocVQA": {
-        #     "path": "lmms-lab/DocVQA",
-        #     "image_key": "image",
-        #     "question_key": "question",
-        #     "id_key": "questionId",
-        #     "subset": "DocVQA",
-        #     "split": "test",
-        # },
-        # "ChartQA": {
-        #     "path": "HuggingFaceM4/ChartQA",
-        #     "image_key": "image",
-        #     "question_key": "query",
-        #     "id_key": "index",
-        #     "subset": False,
-        #     "split": "test",
-        # },
         "realworldqa": {
             "path": "visheratin/realworldqa",
             "image_key": "image",
@@ -88,30 +72,6 @@ if __name__ == "__main__":
             "subset": False,
             "split": "test",
         },
-        # "NewYorker": {
-        #     "path": "jmhessel/newyorker_caption_contest",
-        #     "image_key": "image",
-        #     "question_key": "questions",
-        #     "id_key": "index",
-        #     "subset": "explanation",
-        #     "split": "train",
-        # },
-        # "WikiArt": {
-        #     "path": "huggan/wikiart",
-        #     "image_key": "image",
-        #     "question_key": "artist",
-        #     "id_key": "index",
-        #     "subset": False,
-        #     "split": "train",
-        # },
-        # "TextVQA": {
-        #     "path": "facebook/textvqa",
-        #     "image_key": "image",
-        #     "question_key": "question",
-        #     "id_key": "question_id",
-        #     "subset": False,
-        #     "split": "train",
-        # },
         "Memes": {
             "path": "not-lain/meme-dataset",
             "image_key": "image",
@@ -154,8 +114,7 @@ if __name__ == "__main__":
         with open(f"{args.output_dir}/{dataset_name}/data.json") as f:
             data = json.load(f)
             print(f"Dataset: {dataset_name}, Number of examples: {len(data)}")
-            # dataset_json.extend(np.random.choice(data, 500))
-            dataset_json.extend(data)
+            dataset_json.extend(np.random.choice(data, 500))
 
     with open(f"{args.output_dir}/metadata_sampled.json", "w") as f:
         json.dump(dataset_json, f, indent=4)
