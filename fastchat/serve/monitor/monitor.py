@@ -909,7 +909,7 @@ def build_leaderboard_tab(
         with gr.Column(scale=4):
             md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
         with gr.Column(scale=1):
-            vote_button = gr.Button("Vote!", link="https://chat.lmsys.org")
+            vote_button = gr.Button("Vote!", link="https://lmarena.ai")
     md2 = gr.Markdown(default_md_2, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
         data = load_leaderboard_table_csv(leaderboard_table_file)

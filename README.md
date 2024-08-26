@@ -26,7 +26,7 @@ FastChat's core features include:
 
 </details>
 
-<a href="https://chat.lmsys.org"><img src="assets/demo_narrow.gif" width="70%"></a>
+<a href="https://lmarena.ai"><img src="assets/demo_narrow.gif" width="70%"></a>
 
 ## Contents
 - [Install](#install)
@@ -97,7 +97,7 @@ You can use the commands below to chat with them. They will automatically downlo
 
 ## Inference with Command Line Interface
 
-<a href="https://chat.lmsys.org"><img src="assets/screenshot_cli.png" width="70%"></a>
+<a href="https://lmarena.ai"><img src="assets/screenshot_cli.png" width="70%"></a>
 
 (Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
@@ -202,7 +202,7 @@ export FASTCHAT_USE_MODELSCOPE=True
 
 ## Serving with Web GUI
 
-<a href="https://chat.lmsys.org"><img src="assets/screenshot_gui.png" width="70%"></a>
+<a href="https://lmarena.ai"><img src="assets/screenshot_gui.png" width="70%"></a>
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. You can learn more about the architecture [here](docs/server_arch.md).
 
