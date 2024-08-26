@@ -420,7 +420,7 @@ def build_side_by_side_ui_anony(models):
 {SURVEY_LINK}
 
 ## 📣 News
-- Chatbot Arena now supports images in beta. Check it out [here](https://chat.lmsys.org/?vision).
+- Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
