@@ -399,6 +399,113 @@ def outlier_detect(
     return battles
 
 
+def fit_mle_elo(X, Y, models, indices=None, SCALE=400, INIT_RATING=1000):
+    from sklearn.linear_model import LogisticRegression
+
+    p = len(models.index)
+
+    lr = LogisticRegression(fit_intercept=False)
+    if indices:
+        lr.fit(X[indices], Y[indices])
+    else:
+        lr.fit(X, Y)
+
+    elo_scores = SCALE * lr.coef_[0] + INIT_RATING
+    # calibrate llama-13b to 800 if applicable
+    if "mixtral-8x7b-instruct-v0.1" in models.index:
+        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
+    return (
+        pd.Series(elo_scores[:p], index=models.index).sort_values(ascending=False),
+        lr.coef_[0][p:],
+    )
+
+
+def construct_style_matrices(
+    df,
+    models,
+    BASE=10,
+    apply_ratio=[1, 0, 0, 0],
+    style_elements=[
+        "sum_assistant_a_tokens",
+        "sum_bold_count_a",
+        "sum_list_count_a",
+        "sum_header_count_a",
+        "sum_assistant_b_tokens",
+        "sum_bold_count_b",
+        "sum_list_count_b",
+        "sum_header_count_b",
+    ],
+):
+    # duplicate battles
+    df = pd.concat([df, df], ignore_index=True)
+    p = len(models.index)
+    n = df.shape[0]
+    assert len(style_elements) % 2 == 0
+    k = int(len(style_elements) / 2)
+
+    X = np.zeros([n, p + k])
+    X[np.arange(n), models[df["model_a"]]] = +math.log(BASE)
+    X[np.arange(n), models[df["model_b"]]] = -math.log(BASE)
+
+    style_vector = np.array(
+        [
+            df.new_conv_metadata.map(lambda x: x[element]).tolist()
+            for element in style_elements
+        ]
+    )
+
+    style_diff = (style_vector[:k] - style_vector[k:]).astype(float)
+    style_sum = (style_vector[:k] + style_vector[k:]).astype(float)
+
+    apply_ratio = np.flatnonzero(apply_ratio)
+
+    style_diff[apply_ratio] /= style_sum[
+        apply_ratio
+    ]  # Apply ratio where necessary (length, etc)
+
+    style_mean = np.mean(style_diff, axis=1)
+    print(f"Style Mean: {style_mean}")
+    style_std = np.std(style_diff, axis=1)
+
+    X[:, -k:] = ((style_diff - style_mean[:, np.newaxis]) / style_std[:, np.newaxis]).T
+
+    # one A win => two A win
+    Y = np.zeros(n)
+    Y[df["winner"] == "model_a"] = 1.0
+
+    # one tie => one A win + one B win
+    # find tie + tie (both bad) index
+    tie_idx = (df["winner"] == "tie") | (df["winner"] == "tie (bothbad)")
+    tie_idx[len(tie_idx) // 2 :] = False
+    Y[tie_idx] = 1.0
+
+    return X, Y
+
+
+def get_bootstrap_result_style_control(battles, func_compute_elo, num_round=1000):
+    models = pd.concat([battles["model_a"], battles["model_b"]]).unique()
+    models = pd.Series(np.arange(len(models)), index=models)
+
+    X, Y = construct_style_matrices(battles, models)
+
+    elos = []
+    coefs = []
+    for i in tqdm(range(num_round), desc="bootstrap"):
+        indices = np.random.choice(
+            list(range(len(battles))), size=(len(battles)), replace=True
+        )
+        _X = X[indices]
+        _Y = Y[indices]
+        states = ~_X[:, : len(models)].any(axis=0)
+
+        elo, coef = func_compute_elo(_X, _Y, models=models[~states])
+        elos.append(elo)
+        coefs.append(coef)
+
+    df = pd.DataFrame(elos)
+    return df[df.median().sort_values(ascending=False).index], coefs
+
+
 def filter_long_conv(row):
     threshold = 768
     for conversation_type in ["conversation_a", "conversation_b"]:
