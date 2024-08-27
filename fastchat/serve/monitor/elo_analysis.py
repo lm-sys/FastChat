@@ -422,20 +422,22 @@ def fit_mle_elo(X, Y, models, indices=None, SCALE=400, INIT_RATING=1000):
 
 def construct_style_matrices(
     df,
-    models,
     BASE=10,
     apply_ratio=[1, 0, 0, 0],
     style_elements=[
         "sum_assistant_a_tokens",
-        "sum_bold_count_a",
-        "sum_list_count_a",
-        "sum_header_count_a",
+        "header_count_a",
+        "list_count_a",
+        "bold_count_a",
         "sum_assistant_b_tokens",
-        "sum_bold_count_b",
-        "sum_list_count_b",
-        "sum_header_count_b",
+        "header_count_b",
+        "list_count_b",
+        "bold_count_b",
     ],
 ):
+    models = pd.concat([battles["model_a"], battles["model_b"]]).unique()
+    models = pd.Series(np.arange(len(models)), index=models)
+
     # duplicate battles
     df = pd.concat([df, df], ignore_index=True)
     p = len(models.index)
@@ -449,7 +451,11 @@ def construct_style_matrices(
 
     style_vector = np.array(
         [
-            df.new_conv_metadata.map(lambda x: x[element]).tolist()
+            df.conv_metadata.map(
+                lambda x: x[element]
+                if type(x[element]) is int
+                else sum(x[element].values())
+            ).tolist()
             for element in style_elements
         ]
     )
@@ -479,18 +485,13 @@ def construct_style_matrices(
     tie_idx[len(tie_idx) // 2 :] = False
     Y[tie_idx] = 1.0
 
-    return X, Y
+    return X, Y, models
 
 
-def get_bootstrap_result_style_control(battles, func_compute_elo, num_round=1000):
-    models = pd.concat([battles["model_a"], battles["model_b"]]).unique()
-    models = pd.Series(np.arange(len(models)), index=models)
-
-    X, Y = construct_style_matrices(battles, models)
-
+def get_bootstrap_result_style_control(X, Y, models, func_compute_elo, num_round=1000):
     elos = []
     coefs = []
-    for i in tqdm(range(num_round), desc="bootstrap"):
+    for _ in tqdm(range(num_round), desc="bootstrap"):
         indices = np.random.choice(
             list(range(len(battles))), size=(len(battles)), replace=True
         )
@@ -528,6 +529,7 @@ def report_elo_analysis_results(
     run_outlier_detect=False,
     scale=1,
     filter_func=lambda x: True,
+    style_control=False,
 ):
     battles = pd.DataFrame(battles_json)
 
@@ -568,10 +570,17 @@ def report_elo_analysis_results(
     elo_rating_online = compute_elo(battles)
 
     if rating_system == "bt":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo_mle_with_tie, num_round=num_bootstrap
-        )
-        elo_rating_final = compute_elo_mle_with_tie(battles)
+        if style_control:
+            X, Y, models = construct_style_matrices(battles)
+            bootstrap_df, boostrap_coef = get_bootstrap_result_style_control(
+                X, Y, models, fit_mle_elo, num_round=num_bootstrap
+            )
+            elo_rating_final, coef_final = fit_mle_elo(X, Y, models)
+        else:
+            bootstrap_df = get_bootstrap_result(
+                battles, compute_elo_mle_with_tie, num_round=num_bootstrap
+            )
+            elo_rating_final = compute_elo_mle_with_tie(battles)
     elif rating_system == "elo":
         bootstrap_df = get_bootstrap_result(
             battles, compute_elo, num_round=num_bootstrap
@@ -645,6 +654,12 @@ def report_elo_analysis_results(
         "last_updated_tstamp": last_updated_tstamp,
         "bootstrap_df": bootstrap_df,
         "leaderboard_table_df": leaderboard_table_df,
+        "style_coefficients": {
+            "bootstrap": np.vstack(boostrap_coef),
+            "final": coef_final,
+        }
+        if rating_system == "bt" and style_control
+        else {},
     }
 
 
@@ -672,6 +687,7 @@ if __name__ == "__main__":
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
     parser.add_argument("--category", nargs="+", default=["full"])
     parser.add_argument("--scale", type=float, default=1)
+    parser.add_argument("--style-control", action="store_true")
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -709,6 +725,7 @@ if __name__ == "__main__":
             run_outlier_detect=args.run_outlier_detect,
             scale=args.scale,
             filter_func=filter_func,
+            style_control=args.style_control,
         )
 
     for cat in args.category:

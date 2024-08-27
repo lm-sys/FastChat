@@ -29,7 +29,7 @@ def count_markdown_elements(markdown_text, suffix):
     return counters
 
 
-def remove_code(answer, pattern):
+def remove_pattern(answer, pattern):
     blocks = pattern.findall(answer)
     for block in blocks:
         answer = answer.replace(block, "")
@@ -45,7 +45,8 @@ def get_element_counts(df, column):
     )
     results = answers.progress_map(
         lambda answer: count_markdown_elements(
-            remove_code(answer, pattern), suffix=column[-2:]
+            remove_pattern(answer, pattern),
+            suffix=column[-2:],  # Remove code block first
         )
     )
 
