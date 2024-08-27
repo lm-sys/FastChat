@@ -469,7 +469,6 @@ def bot_response(
             is_vision=state.is_vision, has_csam_image=state.has_csam_image
         )
 
-        print(state.conv.messages)
         _write_to_json(
             filename,
             start_tstamp,
@@ -481,10 +480,9 @@ def bot_response(
             request,
         )
 
-        # Remove the last message: the assistant response
-        state.conv.messages.pop()
         # Remove the last message: the user input
         state.conv.messages.pop()
+        state.content_moderator.update_last_moderation_response(None)
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 

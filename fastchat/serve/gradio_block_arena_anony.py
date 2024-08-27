@@ -381,6 +381,7 @@ def bot_response_multi(
 
             # Remove the last message: the user input
             states[i].conv.messages.pop()
+            states[i].content_moderator.update_last_moderation_response(None)
 
         yield (
             states[0],
