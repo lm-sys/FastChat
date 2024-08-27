@@ -272,8 +272,8 @@ if __name__ == "__main__":
 
     # Set global variables
     set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
-    set_global_vars_named(args.moderate)
-    set_global_vars_anony(args.moderate)
+    set_global_vars_named(args.moderate, args.use_remote_storage)
+    set_global_vars_anony(args.moderate, args.use_remote_storage)
     models, all_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,

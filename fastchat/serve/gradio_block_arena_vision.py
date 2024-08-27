@@ -208,25 +208,31 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
 
     images = convert_images_to_conversation_format(images)
 
-    content_moderator = AzureAndOpenAIContentModerator()
-    text_flagged = content_moderator.text_moderation_filter(text, [state.model_name])
-    if len(images) > 0:
-        nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
-        image_flagged = nsfw_flag or csam_flag
-        if csam_flag:
-            state.has_csam_image = True
-    else:
-        image_flagged = False
+    # Use the first state to get the moderation response because this is based on user input so it is independent of the model
+    moderation_type_to_response_map = states[
+        0
+    ].content_moderator.image_and_text_moderation_filter(
+        images[0], text, [state.model_name], do_moderation=False
+    )
+    text_flagged, nsfw_flag, csam_flag = (
+        moderation_type_to_response_map["text_moderation"]["flagged"],
+        moderation_type_to_response_map["nsfw_moderation"]["flagged"],
+        moderation_type_to_response_map["csam_moderation"]["flagged"],
+    )
 
-    if text_flagged or image_flagged:
+    if csam_flag:
+        state.has_csam_image = True
+
+    state.content_moderator.append_moderation_response(moderation_type_to_response_map)
+
+    if text_flagged or nsfw_flag:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        content_moderator.write_to_json(get_ip(request))
-
-    if image_flagged or text_flagged:
-        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        gradio_chatbot_before_user_input = state.to_gradio_chatbot()
+        post_processed_text = _prepare_text_with_image(state, text, images)
+        state.conv.append_message(state.conv.roles[0], post_processed_text)
         state.skip_next = True
         gr.Warning(MODERATION_MSG)
-        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
+        return (state, gradio_chatbot_before_user_input, None) + (no_change_btn,) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

@@ -582,7 +582,11 @@ class Conversation:
         from fastchat.utils import load_image, upload_image_file_to_gcs
         from PIL import Image
 
-        _, last_user_message = self.messages[-2]
+        last_user_message = None
+        for role, message in reversed(self.messages):
+            if role == "user":
+                last_user_message = message
+                break
 
         if type(last_user_message) == tuple:
             text, images = last_user_message[0], last_user_message[1]

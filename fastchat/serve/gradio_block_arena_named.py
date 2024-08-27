@@ -27,6 +27,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    _write_to_json,
 )
 from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
@@ -38,11 +39,13 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False
+use_remote_storage = False
 
 
-def set_global_vars_named(enable_moderation_):
-    global enable_moderation
+def set_global_vars_named(enable_moderation_, use_remote_storage_):
+    global enable_moderation, use_remote_storage
     enable_moderation = enable_moderation_
+    use_remote_storage = use_remote_storage_
 
 
 def load_demo_side_by_side_named(models, url_params):
@@ -242,17 +245,43 @@ def bot_response_multi(
 ):
     logger.info(f"bot_response_multi (named). ip: {get_ip(request)}")
 
-    if state0.skip_next:
-        # This generate call is skipped due to invalid inputs
+    states = [state0, state1]
+    if states[0].skip_next:
+        for i in range(num_sides):
+            # This generate call is skipped due to invalid inputs
+            start_tstamp = time.time()
+            finish_tstamp = start_tstamp
+            states[i].conv.save_new_images(
+                has_csam_images=states[i].has_csam_image,
+                use_remote_storage=use_remote_storage,
+            )
+
+            filename = get_conv_log_filename(
+                is_vision=states[i].is_vision, has_csam_image=states[i].has_csam_image
+            )
+
+            _write_to_json(
+                filename,
+                start_tstamp,
+                finish_tstamp,
+                states[i],
+                temperature,
+                top_p,
+                max_new_tokens,
+                request,
+            )
+
+            # Remove the last message: the user input
+            states[i].conv.messages.pop()
+
         yield (
-            state0,
-            state1,
-            state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot(),
+            states[0],
+            states[1],
+            states[0].to_gradio_chatbot(),
+            states[1].to_gradio_chatbot(),
         ) + (no_change_btn,) * 6
         return
 
-    states = [state0, state1]
     gen = []
     for i in range(num_sides):
         gen.append(

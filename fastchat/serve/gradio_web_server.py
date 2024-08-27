@@ -116,6 +116,7 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
+        self.content_moderator = AzureAndOpenAIContentModerator()
 
         # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
@@ -142,6 +143,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
+                "moderation": self.content_moderator.conv_moderation_responses,
             }
         )
 
@@ -288,6 +290,7 @@ def regenerate(state, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
+    state.content_moderator.update_last_moderation_response(None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -412,6 +415,34 @@ def is_limit_reached(model_name, ip):
         return None
 
 
+def _write_to_json(
+    filename: str,
+    start_tstamp: float,
+    finish_tstamp: float,
+    state: State,
+    temperature: float,
+    top_p: float,
+    max_new_tokens: int,
+    request: gr.Request,
+):
+    with open(filename, "a") as fout:
+        data = {
+            "tstamp": round(finish_tstamp, 4),
+            "type": "chat",
+            "model": state.model_name,
+            "gen_params": {
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_new_tokens": max_new_tokens,
+            },
+            "start": round(start_tstamp, 4),
+            "finish": round(finish_tstamp, 4),
+            "state": state.dict(),
+            "ip": get_ip(request),
+        }
+        fout.write(json.dumps(data) + "\n")
+
+
 def bot_response(
     state,
     temperature,
@@ -431,6 +462,32 @@ def bot_response(
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
+        start_tstamp = time.time()
+        finish_tstamp = start_tstamp
+        conv.save_new_images(
+            has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
+        )
+
+        filename = get_conv_log_filename(
+            is_vision=state.is_vision, has_csam_image=state.has_csam_image
+        )
+
+        print(state.conv.messages)
+        _write_to_json(
+            filename,
+            start_tstamp,
+            finish_tstamp,
+            state,
+            temperature,
+            top_p,
+            max_new_tokens,
+            request,
+        )
+
+        # Remove the last message: the assistant response
+        state.conv.messages.pop()
+        # Remove the last message: the user input
+        state.conv.messages.pop()
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
@@ -582,22 +639,23 @@ def bot_response(
         is_vision=state.is_vision, has_csam_image=state.has_csam_image
     )
 
-    with open(filename, "a") as fout:
-        data = {
-            "tstamp": round(finish_tstamp, 4),
-            "type": "chat",
-            "model": model_name,
-            "gen_params": {
-                "temperature": temperature,
-                "top_p": top_p,
-                "max_new_tokens": max_new_tokens,
-            },
-            "start": round(start_tstamp, 4),
-            "finish": round(finish_tstamp, 4),
-            "state": state.dict(),
-            "ip": get_ip(request),
-        }
-        fout.write(json.dumps(data) + "\n")
+    moderation_type_to_response_map = (
+        state.content_moderator.image_and_text_moderation_filter(
+            None, output, [state.model_name], do_moderation=True
+        )
+    )
+    state.content_moderator.append_moderation_response(moderation_type_to_response_map)
+
+    _write_to_json(
+        filename,
+        start_tstamp,
+        finish_tstamp,
+        state,
+        temperature,
+        top_p,
+        max_new_tokens,
+        request,
+    )
     get_remote_logger().log(data)
 
 

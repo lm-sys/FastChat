@@ -314,21 +314,32 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    content_moderator = AzureAndOpenAIContentModerator(use_remote_storage)
-    text_flagged = content_moderator.text_moderation_filter(
-        text, model_list, do_moderation=True
-    )
+    # Use the first state to get the moderation response because this is based on user input so it is independent of the model
     if len(images) > 0:
-        nsfw_flag, csam_flag = content_moderator.image_moderation_filter(images[0])
-        image_flagged = nsfw_flag or csam_flag
-        if csam_flag:
-            states[0].has_csam_image, states[1].has_csam_image = True, True
+        moderation_type_to_response_map = states[
+            0
+        ].content_moderator.image_and_text_moderation_filter(
+            images[0], text, model_list, do_moderation=True
+        )
     else:
-        image_flagged = False
+        moderation_type_to_response_map = states[
+            0
+        ].content_moderator.image_and_text_moderation_filter(
+            None, text, model_list, do_moderation=True
+        )
+    text_flagged, nsfw_flag, csam_flag = (
+        moderation_type_to_response_map["text_moderation"]["flagged"],
+        moderation_type_to_response_map["nsfw_moderation"]["flagged"],
+        moderation_type_to_response_map["csam_moderation"]["flagged"],
+    )
 
-    if text_flagged or image_flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        content_moderator.write_to_json(get_ip(request))
+    if csam_flag:
+        states[0].has_csam_image, states[1].has_csam_image = True, True
+
+    for state in states:
+        state.content_moderator.append_moderation_response(
+            moderation_type_to_response_map
+        )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -347,21 +358,19 @@ def add_text(
             + [True]
         )
 
-    if image_flagged or text_flagged:
-        input_that_was_flagged = "text" if text_flagged else "image"
-        logger.info(f"{input_that_was_flagged} flagged. ip: {ip}. text: {text}")
+    if text_flagged or nsfw_flag:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        # We call this before appending the text so it does not appear in the UI
+        gradio_chatbot_list = [x.to_gradio_chatbot() for x in states]
         for i in range(num_sides):
+            post_processed_text = _prepare_text_with_image(states[i], text, images)
+            states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
             states[i].skip_next = True
         gr.Warning(MODERATION_MSG)
         return (
             states
-            + [x.to_gradio_chatbot() for x in states]
+            + gradio_chatbot_list
             + [
-                # {
-                #     "text": MODERATION_MSG
-                #     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
-                # },
-                # MODERATION_MSG + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION.",
                 None,
                 "",
                 no_change_btn,

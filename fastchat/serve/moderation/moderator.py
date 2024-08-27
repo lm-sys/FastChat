@@ -14,44 +14,72 @@ from fastchat.utils import load_image, upload_image_file_to_gcs
 
 class BaseContentModerator:
     def __init__(self):
+        self.conv_moderation_responses: List[
+            Dict[str, Dict[str, Union[str, Dict[str, float]]]]
+        ] = []
+
+    def _image_moderation_filter(self, image: Image) -> Tuple[bool, bool]:
+        """Function that detects whether image violates moderation policies.
+
+        Returns:
+            Tuple[bool, bool]: A tuple of two boolean values indicating whether the image was flagged for nsfw and csam respectively.
+        """
         raise NotImplementedError
 
-    def image_moderation_filter(self, image: Image) -> Tuple[bool, bool]:
+    def _text_moderation_filter(self, text: str) -> bool:
+        """Function that detects whether text violates moderation policies.
+
+        Returns:
+            bool: A boolean value indicating whether the text was flagged.
+        """
         raise NotImplementedError
 
-    def text_moderation_filter(self, text: str) -> bool:
+    def image_and_text_moderation_filter(
+        self, image: Image, text: str
+    ) -> Dict[str, Dict[str, Union[str, Dict[str, float]]]]:
+        """Function that detects whether image and text violate moderation policies.
+
+        Returns:
+            Dict[str, Dict[str, Union[str, Dict[str, float]]]]: A dictionary that maps the type of moderation (text, nsfw, csam) to a dictionary that contains the moderation response.
+        """
         raise NotImplementedError
 
-    def write_to_json(self):
-        raise NotImplementedError
+    def append_moderation_response(
+        self, moderation_response: Dict[str, Dict[str, Union[str, Dict[str, float]]]]
+    ):
+        """Function that appends the moderation response to the list of moderation responses."""
+        if (
+            len(self.conv_moderation_responses) == 0
+            or self.conv_moderation_responses[-1] is not None
+        ):
+            self.conv_moderation_responses.append(moderation_response)
+        else:
+            self.update_last_moderation_response(moderation_response)
+
+    def update_last_moderation_response(
+        self, moderation_response: Dict[str, Dict[str, Union[str, Dict[str, float]]]]
+    ):
+        """Function that updates the last moderation response."""
+        self.conv_moderation_responses[-1] = moderation_response
 
 
 class AzureAndOpenAIContentModerator(BaseContentModerator):
+    _NON_TOXIC_IMAGE_MODERATION_MAP = {
+        "nsfw_moderation": {"flagged": False},
+        "csam_moderation": {"flagged": False},
+    }
+
     def __init__(self, use_remote_storage: bool = False):
+        """This class is used to moderate content using Azure and OpenAI.
+
+        conv_to_moderation_responses: A dictionary that is a map from the type of moderation
+        (text, nsfw, csam) moderation to the moderation response returned from the request sent
+        to the moderation API.
         """
-        This class is used to moderate content using Azure and OpenAI.
-
-        text_and_openai_moderation_responses is a list of dictionaries that holds content and OpenAI moderation responses
-        image_and_azure_moderation_responses is a list of dictionaries that holds image and Azure moderation responses
-        """
-        self.conv_to_moderation_responses: Dict[
-            str, Dict[str, Union[str, Dict[str, float]]]
-        ] = {}
-        self.use_remote_storage = use_remote_storage
-
-    def write_to_json(self, ip):
-        t = datetime.datetime.now()
-        conv_log_filename = f"toxic-{t.year}-{t.month:02d}-{t.day:02d}-conv.json"
-        with open(conv_log_filename, "a") as f:
-            if self.conv_to_moderation_responses:
-                res = {
-                    "tstamp": round(time.time(), 4),
-                    "ip": ip,
-                }
-                res.update(self.conv_to_moderation_responses)
-                f.write(json.dumps(res) + "\n")
-
-        self.conv_to_moderation_responses = {}
+        super().__init__()
+        self.text_flagged = False
+        self.csam_flagged = False
+        self.nsfw_flagged = False
 
     def _image_moderation_request(
         self, image_bytes: bytes, endpoint: str, api_key: str
@@ -82,43 +110,36 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
             response = self._image_moderation_request(image_bytes, endpoint, api_key)
             flagged = response["IsMatch"]
 
+        image_md5_hash = hashlib.md5(image_bytes).hexdigest()
+        moderation_response_map = {
+            "image_hash": image_md5_hash,
+            "response": response,
+            "flagged": False,
+        }
         if flagged:
-            image_md5_hash = hashlib.md5(image_bytes).hexdigest()
-            self.conv_to_moderation_responses[f"{api_type}_api_moderation"] = {
-                "image_hash": image_md5_hash,
-                "response": response,
-            }
+            moderation_response_map["flagged"] = True
 
-        return flagged
+        return moderation_response_map
 
-    def image_moderation_filter(self, image: Image) -> Tuple[bool, bool]:
+    def image_moderation_filter(self, image: Image):
         print(f"moderating image")
 
         image_bytes = base64.b64decode(image.base64_str)
 
-        nsfw_flagged = self._image_moderation_provider(image_bytes, "nsfw")
-        csam_flagged = False
+        nsfw_flagged_map = self._image_moderation_provider(image_bytes, "nsfw")
 
-        if nsfw_flagged:
-            csam_flagged = self._image_moderation_provider(image_bytes, "csam")
+        if nsfw_flagged_map["flagged"]:
+            csam_flagged_map = self._image_moderation_provider(image_bytes, "csam")
+        else:
+            csam_flagged_map = {"flagged": False}
 
-        if nsfw_flagged or csam_flagged:
-            image_md5_hash = hashlib.md5(image_bytes).hexdigest()
-            directory = "serve_images" if not csam_flagged else "csam_images"
-            filename = os.path.join(
-                directory,
-                f"{image_md5_hash}.{image.filetype}",
-            )
-            loaded_image = load_image(image.base64_str)
-            if self.use_remote_storage and not csam_flagged:
-                upload_image_file_to_gcs(loaded_image, filename)
-            else:
-                filename = os.path.join(LOGDIR, filename)
-                if not os.path.isfile(filename):
-                    os.makedirs(os.path.dirname(filename), exist_ok=True)
-                    loaded_image.save(filename)
+        self.nsfw_flagged = nsfw_flagged_map["flagged"]
+        self.csam_flagged = csam_flagged_map["flagged"]
 
-        return nsfw_flagged, csam_flagged
+        return {
+            "nsfw_moderation": nsfw_flagged_map,
+            "csam_moderation": csam_flagged_map,
+        }
 
     def _openai_moderation_filter(
         self, text: str, custom_thresholds: dict = None
@@ -133,6 +154,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         # default to true to be conservative
         flagged = True
         MAX_RETRY = 3
+        moderation_response_map = {"content": text, "response": None, "flagged": False}
         for _ in range(MAX_RETRY):
             try:
                 res = client.moderations.create(input=text)
@@ -144,19 +166,19 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
                             > threshold
                         ):
                             flagged = True
-                    self.conv_to_moderation_responses["text_moderation"] = {
-                        "content": text,
+                    moderation_response_map = {
                         "response": dict(res.results[0].category_scores),
+                        "flagged": flagged,
                     }
                 break
             except (openai.OpenAIError, KeyError, IndexError) as e:
                 print(f"MODERATION ERROR: {e}\nInput: {text}")
 
-        return flagged
+        return moderation_response_map
 
     def text_moderation_filter(
         self, text: str, model_list: List[str], do_moderation: bool = False
-    ) -> bool:
+    ):
         # Apply moderation for below models
         MODEL_KEYWORDS = [
             "claude",
@@ -182,5 +204,56 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
                     break
 
         if do_moderation:
-            return self._openai_moderation_filter(text, custom_thresholds)
-        return False
+            moderation_response_map = self._openai_moderation_filter(
+                text, custom_thresholds
+            )
+            self.text_flagged = moderation_response_map["flagged"]
+
+        return {"text_moderation": moderation_response_map}
+
+    def image_and_text_moderation_filter(
+        self, image: Image, text: str, model_list: List[str], do_moderation=True
+    ) -> Dict[str, bool]:
+        """Function that detects whether image and text violate moderation policies using the Azure and OpenAI moderation APIs.
+
+        Returns:
+            Dict[str, Dict[str, Union[str, Dict[str, float]]]]: A dictionary that maps the type of moderation (text, nsfw, csam) to a dictionary that contains the moderation response.
+
+        Example:
+            {
+                "text_moderation": {
+                    "content": "This is a test",
+                    "response": {
+                        "sexual": 0.1
+                    },
+                    "flagged": True
+                },
+                "nsfw_moderation": {
+                    "image_hash": "1234567890",
+                    "response": {
+                        "IsImageAdultClassified": True
+                    },
+                    "flagged": True
+                },
+                "csam_moderation": {
+                    "image_hash": "1234567890",
+                    "response": {
+                        "IsMatch": True
+                    },
+                    "flagged": True
+                }
+            }
+        """
+        print("moderating text: ", text)
+        text_flagged_map = self.text_moderation_filter(text, model_list, do_moderation)
+
+        if image is not None:
+            image_flagged_map = self.image_moderation_filter(image)
+        else:
+            image_flagged_map = self._NON_TOXIC_IMAGE_MODERATION_MAP
+
+        res = {}
+        res.update(text_flagged_map)
+        res.update(image_flagged_map)
+
+        return res
