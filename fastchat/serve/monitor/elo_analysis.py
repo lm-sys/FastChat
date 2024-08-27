@@ -423,7 +423,7 @@ def fit_mle_elo(X, Y, models, indices=None, SCALE=400, INIT_RATING=1000):
 def construct_style_matrices(
     df,
     BASE=10,
-    apply_ratio=[1, 0, 0, 0],
+    apply_ratio=[1, 1, 1, 1],
     style_elements=[
         "sum_assistant_a_tokens",
         "header_count_a",
@@ -434,6 +434,7 @@ def construct_style_matrices(
         "list_count_b",
         "bold_count_b",
     ],
+    add_one=True,
 ):
     models = pd.concat([battles["model_a"], battles["model_b"]]).unique()
     models = pd.Series(np.arange(len(models)), index=models)
@@ -463,6 +464,9 @@ def construct_style_matrices(
     style_diff = (style_vector[:k] - style_vector[k:]).astype(float)
     style_sum = (style_vector[:k] + style_vector[k:]).astype(float)
 
+    if add_one:
+        style_sum = style_sum + np.ones(style_diff.shape)
+
     apply_ratio = np.flatnonzero(apply_ratio)
 
     style_diff[apply_ratio] /= style_sum[
@@ -470,7 +474,6 @@ def construct_style_matrices(
     ]  # Apply ratio where necessary (length, etc)
 
     style_mean = np.mean(style_diff, axis=1)
-    print(f"Style Mean: {style_mean}")
     style_std = np.std(style_diff, axis=1)
 
     X[:, -k:] = ((style_diff - style_mean[:, np.newaxis]) / style_std[:, np.newaxis]).T
