@@ -181,12 +181,10 @@ def add_text(
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    content_moderator = AzureAndOpenAIContentModerator()
-    text_flagged = content_moderator.text_moderation_filter(text, model_list)
+    text_flagged = states[0].content_moderator.text_moderation_filter(text, model_list)
 
     if text_flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        content_moderator.write_to_json(get_ip(request))
         for i in range(num_sides):
             states[i].skip_next = True
         gr.Warning(MODERATION_MSG)

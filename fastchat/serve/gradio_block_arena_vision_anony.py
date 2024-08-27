@@ -375,8 +375,7 @@ def add_text(
                 "",
                 no_change_btn,
             ]
-            + [disable_btn] * 4
-            + [no_change_btn] * 3
+            + [disable_btn] * 7
             + [""]
             + [True]
         )

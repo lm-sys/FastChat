@@ -299,7 +299,6 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
-    content_moderator = gr.State()
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 

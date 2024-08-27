@@ -209,8 +209,10 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     images = convert_images_to_conversation_format(images)
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
-    moderation_type_to_response_map = state.content_moderator.image_and_text_moderation_filter(
-        images[0], text, [state.model_name], do_moderation=False
+    moderation_type_to_response_map = (
+        state.content_moderator.image_and_text_moderation_filter(
+            images[0], text, [state.model_name], do_moderation=False
+        )
     )
     text_flagged, nsfw_flag, csam_flag = (
         moderation_type_to_response_map["text_moderation"]["flagged"],

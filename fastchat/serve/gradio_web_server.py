@@ -324,12 +324,9 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
-    # all_conv_text = state.conv.get_prompt()
-    # all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
     content_moderator = AzureAndOpenAIContentModerator()
     text_flagged = content_moderator.text_moderation_filter(text, [state.model_name])
 
-    # flagged = moderation_filter(text, [state.model_name])
     if text_flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
