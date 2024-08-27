@@ -21,6 +21,18 @@ from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 pd.options.display.float_format = "{:.2f}".format
 
 
+STYLE_CONTROL_ELEMENTS_V1 = [
+    "sum_assistant_a_tokens",
+    "header_count_a",
+    "list_count_a",
+    "bold_count_a",
+    "sum_assistant_b_tokens",
+    "header_count_b",
+    "list_count_b",
+    "bold_count_b",
+]
+
+
 def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
     rating = defaultdict(lambda: INIT_RATING)
 
@@ -424,16 +436,7 @@ def construct_style_matrices(
     df,
     BASE=10,
     apply_ratio=[1, 1, 1, 1],
-    style_elements=[
-        "sum_assistant_a_tokens",
-        "header_count_a",
-        "list_count_a",
-        "bold_count_a",
-        "sum_assistant_b_tokens",
-        "header_count_b",
-        "list_count_b",
-        "bold_count_b",
-    ],
+    style_elements=STYLE_CONTROL_ELEMENTS_V1,
     add_one=True,
 ):
     models = pd.concat([battles["model_a"], battles["model_b"]]).unique()
@@ -450,6 +453,7 @@ def construct_style_matrices(
     X[np.arange(n), models[df["model_a"]]] = +math.log(BASE)
     X[np.arange(n), models[df["model_b"]]] = -math.log(BASE)
 
+    # creates turn each of the specified column in "conv_metadata" into a vector
     style_vector = np.array(
         [
             df.conv_metadata.map(
