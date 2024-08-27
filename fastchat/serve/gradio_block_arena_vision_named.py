@@ -135,6 +135,7 @@ def regenerate(state0, state1, request: gr.Request):
     if state0.regen_support and state1.regen_support:
         for i in range(num_sides):
             states[i].conv.update_last_message(None)
+            states[i].content_moderator.update_last_moderation_response(None)
         return (
             states
             + [x.to_gradio_chatbot() for x in states]

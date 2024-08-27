@@ -58,6 +58,8 @@ disable_text = gr.Textbox(
     visible=True,
     placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)',
 )
+show_vote_button = True
+dont_show_vote_button = False
 
 controller_url = None
 enable_moderation = False
@@ -459,30 +461,32 @@ def bot_response(
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
-        start_tstamp = time.time()
-        finish_tstamp = start_tstamp
-        conv.save_new_images(
-            has_csam_images=state.has_csam_image, use_remote_storage=use_remote_storage
-        )
+        if state.content_moderator.text_flagged or state.content_moderator.nsfw_flagged:
+            start_tstamp = time.time()
+            finish_tstamp = start_tstamp
+            conv.save_new_images(
+                has_csam_images=state.has_csam_image,
+                use_remote_storage=use_remote_storage,
+            )
 
-        filename = get_conv_log_filename(
-            is_vision=state.is_vision, has_csam_image=state.has_csam_image
-        )
+            filename = get_conv_log_filename(
+                is_vision=state.is_vision, has_csam_image=state.has_csam_image
+            )
 
-        _write_to_json(
-            filename,
-            start_tstamp,
-            finish_tstamp,
-            state,
-            temperature,
-            top_p,
-            max_new_tokens,
-            request,
-        )
+            _write_to_json(
+                filename,
+                start_tstamp,
+                finish_tstamp,
+                state,
+                temperature,
+                top_p,
+                max_new_tokens,
+                request,
+            )
 
-        # Remove the last message: the user input
-        state.conv.messages.pop()
-        state.content_moderator.update_last_moderation_response(None)
+            # Remove the last message: the user input
+            state.conv.messages.pop()
+            state.content_moderator.update_last_moderation_response(None)
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 

@@ -34,6 +34,8 @@ from fastchat.serve.gradio_web_server import (
     disable_text,
     enable_text,
     use_remote_storage,
+    show_vote_button,
+    dont_show_vote_button,
 )
 from fastchat.serve.gradio_block_arena_anony import (
     flash_buttons,
@@ -224,6 +226,7 @@ def regenerate(state0, state1, request: gr.Request):
     if state0.regen_support and state1.regen_support:
         for i in range(num_sides):
             states[i].conv.update_last_message(None)
+            states[i].content_moderator.update_last_moderation_response(None)
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
@@ -307,7 +310,7 @@ def add_text(
             ]
             * 7
             + [""]
-            + [True]
+            + [dont_show_vote_button]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
@@ -355,7 +358,7 @@ def add_text(
             ]
             * 7
             + [""]
-            + [True]
+            + [dont_show_vote_button]
         )
 
     if text_flagged or nsfw_flag:
@@ -377,7 +380,7 @@ def add_text(
             ]
             + [disable_btn] * 7
             + [""]
-            + [True]
+            + [dont_show_vote_button]
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -400,7 +403,7 @@ def add_text(
         ]
         * 7
         + [hint_msg]
-        + [False]
+        + [show_vote_button]
     )
 
 
@@ -425,7 +428,7 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
-    dont_show_vote_buttons = gr.State(False)
+    show_vote_buttons = gr.State(True)
 
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -632,14 +635,14 @@ function (a, b, c, d) {
         + btn_list
         + [random_btn]
         + [slow_warning]
-        + [dont_show_vote_buttons],
+        + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [dont_show_vote_buttons],
+        [show_vote_buttons],
         btn_list,
     )
 
@@ -652,14 +655,14 @@ function (a, b, c, d) {
         + btn_list
         + [random_btn]
         + [slow_warning]
-        + [dont_show_vote_buttons],
+        + [show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [dont_show_vote_buttons],
+        [show_vote_buttons],
         btn_list,
     )
 
@@ -672,14 +675,14 @@ function (a, b, c, d) {
         + btn_list
         + [random_btn]
         + [slow_warning]
-        + [dont_show_vote_buttons],
+        + [show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
         flash_buttons,
-        [dont_show_vote_buttons],
+        [show_vote_buttons],
         btn_list,
     )
 

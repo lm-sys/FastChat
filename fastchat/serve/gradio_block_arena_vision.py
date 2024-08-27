@@ -144,6 +144,7 @@ def regenerate(state, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
+    state.content_moderator.update_last_moderation_response(None)
     return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
 
 

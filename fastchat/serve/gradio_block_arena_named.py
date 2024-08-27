@@ -245,33 +245,38 @@ def bot_response_multi(
 
     states = [state0, state1]
     if states[0].skip_next:
-        for i in range(num_sides):
-            # This generate call is skipped due to invalid inputs
-            start_tstamp = time.time()
-            finish_tstamp = start_tstamp
-            states[i].conv.save_new_images(
-                has_csam_images=states[i].has_csam_image,
-                use_remote_storage=use_remote_storage,
-            )
+        if (
+            states[0].content_moderator.text_flagged
+            or states[0].content_moderator.nsfw_flagged
+        ):
+            for i in range(num_sides):
+                # This generate call is skipped due to invalid inputs
+                start_tstamp = time.time()
+                finish_tstamp = start_tstamp
+                states[i].conv.save_new_images(
+                    has_csam_images=states[i].has_csam_image,
+                    use_remote_storage=use_remote_storage,
+                )
 
-            filename = get_conv_log_filename(
-                is_vision=states[i].is_vision, has_csam_image=states[i].has_csam_image
-            )
+                filename = get_conv_log_filename(
+                    is_vision=states[i].is_vision,
+                    has_csam_image=states[i].has_csam_image,
+                )
 
-            _write_to_json(
-                filename,
-                start_tstamp,
-                finish_tstamp,
-                states[i],
-                temperature,
-                top_p,
-                max_new_tokens,
-                request,
-            )
+                _write_to_json(
+                    filename,
+                    start_tstamp,
+                    finish_tstamp,
+                    states[i],
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    request,
+                )
 
-            # Remove the last message: the user input
-            states[i].conv.messages.pop()
-            states[i].content_moderator.update_last_moderation_response(None)
+                # Remove the last message: the user input
+                states[i].conv.messages.pop()
+                states[i].content_moderator.update_last_moderation_response(None)
 
         yield (
             states[0],
@@ -335,18 +340,19 @@ def bot_response_multi(
             break
 
 
-def flash_buttons(dont_show_vote_buttons: bool = False):
-    if dont_show_vote_buttons:
-        yield [no_change_btn] * 4 + [enable_btn] * 2
-        return
-
+def flash_buttons(show_vote_buttons: bool = True):
     btn_updates = [
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
     ]
-    for i in range(4):
-        yield btn_updates[i % 2]
-        time.sleep(0.3)
+
+    if show_vote_buttons:
+        for i in range(4):
+            yield btn_updates[i % 2]
+            time.sleep(0.3)
+    else:
+        yield [no_change_btn] * 4 + [enable_btn] * 2
+        return
 
 
 def build_side_by_side_ui_named(models):
