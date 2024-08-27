@@ -221,6 +221,19 @@ if __name__ == "__main__":
         type=str,
         help="if provided, will output judgements to this directory",
     )
+    parser.add_argument(
+        "--endpoint",
+        type=str,
+        default="https://aims-oai-research-inference-uks.openai.azure.com/",
+        help="endpoint to use for judgement model",
+    )
+    parser.add_argument(
+        "--engine",
+        type=str,
+        default="tscience-uks-gpt-4o",
+        help="engine to use for judgement model",
+    )
+
 
     args = parser.parse_args()
 
@@ -333,7 +346,9 @@ if __name__ == "__main__":
 
     # these get picked up in chat_completion_openai_azure
     # os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aims-oai-research-inference-uks.openai.azure.com/"
-    os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aoaiptswc.openai.azure.com/"
+    # os.environ["AZURE_OPENAI_ENDPOINT"] = "https://aoaiptswc.openai.azure.com/"
+    os.environ["AZURE_OPENAI_ENDPOINT"] = args.endpoint
+    os.environ["AZURE_OPENAI_ENGINE"] = args.engine
 
     # Play matches
     if args.parallel == 1:
