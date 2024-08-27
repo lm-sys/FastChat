@@ -104,6 +104,14 @@ if __name__ == "__main__":
             "subset": False,
             "split": "test",
         },
+        "NewYorker": {
+            "path": "jmhessel/newyorker_caption_contest",
+            "image_key": "image",
+            "question_key": "questions",
+            "id_key": "index",
+            "subset": "explanation",
+            "split": "train",
+        },
     }
 
     download_images_and_create_json(
@@ -114,7 +122,7 @@ if __name__ == "__main__":
         with open(f"{args.output_dir}/{dataset_name}/data.json") as f:
             data = json.load(f)
             print(f"Dataset: {dataset_name}, Number of examples: {len(data)}")
-            dataset_json.extend(np.random.choice(data, 500))
+            dataset_json.extend(data)
 
     with open(f"{args.output_dir}/metadata_sampled.json", "w") as f:
         json.dump(dataset_json, f, indent=4)
