@@ -72,7 +72,10 @@ async def main(args):
         for _ in batch:
             if args.include_image:
                 # Generate a random dimension for the image
-                y_dimension = 512
+                if args.randomize_image_dimensions:
+                    y_dimension = np.random.randint(100, 1025)
+                else:
+                    y_dimension = 512
                 image_url = f"https://placehold.co/1024x{y_dimension}/png"
                 task = asyncio.create_task(
                     litellm_completion(args, tokenizer, image_url)
@@ -117,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-total-responses", type=int, default=50)
     parser.add_argument("--req-per-sec", type=int, default=5)
     parser.add_argument("--include-image", action="store_true")
+    parser.add_argument("--randomize-image-dimensions", action="store_true")
     args = parser.parse_args()
 
     litellm_client = AsyncOpenAI(base_url=args.server_address, api_key="sk-1234")
