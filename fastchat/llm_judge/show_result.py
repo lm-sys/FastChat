@@ -76,6 +76,10 @@ def display_result_single(args):
     if args.model_list is not None:
         df = df[df["model"].isin(args.model_list)]
 
+    print("\n########## Judgement Model ##########")
+    print(os.environ.get("AZURE_OPENAI_ENGINE", "tscience-uks-gpt-4o"))
+    print("### Note that different judgement models may lead to significantly different scores ###")
+
     print("\n########## First turn ##########")
     df_1 = df[df["turn"] == 1].groupby(["model", "turn"]).mean()
     print(df_1.sort_values(by="score", ascending=False))
