@@ -75,7 +75,7 @@ def make_default_md_1(mirror=False):
 
 
 def make_default_md_2(mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://leaderboard.lmsys.org' style='color: #B00020; text-decoration: none;'>leaderboard.lmsys.org</a> for citation purposes.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://lmarena.ai/leaderboard' style='color: #B00020; text-decoration: none;'>https://lmarena.ai/leaderboard</a> for citation purposes.</span>"
     leaderboard_md = f"""
 {mirror_str if mirror else ""}
 
@@ -98,7 +98,7 @@ Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_v
 """
 
     leaderboard_md += f"""
-Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote at [chat.lmsys.org](https://chat.lmsys.org)!
+Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote at [lmarena.ai](https://lmarena.ai)!
 """
     return leaderboard_md
 
@@ -118,7 +118,7 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
 def make_full_leaderboard_md():
     leaderboard_md = """
 Three benchmarks are displayed: **Arena Elo**, **MT-Bench** and **MMLU**.
-- [Chatbot Arena](https://chat.lmsys.org/?arena) - a crowdsourced, randomized battle platform. We use 500K+ user votes to compute model strength.
+- [Chatbot Arena](https://lmarena.ai) - a crowdsourced, randomized battle platform. We use 1M+ user votes to compute model strength.
 - [MT-Bench](https://arxiv.org/abs/2306.05685): a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
 - [MMLU](https://arxiv.org/abs/2009.03300) (5-shot): a test to measure a model's multitask accuracy on 57 tasks.
 
