@@ -4,13 +4,14 @@ from openai import AsyncOpenAI, AsyncAzureOpenAI
 import uuid
 import traceback
 import numpy as np
+from transformers import AutoTokenizer
 
 # base_url - litellm proxy endpoint
 # api_key - litellm proxy api-key, is created proxy with auth
 litellm_client = None
 
 
-async def litellm_completion(args, image_url=None):
+async def litellm_completion(args, tokenizer, image_url=None):
     # Your existing code for litellm_completion goes here
     try:
         if image_url:
@@ -19,13 +20,13 @@ async def litellm_completion(args, image_url=None):
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": image_url}},
-                        {"type": "text", "text": f"Tell me a story about this image."},
+                        {"type": "text", "text": "Tell me a story about this image."},
                     ],
                 },
             ]
         else:
             messages = [
-                {"role": "user", "content": f"Tell me a story about this image."}
+                {"role": "user", "content": "Tell me a story about this image."}
             ]
 
         start = time.time()
@@ -34,16 +35,20 @@ async def litellm_completion(args, image_url=None):
             messages=messages,
             stream=True,
         )
-        ttft = time.time() - start
+        ttft = None
 
         itl_list = []
         content = ""
         start = time.time()
         async for chunk in response:
             if chunk.choices[0].delta.content:
+                end_time = time.time()
+                if ttft is None:
+                    ttft = end_time - start
                 content += chunk.choices[0].delta.content
-                itl_list.append(time.time() - start)
-                start = time.time()
+                num_tokens = len(tokenizer.encode(content))
+                itl_list.append((end_time - start) / num_tokens)
+                start = end_time
 
         return content, ttft, itl_list
 
@@ -56,21 +61,22 @@ async def litellm_completion(args, image_url=None):
 
 
 async def main(args):
-    n = 50  # Total number of tasks
+    n = args.num_total_responses
     batch_size = args.req_per_sec  # Requests per second
     start = time.time()
 
     all_tasks = []
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
     for i in range(0, n, batch_size):
         batch = range(i, min(i + batch_size, n))
         for _ in batch:
             if args.include_image:
                 # Generate a random dimension for the image
-                y_dimension = np.random.randint(100, 1025)
+                y_dimension = 512
                 image_url = f"https://placehold.co/1024x{y_dimension}/png"
-                task = asyncio.create_task(litellm_completion(args, image_url))
+                task = asyncio.create_task(litellm_completion(args, tokenizer, image_url))
             else:
-                task = asyncio.create_task(litellm_completion(args))
+                task = asyncio.create_task(litellm_completion(args, tokenizer))
             all_tasks.append(task)
         if i + batch_size < n:
             await asyncio.sleep(1)  # Wait 1 second before the next batch
@@ -106,6 +112,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="azure-gpt-3.5")
     parser.add_argument("--server-address", type=str, default="http://0.0.0.0:9094")
+    parser.add_argument("--num-total-responses", type=int, default=50)
     parser.add_argument("--req-per-sec", type=int, default=5)
     parser.add_argument("--include-image", action="store_true")
     args = parser.parse_args()
