@@ -24,7 +24,9 @@ async def litellm_completion(args, image_url=None):
                 },
             ]
         else:
-            messages = [{"role": "user", "content": f"Tell me a story about this image."}]
+            messages = [
+                {"role": "user", "content": f"Tell me a story about this image."}
+            ]
 
         start = time.time()
         response = await litellm_client.chat.completions.create(
@@ -42,7 +44,7 @@ async def litellm_completion(args, image_url=None):
                 content += chunk.choices[0].delta.content
                 itl_list.append(time.time() - start)
                 start = time.time()
-        
+
         return content, ttft, itl_list
 
     except Exception as e:
@@ -54,7 +56,7 @@ async def litellm_completion(args, image_url=None):
 
 
 async def main(args):
-    n = 50 # Total number of tasks
+    n = 50  # Total number of tasks
     batch_size = args.req_per_sec  # Requests per second
     start = time.time()
 
@@ -75,9 +77,17 @@ async def main(args):
 
     all_completions = await asyncio.gather(*all_tasks)
 
-    successful_completions = [c for c in all_completions if isinstance(c, tuple) and len(c) == 3]
+    successful_completions = [
+        c for c in all_completions if isinstance(c, tuple) and len(c) == 3
+    ]
     ttft_list = np.array([float(c[1]) for c in successful_completions])
-    itl_list_flattened = np.array([float(item) for sublist in [c[2] for c in successful_completions] for item in sublist])
+    itl_list_flattened = np.array(
+        [
+            float(item)
+            for sublist in [c[2] for c in successful_completions]
+            for item in sublist
+        ]
+    )
 
     # Write errors to error_log.txt
     with open("error_log.txt", "a") as error_log:
