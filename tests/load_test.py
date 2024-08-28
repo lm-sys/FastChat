@@ -74,7 +74,9 @@ async def main(args):
                 # Generate a random dimension for the image
                 y_dimension = 512
                 image_url = f"https://placehold.co/1024x{y_dimension}/png"
-                task = asyncio.create_task(litellm_completion(args, tokenizer, image_url))
+                task = asyncio.create_task(
+                    litellm_completion(args, tokenizer, image_url)
+                )
             else:
                 task = asyncio.create_task(litellm_completion(args, tokenizer))
             all_tasks.append(task)
