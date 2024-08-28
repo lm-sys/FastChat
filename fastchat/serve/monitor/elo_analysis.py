@@ -499,17 +499,14 @@ def get_bootstrap_result_style_control(X, Y, models, func_compute_elo, num_round
     elos = []
     coefs = []
     assert X.shape[0] % 2 == 0 and X.shape[0] == Y.shape[0]
-    half_X = X[
-        : int(X.shape[0] / 2)
-    ]  # Since we duplicate the battles when constructing X and Y, we don't want to sample the duplicates
-    half_Y = Y[: int(Y.shape[0] / 2)]
+    k = int(
+        X.shape[0] / 2
+    )  # Since we duplicate the battles when constructing X and Y, we don't want to sample the duplicates
 
     for _ in tqdm(range(num_round), desc="bootstrap"):
-        indices = np.random.choice(
-            list(range(half_X.shape[0])), size=(half_X.shape[0]), replace=True
-        )
-        _X = np.concatenate([half_X[indices], half_X[indices]])
-        _Y = np.concatenate([half_Y[indices], half_Y[indices]])
+        indices = np.random.choice(list(range(k)), size=(k), replace=True)
+        _X = np.concatenate([X[indices], X[indices]])
+        _Y = np.concatenate([Y[indices], Y[indices]])
         assert _X.shape == X.shape and _Y.shape == Y.shape
 
         states = ~_X[:, : len(models)].any(axis=0)
