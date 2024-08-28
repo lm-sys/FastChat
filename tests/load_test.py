@@ -19,55 +19,65 @@ async def litellm_completion(args, image_url=None):
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": image_url}},
-                        {"type": "text", "text": f"This is a test: {uuid.uuid4()}"},
+                        {"type": "text", "text": f"Tell me a story about this image."},
                     ],
                 },
             ]
         else:
-            messages = [{"role": "user", "content": f"This is a test: {uuid.uuid4()}"}]
+            messages = [{"role": "user", "content": f"Tell me a story about this image."}]
 
+        start = time.time()
         response = await litellm_client.chat.completions.create(
             model=args.model,
             messages=messages,
+            stream=True,
         )
-        print(response)
-        return response
+        ttft = time.time() - start
+
+        itl_list = []
+        content = ""
+        start = time.time()
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                content += chunk.choices[0].delta.content
+                itl_list.append(time.time() - start)
+                start = time.time()
+        
+        return content, ttft, itl_list
 
     except Exception as e:
         # If there's an exception, log the error message
+        print(e)
         with open("error_log.txt", "a") as error_log:
             error_log.write(f"Error during completion: {str(e)}\n")
         return str(e)
 
 
 async def main(args):
-    n = 100  # Total number of tasks
+    n = 50 # Total number of tasks
     batch_size = args.req_per_sec  # Requests per second
     start = time.time()
 
-    async def run_batch(batch):
-        tasks = []
+    all_tasks = []
+    for i in range(0, n, batch_size):
+        batch = range(i, min(i + batch_size, n))
         for _ in batch:
             if args.include_image:
                 # Generate a random dimension for the image
                 y_dimension = np.random.randint(100, 1025)
                 image_url = f"https://placehold.co/1024x{y_dimension}/png"
-                task = litellm_completion(args, image_url)
+                task = asyncio.create_task(litellm_completion(args, image_url))
             else:
-                task = litellm_completion(args)
-            tasks.append(task)
-        return await asyncio.gather(*tasks)
-
-    all_completions = []
-    for i in range(0, n, batch_size):
-        batch = range(i, min(i + batch_size, n))
-        print("Starting to run on batch number: {}".format(i))
-        completions = await run_batch(batch)
-        all_completions.extend(completions)
+                task = asyncio.create_task(litellm_completion(args))
+            all_tasks.append(task)
         if i + batch_size < n:
             await asyncio.sleep(1)  # Wait 1 second before the next batch
 
-    successful_completions = [c for c in all_completions if c is not None]
+    all_completions = await asyncio.gather(*all_tasks)
+
+    successful_completions = [c for c in all_completions if isinstance(c, tuple) and len(c) == 3]
+    ttft_list = np.array([float(c[1]) for c in successful_completions])
+    itl_list_flattened = np.array([float(item) for sublist in [c[2] for c in successful_completions] for item in sublist])
 
     # Write errors to error_log.txt
     with open("error_log.txt", "a") as error_log:
@@ -75,7 +85,11 @@ async def main(args):
             if isinstance(completion, str):
                 error_log.write(completion + "\n")
 
-    print(n, time.time() - start, len(successful_completions))
+    print(f"Completed requests: {len(successful_completions)}")
+    print(f"P99 TTFT: {np.percentile(ttft_list, 99)}")
+    print(f"Mean TTFT: {np.mean(ttft_list)}")
+    print(f"P99 ITL: {np.percentile(itl_list_flattened, 99)}")
+    print(f"Mean ITL: {np.mean(itl_list_flattened)}")
 
 
 if __name__ == "__main__":
