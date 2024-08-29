@@ -495,7 +495,9 @@ def construct_style_matrices(
     return X, Y, models
 
 
-def get_bootstrap_result_style_control(X, Y, battles, models, func_compute_elo, num_round=1000):
+def get_bootstrap_result_style_control(
+    X, Y, battles, models, func_compute_elo, num_round=1000
+):
     elos = []
     coefs = []
     assert X.shape[0] % 2 == 0 and X.shape[0] == Y.shape[0]
@@ -503,7 +505,9 @@ def get_bootstrap_result_style_control(X, Y, battles, models, func_compute_elo, 
         X.shape[0] / 2
     )  # Since we duplicate the battles when constructing X and Y, we don't want to sample the duplicates
 
-    battles_tie_idx = (battles["winner"] == "tie") | (battles["winner"] == "tie (bothbad)")
+    battles_tie_idx = (battles["winner"] == "tie") | (
+        battles["winner"] == "tie (bothbad)"
+    )
     for _ in tqdm(range(num_round), desc="bootstrap"):
         indices = np.random.choice(list(range(k)), size=(k), replace=True)
 
@@ -511,8 +515,10 @@ def get_bootstrap_result_style_control(X, Y, battles, models, func_compute_elo, 
         index2tie[battles_tie_idx] = True
 
         nontie_indices = indices[~index2tie[indices]]
-        tie_indices = np.concatenate([indices[index2tie[indices]], indices[index2tie[indices]]+k])  
-        
+        tie_indices = np.concatenate(
+            [indices[index2tie[indices]], indices[index2tie[indices]] + k]
+        )
+
         _X = np.concatenate([X[nontie_indices], X[nontie_indices], X[tie_indices]])
         _Y = np.concatenate([Y[nontie_indices], Y[nontie_indices], Y[tie_indices]])
 
