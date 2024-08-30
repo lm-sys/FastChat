@@ -11,6 +11,7 @@ import os
 import random
 import time
 import uuid
+from typing import List
 
 import gradio as gr
 import requests
@@ -32,6 +33,7 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
@@ -150,7 +152,11 @@ class State:
         return base
 
 
-def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
+def set_global_vars(
+    controller_url_,
+    enable_moderation_,
+    use_remote_storage_,
+):
     global controller_url, enable_moderation, use_remote_storage
     controller_url = controller_url_
     enable_moderation = enable_moderation_
@@ -217,16 +223,22 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     return visible_models, models
 
 
-def load_demo_single(models, url_params):
+def load_demo_single(context: Context, query_params):
+    # default to text models
+    models = context.text_models
+
     selected_model = models[0] if len(models) > 0 else ""
-    if "model" in url_params:
-        model = url_params["model"]
+    if "model" in query_params:
+        model = query_params["model"]
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
+    all_models = list(set(context.text_models + context.vision_models))
+    dropdown_update = gr.Dropdown(
+        choices=all_models, value=selected_model, visible=True
+    )
     state = None
-    return state, dropdown_update
+    return [state, dropdown_update]
 
 
 def load_demo(url_params, request: gr.Request):

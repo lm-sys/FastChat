@@ -6,6 +6,7 @@ Users chat with two chosen models.
 import json
 import os
 import time
+from typing import List, Union
 
 import gradio as gr
 import numpy as np
@@ -34,7 +35,12 @@ from fastchat.serve.gradio_block_arena_vision import (
     _prepare_text_with_image,
     convert_images_to_conversation_format,
     enable_multimodal,
+    disable_multimodal,
+    invisible_text,
+    invisible_btn,
+    visible_text,
 )
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -62,12 +68,35 @@ num_sides = 2
 enable_moderation = False
 
 
+def load_demo_side_by_side_vision_named(context: Context):
+    states = [None] * num_sides
+
+    # default to the text models
+    models = context.text_models
+
+    model_left = models[0] if len(models) > 0 else ""
+    if len(models) > 1:
+        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
+        weights = weights / np.sum(weights)
+        model_right = np.random.choice(models[1:], p=weights)
+    else:
+        model_right = model_left
+
+    all_models = list(set(context.text_models + context.vision_models))
+    selector_updates = [
+        gr.Dropdown(choices=all_models, value=model_left, visible=True),
+        gr.Dropdown(choices=all_models, value=model_right, visible=True),
+    ]
+
+    return states + selector_updates
+
+
 def clear_history_example(request: gr.Request):
     logger.info(f"clear_history_example (named). ip: {get_ip(request)}")
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_multimodal]
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
@@ -151,16 +180,40 @@ def clear_history(request: gr.Request):
     return (
         [None] * num_sides
         + [None] * num_sides
-        + [enable_multimodal]
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
     )
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input: Union[str, dict],
+    context: Context,
+    request: gr.Request,
 ):
-    text, images = chat_input["text"], chat_input["files"]
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text, images = chat_input, []
+
+    if len(images) > 0:
+        if (
+            model_selector0 in context.text_models
+            and model_selector0 not in context.vision_models
+        ):
+            gr.Warning(f"{model_selector0} is a text-only model. Image is ignored.")
+            images = []
+        if (
+            model_selector1 in context.text_models
+            and model_selector1 not in context.vision_models
+        ):
+            gr.Warning(f"{model_selector1} is a text-only model. Image is ignored.")
+            images = []
+
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -168,7 +221,9 @@ def add_text(
 
     # Init states if necessary
     for i in range(num_sides):
-        if states[i] is None:
+        if states[i] is None and len(images) == 0:
+            states[i] = State(model_selectors[i], is_vision=False)
+        elif states[i] is None and len(images) > 0:
             states[i] = State(model_selectors[i], is_vision=True)
 
     if len(text) <= 0:
@@ -177,7 +232,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [None]
+            + [None, "", no_change_btn]
             + [
                 no_change_btn,
             ]
@@ -205,7 +260,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
             + [
                 no_change_btn,
             ]
@@ -219,7 +274,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": IMAGE_MODERATION_MSG}]
+            + [{"text": IMAGE_MODERATION_MSG}, "", no_change_btn]
             + [
                 no_change_btn,
             ]
@@ -238,7 +293,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [None]
+        + [disable_multimodal, visible_text, enable_btn]
         + [
             disable_btn,
         ]
@@ -246,7 +301,7 @@ def add_text(
     )
 
 
-def build_side_by_side_vision_ui_named(models, random_questions=None):
+def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
@@ -268,6 +323,9 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
+    context_state = gr.State(context)
+
     with gr.Row():
         with gr.Column(scale=2, visible=False) as image_column:
             imagebox = gr.Image(
@@ -279,10 +337,12 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(models)
+                    model_description_md = get_model_description_md(
+                        text_and_vision_models
+                    )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )
@@ -291,8 +351,10 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
                     for i in range(num_sides):
                         with gr.Column():
                             model_selectors[i] = gr.Dropdown(
-                                choices=models,
-                                value=models[i] if len(models) > i else "",
+                                choices=text_and_vision_models,
+                                value=text_and_vision_models[i]
+                                if len(text_and_vision_models) > i
+                                else "",
                                 interactive=True,
                                 show_label=False,
                                 container=False,
@@ -322,7 +384,18 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
         )
 
     with gr.Row():
-        textbox = gr.MultimodalTextbox(
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            elem_id="input_box",
+            visible=False,
+        )
+
+        send_btn = gr.Button(
+            value="Send", variant="primary", scale=0, visible=False, interactive=False
+        )
+
+        multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
             placeholder="Enter your prompt or add image here",
@@ -406,7 +479,11 @@ def build_side_by_side_vision_ui_named(models, random_questions=None):
     ).then(
         flash_buttons, [], btn_list
     )
-    clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+    clear_btn.click(
+        clear_history,
+        None,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+    )
 
     share_js = """
 function (a, b, c, d) {
@@ -432,17 +509,47 @@ function (a, b, c, d) {
 
     for i in range(num_sides):
         model_selectors[i].change(
-            clear_history, None, states + chatbots + [textbox] + btn_list
-        ).then(set_visible_image, [textbox], [image_column])
+            clear_history,
+            None,
+            states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+        ).then(set_visible_image, [multimodal_textbox], [image_column])
 
-    textbox.input(add_image, [textbox], [imagebox]).then(
-        set_visible_image, [textbox], [image_column]
-    ).then(clear_history_example, None, states + chatbots + [textbox] + btn_list)
+    multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
+        set_visible_image, [multimodal_textbox], [image_column]
+    ).then(
+        clear_history_example,
+        None,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+    )
+
+    multimodal_textbox.submit(
+        add_text,
+        states + model_selectors + [multimodal_textbox, context_state],
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+    ).then(set_invisible_image, [], [image_column]).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
+    )
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + model_selectors + [textbox, context_state],
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+    ).then(set_invisible_image, [], [image_column]).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
+    )
+
+    send_btn.click(
+        add_text,
+        states + model_selectors + [textbox, context_state],
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -455,9 +562,11 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(set_visible_image, [textbox], [image_column]).then(
-            clear_history_example, None, states + chatbots + [textbox] + btn_list
+            [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
+        ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
+            clear_history_example,
+            None,
+            states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
         )
 
     return states + model_selectors

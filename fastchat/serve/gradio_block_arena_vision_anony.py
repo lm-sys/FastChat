@@ -8,6 +8,7 @@ import time
 
 import gradio as gr
 import numpy as np
+from typing import Union
 
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
@@ -44,7 +45,6 @@ from fastchat.serve.gradio_block_arena_anony import (
     regenerate,
     clear_history,
     share_click,
-    add_text,
     bot_response_multi,
     set_global_vars_anony,
     load_demo_side_by_side_anony,
@@ -67,6 +67,7 @@ from fastchat.serve.gradio_block_arena_vision import (
     visible_text,
     disable_multimodal,
 )
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
@@ -114,16 +115,12 @@ def get_vqa_sample():
     return (res, path)
 
 
-def load_demo_side_by_side_vision_anony(all_text_models, all_vl_models, url_params):
-    global text_models, vl_models
-    text_models = all_text_models
-    vl_models = all_vl_models
-
-    states = (None,) * num_sides
-    selector_updates = (
+def load_demo_side_by_side_vision_anony():
+    states = [None] * num_sides
+    selector_updates = [
         gr.Markdown(visible=True),
         gr.Markdown(visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -248,7 +245,13 @@ def clear_history(request: gr.Request):
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input: Union[str, dict],
+    context: Context,
+    request: gr.Request,
 ):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
@@ -267,7 +270,7 @@ def add_text(
 
         if len(images) > 0:
             model_left, model_right = get_battle_pair(
-                vl_models,
+                context.all_vision_models,
                 VISION_BATTLE_TARGETS,
                 VISION_OUTAGE_MODELS,
                 VISION_SAMPLING_WEIGHTS,
@@ -279,7 +282,7 @@ def add_text(
             ]
         else:
             model_left, model_right = get_battle_pair(
-                text_models,
+                context.all_text_models,
                 BATTLE_TARGETS,
                 OUTAGE_MODELS,
                 SAMPLING_WEIGHTS,
@@ -373,7 +376,7 @@ def add_text(
     )
 
 
-def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=None):
+def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     notice_markdown = """
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
@@ -394,8 +397,9 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
-
+    context_state = gr.State(context)
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
 
     with gr.Row():
         with gr.Column(scale=2, visible=False) as image_column:
@@ -408,11 +412,11 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(text_models) + len(vl_models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
                     model_description_md = get_model_description_md(
-                        text_models + vl_models
+                        text_and_vision_models
                     )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
@@ -593,7 +597,7 @@ function (a, b, c, d) {
 
     multimodal_textbox.submit(
         add_text,
-        states + model_selectors + [multimodal_textbox],
+        states + model_selectors + [multimodal_textbox, context_state],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
@@ -612,7 +616,7 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, context_state],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
@@ -631,7 +635,7 @@ function (a, b, c, d) {
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + [textbox, context_state],
         states
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
