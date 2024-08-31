@@ -477,7 +477,7 @@ def bot_response(
         if state.content_moderator.text_flagged or state.content_moderator.nsfw_flagged:
             start_tstamp = time.time()
             finish_tstamp = start_tstamp
-            conv.save_new_images(
+            state.conv.save_new_images(
                 has_csam_images=state.has_csam_image,
                 use_remote_storage=use_remote_storage,
             )

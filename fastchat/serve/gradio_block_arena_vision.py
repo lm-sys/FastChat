@@ -199,8 +199,19 @@ def convert_images_to_conversation_format(images):
     return conv_images
 
 
-def add_text(state, model_selector, chat_input, request: gr.Request):
-    text, images = chat_input["text"], chat_input["files"]
+def add_text(state, model_selector, chat_input, context: Context, request: gr.Request):
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text, images = chat_input, []
+
+    if (
+        len(images) > 0
+        and model_selector in context.text_models
+        and model_selector not in context.vision_models
+    ):
+        gr.Warning(f"{model_selector} is a text-only model. Image is ignored.")
+        images = []
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -222,11 +233,13 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
     images = convert_images_to_conversation_format(images)
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
+    moderation_image_input = images[0] if len(images) > 0 else None
     moderation_type_to_response_map = (
         state.content_moderator.image_and_text_moderation_filter(
-            images[0], text, [state.model_name], do_moderation=False
+            moderation_image_input, text, [state.model_name], do_moderation=False
         )
     )
+
     text_flagged, nsfw_flag, csam_flag = (
         moderation_type_to_response_map["text_moderation"]["flagged"],
         moderation_type_to_response_map["nsfw_moderation"]["flagged"],
@@ -245,7 +258,9 @@ def add_text(state, model_selector, chat_input, request: gr.Request):
         state.conv.append_message(state.conv.roles[0], post_processed_text)
         state.skip_next = True
         gr.Warning(MODERATION_MSG)
-        return (state, gradio_chatbot_before_user_input, None) + (no_change_btn,) * 5
+        return (state, gradio_chatbot_before_user_input, None, "", no_change_btn) + (
+            no_change_btn,
+        ) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

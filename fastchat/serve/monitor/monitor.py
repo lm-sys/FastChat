@@ -864,6 +864,8 @@ def build_leaderboard_tab(
                         vision=True,
                         show_plot=show_plot,
                     )
+
+            model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
                     dataFrame = arena_hard_process(
@@ -883,7 +885,6 @@ def build_leaderboard_tab(
                             "avg_tokens": "Average Tokens",
                         }
                     )
-                    model_to_score = {}
                     for i in range(len(dataFrame)):
                         model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
                             i, "Win-rate"

@@ -36,7 +36,6 @@ from fastchat.serve.gradio_block_arena_vision import (
     convert_images_to_conversation_format,
     enable_multimodal_keep_input,
     enable_multimodal_clear_input,
-    enable_multimodal,
     disable_multimodal,
     invisible_text,
     invisible_btn,
@@ -254,18 +253,13 @@ def add_text(
     images = convert_images_to_conversation_format(images)
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
-    if len(images) > 0:
-        moderation_type_to_response_map = states[
-            0
-        ].content_moderator.image_and_text_moderation_filter(
-            images[0], text, model_list, do_moderation=False
-        )
-    else:
-        moderation_type_to_response_map = states[
-            0
-        ].content_moderator.image_and_text_moderation_filter(
-            None, text, model_list, do_moderation=False
-        )
+    moderation_image_input = images[0] if len(images) > 0 else None
+    moderation_type_to_response_map = states[
+        0
+    ].content_moderator.image_and_text_moderation_filter(
+        moderation_image_input, text, model_list, do_moderation=False
+    )
+
     text_flagged, nsfw_flag, csam_flag = (
         moderation_type_to_response_map["text_moderation"]["flagged"],
         moderation_type_to_response_map["nsfw_moderation"]["flagged"],
@@ -309,7 +303,7 @@ def add_text(
         return (
             states
             + gradio_chatbot_list
-            + [None]
+            + [None, "", no_change_btn]
             + [
                 no_change_btn,
             ]
