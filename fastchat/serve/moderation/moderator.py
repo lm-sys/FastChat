@@ -35,7 +35,7 @@ class BaseContentModerator:
         raise NotImplementedError
 
     def image_and_text_moderation_filter(
-        self, image: Image, text: str
+        self, images: List[Image], text: str
     ) -> Dict[str, Dict[str, Union[str, Dict[str, float]]]]:
         """Function that detects whether image and text violate moderation policies.
 
@@ -121,25 +121,33 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         return moderation_response_map
 
-    def image_moderation_filter(self, image: Image):
-        print(f"moderating image")
+    def image_moderation_filter(self, images: List[Image]):
+        print(f"moderating images")
 
-        image_bytes = base64.b64decode(image.base64_str)
-
-        nsfw_flagged_map = self._image_moderation_provider(image_bytes, "nsfw")
-
-        if nsfw_flagged_map["flagged"]:
-            csam_flagged_map = self._image_moderation_provider(image_bytes, "csam")
-        else:
-            csam_flagged_map = {"flagged": False}
-
-        self.nsfw_flagged = nsfw_flagged_map["flagged"]
-        self.csam_flagged = csam_flagged_map["flagged"]
-
-        return {
-            "nsfw_moderation": nsfw_flagged_map,
-            "csam_moderation": csam_flagged_map,
+        images_moderation_response: Dict[
+            str, List[Dict[str, Union[str, Dict[str, float]]]]
+        ] = {
+            "nsfw_moderation": [],
+            "csam_moderation": [],
         }
+
+        for image in images:
+            image_bytes = base64.b64decode(image.base64_str)
+
+            nsfw_flagged_map = self._image_moderation_provider(image_bytes, "nsfw")
+
+            if nsfw_flagged_map["flagged"]:
+                csam_flagged_map = self._image_moderation_provider(image_bytes, "csam")
+            else:
+                csam_flagged_map = {"flagged": False}
+
+            self.nsfw_flagged |= nsfw_flagged_map["flagged"]
+            self.csam_flagged |= csam_flagged_map["flagged"]
+
+            images_moderation_response["nsfw_moderation"].append(nsfw_flagged_map)
+            images_moderation_response["csam_moderation"].append(csam_flagged_map)
+
+        return images_moderation_response
 
     def _openai_moderation_filter(
         self, text: str, custom_thresholds: dict = None
@@ -212,7 +220,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         return {"text_moderation": moderation_response_map}
 
     def image_and_text_moderation_filter(
-        self, image: Image, text: str, model_list: List[str], do_moderation=True
+        self, images: List[Image], text: str, model_list: List[str], do_moderation=True
     ) -> Dict[str, bool]:
         """Function that detects whether image and text violate moderation policies using the Azure and OpenAI moderation APIs.
 
@@ -247,8 +255,8 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         print("moderating text: ", text)
         text_flagged_map = self.text_moderation_filter(text, model_list, do_moderation)
 
-        if image is not None:
-            image_flagged_map = self.image_moderation_filter(image)
+        if images:
+            image_flagged_map = self.image_moderation_filter(images)
         else:
             image_flagged_map = self._NON_TOXIC_IMAGE_MODERATION_MAP
 

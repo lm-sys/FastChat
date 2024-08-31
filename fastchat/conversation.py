@@ -365,12 +365,16 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, images = msg
-                    image = images[0]  # Only one image on gradio at one time
-                    if image.image_format == ImageFormat.URL:
-                        img_str = f'<img src="{image.url}" alt="user upload image" />'
-                    elif image.image_format == ImageFormat.BYTES:
-                        img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace("<image>\n", "").strip()
+                    combined_image_str = ""
+                    for image in images:
+                        if image.image_format == ImageFormat.URL:
+                            img_str = (
+                                f'<img src="{image.url}" alt="user upload image" />'
+                            )
+                        elif image.image_format == ImageFormat.BYTES:
+                            img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
+                        combined_image_str += img_str
+                    msg = combined_image_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
             else:

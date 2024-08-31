@@ -180,7 +180,7 @@ def _prepare_text_with_image(state, text, images):
             # reset convo with new image
             state.conv = get_conversation_template(state.model_name)
 
-        text = text, [images[0]]
+        text = text, images
 
     return text
 
@@ -192,9 +192,10 @@ def convert_images_to_conversation_format(images):
     MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
     conv_images = []
     if len(images) > 0:
-        conv_image = Image(url=images[0])
-        conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
-        conv_images.append(conv_image)
+        for image in images:
+            conv_image = Image(url=image)
+            conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
+            conv_images.append(conv_image)
 
     return conv_images
 
@@ -233,17 +234,26 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
     images = convert_images_to_conversation_format(images)
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
-    moderation_image_input = images[0] if len(images) > 0 else None
     moderation_type_to_response_map = (
         state.content_moderator.image_and_text_moderation_filter(
-            moderation_image_input, text, [state.model_name], do_moderation=False
+            images, text, [state.model_name], do_moderation=False
         )
     )
 
     text_flagged, nsfw_flag, csam_flag = (
         moderation_type_to_response_map["text_moderation"]["flagged"],
-        moderation_type_to_response_map["nsfw_moderation"]["flagged"],
-        moderation_type_to_response_map["csam_moderation"]["flagged"],
+        any(
+            [
+                response["flagged"]
+                for response in moderation_type_to_response_map["nsfw_moderation"]
+            ]
+        ),
+        any(
+            [
+                response["flagged"]
+                for response in moderation_type_to_response_map["csam_moderation"]
+            ]
+        ),
     )
 
     if csam_flag:
