@@ -387,7 +387,6 @@ def build_arena_tab(
         )
         return
 
-    round_digit = None if vision else None
     arena_dfs = {}
     category_elo_results = {}
     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
@@ -410,7 +409,6 @@ def build_arena_tab(
             arena_df,
             model_table_df,
             arena_subset_df=arena_subset_df if category != "Overall" else None,
-            round_digit=round_digit,
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
