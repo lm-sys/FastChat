@@ -155,18 +155,14 @@ def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal_clear_input, invisible_text, invisible_btn) + (
-        disable_btn,
-    ) * 5
+    return (state, [], enable_multimodal_clear_input) + (disable_btn,) * 5
 
 
 def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal_keep_input, invisible_text, invisible_btn) + (
-        disable_btn,
-    ) * 5
+    return (state, [], enable_multimodal_keep_input) + (disable_btn,) * 5
 
 
 # TODO(Chris): At some point, we would like this to be a live-reporting feature.
@@ -231,9 +227,7 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
 
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), None, "", no_change_btn) + (
-            no_change_btn,
-        ) * 5
+        return (state, state.to_gradio_chatbot(), None) + (no_change_btn,) * 5
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
@@ -271,13 +265,15 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
     if text_flagged or nsfw_flag:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         gradio_chatbot_before_user_input = state.to_gradio_chatbot()
-        post_processed_text = _prepare_text_with_image(state, text, images)
+        post_processed_text = _prepare_text_with_image(state, text, images, context)
         state.conv.append_message(state.conv.roles[0], post_processed_text)
         state.skip_next = True
         gr.Warning(MODERATION_MSG)
-        return (state, gradio_chatbot_before_user_input, None, "", no_change_btn) + (
-            no_change_btn,
-        ) * 5
+        return (
+            state,
+            gradio_chatbot_before_user_input,
+            None,
+        ) + (no_change_btn,) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -286,20 +282,16 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
             state,
             state.to_gradio_chatbot(),
             {"text": CONVERSATION_LIMIT_MSG},
-            "",
-            no_change_btn,
         ) + (no_change_btn,) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, images)
+    text = _prepare_text_with_image(state, text, images, context)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (
         state,
         state.to_gradio_chatbot(),
-        disable_multimodal,
-        visible_text,
-        enable_btn,
+        None,
     ) + (disable_btn,) * 5
 
 
@@ -361,17 +353,6 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             )
 
     with gr.Row():
-        textbox = gr.Textbox(
-            show_label=False,
-            placeholder="👉 Enter your prompt and press ENTER",
-            elem_id="input_box",
-            visible=False,
-        )
-
-        send_btn = gr.Button(
-            value="Send", variant="primary", scale=0, visible=False, interactive=False
-        )
-
         multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
@@ -426,19 +407,21 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     upvote_btn.click(
         upvote_last_response,
         [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
+        [multimodal_textbox, upvote_btn, downvote_btn, flag_btn],
     )
     downvote_btn.click(
         downvote_last_response,
         [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
+        [multimodal_textbox, upvote_btn, downvote_btn, flag_btn],
     )
     flag_btn.click(
         flag_last_response,
         [state, model_selector],
-        [textbox, upvote_btn, downvote_btn, flag_btn],
+        [multimodal_textbox, upvote_btn, downvote_btn, flag_btn],
     )
-    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
+    regenerate_btn.click(
+        regenerate, state, [state, chatbot, multimodal_textbox] + btn_list
+    ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
@@ -446,47 +429,23 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     clear_btn.click(
         clear_history,
         None,
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        [state, chatbot, multimodal_textbox] + btn_list,
     )
 
     model_selector.change(
         clear_history,
         None,
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        [state, chatbot, multimodal_textbox] + btn_list,
     ).then(set_visible_image, [multimodal_textbox], [image_column])
 
     multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
         set_visible_image, [multimodal_textbox], [image_column]
-    ).then(
-        clear_history_example,
-        None,
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
     )
 
     multimodal_textbox.submit(
         add_text,
         [state, model_selector, multimodal_textbox, context_state],
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
-    ).then(set_invisible_image, [], [image_column]).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-
-    textbox.submit(
-        add_text,
-        [state, model_selector, textbox, context_state],
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
-    ).then(set_invisible_image, [], [image_column]).then(
-        bot_response,
-        [state, temperature, top_p, max_output_tokens],
-        [state, chatbot] + btn_list,
-    )
-
-    send_btn.click(
-        add_text,
-        [state, model_selector, textbox, context_state],
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        [state, chatbot, multimodal_textbox] + btn_list,
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens],
@@ -498,10 +457,6 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
-            clear_history_example,
-            None,
-            [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
-        )
+        ).then(set_visible_image, [multimodal_textbox], [image_column])
 
     return [state, model_selector]

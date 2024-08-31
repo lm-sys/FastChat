@@ -496,13 +496,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
 
     with gr.Row():
-        # textbox = gr.Textbox(
-        #     show_label=False,
-        #     placeholder="👉 Enter your prompt and press ENTER",
-        #     elem_id="input_box",
-        #     visible=False,
-        # )
-
         multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
@@ -510,9 +503,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             placeholder="Enter your prompt or add image here",
             elem_id="input_box",
         )
-        # send_btn = gr.Button(
-        #     value="Send", variant="primary", scale=0, visible=False, interactive=False
-        # )
 
     with gr.Row() as button_row:
         if random_questions:
@@ -651,46 +641,6 @@ function (a, b, c, d) {
         [show_vote_buttons],
         btn_list,
     )
-
-    # textbox.submit(
-    #     add_text,
-    #     states + model_selectors + [textbox, context_state],
-    #     states
-    #     + chatbots
-    #     + [multimodal_textbox]
-    #     + btn_list
-    #     + [random_btn]
-    #     + [slow_warning]
-    #     + [show_vote_buttons],
-    # ).then(
-    #     bot_response_multi,
-    #     states + [temperature, top_p, max_output_tokens],
-    #     states + chatbots + btn_list,
-    # ).then(
-    #     flash_buttons,
-    #     [show_vote_buttons],
-    #     btn_list,
-    # )
-
-    # send_btn.click(
-    #     add_text,
-    #     states + model_selectors + [textbox, context_state],
-    #     states
-    #     + chatbots
-    #     + [multimodal_textbox]
-    #     + btn_list
-    #     + [random_btn]
-    #     + [slow_warning]
-    #     + [show_vote_buttons],
-    # ).then(
-    #     bot_response_multi,
-    #     states + [temperature, top_p, max_output_tokens],
-    #     states + chatbots + btn_list,
-    # ).then(
-    #     flash_buttons,
-    #     [show_vote_buttons],
-    #     btn_list,
-    # )
 
     if random_questions:
         random_btn.click(
