@@ -17,11 +17,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset_prop = {
-        "DocVQA": 500,
-        "ChartQA": 500,
-        "NewYorker": 1000,
-        "WikiArt": 500,
-        "TextVQA": 500,
+        "realworldqa": 500,
+        "Memes": 500,
+        "Floorplan": 500,
+        "Website": 500,
+        "IllusionVQA": 500,
+        "NewYorker": 500,
     }
 
     dataset_json = []

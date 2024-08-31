@@ -15,6 +15,7 @@ from fastchat.constants import (
     SLOW_MODEL_MSG,
     BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import flash_buttons
@@ -454,20 +455,22 @@ def bot_response_multi(
 
 
 def build_side_by_side_ui_anony(models):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
+{SURVEY_LINK}
+
 ## 📣 News
-- Chatbot Arena now supports images in beta. Check it out [here](https://chat.lmsys.org/?vision).
+- Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
 
 ## 📜 Rules
 - Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can chat for multiple turns until you identify a winner.
 - Votes won't be counted if model identities are revealed during the conversation.
 
-## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
-- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
+## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
+- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
 
 ## 👇 Chat now!
 """
