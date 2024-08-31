@@ -8,3 +8,4 @@ class Context:
     all_text_models: List[str] = field(default_factory=list)
     vision_models: List[str] = field(default_factory=list)
     all_vision_models: List[str] = field(default_factory=list)
+    api_endpoint_info: dict = field(default_factory=dict)

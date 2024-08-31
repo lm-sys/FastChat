@@ -373,7 +373,9 @@ def add_text(
         # We call this before appending the text so it does not appear in the UI
         gradio_chatbot_list = [x.to_gradio_chatbot() for x in states]
         for i in range(num_sides):
-            post_processed_text = _prepare_text_with_image(states[i], text, images)
+            post_processed_text = _prepare_text_with_image(
+                states[i], text, images, context
+            )
             states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
             states[i].skip_next = True
         gr.Warning(MODERATION_MSG)
@@ -390,7 +392,7 @@ def add_text(
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(states[i], text, images)
+        post_processed_text = _prepare_text_with_image(states[i], text, images, context)
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False

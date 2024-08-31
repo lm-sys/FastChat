@@ -174,8 +174,19 @@ def report_csam_image(state, image):
     pass
 
 
-def _prepare_text_with_image(state, text, images):
+def _prepare_text_with_image(
+    state: State, text: str, images: List[Image], context: Context
+):
     if len(images) > 0:
+        model_supports_multi_image = context.api_endpoint_info[state.model_name].get(
+            "multi_image", False
+        )
+        if len(state.conv.get_images()) > 0 and not model_supports_multi_image:
+            gr.Warning(
+                f"The model does not support multiple images. Only the first image will be used."
+            )
+            return text
+
         text = text, images
 
     return text

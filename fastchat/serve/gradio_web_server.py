@@ -228,6 +228,11 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     return visible_models, models
 
 
+def _get_api_endpoint_info():
+    global api_endpoint_info
+    return api_endpoint_info
+
+
 def load_demo_single(context: Context, query_params):
     # default to text models
     models = context.text_models

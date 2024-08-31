@@ -41,6 +41,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_list,
     load_demo_single,
     get_ip,
+    _get_api_endpoint_info,
 )
 from fastchat.serve.monitor.monitor import build_leaderboard_tab
 from fastchat.utils import (
@@ -318,8 +319,15 @@ if __name__ == "__main__":
         args.register_api_endpoint_file,
         vision_arena=True,
     )
+    api_endpoint_info = _get_api_endpoint_info()
 
-    context = Context(text_models, all_text_models, vision_models, all_vision_models)
+    context = Context(
+        text_models,
+        all_text_models,
+        vision_models,
+        all_vision_models,
+        api_endpoint_info,
+    )
 
     # Set authorization credentials
     auth = None
