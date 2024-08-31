@@ -11,6 +11,7 @@ import os
 import random
 import time
 import uuid
+from typing import List
 
 import gradio as gr
 import requests
@@ -33,12 +34,13 @@ from fastchat.model.model_adapter import (
 )
 from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
     get_window_url_params_with_tos_js,
-    moderation_filter,
     parse_gradio_auth_creds,
     load_image,
 )
@@ -59,6 +61,8 @@ disable_text = gr.Textbox(
     visible=True,
     placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)',
 )
+show_vote_button = True
+dont_show_vote_button = False
 
 controller_url = None
 enable_moderation = False
@@ -117,6 +121,7 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
+        self.content_moderator = AzureAndOpenAIContentModerator()
 
         # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
@@ -143,6 +148,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
+                "moderation": self.content_moderator.conv_moderation_responses,
             }
         )
 
@@ -151,7 +157,11 @@ class State:
         return base
 
 
-def set_global_vars(controller_url_, enable_moderation_, use_remote_storage_):
+def set_global_vars(
+    controller_url_,
+    enable_moderation_,
+    use_remote_storage_,
+):
     global controller_url, enable_moderation, use_remote_storage
     controller_url = controller_url_
     enable_moderation = enable_moderation_
@@ -218,16 +228,27 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     return visible_models, models
 
 
-def load_demo_single(models, url_params):
+def _get_api_endpoint_info():
+    global api_endpoint_info
+    return api_endpoint_info
+
+
+def load_demo_single(context: Context, query_params):
+    # default to text models
+    models = context.text_models
+
     selected_model = models[0] if len(models) > 0 else ""
-    if "model" in url_params:
-        model = url_params["model"]
+    if "model" in query_params:
+        model = query_params["model"]
         if model in models:
             selected_model = model
 
-    dropdown_update = gr.Dropdown(choices=models, value=selected_model, visible=True)
+    all_models = list(set(context.text_models + context.vision_models))
+    dropdown_update = gr.Dropdown(
+        choices=all_models, value=selected_model, visible=True
+    )
     state = None
-    return state, dropdown_update
+    return [state, dropdown_update]
 
 
 def load_demo(url_params, request: gr.Request):
@@ -289,6 +310,7 @@ def regenerate(state, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
+    state.content_moderator.update_last_moderation_response(None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -322,14 +344,24 @@ def add_text(state, model_selector, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
 
-    all_conv_text = state.conv.get_prompt()
-    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
-    # flagged = moderation_filter(text, [state.model_name])
-    if flagged:
+    content_moderator = AzureAndOpenAIContentModerator()
+    text_flagged = content_moderator.text_moderation_filter(text, [state.model_name])
+
+    if text_flagged:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
-        text = MODERATION_MSG
+        content_moderator.write_to_json(get_ip(request))
+        state.skip_next = True
+        gr.Warning(MODERATION_MSG)
+        return (
+            [state]
+            + [state.to_gradio_chatbot()]
+            + [""]
+            + [
+                no_change_btn,
+            ]
+            * 5
+        )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -400,6 +432,34 @@ def is_limit_reached(model_name, ip):
         return None
 
 
+def _write_to_json(
+    filename: str,
+    start_tstamp: float,
+    finish_tstamp: float,
+    state: State,
+    temperature: float,
+    top_p: float,
+    max_new_tokens: int,
+    request: gr.Request,
+):
+    with open(filename, "a") as fout:
+        data = {
+            "tstamp": round(finish_tstamp, 4),
+            "type": "chat",
+            "model": state.model_name,
+            "gen_params": {
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_new_tokens": max_new_tokens,
+            },
+            "start": round(start_tstamp, 4),
+            "finish": round(finish_tstamp, 4),
+            "state": state.dict(),
+            "ip": get_ip(request),
+        }
+        fout.write(json.dumps(data) + "\n")
+
+
 def bot_response(
     state,
     temperature,
@@ -419,6 +479,32 @@ def bot_response(
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
+        if state.content_moderator.text_flagged or state.content_moderator.nsfw_flagged:
+            start_tstamp = time.time()
+            finish_tstamp = start_tstamp
+            state.conv.save_new_images(
+                has_csam_images=state.has_csam_image,
+                use_remote_storage=use_remote_storage,
+            )
+
+            filename = get_conv_log_filename(
+                is_vision=state.is_vision, has_csam_image=state.has_csam_image
+            )
+
+            _write_to_json(
+                filename,
+                start_tstamp,
+                finish_tstamp,
+                state,
+                temperature,
+                top_p,
+                max_new_tokens,
+                request,
+            )
+
+            # Remove the last message: the user input
+            state.conv.messages.pop()
+            state.content_moderator.update_last_moderation_response(None)
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
@@ -570,22 +656,23 @@ def bot_response(
         is_vision=state.is_vision, has_csam_image=state.has_csam_image
     )
 
-    with open(filename, "a") as fout:
-        data = {
-            "tstamp": round(finish_tstamp, 4),
-            "type": "chat",
-            "model": model_name,
-            "gen_params": {
-                "temperature": temperature,
-                "top_p": top_p,
-                "max_new_tokens": max_new_tokens,
-            },
-            "start": round(start_tstamp, 4),
-            "finish": round(finish_tstamp, 4),
-            "state": state.dict(),
-            "ip": get_ip(request),
-        }
-        fout.write(json.dumps(data) + "\n")
+    moderation_type_to_response_map = (
+        state.content_moderator.image_and_text_moderation_filter(
+            None, output, [state.model_name], do_moderation=True
+        )
+    )
+    state.content_moderator.append_moderation_response(moderation_type_to_response_map)
+
+    _write_to_json(
+        filename,
+        start_tstamp,
+        finish_tstamp,
+        state,
+        temperature,
+        top_p,
+        max_new_tokens,
+        request,
+    )
     get_remote_logger().log(data)
 
 

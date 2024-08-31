@@ -365,12 +365,16 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, images = msg
-                    image = images[0]  # Only one image on gradio at one time
-                    if image.image_format == ImageFormat.URL:
-                        img_str = f'<img src="{image.url}" alt="user upload image" />'
-                    elif image.image_format == ImageFormat.BYTES:
-                        img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace("<image>\n", "").strip()
+                    combined_image_str = ""
+                    for image in images:
+                        if image.image_format == ImageFormat.URL:
+                            img_str = (
+                                f'<img src="{image.url}" alt="user upload image" />'
+                            )
+                        elif image.image_format == ImageFormat.BYTES:
+                            img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
+                        combined_image_str += img_str
+                    msg = combined_image_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
             else:
@@ -524,6 +528,7 @@ class Conversation:
 
     def to_reka_api_messages(self):
         from fastchat.serve.vision.image import ImageFormat
+        from reka import ChatMessage, TypedMediaContent, TypedText
 
         ret = []
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
@@ -531,23 +536,47 @@ class Conversation:
                 if type(msg) == tuple:
                     text, images = msg
                     for image in images:
-                        if image.image_format == ImageFormat.URL:
+                        if image.image_format == ImageFormat.BYTES:
                             ret.append(
-                                {"type": "human", "text": text, "media_url": image.url}
-                            )
-                        elif image.image_format == ImageFormat.BYTES:
-                            ret.append(
-                                {
-                                    "type": "human",
-                                    "text": text,
-                                    "media_url": f"data:image/{image.filetype};base64,{image.base64_str}",
-                                }
+                                ChatMessage(
+                                    content=[
+                                        TypedText(
+                                            type="text",
+                                            text=text,
+                                        ),
+                                        TypedMediaContent(
+                                            type="image_url",
+                                            image_url=f"data:image/{image.filetype};base64,{image.base64_str}",
+                                        ),
+                                    ],
+                                    role="user",
+                                )
                             )
                 else:
-                    ret.append({"type": "human", "text": msg})
+                    ret.append(
+                        ChatMessage(
+                            content=[
+                                TypedText(
+                                    type="text",
+                                    text=msg,
+                                )
+                            ],
+                            role="user",
+                        )
+                    )
             else:
                 if msg is not None:
-                    ret.append({"type": "model", "text": msg})
+                    ret.append(
+                        ChatMessage(
+                            content=[
+                                TypedText(
+                                    type="text",
+                                    text=msg,
+                                )
+                            ],
+                            role="assistant",
+                        )
+                    )
 
         return ret
 
@@ -557,7 +586,11 @@ class Conversation:
         from fastchat.utils import load_image, upload_image_file_to_gcs
         from PIL import Image
 
-        _, last_user_message = self.messages[-2]
+        last_user_message = None
+        for role, message in reversed(self.messages):
+            if role == "user":
+                last_user_message = message
+                break
 
         if type(last_user_message) == tuple:
             text, images = last_user_message[0], last_user_message[1]

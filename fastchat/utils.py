@@ -149,61 +149,6 @@ def get_gpu_memory(max_gpus=None):
     return gpu_memory
 
 
-def oai_moderation(text, custom_thresholds=None):
-    """
-    Check whether the text violates OpenAI moderation API.
-    """
-    import openai
-
-    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-    # default to true to be conservative
-    flagged = True
-    MAX_RETRY = 3
-    for _ in range(MAX_RETRY):
-        try:
-            res = client.moderations.create(input=text)
-            flagged = res.results[0].flagged
-            if custom_thresholds is not None:
-                for category, threshold in custom_thresholds.items():
-                    if getattr(res.results[0].category_scores, category) > threshold:
-                        flagged = True
-            break
-        except (openai.OpenAIError, KeyError, IndexError) as e:
-            print(f"MODERATION ERROR: {e}\nInput: {text}")
-    return flagged
-
-
-def moderation_filter(text, model_list, do_moderation=False):
-    # Apply moderation for below models
-    MODEL_KEYWORDS = [
-        "claude",
-        "gpt",
-        "bard",
-        "mistral-large",
-        "command-r",
-        "dbrx",
-        "gemini",
-        "reka",
-    ]
-
-    custom_thresholds = {"sexual": 0.3}
-    # set a stricter threshold for claude
-    for model in model_list:
-        if "claude" in model:
-            custom_thresholds = {"sexual": 0.2}
-
-    for keyword in MODEL_KEYWORDS:
-        for model in model_list:
-            if keyword in model:
-                do_moderation = True
-                break
-
-    if do_moderation:
-        return oai_moderation(text, custom_thresholds)
-    return False
-
-
 def clean_flant5_ckpt(ckpt_path):
     """
     Flan-t5 trained with HF+FSDP saves corrupted  weights for shared embeddings,
@@ -438,47 +383,3 @@ def get_image_file_from_gcs(filename):
     contents = blob.download_as_bytes()
 
     return contents
-
-
-def image_moderation_request(image_bytes, endpoint, api_key):
-    headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
-
-    MAX_RETRIES = 3
-    for _ in range(MAX_RETRIES):
-        response = requests.post(endpoint, headers=headers, data=image_bytes).json()
-        try:
-            if response["Status"]["Code"] == 3000:
-                break
-        except:
-            time.sleep(0.5)
-    return response
-
-
-def image_moderation_provider(image, api_type):
-    if api_type == "nsfw":
-        endpoint = os.environ["AZURE_IMG_MODERATION_ENDPOINT"]
-        api_key = os.environ["AZURE_IMG_MODERATION_API_KEY"]
-        response = image_moderation_request(image, endpoint, api_key)
-        print(response)
-        return response["IsImageAdultClassified"]
-    elif api_type == "csam":
-        endpoint = (
-            "https://api.microsoftmoderator.com/photodna/v1.0/Match?enhance=false"
-        )
-        api_key = os.environ["PHOTODNA_API_KEY"]
-        response = image_moderation_request(image, endpoint, api_key)
-        return response["IsMatch"]
-
-
-def image_moderation_filter(image):
-    print(f"moderating image")
-
-    image_bytes = base64.b64decode(image.base64_str)
-
-    nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
-    csam_flagged = False
-
-    if nsfw_flagged:
-        csam_flagged = image_moderation_provider(image_bytes, "csam")
-
-    return nsfw_flagged, csam_flagged

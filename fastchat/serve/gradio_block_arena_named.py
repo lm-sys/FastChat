@@ -28,22 +28,25 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    _write_to_json,
 )
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False
+use_remote_storage = False
 
 
-def set_global_vars_named(enable_moderation_):
-    global enable_moderation
+def set_global_vars_named(enable_moderation_, use_remote_storage_):
+    global enable_moderation, use_remote_storage
     enable_moderation = enable_moderation_
+    use_remote_storage = use_remote_storage_
 
 
 def load_demo_side_by_side_named(models, url_params):
@@ -175,19 +178,27 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [True]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    all_conv_text_left = states[0].conv.get_prompt()
-    all_conv_text_right = states[1].conv.get_prompt()
-    all_conv_text = (
-        all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
-    )
-    flagged = moderation_filter(all_conv_text, model_list)
-    if flagged:
-        logger.info(f"violate moderation (named). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+    text_flagged = states[0].content_moderator.text_moderation_filter(text, model_list)
+
+    if text_flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        gr.Warning(MODERATION_MSG)
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [""]
+            + [
+                no_change_btn,
+            ]
+            * 6
+            + [True]
+        )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -202,6 +213,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [True]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -218,6 +230,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [False]
     )
 
 
@@ -231,17 +244,49 @@ def bot_response_multi(
 ):
     logger.info(f"bot_response_multi (named). ip: {get_ip(request)}")
 
-    if state0.skip_next:
-        # This generate call is skipped due to invalid inputs
+    states = [state0, state1]
+    if states[0].skip_next:
+        if (
+            states[0].content_moderator.text_flagged
+            or states[0].content_moderator.nsfw_flagged
+        ):
+            for i in range(num_sides):
+                # This generate call is skipped due to invalid inputs
+                start_tstamp = time.time()
+                finish_tstamp = start_tstamp
+                states[i].conv.save_new_images(
+                    has_csam_images=states[i].has_csam_image,
+                    use_remote_storage=use_remote_storage,
+                )
+
+                filename = get_conv_log_filename(
+                    is_vision=states[i].is_vision,
+                    has_csam_image=states[i].has_csam_image,
+                )
+
+                _write_to_json(
+                    filename,
+                    start_tstamp,
+                    finish_tstamp,
+                    states[i],
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    request,
+                )
+
+                # Remove the last message: the user input
+                states[i].conv.messages.pop()
+                states[i].content_moderator.update_last_moderation_response(None)
+
         yield (
-            state0,
-            state1,
-            state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot(),
+            states[0],
+            states[1],
+            states[0].to_gradio_chatbot(),
+            states[1].to_gradio_chatbot(),
         ) + (no_change_btn,) * 6
         return
 
-    states = [state0, state1]
     gen = []
     for i in range(num_sides):
         gen.append(
@@ -296,14 +341,19 @@ def bot_response_multi(
             break
 
 
-def flash_buttons():
+def flash_buttons(show_vote_buttons: bool = True):
     btn_updates = [
         [disable_btn] * 4 + [enable_btn] * 2,
         [enable_btn] * 6,
     ]
-    for i in range(4):
-        yield btn_updates[i % 2]
-        time.sleep(0.3)
+
+    if show_vote_buttons:
+        for i in range(4):
+            yield btn_updates[i % 2]
+            time.sleep(0.3)
+    else:
+        yield [no_change_btn] * 4 + [enable_btn] * 2
+        return
 
 
 def build_side_by_side_ui_named(models):
@@ -323,6 +373,7 @@ def build_side_by_side_ui_named(models):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    dont_show_vote_buttons = gr.State(False)
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -478,24 +529,24 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [dont_show_vote_buttons], btn_list
     )
     send_btn.click(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [dont_show_vote_buttons],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [dont_show_vote_buttons], btn_list
     )
 
     return states + model_selectors

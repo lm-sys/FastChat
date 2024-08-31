@@ -455,7 +455,7 @@ def build_arena_tab(
                     "Knowledge Cutoff",
                 ],
                 datatype=[
-                    "str",
+                    "number",
                     "markdown",
                     "number",
                     "str",
@@ -534,7 +534,7 @@ def build_arena_tab(
             "Knowledge Cutoff",
         ],
         datatype=[
-            "str",
+            "number",
             "markdown",
             "number",
             "str",
@@ -562,9 +562,7 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
         elem_id="leaderboard_markdown",
     )
 
-    if not vision:
-        # only live update the text tab
-        leader_component_values[:] = [default_md, p1, p2, p3, p4]
+    leader_component_values[:] = [default_md, p1, p2, p3, p4]
 
     if show_plot:
         more_stats_md = gr.Markdown(
@@ -777,6 +775,7 @@ def build_leaderboard_tab(
     elo_results_file,
     leaderboard_table_file,
     arena_hard_leaderboard,
+    vision=True,
     show_plot=False,
     mirror=False,
 ):
@@ -855,14 +854,18 @@ def build_leaderboard_tab(
                     default_md,
                     show_plot=show_plot,
                 )
-            with gr.Tab("Arena (Vision)", id=2):
-                build_arena_tab(
-                    elo_results_vision,
-                    model_table_df,
-                    default_md,
-                    vision=True,
-                    show_plot=show_plot,
-                )
+
+            if vision:
+                with gr.Tab("Arena (Vision)", id=2):
+                    build_arena_tab(
+                        elo_results_vision,
+                        model_table_df,
+                        default_md,
+                        vision=True,
+                        show_plot=show_plot,
+                    )
+
+            model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
                     dataFrame = arena_hard_process(
@@ -882,7 +885,6 @@ def build_leaderboard_tab(
                             "avg_tokens": "Average Tokens",
                         }
                     )
-                    model_to_score = {}
                     for i in range(len(dataFrame)):
                         model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
                             i, "Win-rate"

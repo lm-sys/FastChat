@@ -32,24 +32,27 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    _write_to_json,
 )
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 num_sides = 2
 enable_moderation = False
+use_remote_storage = False
 anony_names = ["", ""]
 models = []
 
 
-def set_global_vars_anony(enable_moderation_):
-    global enable_moderation
+def set_global_vars_anony(enable_moderation_, use_remote_storage_):
+    global enable_moderation, use_remote_storage
     enable_moderation = enable_moderation_
+    use_remote_storage = use_remote_storage_
 
 
 def load_demo_side_by_side_anony(models_, url_params):
@@ -202,6 +205,9 @@ def get_battle_pair(
     if len(models) == 1:
         return models[0], models[0]
 
+    if len(models) == 0:
+        raise ValueError("There are no models provided. Cannot get battle pair.")
+
     model_weights = []
     for model in models:
         weight = get_sample_weight(
@@ -290,7 +296,11 @@ def add_text(
     all_conv_text = (
         all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
     )
-    flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
+
+    content_moderator = AzureAndOpenAIContentModerator()
+    flagged = content_moderator.text_moderation_filter(
+        all_conv_text, model_list, do_moderation=True
+    )
     if flagged:
         logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
         # overwrite the original text
@@ -343,18 +353,50 @@ def bot_response_multi(
     request: gr.Request,
 ):
     logger.info(f"bot_response_multi (anony). ip: {get_ip(request)}")
+    states = [state0, state1]
 
-    if state0 is None or state0.skip_next:
-        # This generate call is skipped due to invalid inputs
+    if states[0] is None or states[0].skip_next:
+        if (
+            states[0].content_moderator.text_flagged
+            or states[0].content_moderator.nsfw_flagged
+        ):
+            for i in range(num_sides):
+                # This generate call is skipped due to invalid inputs
+                start_tstamp = time.time()
+                finish_tstamp = start_tstamp
+                states[i].conv.save_new_images(
+                    has_csam_images=states[i].has_csam_image,
+                    use_remote_storage=use_remote_storage,
+                )
+
+                filename = get_conv_log_filename(
+                    is_vision=states[i].is_vision,
+                    has_csam_image=states[i].has_csam_image,
+                )
+
+                _write_to_json(
+                    filename,
+                    start_tstamp,
+                    finish_tstamp,
+                    states[i],
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    request,
+                )
+
+                # Remove the last message: the user input
+                states[i].conv.messages.pop()
+                states[i].content_moderator.update_last_moderation_response(None)
+
         yield (
-            state0,
-            state1,
-            state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot(),
+            states[0],
+            states[1],
+            states[0].to_gradio_chatbot(),
+            states[1].to_gradio_chatbot(),
         ) + (no_change_btn,) * 6
         return
 
-    states = [state0, state1]
     gen = []
     for i in range(num_sides):
         gen.append(
