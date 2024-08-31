@@ -772,7 +772,12 @@ def get_combined_table(elo_results, model_table_df):
 
 
 def build_leaderboard_tab(
-    elo_results_file, leaderboard_table_file, arena_hard_leaderboard, vision=True, show_plot=False, mirror=False
+    elo_results_file,
+    leaderboard_table_file,
+    arena_hard_leaderboard,
+    vision=True,
+    show_plot=False,
+    mirror=False,
 ):
     if elo_results_file is None:  # Do live update
         default_md = "Loading ..."
@@ -849,7 +854,7 @@ def build_leaderboard_tab(
                     default_md,
                     show_plot=show_plot,
                 )
-            
+
             if vision:
                 with gr.Tab("Arena (Vision)", id=2):
                     build_arena_tab(

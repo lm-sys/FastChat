@@ -155,14 +155,18 @@ def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal_clear_input, invisible_text, invisible_btn) + (disable_btn,) * 5
+    return (state, [], enable_multimodal_clear_input, invisible_text, invisible_btn) + (
+        disable_btn,
+    ) * 5
 
 
 def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal_keep_input, invisible_text, invisible_btn) + (disable_btn,) * 5
+    return (state, [], enable_multimodal_keep_input, invisible_text, invisible_btn) + (
+        disable_btn,
+    ) * 5
 
 
 # TODO(Chris): At some point, we would like this to be a live-reporting feature.
