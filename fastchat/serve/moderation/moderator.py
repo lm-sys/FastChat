@@ -65,8 +65,8 @@ class BaseContentModerator:
 
 class AzureAndOpenAIContentModerator(BaseContentModerator):
     _NON_TOXIC_IMAGE_MODERATION_MAP = {
-        "nsfw_moderation": {"flagged": False},
-        "csam_moderation": {"flagged": False},
+        "nsfw_moderation": [{"flagged": False}],
+        "csam_moderation": [{"flagged": False}],
     }
 
     def __init__(self, use_remote_storage: bool = False):

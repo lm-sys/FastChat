@@ -138,7 +138,7 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal_keep_input, invisible_text, invisible_btn]
+        + [enable_multimodal_keep_input]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -244,7 +244,7 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [enable_multimodal_clear_input, invisible_text, invisible_btn]
+        + [enable_multimodal_clear_input]
         + [invisible_btn] * 4
         + [disable_btn] * 2
         + [enable_btn]
@@ -308,7 +308,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [None, "", no_change_btn]
+            + [None]
             + [
                 no_change_btn,
             ]
@@ -359,7 +359,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
+            + [{"text": CONVERSATION_LIMIT_MSG}]
             + [
                 no_change_btn,
             ]
@@ -382,8 +382,6 @@ def add_text(
             + gradio_chatbot_list
             + [
                 None,
-                "",
-                no_change_btn,
             ]
             + [disable_btn] * 7
             + [""]
@@ -404,7 +402,7 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [disable_multimodal, visible_text, enable_btn]
+        + [None]
         + [
             disable_btn,
         ]
@@ -496,12 +494,12 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
 
     with gr.Row():
-        textbox = gr.Textbox(
-            show_label=False,
-            placeholder="👉 Enter your prompt and press ENTER",
-            elem_id="input_box",
-            visible=False,
-        )
+        # textbox = gr.Textbox(
+        #     show_label=False,
+        #     placeholder="👉 Enter your prompt and press ENTER",
+        #     elem_id="input_box",
+        #     visible=False,
+        # )
 
         multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
@@ -510,9 +508,9 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             placeholder="Enter your prompt or add image here",
             elem_id="input_box",
         )
-        send_btn = gr.Button(
-            value="Send", variant="primary", scale=0, visible=False, interactive=False
-        )
+        # send_btn = gr.Button(
+        #     value="Send", variant="primary", scale=0, visible=False, interactive=False
+        # )
 
     with gr.Row() as button_row:
         if random_questions:
@@ -564,25 +562,29 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [multimodal_textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [multimodal_textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [multimodal_textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
     )
     bothbad_btn.click(
         bothbad_vote_last_response,
         states + model_selectors,
-        model_selectors + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
+        model_selectors
+        + [multimodal_textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
     )
     regenerate_btn.click(
-        regenerate, states, states + chatbots + [textbox] + btn_list
+        regenerate, states, states + chatbots + [multimodal_textbox] + btn_list
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -596,7 +598,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         states
         + chatbots
         + model_selectors
-        + [multimodal_textbox, textbox, send_btn]
+        + [multimodal_textbox]
         + btn_list
         + [random_btn]
         + [slow_warning],
@@ -626,14 +628,6 @@ function (a, b, c, d) {
 
     multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
         set_visible_image, [multimodal_textbox], [image_column]
-    ).then(
-        clear_history_example,
-        None,
-        states
-        + chatbots
-        + model_selectors
-        + [multimodal_textbox, textbox, send_btn]
-        + btn_list,
     )
 
     multimodal_textbox.submit(
@@ -641,7 +635,7 @@ function (a, b, c, d) {
         states + model_selectors + [multimodal_textbox, context_state],
         states
         + chatbots
-        + [multimodal_textbox, textbox, send_btn]
+        + [multimodal_textbox]
         + btn_list
         + [random_btn]
         + [slow_warning]
@@ -656,60 +650,51 @@ function (a, b, c, d) {
         btn_list,
     )
 
-    textbox.submit(
-        add_text,
-        states + model_selectors + [textbox, context_state],
-        states
-        + chatbots
-        + [multimodal_textbox, textbox, send_btn]
-        + btn_list
-        + [random_btn]
-        + [slow_warning]
-        + [show_vote_buttons],
-    ).then(
-        bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
-        states + chatbots + btn_list,
-    ).then(
-        flash_buttons,
-        [show_vote_buttons],
-        btn_list,
-    )
+    # textbox.submit(
+    #     add_text,
+    #     states + model_selectors + [textbox, context_state],
+    #     states
+    #     + chatbots
+    #     + [multimodal_textbox]
+    #     + btn_list
+    #     + [random_btn]
+    #     + [slow_warning]
+    #     + [show_vote_buttons],
+    # ).then(
+    #     bot_response_multi,
+    #     states + [temperature, top_p, max_output_tokens],
+    #     states + chatbots + btn_list,
+    # ).then(
+    #     flash_buttons,
+    #     [show_vote_buttons],
+    #     btn_list,
+    # )
 
-    send_btn.click(
-        add_text,
-        states + model_selectors + [textbox, context_state],
-        states
-        + chatbots
-        + [multimodal_textbox, textbox, send_btn]
-        + btn_list
-        + [random_btn]
-        + [slow_warning]
-        + [show_vote_buttons],
-    ).then(
-        bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
-        states + chatbots + btn_list,
-    ).then(
-        flash_buttons,
-        [show_vote_buttons],
-        btn_list,
-    )
+    # send_btn.click(
+    #     add_text,
+    #     states + model_selectors + [textbox, context_state],
+    #     states
+    #     + chatbots
+    #     + [multimodal_textbox]
+    #     + btn_list
+    #     + [random_btn]
+    #     + [slow_warning]
+    #     + [show_vote_buttons],
+    # ).then(
+    #     bot_response_multi,
+    #     states + [temperature, top_p, max_output_tokens],
+    #     states + chatbots + btn_list,
+    # ).then(
+    #     flash_buttons,
+    #     [show_vote_buttons],
+    #     btn_list,
+    # )
 
     if random_questions:
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
             [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
-            clear_history_example,
-            None,
-            states
-            + chatbots
-            + model_selectors
-            + [multimodal_textbox, textbox, send_btn]
-            + btn_list
-            + [random_btn],
-        )
+        ).then(set_visible_image, [multimodal_textbox], [image_column])
 
     return states + model_selectors

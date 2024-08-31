@@ -176,10 +176,6 @@ def report_csam_image(state, image):
 
 def _prepare_text_with_image(state, text, images):
     if len(images) > 0:
-        if len(state.conv.get_images()) > 0:
-            # reset convo with new image
-            state.conv = get_conversation_template(state.model_name)
-
         text = text, images
 
     return text
