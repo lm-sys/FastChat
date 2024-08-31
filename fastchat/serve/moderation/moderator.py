@@ -203,6 +203,7 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
                     do_moderation = True
                     break
 
+        moderation_response_map = {"flagged": False}
         if do_moderation:
             moderation_response_map = self._openai_moderation_filter(
                 text, custom_thresholds
