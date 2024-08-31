@@ -551,6 +551,31 @@ class Conversation:
 
         return ret
 
+    def to_metagen_api_messages(self):
+        """Convert the conversation to MetaGen (Meta) chat completion format."""
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "text": self.system_message}]
+
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                if type(msg) is tuple:
+                    text, images = msg[0], msg[1]
+                    # Currently only support one image.
+                    attachment = {
+                        "type": "base64_image",
+                        "mime": "image/jpeg",
+                        "data": images[-1].base64_str,
+                    }
+                    ret.append({"role": "user", "text": text, "attachment": attachment})
+                else:
+                    ret.append({"role": "user", "text": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "ai", "text": msg})
+        return ret
+
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR
