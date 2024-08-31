@@ -85,10 +85,6 @@ def set_visible_image(textbox):
     images = textbox["files"]
     if len(images) == 0:
         return invisible_image_column
-    elif len(images) > 1:
-        gr.Warning(
-            "We only support single image conversations. Please start a new round if you would like to chat using this image."
-        )
 
     return visible_image_column
 
@@ -177,11 +173,23 @@ def _prepare_text_with_image(
         model_supports_multi_image = context.api_endpoint_info[state.model_name].get(
             "multi_image", False
         )
-        if len(state.conv.get_images()) > 0 and not model_supports_multi_image:
+        num_previous_images = len(state.conv.get_images())
+        images_interleaved_with_text_exists_but_model_does_not_support = (
+            num_previous_images > 0 and not model_supports_multi_image
+        )
+        multiple_image_one_turn_but_model_does_not_support = (
+            len(images) > 1 and not model_supports_multi_image
+        )
+        if images_interleaved_with_text_exists_but_model_does_not_support:
+            gr.Warning(
+                f"The model does not support interleaved image/text. We only use the very first image."
+            )
+            return text
+        elif multiple_image_one_turn_but_model_does_not_support:
             gr.Warning(
                 f"The model does not support multiple images. Only the first image will be used."
             )
-            return text
+            return text, [images[0]]
 
         text = text, images
 
