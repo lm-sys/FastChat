@@ -673,13 +673,6 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
     for category in category_names:
         style = style.apply(highlight_top_3, subset=[category])
 
-    # if metric == "rating":
-    #     style = style.background_gradient(
-    #         cmap="Blues",
-    #         subset=category_names,
-    #         vmin=1150,
-    #         vmax=category_df[category_names].max().max(),
-    #     )
     if metric == "rating":
         for category in category_names:
             style = style.background_gradient(
