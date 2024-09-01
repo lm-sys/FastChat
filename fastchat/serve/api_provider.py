@@ -203,6 +203,17 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "metagen":
+        prompt = conv.to_metagen_api_messages()
+        stream_iter = metagen_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
     else:
         raise NotImplementedError()
 
@@ -1125,3 +1136,47 @@ def reka_api_stream_iter(
             continue
         gen = json.loads(line[6:])
         yield {"text": gen["text"], "error_code": 0}
+
+
+def metagen_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key,
+    api_base,
+):
+    res = requests.post(
+        f"{api_base}/chat_stream_completions?access_token={api_key}",
+        stream=True,
+        headers={"Content-Type": "application/json"},
+        json={
+            "model": model_name,
+            "chunks_delimited": True,
+            "messages": messages,
+            "options": {
+                "max_tokens": max_new_tokens,
+                "generation_algorithm": "top_p",
+                "top_p": top_p,
+                "temperature": temperature,
+            },
+        },
+        timeout=40,
+    )
+
+    if res.status_code != 200:
+        logger.error(f"Unexpected response ({res.status_code}): {res.text}")
+        raise ValueError("Unexpected response: ", res.json())
+
+    text = ""
+    for line in res.iter_lines():
+        if line:
+            part = json.loads(line.decode("utf-8"))
+            if "text" in part:
+                text += part["text"]
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
