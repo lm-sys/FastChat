@@ -11,6 +11,13 @@ import threading
 import orjson
 
 from category import Category
+from vision_utils import get_image_path
+
+import lmdb
+
+if not os.path.exists("cache/category_cache"):
+    os.makedirs("cache/category_cache")
+cache = lmdb.open("cache/category_cache", map_size=1024 ** 4)
 
 
 LOCK = threading.RLock()
@@ -65,7 +72,7 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
                 # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
             )
             output = completion.choices[0].message.content
-            # print(output)
+            print(output)
             break
         except openai.RateLimitError as e:
             print(type(e), e)
@@ -107,7 +114,7 @@ def get_answer(
     output_log = {}
 
     for category in categories:
-        conv = category.pre_process(question["prompt"])
+        conv = category.pre_process(question)
         output = chat_completion_openai(
             model=model_name,
             messages=conv,
@@ -125,7 +132,7 @@ def get_answer(
     if testing:
         question["output_log"] = output_log
 
-    question.drop(["prompt", "uid", "required_tasks"], inplace=True)
+    # question.drop(["prompt", "uid", "required_tasks"], inplace=True)
 
     with LOCK:
         with open(answer_file, "a") as fout:
@@ -164,11 +171,13 @@ def find_required_tasks(row):
         )
     ]
 
-
+import wandb
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--testing", action="store_true")
+    parser.add_argument("--vision", action="store_true")
+    parser.add_argument("--wandb", action="store_true")
     args = parser.parse_args()
 
     enter = input(
@@ -178,6 +187,11 @@ if __name__ == "__main__":
         exit()
 
     config = make_config(args.config)
+
+    if not args.wandb:
+        os.environ["WANDB_MODE"] = "dryrun"
+    if args.wandb:
+        wandb.init(project="arena", entity="clipinvariance", name=config["input_file"].split("/")[-1].split(".")[0])
 
     API_MAX_RETRY = config["max_retry"]
     API_RETRY_SLEEP = config["retry_sleep"]
@@ -193,6 +207,20 @@ if __name__ == "__main__":
     with open(config["input_file"], "rb") as f:
         data = orjson.loads(f.read())
     input_data = pd.DataFrame(data)
+
+    if args.vision:
+        old_len = len(input_data)
+        input_data["image_hash"] = input_data.conversation_a.map(lambda convo: convo[0]["content"][1][0])
+        input_data["image_path"] = input_data.image_hash.map(get_image_path)
+        input_data = input_data[input_data.image_path != False].reset_index(drop=True)
+        print(input_data["image_path"])
+        print(f"{len(input_data)} out of {old_len}# images found")
+
+    if args.testing:
+        if "category_tag" in input_data.columns:
+            input_data.drop(columns=["category_tag"], inplace=True)
+        input_data = input_data[input_data['language'] == 'English'].reset_index(drop=True)
+        input_data = input_data[:250]
 
     # much faster than pd.apply
     input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)
@@ -246,10 +274,19 @@ if __name__ == "__main__":
             f"{name}: {len(not_labeled[not_labeled.required_tasks.map(lambda tasks: name in tasks)])}"
         )
 
+    get_content = lambda c: c if type(c) == str else c[0]
     not_labeled["prompt"] = not_labeled.conversation_a.map(
-        lambda convo: "\n".join([convo[i]["content"] for i in range(0, len(convo), 2)])
+        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(0, len(convo), 2)])
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
+    not_labeled["response_a"] = not_labeled.conversation_a.map(
+        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(1, len(convo), 2)])
+    )
+    not_labeled["response_a"] = not_labeled.response_a.map(lambda x: x[:12500])
+    not_labeled["response_b"] = not_labeled.conversation_b.map(
+        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(1, len(convo), 2)])
+    )
+    not_labeled["response_b"] = not_labeled.response_b.map(lambda x: x[:12500])
 
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=config["parallel"]
@@ -277,7 +314,27 @@ if __name__ == "__main__":
         ):
             future.result()
 
+    output = pd.read_json(config["output_file"], lines=True)
+    # log table to wandb
+    if args.wandb:
+        columns = ["prompt", "response_a", "response_b", "category_tag"] if not args.vision else ["prompt", "image", "response_a", "response_b", "category_tag"]
+        if args.vision:
+            # read image_path into wandb Image
+            output["image"] = output.image_path.map(lambda x: wandb.Image(x))
+
+        wandb.log({"categories": wandb.Table(dataframe=output[columns])})
+
     if config["convert_to_json"]:
+        if not os.path.isfile(config["output_file"]):
+            print("output file not found, creating new file")
+            input_data["category_tag"] = input_data.apply(category_merge, axis=1)
+            final_data = input_data.drop(
+                columns=["prompt", "uid", "required_tasks"], errors="ignore"
+            )
+            final_data.to_json(
+                config["output_file"], orient="records", indent=4, force_ascii=False
+            )
+
         # merge two data frames, but only take the fields from the cache data to overwrite the input data
         merge_columns = [category.name_tag for category in categories]
         print(f"Columns to be merged:\n{merge_columns}")
