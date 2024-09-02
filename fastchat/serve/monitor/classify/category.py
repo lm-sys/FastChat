@@ -174,30 +174,6 @@ class CategoryRefusal(Category):
         return {"refusal_a": bool(score == "a") or bool(score == "both"),
                 "refusal_b": bool(score == "b") or bool(score == "both"), 
                 "refusal": bool(score == "a") or bool(score == "b") or bool(score == "both")}
-
-class CategoryRequiresVision(Category):
-    def __init__(self):
-        super().__init__()
-        self.name_tag = "requires_vision_v0.1"
-        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
-        self.system_prompt = """Your task is to analyze the user prompt and determine if it requires the AI to interpret or analyze the given image to answer. Consider the following aspects when evaluating the prompt:\n1. Does the prompt ask questions that can only be answered by understanding the image?\n2. If the AI was given the text alone, would the user likely prefer this response less?\n3. Would the AI need the image to provide an accurate response?\n\nOutput your verdict in the following format:\n<decision>\n[yes/no]\n</decision>. yes means the prompt requires the AI to look at the image. Do NOT explain."""
-        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
-
-    def get_score(self, judgment):
-        return 'yes' in judgment.lower() and 'no' not in judgment.lower()
-
-    def pre_process(self, prompt):
-        args = {"PROMPT": prompt["prompt"]}
-        base64_image = get_image_file_from_gcs(prompt["image_hash"])
-        conv = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": [{"type": "text", "text": self.prompt_template.format(**args)}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}",},},],},
-        ]
-        return conv
-
-    def post_process(self, judgment):
-        score = self.get_score(judgment=judgment)
-        return {"requires_vision": score}
     
 class CategoryVision(Category):
     def __init__(self):
@@ -230,50 +206,6 @@ Remember to consider all aspects of the question and assign all relevant categor
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": [{"type": "text", "text": self.prompt_template.format(**args)}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}",},},],},
-        ]
-        return conv
-
-    def post_process(self, judgment):
-        score = self.get_score(judgment=judgment)
-        return {
-        "is_captioning": "captioning" in score,
-        "is_counting": "counting" in score,
-        "is_ocr": "optical character recognition" in score,
-        "is_entity_recognition": "entity recognition" in score,
-        "is_creative_composition": "creative composition" in score,
-        "response": judgment
-        }
-    
-class CategoryVisionTextOnly(Category):
-    def __init__(self):
-        super().__init__()
-        self.name_tag = "vision_text_only_v0.1"
-        self.system_prompt = """You are an AI assistant specialized in classifying Visual Question Answering (VQA) questions into appropriate categories. When presented with a question or multiple questions about an image, you will analyze them and categorize it based on the following criteria:
-
-Categories:
-1. Captioning: Questions that ask for a general, overall description of the entire image. A captioning question must be a single, open-ended query that does NOT ask about particular objects, people, or parts of the image, nor require interpretation beyond a broad description of what is visually present. Examples include "What is happening in this image?", "Describe this picture.", "explain", etc.
-2. Counting: Questions requiring counting or identifying the number of objects in the image.
-3. Optical Character Recognition: Questions requiring reading and understanding text in the image to answer. If the question is likely to require reading text in the image, it should be classified as Optical Character Recognition. This includes questions that makes reference to a document or text in the image or is asking for text-based tasks like translation, summarization, etc.
-4. Entity Recognition: Questions that ask for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.
-5. Creative Composition: Questions that ask for creative or imaginative responses based on the image. This includes questions that ask for a story, a poem, or a creative interpretation of the image.
-
-Your task is to classify each question(s) into one or more of these categories. Provide your answer in the following format, with category names separated by commas and no additional information:
-
-{category name}, {category name}
-
-If more than one question is provided, 'Captioning' should not be a in the output. If none of the categories apply, enter 'Other'.
-
-Remember to consider all aspects of the question and assign all relevant categories. Do not attempt to answer the question, only classify it."""
-        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
-    
-    def get_score(self, judgment):
-        return judgment.replace("\n", "").replace("[text only]", "").lower()
-
-    def pre_process(self, prompt):
-        args = {"PROMPT": prompt["prompt"]}
-        conv = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": self.prompt_template.format(**args)},
         ]
         return conv
 
