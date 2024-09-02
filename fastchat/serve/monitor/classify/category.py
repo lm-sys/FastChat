@@ -30,10 +30,6 @@ class Category:
             return CategoryRefusal()
         elif name == "vision_v0.1":
             return CategoryVision()
-        elif name == "vision_text_only_v0.1":
-            return CategoryVisionTextOnly()
-        elif name == "requires_vision_v0.1":
-            return CategoryRequiresVision()
 
         raise Exception(f"Category name is incorrect: {name}")
 
