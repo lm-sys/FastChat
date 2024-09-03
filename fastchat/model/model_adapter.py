@@ -204,6 +204,7 @@ def load_model(
     awq_config: Optional[AWQConfig] = None,
     exllama_config: Optional[ExllamaConfig] = None,
     xft_config: Optional[XftConfig] = None,
+    state_dict: Optional[str] = None,
     revision: str = "main",
     debug: bool = False,
 ):
@@ -346,6 +347,9 @@ def load_model(
         return model, tokenizer
     kwargs["revision"] = revision
 
+    if state_dict is not None:  # Pass state_dict if it is provided in the arguments.
+        kwargs["state_dict"] = state_dict
+
     if dtype is not None:  # Overwrite dtype if it is provided in the arguments.
         kwargs["torch_dtype"] = dtype
 
@@ -485,6 +489,12 @@ def add_model_args(parser):
         type=str,
         default="lmsys/vicuna-7b-v1.5",
         help="The path to the weights. This can be a local folder or a Hugging Face repo ID.",
+    )
+    parser.add_argument(
+        "--state-dict",
+        type=str,
+        required=False,
+        help="The path to compatible weights overriding the default weights in the Hugging Face repo.",
     )
     parser.add_argument(
         "--revision",
