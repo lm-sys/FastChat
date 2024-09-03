@@ -1535,6 +1535,10 @@ class MistralAdapter(BaseModelAdapter):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
+
+        # Set num_experts_per_tok to 1 by default
+        model.config.num_experts_per_tok = 1
+
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
