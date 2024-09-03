@@ -1008,6 +1008,12 @@ if __name__ == "__main__":
         help="Enable content moderation to block unsafe inputs",
     )
     parser.add_argument(
+        "--use_remote_storage",
+        type=bool,
+        default=False,
+        help="Whether to use remote storage when using image",
+    )
+    parser.add_argument(
         "--show-terms-of-use",
         action="store_true",
         help="Shows term of use before loading the demo",
