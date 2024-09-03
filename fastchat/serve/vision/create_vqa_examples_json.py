@@ -17,11 +17,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset_prop = {
-        "realworldqa": 500,
         "Memes": 500,
         "Floorplan": 500,
         "Website": 500,
-        "IllusionVQA": 500,
+        "IllusionVQA": 435,
         "NewYorker": 500,
     }
 
