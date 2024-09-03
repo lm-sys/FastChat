@@ -232,7 +232,7 @@ if __name__ == "__main__":
         input_data = input_data[input_data["language"] == "English"].reset_index(
             drop=True
         )
-        input_data = input_data[:1000]
+        input_data = input_data[:250]
 
     # much faster than pd.apply
     input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)

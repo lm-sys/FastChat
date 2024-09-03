@@ -707,6 +707,7 @@ if __name__ == "__main__":
     if args.clean_battle_file:
         # Read data from a cleaned battle files
         battles = pd.read_json(args.clean_battle_file)
+        print(battles.columns)
     else:
         # Read data from all log files
         log_files = get_log_files(args.max_num_files)
@@ -717,7 +718,7 @@ if __name__ == "__main__":
         "long": filter_long_conv,
         "chinese": lambda x: x["language"] == "Chinese",
         "english": lambda x: x["language"] == "English",
-        "vietnamese": lambda x: x["language"] == "Vietnamese",
+        "russian": lambda x: x["language"] == "Russian",
         "multiturn": lambda x: x["turn"] > 1,
         "exclude_preset": lambda x: not x["preset"],
     }
@@ -759,3 +760,5 @@ if __name__ == "__main__":
 
     with open(f"elo_results_{cutoff_date}.pkl", "wb") as fout:
         pickle.dump(results, fout)
+   
+    print(f"saved elo_results_{cutoff_date}.pkl")
