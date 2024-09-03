@@ -19,6 +19,7 @@ class SeparatorStyle(IntEnum):
     NO_COLON_SINGLE = auto()
     NO_COLON_TWO = auto()
     ADD_NEW_LINE_SINGLE = auto()
+    ADD_NEW_LINE_DOUBLE = auto()
     LLAMA2 = auto()
     CHATGLM = auto()
     CHATML = auto()
@@ -1482,6 +1483,16 @@ register_conv_template(
         sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="<|end|>\n",
         stop_str="<|end|>"
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="llama3_1",
+        roles=("<|start_header_id|>user<|end_header_id|>", "<|start_header_id|>assistant<|end_header_id|>"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_DOUBLE,
+        sep="<|eot_id|>",
+        stop_str="<|eot_id|>"
     )
 )
 
