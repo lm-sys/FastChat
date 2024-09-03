@@ -18,7 +18,7 @@ import lmdb
 
 if not os.path.exists("cache/category_cache"):
     os.makedirs("cache/category_cache")
-category_cache = lmdb.open("cache/category_cache", map_size=1024 ** 4)
+category_cache = lmdb.open("cache/category_cache", map_size=1024**4)
 
 
 LOCK = threading.RLock()
@@ -139,94 +139,6 @@ def get_answer(
         with open(answer_file, "a") as fout:
             fout.write(json.dumps(question.to_dict()) + "\n")
 
-# def series_to_dict(obj):
-#     if isinstance(obj, pd.Series):
-#         return obj.to_dict()
-#     elif isinstance(obj, dict):
-#         return {k: series_to_dict(v) for k, v in obj.items()}
-#     elif isinstance(obj, list):
-#         return [series_to_dict(item) for item in obj]
-#     else:
-#         print(f"Unknown type: {type(obj)}")
-#         return obj
-
-# def generate_cache_key(question, model_name, max_tokens, temperature):
-#     cache_key_data = {
-#         "question": series_to_dict(question),
-#         "model_name": model_name,
-#         "max_tokens": max_tokens,
-#         "temperature": temperature,
-#     }
-#     return hashlib.md5(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()
-
-# def load_from_cache(cache, cache_key):
-#     with cache.begin(write=False) as txn:
-#         cached_result = txn.get(cache_key.encode())
-#         if cached_result:
-#             return json.loads(cached_result.decode())
-#     return None
-
-# def save_to_cache(cache, cache_key, data):
-#     with cache.begin(write=True) as txn:
-#         txn.put(cache_key.encode(), json.dumps(data).encode())
-
-# def get_answer(
-#     question: dict,
-#     model_name: str,
-#     max_tokens: int,
-#     temperature: float,
-#     answer_file: str,
-#     api_dict: dict,
-#     categories: list,
-#     testing: bool,
-#     cache: bool,
-# ):
-#     if "category_tag" in question:
-#         category_tag = question["category_tag"]
-#     else:
-#         category_tag = {}
-
-#     output_log = {}
-
-#     cache_key = generate_cache_key(question, model_name, max_tokens, temperature)
-
-#     if cache:
-#         cached_data = load_from_cache(category_cache, cache_key)
-#         if cached_data:
-#             question["category_tag"] = cached_data["category_tag"]
-#             if testing:
-#                 question["output_log"] = cached_data["output_log"]
-
-#     if not cache or not cached_data:
-#         for category in categories:
-#             conv = category.pre_process(question)
-#             output = chat_completion_openai(
-#                 model=model_name,
-#                 messages=conv,
-#                 temperature=temperature,
-#                 max_tokens=max_tokens,
-#                 api_dict=api_dict,
-#             )
-#             # Dump answers
-#             category_tag[category.name_tag] = category.post_process(output)
-
-#             if testing:
-#                 output_log[category.name_tag] = output
-
-#         question["category_tag"] = category_tag
-#         if testing:
-#             question["output_log"] = output_log
-
-#     if cache:
-#         save_to_cache(category_cache, cache_key, {
-#             "category_tag": category_tag,
-#             "output_log": output_log if testing else {}
-#         })
-
-#     with LOCK:
-#         with open(answer_file, "a") as fout:
-#             fout.write(json.dumps(series_to_dict(question)) + "\n")
-
 
 def category_merge(row):
     id = row["uid"]
@@ -260,14 +172,15 @@ def find_required_tasks(row):
         )
     ]
 
+
 import wandb
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     parser.add_argument("--testing", action="store_true")
     parser.add_argument("--vision", action="store_true")
     parser.add_argument("--wandb", action="store_true")
-    parser.add_argument("--cache", action="store_true")
     args = parser.parse_args()
 
     enter = input(
@@ -281,7 +194,11 @@ if __name__ == "__main__":
     if not args.wandb:
         os.environ["WANDB_MODE"] = "dryrun"
     if args.wandb:
-        wandb.init(project="arena", entity="clipinvariance", name=config["input_file"].split("/")[-1].split(".")[0])
+        wandb.init(
+            project="arena",
+            entity="clipinvariance",
+            name=config["input_file"].split("/")[-1].split(".")[0],
+        )
 
     API_MAX_RETRY = config["max_retry"]
     API_RETRY_SLEEP = config["retry_sleep"]
@@ -300,7 +217,9 @@ if __name__ == "__main__":
 
     if args.vision:
         old_len = len(input_data)
-        input_data["image_hash"] = input_data.conversation_a.map(lambda convo: convo[0]["content"][1][0])
+        input_data["image_hash"] = input_data.conversation_a.map(
+            lambda convo: convo[0]["content"][1][0]
+        )
         input_data["image_path"] = input_data.image_hash.map(get_image_path)
         input_data = input_data[input_data.image_path != False].reset_index(drop=True)
         print(f"{len(input_data)} out of {old_len}# images found")
@@ -310,8 +229,10 @@ if __name__ == "__main__":
             os.remove(config["output_file"])
         if "category_tag" in input_data.columns:
             input_data.drop(columns=["category_tag"], inplace=True)
-        input_data = input_data[input_data['language'] == 'English'].reset_index(drop=True)
-        input_data = input_data[:100]
+        input_data = input_data[input_data["language"] == "English"].reset_index(
+            drop=True
+        )
+        input_data = input_data[:1000]
 
     # much faster than pd.apply
     input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)
@@ -367,15 +288,21 @@ if __name__ == "__main__":
 
     get_content = lambda c: c if type(c) == str else c[0]
     not_labeled["prompt"] = not_labeled.conversation_a.map(
-        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(0, len(convo), 2)])
+        lambda convo: "\n".join(
+            [get_content(convo[i]["content"]) for i in range(0, len(convo), 2)]
+        )
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
     not_labeled["response_a"] = not_labeled.conversation_a.map(
-        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(1, len(convo), 2)])
+        lambda convo: "\n".join(
+            [get_content(convo[i]["content"]) for i in range(1, len(convo), 2)]
+        )
     )
     not_labeled["response_a"] = not_labeled.response_a.map(lambda x: x[:12500])
     not_labeled["response_b"] = not_labeled.conversation_b.map(
-        lambda convo: "\n".join([get_content(convo[i]["content"]) for i in range(1, len(convo), 2)])
+        lambda convo: "\n".join(
+            [get_content(convo[i]["content"]) for i in range(1, len(convo), 2)]
+        )
     )
     not_labeled["response_b"] = not_labeled.response_b.map(lambda x: x[:12500])
 
@@ -398,7 +325,6 @@ if __name__ == "__main__":
                     if category.name_tag in row["required_tasks"]
                 ],
                 args.testing,
-                # args.cache,
             )
             futures.append(future)
         for future in tqdm.tqdm(
@@ -407,9 +333,10 @@ if __name__ == "__main__":
             future.result()
 
     output = pd.read_json(config["output_file"], lines=True)
-        
+
     # log table to wandb
     if args.wandb:
+
         def replace_none_in_nested_dict(d):
             if isinstance(d, dict):
                 return {k: replace_none_in_nested_dict(v) for k, v in d.items()}
@@ -421,12 +348,16 @@ if __name__ == "__main__":
                 return d
 
         def process_category_tag(df):
-            df['category_tag'] = df['category_tag'].apply(replace_none_in_nested_dict)
+            df["category_tag"] = df["category_tag"].apply(replace_none_in_nested_dict)
             return df
 
         # Use this function before logging to wandb
         output = process_category_tag(output)
-        columns = ["prompt", "response_a", "response_b", "category_tag"] if not args.vision else ["prompt", "image", "response_a", "response_b", "category_tag"]
+        columns = (
+            ["prompt", "response_a", "response_b", "category_tag"]
+            if not args.vision
+            else ["prompt", "image", "response_a", "response_b", "category_tag"]
+        )
         if args.vision:
             # read image_path into wandb Image
             output["image"] = output.image_path.map(lambda x: wandb.Image(x))

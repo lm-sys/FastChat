@@ -27,6 +27,9 @@ key_to_category_name = {
     "no_refusal": "Exclude Refusal",
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
     "full_old": "Overall (Deprecated)",
+    "full_style_control": "Overall (Style Control)",
+    "hard_6_style_control": "Hard Prompts (Overall) (Style Control)",
+    "exclude_preset": "Exclude Preset",
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
@@ -51,6 +54,7 @@ cat_name_to_explanation = {
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
     "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
+    "Exclude Preset": "Exclude Preset Images",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",

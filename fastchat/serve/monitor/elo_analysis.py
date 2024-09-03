@@ -717,6 +717,9 @@ if __name__ == "__main__":
         "long": filter_long_conv,
         "chinese": lambda x: x["language"] == "Chinese",
         "english": lambda x: x["language"] == "English",
+        "vietnamese": lambda x: x["language"] == "Vietnamese",
+        "multiturn": lambda x: x["turn"] > 1,
+        "exclude_preset": lambda x: not x["preset"],
     }
     assert all(
         [cat in filter_func_map for cat in args.category]
