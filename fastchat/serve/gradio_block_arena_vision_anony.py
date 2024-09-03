@@ -386,8 +386,8 @@ def build_side_by_side_vision_ui_anony(text_models, vl_models, random_questions=
 - Vote won't be counted if model identity is revealed during conversation.
 - **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
 
-## 🏆 Chatbot Arena [Leaderboard](https://leaderboard.lmsys.org)
-- We've collected **1,000,000+** human votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://leaderboard.lmsys.org)!
+## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
+- We've collected **1,000,000+** human votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
 
 ## 👇 Chat now!
 """
