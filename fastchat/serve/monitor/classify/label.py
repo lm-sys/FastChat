@@ -10,6 +10,7 @@ import random
 import threading
 import orjson
 import hashlib
+from PIL import Image
 
 from category import Category
 from vision_utils import get_image_path
@@ -64,7 +65,6 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            # print(messages)
             completion = client.chat.completions.create(
                 model=model,
                 messages=messages,
@@ -73,7 +73,6 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
                 # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
             )
             output = completion.choices[0].message.content
-            print(output)
             break
         except openai.RateLimitError as e:
             print(type(e), e)
@@ -354,13 +353,24 @@ if __name__ == "__main__":
         # Use this function before logging to wandb
         output = process_category_tag(output)
         columns = (
-            ["prompt", "response_a", "response_b", "category_tag"]
+            ["prompt", "response_a", "response_b", "tstamp", "category_tag"]
             if not args.vision
-            else ["prompt", "image", "response_a", "response_b", "category_tag"]
+            else ["prompt", "image", "response_a", "response_b", "tstamp", "category_tag"]
         )
         if args.vision:
-            # read image_path into wandb Image
-            output["image"] = output.image_path.map(lambda x: wandb.Image(x))
+            # # read image_path into wandb Image
+            # output["image"] = output.image_path.map(lambda x: wandb.Image(x))
+            def is_valid_image(filepath):
+                try:
+                    Image.open(filepath).verify()
+                    return True
+                except Exception:
+                    print(f"Invalid image: {filepath}")
+                    return False
+            if args.testing:
+                output["image"] = output.image_path.map(lambda x: wandb.Image(x) if os.path.exists(x) and is_valid_image(x) else None) 
+            else:
+                output["image"] = output.image_path
 
         wandb.log({"categories": wandb.Table(dataframe=output[columns])})
 

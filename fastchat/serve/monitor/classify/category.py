@@ -190,16 +190,16 @@ Categories ([text only] means classification of this category should be based on
 2. Counting[text only]: Questions requiring counting or identifying the number of objects in the image.
 3. Optical Character Recognition: Questions requiring reading and understanding text in the image to answer. If there is some amount of text in the image and the question requires reading the text in any capacity it should be classified as Optical Character Recognition.
 4. Entity Recognition: Questions that ask for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.
-5. Spatial Reasoning[text only]: Questions that ask about the spatial relationships, locations, or arrangements of objects or elements within the image. This includes queries about relative positions (e.g., left, right, top, bottom), sizes, orientations, distances between objects, or the overall layout of the scene.
-6. Creative Writing: Questions that ask for creative or imaginative responses based on the image. This includes questions that ask for a story, a poem, or a creative interpretation of the image.
+5. Spatial Reasoning[text only]: Questions that explicitly ask about the spatial relationships, locations, or arrangements of objects or elements within the image. This includes queries about relative positions (e.g., left, right, top, bottom), sizes, orientations, or distances between objects.
+6. Creative Writing: Questions that explicitly ask for creative or imaginative responses based on the image, such as composing a story, poem, or providing a fictional interpretation. This excludes questions that simply ask for factual observations, interpretations, or speculations about the image content.
 
-Your task is to classify each question(s) into one or more of these categories. Note that if there is more than one question, captioning should not be a category. Provide your answer in the following format, with category names separated by commas and no additional information:
+Your task is to classify each question(s) into one or more of these categories. Provide your answer in the following format, with category names separated by commas and no additional information:
 
 {category name}, {category name}
 
 If none of the categories apply, enter 'Other'.
 
-Remember to consider all aspects of the question and assign all relevant categories. Do not attempt to answer the question, only classify it."""
+Remember to consider all aspects of the question and assign all relevant categories. Do not answer the question, only classify it."""
 
         self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
 
@@ -234,5 +234,6 @@ Remember to consider all aspects of the question and assign all relevant categor
             "is_ocr": "optical character recognition" in score,
             "is_entity_recognition": "entity recognition" in score,
             "is_creative_composition": "creative composition" in score,
+            "is_spatial_reasoning": "spatial reasoning" in score,
             "response": judgment,
         }
