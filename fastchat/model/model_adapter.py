@@ -830,7 +830,7 @@ class AlpacaAdapter(BaseModelAdapter):
     use_fast_tokenizer = False
 
     def match(self, model_path: str):
-        return "alpaca" in model_path.lower()
+        return "alpaca" in model_path.lower() and "chinese-alpaca" not in model_path.lower()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("alpaca")
