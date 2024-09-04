@@ -20,7 +20,7 @@ if __name__ == "__main__":
         "Memes": 500,
         "Floorplan": 500,
         "Website": 500,
-        "IllusionVQA": 435,
+        "IllusionVQA": 500,
         "NewYorker": 500,
     }
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     for dataset_name in dataset_prop.keys():
         with open(f"{args.output_dir}/{dataset_name}/data.json") as f:
             data = json.load(f)
-            dataset_json.extend(np.random.choice(data, dataset_prop[dataset_name]))
+            dataset_json.extend(np.random.choice(data, min(dataset_prop[dataset_name], len(data)), replace=False))
 
     with open(f"{args.output_dir}/metadata_sampled.json", "w") as f:
         json.dump(dataset_json, f, indent=4)
