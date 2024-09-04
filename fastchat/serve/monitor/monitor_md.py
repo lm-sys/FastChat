@@ -7,7 +7,6 @@ from fastchat.constants import SURVEY_LINK
 deprecated_model_name = [
     "gemini-1.5-pro-exp-0801",
     "gemini-1.5-pro-api-0409-preview",
-    "yi-large-preview",
 ]
 
 key_to_category_name = {
