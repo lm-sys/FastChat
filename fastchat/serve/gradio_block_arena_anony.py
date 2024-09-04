@@ -237,10 +237,13 @@ SAMPLING_WEIGHTS = {
     "gemma-2-9b-it-simpo": 4,
     "grok-2-2024-08-13": 6,
     "grok-2-mini-2024-08-13": 6,
-    "gemini-1.5-flash-exp-0827": 8,
-    "gemini-1.5-flash-8b-exp-0827": 8,
-    "command-r-08-2024": 8,
-    "command-r-plus-08-2024": 8,
+    "gemini-1.5-flash-exp-0827": 6,
+    "gemini-1.5-flash-8b-exp-0827": 6,
+    "command-r-08-2024": 4,
+    "command-r-plus-08-2024": 4,
+    "gemini-test-4": 8,
+    "engine-test-4": 8,
+    "qwen-plus-0828": 8,
 }
 
 # target model sampling weights will be boosted.
@@ -487,6 +490,7 @@ def bot_response_multi(
             token_per_yield = 7
         elif states[i].model_name in [
             "qwen2-72b-instruct",
+            "qwen-plus-0828",
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)
