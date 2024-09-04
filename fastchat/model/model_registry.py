@@ -40,6 +40,18 @@ register_model_info(
     "Yuan2.0 is a new generation Fundamental Large Language Model developed by IEIT System.",
 )
 
+register_model_info(
+    [
+        "chatgpt-4o-latest",
+        "gpt-4o-mini-2024-07-18",
+        "gpt-4o-2024-08-06",
+        "gpt-4o-2024-05-13",
+        "anonymous-chatbot",
+    ],
+    "GPT-4o",
+    "https://openai.com/index/hello-gpt-4o/",
+    "The flagship model across audio, vision, and text by OpenAI",
+)
 
 register_model_info(
     [
@@ -54,6 +66,8 @@ register_model_info(
         "gemini-test-2",
         "gemini-test-1",
         "gemini-test-3",
+        "engine-test",
+        "little-engine-test",
     ],
     "Gemini",
     "https://deepmind.google/technologies/gemini/",
@@ -91,18 +105,6 @@ register_model_info(
 
 register_model_info(
     [
-        "gpt-4o-mini-2024-07-18",
-        "gpt-4o-2024-08-06",
-        "gpt-4o-2024-05-13",
-        "anonymous-chatbot",
-    ],
-    "GPT-4o",
-    "https://openai.com/index/hello-gpt-4o/",
-    "The flagship model across audio, vision, and text by OpenAI",
-)
-
-register_model_info(
-    [
         "gpt-4-turbo",
         "gpt-4-turbo-2024-04-09",
         "gpt-4-1106-preview",
@@ -111,10 +113,20 @@ register_model_info(
         "im-also-a-good-gpt2-chatbot",
         "im-a-good-gpt2-chatbot",
         "upcoming-gpt-mini",
+        "sus-column-r",
+        "grok-2-2024-08-13",
+        "grok-2-mini-2024-08-13",
     ],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
     "GPT-4-Turbo by OpenAI",
+)
+
+register_model_info(
+    ["jamba-1.5-large", "jamba-1.5-mini"],
+    "Jamba 1.5",
+    "https://www.ai21.com/jamba",
+    "Jamba by AI21 Labs",
 )
 
 register_model_info(
@@ -211,10 +223,21 @@ register_model_info(
         "phi-3-mini-4k-instruct",
         "phi-3-mini-4k-instruct-june-2024",
         "phi-3-mini-128k-instruct",
+        "phi-3-vision-128k-instruct",
+        "phi-3.5-vision-instruct",
     ],
     "Phi-3",
     "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
     "A capable and cost-effective small language models (SLMs) by Microsoft",
+)
+
+register_model_info(
+    [
+        "minicpm-v-2_6",
+    ],
+    "MiniCPM-V 2.6",
+    "https://huggingface.co/openbmb/MiniCPM-V-2_6",
+    "MiniCPM-V 2.6 by OpenBMB",
 )
 
 register_model_info(
@@ -431,7 +454,6 @@ register_model_info(
         "vicuna-7b-v1.5",
         "column-r",
         "column-u",
-        "sus-column-r",
     ],
     "Vicuna",
     "https://lmsys.org/blog/2023-03-30-vicuna/",
@@ -776,7 +798,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["internvl2-26b"],
+    ["internvl2-26b", "internvl2-4b"],
     "InternVL 2",
     "https://internvl.github.io/blog/2024-07-02-InternVL-2.0/",
     "Multimodal Model developed by OpenGVLab",

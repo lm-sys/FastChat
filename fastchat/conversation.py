@@ -2239,6 +2239,48 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="grok-2",
+        system_message=(
+            "You are Grok-2, a smart and helpful AI assistant created by xAI. "
+            "Please think step by step, provide detailed and professional response."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="grok-2-mini",
+        system_message=(
+            "You are Grok-2 mini, a smart and helpful AI assistant created by xAI. "
+            "Please think step by step, provide detailed and professional response."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="toto",
+        system_message=(
+            "You are Toto, a brilliant and helpful Large Language Model made by Toto AI.\n"
+            "When presented with complicated questions that require multiple reasoning steps, "
+            "you work them step by step. You follow safety guidelines and avoid toxic, "
+            "violent or illegal content. When needed, you ask the user for clarifications or "
+            "extra information in order to perform the task as well as you can."
+        ),
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+    )
+)
+
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
 

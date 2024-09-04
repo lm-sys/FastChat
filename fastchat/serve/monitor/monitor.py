@@ -605,7 +605,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=800,
-                column_widths=[70, 70, 200, 90, 100, 90, 120, 150, 100],
+                column_widths=[70, 70, 210, 90, 90, 90, 120, 150, 100],
                 wrap=True,
             )
         else:
@@ -633,7 +633,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=800,
-                column_widths=[70, 190, 100, 100, 90, 140, 150, 100],
+                column_widths=[70, 220, 90, 90, 90, 120, 150, 100],
                 wrap=True,
             )
 
@@ -713,7 +713,7 @@ def build_arena_tab(
         value=arena_vals.style,
         elem_id="arena_leaderboard_dataframe",
         height=800,
-        column_widths=[70, 190, 100, 100, 90, 130, 150, 100],
+        column_widths=[70, 220, 90, 90, 90, 120, 150, 100],
         wrap=True,
     )
 
@@ -889,10 +889,10 @@ def build_leaderboard_tab(
                         column_widths=[70, 190, 80, 80, 90, 150],
                     )
 
-            with gr.Tab("Full Leaderboard", id=3):
-                build_full_leaderboard_tab(
-                    elo_results_text, model_table_df, model_to_score
-                )
+                with gr.Tab("Full Leaderboard", id=3):
+                    build_full_leaderboard_tab(
+                        elo_results_text, model_table_df, model_to_score
+                    )
 
         if not show_plot:
             gr.Markdown(
@@ -997,7 +997,7 @@ if __name__ == "__main__":
     parser.add_argument("--ban-ip-file", type=str)
     parser.add_argument("--exclude-model-names", type=str, nargs="+")
     parser.add_argument("--password", type=str, default=None, nargs="+")
-    parser.add_argument("--arena-hard-leaderboard", type=str)
+    parser.add_argument("--arena-hard-leaderboard", type=str, default=None)
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")

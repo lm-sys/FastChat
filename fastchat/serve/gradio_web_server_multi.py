@@ -192,7 +192,7 @@ window.__gradio_mode__ = "app";
             if elo_results_file:
                 with gr.Tab("🏆 Leaderboard", id=3):
                     build_leaderboard_tab(
-                        elo_results_file, leaderboard_table_file, show_plot=True
+                        elo_results_file, leaderboard_table_file, arena_hard_table, show_plot=True
                     )
 
             with gr.Tab("ℹ️ About Us", id=4):
@@ -276,6 +276,9 @@ if __name__ == "__main__":
         "--leaderboard-table-file", type=str, help="Load leaderboard results and plots"
     )
     parser.add_argument(
+        "--arena-hard-table", type=str, help="Load leaderboard results and plots"
+    )
+    parser.add_argument(
         "--gradio-root-path",
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
@@ -328,6 +331,7 @@ if __name__ == "__main__":
         context,
         args.elo_results_file,
         args.leaderboard_table_file,
+        args.arena_hard_table,
     )
     demo.queue(
         default_concurrency_limit=args.concurrency_count,

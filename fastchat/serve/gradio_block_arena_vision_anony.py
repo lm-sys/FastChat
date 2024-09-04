@@ -88,20 +88,25 @@ vl_models = []
 VISION_SAMPLING_WEIGHTS = {
     "gpt-4o-2024-05-13": 6,
     "gpt-4-turbo-2024-04-09": 4,
-    "claude-3-haiku-20240307": 4,
-    "claude-3-sonnet-20240229": 4,
+    "claude-3-haiku-20240307": 2,
+    "claude-3-sonnet-20240229": 2,
     "claude-3-5-sonnet-20240620": 6,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 4,
     "gemini-1.5-pro-api-0514": 6,
     # "llava-v1.6-34b": 4,
-    "reka-core-20240501": 4,
-    "reka-flash-preview-20240611": 4,
+    "reka-core-20240501": 2,
+    "reka-flash-preview-20240611": 2,
     # "cogvlm2-llama3-chat-19b": 4,
     "gemini-test-2": 6,
-    "gpt-4o-mini-2024-07-18": 6,
+    "gpt-4o-mini-2024-07-18": 4,
     "internvl2-26b": 2,
     "gemini-test-3": 6,
+    # "phi-3-vision-128k-instruct": 4,
+    "minicpm-v-2_6": 2,
+    "phi-3.5-vision-instruct": 6,
+    "internvl2-4b": 6,
+    "yi-vision": 6,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -113,7 +118,12 @@ VISION_SAMPLING_BOOST_MODELS = [
 #    "reka-flash-preview-20240611",
 #    "cogvlm2-llama3-chat-19b",
     # "internvl2-26b",
-    "gemini-test-3",
+   #  "gemini-test-3",
+   "minicpm-v-2_6",
+   "phi-3.5-vision-instruct",
+   "internvl2-4b",
+   "yi-vision",
+   # "phi-3-vision-128k-instruct",
 ]
 
 # outage models won't be sampled.
@@ -530,7 +540,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1800,
+            value=2000,
             step=64,
             interactive=True,
             label="Max output tokens",

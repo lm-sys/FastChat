@@ -777,7 +777,7 @@ def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
     pos = 0
     while pos < len(response):
         # simulate token streaming
-        pos += 1
+        pos += 5
         time.sleep(0.001)
         data = {
             "text": response[:pos],

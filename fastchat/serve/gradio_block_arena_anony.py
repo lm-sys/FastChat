@@ -215,12 +215,11 @@ SAMPLING_WEIGHTS = {
     #    "dbrx-next": 4,
     # "nemotron-4-340b": 4,
     # "glm-4-0520": 4,
-    "deepseek-coder-v2": 2,
-    "deepseek-v2-api-0628": 4,
+    "deepseek-coder-v2": 6,
+    "deepseek-v2-api-0628": 2,
     # "column-r": 2,
     # "column-u": 2,
 #     "upcoming-gpt-mini": 8,
-    "eureka-chatbot": 4,
     "gemma-2-2b-it": 4,
     "athene-70b-0725": 4,
     "gemini-1.5-pro-exp-0801": 6,
@@ -229,29 +228,35 @@ SAMPLING_WEIGHTS = {
     "llama-3.1-70b-instruct": 6,
     "llama-3.1-8b-instruct": 6,
     "mistral-large-2407": 6,
-    "gemini-test-3": 7,
-    "sus-column-r": 10,
-    "anonymous-chatbot": 7,
-    "gpt-4o-2024-08-06": 4,
+    "gemini-test-3": 2,
+    # "sus-column-r": 4,
+    # "anonymous-chatbot": 6,
+    "chatgpt-4o-latest": 5,
+    "gpt-4o-2024-08-06": 6,
+    "jamba-1.5-mini": 4,
+    # "toto-mid": 6,
+    "jamba-1.5-large": 4,
+    "gemma-2-9b-it-simpo": 10,
+    "grok-2-2024-08-13": 10,
+    "grok-2-mini-2024-08-13": 10,
+    "engine-test": 12,
+    "little-engine-test": 12,
 }
 
 # target model sampling weights will be boosted.
-BATTLE_TARGETS = {
-}
+BATTLE_TARGETS = {}
 
 BATTLE_STRICT_TARGETS = {}
 
 ANON_MODELS = [
-    "column-r",
-    "column-u",
-    "eureka-chatbot",
     "gemini-test-3",
     "gemini-test-2",
-    "reka-core-20240722",
-    "reka-flash-20240722",
-    "sus-column-r",
-    "anonymous-chatbot",
+    # "anonymous-chatbot",
     "gpt-4o-2024-08-06",
+    "grok-2-2024-08-13",
+    "grok-2-mini-2024-08-13",
+    "engine-test",
+    "little-engine-test",
 ]
 
 SAMPLING_BOOST_MODELS = [
@@ -261,9 +266,17 @@ SAMPLING_BOOST_MODELS = [
     # "llama-3.1-8b-instruct",
     # "gpt-4o-mini-2024-07-18",
     "gemini-test-3",
-    "sus-column-r",
-    "anonymous-chatbot",
-    "gpt-4o-2024-08-06",
+    # "sus-column-r",
+    # "anonymous-chatbot",
+    "chatgpt-4o-latest",
+    # "gpt-4o-2024-08-06",
+    "jamba-1.5-mini",
+    "jamba-1.5-large",
+    "gemma-2-9b-it-simpo",
+    "grok-2-2024-08-13",
+    "grok-2-mini-2024-08-13",
+    "engine-test",
+    "little-engine-test",
 ]
 
 # outage models won't be sampled.
@@ -610,7 +623,7 @@ def build_side_by_side_ui_anony(models):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1800,
+            value=2000,
             step=64,
             interactive=True,
             label="Max output tokens",
