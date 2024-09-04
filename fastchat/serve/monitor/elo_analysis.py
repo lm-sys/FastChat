@@ -715,7 +715,6 @@ if __name__ == "__main__":
 
     filter_func_map = {
         "full": lambda x: True,
-        "long": filter_long_conv,
         "chinese": lambda x: x["language"] == "Chinese",
         "english": lambda x: x["language"] == "English",
         "russian": lambda x: x["language"] == "Russian",

@@ -224,6 +224,7 @@ if __name__ == "__main__":
         print(f"{len(input_data)} out of {old_len}# images found")
 
     if args.testing:
+        # remove output file if exists
         if os.path.isfile(config["output_file"]):
             os.remove(config["output_file"])
         if "category_tag" in input_data.columns:
@@ -231,7 +232,7 @@ if __name__ == "__main__":
         input_data = input_data[input_data["language"] == "English"].reset_index(
             drop=True
         )
-        input_data = input_data[:250]
+        input_data = input_data[:50]
 
     # much faster than pd.apply
     input_data["uid"] = input_data.question_id.map(str) + input_data.tstamp.map(str)
