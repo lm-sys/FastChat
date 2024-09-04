@@ -361,7 +361,9 @@ def update_leaderboard_df(arena_table_vals):
             (
                 "color: green; font-weight: bold"
                 if "\u2191" in str(v)
-                else "color: red; font-weight: bold" if "\u2193" in str(v) else ""
+                else "color: red; font-weight: bold"
+                if "\u2193" in str(v)
+                else ""
             )
             for v in s
         ]
@@ -371,7 +373,9 @@ def update_leaderboard_df(arena_table_vals):
             (
                 "color: green; font-weight: bold"
                 if v > 0
-                else "color: red; font-weight: bold" if v < 0 else ""
+                else "color: red; font-weight: bold"
+                if v < 0
+                else ""
             )
             for v in s
         ]
