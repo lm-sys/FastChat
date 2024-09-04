@@ -979,8 +979,8 @@ def cohere_api_stream_iter(
 
     date_str = date.today().strftime("%b %d, %Y")
     preamble = f"You are a large language model called Command built by the \
-    company Cohere. You act as a brilliant, sophisticated, AI-assistant chatbot trained \
-    to assist human users by providing thorough responses. Today's date is {date_str}."
+company Cohere. You act as a brilliant, sophisticated, AI-assistant chatbot trained \
+to assist human users by providing thorough responses. Today's date is {date_str}."
 
     gen_params = {
         "model": model_id,
