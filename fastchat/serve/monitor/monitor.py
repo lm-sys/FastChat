@@ -25,6 +25,19 @@ from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
+from fastchat.serve.monitor.monitor_md import (
+    cat_name_to_baseline,
+    key_to_category_name,
+    arena_hard_title,
+    make_default_md_1,
+    make_default_md_2,
+    make_arena_leaderboard_md,
+    make_category_arena_leaderboard_md,
+    make_full_leaderboard_md,
+    make_leaderboard_md_live,
+)
+
+
 notebook_url = (
     "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
 )
@@ -121,6 +134,20 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
+def recompute_final_ranking(arena_df):
+    # compute ranking based on CI
+    ranking = {}
+    for i, model_a in enumerate(arena_df.index):
+        ranking[model_a] = 1
+        for j, model_b in enumerate(arena_df.index):
+            if i == j:
+                continue
+            if (
+                arena_df.loc[model_b]["rating_q025"]
+                > arena_df.loc[model_a]["rating_q975"]
+            ):
+                ranking[model_a] += 1
+    return list(ranking.values())
 
 
 def update_elo_components(
@@ -319,59 +346,23 @@ def create_ranking_str(ranking, ranking_difference):
         return f"{int(ranking)}"
 
 
-def recompute_final_ranking(arena_df):
-    # compute ranking based on CI
-    ranking = {}
-    for i, model_a in enumerate(arena_df.index):
-        ranking[model_a] = 1
-        for j, model_b in enumerate(arena_df.index):
-            if i == j:
-                continue
-            if (
-                arena_df.loc[model_b]["rating_q025"]
-                > arena_df.loc[model_a]["rating_q975"]
-            ):
-                ranking[model_a] += 1
-    return list(ranking.values())
-
-
-def highlight_top_models(df):
-    def highlight_max_rank(s):
-        # Pastel Yellow with transparency, rgba(red, green, blue, alpha)
-        highlight_color = "rgba(255, 255, 128, 0.2)"  # 50% transparent
-        if int(s["Rank* (UB)"].replace("↑", "").replace("↓", "")) == 1:
-            return [f"background-color: {highlight_color}" for _ in s]
-        else:
-            return ["" for _ in s]
-
-    # Apply and return the styled DataFrame
-    return df.apply(highlight_max_rank, axis=1)
-
-
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-    arena_df = arena_df.sort_values(
-        by=["final_ranking", "rating"], ascending=[True, False]
-    )
 
-    # sort by rating
     if arena_subset_df is not None:
-        # filter out models not in the arena_df
         arena_subset_df = arena_subset_df[arena_subset_df.index.isin(arena_df.index)]
         arena_subset_df = arena_subset_df.sort_values(by=["rating"], ascending=False)
         arena_subset_df["final_ranking"] = recompute_final_ranking(arena_subset_df)
-        # keep only the models in the subset in arena_df and recompute final_ranking
+
         arena_df = arena_df[arena_df.index.isin(arena_subset_df.index)]
-        # recompute final ranking
         arena_df["final_ranking"] = recompute_final_ranking(arena_df)
 
-        # assign ranking by the order
-        arena_subset_df["final_ranking_no_tie"] = range(1, len(arena_subset_df) + 1)
-        arena_df["final_ranking_no_tie"] = range(1, len(arena_df) + 1)
-        # join arena_df and arena_subset_df on index
+        arena_subset_df["final_ranking_no_tie"] = np.arange(1, len(arena_subset_df) + 1)
+        arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
+
         arena_df = arena_subset_df.join(
             arena_df["final_ranking"], rsuffix="_global", how="inner"
         )
@@ -389,152 +380,83 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
 
     arena_df["final_ranking"] = arena_df["final_ranking"].astype(str)
 
-    values = []
-    for i in range(len(arena_df)):
-        row = []
-        model_key = arena_df.index[i]
-        try:  # this is a janky fix for where the model key is not in the model table (model table and arena table dont contain all the same models)
-            model_name = model_table_df[model_table_df["key"] == model_key][
-                "Model"
-            ].values[0]
-            # rank
-            ranking = arena_df.iloc[i].get("final_ranking") or i + 1
-            row.append(ranking)
-            if arena_subset_df is not None:
-                row.append(arena_df.iloc[i].get("ranking_difference") or 0)
-            # model display name
-            row.append(model_name)
-            # elo rating
-            rating = round(arena_df.iloc[i]["rating"])
-            row.append(rating)
-            upper_diff = round(
-                arena_df.iloc[i]["rating_q975"] - arena_df.iloc[i]["rating"]
-            )
-            lower_diff = round(
-                arena_df.iloc[i]["rating"] - arena_df.iloc[i]["rating_q025"]
-            )
-            row.append(f"+{upper_diff}/-{lower_diff}")
-            # num battles
-            row.append(round(arena_df.iloc[i]["num_battles"]))
-            # Organization
-            row.append(
-                model_table_df[model_table_df["key"] == model_key][
-                    "Organization"
-                ].values[0]
-            )
-            # license
-            row.append(
-                model_table_df[model_table_df["key"] == model_key]["License"].values[0]
-            )
-            cutoff_date = model_table_df[model_table_df["key"] == model_key][
-                "Knowledge cutoff date"
-            ].values[0]
-            if cutoff_date == "-":
-                row.append("Unknown")
-            else:
-                row.append(cutoff_date)
-            values.append(row)
-        except Exception as e:
-            print(f"{model_key} - {e}")
+    # Handle potential duplicate keys in model_table_df
+    model_table_dict = model_table_df.groupby("key").first().to_dict(orient="index")
+
+    def process_row(row):
+        model_key = row.name
+        model_info = model_table_dict.get(model_key, {})
+
+        if not model_info:
+            print(f"Warning: {model_key} not found in model table")
+            return None
+
+        ranking = row.get("final_ranking") or row.name + 1
+        result = [ranking]
+
+        if arena_subset_df is not None:
+            result.append(row.get("ranking_difference", 0))
+
+        result.extend(
+            [
+                model_info.get("Model", "Unknown"),
+                f"{round(row['rating'])}",
+                f"+{round(row['rating_q975'] - row['rating'])}/-{round(row['rating'] - row['rating_q025'])}",
+                round(row["num_battles"]),
+                model_info.get("Organization", "Unknown"),
+                model_info.get("License", "Unknown"),
+                "Unknown"
+                if model_info.get("Knowledge cutoff date", "-") == "-"
+                else model_info.get("Knowledge cutoff date", "Unknown"),
+            ]
+        )
+
+        return result
+
+    values = [
+        process_row(row)
+        for _, row in arena_df.iterrows()
+        if process_row(row) is not None
+    ]
+
     return values
 
 
-key_to_category_name = {
-    "full": "Overall",
-    "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
-    "math": "Math",
-    "if": "Instruction Following",
-    "multiturn": "Multi-Turn",
-    "coding": "Coding",
-    "hard_6": "Hard Prompts (Overall)",
-    "hard_english_6": "Hard Prompts (English)",
-    "long_user": "Longer Query",
-    "english": "English",
-    "chinese": "Chinese",
-    "french": "French",
-    "german": "German",
-    "spanish": "Spanish",
-    "russian": "Russian",
-    "japanese": "Japanese",
-    "korean": "Korean",
-    "no_tie": "Exclude Ties",
-    "no_short": "Exclude Short Query (< 5 tokens)",
-    "no_refusal": "Exclude Refusal",
-    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "full_old": "Overall (Deprecated)",
-}
-cat_name_to_explanation = {
-    "Overall": "Overall Questions",
-    "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
-    "Math": "Math",
-    "Instruction Following": "Instruction Following",
-    "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
-    "Coding": "Coding: whether conversation contains code snippets",
-    "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Longer Query": "Longer Query (>= 500 tokens)",
-    "English": "English Prompts",
-    "Chinese": "Chinese Prompts",
-    "French": "French Prompts",
-    "German": "German Prompts",
-    "Spanish": "Spanish Prompts",
-    "Russian": "Russian Prompts",
-    "Japanese": "Japanese Prompts",
-    "Korean": "Korean Prompts",
-    "Exclude Ties": "Exclude Ties and Bothbad",
-    "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
-    "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
-    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
-}
-cat_name_to_baseline = {
-    "Hard Prompts (English)": "English",
-}
-
-
 def update_leaderboard_df(arena_table_vals):
-    elo_datarame = pd.DataFrame(
-        arena_table_vals,
-        columns=[
-            "Rank* (UB)",
-            "Delta",
-            "Model",
-            "Arena Score",
-            "95% CI",
-            "Votes",
-            "Organization",
-            "License",
-            "Knowledge Cutoff",
-        ],
-    )
+    columns = [
+        "Rank* (UB)",
+        "Delta",
+        "Model",
+        "Arena Score",
+        "95% CI",
+        "Votes",
+        "Organization",
+        "License",
+        "Knowledge Cutoff",
+    ]
+    elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
 
-    # goal: color the rows based on the rank with styler
     def highlight_max(s):
-        # all items in S which contain up arrow should be green, down arrow should be red, otherwise black
         return [
-            (
-                "color: green; font-weight: bold"
-                if "\u2191" in v
-                else "color: red; font-weight: bold"
-                if "\u2193" in v
-                else ""
-            )
+            "color: green; font-weight: bold"
+            if "\u2191" in str(v)
+            else "color: red; font-weight: bold"
+            if "\u2193" in str(v)
+            else ""
             for v in s
         ]
 
     def highlight_rank_max(s):
         return [
-            (
-                "color: green; font-weight: bold"
-                if v > 0
-                else "color: red; font-weight: bold"
-                if v < 0
-                else ""
-            )
+            "color: green; font-weight: bold"
+            if v > 0
+            else "color: red; font-weight: bold"
+            if v < 0
+            else ""
             for v in s
         ]
 
-    return elo_datarame.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
+    return elo_dataframe.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
         highlight_rank_max, subset=["Delta"]
     )
 
@@ -612,10 +534,10 @@ def build_arena_tab(
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
-                    "🤖 Model",
-                    "⭐ Arena Score",
-                    "📊 95% CI",
-                    "🗳️ Votes",
+                    "Model",
+                    "Arena Score",
+                    "95% CI",
+                    "Votes",
                     "Organization",
                     "License",
                     "Knowledge Cutoff",
@@ -691,10 +613,10 @@ def build_arena_tab(
     elo_display_df = gr.Dataframe(
         headers=[
             "Rank* (UB)",
-            "🤖 Model",
-            "⭐ Arena Score",
-            "📊 95% CI",
-            "🗳️ Votes",
+            "Model",
+            "Arena Elo",
+            "95% CI",
+            "Votes",
             "Organization",
             "License",
             "Knowledge Cutoff",
@@ -802,6 +724,142 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     )
 
 
+def get_arena_category_table(results_df, categories, metric="ranking"):
+    assert metric in ["rating", "ranking"]
+
+    category_names = [key_to_category_name[k] for k in categories]
+    filtered_df = results_df[results_df["category"].isin(category_names)][
+        ["category", metric]
+    ]
+    category_df = filtered_df.pivot(columns="category", values=metric)
+    category_df = category_df.fillna(-1).astype(int)
+
+    # Reorder columns to match the input order of categories
+    category_df = category_df.reindex(columns=category_names)
+    category_df.insert(0, "Model", category_df.index)
+    category_df = category_df.sort_values(
+        by=category_names[0], ascending=metric == "ranking"
+    )
+    category_df = category_df.reset_index(drop=True)
+
+    style = category_df.style
+
+    def highlight_top_3(s):
+        return [
+            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%"
+            if v == 1 and v != 0
+            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%"
+            if v == 2 and v != 0
+            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%"
+            if v == 3 and v != 0
+            else "text-align: center; font-size: 110%"
+            for v in s
+        ]
+
+    # Apply styling for each category
+    for category in category_names:
+        style = style.apply(highlight_top_3, subset=[category])
+
+    if metric == "rating":
+        style = style.background_gradient(
+            cmap="Blues",
+            subset=category_names,
+            vmin=1150,
+            vmax=category_df[category_names].max().max(),
+        )
+
+    return style
+
+
+def build_category_leaderboard_tab(
+    combined_elo_df, title, categories, categories_width
+):
+    full_table_vals = get_arena_category_table(combined_elo_df, categories)
+    ranking_table_vals = get_arena_category_table(combined_elo_df, categories)
+    rating_table_vals = get_arena_category_table(combined_elo_df, categories, "rating")
+    with gr.Row():
+        gr.Markdown(
+            f"""&emsp; <span style='font-weight: bold; font-size: 125%;'>{title} Leaderboard</span>"""
+        )
+        ranking_button = gr.Button("Sort by Rank")
+        rating_button = gr.Button("Sort by Arena Score")
+        sort_rating = lambda _: get_arena_category_table(
+            combined_elo_df, categories, "rating"
+        )
+        sort_ranking = lambda _: get_arena_category_table(combined_elo_df, categories)
+
+    overall_ranking_leaderboard = gr.Dataframe(
+        headers=["Model"] + [key_to_category_name[k] for k in categories],
+        datatype=["markdown"] + ["str" for k in categories],
+        value=full_table_vals,
+        elem_id="full_leaderboard_dataframe",
+        column_widths=[250]
+        + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
+        height=800,
+        wrap=True,
+    )
+    ranking_button.click(
+        sort_ranking, inputs=[ranking_button], outputs=[overall_ranking_leaderboard]
+    )
+    rating_button.click(
+        sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard]
+    )
+
+
+selected_categories = [
+    "full",
+    "coding",
+    "if",
+    "math",
+    "hard_6",
+    "multiturn",
+    "long_user",
+    "no_refusal",
+]
+selected_categories_width = [95, 85, 130, 75, 150, 100, 95, 100]
+
+language_categories = [
+    "english",
+    "chinese",
+    "german",
+    "french",
+    "spanish",
+    "russian",
+    "japanese",
+    "korean",
+]
+language_categories_width = [100] * len(language_categories)
+
+
+def get_combined_table(elo_results, model_table_df):
+    def get_model_name(model_key):
+        try:
+            model_name = model_table_df[model_table_df["key"] == model_key][
+                "Model"
+            ].values[0]
+            return model_name
+        except:
+            return None
+
+    combined_table = []
+    for category in elo_results.keys():
+        df = elo_results[category]["leaderboard_table_df"]
+        ranking = recompute_final_ranking(df)
+        df["ranking"] = ranking
+        df["category"] = key_to_category_name[category]
+        df["Model"] = df.index
+        try:
+            df["Model"] = df["Model"].apply(get_model_name)
+            combined_table.append(df)
+        except:
+            continue
+    combined_table = pd.concat(combined_table)
+    combined_table["Model"] = combined_table.index
+    # drop any rows with nan values
+    combined_table = combined_table.dropna()
+    return combined_table
+
+
 def build_leaderboard_tab(
     elo_results_file,
     leaderboard_table_file,
@@ -836,14 +894,55 @@ def build_leaderboard_tab(
         model_table_df = pd.DataFrame(data)
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Arena", id=0):
+            with gr.Tab("Ranking Breakdown", id=0):
+                gr.Markdown(
+                    f"""
+                    <div style="text-align: center; font-weight: bold;">
+                        For a more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
+                    </div>
+                    """,
+                )
+                last_updated_time = elo_results_text["full"][
+                    "last_updated_datetime"
+                ].split(" ")[0]
+                gr.Markdown(
+                    make_arena_leaderboard_md(
+                        elo_results_text["full"]["leaderboard_table_df"],
+                        last_updated_time,
+                    ),
+                    elem_id="leaderboard_markdown",
+                )
+                combined_table = get_combined_table(elo_results_text, model_table_df)
+                gr_plots = build_category_leaderboard_tab(
+                    combined_table,
+                    "Task",
+                    selected_categories,
+                    selected_categories_width,
+                )
+                build_category_leaderboard_tab(
+                    combined_table,
+                    "Language",
+                    language_categories,
+                    language_categories_width,
+                )
+                gr.Markdown(
+                    f"""
+            ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
+            Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
+            See Figure 1 below for visualization of the confidence intervals of model scores.
+
+            Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
+            """,
+                    elem_id="leaderboard_markdown",
+                )
+            with gr.Tab("Arena", id=1):
                 gr_plots = build_arena_tab(
                     elo_results_text,
                     model_table_df,
                     default_md,
                     show_plot=show_plot,
                 )
-            with gr.Tab("📣 NEW: Arena (Vision)", id=1):
+            with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
                     elo_results_vision,
                     model_table_df,
@@ -852,7 +951,7 @@ def build_leaderboard_tab(
                     show_plot=show_plot,
                 )
             if arena_hard_leaderboard is not None:
-                with gr.Tab("Arena-Hard-Auto", id=2):
+                with gr.Tab("Arena-Hard-Auto", id=3):
                     dataFrame = arena_hard_process(
                         leaderboard_table_file, arena_hard_leaderboard
                     )
@@ -889,10 +988,10 @@ def build_leaderboard_tab(
                         column_widths=[70, 190, 80, 80, 90, 150],
                     )
 
-                with gr.Tab("Full Leaderboard", id=3):
-                    build_full_leaderboard_tab(
-                        elo_results_text, model_table_df, model_to_score
-                    )
+            with gr.Tab("Full Leaderboard", id=4):
+                build_full_leaderboard_tab(
+                    elo_results_text, model_table_df, model_to_score
+                )
 
         if not show_plot:
             gr.Markdown(
@@ -938,10 +1037,10 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
     # set text size to large
     theme.text_size = text_size
     theme.set(
-        button_large_text_size="40px",
-        button_small_text_size="40px",
-        button_large_text_weight="1000",
-        button_small_text_weight="1000",
+        button_large_text_size="20px",
+        button_small_text_size="20px",
+        button_large_text_weight="100",
+        button_small_text_weight="100",
         button_shadow="*shadow_drop_lg",
         button_shadow_hover="*shadow_drop_lg",
         checkbox_label_shadow="*shadow_drop_lg",
