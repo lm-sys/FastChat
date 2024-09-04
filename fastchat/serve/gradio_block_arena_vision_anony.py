@@ -89,24 +89,26 @@ VISION_SAMPLING_WEIGHTS = {
     "gpt-4o-2024-05-13": 6,
     "gpt-4-turbo-2024-04-09": 4,
     "claude-3-haiku-20240307": 2,
-    "claude-3-sonnet-20240229": 2,
     "claude-3-5-sonnet-20240620": 6,
     "claude-3-opus-20240229": 4,
-    "gemini-1.5-flash-api-0514": 4,
-    "gemini-1.5-pro-api-0514": 6,
+    "gemini-1.5-flash-api-0514": 2,
+    "gemini-1.5-pro-api-0514": 4,
     # "llava-v1.6-34b": 4,
-    "reka-core-20240501": 2,
-    "reka-flash-preview-20240611": 2,
+    # "reka-core-20240501": 2,
+    # "reka-flash-preview-20240611": 2,
     # "cogvlm2-llama3-chat-19b": 4,
-    "gemini-test-2": 6,
+    # "gemini-test-2": 6,
     "gpt-4o-mini-2024-07-18": 4,
     "internvl2-26b": 2,
-    "gemini-test-3": 6,
+    "gemini-1.5-pro-exp-0827": 6,
+    "gemini-1.5-flash-exp-0827": 6,
+    "gemini-1.5-flash-8b-exp-0827": 4,
     # "phi-3-vision-128k-instruct": 4,
-    "minicpm-v-2_6": 2,
     "phi-3.5-vision-instruct": 6,
-    "internvl2-4b": 6,
-    "yi-vision": 6,
+    "internvl2-4b": 4,
+    "llava-onevision-qwen2-72b-ov": 6,
+    "yi-vision": 4,
+    # "qwen-vl-max-0809": 600,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -114,16 +116,12 @@ VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = [
-#    "reka-core-20240501",
-#    "reka-flash-preview-20240611",
-#    "cogvlm2-llama3-chat-19b",
     # "internvl2-26b",
-   #  "gemini-test-3",
-   "minicpm-v-2_6",
-   "phi-3.5-vision-instruct",
-   "internvl2-4b",
-   "yi-vision",
-   # "phi-3-vision-128k-instruct",
+   #"minicpm-v-2_6",
+   #"phi-3.5-vision-instruct",
+   "gemini-1.5-flash-exp-0827",
+   "gemini-1.5-flash-8b-exp-0827",
+   "llava-onevision-qwen2-72b-ov",
 ]
 
 # outage models won't be sampled.

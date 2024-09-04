@@ -10,7 +10,7 @@ REPO_PATH = os.path.dirname(os.path.dirname(__file__))
 # Survey Link URL (to be removed) #00729c
 SURVEY_LINK = """<div style='text-align: left; margin: 20px 0;'>
     <div style='display: inline-block; border: 2px solid #00729c; padding: 20px; padding-bottom: 10px; padding-top: 10px; border-radius: 5px;'>
-        <span style='color: #00729c; font-weight: bold;'>📣 NEWS: We got a shorter URL! Reach us via <a href='https://lmarena.ai' style='color: #00729c; text-decoration: underline;'>lmarena.ai</a></span>
+        <span style='color: #00729c; font-weight: bold;'>NEWS: We got a shorter URL! Reach us via <a href='https://lmarena.ai' style='color: #00729c; text-decoration: underline;'>lmarena.ai</a></span>
     </div>
 </div>"""
 # SURVEY_LINK = ""

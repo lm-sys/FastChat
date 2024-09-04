@@ -55,7 +55,20 @@ register_model_info(
 
 register_model_info(
     [
+        "grok-2-2024-08-13",
+        "grok-2-mini-2024-08-13",
+    ],
+    "Grok-2",
+    "https://x.ai/blog/grok-2",
+    "Grok-2 by xAI",
+)
+
+register_model_info(
+    [
+        "gemini-1.5-pro-exp-0827",
         "gemini-1.5-pro-exp-0801",
+        "gemini-1.5-flash-exp-0827",
+        "gemini-1.5-flash-8b-exp-0827",
         "gemini-1.5-pro-api-0409-preview",
         "gemini-1.5-pro-tuned",
         "gemini-1.5-pro-api-preview",
@@ -114,8 +127,6 @@ register_model_info(
         "im-a-good-gpt2-chatbot",
         "upcoming-gpt-mini",
         "sus-column-r",
-        "grok-2-2024-08-13",
-        "grok-2-mini-2024-08-13",
     ],
     "GPT-4-Turbo",
     "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
@@ -203,7 +214,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["yi-large-preview", "yi-large"],
+    ["yi-large-preview", "yi-large", "yi-vision"],
     "Yi-Large",
     "https://x.com/01AI_Yi/status/1789894091620458667",
     "State-of-the-art model by 01 AI",
@@ -225,6 +236,7 @@ register_model_info(
         "phi-3-mini-128k-instruct",
         "phi-3-vision-128k-instruct",
         "phi-3.5-vision-instruct",
+        "llava-onevision-qwen2-72b-ov",
     ],
     "Phi-3",
     "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
@@ -262,14 +274,14 @@ register_model_info(
 )
 
 register_model_info(
-    ["command-r-plus"],
+    ["command-r-plus", "command-r-plus-08-2024"],
     "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
     "Command-R Plus by Cohere",
 )
 
 register_model_info(
-    ["command-r"],
+    ["command-r", "command-r-08-2024"],
     "Command-R",
     "https://txt.cohere.com/command-r/",
     "Command-R by Cohere",
