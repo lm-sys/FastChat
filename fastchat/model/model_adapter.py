@@ -1532,12 +1532,50 @@ class MistralAdapter(BaseModelAdapter):
         return "mistral" in model_path.lower() or "mixtral" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        # Load the config first
+        config = AutoConfig.from_pretrained(
+            model_path,
+            trust_remote_code=True
+        )
+
+        # Modify the 'num_experts_per_tok' parameter
+        config.num_experts_per_tok = 1  # Set it to 1
+
+        # Load the tokenizer
+        revision = from_pretrained_kwargs.get("revision", "main")
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=self.use_fast_tokenizer,
+                revision=revision,
+                trust_remote_code=True,
+            )
+        except TypeError:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, use_fast=False, revision=revision, trust_remote_code=True
+            )
+
+        # Initialize the model with the modified config
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                config=config,  # Pass the modified config here
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+                **from_pretrained_kwargs,
+            )
+        except NameError:
+            model = AutoModel.from_pretrained(
+                model_path,
+                config=config,  # Pass the modified config here
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+                **from_pretrained_kwargs,
+            )
+
+        # Set eos_token_id and pad_token_id from tokenizer
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
-
-        # Set num_experts_per_tok to 1 by default
-        model.config.num_experts_per_tok = 1
 
         return model, tokenizer
 
