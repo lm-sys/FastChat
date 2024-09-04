@@ -2482,7 +2482,7 @@ class CohereAdapter(BaseModelAdapter):
 
 
 class DBRXAdapter(BaseModelAdapter):
-    """The model adapter for Cohere"""
+    """The model adapter for Databricks"""
 
     def match(self, model_path: str):
         return model_path in ["dbrx-instruct"]
