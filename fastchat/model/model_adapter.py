@@ -1991,6 +1991,15 @@ class PhyagiUserassistantNlAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("phyagi-userassistant-nl")
 
+class Llama31Adapter(BaseModelAdapter):
+    """The model adapter for llama3_1"""
+
+    def match(self, model_path: str):
+        return "llama3_1" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama3_1")
+
 class Tlg47Adapter(BaseModelAdapter):
     """The model adapter for Tlg47"""
 
@@ -2322,6 +2331,7 @@ register_model_adapter(CodeLlamaAdapter)
 register_model_adapter(Llama2ChangAdapter)
 register_model_adapter(ZephyrAdapter)
 register_model_adapter(PhyagiUserassistantNlAdapter)
+register_model_adapter(Llama31Adapter)
 register_model_adapter(Tlg47Adapter)
 register_model_adapter(NotusAdapter)
 register_model_adapter(CatPPTAdapter)
