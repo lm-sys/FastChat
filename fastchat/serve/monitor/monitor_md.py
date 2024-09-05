@@ -6,6 +6,7 @@ from fastchat.constants import SURVEY_LINK
 
 key_to_category_name = {
     "full": "Overall",
+    "full_style_control": "Overall w/ Style Control",
     "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
     "math": "Math",
     "if": "Instruction Following",
@@ -13,6 +14,7 @@ key_to_category_name = {
     "coding": "Coding",
     "hard_6": "Hard Prompts (Overall)",
     "hard_english_6": "Hard Prompts (English)",
+    "hard_6_style_control": "Hard Prompts (Overall) w/ Style Control",
     "long_user": "Longer Query",
     "english": "English",
     "chinese": "Chinese",
@@ -30,12 +32,14 @@ key_to_category_name = {
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
+    "Overall w/ Style Control": "Overall with Style Control",
     "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Math": "Math",
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
+    "Hard Prompts (Overall) w/ Style Control": "Hard Prompts (Overall) with Style Control",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Longer Query": "Longer Query (>= 500 tokens)",
     "English": "English Prompts",
