@@ -329,7 +329,11 @@ if __name__ == "__main__":
         args.elo_results_file,
         args.leaderboard_table_file,
     )
-    demo.launch(
+    demo.queue(
+        default_concurrency_limit=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
+    ).launch(
         server_name=args.host,
         server_port=args.port,
         share=args.share,
