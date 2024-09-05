@@ -37,11 +37,14 @@ from fastchat.serve.monitor.monitor_md import (
     make_leaderboard_md_live,
 )
 
+<<<<<<< HEAD
 k2c = {}
 for k, v in key_to_category_name.items():
     k2c[k] = v
     k2c[k+"_style_control"] = v + "_style_control"
 key_to_category_name = k2c
+=======
+>>>>>>> c7f9230 (New leaderboard (#3465))
 
 notebook_url = (
     "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
@@ -51,6 +54,7 @@ basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
 
+<<<<<<< HEAD
 def make_default_md_1(mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
@@ -127,6 +131,8 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
+=======
+>>>>>>> c7f9230 (New leaderboard (#3465))
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -415,65 +421,16 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
     return values
 
 
-key_to_category_name = {
-    "full": "Overall",
-    "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
-    "math": "Math",
-    "if": "Instruction Following",
-    "multiturn": "Multi-Turn",
-    "coding": "Coding",
-    "hard_6": "Hard Prompts (Overall)",
-    "hard_english_6": "Hard Prompts (English)",
-    "long_user": "Longer Query",
-    "english": "English",
-    "chinese": "Chinese",
-    "french": "French",
-    "german": "German",
-    "spanish": "Spanish",
-    "russian": "Russian",
-    "japanese": "Japanese",
-    "korean": "Korean",
-    "no_tie": "Exclude Ties",
-    "no_short": "Exclude Short Query (< 5 tokens)",
-    "no_refusal": "Exclude Refusal",
-    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "full_old": "Overall (Deprecated)",
-}
-cat_name_to_explanation = {
-    "Overall": "Overall Questions",
-    "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
-    "Math": "Math",
-    "Instruction Following": "Instruction Following",
-    "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
-    "Coding": "Coding: whether conversation contains code snippets",
-    "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Longer Query": "Longer Query (>= 500 tokens)",
-    "English": "English Prompts",
-    "Chinese": "Chinese Prompts",
-    "French": "French Prompts",
-    "German": "German Prompts",
-    "Spanish": "Spanish Prompts",
-    "Russian": "Russian Prompts",
-    "Japanese": "Japanese Prompts",
-    "Korean": "Korean Prompts",
-    "Exclude Ties": "Exclude Ties and Bothbad",
-    "Exclude Short Query (< 5 tokens)": "Exclude Short User Query (< 5 tokens)",
-    "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
-    "overall_limit_5_user_vote": "overall_limit_5_user_vote",
-    "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
-}
-cat_name_to_baseline = {
-    "Hard Prompts (English)": "English",
-}
-
-
 def update_leaderboard_df(arena_table_vals):
     columns = [
         "Rank* (UB)",
         "Delta",
         "Model",
+<<<<<<< HEAD
         "Arena Score",
+=======
+        "Arena Elo",
+>>>>>>> c7f9230 (New leaderboard (#3465))
         "95% CI",
         "Votes",
         "Organization",
@@ -484,25 +441,21 @@ def update_leaderboard_df(arena_table_vals):
 
     def highlight_max(s):
         return [
-            (
-                "color: green; font-weight: bold"
-                if "\u2191" in v
-                else "color: red; font-weight: bold"
-                if "\u2193" in v
-                else ""
-            )
+            "color: green; font-weight: bold"
+            if "\u2191" in str(v)
+            else "color: red; font-weight: bold"
+            if "\u2193" in str(v)
+            else ""
             for v in s
         ]
 
     def highlight_rank_max(s):
         return [
-            (
-                "color: green; font-weight: bold"
-                if v > 0
-                else "color: red; font-weight: bold"
-                if v < 0
-                else ""
-            )
+            "color: green; font-weight: bold"
+            if v > 0
+            else "color: red; font-weight: bold"
+            if v < 0
+            else ""
             for v in s
         ]
 
@@ -845,19 +798,28 @@ def build_category_leaderboard_tab(
             combined_elo_df, categories, "rating"
         )
         sort_ranking = lambda _: get_arena_category_table(combined_elo_df, categories)
+<<<<<<< HEAD
     with gr.Row():
         gr.Markdown(
             f"""&emsp; <span style='font-weight: bold; font-size: 150%;'>Chatbot Arena Overview</span>"""
         )
+=======
+>>>>>>> c7f9230 (New leaderboard (#3465))
 
     overall_ranking_leaderboard = gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
+<<<<<<< HEAD
         column_widths=[150]
         + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
         height=1000,
+=======
+        column_widths=[250]
+        + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
+        height=800,
+>>>>>>> c7f9230 (New leaderboard (#3465))
         wrap=True,
     )
     ranking_button.click(
@@ -870,6 +832,7 @@ def build_category_leaderboard_tab(
 
 selected_categories = [
     "full",
+<<<<<<< HEAD
     "full_style_control",
     "hard_6",
     "hard_6_style_control",
@@ -883,6 +846,17 @@ selected_categories = [
 #selected_categories_width = [95, 85, 100, 75, 120, 100, 95, 100,100]
 selected_categories_width = [110,110,110,110,110,80,80,80,80]
 # selected_categories_width = [100] * len(selected_categories)
+=======
+    "coding",
+    "if",
+    "math",
+    "hard_6",
+    "multiturn",
+    "long_user",
+    "no_refusal",
+]
+selected_categories_width = [95, 85, 130, 75, 150, 100, 95, 100]
+>>>>>>> c7f9230 (New leaderboard (#3465))
 
 language_categories = [
     "english",
@@ -917,8 +891,12 @@ def get_combined_table(elo_results, model_table_df):
         try:
             df["Model"] = df["Model"].apply(get_model_name)
             combined_table.append(df)
+<<<<<<< HEAD
         except Exception as e:
             print(f"Error: {e}")
+=======
+        except:
+>>>>>>> c7f9230 (New leaderboard (#3465))
             continue
     combined_table = pd.concat(combined_table)
     combined_table["Model"] = combined_table.index
@@ -961,13 +939,55 @@ def build_leaderboard_tab(
         model_table_df = pd.DataFrame(data)
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Arena", id=0):
+            with gr.Tab("Ranking Breakdown", id=0):
+                gr.Markdown(
+                    f"""
+                    <div style="text-align: center; font-weight: bold;">
+                        For a more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
+                    </div>
+                    """,
+                )
+                last_updated_time = elo_results_text["full"][
+                    "last_updated_datetime"
+                ].split(" ")[0]
+                gr.Markdown(
+                    make_arena_leaderboard_md(
+                        elo_results_text["full"]["leaderboard_table_df"],
+                        last_updated_time,
+                    ),
+                    elem_id="leaderboard_markdown",
+                )
+                combined_table = get_combined_table(elo_results_text, model_table_df)
+                gr_plots = build_category_leaderboard_tab(
+                    combined_table,
+                    "Task",
+                    selected_categories,
+                    selected_categories_width,
+                )
+                build_category_leaderboard_tab(
+                    combined_table,
+                    "Language",
+                    language_categories,
+                    language_categories_width,
+                )
+                gr.Markdown(
+                    f"""
+            ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
+            Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
+            See Figure 1 below for visualization of the confidence intervals of model scores.
+
+            Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
+            """,
+                    elem_id="leaderboard_markdown",
+                )
+            with gr.Tab("Arena", id=1):
                 gr_plots = build_arena_tab(
                     elo_results_text,
                     model_table_df,
                     default_md,
                     show_plot=show_plot,
                 )
+<<<<<<< HEAD
             with gr.Tab("Ranking Breakdown", id=1):
                 gr.Markdown(
                     f"""
@@ -1009,6 +1029,8 @@ def build_leaderboard_tab(
             """,
                     elem_id="leaderboard_markdown",
                 )
+=======
+>>>>>>> c7f9230 (New leaderboard (#3465))
             with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
                     elo_results_vision,
@@ -1024,8 +1046,12 @@ def build_leaderboard_tab(
                 with gr.Tab("Arena-Hard-Auto", id=3):
 =======
             if arena_hard_leaderboard is not None:
+<<<<<<< HEAD
                 with gr.Tab("Arena-Hard-Auto", id=2):
 >>>>>>> a5c29e1 (Update monitor.py (#3460))
+=======
+                with gr.Tab("Arena-Hard-Auto", id=3):
+>>>>>>> c7f9230 (New leaderboard (#3465))
                     dataFrame = arena_hard_process(
                         leaderboard_table_file, arena_hard_leaderboard
                     )
@@ -1064,6 +1090,7 @@ def build_leaderboard_tab(
                     )
 
             with gr.Tab("Full Leaderboard", id=4):
+<<<<<<< HEAD
 =======
             with gr.Tab("Arena-Hard-Auto", id=2):
                 dataFrame = arena_hard_process(
@@ -1110,6 +1137,8 @@ def build_leaderboard_tab(
 
             with gr.Tab("Full Leaderboard", id=3):
 >>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
+=======
+>>>>>>> c7f9230 (New leaderboard (#3465))
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )

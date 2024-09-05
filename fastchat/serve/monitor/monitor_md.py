@@ -102,7 +102,11 @@ Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_v
 """
 
     leaderboard_md += f"""
+<<<<<<< HEAD
 Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote at [lmarena.ai](https://lmarena.ai)!
+=======
+Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote at [chat.lmsys.org](https://chat.lmsys.org)!
+>>>>>>> c7f9230 (New leaderboard (#3465))
 """
     return leaderboard_md
 
