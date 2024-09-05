@@ -1013,6 +1013,7 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
+<<<<<<< HEAD
             model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
@@ -1053,6 +1054,44 @@ def build_leaderboard_tab(
                     )
 
             with gr.Tab("Full Leaderboard", id=4):
+=======
+            with gr.Tab("Arena-Hard-Auto", id=2):
+                dataFrame = arena_hard_process(
+                    leaderboard_table_file, arena_hard_leaderboard
+                )
+                date = dataFrame["date"][0]
+                dataFrame = dataFrame.drop(
+                    columns=["rating_q025", "rating_q975", "date"]
+                )
+                dataFrame = dataFrame.rename(
+                    columns={
+                        "model": "Model",
+                        "score": "Score",
+                        "CI": "95% CI",
+                        "avg_tokens": "Average Tokens",
+                    }
+                )
+                model_to_score = {}
+                for i in range(len(dataFrame)):
+                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
+                        i, "Score"
+                    ]
+                md = arena_hard_title(date)
+                gr.Markdown(md, elem_id="leaderboard_markdown")
+                gr.DataFrame(
+                    dataFrame,
+                    datatype=[
+                        "markdown" if col == "Model" else "str"
+                        for col in dataFrame.columns
+                    ],
+                    elem_id="arena_hard_leaderboard",
+                    height=800,
+                    wrap=True,
+                    column_widths=[70, 190, 80, 140, 70, 150],
+                )
+
+            with gr.Tab("Full Leaderboard", id=3):
+>>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
@@ -1160,7 +1199,11 @@ if __name__ == "__main__":
     parser.add_argument("--ban-ip-file", type=str)
     parser.add_argument("--exclude-model-names", type=str, nargs="+")
     parser.add_argument("--password", type=str, default=None, nargs="+")
+<<<<<<< HEAD
     parser.add_argument("--arena-hard-leaderboard", type=str, default=None)
+=======
+    parser.add_argument("--arena-hard-leaderboard", type=str)
+>>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")
