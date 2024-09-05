@@ -39,6 +39,7 @@ async def litellm_completion(args, tokenizer, image_url=None):
 
         itl_list = []
         content = ""
+        start = time.time()
         async for chunk in response:
             if chunk.choices[0].delta.content:
                 end_time = time.time()
@@ -100,7 +101,7 @@ async def main(args):
     )
 
     # Write errors to error_log.txt
-    with open("load_test_errors.log", "a") as error_log:
+    with open("error_log.txt", "a") as error_log:
         for completion in all_completions:
             if isinstance(completion, str):
                 error_log.write(completion + "\n")
@@ -124,6 +125,6 @@ if __name__ == "__main__":
 
     litellm_client = AsyncOpenAI(base_url=args.server_address, api_key="sk-1234")
     # Blank out contents of error_log.txt
-    open("load_test_errors.log", "w").close()
+    open("error_log.txt", "w").close()
 
     asyncio.run(main(args))
