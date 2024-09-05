@@ -759,13 +759,8 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     gr.Dataframe(
         headers=[
             "Model",
-<<<<<<< HEAD
             "Arena Score",
             "arena-hard-auto",
-=======
-            "Arena Elo",
-            "Arena-Hard-Auto",
->>>>>>> 76571d2 (Arena hard auto leaderboard UI (#3457))
             "MT-bench",
             "MMLU",
             "Organization",
@@ -775,11 +770,7 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
         column_widths=[200, 100, 110, 100, 70, 130, 150],
-<<<<<<< HEAD
         height=1000,
-=======
-        height=800,
->>>>>>> 76571d2 (Arena hard auto leaderboard UI (#3457))
         wrap=True,
     )
 
@@ -1027,9 +1018,14 @@ def build_leaderboard_tab(
                     show_plot=show_plot,
                 )
 <<<<<<< HEAD
+<<<<<<< HEAD
             model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
+=======
+            if arena_hard_leaderboard is not None:
+                with gr.Tab("Arena-Hard-Auto", id=2):
+>>>>>>> a5c29e1 (Update monitor.py (#3460))
                     dataFrame = arena_hard_process(
                         leaderboard_table_file, arena_hard_leaderboard
                     )
@@ -1061,6 +1057,7 @@ def build_leaderboard_tab(
                             for col in dataFrame.columns
                         ],
                         elem_id="arena_hard_leaderboard",
+<<<<<<< HEAD
                         height=1000,
                         wrap=True,
                         column_widths=[70, 190, 80, 80, 90, 150],
@@ -1104,6 +1101,12 @@ def build_leaderboard_tab(
                     wrap=True,
                     column_widths=[70, 190, 80, 80, 90, 150],
                 )
+=======
+                        height=800,
+                        wrap=True,
+                        column_widths=[70, 190, 80, 80, 90, 150],
+                    )
+>>>>>>> a5c29e1 (Update monitor.py (#3460))
 
             with gr.Tab("Full Leaderboard", id=3):
 >>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
