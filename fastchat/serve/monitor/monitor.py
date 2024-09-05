@@ -37,14 +37,11 @@ from fastchat.serve.monitor.monitor_md import (
     make_leaderboard_md_live,
 )
 
-<<<<<<< HEAD
 k2c = {}
 for k, v in key_to_category_name.items():
     k2c[k] = v
     k2c[k+"_style_control"] = v + "_style_control"
 key_to_category_name = k2c
-=======
->>>>>>> c7f9230 (New leaderboard (#3465))
 
 notebook_url = (
     "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
@@ -53,6 +50,7 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 def make_default_md_1(mirror=False):
@@ -121,6 +119,8 @@ Last updated: {elo_results["last_updated_datetime"]}
     return leaderboard_md
 
 
+=======
+>>>>>>> a8adf50 (update)
 def arena_hard_title(date):
     arena_hard_title = f"""
 Last Updated: {date}
@@ -939,48 +939,7 @@ def build_leaderboard_tab(
         model_table_df = pd.DataFrame(data)
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Ranking Breakdown", id=0):
-                gr.Markdown(
-                    f"""
-                    <div style="text-align: center; font-weight: bold;">
-                        For a more holistic comparison, we've updated the leaderboard to show model rank (UB) across tasks and languages. Check out the 'Arena' tab for more categories, statistics, and model info.
-                    </div>
-                    """,
-                )
-                last_updated_time = elo_results_text["full"][
-                    "last_updated_datetime"
-                ].split(" ")[0]
-                gr.Markdown(
-                    make_arena_leaderboard_md(
-                        elo_results_text["full"]["leaderboard_table_df"],
-                        last_updated_time,
-                    ),
-                    elem_id="leaderboard_markdown",
-                )
-                combined_table = get_combined_table(elo_results_text, model_table_df)
-                gr_plots = build_category_leaderboard_tab(
-                    combined_table,
-                    "Task",
-                    selected_categories,
-                    selected_categories_width,
-                )
-                build_category_leaderboard_tab(
-                    combined_table,
-                    "Language",
-                    language_categories,
-                    language_categories_width,
-                )
-                gr.Markdown(
-                    f"""
-            ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
-            Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
-            See Figure 1 below for visualization of the confidence intervals of model scores.
-
-            Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
-            """,
-                    elem_id="leaderboard_markdown",
-                )
-            with gr.Tab("Arena", id=1):
+            with gr.Tab("Arena", id=0):
                 gr_plots = build_arena_tab(
                     elo_results_text,
                     model_table_df,
@@ -988,7 +947,11 @@ def build_leaderboard_tab(
                     show_plot=show_plot,
                 )
 <<<<<<< HEAD
+<<<<<<< HEAD
             with gr.Tab("Ranking Breakdown", id=1):
+=======
+            with gr.Tab("📣 NEW: Overview", id=1):
+>>>>>>> a8adf50 (update)
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">

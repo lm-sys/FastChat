@@ -300,7 +300,7 @@ def build_single_vision_language_model_ui(
 ):
     promotion = (
         f"""
-- [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
@@ -350,7 +350,10 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             )
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
-                elem_id="chatbot", label="Scroll down and start chatting", height=650
+                elem_id="chatbot",
+                label="Scroll down and start chatting",
+                height=650,
+                show_copy_button=True,
             )
 
     with gr.Row():

@@ -1217,6 +1217,15 @@ def metagen_api_stream_iter(
     api_key,
     api_base,
 ):
+    gen_params = {
+        "model": model_name,
+        "prompt": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+    
     res = requests.post(
         f"{api_base}/chat_stream_completions?access_token={api_key}",
         stream=True,

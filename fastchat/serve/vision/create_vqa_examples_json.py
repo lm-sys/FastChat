@@ -28,6 +28,7 @@ if __name__ == "__main__":
     for dataset_name in dataset_prop.keys():
         with open(f"{args.output_dir}/{dataset_name}/data.json") as f:
             data = json.load(f)
+            print(f"Dataset: {dataset_name}, Number of examples: {len(data)}")
             dataset_json.extend(np.random.choice(data, dataset_prop[dataset_name]))
 
     with open(f"{args.output_dir}/metadata_sampled.json", "w") as f:

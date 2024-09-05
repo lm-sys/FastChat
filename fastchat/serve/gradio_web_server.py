@@ -681,6 +681,10 @@ a:hover {
     color: #63A4FF; /* This can be any color you choose for hover */
     text-decoration: underline; /* Adds underline on hover */
 }
+
+.block {
+  overflow-y: hidden !important;
+}
 """
 
 
