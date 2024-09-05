@@ -484,21 +484,25 @@ def update_leaderboard_df(arena_table_vals):
 
     def highlight_max(s):
         return [
-            "color: green; font-weight: bold"
-            if "\u2191" in str(v)
-            else "color: red; font-weight: bold"
-            if "\u2193" in str(v)
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if "\u2191" in v
+                else "color: red; font-weight: bold"
+                if "\u2193" in v
+                else ""
+            )
             for v in s
         ]
 
     def highlight_rank_max(s):
         return [
-            "color: green; font-weight: bold"
-            if v > 0
-            else "color: red; font-weight: bold"
-            if v < 0
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if v > 0
+                else "color: red; font-weight: bold"
+                if v < 0
+                else ""
+            )
             for v in s
         ]
 
@@ -755,8 +759,13 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     gr.Dataframe(
         headers=[
             "Model",
+<<<<<<< HEAD
             "Arena Score",
             "arena-hard-auto",
+=======
+            "Arena Elo",
+            "Arena-Hard-Auto",
+>>>>>>> 76571d2 (Arena hard auto leaderboard UI (#3457))
             "MT-bench",
             "MMLU",
             "Organization",
@@ -766,7 +775,11 @@ def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
         column_widths=[200, 100, 110, 100, 70, 130, 150],
+<<<<<<< HEAD
         height=1000,
+=======
+        height=800,
+>>>>>>> 76571d2 (Arena hard auto leaderboard UI (#3457))
         wrap=True,
     )
 
@@ -1063,10 +1076,12 @@ def build_leaderboard_tab(
                 dataFrame = dataFrame.drop(
                     columns=["rating_q025", "rating_q975", "date"]
                 )
+                dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
+                dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
                 dataFrame = dataFrame.rename(
                     columns={
                         "model": "Model",
-                        "score": "Score",
+                        "score": "Win-rate",
                         "CI": "95% CI",
                         "avg_tokens": "Average Tokens",
                     }
@@ -1074,7 +1089,7 @@ def build_leaderboard_tab(
                 model_to_score = {}
                 for i in range(len(dataFrame)):
                     model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
-                        i, "Score"
+                        i, "Win-rate"
                     ]
                 md = arena_hard_title(date)
                 gr.Markdown(md, elem_id="leaderboard_markdown")
@@ -1087,7 +1102,7 @@ def build_leaderboard_tab(
                     elem_id="arena_hard_leaderboard",
                     height=800,
                     wrap=True,
-                    column_widths=[70, 190, 80, 140, 70, 150],
+                    column_widths=[70, 190, 80, 80, 90, 150],
                 )
 
             with gr.Tab("Full Leaderboard", id=3):
