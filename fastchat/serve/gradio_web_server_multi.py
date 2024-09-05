@@ -54,9 +54,9 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-def load_demo(context: Context, url_params, request: gr.Request):
+def load_demo(context: Context, request: gr.Request):
     ip = get_ip(request)
-    logger.info(f"load_demo. ip: {ip}. params: {url_params}")
+    logger.info(f"load_demo. ip: {ip}. params: {request.query_params}")
 
     inner_selected = 0
     if "arena" in request.query_params:
@@ -113,7 +113,7 @@ def load_demo(context: Context, url_params, request: gr.Request):
     return tabs_list
 
 
-def build_demo(context: Context, elo_results_file: str, leaderboard_table_file):
+def build_demo(context: Context, elo_results_file: str, leaderboard_table_file: str):
     if args.show_terms_of_use:
         load_js = get_window_url_params_with_tos_js
     else:
@@ -206,7 +206,7 @@ window.__gradio_mode__ = "app";
 
         demo.load(
             load_demo,
-            [context_state, url_params],
+            [context_state],
             demo_tabs,
             js=load_js,
         )
