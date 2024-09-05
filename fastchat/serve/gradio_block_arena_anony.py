@@ -230,6 +230,7 @@ SAMPLING_WEIGHTS = {
     "gemini-1.5-pro-exp-0827": 6,
     # "sus-column-r": 4,
     # "anonymous-chatbot": 6,
+    "anonymous-chatbot-0903": 8,
     "chatgpt-4o-latest": 6,
     "gpt-4o-2024-08-06": 6,
     "jamba-1.5-mini": 4,
@@ -237,8 +238,8 @@ SAMPLING_WEIGHTS = {
     "gemma-2-9b-it-simpo": 4,
     "grok-2-2024-08-13": 6,
     "grok-2-mini-2024-08-13": 6,
-    "gemini-1.5-flash-exp-0827": 6,
-    "gemini-1.5-flash-8b-exp-0827": 6,
+    "gemini-1.5-flash-exp-0827": 4,
+    "gemini-1.5-flash-8b-exp-0827": 4,
     "command-r-08-2024": 4,
     "command-r-plus-08-2024": 4,
     "gemini-test-4": 8,
@@ -252,16 +253,20 @@ BATTLE_TARGETS = {}
 BATTLE_STRICT_TARGETS = {}
 
 ANON_MODELS = [
-    "gemini-test-2",
+    "gemini-test-4",
+    "engine-test-4",
+    "anonymous-chatbot-0903",
     # "anonymous-chatbot",
 ]
 
 SAMPLING_BOOST_MODELS = [
     # "sus-column-r",
     # "anonymous-chatbot",
-    "chatgpt-4o-latest",
+    "anonymous-chatbot-0903",
+    # "chatgpt-4o-latest",
     "grok-2-2024-08-13",
-    "grok-2-mini-2024-08-13",
+    "gemini-test-4",
+    "engine-test-4",
     "gemini-1.5-flash-exp-0827",
     "gemini-1.5-flash-8b-exp-0827",
 ]

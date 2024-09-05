@@ -1251,6 +1251,7 @@ def metagen_api_stream_iter(
     text = ""
     for line in res.iter_lines():
         if line:
+            print(line)
             part = json.loads(line.decode("utf-8"))
             if "text" in part:
                 text += part["text"]

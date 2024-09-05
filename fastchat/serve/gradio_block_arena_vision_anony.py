@@ -97,7 +97,8 @@ VISION_SAMPLING_WEIGHTS = {
     # "reka-core-20240501": 2,
     # "reka-flash-preview-20240611": 2,
     # "cogvlm2-llama3-chat-19b": 4,
-    # "gemini-test-2": 6,
+    "gemini-test-4": 4,
+    "engine-test-4": 4,
     "gpt-4o-mini-2024-07-18": 4,
     "internvl2-26b": 2,
     "gemini-1.5-pro-exp-0827": 6,
@@ -119,9 +120,10 @@ VISION_SAMPLING_BOOST_MODELS = [
     # "internvl2-26b",
    #"minicpm-v-2_6",
    #"phi-3.5-vision-instruct",
-   "gemini-1.5-flash-exp-0827",
-   "gemini-1.5-flash-8b-exp-0827",
-   "llava-onevision-qwen2-72b-ov",
+    "gemini-1.5-flash-exp-0827",
+    "gemini-1.5-flash-8b-exp-0827",
+    "gemini-test-4",
+    "engine-test-4",
 ]
 
 # outage models won't be sampled.
@@ -178,14 +180,19 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 
     model_name_1 = states[0].model_name
     model_name_2 = states[1].model_name
-    if model_name_1 == "gemini-test-1" or model_name_1 == "gemini-test-2":
-        model_name_1 = "gemini-1.5-pro-exp-0801"
-    if model_name_2 == "gemini-test-1" or model_name_2 == "gemini-test-2":
-        model_name_2 = "gemini-1.5-pro-exp-0801"
-    if model_name_1 == "gemini-test-3":
-        model_name_1 = "gemini-test"
-    if model_name_2 == "gemini-test-3":
-        model_name_2 = "gemini-test"
+    model_name_map = {
+        "gemini-test-1": "gemini-1.5-pro-exp-0801",
+        "gemini-test-2": "gemini-1.5-pro-exp-0801",
+        "gemini-test-3": "gemini-test",
+        "gemini-test-4": "gemini-test",
+        "engine-test-4": "engine-test",
+        "anonymous-chatbot-0903": "anonymous-chatbot",
+    }
+
+    if model_name_1 in model_name_map:
+        model_name_1 = model_name_map[model_name_1]
+    if model_name_2 in model_name_map:
+        model_name_2 = model_name_map[model_name_2]
 
     if ":" not in model_selectors[0]:
         for i in range(5):

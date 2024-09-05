@@ -89,6 +89,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4o-2024-05-13",
     "gpt-4o-2024-08-06",
     "anonymous-chatbot",
+    "anonymous-chatbot-0903",
     "chatgpt-4o-latest",
 )
 
@@ -1606,7 +1607,7 @@ class Llama31Adapter(BaseModelAdapter):
     """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
 
     def match(self, model_path: str):
-        return "llama-3.1" in model_path.lower()
+        return "llama-3.1" in model_path.lower() or "real-chatbot" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1615,7 +1616,9 @@ class Llama31Adapter(BaseModelAdapter):
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if model_path.lower() in ["llama-3.1-8b-instruct", "llama-3.1-70b-instruct"]:
+        if model_path.lower() in [
+            "llama-3.1-8b-instruct", "llama-3.1-70b-instruct", "the-real-chatbot-v2"
+        ]:
             return get_conv_template("meta-llama-3.1-sp")
         return get_conv_template("meta-llama-3.1")
 
