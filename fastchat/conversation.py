@@ -98,6 +98,14 @@ class Conversation:
                 else:
                     ret += role + "\n"
             return ret
+        elif self.sep_style == SeparatorStyle.ADD_NEW_LINE_DOUBLE:
+            ret = "" if system_prompt == "" else system_prompt + self.sep
+            for role, message in self.messages:
+                if message:
+                    ret += role + "\n\n" + message + self.sep
+                else:
+                    ret += role + "\n\n"
+            return ret
         elif self.sep_style == SeparatorStyle.NO_COLON_SINGLE:
             ret = system_prompt
             for role, message in self.messages:
