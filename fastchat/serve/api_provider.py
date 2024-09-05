@@ -211,6 +211,8 @@ def get_api_provider_stream_iter(
             temperature=temperature,
             top_p=top_p,
             max_new_tokens=max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "metagen":
         prompt = conv.to_metagen_api_messages()
