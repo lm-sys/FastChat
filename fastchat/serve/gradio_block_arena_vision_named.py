@@ -83,7 +83,7 @@ def load_demo_side_by_side_vision_named(context: Context):
     else:
         model_right = model_left
 
-    all_models = list(set(context.text_models + context.vision_models))
+    all_models = context.models
     selector_updates = [
         gr.Dropdown(choices=all_models, value=model_left, visible=True),
         gr.Dropdown(choices=all_models, value=model_right, visible=True),
@@ -303,7 +303,7 @@ def add_text(
 
 
 def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
-    notice_markdown = """
+    notice_markdown = f"""
 # ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
 
@@ -326,7 +326,7 @@ def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    text_and_vision_models = list(set(context.text_models + context.vision_models))
+    text_and_vision_models = context.models
     context_state = gr.State(context)
 
     with gr.Row():

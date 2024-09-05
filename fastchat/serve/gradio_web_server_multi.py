@@ -113,7 +113,7 @@ def load_demo(context: Context, request: gr.Request):
     return tabs_list
 
 
-def build_demo(context: Context, elo_results_file: str, leaderboard_table_file: str):
+def build_demo(context: Context, elo_results_file: str, leaderboard_table_file, arena_hard_table):
     if args.show_terms_of_use:
         load_js = get_window_url_params_with_tos_js
     else:
@@ -321,7 +321,9 @@ if __name__ == "__main__":
         vision_arena=True,
     )
 
-    context = Context(text_models, all_text_models, vision_models, all_vision_models)
+    models = text_models + [model for model in vision_models if model not in text_models]
+    all_models = all_text_models + [model for model in all_vision_models if model not in all_text_models]
+    context = Context(text_models, all_text_models, vision_models, all_vision_models, models, all_models)
 
     # Set authorization credentials
     auth = None

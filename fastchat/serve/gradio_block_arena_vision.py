@@ -318,7 +318,8 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
-    text_and_vision_models = list(set(context.text_models + context.vision_models))
+    vision_not_in_text_models = [model for model in context.vision_models if model not in context.text_models]
+    text_and_vision_models = context.text_models + vision_not_in_text_models
     context_state = gr.State(context)
 
     with gr.Group():

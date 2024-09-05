@@ -94,18 +94,6 @@ Code to recreate leaderboard tables and plots in this [notebook]({notebook_url})
     return leaderboard_md
 
 
-def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"):
-    total_votes = sum(arena_df["num_battles"]) // 2
-    total_models = len(arena_df)
-    space = "&nbsp;&nbsp;&nbsp;"
-    total_subset_votes = sum(arena_subset_df["num_battles"]) // 2
-    total_subset_models = len(arena_subset_df)
-    leaderboard_md = f"""### {cat_name_to_explanation[name]}
-#### {space} #models: **{total_subset_models} ({round(total_subset_models/total_models *100)}%)** {space} #votes: **{"{:,}".format(total_subset_votes)} ({round(total_subset_votes/total_votes * 100)}%)**{space}
-"""
-    return leaderboard_md
-
-
 def make_full_leaderboard_md():
     leaderboard_md = """
 Three benchmarks are displayed: **Arena Score**, **MT-Bench** and **MMLU**.
@@ -916,7 +904,14 @@ def build_leaderboard_tab(
         model_table_df = pd.DataFrame(data)
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Ranking Breakdown", id=0):
+            with gr.Tab("Arena", id=0):
+                gr_plots = build_arena_tab(
+                    elo_results_text,
+                    model_table_df,
+                    default_md,
+                    show_plot=show_plot,
+                )
+            with gr.Tab("Ranking Breakdown", id=1):
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">
@@ -935,7 +930,7 @@ def build_leaderboard_tab(
                     elem_id="leaderboard_markdown",
                 )
                 combined_table = get_combined_table(elo_results_text, model_table_df)
-                gr_plots = build_category_leaderboard_tab(
+                build_category_leaderboard_tab(
                     combined_table,
                     "Task",
                     selected_categories,
@@ -956,13 +951,6 @@ def build_leaderboard_tab(
             Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
             """,
                     elem_id="leaderboard_markdown",
-                )
-            with gr.Tab("Arena", id=1):
-                gr_plots = build_arena_tab(
-                    elo_results_text,
-                    model_table_df,
-                    default_md,
-                    show_plot=show_plot,
                 )
             with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
