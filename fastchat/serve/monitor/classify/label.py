@@ -195,7 +195,6 @@ if __name__ == "__main__":
     if args.wandb:
         wandb.init(
             project="arena",
-            entity="clipinvariance",
             name=config["input_file"].split("/")[-1].split(".")[0],
         )
 
@@ -356,7 +355,14 @@ if __name__ == "__main__":
         columns = (
             ["prompt", "response_a", "response_b", "tstamp", "category_tag"]
             if not args.vision
-            else ["prompt", "image", "response_a", "response_b", "tstamp", "category_tag"]
+            else [
+                "prompt",
+                "image",
+                "response_a",
+                "response_b",
+                "tstamp",
+                "category_tag",
+            ]
         )
         if args.vision:
             # # read image_path into wandb Image
@@ -368,8 +374,13 @@ if __name__ == "__main__":
                 except Exception:
                     print(f"Invalid image: {filepath}")
                     return False
+
             if args.testing:
-                output["image"] = output.image_path.map(lambda x: wandb.Image(x) if os.path.exists(x) and is_valid_image(x) else None) 
+                output["image"] = output.image_path.map(
+                    lambda x: wandb.Image(x)
+                    if os.path.exists(x) and is_valid_image(x)
+                    else None
+                )
             else:
                 output["image"] = output.image_path
 

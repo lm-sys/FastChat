@@ -851,7 +851,9 @@ def build_leaderboard_tab(
                     language_categories_width,
                 )
                 if elo_results_vision is not None:
-                    vision_combined_table = get_combined_table(elo_results_vision, model_table_df)
+                    vision_combined_table = get_combined_table(
+                        elo_results_vision, model_table_df
+                    )
                     build_category_leaderboard_tab(
                         vision_combined_table,
                         "Vision",

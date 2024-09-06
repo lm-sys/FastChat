@@ -722,11 +722,17 @@ if __name__ == "__main__":
         "exclude_preset": lambda x: not x["preset"],
         "no_refusal": lambda x: not x["is_refusal"],
         "is_captioning": lambda x: x["category_tag"]["vision_v0.1"]["is_captioning"],
-        "is_entity_recognition": lambda x: x["category_tag"]["vision_v0.1"]["is_entity_recognition"],
+        "is_entity_recognition": lambda x: x["category_tag"]["vision_v0.1"][
+            "is_entity_recognition"
+        ],
         "is_ocr": lambda x: x["category_tag"]["vision_v0.1"]["is_ocr"],
         "is_counting": lambda x: x["category_tag"]["vision_v0.1"]["is_counting"],
-        "is_creative_composition": lambda x: x["category_tag"]["vision_v0.1"]["is_creative_composition"],
-        "is_spatial_reasoning": lambda x: x["category_tag"]["vision_v0.1"]["is_spatial_reasoning"],
+        "is_creative_composition": lambda x: x["category_tag"]["vision_v0.1"][
+            "is_creative_composition"
+        ],
+        "is_spatial_reasoning": lambda x: x["category_tag"]["vision_v0.1"][
+            "is_spatial_reasoning"
+        ],
         "if": lambda x: x["category_tag"]["if_v0.1"]["if"],
         "math": lambda x: x["category_tag"]["math_v0.1"]["math"],
     }
@@ -775,5 +781,5 @@ if __name__ == "__main__":
 
     with open(f"elo_results_{cutoff_date}.pkl", "wb") as fout:
         pickle.dump(results, fout)
-   
+
     print(f"saved elo_results_{cutoff_date}.pkl")
