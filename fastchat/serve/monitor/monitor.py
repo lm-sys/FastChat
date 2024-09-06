@@ -674,12 +674,13 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
         style = style.apply(highlight_top_3, subset=[category])
 
     if metric == "rating":
-        style = style.background_gradient(
-            cmap="Blues",
-            subset=category_names,
-            vmin=1150,
-            vmax=category_df[category_names].max().max(),
-        )
+        for category in category_names:
+            style = style.background_gradient(
+                cmap="Blues",
+                subset=[category],
+                vmin=category_df[category].max() - 150,
+                vmax=category_df[category].max(),
+            )
 
     return style
 
@@ -705,7 +706,7 @@ def build_category_leaderboard_tab(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
-        elem_id="full_leaderboard_dataframe",
+        elem_id="overview_leaderboard_dataframe",
         column_widths=[250]
         + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
         height=800,
@@ -730,6 +731,17 @@ selected_categories = [
     "no_refusal",
 ]
 selected_categories_width = [95, 85, 130, 75, 150, 100, 95, 100]
+
+vision_categories = [
+    "full",
+    "is_captioning",
+    "is_entity_recognition",
+    "is_ocr",
+    "is_creative_composition",
+    "if",
+    "no_refusal",
+]
+vision_categories_width = [90, 90, 90, 50, 80, 95, 90, 80]
 
 language_categories = [
     "english",
@@ -838,6 +850,14 @@ def build_leaderboard_tab(
                     language_categories,
                     language_categories_width,
                 )
+                if elo_results_vision is not None:
+                    vision_combined_table = get_combined_table(elo_results_vision, model_table_df)
+                    build_category_leaderboard_tab(
+                        vision_combined_table,
+                        "Vision",
+                        vision_categories,
+                        vision_categories_width,
+                    )
                 gr.Markdown(
                     f"""
             ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.

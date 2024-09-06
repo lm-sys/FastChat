@@ -707,7 +707,6 @@ if __name__ == "__main__":
     if args.clean_battle_file:
         # Read data from a cleaned battle files
         battles = pd.read_json(args.clean_battle_file)
-        print(battles.columns)
     else:
         # Read data from all log files
         log_files = get_log_files(args.max_num_files)
@@ -718,14 +717,31 @@ if __name__ == "__main__":
         "chinese": lambda x: x["language"] == "Chinese",
         "english": lambda x: x["language"] == "English",
         "russian": lambda x: x["language"] == "Russian",
+        "vietnamese": lambda x: x["language"] == "Vietnamese",
         "multiturn": lambda x: x["turn"] > 1,
         "exclude_preset": lambda x: not x["preset"],
+        "no_refusal": lambda x: not x["is_refusal"],
+        "is_captioning": lambda x: x["category_tag"]["vision_v0.1"]["is_captioning"],
+        "is_entity_recognition": lambda x: x["category_tag"]["vision_v0.1"]["is_entity_recognition"],
+        "is_ocr": lambda x: x["category_tag"]["vision_v0.1"]["is_ocr"],
+        "is_counting": lambda x: x["category_tag"]["vision_v0.1"]["is_counting"],
+        "is_creative_composition": lambda x: x["category_tag"]["vision_v0.1"]["is_creative_composition"],
+        "is_spatial_reasoning": lambda x: x["category_tag"]["vision_v0.1"]["is_spatial_reasoning"],
+        "if": lambda x: x["category_tag"]["if_v0.1"]["if"],
+        "math": lambda x: x["category_tag"]["math_v0.1"]["math"],
     }
     assert all(
         [cat in filter_func_map for cat in args.category]
     ), f"Invalid category: {args.category}"
 
     results = {}
+    for cat in args.category:
+        values = battles.apply(filter_func_map[cat], axis=1)
+        # if all values are False, skip
+        print(f"Category {cat} has {values.sum()} battles")
+        if not any(values):
+            print(f"Skipping category {cat}")
+            continue
     for cat in args.category:
         filter_func = filter_func_map[cat]
         results[cat] = report_elo_analysis_results(

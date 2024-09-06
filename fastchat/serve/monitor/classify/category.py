@@ -233,7 +233,7 @@ Remember to consider all aspects of the question and assign all relevant categor
             "is_counting": "counting" in score,
             "is_ocr": "optical character recognition" in score,
             "is_entity_recognition": "entity recognition" in score,
-            "is_creative_composition": "creative composition" in score,
+            "is_creative_composition": "creative writing" in score,
             "is_spatial_reasoning": "spatial reasoning" in score,
             "response": judgment,
         }
