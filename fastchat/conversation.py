@@ -1379,7 +1379,7 @@ Today Date: {{currentDateTimev2}}"""
 )
 
 register_conv_template(
-Conversation(
+    Conversation(
         name="meta-llama-3.1-sp",
         system_message=(
             """Cutting Knowledge Date: December 2023

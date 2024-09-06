@@ -1617,7 +1617,9 @@ class Llama31Adapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         if model_path.lower() in [
-            "llama-3.1-8b-instruct", "llama-3.1-70b-instruct", "the-real-chatbot-v2"
+            "llama-3.1-8b-instruct",
+            "llama-3.1-70b-instruct",
+            "the-real-chatbot-v2",
         ]:
             return get_conv_template("meta-llama-3.1-sp")
         return get_conv_template("meta-llama-3.1")

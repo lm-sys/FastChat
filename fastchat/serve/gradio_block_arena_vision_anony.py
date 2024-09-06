@@ -118,8 +118,8 @@ VISION_BATTLE_TARGETS = {}
 # TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = [
     # "internvl2-26b",
-   #"minicpm-v-2_6",
-   #"phi-3.5-vision-instruct",
+    # "minicpm-v-2_6",
+    # "phi-3.5-vision-instruct",
     "gemini-1.5-flash-exp-0827",
     "gemini-1.5-flash-8b-exp-0827",
     "gemini-test-4",

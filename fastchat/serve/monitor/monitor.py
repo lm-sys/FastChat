@@ -40,7 +40,7 @@ from fastchat.serve.monitor.monitor_md import (
 k2c = {}
 for k, v in key_to_category_name.items():
     k2c[k] = v
-    k2c[k+"_style_control"] = v + "_style_control"
+    k2c[k + "_style_control"] = v + "_style_control"
 key_to_category_name = k2c
 
 notebook_url = (
@@ -127,6 +127,8 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
+
+
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -471,7 +473,7 @@ def build_arena_tab(
     arena_dfs = {}
     category_elo_results = {}
     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
-        
+
     for k in key_to_category_name.keys():
         if k not in elo_results:
             continue
@@ -734,10 +736,13 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
 
     # insert model rating as a column to category_df
     category_df = category_df.merge(
-        results_df[results_df["category"]=="Overall"][["Model", "rating"]], on="Model", how="left"
+        results_df[results_df["category"] == "Overall"][["Model", "rating"]],
+        on="Model",
+        how="left",
     )
     category_df = category_df.sort_values(
-        by=[category_names[0], "rating"], ascending=[metric == "ranking", False],
+        by=[category_names[0], "rating"],
+        ascending=[metric == "ranking", False],
     )
     # by=["final_ranking", "rating"], ascending=[True, False]
     category_df = category_df.drop(columns=["rating"])
@@ -821,10 +826,10 @@ selected_categories = [
     "math",
     "multiturn",
     "long_user",
-    #"no_refusal",
+    # "no_refusal",
 ]
-#selected_categories_width = [95, 85, 100, 75, 120, 100, 95, 100,100]
-selected_categories_width = [110,110,110,110,110,80,80,80,80]
+# selected_categories_width = [95, 85, 100, 75, 120, 100, 95, 100,100]
+selected_categories_width = [110, 110, 110, 110, 110, 80, 80, 80, 80]
 # selected_categories_width = [100] * len(selected_categories)
 
 language_categories = [

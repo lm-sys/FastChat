@@ -206,18 +206,18 @@ SAMPLING_WEIGHTS = {
     #    "codestral-2405": 4,
     #    "snowflake-arctic-instruct": 1,
     #    "dbrx-instruct": 1,
-    #"phi-3-mini-4k-instruct-june-2024": 2,
+    # "phi-3-mini-4k-instruct-june-2024": 2,
     "phi-3-medium-4k-instruct": 2,
     # "phi-3-small-8k-instruct": 2,
-    #"yi-large-preview": 2,
-    #"yi-large": 2,
+    # "yi-large-preview": 2,
+    # "yi-large": 2,
     # "yi-1.5-34b-chat": 2,
     #    "dbrx-next": 4,
     # "nemotron-4-340b": 4,
     # "glm-4-0520": 4,
     # "column-r": 2,
     # "column-u": 2,
-#     "upcoming-gpt-mini": 8,
+    #     "upcoming-gpt-mini": 8,
     "gemma-2-2b-it": 4,
     "athene-70b-0725": 4,
     "gpt-4o-mini-2024-07-18": 6,
@@ -326,9 +326,15 @@ def get_battle_pair(
             continue
         if model in ANON_MODELS and chosen_model in ANON_MODELS:
             continue
-        if chosen_model in BATTLE_STRICT_TARGETS and model not in BATTLE_STRICT_TARGETS[chosen_model]:
+        if (
+            chosen_model in BATTLE_STRICT_TARGETS
+            and model not in BATTLE_STRICT_TARGETS[chosen_model]
+        ):
             continue
-        if model in BATTLE_STRICT_TARGETS and chosen_model not in BATTLE_STRICT_TARGETS[model]:
+        if (
+            model in BATTLE_STRICT_TARGETS
+            and chosen_model not in BATTLE_STRICT_TARGETS[model]
+        ):
             continue
         weight = get_sample_weight(model, outage_models, sampling_weights)
         if (

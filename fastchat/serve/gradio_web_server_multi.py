@@ -113,7 +113,9 @@ def load_demo(context: Context, request: gr.Request):
     return tabs_list
 
 
-def build_demo(context: Context, elo_results_file: str, leaderboard_table_file, arena_hard_table):
+def build_demo(
+    context: Context, elo_results_file: str, leaderboard_table_file, arena_hard_table
+):
     if args.show_terms_of_use:
         load_js = get_window_url_params_with_tos_js
     else:
@@ -194,7 +196,10 @@ window.__gradio_mode__ = "app";
             if elo_results_file:
                 with gr.Tab("🏆 Leaderboard", id=3):
                     build_leaderboard_tab(
-                        elo_results_file, leaderboard_table_file, arena_hard_table, show_plot=True
+                        elo_results_file,
+                        leaderboard_table_file,
+                        arena_hard_table,
+                        show_plot=True,
                     )
 
             with gr.Tab("ℹ️ About Us", id=4):
@@ -321,9 +326,20 @@ if __name__ == "__main__":
         vision_arena=True,
     )
 
-    models = text_models + [model for model in vision_models if model not in text_models]
-    all_models = all_text_models + [model for model in all_vision_models if model not in all_text_models]
-    context = Context(text_models, all_text_models, vision_models, all_vision_models, models, all_models)
+    models = text_models + [
+        model for model in vision_models if model not in text_models
+    ]
+    all_models = all_text_models + [
+        model for model in all_vision_models if model not in all_text_models
+    ]
+    context = Context(
+        text_models,
+        all_text_models,
+        vision_models,
+        all_vision_models,
+        models,
+        all_models,
+    )
 
     # Set authorization credentials
     auth = None

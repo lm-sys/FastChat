@@ -1208,6 +1208,7 @@ def reka_api_stream_iter(
                 "error_code": 1,
             }
 
+
 def metagen_api_stream_iter(
     model_name,
     messages,
@@ -1226,7 +1227,7 @@ def metagen_api_stream_iter(
             "max_new_tokens": max_new_tokens,
         }
         logger.info(f"==== request ====\n{gen_params}")
-        
+
         res = requests.post(
             f"{api_base}/chat_stream_completions?access_token={api_key}",
             stream=True,

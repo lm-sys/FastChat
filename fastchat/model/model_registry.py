@@ -144,7 +144,13 @@ register_model_info(
 )
 
 register_model_info(
-    ["gemma-2-27b-it", "gemma-2-9b-it", "gemma-2-2b-it", "eureka-chatbot", "gemma-2-9b-it-simpo"],
+    [
+        "gemma-2-27b-it",
+        "gemma-2-9b-it",
+        "gemma-2-2b-it",
+        "eureka-chatbot",
+        "gemma-2-9b-it-simpo",
+    ],
     "Gemma 2",
     "https://ai.google.dev/gemma",
     "Gemma 2 by Google",
@@ -271,7 +277,12 @@ register_model_info(
 )
 
 register_model_info(
-    ["reka-flash-20240722", "reka-flash-preview-20240611", "reka-flash", "reka-flash-online"],
+    [
+        "reka-flash-20240722",
+        "reka-flash-preview-20240611",
+        "reka-flash",
+        "reka-flash-online",
+    ],
     "Reka Flash",
     "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
     "Multimodal model by Reka",

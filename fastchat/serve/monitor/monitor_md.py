@@ -113,7 +113,9 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
     space = "&nbsp;&nbsp;&nbsp;"
     total_subset_votes = sum(arena_subset_df["num_battles"]) // 2
     total_subset_models = len(arena_subset_df)
-    cat_description = cat_name_to_explanation[name] if name in cat_name_to_explanation else ""
+    cat_description = (
+        cat_name_to_explanation[name] if name in cat_name_to_explanation else ""
+    )
     leaderboard_md = f"""### {cat_description}
 #### {space} #models: **{total_subset_models} ({round(total_subset_models/total_models *100)}%)** {space} #votes: **{"{:,}".format(total_subset_votes)} ({round(total_subset_votes/total_votes * 100)}%)**{space}
 """
