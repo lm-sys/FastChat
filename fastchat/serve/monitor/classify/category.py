@@ -11,6 +11,8 @@
 import ast
 import re
 
+from vision_utils import pil_to_base64, get_image_file_from_gcs
+
 
 class Category:
     def __init__(self):
@@ -24,6 +26,10 @@ class Category:
             return CategoryIF()
         elif name == "math_v0.1":
             return CategoryMath()
+        elif name == "refusal_v0.1":
+            return CategoryRefusal()
+        elif name == "vision_v0.1":
+            return CategoryVision()
 
         raise Exception(f"Category name is incorrect: {name}")
 
@@ -63,7 +69,7 @@ class CategoryHardPrompt(Category):
 
     def pre_process(self, prompt):
         conv = [{"role": "system", "content": self.sys_prompt}]
-        conv.append({"role": "user", "content": prompt})
+        conv.append({"role": "user", "content": prompt["prompt"]})
         return conv
 
     def post_process(self, judgment):
@@ -87,10 +93,11 @@ class CategoryIF(Category):
         elif len(set(matches)) == 1:
             return int(matches[0])
         else:
+            print("Error parsing IF")
             return None
 
     def pre_process(self, prompt):
-        args = {"PROMPT": prompt}
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -124,7 +131,7 @@ class CategoryMath(Category):
             return None
 
     def pre_process(self, prompt):
-        args = {"PROMPT": prompt}
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -134,3 +141,99 @@ class CategoryMath(Category):
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"math": bool(score == "yes") if score else False}
+
+
+class CategoryRefusal(Category):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "refusal_v0.1"
+        self.pattern = re.compile(r"<decision>([a-z]+)</decision>")
+        self.system_prompt = 'You are tasked with determining if any of the given model responses are a refusal to answer. A refusal occurs when the model explicitly declines to answer or complete a task, due to reasons like safety, moderation, or model limitations (e.g. the user asks the model to search the web but it does not have that capability). You will be given the responces of 2 models, A and B and you are to determine if A refuses to answer, B refuses, both refuse, or neither refuse. Output your verdict in the following format:"<decision>\n[A/B/both/neither]\n</decision>". Do not respond with any additional information.'
+
+        self.prompt_template = "<model_A_response>\n{RESPONSE_A}\n</model_A_response>\n<model_B_response>\n{RESPONSE_B}\n</model_B_response>"
+
+    def get_score(self, judgment):
+        match = self.pattern.search(
+            judgment.replace("\n", "").replace("[", "").replace("]", "").lower()
+        )
+        if match:
+            return match.group(1)
+        return "error"
+
+    def pre_process(self, prompt):
+        args = {"RESPONSE_A": prompt["response_a"], "RESPONSE_B": prompt["response_a"]}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {
+            "refusal_a": bool(score == "a") or bool(score == "both"),
+            "refusal_b": bool(score == "b") or bool(score == "both"),
+            "refusal": bool(score == "a")
+            or bool(score == "b")
+            or bool(score == "both"),
+        }
+
+
+class CategoryVision(Category):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "vision_v0.1"
+        self.system_prompt = """You are an AI assistant specialized in classifying Visual Question Answering (VQA) questions into appropriate categories. When presented with a question or multiple questions about an image, you will analyze both the question and the image and categorize it based on the following criteria:
+
+Categories ([text only] means classification of this category should be based on the text question alone):
+1. Captioning[text only]: Questions that ask for a general, overall description of the entire image. A captioning question must be a single, open-ended query that does NOT ask about particular objects, people, or parts of the image, nor require interpretation beyond a broad description of what is visually present. Examples include "What is happening in this image?", "Describe this picture.", "explain", etc.
+2. Counting[text only]: Questions requiring counting or identifying the number of objects in the image.
+3. Optical Character Recognition: Questions requiring reading and understanding text in the image to answer. If there is some amount of text in the image and the question requires reading the text in any capacity it should be classified as Optical Character Recognition.
+4. Entity Recognition: Questions that ask for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.
+5. Spatial Reasoning[text only]: Questions that explicitly ask about the spatial relationships, locations, or arrangements of objects or elements within the image. This includes queries about relative positions (e.g., left, right, top, bottom), sizes, orientations, or distances between objects.
+6. Creative Writing: Questions that explicitly ask for creative or imaginative responses based on the image, such as composing a story, poem, or providing a fictional interpretation. This excludes questions that simply ask for factual observations, interpretations, or speculations about the image content.
+
+Your task is to classify each question(s) into one or more of these categories. Provide your answer in the following format, with category names separated by commas and no additional information:
+
+{category name}, {category name}
+
+If none of the categories apply, enter 'Other'.
+
+Remember to consider all aspects of the question and assign all relevant categories. Do not answer the question, only classify it."""
+
+        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
+
+    def get_score(self, judgment):
+        return judgment.replace("\n", "").replace("[text only]", "").lower()
+
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt["prompt"]}
+        base64_image = get_image_file_from_gcs(prompt["image_hash"])
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": self.prompt_template.format(**args)},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                        },
+                    },
+                ],
+            },
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {
+            "is_captioning": "captioning" in score,
+            "is_counting": "counting" in score,
+            "is_ocr": "optical character recognition" in score,
+            "is_entity_recognition": "entity recognition" in score,
+            "is_creative_composition": "creative writing" in score,
+            "is_spatial_reasoning": "spatial reasoning" in score,
+            "response": judgment,
+        }

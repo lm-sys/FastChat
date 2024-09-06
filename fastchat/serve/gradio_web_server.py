@@ -601,6 +601,14 @@ block_css = """
     font-size: 105%;
 }
 
+#overview_leaderboard_dataframe table th {
+    font-size: 90%;
+}
+
+#overview_leaderboard_dataframe table td {
+    font-size: 105%;
+}
+
 .tab-nav button {
     font-size: 18px;
 }
