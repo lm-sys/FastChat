@@ -50,9 +50,7 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
-<<<<<<< HEAD
 
-<<<<<<< HEAD
 def make_default_md_1(mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
@@ -119,8 +117,6 @@ Last updated: {elo_results["last_updated_datetime"]}
     return leaderboard_md
 
 
-=======
->>>>>>> a8adf50 (update)
 def arena_hard_title(date):
     arena_hard_title = f"""
 Last Updated: {date}
@@ -131,8 +127,6 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
-=======
->>>>>>> c7f9230 (New leaderboard (#3465))
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -426,11 +420,7 @@ def update_leaderboard_df(arena_table_vals):
         "Rank* (UB)",
         "Delta",
         "Model",
-<<<<<<< HEAD
         "Arena Score",
-=======
-        "Arena Elo",
->>>>>>> c7f9230 (New leaderboard (#3465))
         "95% CI",
         "Votes",
         "Organization",
@@ -798,28 +788,19 @@ def build_category_leaderboard_tab(
             combined_elo_df, categories, "rating"
         )
         sort_ranking = lambda _: get_arena_category_table(combined_elo_df, categories)
-<<<<<<< HEAD
     with gr.Row():
         gr.Markdown(
             f"""&emsp; <span style='font-weight: bold; font-size: 150%;'>Chatbot Arena Overview</span>"""
         )
-=======
->>>>>>> c7f9230 (New leaderboard (#3465))
 
     overall_ranking_leaderboard = gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
         elem_id="full_leaderboard_dataframe",
-<<<<<<< HEAD
         column_widths=[150]
         + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
         height=1000,
-=======
-        column_widths=[250]
-        + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
-        height=800,
->>>>>>> c7f9230 (New leaderboard (#3465))
         wrap=True,
     )
     ranking_button.click(
@@ -832,7 +813,6 @@ def build_category_leaderboard_tab(
 
 selected_categories = [
     "full",
-<<<<<<< HEAD
     "full_style_control",
     "hard_6",
     "hard_6_style_control",
@@ -846,17 +826,6 @@ selected_categories = [
 #selected_categories_width = [95, 85, 100, 75, 120, 100, 95, 100,100]
 selected_categories_width = [110,110,110,110,110,80,80,80,80]
 # selected_categories_width = [100] * len(selected_categories)
-=======
-    "coding",
-    "if",
-    "math",
-    "hard_6",
-    "multiturn",
-    "long_user",
-    "no_refusal",
-]
-selected_categories_width = [95, 85, 130, 75, 150, 100, 95, 100]
->>>>>>> c7f9230 (New leaderboard (#3465))
 
 language_categories = [
     "english",
@@ -891,12 +860,8 @@ def get_combined_table(elo_results, model_table_df):
         try:
             df["Model"] = df["Model"].apply(get_model_name)
             combined_table.append(df)
-<<<<<<< HEAD
         except Exception as e:
             print(f"Error: {e}")
-=======
-        except:
->>>>>>> c7f9230 (New leaderboard (#3465))
             continue
     combined_table = pd.concat(combined_table)
     combined_table["Model"] = combined_table.index
@@ -946,12 +911,7 @@ def build_leaderboard_tab(
                     default_md,
                     show_plot=show_plot,
                 )
-<<<<<<< HEAD
-<<<<<<< HEAD
-            with gr.Tab("Ranking Breakdown", id=1):
-=======
             with gr.Tab("📣 NEW: Overview", id=1):
->>>>>>> a8adf50 (update)
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">
@@ -992,8 +952,6 @@ def build_leaderboard_tab(
             """,
                     elem_id="leaderboard_markdown",
                 )
-=======
->>>>>>> c7f9230 (New leaderboard (#3465))
             with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
                     elo_results_vision,
@@ -1002,19 +960,9 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
-<<<<<<< HEAD
-<<<<<<< HEAD
             model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
-=======
-            if arena_hard_leaderboard is not None:
-<<<<<<< HEAD
-                with gr.Tab("Arena-Hard-Auto", id=2):
->>>>>>> a5c29e1 (Update monitor.py (#3460))
-=======
-                with gr.Tab("Arena-Hard-Auto", id=3):
->>>>>>> c7f9230 (New leaderboard (#3465))
                     dataFrame = arena_hard_process(
                         leaderboard_table_file, arena_hard_leaderboard
                     )
@@ -1046,62 +994,12 @@ def build_leaderboard_tab(
                             for col in dataFrame.columns
                         ],
                         elem_id="arena_hard_leaderboard",
-<<<<<<< HEAD
                         height=1000,
                         wrap=True,
                         column_widths=[70, 190, 80, 80, 90, 150],
                     )
 
             with gr.Tab("Full Leaderboard", id=4):
-<<<<<<< HEAD
-=======
-            with gr.Tab("Arena-Hard-Auto", id=2):
-                dataFrame = arena_hard_process(
-                    leaderboard_table_file, arena_hard_leaderboard
-                )
-                date = dataFrame["date"][0]
-                dataFrame = dataFrame.drop(
-                    columns=["rating_q025", "rating_q975", "date"]
-                )
-                dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
-                dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
-                dataFrame = dataFrame.rename(
-                    columns={
-                        "model": "Model",
-                        "score": "Win-rate",
-                        "CI": "95% CI",
-                        "avg_tokens": "Average Tokens",
-                    }
-                )
-                model_to_score = {}
-                for i in range(len(dataFrame)):
-                    model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
-                        i, "Win-rate"
-                    ]
-                md = arena_hard_title(date)
-                gr.Markdown(md, elem_id="leaderboard_markdown")
-                gr.DataFrame(
-                    dataFrame,
-                    datatype=[
-                        "markdown" if col == "Model" else "str"
-                        for col in dataFrame.columns
-                    ],
-                    elem_id="arena_hard_leaderboard",
-                    height=800,
-                    wrap=True,
-                    column_widths=[70, 190, 80, 80, 90, 150],
-                )
-=======
-                        height=800,
-                        wrap=True,
-                        column_widths=[70, 190, 80, 80, 90, 150],
-                    )
->>>>>>> a5c29e1 (Update monitor.py (#3460))
-
-            with gr.Tab("Full Leaderboard", id=3):
->>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
-=======
->>>>>>> c7f9230 (New leaderboard (#3465))
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
@@ -1209,11 +1107,7 @@ if __name__ == "__main__":
     parser.add_argument("--ban-ip-file", type=str)
     parser.add_argument("--exclude-model-names", type=str, nargs="+")
     parser.add_argument("--password", type=str, default=None, nargs="+")
-<<<<<<< HEAD
     parser.add_argument("--arena-hard-leaderboard", type=str, default=None)
-=======
-    parser.add_argument("--arena-hard-leaderboard", type=str)
->>>>>>> d310369 (added leaderboard for arena hard auto (#3437))
     args = parser.parse_args()
 
     logger = build_logger("monitor", "monitor.log")

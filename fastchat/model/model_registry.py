@@ -165,7 +165,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["deepseek-coder-v2", "deepseek-v2-api-0628"],
+    ["deepseek-coder-v2", "deepseek-v2-api-0628", "deepseek-v2.5"],
     "DeepSeek Coder v2",
     "https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct",
     "An advanced code model by DeepSeek",

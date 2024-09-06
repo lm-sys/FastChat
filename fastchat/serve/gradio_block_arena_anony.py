@@ -186,7 +186,7 @@ SAMPLING_WEIGHTS = {
     "gemini-1.5-flash-api-0514": 4,
     "gemma-2-27b-it": 4,
     "gemma-2-9b-it": 2,
-    "claude-3-5-sonnet-20240620": 6,
+    "claude-3-5-sonnet-20240620": 8,
     "claude-3-opus-20240229": 4,
     # "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 2,
@@ -215,17 +215,15 @@ SAMPLING_WEIGHTS = {
     #    "dbrx-next": 4,
     # "nemotron-4-340b": 4,
     # "glm-4-0520": 4,
-    "deepseek-coder-v2": 4,
-    "deepseek-v2-api-0628": 2,
     # "column-r": 2,
     # "column-u": 2,
 #     "upcoming-gpt-mini": 8,
     "gemma-2-2b-it": 4,
     "athene-70b-0725": 4,
     "gpt-4o-mini-2024-07-18": 6,
-    "llama-3.1-405b-instruct": 6,
-    "llama-3.1-70b-instruct": 6,
-    "llama-3.1-8b-instruct": 4,
+    # "llama-3.1-405b-instruct": 6,
+    # "llama-3.1-70b-instruct": 6,
+    # "llama-3.1-8b-instruct": 4,
     "mistral-large-2407": 8,
     "gemini-1.5-pro-exp-0827": 6,
     # "sus-column-r": 4,
@@ -238,13 +236,16 @@ SAMPLING_WEIGHTS = {
     "gemma-2-9b-it-simpo": 4,
     "grok-2-2024-08-13": 6,
     "grok-2-mini-2024-08-13": 6,
-    "gemini-1.5-flash-exp-0827": 4,
-    "gemini-1.5-flash-8b-exp-0827": 4,
+    "gemini-1.5-flash-exp-0827": 6,
+    "gemini-1.5-flash-8b-exp-0827": 6,
     "command-r-08-2024": 4,
     "command-r-plus-08-2024": 4,
     "gemini-test-4": 8,
     "engine-test-4": 8,
     "qwen-plus-0828": 8,
+    "deepseek-v2.5": 4,
+    "the-real-chatbot-v1": 4,
+    "the-real-chatbot-v2": 4,
 }
 
 # target model sampling weights will be boosted.
@@ -257,18 +258,20 @@ ANON_MODELS = [
     "engine-test-4",
     "anonymous-chatbot-0903",
     # "anonymous-chatbot",
+    "the-real-chatbot-v1",
+    "the-real-chatbot-v2",
 ]
 
 SAMPLING_BOOST_MODELS = [
     # "sus-column-r",
     # "anonymous-chatbot",
     "anonymous-chatbot-0903",
-    # "chatgpt-4o-latest",
+    "chatgpt-4o-latest",
     "grok-2-2024-08-13",
     "gemini-test-4",
     "engine-test-4",
-    "gemini-1.5-flash-exp-0827",
-    "gemini-1.5-flash-8b-exp-0827",
+    "the-real-chatbot-v1",
+    "the-real-chatbot-v2",
 ]
 
 # outage models won't be sampled.
@@ -496,6 +499,8 @@ def bot_response_multi(
         elif states[i].model_name in [
             "qwen2-72b-instruct",
             "qwen-plus-0828",
+            "the-real-chatbot-v1",
+            "the-real-chatbot-v2",
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)

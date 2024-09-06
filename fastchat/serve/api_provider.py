@@ -1217,46 +1217,55 @@ def metagen_api_stream_iter(
     api_key,
     api_base,
 ):
-    gen_params = {
-        "model": model_name,
-        "prompt": messages,
-        "temperature": temperature,
-        "top_p": top_p,
-        "max_new_tokens": max_new_tokens,
-    }
-    logger.info(f"==== request ====\n{gen_params}")
-    
-    res = requests.post(
-        f"{api_base}/chat_stream_completions?access_token={api_key}",
-        stream=True,
-        headers={"Content-Type": "application/json"},
-        json={
+    try:
+        gen_params = {
             "model": model_name,
-            "chunks_delimited": True,
-            "messages": messages,
-            "options": {
-                "max_tokens": max_new_tokens,
-                "generation_algorithm": "top_p",
-                "top_p": top_p,
-                "temperature": temperature,
+            "prompt": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_new_tokens": max_new_tokens,
+        }
+        logger.info(f"==== request ====\n{gen_params}")
+        
+        res = requests.post(
+            f"{api_base}/chat_stream_completions?access_token={api_key}",
+            stream=True,
+            headers={"Content-Type": "application/json"},
+            json={
+                "model": model_name,
+                "chunks_delimited": True,
+                "messages": messages,
+                "options": {
+                    "max_tokens": max_new_tokens,
+                    "generation_algorithm": "top_p",
+                    "top_p": top_p,
+                    "temperature": temperature,
+                },
             },
-        },
-        timeout=40,
-    )
+            timeout=30,
+        )
 
-    if res.status_code != 200:
-        logger.error(f"Unexpected response ({res.status_code}): {res.text}")
-        raise ValueError("Unexpected response: ", res.json())
-
-    text = ""
-    for line in res.iter_lines():
-        if line:
-            print(line)
-            part = json.loads(line.decode("utf-8"))
-            if "text" in part:
-                text += part["text"]
-            data = {
-                "text": text,
-                "error_code": 0,
+        if res.status_code != 200:
+            logger.error(f"Unexpected response ({res.status_code}): {res.text}")
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: Unknown.",
+                "error_code": 1,
             }
-            yield data
+
+        text = ""
+        for line in res.iter_lines():
+            if line:
+                part = json.loads(line.decode("utf-8"))
+                if "text" in part:
+                    text += part["text"]
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
+            "error_code": 1,
+        }

@@ -65,7 +65,7 @@ class Monitor:
             "llama-3.1-405b-instruct": 2000,
             "gemini-1.5-pro-exp-0801": 800,
             "sus-column-r": 3000,
-            "chatgpt-4o-latest": 3000,
+            "chatgpt-4o-latest": 1500,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
