@@ -4,6 +4,12 @@ import gradio as gr
 
 from fastchat.constants import SURVEY_LINK
 
+deprecated_model_name = [
+    "gemini-1.5-pro-exp-0801",
+    "gemini-1.5-pro-api-0409-preview",
+    "bard-jan-24-gemini-pro",
+]
+
 key_to_category_name = {
     "full": "Overall",
     "full_style_control": "Overall w/ Style Control",
@@ -32,14 +38,14 @@ key_to_category_name = {
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
-    "Overall w/ Style Control": "Overall with Style Control",
+    "Overall w/ Style Control": "Overall Leaderboard with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Math": "Math",
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Hard Prompts (Overall) w/ Style Control": "Hard Prompts (Overall) with Style Control",
+    "Hard Prompts (Overall) w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Longer Query": "Longer Query (>= 500 tokens)",
     "English": "English Prompts",
@@ -113,10 +119,7 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
     space = "&nbsp;&nbsp;&nbsp;"
     total_subset_votes = sum(arena_subset_df["num_battles"]) // 2
     total_subset_models = len(arena_subset_df)
-    cat_description = (
-        cat_name_to_explanation[name] if name in cat_name_to_explanation else ""
-    )
-    leaderboard_md = f"""### {cat_description}
+    leaderboard_md = f"""### {cat_name_to_explanation[name]}
 #### {space} #models: **{total_subset_models} ({round(total_subset_models/total_models *100)}%)** {space} #votes: **{"{:,}".format(total_subset_votes)} ({round(total_subset_votes/total_votes * 100)}%)**{space}
 """
     return leaderboard_md

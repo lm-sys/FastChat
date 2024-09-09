@@ -28,6 +28,8 @@ from fastchat.utils import build_logger, get_window_url_params_js
 from fastchat.serve.monitor.monitor_md import (
     cat_name_to_baseline,
     key_to_category_name,
+    cat_name_to_explanation,
+    deprecated_model_name,
     arena_hard_title,
     make_default_md_1,
     make_default_md_2,
@@ -51,70 +53,20 @@ basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
 
-def make_default_md_1(mirror=False):
-    link_color = "#1976D2"  # This color should be clear in both light and dark mode
-    leaderboard_md = f"""
-    # 🏆 LMSYS Chatbot Arena Leaderboard 
-    [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
-    """
-
-    return leaderboard_md
-
-
-def make_default_md_2(mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://leaderboard.lmsys.org' style='color: #B00020; text-decoration: none;'>leaderboard.lmsys.org</a> for citation purposes.</span>"
-    leaderboard_md = f"""
-{mirror_str if mirror else ""}
-
-LMSYS Chatbot Arena is a crowdsourced open platform for LLM evals. We've collected over 1,000,000 human pairwise comparisons to rank LLMs with the Bradley-Terry model and display the model ratings in Elo-scale.
-You can find more details in our paper. **Chatbot arena is dependent on community participation, please contribute by casting your vote!**
-
-{SURVEY_LINK}
-"""
-
-    return leaderboard_md
-
-
-def make_arena_leaderboard_md(arena_df, last_updated_time, vision=False):
-    total_votes = sum(arena_df["num_battles"]) // 2
-    total_models = len(arena_df)
-    space = "&nbsp;&nbsp;&nbsp;"
-
-    leaderboard_md = f"""
-Total #models: **{total_models}**.{space} Total #votes: **{"{:,}".format(total_votes)}**.{space} Last updated: {last_updated_time}.
-"""
-    if not vision:
-        leaderboard_md += """
-📣 **NEW!** View leaderboard for different categories (e.g., coding, long user query)! This is still in preview and subject to change.
-"""
-
-    leaderboard_md += f"""
-Code to recreate leaderboard tables and plots in this [notebook]({notebook_url}). You can contribute your vote at [chat.lmsys.org](https://chat.lmsys.org)!
-"""
-    return leaderboard_md
-
-
-def make_full_leaderboard_md():
-    leaderboard_md = """
-Three benchmarks are displayed: **Arena Score**, **MT-Bench** and **MMLU**.
-- [Chatbot Arena](https://chat.lmsys.org/?arena) - a crowdsourced, randomized battle platform. We use 500K+ user votes to compute model strength.
-- [MT-Bench](https://arxiv.org/abs/2306.05685): a set of challenging multi-turn questions. We use GPT-4 to grade the model responses.
-- [MMLU](https://arxiv.org/abs/2009.03300) (5-shot): a test to measure a model's multitask accuracy on 57 tasks.
-
-💻 Code: The MT-bench scores (single-answer grading on a scale of 10) are computed by [fastchat.llm_judge](https://github.com/lm-sys/FastChat/tree/main/fastchat/llm_judge).
-The MMLU scores are mostly computed by [InstructEval](https://github.com/declare-lab/instruct-eval).
-Higher values are better for all benchmarks. Empty cells mean not available.
-"""
-    return leaderboard_md
-
-
-def make_leaderboard_md_live(elo_results):
-    leaderboard_md = f"""
-# Leaderboard
-Last updated: {elo_results["last_updated_datetime"]}
-{elo_results["leaderboard_table"]}
-"""
-    return leaderboard_md
+def recompute_final_ranking(arena_df):
+    # compute ranking based on CI
+    ranking = {}
+    for i, model_a in enumerate(arena_df.index):
+        ranking[model_a] = 1
+        for j, model_b in enumerate(arena_df.index):
+            if i == j:
+                continue
+            if (
+                arena_df.loc[model_b]["rating_q025"]
+                > arena_df.loc[model_a]["rating_q975"]
+            ):
+                ranking[model_a] += 1
+    return list(ranking.values())
 
 
 def arena_hard_title(date):
@@ -341,10 +293,14 @@ def create_ranking_str(ranking, ranking_difference):
         return f"{int(ranking)}"
 
 
-def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
+def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_models=None):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
+
+    if hidden_models:
+        arena_df = arena_df[~arena_df.index.isin(hidden_models)].copy()
+
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
 
     if arena_subset_df is not None:
@@ -400,9 +356,11 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None):
                 round(row["num_battles"]),
                 model_info.get("Organization", "Unknown"),
                 model_info.get("License", "Unknown"),
-                "Unknown"
-                if model_info.get("Knowledge cutoff date", "-") == "-"
-                else model_info.get("Knowledge cutoff date", "Unknown"),
+                (
+                    "Unknown"
+                    if model_info.get("Knowledge cutoff date", "-") == "-"
+                    else model_info.get("Knowledge cutoff date", "Unknown")
+                ),
             ]
         )
 
@@ -433,21 +391,25 @@ def update_leaderboard_df(arena_table_vals):
 
     def highlight_max(s):
         return [
-            "color: green; font-weight: bold"
-            if "\u2191" in str(v)
-            else "color: red; font-weight: bold"
-            if "\u2193" in str(v)
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if "\u2191" in str(v)
+                else "color: red; font-weight: bold"
+                if "\u2193" in str(v)
+                else ""
+            )
             for v in s
         ]
 
     def highlight_rank_max(s):
         return [
-            "color: green; font-weight: bold"
-            if v > 0
-            else "color: red; font-weight: bold"
-            if v < 0
-            else ""
+            (
+                "color: green; font-weight: bold"
+                if v > 0
+                else "color: red; font-weight: bold"
+                if v < 0
+                else ""
+            )
             for v in s
         ]
 
@@ -482,7 +444,14 @@ def build_arena_tab(
 
     arena_df = arena_dfs["Overall"]
 
-    def update_leaderboard_and_plots(category):
+    def update_leaderboard_and_plots(category, filters):
+        if len(filters) > 0 and "Style Control" in filters:
+            cat_name = f"{category} w/ Style Control"
+            if cat_name in arena_dfs:
+                category = cat_name
+            else:
+                gr.Warning("This category does not support style control.")
+
         arena_subset_df = arena_dfs[category]
         arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 300]
         elo_subset_results = category_elo_results[category]
@@ -493,6 +462,11 @@ def build_arena_tab(
             arena_df,
             model_table_df,
             arena_subset_df=arena_subset_df if category != "Overall" else None,
+            hidden_models=(
+                None
+                if len(filters) > 0 and "Show Deprecate" in filters
+                else deprecated_model_name
+            ),
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
@@ -574,16 +548,27 @@ def build_arena_tab(
     p4 = category_elo_results["Overall"]["average_win_rate_bar"]
 
     # arena table
-    arena_table_vals = get_arena_table(arena_df, model_table_df)
+    arena_table_vals = get_arena_table(
+        arena_df, model_table_df, hidden_models=deprecated_model_name
+    )
 
     md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
     gr.Markdown(md, elem_id="leaderboard_markdown")
+    
+    # only keep category without style control
+    category_choices = list(arena_dfs.keys())
+    category_choices = [x for x in category_choices if "Style Control" not in x]
+
     with gr.Row():
         with gr.Column(scale=2):
             category_dropdown = gr.Dropdown(
-                choices=list(arena_dfs.keys()),
+                choices=category_choices,
                 label="Category",
                 value="Overall",
+            )
+        with gr.Column(scale=2):
+            category_checkbox = gr.CheckboxGroup(
+                ["Style Control", "Show Deprecate"], label="Apply filter", info=""
             )
         default_category_details = make_category_arena_leaderboard_md(
             arena_df, arena_df, name="Overall"
@@ -682,7 +667,21 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
                 plot_2 = gr.Plot(p2, show_label=False)
     category_dropdown.change(
         update_leaderboard_and_plots,
-        inputs=[category_dropdown],
+        inputs=[category_dropdown, category_checkbox],
+        outputs=[
+            elo_display_df,
+            plot_1,
+            plot_2,
+            plot_3,
+            plot_4,
+            more_stats_md,
+            category_deets,
+        ],
+    )
+
+    category_checkbox.change(
+        update_leaderboard_and_plots,
+        inputs=[category_dropdown, category_checkbox],
         outputs=[
             elo_display_df,
             plot_1,
@@ -752,13 +751,19 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
 
     def highlight_top_3(s):
         return [
-            "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%"
-            if v == 1 and v != 0
-            else "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%"
-            if v == 2 and v != 0
-            else "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%"
-            if v == 3 and v != 0
-            else "text-align: center; font-size: 110%"
+            (
+                "background-color: rgba(255, 215, 0, 0.5); text-align: center; font-size: 110%"
+                if v == 1 and v != 0
+                else (
+                    "background-color: rgba(192, 192, 192, 0.5); text-align: center; font-size: 110%"
+                    if v == 2 and v != 0
+                    else (
+                        "background-color: rgba(255, 165, 0, 0.5); text-align: center; font-size: 110%"
+                        if v == 3 and v != 0
+                        else "text-align: center; font-size: 110%"
+                    )
+                )
+            )
             for v in s
         ]
 
