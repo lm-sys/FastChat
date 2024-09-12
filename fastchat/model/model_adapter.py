@@ -858,6 +858,7 @@ class ChatGLMAdapter(BaseModelAdapter):
         model = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         )
+        model.eval()
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
