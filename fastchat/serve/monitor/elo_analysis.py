@@ -11,8 +11,6 @@ from functools import partial
 import multiprocessing as mp
 
 import numpy as np
-from scipy.special import expit as sigmoid
-from scipy.optimize import minimize
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
@@ -101,6 +99,8 @@ def preprocess_battles_to_arrays(df):
 
 def bt_loss_and_grad(ratings, matchups, outcomes, weights, alpha=1.0):
     """negative log likelihood and gradient for BT model with numpy array inputs"""
+    from scipy.special import expit as sigmoid
+
     matchup_ratings = ratings[matchups]
     logits = alpha * (matchup_ratings[:, 0] - matchup_ratings[:, 1])
     probs = sigmoid(logits)
@@ -121,6 +121,8 @@ def bt_loss_and_grad(ratings, matchups, outcomes, weights, alpha=1.0):
 
 def fit_bt(matchups, outcomes, weights, n_models, alpha, tol=1e-6):
     """perform the BT likelihood optimization"""
+    from scipy.optimize import minimize
+
     initial_ratings = np.zeros(n_models, dtype=np.float64)
     result = minimize(
         fun=bt_loss_and_grad,
