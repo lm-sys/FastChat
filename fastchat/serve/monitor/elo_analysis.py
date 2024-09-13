@@ -87,13 +87,12 @@ def preprocess_battles_to_arrays(df):
         default=1,
     )
     # count the number of occurances of each observed result
-    matchups_outcomes, weights = np.unique(schedule, return_counts=True, axis=0)
+    matchups_outcomes, counts = np.unique(schedule, return_counts=True, axis=0)
     matchups = matchups_outcomes[:, [0, 1]]
     # map 2 -> 1.0, 1 -> 0.5, 0 -> 0.0 which will be used as labels during optimization
     outcomes = matchups_outcomes[:, 2].astype(np.float64) / 2.0
-    weights = weights.astype(np.float64)
     # each possible result is weighted according to number of times it occured in the dataset
-    weights = weights / weights.sum()
+    weights = counts.astype(np.float64)
     return matchups, outcomes, weights, models
 
 
@@ -172,7 +171,9 @@ def get_bootstrap_result_elo_mle_with_tie(
 ):
     matchups, outcomes, weights, models = preprocess_battles_to_arrays(battles)
     # bootstrap sample the unique outcomes and their counts directly using the multinomial distribution
-    idxs = np.random.multinomial(n=len(battles), pvals=weights, size=(num_round))
+    idxs = np.random.multinomial(
+        n=len(battles), pvals=weights / weights.sum(), size=(num_round)
+    )
     # only the distribution over their occurance counts changes between samples (and it can be 0)
     boot_weights = idxs.astype(np.float64) / len(battles)
 
