@@ -199,6 +199,7 @@ def load_model(
     max_gpu_memory: Optional[str] = None,
     dtype: Optional[torch.dtype] = None,
     load_8bit: bool = False,
+    load_4bit: bool = False,
     cpu_offloading: bool = False,
     gptq_config: Optional[GptqConfig] = None,
     awq_config: Optional[AWQConfig] = None,
@@ -363,6 +364,9 @@ def load_model(
             )
             raise e
 
+    if load_4bit:
+        kwargs["load_in_4bit"] = load_4bit
+
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
@@ -373,15 +377,16 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
-        "mps",
-        "xpu",
-        "npu",
-    ):
-        model.to(device)
+    if not load_4bit:
+        if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
+            "mps",
+            "xpu",
+            "npu",
+        ):
+            model.to(device)
 
-    if device == "xpu":
-        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
+        if device == "xpu":
+            model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
 
     if debug:
         print(model)
@@ -520,6 +525,9 @@ def add_model_args(parser):
     )
     parser.add_argument(
         "--load-8bit", action="store_true", help="Use 8-bit quantization"
+    )
+    parser.add_argument(
+        "--load-4bit", action="store_true", help="Use 4-bit quantization"
     )
     parser.add_argument(
         "--cpu-offloading",
