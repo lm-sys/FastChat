@@ -9,6 +9,8 @@
 #         - if
 #         - score
 import ast
+import base64
+import os
 import re
 
 
@@ -24,6 +26,8 @@ class Category:
             return CategoryIF()
         elif name == "math_v0.1":
             return CategoryMath()
+        elif name == "criteria_vision_v0.1":
+            return CategoryVisionHardPrompt()
 
         raise Exception(f"Category name is incorrect: {name}")
 
@@ -139,3 +143,18 @@ class CategoryVisionHardPrompt(CategoryHardPrompt):
     def __init__(self):
         super().__init__()
         self.name_tag = "criteria_vision_v0.1"
+    
+    def _convert_filepath_to_base64(self, filepath):
+        with open(filepath, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
+    def pre_process(self, prompt: str, image_list: list):
+        # Prompt is a list where the first element is text and the second element is a list of image in base64 format
+        conv = [{"role": "system", "content": self.sys_prompt}]
+        single_turn_content_list = []
+        single_turn_content_list.append({"type": "text", "text": prompt})
+        for image_url in image_list:
+            single_turn_content_list.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{self._convert_filepath_to_base64(image_url)}"}})
+        
+        conv.append({"role": "user", "content": single_turn_content_list})
+        return conv

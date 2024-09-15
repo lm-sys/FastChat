@@ -107,7 +107,10 @@ def get_answer(
     output_log = {}
 
     for category in categories:
-        conv = category.pre_process(question["prompt"])
+        if config["images_dir"]:
+            conv = category.pre_process(question["prompt"], question["image_list"])
+        else:
+            conv = category.pre_process(question["prompt"])
         output = chat_completion_openai(
             model=model_name,
             messages=conv,
@@ -164,6 +167,30 @@ def find_required_tasks(row):
         )
     ]
 
+def aggregate_entire_conversation(conversation, images_dir):              
+    final_text_content = ""
+    final_image_list = []
+
+    for i in range(0, len(conversation), 2):
+        content = conversation[i]["content"]
+        if isinstance(content, str):
+            final_text_content += "\n" + content
+        elif isinstance(content, list):
+            text_content, image_list = content
+            final_text_content += "\n" + text_content
+
+            for image in image_list:
+                image_url = os.path.join(images_dir, f"{image}.png")
+                if os.path.exists(image_url):
+                    final_image_list.append(image_url)
+
+    return final_text_content, final_image_list
+
+def get_prompt_from_conversation(conversation):
+    return conversation[0]
+
+def get_image_list_from_conversation(conversation):
+    return conversation[1]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -247,8 +274,13 @@ if __name__ == "__main__":
         )
 
     not_labeled["prompt"] = not_labeled.conversation_a.map(
-        lambda convo: "\n".join([convo[i]["content"] for i in range(0, len(convo), 2)])
+        lambda convo: aggregate_entire_conversation(convo, config["images_dir"])
     )
+    
+    if config["images_dir"]:
+        not_labeled["image_list"] = not_labeled.prompt.map(get_image_list_from_conversation)
+        not_labeled = not_labeled[not_labeled.image_list.map(len) > 0]
+    not_labeled["prompt"] = not_labeled.prompt.map(get_prompt_from_conversation)
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
 
     with concurrent.futures.ThreadPoolExecutor(
