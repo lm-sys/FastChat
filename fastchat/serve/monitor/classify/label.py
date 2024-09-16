@@ -167,7 +167,8 @@ def find_required_tasks(row):
         )
     ]
 
-def aggregate_entire_conversation(conversation, images_dir):              
+
+def aggregate_entire_conversation(conversation, images_dir):
     final_text_content = ""
     final_image_list = []
 
@@ -186,11 +187,14 @@ def aggregate_entire_conversation(conversation, images_dir):
 
     return final_text_content, final_image_list
 
+
 def get_prompt_from_conversation(conversation):
     return conversation[0]
 
+
 def get_image_list_from_conversation(conversation):
     return conversation[1]
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -276,9 +280,11 @@ if __name__ == "__main__":
     not_labeled["prompt"] = not_labeled.conversation_a.map(
         lambda convo: aggregate_entire_conversation(convo, config["images_dir"])
     )
-    
+
     if config["images_dir"]:
-        not_labeled["image_list"] = not_labeled.prompt.map(get_image_list_from_conversation)
+        not_labeled["image_list"] = not_labeled.prompt.map(
+            get_image_list_from_conversation
+        )
         not_labeled = not_labeled[not_labeled.image_list.map(len) > 0]
     not_labeled["prompt"] = not_labeled.prompt.map(get_prompt_from_conversation)
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])

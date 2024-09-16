@@ -735,7 +735,10 @@ if __name__ == "__main__":
         "long": filter_long_conv,
         "chinese": lambda x: x["language"] == "Chinese",
         "english": lambda x: x["language"] == "English",
-        "criteria_vision_v0.1": lambda x: sum(x["category_tag"]["criteria_vision_v0.1"].values()) >= 6,
+        "criteria_vision_v0.1": lambda x: sum(
+            x["category_tag"]["criteria_vision_v0.1"].values()
+        )
+        >= 6,
     }
     assert all(
         [cat in filter_func_map for cat in args.category]
