@@ -856,7 +856,14 @@ def build_leaderboard_tab(
         model_table_df = pd.DataFrame(data)
 
         with gr.Tabs() as tabs:
-            with gr.Tab("Ranking Breakdown", id=0):
+            with gr.Tab("Arena", id=0):
+                gr_plots = build_arena_tab(
+                    elo_results_text,
+                    model_table_df,
+                    default_md,
+                    show_plot=show_plot,
+                )
+            with gr.Tab("📣 NEW: Overview", id=1):
                 gr.Markdown(
                     f"""
                     <div style="text-align: center; font-weight: bold;">
@@ -875,7 +882,7 @@ def build_leaderboard_tab(
                     elem_id="leaderboard_markdown",
                 )
                 combined_table = get_combined_table(elo_results_text, model_table_df)
-                gr_plots = build_category_leaderboard_tab(
+                build_category_leaderboard_tab(
                     combined_table,
                     "Task",
                     selected_categories,
@@ -896,13 +903,6 @@ def build_leaderboard_tab(
             Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
             """,
                     elem_id="leaderboard_markdown",
-                )
-            with gr.Tab("Arena", id=1):
-                gr_plots = build_arena_tab(
-                    elo_results_text,
-                    model_table_df,
-                    default_md,
-                    show_plot=show_plot,
                 )
             with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
