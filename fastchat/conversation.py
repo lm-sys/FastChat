@@ -385,7 +385,7 @@ class Conversation:
             ret = [
                 {
                     "role": "system",
-                    "content": [{"type": "text", "text": self.system_message}],
+                    "content": self.system_message,
                 }
             ]
 
@@ -410,7 +410,7 @@ class Conversation:
                     ret.append(
                         {
                             "role": "assistant",
-                            "content": [{"type": "text", "text": msg}],
+                            "content": msg,
                         }
                     )
         return ret
