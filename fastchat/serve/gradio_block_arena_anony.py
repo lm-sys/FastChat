@@ -5,6 +5,7 @@ Users chat with two anonymous models.
 
 import json
 import time
+import re
 
 import gradio as gr
 import numpy as np
@@ -179,99 +180,143 @@ SAMPLING_WEIGHTS = {
     # "gpt-4-0613": 2,
     "gpt-4-1106-preview": 2,
     "gpt-4-0125-preview": 2,
-    "gpt-4-turbo-2024-04-09": 4,
+    "gpt-4-turbo-2024-04-09": 2,
     # "gpt-3.5-turbo-0125": 2,
-    "gpt-4o-2024-05-13": 6,
+    "gpt-4o-2024-05-13": 4,
     "gemini-1.5-pro-api-0514": 4,
-    "gemini-1.5-flash-api-0514": 4,
+    "gemini-1.5-flash-api-0514": 2,
     "gemma-2-27b-it": 4,
     "gemma-2-9b-it": 2,
-    "claude-3-5-sonnet-20240620": 8,
+    "claude-3-5-sonnet-20240620": 6,
     "claude-3-opus-20240229": 4,
     # "claude-3-sonnet-20240229": 4,
     "claude-3-haiku-20240307": 2,
     # "llama-3-70b-instruct": 2,
-    # "llama-3-8b-instruct": 2,
+    # "llama-3-8b-instruct": 4,
     # "command-r-plus": 2,
     # "command-r": 2,
     # "reka-core-20240501": 2,
     # "reka-flash-preview-20240611": 2,
-    "reka-core-20240722": 2,
-    "reka-flash-20240722": 2,
-    "qwen2-72b-instruct": 2,
+    #"reka-core-20240722": 2,
+    #"reka-flash-20240722": 2,
+    # "qwen2-72b-instruct": 2,
     # "gemma-1.1-7b-it": 2,
     # "mixtral-8x7b-instruct-v0.1": 2,
-    "mixtral-8x22b-instruct-v0.1": 2,
+    # "mixtral-8x22b-instruct-v0.1": 2,
     # "mistral-large-2402": 2,
     #    "codestral-2405": 4,
     #    "snowflake-arctic-instruct": 1,
     #    "dbrx-instruct": 1,
     # "phi-3-mini-4k-instruct-june-2024": 2,
-    "phi-3-medium-4k-instruct": 2,
+    # "phi-3-medium-4k-instruct": 2,
     # "phi-3-small-8k-instruct": 2,
     # "yi-large-preview": 2,
     # "yi-large": 2,
     # "yi-1.5-34b-chat": 2,
-    #    "dbrx-next": 4,
     # "nemotron-4-340b": 4,
     # "glm-4-0520": 4,
-    # "column-r": 2,
-    # "column-u": 2,
-    #     "upcoming-gpt-mini": 8,
     "gemma-2-2b-it": 4,
     "athene-70b-0725": 4,
-    "gpt-4o-mini-2024-07-18": 6,
-    "llama-3.1-405b-instruct": 6,
-    "llama-3.1-70b-instruct": 6,
+    "gpt-4o-mini-2024-07-18": 4,
+    "llama-3.1-405b-instruct": 4,
+    "llama-3.1-70b-instruct": 4,
     "llama-3.1-8b-instruct": 4,
-    "mistral-large-2407": 8,
+    "mistral-large-2407": 6,
     "gemini-1.5-pro-exp-0827": 6,
     # "sus-column-r": 4,
     # "anonymous-chatbot": 6,
-    "anonymous-chatbot-0903": 8,
-    "chatgpt-4o-latest": 6,
-    "gpt-4o-2024-08-06": 6,
-    "jamba-1.5-mini": 4,
-    "jamba-1.5-large": 4,
-    "gemma-2-9b-it-simpo": 4,
+    "chatgpt-4o-latest-20240903": 4,
+    # "chatgpt-4o-latest": 6,
+    "gpt-4o-2024-08-06": 4,
+    #"jamba-1.5-mini": 4,
+    #"jamba-1.5-large": 4,
+    # "gemma-2-9b-it-simpo": 4,
     "grok-2-2024-08-13": 6,
     "grok-2-mini-2024-08-13": 6,
-    "gemini-1.5-flash-exp-0827": 6,
-    "gemini-1.5-flash-8b-exp-0827": 6,
+    "gemini-1.5-flash-exp-0827": 4,
+    "gemini-1.5-flash-8b-exp-0827": 4,
     "command-r-08-2024": 4,
     "command-r-plus-08-2024": 4,
-    "gemini-test-4": 6,
-    "engine-test-4": 6,
-    "qwen-plus-0828": 8,
-    "deepseek-v2.5": 4,
-    "the-real-chatbot-v1": 8,
-    "the-real-chatbot-v2": 8,
+    "qwen-plus-0828": 6,
+    "deepseek-v2.5": 8,
+    # "the-real-chatbot-v1": 4,
+    # "the-real-chatbot-v2": 4,
+    "llama-3.1-405b-instruct-bf16": 4,
+    # "llama-3.1-8b-dpo-test-1": 2,
+    # "llama-3.1-8b-dpo-test-2": 2,
+    # "llama-3.1-8b-dpo-test-3": 2,
+    # "llama-3.1-8b-dpo-test-4": 2,
+    # "llama-3.1-8b-dpo-test-5": 2,
+    # "llama-3.1-8b-dpo-test-6": 2,
+    # "llama-3.1-8b-dpo-test-7": 2,
+    # "llama-3.1-8b-dpo-test-8": 2,
+    # "llama-3.1-8b-dpo-test-9": 2,
+    # "meta-llama-3.1-8b-instruct-temp-0.2": 2,
+    # "meta-llama-3.1-70b-instruct-temp-0.2": 2,
+    # "llama-3-8b-instruct": 2,
+    "reka-core-20240904": 6,
+    "reka-flash-20240904": 6,
+    "pizza-model-large": 6,
+    "pizza-model-small": 6,
+    "o1-mini": 6,
+    "o1-preview": 6,
+    "gemini-test-5": 6,
+    "big-engine-test": 6,
+    "sharp-game-player-v1": 4,
+    "sharp-game-player-v2": 4,
+    "zeus-flare-thunder-v1": 4,
+    "zeus-flare-thunder-v2": 4,
 }
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
 
-BATTLE_STRICT_TARGETS = {}
+BATTLE_STRICT_TARGETS = {
+    "llama-3.1-8b-dpo-test-1": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-3": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-4": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-5": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-6": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-7": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-8": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "llama-3.1-8b-dpo-test-9": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
+    "meta-llama-3.1-8b-instruct-temp-0.2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*"},
+    "meta-llama-3.1-70b-instruct-temp-0.2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*"},
+    "llama-3-8b-instruct": {"llama-3.1-8b-dpo-test-*"},
+}
 
 ANON_MODELS = [
-    "gemini-test-4",
-    "engine-test-4",
-    "anonymous-chatbot-0903",
     # "anonymous-chatbot",
     "the-real-chatbot-v1",
     "the-real-chatbot-v2",
+    "pizza-model-large",
+    "pizza-model-small",
+    "gemini-test-5",
+    "big-engine-test",
+    "sharp-game-player-v1",
+    "sharp-game-player-v2",
+    "zeus-flare-thunder-v1",
+    "zeus-flare-thunder-v2",
+    "dumbledore-v1",
+    "dumbledore-v2",
+    "potter-v1",
+    "potter-v2",
 ]
 
 SAMPLING_BOOST_MODELS = [
     # "sus-column-r",
     # "anonymous-chatbot",
-    "anonymous-chatbot-0903",
-    "chatgpt-4o-latest",
-    "grok-2-2024-08-13",
-    "gemini-test-4",
-    "engine-test-4",
-    "the-real-chatbot-v1",
-    "the-real-chatbot-v2",
+    # "anonymous-chatbot-0903",
+    "chatgpt-4o-latest-20240903",
+    "gemini-test-5",
+    "big-engine-test",
+    "sharp-game-player-v1",
+    "sharp-game-player-v2",
+    "zeus-flare-thunder-v1",
+    "zeus-flare-thunder-v2",
+    # "the-real-chatbot-v1",
+    # "the-real-chatbot-v2",
 ]
 
 # outage models won't be sampled.
@@ -296,6 +341,16 @@ def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_mod
     if model in sampling_boost_models:
         weight *= 5
     return weight
+
+
+def is_model_match_pattern(model, patterns):
+    flag = False
+    for pattern in patterns:
+        pattern = pattern.replace("*", ".*")
+        if re.match(pattern, model) is not None:
+            flag = True
+            break
+    return flag
 
 
 def get_battle_pair(
@@ -326,16 +381,12 @@ def get_battle_pair(
             continue
         if model in ANON_MODELS and chosen_model in ANON_MODELS:
             continue
-        if (
-            chosen_model in BATTLE_STRICT_TARGETS
-            and model not in BATTLE_STRICT_TARGETS[chosen_model]
-        ):
-            continue
-        if (
-            model in BATTLE_STRICT_TARGETS
-            and chosen_model not in BATTLE_STRICT_TARGETS[model]
-        ):
-            continue
+        if chosen_model in BATTLE_STRICT_TARGETS:
+            if not is_model_match_pattern(model, BATTLE_STRICT_TARGETS[chosen_model]):
+                continue
+        if model in BATTLE_STRICT_TARGETS:
+            if not is_model_match_pattern(chosen_model, BATTLE_STRICT_TARGETS[model]):
+                continue
         weight = get_sample_weight(model, outage_models, sampling_weights)
         if (
             weight != 0
@@ -507,6 +558,15 @@ def bot_response_multi(
             "qwen-plus-0828",
             "the-real-chatbot-v1",
             "the-real-chatbot-v2",
+            "llama-3.1-405b-instruct-bf16",
+            "sharp-game-player-v1",
+            "sharp-game-player-v2",
+            "zeus-flare-thunder-v1",
+            "zeus-flare-thunder-v2",
+            "dumbledore-v1",
+            "dumbledore-v2",
+            "potter-v1",
+            "potter-v2"
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)

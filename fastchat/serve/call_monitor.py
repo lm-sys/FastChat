@@ -65,7 +65,7 @@ class Monitor:
             "llama-3.1-405b-instruct": 2000,
             "gemini-1.5-pro-exp-0801": 800,
             "sus-column-r": 3000,
-            "chatgpt-4o-latest": 1500,
+            "chatgpt-4o-latest-20240903": 1500,
         }
         self.model_call_day_limit_per_user = {
             "gpt-4-1106-preview": 5,
@@ -88,7 +88,7 @@ class Monitor:
             "llama-3.1-405b-instruct": 16,
             "gemini-1.5-pro-exp-0801": 8,
             "sus-column-r": 16,
-            "chatgpt-4o-latest": 16,
+            "chatgpt-4o-latest-20240903": 16,
         }
 
     async def update_stats(self, num_file=1) -> None:
@@ -103,7 +103,11 @@ class Monitor:
             user_call = {}
             for json_file in json_files:
                 for line in open(json_file, "r", encoding="utf-8"):
-                    obj = json.loads(line)
+                    try:
+                        obj = json.loads(line)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding json: {json_file} {line}")
+                        continue
                     if obj["type"] != "chat":
                         continue
                     if obj["model"] not in model_call:

@@ -8,6 +8,7 @@ deprecated_model_name = [
     "gemini-1.5-pro-exp-0801",
     "gemini-1.5-pro-api-0409-preview",
     "bard-jan-24-gemini-pro",
+    "chatgpt-4o-latest-20240808",
 ]
 
 key_to_category_name = {
@@ -18,6 +19,7 @@ key_to_category_name = {
     "if": "Instruction Following",
     "multiturn": "Multi-Turn",
     "coding": "Coding",
+    "coding_style_control": "Coding w/ Style Control",
     "hard_6": "Hard Prompts (Overall)",
     "hard_english_6": "Hard Prompts (English)",
     "hard_6_style_control": "Hard Prompts (Overall) w/ Style Control",
@@ -44,6 +46,7 @@ cat_name_to_explanation = {
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
+    "Coding w/ Style Control": "Coding w/ Style Control",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Hard Prompts (Overall) w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",

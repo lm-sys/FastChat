@@ -43,6 +43,7 @@ register_model_info(
 register_model_info(
     [
         "chatgpt-4o-latest",
+        "chatgpt-4o-latest-20240903",
         "gpt-4o-mini-2024-07-18",
         "gpt-4o-2024-08-06",
         "gpt-4o-2024-05-13",
@@ -82,6 +83,7 @@ register_model_info(
         "gemini-test-3",
         "engine-test",
         "little-engine-test",
+        "big-engine-test",
     ],
     "Gemini",
     "https://deepmind.google/technologies/gemini/",
@@ -99,11 +101,20 @@ register_model_info(
 
 register_model_info(
     [
+        "llama-3.1-405b-instruct-bf16",
         "llama-3.1-405b-instruct",
         "llama-3.1-70b-instruct",
         "llama-3.1-8b-instruct",
         "the-real-chatbot-v1",
         "the-real-chatbot-v2",
+        "sharp-game-player-v1",
+        "sharp-game-player-v2",
+        "zeus-flare-thunder-v1",
+        "zeus-flare-thunder-v2",
+        "dumbledore-v1",
+        "dumbledore-v2",
+        "potter-v1",
+        "potter-v2",
     ],
     "Llama 3.1",
     "https://llama.meta.com/",
@@ -204,6 +215,8 @@ register_model_info(
         "qwen-max-0403",
         "qwen-max-0428",
         "qwen-plus-0828",
+        "qwen2-vl-7b-instruct",
+        "qwen-vl-max-0809",
     ],
     "Qwen Max",
     "https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction",
@@ -263,7 +276,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["reka-core-20240722", "reka-core-20240501"],
+    ["reka-core-20240904", "reka-core-20240722", "reka-core-20240501"],
     "Reka Core",
     "https://www.reka.ai/news/reka-core-our-frontier-class-multimodal-language-model",
     "Frontier Multimodal Language Model by Reka",
@@ -278,10 +291,13 @@ register_model_info(
 
 register_model_info(
     [
+        "reka-flash-20240904",
         "reka-flash-20240722",
         "reka-flash-preview-20240611",
         "reka-flash",
         "reka-flash-online",
+        "pizza-model-small",
+        "pizza-model-large",
     ],
     "Reka Flash",
     "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
@@ -330,6 +346,7 @@ register_model_info(
         "mistral-7b-instruct",
         "experimental-mf-router",
         "experimental-causal-router",
+        "pixtral-12b-2409",
     ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",

@@ -77,7 +77,7 @@ def load_demo_side_by_side_vision_named(context: Context):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
+        weights = ([1] * 128)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:

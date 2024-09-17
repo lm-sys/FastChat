@@ -90,7 +90,10 @@ OPENAI_MODEL_LIST = (
     "gpt-4o-2024-08-06",
     "anonymous-chatbot",
     "anonymous-chatbot-0903",
+    "chatgpt-4o-latest-20240903",
     "chatgpt-4o-latest",
+    "o1-preview",
+    "o1-mini",
 )
 
 
@@ -1136,6 +1139,8 @@ class ChatGPTAdapter(BaseModelAdapter):
             return get_conv_template("gpt-mini")
         if "gpt-4o-mini-2024-07-18" in model_path:
             return get_conv_template("gpt-mini")
+        if "o1" in model_path:
+            return get_conv_template("api_based_default")
         return get_conv_template("chatgpt")
 
 
@@ -1607,7 +1612,17 @@ class Llama31Adapter(BaseModelAdapter):
     """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
 
     def match(self, model_path: str):
-        return "llama-3.1" in model_path.lower() or "real-chatbot" in model_path.lower()
+        keywords = [
+            "llama-3.1",
+            "real-chatbot",
+            "sharp-game",
+            "zeus-flare",
+            "dumbledore",
+            "potter",
+        ]
+        for keyword in keywords:
+            if keyword in model_path.lower():
+                return True
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1622,6 +1637,15 @@ class Llama31Adapter(BaseModelAdapter):
             "the-real-chatbot-v2",
         ]:
             return get_conv_template("meta-llama-3.1-sp")
+        elif model_path.lower() in [
+            "sharp-game-player-v2",
+            "zeus-flare-thunder-v2",
+        ]:
+            return get_conv_template("meta-llama-3.2")
+        elif model_path.lower() in ["dumbledore-v1"]:
+            return get_conv_template("dumbledore")
+        elif model_path.lower() in ["potter-v2"]:
+            return get_conv_template("potter")
         return get_conv_template("meta-llama-3.1")
 
 

@@ -50,6 +50,18 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
             stream=False,
         )
+    elif model_api_dict["api_type"] == "openai_o1":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            is_o1=True
+        )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
         stream_iter = openai_assistant_api_stream_iter(
@@ -240,6 +252,7 @@ def openai_api_stream_iter(
     api_base=None,
     api_key=None,
     stream=True,
+    is_o1=False,
 ):
     import openai
 
@@ -280,17 +293,13 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    if stream:
+    if stream and not is_o1:
         res = client.chat.completions.create(
             model=model_name,
             messages=messages,
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
-            extra_headers={
-                "request-id": "test-request-id",
-                "origin-id": "test-origin-id",
-            },
         )
         text = ""
         for chunk in res:
@@ -302,13 +311,21 @@ def openai_api_stream_iter(
                 }
                 yield data
     else:
-        res = client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_new_tokens,
-            stream=False,
-        )
+        if is_o1:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=1.0,
+                stream=False,
+            )
+        else:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_new_tokens,
+                stream=False,
+            )
         text = res.choices[0].message.content
         pos = 0
         while pos < len(text):
@@ -1219,9 +1236,15 @@ def metagen_api_stream_iter(
     api_base,
 ):
     try:
+        messages_no_img = []
+        for msg in messages:
+            msg_no_img = msg.copy()
+            msg_no_img.pop("attachment", None)
+            messages_no_img.append(msg_no_img)
+
         gen_params = {
             "model": model_name,
-            "prompt": messages,
+            "prompt": messages_no_img,
             "temperature": temperature,
             "top_p": top_p,
             "max_new_tokens": max_new_tokens,
