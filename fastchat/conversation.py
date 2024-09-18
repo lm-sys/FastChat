@@ -388,7 +388,7 @@ class Conversation:
             ret = [
                 {
                     "role": "system",
-                    "content": [{"type": "text", "text": self.system_message}],
+                    "content": self.system_message,
                 }
             ]
 
@@ -406,14 +406,14 @@ class Conversation:
                     ret.append({"role": "user", "content": content_list})
                 else:
                     ret.append(
-                        {"role": "user", "content": [{"type": "text", "text": msg}]}
+                        {"role": "user", "content": msg}
                     )
             else:
                 if msg is not None:
                     ret.append(
                         {
                             "role": "assistant",
-                            "content": [{"type": "text", "text": msg}],
+                            "content": msg,
                         }
                     )
         return ret
