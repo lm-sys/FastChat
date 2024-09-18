@@ -200,6 +200,7 @@ SAMPLING_WEIGHTS = {
     #"reka-core-20240722": 2,
     #"reka-flash-20240722": 2,
     # "qwen2-72b-instruct": 2,
+    "qwen2.5-72b-instruct": 6,
     # "gemma-1.1-7b-it": 2,
     # "mixtral-8x7b-instruct-v0.1": 2,
     # "mixtral-8x22b-instruct-v0.1": 2,
@@ -216,9 +217,9 @@ SAMPLING_WEIGHTS = {
     # "nemotron-4-340b": 4,
     # "glm-4-0520": 4,
     "gemma-2-2b-it": 4,
-    "athene-70b-0725": 4,
+    # "athene-70b-0725": 4,
     "gpt-4o-mini-2024-07-18": 4,
-    "llama-3.1-405b-instruct": 4,
+    "llama-3.1-405b-instruct-fp8": 4,
     "llama-3.1-70b-instruct": 4,
     "llama-3.1-8b-instruct": 4,
     "mistral-large-2407": 6,
@@ -556,6 +557,7 @@ def bot_response_multi(
         ]:
             token_per_yield = 7
         elif states[i].model_name in [
+            "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
             "qwen-plus-0828",
             "the-real-chatbot-v1",

@@ -273,6 +273,7 @@ def bot_response_multi(
         ]:
             token_per_yield = 7
         elif states[i].model_name in [
+            "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
             "qwen-plus-0828",
             "the-real-chatbot-v1",

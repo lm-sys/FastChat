@@ -98,12 +98,12 @@ VISION_SAMPLING_WEIGHTS = {
     # "reka-flash-preview-20240611": 2,
     # "cogvlm2-llama3-chat-19b": 4,
     "gpt-4o-mini-2024-07-18": 4,
-    #"internvl2-26b": 4,
+    "internvl2-26b": 4,
     "gemini-1.5-pro-exp-0827": 6,
     "gemini-1.5-flash-exp-0827": 6,
     "gemini-1.5-flash-8b-exp-0827": 6,
     "phi-3.5-vision-instruct": 4,
-    #"internvl2-4b": 4,
+    "internvl2-4b": 4,
     # "llava-onevision-qwen2-72b-ov": 4,
     "yi-vision": 4,
     "qwen2-vl-7b-instruct": 4,
@@ -114,6 +114,7 @@ VISION_SAMPLING_WEIGHTS = {
     "dumbledore-v2": 4,
     "potter-v1": 4,
     "potter-v2": 4,
+    "chatgpt-4o-latest-20240903": 4,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -135,6 +136,7 @@ VISION_SAMPLING_BOOST_MODELS = [
     "dumbledore-v2",
     "potter-v1",
     "potter-v2",
+    "chatgpt-4o-latest-20240903",
 ]
 
 # outage models won't be sampled.

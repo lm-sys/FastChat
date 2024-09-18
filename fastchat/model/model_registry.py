@@ -102,6 +102,7 @@ register_model_info(
 register_model_info(
     [
         "llama-3.1-405b-instruct-bf16",
+        "llama-3.1-405b-instruct-fp8",
         "llama-3.1-405b-instruct",
         "llama-3.1-70b-instruct",
         "llama-3.1-8b-instruct",
@@ -211,6 +212,7 @@ register_model_info(
 
 register_model_info(
     [
+        "qwen2.5-72b-instruct",
         "qwen2-72b-instruct",
         "qwen-max-0403",
         "qwen-max-0428",
