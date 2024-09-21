@@ -23,7 +23,7 @@ from fastchat.serve.monitor.rating_systems import (
     compute_style_control,
     compute_bootstrap_elo,
     compute_bootstrap_bt,
-    compute_bootstrap_style_control
+    compute_bootstrap_style_control,
 )
 
 pd.options.display.float_format = "{:.2f}".format
@@ -373,7 +373,9 @@ def report_elo_analysis_results(
 
     if rating_system == "bt":
         if style_control:
-            bootstrap_df, boostrap_coef = compute_bootstrap_style_control(battles, num_round=num_bootstrap)
+            bootstrap_df, boostrap_coef = compute_bootstrap_style_control(
+                battles, num_round=num_bootstrap
+            )
             elo_rating_final, coef_final = compute_style_control(battles)
         else:
             bootstrap_df = compute_bootstrap_bt(battles, num_round=num_bootstrap)
