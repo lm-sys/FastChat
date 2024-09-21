@@ -1,4 +1,3 @@
-import os
 import argparse
 import ast
 from collections import defaultdict
@@ -8,7 +7,6 @@ import math
 import pickle
 from pytz import timezone
 from functools import partial
-import multiprocessing as mp
 
 import numpy as np
 import pandas as pd
