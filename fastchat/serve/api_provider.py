@@ -130,7 +130,10 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "mistral":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict.get("vision-arena", False):
+            prompt = conv.to_openai_vision_api_messages(is_mistral=True)
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = mistral_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
@@ -890,41 +893,55 @@ def ai2_api_stream_iter(
 def mistral_api_stream_iter(
     model_name, messages, temperature, top_p, max_new_tokens, api_key=None
 ):
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+    # from mistralai.client import MistralClient
+    # from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
 
     if api_key is None:
         api_key = os.environ["MISTRAL_API_KEY"]
 
-    client = MistralClient(api_key=api_key, timeout=5)
+    client = Mistral(api_key=api_key)
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
 
     # Make requests
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    new_messages = [
-        ChatMessage(role=message["role"], content=message["content"])
-        for message in messages
-    ]
+    # new_messages = [
+    #     ChatMessage(role=message["role"], content=message["content"])
+    #     for message in messages
+    # ]
 
-    res = client.chat_stream(
+    res = client.chat.stream(
         model=model_name,
         temperature=temperature,
-        messages=new_messages,
+        messages=messages,
         max_tokens=max_new_tokens,
         top_p=top_p,
     )
 
     text = ""
     for chunk in res:
-        if chunk.choices[0].delta.content is not None:
-            text += chunk.choices[0].delta.content
+        if chunk.data.choices[0].delta.content is not None:
+            text += chunk.data.choices[0].delta.content
             data = {
                 "text": text,
                 "error_code": 0,

@@ -312,7 +312,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     )
 
     notice_markdown = f"""
-# 🏔️ Chat with Large Vision-Language Models
+# 🏔️ Chat with Large Language Models
 {promotion}
 """
 

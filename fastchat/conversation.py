@@ -380,7 +380,7 @@ class Conversation:
                 ret[-1][-1] = msg
         return ret
 
-    def to_openai_vision_api_messages(self):
+    def to_openai_vision_api_messages(self, is_mistral=False):
         """Convert the conversation to OpenAI vision api completion format"""
         if self.system_message == "":
             ret = []
@@ -399,9 +399,12 @@ class Conversation:
                     image_urls = msg[1]
                     for image in image_urls:
                         image_url = image.to_openai_image_format()
-                        content_list.append(
-                            {"type": "image_url", "image_url": {"url": image_url}}
-                        )
+                        content = {}
+                        if is_mistral:
+                            content = {"type": "image_url", "image_url": image_url}
+                        else:
+                            content = {"type": "image_url", "image_url": {"url": image_url}}
+                        content_list.append(content)
 
                     ret.append({"role": "user", "content": content_list})
                 else:
@@ -1597,6 +1600,20 @@ register_conv_template(
             "When presented with inquiries seeking information, provide answers that reflect a deep understanding of the field, guaranteeing their correctness.\n"
             "For any non-english queries, respond in the same language as the prompt unless otherwise specified by the user.\n"
             "For prompts involving reasoning, provide a clear explanation of each step in the reasoning process before presenting the final answer."
+        ),
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="gemini-1.5-pro-002-test-sp",
+        roles=("user", "model"),
+        sep_style=SeparatorStyle.DEFAULT,
+        sep=None,
+        system_message=(
+            "All questions should be answered comprehensively with details, "
+            "unless the user requests a concise response specifically. "
+            "Respond in the same language as the query."
         ),
     )
 )
