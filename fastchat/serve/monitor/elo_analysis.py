@@ -19,176 +19,16 @@ from transformers import AutoTokenizer
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
+from fastchat.serve.monitor.rating_systems import (
+    compute_elo,
+    compute_bt,
+    compute_style_control,
+    compute_bootstrap_elo,
+    compute_bootstrap_bt,
+    compute_bootstrap_style_control
+)
 
 pd.options.display.float_format = "{:.2f}".format
-
-
-STYLE_CONTROL_ELEMENTS_V1 = [
-    "sum_assistant_a_tokens",
-    "header_count_a",
-    "list_count_a",
-    "bold_count_a",
-    "sum_assistant_b_tokens",
-    "header_count_b",
-    "list_count_b",
-    "bold_count_b",
-]
-
-
-def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
-    rating = defaultdict(lambda: INIT_RATING)
-
-    for rd, model_a, model_b, winner in battles[
-        ["model_a", "model_b", "winner"]
-    ].itertuples():
-        ra = rating[model_a]
-        rb = rating[model_b]
-        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
-        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
-        if winner == "model_a":
-            sa = 1
-        elif winner == "model_b":
-            sa = 0
-        elif winner == "tie" or winner == "tie (bothbad)":
-            sa = 0.5
-        else:
-            raise Exception(f"unexpected vote {winner}")
-        rating[model_a] += K * (sa - ea)
-        rating[model_b] += K * (1 - sa - eb)
-
-    return dict(rating)
-
-
-def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
-    rows = []
-    for i in tqdm(range(num_round), desc="bootstrap"):
-        tmp_battles = battles.sample(frac=1.0, replace=True)
-        rows.append(func_compute_elo(tmp_battles))
-    df = pd.DataFrame(rows)
-    return df[df.median().sort_values(ascending=False).index]
-
-
-def preprocess_battles_to_arrays(df):
-    """convert the battles df into numpy arrays optimized for BT likelihood calculation"""
-
-    models = pd.unique(df[["model_a", "model_b"]].values.ravel()).tolist()
-    model_to_idx = {model: idx for idx, model in enumerate(models)}
-    # the 3 columns of schedule represent: model_a id, model_b id, outcome_id
-    schedule = np.empty((len(df), 3), dtype=np.int32)
-    # set the two model cols by mapping the model names to their int ids
-    schedule[:, [0, 1]] = (
-        df[["model_a", "model_b"]].map(lambda x: model_to_idx[x]).values
-    )
-    # map outcomes to integers (must be same dtype as model ids so it can be in the same array)
-    # model_a win -> 2, tie -> 1, model_b win -> 0
-    schedule[:, 2] = np.select(
-        condlist=[df["winner"] == "model_a", df["winner"] == "model_b"],
-        choicelist=[2, 0],
-        default=1,
-    )
-    # count the number of occurances of each observed result
-    matchups_outcomes, counts = np.unique(schedule, return_counts=True, axis=0)
-    matchups = matchups_outcomes[:, [0, 1]]
-    # map 2 -> 1.0, 1 -> 0.5, 0 -> 0.0 which will be used as labels during optimization
-    outcomes = matchups_outcomes[:, 2].astype(np.float64) / 2.0
-    # each possible result is weighted according to number of times it occured in the dataset
-    weights = counts.astype(np.float64)
-    return matchups, outcomes, weights, models
-
-
-def bt_loss_and_grad(ratings, matchups, outcomes, weights, alpha=1.0):
-    """negative log likelihood and gradient for BT model with numpy array inputs"""
-    from scipy.special import expit as sigmoid
-
-    matchup_ratings = ratings[matchups]
-    logits = alpha * (matchup_ratings[:, 0] - matchup_ratings[:, 1])
-    probs = sigmoid(logits)
-    # this form naturally counts a draw as half a win and half a loss
-    loss = -(
-        (np.log(probs) * outcomes + np.log(1.0 - probs) * (1.0 - outcomes)) * weights
-    ).sum()
-    matchups_grads = -alpha * (outcomes - probs) * weights
-    model_grad = np.zeros_like(ratings)
-    # aggregate gradients at the model level using the indices in matchups
-    np.add.at(
-        model_grad,
-        matchups[:, [0, 1]],
-        matchups_grads[:, None] * np.array([1.0, -1.0], dtype=np.float64),
-    )
-    return loss, model_grad
-
-
-def fit_bt(matchups, outcomes, weights, n_models, alpha, tol=1e-6):
-    """perform the BT likelihood optimization"""
-    from scipy.optimize import minimize
-
-    initial_ratings = np.zeros(n_models, dtype=np.float64)
-    result = minimize(
-        fun=bt_loss_and_grad,
-        x0=initial_ratings,
-        args=(matchups, outcomes, weights, alpha),
-        jac=True,
-        method="L-BFGS-B",
-        options={"disp": False, "maxiter": 100, "gtol": tol},
-    )
-    return result["x"]
-
-
-def scale_and_offset(
-    ratings,
-    models,
-    scale=400,
-    init_rating=1000,
-    baseline_model="mixtral-8x7b-instruct-v0.1",
-    baseline_rating=1114,
-):
-    """convert ratings from the natural scale to the Elo rating scale with an anchored baseline"""
-    scaled_ratings = (ratings * scale) + init_rating
-    if baseline_model in models:
-        baseline_idx = models.index(baseline_model)
-        scaled_ratings += baseline_rating - scaled_ratings[..., [baseline_idx]]
-    return scaled_ratings
-
-
-def compute_elo_mle_with_tie(
-    df,
-    SCALE=400,
-    BASE=10,
-    INIT_RATING=1000,
-    baseline_model="mixtral-8x7b-instruct-v0.1",
-    baseline_rating=1114.0,
-):
-    matchups, outcomes, weights, models = preprocess_battles_to_arrays(df)
-    ratings = fit_bt(matchups, outcomes, weights, len(models), np.log(BASE))
-    scaled_ratings = scale_and_offset(
-        ratings, models, SCALE, INIT_RATING, baseline_model, baseline_rating
-    )
-    return pd.Series(scaled_ratings, index=models).sort_values(ascending=False)
-
-
-def get_bootstrap_result_elo_mle_with_tie(
-    df, num_round, BASE=10.0, SCALE=400.0, INIT_RATING=1000.0
-):
-    matchups, outcomes, weights, models = preprocess_battles_to_arrays(battles)
-    # bootstrap sample the unique outcomes and their counts directly using the multinomial distribution
-    idxs = np.random.multinomial(
-        n=len(battles), pvals=weights / weights.sum(), size=(num_round)
-    )
-    # only the distribution over their occurance counts changes between samples (and it can be 0)
-    boot_weights = idxs.astype(np.float64) / len(battles)
-
-    # the only thing different across samples is the distribution of weights
-    bt_fn = partial(
-        fit_bt, matchups, outcomes, n_models=len(models), alpha=np.log(BASE)
-    )
-
-    with mp.Pool(os.cpu_count()) as pool:
-        results = pool.map(bt_fn, boot_weights)
-
-    ratings = np.array(results)
-    scaled_ratings = scale_and_offset(ratings, models, SCALE, INIT_RATING)
-    df = pd.DataFrame(scaled_ratings, columns=models)
-    return df[df.median().sort_values(ascending=False).index]
 
 
 def get_median_elo_from_bootstrap(bootstrap_df):
@@ -471,129 +311,6 @@ def outlier_detect(
     return battles
 
 
-def fit_mle_elo(X, Y, models, indices=None, SCALE=400, INIT_RATING=1000):
-    from sklearn.linear_model import LogisticRegression
-
-    p = len(models.index)
-
-    lr = LogisticRegression(fit_intercept=False)
-    if indices:
-        lr.fit(X[indices], Y[indices])
-    else:
-        lr.fit(X, Y)
-
-    elo_scores = SCALE * lr.coef_[0] + INIT_RATING
-    # calibrate llama-13b to 800 if applicable
-    if "mixtral-8x7b-instruct-v0.1" in models.index:
-        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
-    return (
-        pd.Series(elo_scores[:p], index=models.index).sort_values(ascending=False),
-        lr.coef_[0][p:],
-    )
-
-
-def construct_style_matrices(
-    df,
-    BASE=10,
-    apply_ratio=[1, 1, 1, 1],
-    style_elements=STYLE_CONTROL_ELEMENTS_V1,
-    add_one=True,
-):
-    models = pd.concat([df["model_a"], df["model_b"]]).unique()
-    models = pd.Series(np.arange(len(models)), index=models)
-
-    # duplicate battles
-    df = pd.concat([df, df], ignore_index=True)
-    p = len(models.index)
-    n = df.shape[0]
-    assert len(style_elements) % 2 == 0
-    k = int(len(style_elements) / 2)
-
-    X = np.zeros([n, p + k])
-    X[np.arange(n), models[df["model_a"]]] = +math.log(BASE)
-    X[np.arange(n), models[df["model_b"]]] = -math.log(BASE)
-
-    # creates turn each of the specified column in "conv_metadata" into a vector
-    style_vector = np.array(
-        [
-            df.conv_metadata.map(
-                lambda x: x[element]
-                if type(x[element]) is int
-                else sum(x[element].values())
-            ).tolist()
-            for element in style_elements
-        ]
-    )
-
-    style_diff = (style_vector[:k] - style_vector[k:]).astype(float)
-    style_sum = (style_vector[:k] + style_vector[k:]).astype(float)
-
-    if add_one:
-        style_sum = style_sum + np.ones(style_diff.shape)
-
-    apply_ratio = np.flatnonzero(apply_ratio)
-
-    style_diff[apply_ratio] /= style_sum[
-        apply_ratio
-    ]  # Apply ratio where necessary (length, etc)
-
-    style_mean = np.mean(style_diff, axis=1)
-    style_std = np.std(style_diff, axis=1)
-
-    X[:, -k:] = ((style_diff - style_mean[:, np.newaxis]) / style_std[:, np.newaxis]).T
-
-    # one A win => two A win
-    Y = np.zeros(n)
-    Y[df["winner"] == "model_a"] = 1.0
-
-    # one tie => one A win + one B win
-    # find tie + tie (both bad) index
-    tie_idx = (df["winner"] == "tie") | (df["winner"] == "tie (bothbad)")
-    tie_idx[len(tie_idx) // 2 :] = False
-    Y[tie_idx] = 1.0
-
-    return X, Y, models
-
-
-def get_bootstrap_result_style_control(
-    X, Y, battles, models, func_compute_elo, num_round=1000
-):
-    elos = []
-    coefs = []
-    assert X.shape[0] % 2 == 0 and X.shape[0] == Y.shape[0]
-    k = int(
-        X.shape[0] / 2
-    )  # Since we duplicate the battles when constructing X and Y, we don't want to sample the duplicates
-
-    battles_tie_idx = (battles["winner"] == "tie") | (
-        battles["winner"] == "tie (bothbad)"
-    )
-    for _ in tqdm(range(num_round), desc="bootstrap"):
-        indices = np.random.choice(list(range(k)), size=(k), replace=True)
-
-        index2tie = np.zeros(k, dtype=bool)
-        index2tie[battles_tie_idx] = True
-
-        nontie_indices = indices[~index2tie[indices]]
-        tie_indices = np.concatenate(
-            [indices[index2tie[indices]], indices[index2tie[indices]] + k]
-        )
-
-        _X = np.concatenate([X[nontie_indices], X[nontie_indices], X[tie_indices]])
-        _Y = np.concatenate([Y[nontie_indices], Y[nontie_indices], Y[tie_indices]])
-
-        assert _X.shape == X.shape and _Y.shape == Y.shape
-
-        states = ~_X[:, : len(models)].any(axis=0)
-
-        elo, coef = func_compute_elo(_X, _Y, models=models[~states])
-        elos.append(elo)
-        coefs.append(coef)
-
-    df = pd.DataFrame(elos)
-    return df[df.median().sort_values(ascending=False).index], coefs
-
-
 def filter_long_conv(row):
     threshold = 768
     for conversation_type in ["conversation_a", "conversation_b"]:
@@ -658,20 +375,13 @@ def report_elo_analysis_results(
 
     if rating_system == "bt":
         if style_control:
-            X, Y, models = construct_style_matrices(battles)
-            bootstrap_df, boostrap_coef = get_bootstrap_result_style_control(
-                X, Y, battles, models, fit_mle_elo, num_round=num_bootstrap
-            )
-            elo_rating_final, coef_final = fit_mle_elo(X, Y, models)
+            bootstrap_df, boostrap_coef = compute_bootstrap_style_control(battles, num_round=num_bootstrap)
+            elo_rating_final, coef_final = compute_style_control(battles)
         else:
-            bootstrap_df = get_bootstrap_result_elo_mle_with_tie(
-                battles, num_round=num_bootstrap
-            )
-            elo_rating_final = compute_elo_mle_with_tie(battles)
+            bootstrap_df = compute_bootstrap_bt(battles, num_round=num_bootstrap)
+            elo_rating_final = compute_bt(battles)
     elif rating_system == "elo":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo, num_round=num_bootstrap
-        )
+        bootstrap_df = compute_bootstrap_elo(battles, num_round=num_bootstrap)
         elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
         elo_rating_final = elo_rating_median
 
