@@ -439,9 +439,9 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
 {SURVEY_LINK}
 
 ## 📜 How It Works
-- **Chat Anonymously**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, or Llama).
-- **Vote for the Best**: Choose the AI that gives the best response. You can continue to chat until you identify a winner.
-- **Fair Play**: Vote won't count if AI's identity is revealed during chat.
+- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
+- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
+- **Play Fair**: If AI identity reveals, your vote won't count.
 
 **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> to unlock the multimodal arena!
 
