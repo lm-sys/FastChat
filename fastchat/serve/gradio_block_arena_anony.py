@@ -200,7 +200,7 @@ SAMPLING_WEIGHTS = {
     #"reka-core-20240722": 2,
     #"reka-flash-20240722": 2,
     # "qwen2-72b-instruct": 2,
-    "qwen2.5-72b-instruct": 6,
+    "qwen2.5-72b-instruct": 4,
     # "gemma-1.1-7b-it": 2,
     # "mixtral-8x7b-instruct-v0.1": 2,
     # "mixtral-8x22b-instruct-v0.1": 2,
@@ -327,6 +327,7 @@ SAMPLING_BOOST_MODELS = [
     "zeus-flare-thunder-v3",
     "o1-mini",
     "o1-preview",
+    "qwen2.5-72b-instruct",
     # "the-real-chatbot-v1",
     # "the-real-chatbot-v2",
 ]
@@ -605,7 +606,7 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
@@ -618,8 +619,8 @@ def build_side_by_side_ui_anony(models):
 - You can chat for multiple turns until you identify a winner.
 - Votes won't be counted if model identities are revealed during the conversation.
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/?leaderboard)
+- We've collected **1,000,000+** user votes to compute an AI chatbot leaderboard for 100+ models. Find out the best AI chatbots [here](https://lmarena.ai/?leaderboard)!
 
 ## 👇 Chat now!
 """

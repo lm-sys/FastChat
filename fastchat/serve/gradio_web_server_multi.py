@@ -140,7 +140,7 @@ window.__gradio_mode__ = "app";
         """
     text_size = gr.themes.sizes.text_lg
     with gr.Blocks(
-        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots",
+        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
         theme=gr.themes.Default(text_size=text_size),
         css=block_css,
         head=head_js,

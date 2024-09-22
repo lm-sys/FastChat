@@ -795,7 +795,7 @@ def get_model_description_md(models):
 def build_about():
     about_markdown = """
 # About Us
-Chatbot Arena ([lmarena.ai](http://lmarena.ai)) is an open-source platform for evaluating AI by human preference, developed by researchers from UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). We open-source the [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release open datasets. We always welcome contributions from the community. If you're interested in getting involved, we'd love to hear from you!
+Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). We open-source the [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release open datasets. We always welcome contributions from the community. If you're interested in getting involved, we'd love to hear from you!
 
 ## Open-source contributors
 - Leads: [Wei-Lin Chiang](https://infwinston.github.io/), [Anastasios Angelopoulos](https://people.eecs.berkeley.edu/~angelopoulos/)
@@ -844,7 +844,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
 
     notice_markdown = f"""
-# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots
+# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
 {promotion}
 """
 
@@ -968,7 +968,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
 def build_demo(models):
     with gr.Blocks(
-        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots",
+        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
         theme=gr.themes.Default(),
         css=block_css,
     ) as demo:

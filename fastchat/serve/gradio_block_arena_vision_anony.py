@@ -433,7 +433,7 @@ def add_text(
 
 def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
 [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
@@ -445,7 +445,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
 - **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
 
 ## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** user votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
+- We've collected **1,000,000+** user votes to compute an AI chatbot leaderboard for 100+ models. Find out the best AI chatbots [here](https://lmarena.ai/?leaderboard)!
 
 ## 👇 Chat now!
 """

@@ -312,7 +312,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     )
 
     notice_markdown = f"""
-# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test AI Chatbots
+# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
 {promotion}
 """
 
