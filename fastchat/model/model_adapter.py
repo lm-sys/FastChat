@@ -44,7 +44,7 @@ from fastchat.modules.awq import AWQConfig, load_awq_quantized
 from fastchat.modules.exllama import ExllamaConfig, load_exllama_model
 from fastchat.modules.xfastertransformer import load_xft_model, XftConfig
 from fastchat.modules.gptq import GptqConfig, load_gptq_quantized
-from fastchat.utils import get_gpu_memory
+from fastchat.utils import get_gpu_memory, get_npu_memory
 
 # Check an environment variable to check if we should be sharing Peft model
 # weights.  When false we treat all Peft models as separate.
@@ -861,7 +861,7 @@ class ChatGLMAdapter(BaseModelAdapter):
         return "chatglm" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        # Disable JIT on-the-fly compilation
+        # Disable JIT just-in-time compilation
         torch.npu.set_compile_mode(jit_compile=False)
         revision = from_pretrained_kwargs.get("revision", "main")
         if "chatglm3" in model_path.lower():
