@@ -171,6 +171,16 @@ def get_npu_memory(max_npus=None):
     return npu_memory
 
 
+def get_npu_type():
+    import torch_npu
+    chip_type = ""
+    try:
+        chip_type = torch_npu.npu.get_device_name(0)
+    except AssertionError:
+        warnings.warn("No accessible NPU devices!")
+    return chip_type
+
+
 def oai_moderation(text, custom_thresholds=None):
     """
     Check whether the text violates OpenAI moderation API.
