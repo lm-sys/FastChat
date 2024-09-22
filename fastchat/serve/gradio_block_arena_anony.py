@@ -614,13 +614,13 @@ def build_side_by_side_ui_anony(models):
 ## 📣 News
 - Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
 
-## 📜 Rules
+## 📜 How It Works
 - Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can chat for multiple turns until you identify a winner.
 - Votes won't be counted if model identities are revealed during the conversation.
 
-## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** user votes to compute an AI chatbot leaderboard for 100+ models. Find out the best AI chatbots [here](https://lmarena.ai/?leaderboard)!
+## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLMs and AI chatbots. Explore the top AI models on our [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """

@@ -309,7 +309,7 @@ def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
 
 {SURVEY_LINK}
 
-## 📜 Rules
+## 📜 How It Works
 - Ask any question to two chosen models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can chat for multiple turns until you identify a winner.
 

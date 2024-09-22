@@ -438,14 +438,15 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
 
 {SURVEY_LINK}
 
-## 📜 Rules
-- Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama) and vote for the better one!
-- You can continue to chat with AI until you identify a winner.
-- Vote won't be counted if AI identity is revealed during chat.
-- **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
+## 📜 How It Works
+- **Chat Anonymously**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, or Llama).
+- **Vote for the Best**: Choose the AI that gives the best response. You can continue to chat until you identify a winner.
+- **Fair Play**: Vote won't count if AI's identity is revealed during chat.
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** user votes to compute an AI chatbot leaderboard for 100+ models. Find out the best AI chatbots [here](https://lmarena.ai/?leaderboard)!
+**NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> to unlock the multimodal arena!
+
+## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLMs and AI chatbots. Explore the top AI models on our [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """
