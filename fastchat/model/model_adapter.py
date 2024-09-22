@@ -266,11 +266,30 @@ def load_model(
             )
     elif device == "npu":
         kwargs = {"torch_dtype": torch.float16}
-        # Try to load ipex, while it looks unused, it links into torch for xpu support
+        # Adapted version 2.1.0.post6 of torch-npu for the Ascend 310p chips.
+        from pkg_resources import parse_version, get_distribution
         try:
             import torch_npu
+
+            required_version = "2.1.0.post6"
+            installed_version = get_distribution("torch_npu").version
+            if parse_version(installed_version) != parse_version(required_version):
+                warnings.warn(f"The version of torch-npu is not {required_version}.")
         except ImportError:
             warnings.warn("Ascend Extension for PyTorch is not installed.")
+
+        if num_gpus != 1:
+            num_npus = num_gpus
+            kwargs["device_map"] = "balanced"
+            if max_gpu_memory is None:
+                kwargs["device_map"] = "sequential"
+                available_gpu_memory = get_npu_memory(num_npus)
+                kwargs["max_memory"] = {
+                    i: str(int(available_gpu_memory[i] * 0.8)) + "GiB"
+                    for i in range(num_npus)
+                }
+            else:
+                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_npus)}
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -373,11 +392,8 @@ def load_model(
     ):
         model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
-    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
-        "mps",
-        "xpu",
-        "npu",
-    ):
+    if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or \
+       (device == "npu" and num_gpus == 1) or device in ("mps", "xpu"):
         model.to(device)
 
     if device == "xpu":
@@ -702,6 +718,8 @@ class VicunaAdapter(BaseModelAdapter):
         return "vicuna" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        # Disable JIT just-in-time compilation
+        torch.npu.set_compile_mode(jit_compile=False)
         revision = from_pretrained_kwargs.get("revision", "main")
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=self.use_fast_tokenizer, revision=revision
@@ -843,6 +861,8 @@ class ChatGLMAdapter(BaseModelAdapter):
         return "chatglm" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        # Disable JIT on-the-fly compilation
+        torch.npu.set_compile_mode(jit_compile=False)
         revision = from_pretrained_kwargs.get("revision", "main")
         if "chatglm3" in model_path.lower():
             tokenizer = AutoTokenizer.from_pretrained(

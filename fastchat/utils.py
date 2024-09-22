@@ -149,6 +149,28 @@ def get_gpu_memory(max_gpus=None):
     return gpu_memory
 
 
+def get_npu_memory(max_npus=None):
+    """Get available memory for each NPU."""
+    import torch_npu
+
+    npu_memory = []
+    num_npus = (
+        torch_npu.npu.device_count()
+        if max_npus is None
+        else min(max_npus, torch_npu.npu.device_count())
+    )
+
+    for npu_id in range(num_npus):
+        with torch_npu.npu.device(npu_id):
+            device = torch_npu.npu.current_device()
+            npu_properties = torch_npu.npu.get_device_properties(device)
+            total_memory = npu_properties.total_memory / (1024**3)
+            allocated_memory = torch_npu.npu.memory_allocated() / (1024**3)
+            available_memory = total_memory - allocated_memory
+            npu_memory.append(available_memory)
+    return npu_memory
+
+
 def oai_moderation(text, custom_thresholds=None):
     """
     Check whether the text violates OpenAI moderation API.
