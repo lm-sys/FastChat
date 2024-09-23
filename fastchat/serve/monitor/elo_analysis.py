@@ -332,6 +332,7 @@ def report_elo_analysis_results(
     scale=1,
     filter_func=lambda x: True,
     style_control=False,
+    num_cpu=None,
 ):
     battles = pd.DataFrame(battles_json)
 
@@ -378,10 +379,14 @@ def report_elo_analysis_results(
             )
             elo_rating_final, coef_final = compute_style_control(battles)
         else:
-            bootstrap_df = compute_bootstrap_bt(battles, num_round=num_bootstrap)
+            bootstrap_df = compute_bootstrap_bt(
+                battles, num_round=num_bootstrap, num_cpu=num_cpu
+            )
             elo_rating_final = compute_bt(battles)
     elif rating_system == "elo":
-        bootstrap_df = compute_bootstrap_elo(battles, num_round=num_bootstrap)
+        bootstrap_df = compute_bootstrap_elo(
+            battles, num_round=num_bootstrap, num_cpu=num_cpu
+        )
         elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
         elo_rating_final = elo_rating_median
 
@@ -485,6 +490,7 @@ if __name__ == "__main__":
     parser.add_argument("--category", nargs="+", default=["full"])
     parser.add_argument("--scale", type=float, default=1)
     parser.add_argument("--style-control", action="store_true")
+    parser.add_argument("--num-cpu", type=int, default=12)
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -523,6 +529,7 @@ if __name__ == "__main__":
             scale=args.scale,
             filter_func=filter_func,
             style_control=args.style_control,
+            num_cpu=args.num_cpu,
         )
 
     for cat in args.category:

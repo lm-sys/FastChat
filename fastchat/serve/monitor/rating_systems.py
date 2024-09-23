@@ -6,6 +6,7 @@ import numpy as np
 from scipy.special import expit
 from scipy.optimize import minimize
 import pandas as pd
+from tqdm import tqdm
 
 
 STYLE_CONTROL_ELEMENTS_V1 = [
@@ -217,7 +218,13 @@ def compute_bt(df, base=10.0, scale=400.0, init_rating=1000, tol=1e-6):
 
 
 def compute_bootstrap_bt(
-    battles, num_round, base=10.0, scale=400.0, init_rating=1000.0, tol=1e-6
+    battles,
+    num_round,
+    base=10.0,
+    scale=400.0,
+    init_rating=1000.0,
+    tol=1e-6,
+    num_cpu=None,
 ):
     matchups, outcomes, models, weights = preprocess_for_bt(battles)
     # bootstrap sample the unique outcomes and their counts directly using the multinomial distribution
@@ -232,8 +239,8 @@ def compute_bootstrap_bt(
     bt_fn = partial(
         fit_bt, matchups, outcomes, n_models=len(models), alpha=np.log(base), tol=tol
     )
-    with mp.Pool(os.cpu_count()) as pool:
-        results = pool.map(bt_fn, boot_weights)
+    with mp.Pool(num_cpu if num_cpu else os.cpu_count()) as pool:
+        results = list(tqdm(pool.imap_unordered(bt_fn, boot_weights), total=num_round))
 
     ratings = np.array(results)
     scaled_ratings = scale_and_offset(ratings, models, scale, init_rating)
@@ -346,6 +353,7 @@ def compute_bootstrap_style_control(
     init_rating=1000.0,
     scale=400.0,
     tol=1e-6,
+    num_cpu=None,
 ):
     matchups, features, outcomes, models = preprocess_for_style(df)
 
@@ -364,9 +372,10 @@ def compute_bootstrap_style_control(
         low=0, high=matchups.shape[0], size=(num_round, matchups.shape[0])
     )
 
-    # this one is still memory and cpu intensive so don't make too many processes
-    with mp.Pool(4) as pool:
-        results = pool.map(contextual_bt_fn, boot_idxs)
+    with mp.Pool(num_cpu if num_cpu else os.cpu_count()) as pool:
+        results = list(
+            tqdm(pool.imap_unordered(contextual_bt_fn, boot_idxs), total=num_round)
+        )
 
     ratings_params = np.array(results)
     ratings = ratings_params[:, : len(models)]
