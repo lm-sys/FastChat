@@ -28,6 +28,7 @@ from fastchat.utils import get_context_length, is_partial_stop
 
 app = FastAPI()
 
+
 class VLLMWorker(BaseModelWorker):
     def __init__(
         self,
@@ -67,13 +68,17 @@ class VLLMWorker(BaseModelWorker):
             self.init_heart_beat()
 
     def find_lora(self, model):
-        lora_request = next((item for item in lora_requests if item.lora_name == model), None)
+        lora_request = next(
+            (item for item in lora_requests if item.lora_name == model), None
+        )
 
         if lora_request:
             logger.info(f"Successfully selected LoRA adapter: {model}")
             return lora_request
         else:
-            logger.warning(f"Corresponding LoRA not found: {model}, will perform inference without LoRA adapter.")
+            logger.warning(
+                f"Corresponding LoRA not found: {model}, will perform inference without LoRA adapter."
+            )
             return None
 
     async def generate_stream(self, params):
@@ -131,7 +136,9 @@ class VLLMWorker(BaseModelWorker):
         )
         if self.lora_requests and len(self.lora_requests) > 0:
             lora_request = self.find_lora(model)
-        results_generator = engine.generate(context, sampling_params, request_id, lora_request = lora_request)
+        results_generator = engine.generate(
+            context, sampling_params, request_id, lora_request=lora_request
+        )
 
         async for request_output in results_generator:
             prompt = request_output.prompt
@@ -171,9 +178,11 @@ class VLLMWorker(BaseModelWorker):
                 "cumulative_logprob": [
                     output.cumulative_logprob for output in request_output.outputs
                 ],
-                "finish_reason": request_output.outputs[0].finish_reason
-                if len(request_output.outputs) == 1
-                else [output.finish_reason for output in request_output.outputs],
+                "finish_reason": (
+                    request_output.outputs[0].finish_reason
+                    if len(request_output.outputs) == 1
+                    else [output.finish_reason for output in request_output.outputs]
+                ),
             }
             # Emit twice here to ensure a 'finish_reason' with empty content in the OpenAI API response.
             # This aligns with the behavior of model_worker.
@@ -297,10 +306,11 @@ if __name__ == "__main__":
         "--lora-modules",
         type=nullable_str,
         default=None,
-        nargs='+',
+        nargs="+",
         action=LoRAParserAction,
         help="LoRA module configurations in the format name=path. "
-        "Multiple modules can be specified.")
+        "Multiple modules can be specified.",
+    )
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
@@ -316,7 +326,8 @@ if __name__ == "__main__":
                 lora_name=lora.name,
                 lora_int_id=i,
                 lora_path=lora.path,
-            ) for i, lora in enumerate(args.lora_modules, start=1)
+            )
+            for i, lora in enumerate(args.lora_modules, start=1)
         ]
 
     engine_args = AsyncEngineArgs.from_cli_args(args)
@@ -331,6 +342,6 @@ if __name__ == "__main__":
         args.no_register,
         engine,
         args.conv_template,
-        lora_requests
+        lora_requests,
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
