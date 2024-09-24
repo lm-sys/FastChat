@@ -13,7 +13,9 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 import uvicorn
 from vllm import AsyncLLMEngine
-from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.arg_utils import AsyncEngineArgs, nullable_str
+from vllm.entrypoints.openai.cli_args import LoRAParserAction
+from vllm.lora.request import LoRARequest
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
@@ -24,9 +26,7 @@ from fastchat.serve.model_worker import (
 )
 from fastchat.utils import get_context_length, is_partial_stop
 
-
 app = FastAPI()
-
 
 class VLLMWorker(BaseModelWorker):
     def __init__(
@@ -40,6 +40,7 @@ class VLLMWorker(BaseModelWorker):
         no_register: bool,
         llm_engine: AsyncLLMEngine,
         conv_template: str,
+        lora_requests: LoRARequest,
     ):
         super().__init__(
             controller_addr,
@@ -55,6 +56,7 @@ class VLLMWorker(BaseModelWorker):
             f"Loading the model {self.model_names} on worker {worker_id}, worker type: vLLM worker..."
         )
         self.tokenizer = llm_engine.engine.tokenizer
+        self.lora_requests = lora_requests
         # This is to support vllm >= 0.2.7 where TokenizerGroup was introduced
         # and llm_engine.engine.tokenizer was no longer a raw tokenizer
         if hasattr(self.tokenizer, "tokenizer"):
@@ -64,9 +66,20 @@ class VLLMWorker(BaseModelWorker):
         if not no_register:
             self.init_heart_beat()
 
+    def find_lora(self, model):
+        lora_request = next((item for item in lora_requests if item.lora_name == model), None)
+
+        if lora_request:
+            logger.info(f"Successfully selected LoRA adapter: {model}")
+            return lora_request
+        else:
+            logger.warning(f"Corresponding LoRA not found: {model}, will perform inference without LoRA adapter.")
+            return None
+
     async def generate_stream(self, params):
         self.call_ct += 1
 
+        model = params.pop("model")
         context = params.pop("prompt")
         request_id = params.pop("request_id")
         temperature = float(params.get("temperature", 1.0))
@@ -116,7 +129,9 @@ class VLLMWorker(BaseModelWorker):
             frequency_penalty=frequency_penalty,
             best_of=best_of,
         )
-        results_generator = engine.generate(context, sampling_params, request_id)
+        if self.lora_requests and len(self.lora_requests) > 0:
+            lora_request = self.find_lora(model)
+        results_generator = engine.generate(context, sampling_params, request_id, lora_request = lora_request)
 
         async for request_output in results_generator:
             prompt = request_output.prompt
@@ -278,6 +293,14 @@ if __name__ == "__main__":
         "throughput. However, if the value is too high, it may cause out-of-"
         "memory (OOM) errors.",
     )
+    parser.add_argument(
+        "--lora-modules",
+        type=nullable_str,
+        default=None,
+        nargs='+',
+        action=LoRAParserAction,
+        help="LoRA module configurations in the format name=path. "
+        "Multiple modules can be specified.")
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
@@ -285,6 +308,16 @@ if __name__ == "__main__":
         args.model = args.model_path
     if args.num_gpus > 1:
         args.tensor_parallel_size = args.num_gpus
+
+    lora_requests = None
+    if args.lora_modules is not None:
+        lora_requests = [
+            LoRARequest(
+                lora_name=lora.name,
+                lora_int_id=i,
+                lora_path=lora.path,
+            ) for i, lora in enumerate(args.lora_modules, start=1)
+        ]
 
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
@@ -298,5 +331,6 @@ if __name__ == "__main__":
         args.no_register,
         engine,
         args.conv_template,
+        lora_requests
     )
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
