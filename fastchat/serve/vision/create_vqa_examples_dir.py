@@ -64,24 +64,32 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     datasets_info = {
-        "DocVQA": {
-            "path": "lmms-lab/DocVQA",
+        "Memes": {
+            "path": "not-lain/meme-dataset",
             "image_key": "image",
-            "question_key": "question",
-            "id_key": "questionId",
-            "subset": "DocVQA",
-            "split": "test",
-        },
-        "ChartQA": {
-            "path": "HuggingFaceM4/ChartQA",
-            "image_key": "image",
-            "question_key": "query",
+            "question_key": "name",
             "id_key": "index",
             "subset": False,
-            "split": "test",
+            "split": "train",
         },
-        "realworldqa": {
-            "path": "visheratin/realworldqa",
+        "Floorplan": {
+            "path": "umesh16071973/Floorplan_Dataset_21022024",
+            "image_key": "image",
+            "question_key": "caption",
+            "id_key": "index",
+            "subset": False,
+            "split": "train",
+        },
+        "Website": {
+            "path": "Zexanima/website_screenshots_image_dataset",
+            "image_key": "image",
+            "question_key": "date_captured",
+            "id_key": "index",
+            "subset": False,
+            "split": "train",
+        },
+        "IllusionVQA": {
+            "path": "csebuetnlp/illusionVQA-Comprehension",
             "image_key": "image",
             "question_key": "question",
             "id_key": "index",
@@ -96,22 +104,6 @@ if __name__ == "__main__":
             "subset": "explanation",
             "split": "train",
         },
-        "WikiArt": {
-            "path": "huggan/wikiart",
-            "image_key": "image",
-            "question_key": "artist",
-            "id_key": "index",
-            "subset": False,
-            "split": "train",
-        },
-        "TextVQA": {
-            "path": "facebook/textvqa",
-            "image_key": "image",
-            "question_key": "question",
-            "id_key": "question_id",
-            "subset": False,
-            "split": "train",
-        },
     }
 
     download_images_and_create_json(
@@ -121,7 +113,8 @@ if __name__ == "__main__":
     for dataset_name in datasets_info.keys():
         with open(f"{args.output_dir}/{dataset_name}/data.json") as f:
             data = json.load(f)
-            dataset_json.extend(np.random.choice(data, 500))
+            print(f"Dataset: {dataset_name}, Number of examples: {len(data)}")
+            dataset_json.extend(data)
 
     with open(f"{args.output_dir}/metadata_sampled.json", "w") as f:
         json.dump(dataset_json, f, indent=4)

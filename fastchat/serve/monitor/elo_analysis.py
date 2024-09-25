@@ -17,106 +17,16 @@ from transformers import AutoTokenizer
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
+from fastchat.serve.monitor.rating_systems import (
+    compute_elo,
+    compute_bt,
+    compute_style_control,
+    compute_bootstrap_elo,
+    compute_bootstrap_bt,
+    compute_bootstrap_style_control,
+)
 
 pd.options.display.float_format = "{:.2f}".format
-
-
-def compute_elo(battles, K=4, SCALE=400, BASE=10, INIT_RATING=1000):
-    rating = defaultdict(lambda: INIT_RATING)
-
-    for rd, model_a, model_b, winner in battles[
-        ["model_a", "model_b", "winner"]
-    ].itertuples():
-        ra = rating[model_a]
-        rb = rating[model_b]
-        ea = 1 / (1 + BASE ** ((rb - ra) / SCALE))
-        eb = 1 / (1 + BASE ** ((ra - rb) / SCALE))
-        if winner == "model_a":
-            sa = 1
-        elif winner == "model_b":
-            sa = 0
-        elif winner == "tie" or winner == "tie (bothbad)":
-            sa = 0.5
-        else:
-            raise Exception(f"unexpected vote {winner}")
-        rating[model_a] += K * (sa - ea)
-        rating[model_b] += K * (1 - sa - eb)
-
-    return dict(rating)
-
-
-def get_bootstrap_result(battles, func_compute_elo, num_round=1000):
-    rows = []
-    for i in tqdm(range(num_round), desc="bootstrap"):
-        tmp_battles = battles.sample(frac=1.0, replace=True)
-        rows.append(func_compute_elo(tmp_battles))
-    df = pd.DataFrame(rows)
-    return df[df.median().sort_values(ascending=False).index]
-
-
-def compute_elo_mle_with_tie(
-    df, SCALE=400, BASE=10, INIT_RATING=1000, sample_weight=None
-):
-    from sklearn.linear_model import LogisticRegression
-
-    ptbl_a_win = pd.pivot_table(
-        df[df["winner"] == "model_a"],
-        index="model_a",
-        columns="model_b",
-        aggfunc="size",
-        fill_value=0,
-    )
-    ptbl_tie = pd.pivot_table(
-        df[df["winner"].isin(["tie", "tie (bothbad)"])],
-        index="model_a",
-        columns="model_b",
-        aggfunc="size",
-        fill_value=0,
-    )
-    ptbl_tie = ptbl_tie + ptbl_tie.T
-    ptbl_b_win = pd.pivot_table(
-        df[df["winner"] == "model_b"],
-        index="model_a",
-        columns="model_b",
-        aggfunc="size",
-        fill_value=0,
-    )
-    ptbl_win = ptbl_a_win * 2 + ptbl_b_win.T * 2 + ptbl_tie
-
-    models = pd.Series(np.arange(len(ptbl_win.index)), index=ptbl_win.index)
-
-    p = len(models)
-    X = np.zeros([p * (p - 1) * 2, p])
-    Y = np.zeros(p * (p - 1) * 2)
-
-    cur_row = 0
-    sample_weights = []
-    for m_a in ptbl_win.index:
-        for m_b in ptbl_win.columns:
-            if m_a == m_b:
-                continue
-            # if nan skip
-            if math.isnan(ptbl_win.loc[m_a, m_b]) or math.isnan(ptbl_win.loc[m_b, m_a]):
-                continue
-            X[cur_row, models[m_a]] = +math.log(BASE)
-            X[cur_row, models[m_b]] = -math.log(BASE)
-            Y[cur_row] = 1.0
-            sample_weights.append(ptbl_win.loc[m_a, m_b])
-
-            X[cur_row + 1, models[m_a]] = math.log(BASE)
-            X[cur_row + 1, models[m_b]] = -math.log(BASE)
-            Y[cur_row + 1] = 0.0
-            sample_weights.append(ptbl_win.loc[m_b, m_a])
-            cur_row += 2
-    X = X[:cur_row]
-    Y = Y[:cur_row]
-
-    lr = LogisticRegression(fit_intercept=False, penalty=None)
-    lr.fit(X, Y, sample_weight=sample_weights)
-    elo_scores = SCALE * lr.coef_[0] + INIT_RATING
-    if "mixtral-8x7b-instruct-v0.1" in models.index:
-        elo_scores += 1114 - elo_scores[models["mixtral-8x7b-instruct-v0.1"]]
-    return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 
 
 def get_median_elo_from_bootstrap(bootstrap_df):
@@ -421,6 +331,8 @@ def report_elo_analysis_results(
     run_outlier_detect=False,
     scale=1,
     filter_func=lambda x: True,
+    style_control=False,
+    num_cpu=None,
 ):
     battles = pd.DataFrame(battles_json)
 
@@ -461,13 +373,19 @@ def report_elo_analysis_results(
     elo_rating_online = compute_elo(battles)
 
     if rating_system == "bt":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo_mle_with_tie, num_round=num_bootstrap
-        )
-        elo_rating_final = compute_elo_mle_with_tie(battles)
+        if style_control:
+            bootstrap_df, boostrap_coef = compute_bootstrap_style_control(
+                battles, num_round=num_bootstrap
+            )
+            elo_rating_final, coef_final = compute_style_control(battles)
+        else:
+            bootstrap_df = compute_bootstrap_bt(
+                battles, num_round=num_bootstrap, num_cpu=num_cpu
+            )
+            elo_rating_final = compute_bt(battles)
     elif rating_system == "elo":
-        bootstrap_df = get_bootstrap_result(
-            battles, compute_elo, num_round=num_bootstrap
+        bootstrap_df = compute_bootstrap_elo(
+            battles, num_round=num_bootstrap, num_cpu=num_cpu
         )
         elo_rating_median = get_median_elo_from_bootstrap(bootstrap_df)
         elo_rating_final = elo_rating_median
@@ -538,6 +456,12 @@ def report_elo_analysis_results(
         "last_updated_tstamp": last_updated_tstamp,
         "bootstrap_df": bootstrap_df,
         "leaderboard_table_df": leaderboard_table_df,
+        "style_coefficients": {
+            "bootstrap": np.vstack(boostrap_coef),
+            "final": coef_final,
+        }
+        if rating_system == "bt" and style_control
+        else {},
     }
 
 
@@ -565,6 +489,8 @@ if __name__ == "__main__":
     parser.add_argument("--run-outlier-detect", action="store_true", default=False)
     parser.add_argument("--category", nargs="+", default=["full"])
     parser.add_argument("--scale", type=float, default=1)
+    parser.add_argument("--style-control", action="store_true")
+    parser.add_argument("--num-cpu", type=int, default=12)
     args = parser.parse_args()
 
     np.random.seed(42)
@@ -602,6 +528,8 @@ if __name__ == "__main__":
             run_outlier_detect=args.run_outlier_detect,
             scale=args.scale,
             filter_func=filter_func,
+            style_control=args.style_control,
+            num_cpu=args.num_cpu,
         )
 
     for cat in args.category:
