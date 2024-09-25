@@ -211,15 +211,16 @@ class VLLMWorker(BaseModelWorker):
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
         seed = params.get("seed", None)
+        skip_special_tokens = params.get("skip_special_tokens", True)
 
         request = params.get("request", None)
 
         # split prompt by image token
-        split_prompt = prompt.split("<image>")
-        if prompt.count("<image>") != len(images):
-            raise ValueError(
-                "The number of images passed in does not match the number of <image> tokens in the prompt!"
-            )
+        # split_prompt = prompt.split("<image>")
+        # if prompt.count("<image>") != len(images):
+        #     raise ValueError(
+        #         "The number of images passed in does not match the number of <image> tokens in the prompt!"
+        #     )
 
         # context: List[TextPrompt] = []
         # for i in range(len(split_prompt)):
@@ -264,6 +265,7 @@ class VLLMWorker(BaseModelWorker):
             frequency_penalty=frequency_penalty,
             best_of=best_of,
             seed=seed,
+            skip_special_tokens=skip_special_tokens
         )
 
         if VLLM_LORA_SUPPORTED:
