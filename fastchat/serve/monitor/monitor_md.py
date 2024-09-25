@@ -80,8 +80,8 @@ leader_component_values = [None] * 5
 def make_default_md_1(mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
-    # 🏆 Chatbot Arena Leaderboard: Ranking the Best LLMs, AI Chatbots Through Community Votes
-    [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+    # 🏆 Chatbot Arena LLM Leaderboard: Community-driven Evaluation for Best LLM and AI chatbots
+    [Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
     """
 
     return leaderboard_md
@@ -92,7 +92,7 @@ def make_default_md_2(mirror=False):
     leaderboard_md = f"""
 {mirror_str if mirror else ""}
 
-Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). With over 1,000,000 user votes, the platform ranks best AI chatbots using the Bradley-Terry model to generate live leaderboards. For technical details, check out our [paper](https://arxiv.org/abs/2403.04132).
+Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). With over 1,000,000 user votes, the platform ranks best LLM and AI chatbots using the Bradley-Terry model to generate live leaderboards. For technical details, check out our [paper](https://arxiv.org/abs/2403.04132).
 
 **Chatbot Arena thrives on community engagement — cast your vote to help improve AI evaluation!**
 

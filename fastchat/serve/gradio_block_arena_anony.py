@@ -270,6 +270,7 @@ SAMPLING_WEIGHTS = {
     "zeus-flare-thunder-v1": 2,
     "zeus-flare-thunder-v2": 2,
     "zeus-flare-thunder-v3": 4,
+    "glm-4-plus": 8,
 }
 
 # target model sampling weights will be boosted.
@@ -607,7 +608,7 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
 # ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
@@ -619,8 +620,8 @@ def build_side_by_side_ui_anony(models):
 - **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
 - **Play Fair**: If AI identity reveals, your vote won't count.
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/leaderboard)
-- Backed by over **1,000,000+** community votes, our platform ranks the best LLMs and AI chatbots. Explore the top AI models on our [leaderboard](https://lmarena.ai/leaderboard)!
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """

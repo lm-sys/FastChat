@@ -88,7 +88,7 @@ class Monitor:
             "llama-3.1-405b-instruct": 16,
             "gemini-1.5-pro-exp-0801": 8,
             "sus-column-r": 16,
-            "chatgpt-4o-latest-20240903": 16,
+            "chatgpt-4o-latest-20240903": 8,
         }
 
     async def update_stats(self, num_file=1) -> None:

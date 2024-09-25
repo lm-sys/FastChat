@@ -87,8 +87,8 @@ vl_models = []
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {
     "gpt-4o-2024-05-13": 4,
-    "gpt-4-turbo-2024-04-09": 2,
-    "claude-3-haiku-20240307": 2,
+    # "gpt-4-turbo-2024-04-09": 2,
+    # "claude-3-haiku-20240307": 2,
     "claude-3-5-sonnet-20240620": 4,
     "claude-3-opus-20240229": 4,
     "gemini-1.5-flash-api-0514": 2,
@@ -98,23 +98,24 @@ VISION_SAMPLING_WEIGHTS = {
     # "reka-flash-preview-20240611": 2,
     # "cogvlm2-llama3-chat-19b": 4,
     "gpt-4o-mini-2024-07-18": 2,
-    "internvl2-26b": 4,
+    "internvl2-26b": 2,
     "gemini-1.5-pro-exp-0827": 4,
     "gemini-1.5-flash-exp-0827": 4,
     "gemini-1.5-flash-8b-exp-0827": 4,
-    "gemini-1.5-flash-test-5": 4,
     # "phi-3.5-vision-instruct": 4,
     "internvl2-4b": 2,
     # "llava-onevision-qwen2-72b-ov": 4,
     # "yi-vision": 4,
     "qwen2-vl-7b-instruct": 4,
-    "gemini-1.5-pro-002-test-sp": 4,
+    # "gemini-1.5-pro-002-test-sp": 6,
+    # "gemini-1.5-flash-test-5": 6,
     "qwen-vl-max-0809": 4,
     "dumbledore-v2": 4,
-    "dumbledore-v3": 4,
+    "dumbledore-v3": 12,
     "potter-v1": 4,
     "potter-v2": 4,
     "chatgpt-4o-latest-20240903": 4,
+    "pixtral-12b-2409": 6,
 }
 
 # TODO(chris): Find battle targets that make sense
@@ -130,8 +131,9 @@ VISION_SAMPLING_BOOST_MODELS = [
     # "qwen2-vl-7b-instruct",
     # "qwen-vl-max-0809",
     # "pixtral-12b-2409",
-    "gemini-1.5-flash-test-5",
-    "gemini-1.5-pro-002-test-sp",
+    # "gemini-1.5-flash-test-5",
+    # "gemini-1.5-pro-002-test-sp",
+    "pixtral-12b-2409",
     "dumbledore-v2",
     "dumbledore-v3",
     "potter-v1",
@@ -434,7 +436,7 @@ def add_text(
 def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     notice_markdown = f"""
 # ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
@@ -445,8 +447,8 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
 
 **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> to unlock the multimodal arena!
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/leaderboard)
-- Backed by over **1,000,000+** community votes, our platform ranks the best LLMs and AI chatbots. Explore the top AI models on our [leaderboard](https://lmarena.ai/leaderboard)!
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """
