@@ -2075,7 +2075,7 @@ register_conv_template(
     Conversation(
         name="metharme",
         system_template="<|system|>{system_message}",
-        system_message="""Enter RP mode. You shall reply to the user while staying 
+        system_message="""Enter RP mode. You shall reply to the user while staying
         in character. Your responses must be detailed, creative, immersive, and drive the scenario
         forward.""",
         roles=("<|user|>", "<|model|>"),
@@ -2298,6 +2298,17 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="bailing",
+        system_message="",
+        roles=("user", "assistant"),
+        messages=[],
+        sep_style=None,
+        sep=None,
+    )
+)
+
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
@@ -2340,3 +2351,16 @@ if __name__ == "__main__":
     conv.append_message(conv.roles[0], "How are you?")
     conv.append_message(conv.roles[1], None)
     print(conv.get_prompt())
+
+    print("\n")
+
+    print("-- Baling template --")
+    conv = get_conv_template("bailing")
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.to_openai_api_messages())
+
+    print("\n")
+

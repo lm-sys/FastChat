@@ -246,6 +246,18 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
             conversation_id=state.conv_id,
         )
+    elif model_api_dict["api_type"] == "bailing":
+        messages = conv.to_openai_api_messages()
+        stream_iter = bailing_api_stream_iter(
+                model_name=model_api_dict["model_name"],
+                messages=messages,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_new_tokens,
+                api_base=model_api_dict.get("api_base"),
+                api_key=model_api_dict.get("api_key"),
+                generation_args=model_api_dict.get("recommended_config"),
+        )
     else:
         raise NotImplementedError()
 
@@ -1264,3 +1276,39 @@ def metagen_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
+
+
+def bailing_api_stream_iter(
+        model_name,
+        messages,
+        temperature,
+        top_p,
+        max_tokens,
+        api_base=None,
+        api_key=None,
+        generation_args=None,
+        ):
+    url = api_base if api_base else "https://bailingchat.alipay.com/chat/arena"
+    token = api_key if api_key else os.environ.get("BAILING_API_KEY")
+    if token:
+        headers = {"Authorization": f"Bearer {token}"}
+    else:
+        raise ValueError(f"There is not valid token.")
+
+    headers["Content-Type"] = "application/json"
+
+    request = {"model": model_name, "messages": messages}
+    request["stream"] = True
+    request["temperature"] = temperature or 0.4
+    request["top_p"] = top_p or 1.0
+    request["top_k"] = -1
+    request["max_tokens"] = max_tokens or 4096
+    if generation_args:
+        request.update(generation_args)
+
+    sess = requests.Session()
+    with sess.post(url, json=request, headers=headers, stream=True, timeout=180) as resp:
+        for line in resp.iter_lines():
+            if line:
+                yield {"text": str(line, 'utf-8'), "error_code": 0}
+
