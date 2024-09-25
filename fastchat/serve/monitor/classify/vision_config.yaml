@@ -1,0 +1,27 @@
+# Yaml config file for category classification
+
+input_file: "../arena-data-analysis/data/vision_clean_battle_conv_20240822_with_image_hash.json" # json
+cache_file: False # json
+output_file: "fastchat/serve/monitor/classify/results/vision_clean_battle_conv_20240822_with_image_hash-labeled.json" # json line
+
+convert_to_json: True
+
+task_name:
+  - refusal_v0.1
+  - criteria_v0.1
+  - if_v0.1
+  - vision_v0.1
+
+model_name: gpt-4o
+name: gpt-4o
+endpoints:
+  - api_base: # BASE URL
+    api_key: # API KEY
+
+parallel: 50
+temperature: 0.0
+max_token: 512
+
+max_retry: 2
+retry_sleep: 10
+error_output: $ERROR$
