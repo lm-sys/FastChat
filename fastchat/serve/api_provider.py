@@ -1299,10 +1299,11 @@ def bailing_api_stream_iter(
 
     request = {"model": model_name, "messages": messages}
     request["stream"] = True
-    request["temperature"] = temperature or 0.4
-    request["top_p"] = top_p or 1.0
+    # default value
+    request["temperature"] = 0.4
+    request["top_p"] = 1.0
     request["top_k"] = -1
-    request["max_tokens"] = max_tokens or 4096
+    request["max_tokens"] = 4096
     if generation_args:
         request.update(generation_args)
 
