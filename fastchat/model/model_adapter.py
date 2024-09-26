@@ -78,6 +78,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0613",
     "gpt-4-turbo",
     "gpt-4-1106-preview",
+    "azure-gpt-4-1106-preview-nofilter",
     "gpt-4-0125-preview",
     "gpt-4-turbo-browsing",
     "gpt-4-turbo-2024-04-09",
@@ -408,6 +409,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
     is_cllm = "consistency-llm" in model_path.lower()
+    is_rwkv = "rwkv" in model_path.lower()
+    is_mamba = "mamba" in model_path.lower()
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -423,6 +426,14 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_yuan2
     elif is_cllm:
         return generate_stream_cllm
+    elif is_rwkv:
+        from fastchat.model.rwkv_model import generate_stream_rwkv
+
+        return generate_stream_rwkv
+    elif is_mamba:
+        from fastchat.model.model_mamba import generate_stream_mamba
+
+        return generate_stream_mamba
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -1046,21 +1057,60 @@ class BaizeAdapter(BaseModelAdapter):
 class RwkvAdapter(BaseModelAdapter):
     """The model adapter for BlinkDL/RWKV-4-Raven"""
 
+    version = None
+
     def match(self, model_path: str):
-        return "rwkv-4" in model_path.lower()
+        if "rwkv-4" in model_path.lower():
+            self.version = "4"
+            return True
+        elif "rwkv-v5" in model_path.lower():
+            self.version = "5"
+            return True
+        else:
+            return False
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         from fastchat.model.rwkv_model import RwkvModel
 
-        model = RwkvModel(model_path)
+        model = RwkvModel(model_path, version=self.version)
         revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(
-            "EleutherAI/pythia-160m", revision=revision
-        )
+        if self.version == "4":
+            tokenizer = AutoTokenizer.from_pretrained(
+                "EleutherAI/pythia-160m", revision=revision
+            )
+        elif self.version == "5":
+            tokenizer = model.tokenizer
         return model, tokenizer
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("rwkv")
+        if self.version == "4":
+            return get_conv_template("rwkv")
+        elif self.version == "5":
+            return get_conv_template("hermes-rwkv-v5")
+
+
+class MambaAdapter(BaseModelAdapter):
+    """The model adapter for Hermes-mamba"""
+
+    def match(self, model_path: str):
+        return "mamba" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+        from fastchat.model.model_mamba import MambaModel
+
+        tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
+        dtype = from_pretrained_kwargs.pop("torch_dtype", None)
+        from_pretrained_kwargs.pop("revision", None)
+        model = MambaLMHeadModel.from_pretrained(
+            model_path, dtype=dtype, **from_pretrained_kwargs
+        )
+        model.config.is_encoder_decoder = False
+        model = MambaModel(tokenizer, model)
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("hermes-rwkv-v5")
 
 
 class OpenBuddyAdapter(BaseModelAdapter):
@@ -1127,7 +1177,11 @@ class AzureOpenAIAdapter(BaseModelAdapter):
     """The model adapter for Azure OpenAI"""
 
     def match(self, model_path: str):
-        return model_path in ("azure-gpt-35-turbo", "azure-gpt-4")
+        return model_path in (
+            "azure-gpt-35-turbo",
+            "azure-gpt-4",
+            "azure-gpt-4-1106-preview-nofilter",
+        )
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         raise NotImplementedError()
@@ -2465,6 +2519,7 @@ register_model_adapter(TenyxChatAdapter)
 register_model_adapter(StableLMAdapter)
 register_model_adapter(BaizeAdapter)
 register_model_adapter(RwkvAdapter)
+register_model_adapter(MambaAdapter)
 register_model_adapter(OpenBuddyAdapter)
 register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
