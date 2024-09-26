@@ -659,7 +659,7 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
 def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
     arena_df = elo_results["full"]["leaderboard_table_df"]
     md = make_full_leaderboard_md()
-    gr.Markdown(md, elem_id="leaderboard_markdown")
+    gr.Markdown(md, elem_id="full_leaderboard_dataframe")
     full_table_vals = get_full_table(arena_df, model_table_df, model_to_score)
     gr.Dataframe(
         headers=[
@@ -723,12 +723,13 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
         style = style.apply(highlight_top_3, subset=[category])
 
     if metric == "rating":
-        style = style.background_gradient(
-            cmap="Blues",
-            subset=category_names,
-            vmin=1150,
-            vmax=category_df[category_names].max().max(),
-        )
+        for category in category_names:
+            style = style.background_gradient(
+                cmap="Blues",
+                subset=[category],
+                vmin=category_df[category].max() - 150,
+                vmax=category_df[category].max(),
+            )
 
     return style
 
@@ -754,7 +755,7 @@ def build_category_leaderboard_tab(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
         datatype=["markdown"] + ["str" for k in categories],
         value=full_table_vals,
-        elem_id="full_leaderboard_dataframe",
+        elem_id="overview_leaderboard_dataframe",
         column_widths=[250]
         + categories_width,  # IMPORTANT: THIS IS HARDCODED WITH THE CURRENT CATEGORIES
         height=800,
