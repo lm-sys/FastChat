@@ -1307,9 +1307,23 @@ def bailing_api_stream_iter(
     if generation_args:
         request.update(generation_args)
 
-    sess = requests.Session()
-    with sess.post(url, json=request, headers=headers, stream=True, timeout=180) as resp:
-        for line in resp.iter_lines():
-            if line:
-                yield {"text": str(line, 'utf-8'), "error_code": 0}
+    retry_num = 0
+    while retry_num < 3:
+        try:
+            sess = requests.Session()
+            resp = sess.post(url, json=request, headers=headers, stream=True, timeout=180)
+            if resp.status_code != 200:
+                logger.error(f"Error occurs and retry if possible. status_code={res.status_code}: status_text={resp.text}")
+            else:
+                break
+        except Exception as e:
+            logger.error(f"Exception happens and retry if possible. info:{e.args}")
+        retry_num += 1
+    else:
+        raise ValueError(f'Exceed the maximal retry times.')
+    total_text = ""
+    for line in resp.iter_lines():
+        if line:
+            total_text += line.decode("utf-8")
+            yield {"text": total_text, "error_code": 0}
 
