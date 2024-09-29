@@ -7,6 +7,7 @@ import re
 from typing import Optional
 import time
 
+import httpx
 import requests
 
 from fastchat.utils import build_logger
@@ -249,14 +250,14 @@ def get_api_provider_stream_iter(
     elif model_api_dict["api_type"] == "bailing":
         messages = conv.to_openai_api_messages()
         stream_iter = bailing_api_stream_iter(
-                model_name=model_api_dict["model_name"],
-                messages=messages,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_new_tokens,
-                api_base=model_api_dict.get("api_base"),
-                api_key=model_api_dict.get("api_key"),
-                generation_args=model_api_dict.get("recommended_config"),
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_new_tokens,
+            api_base=model_api_dict.get("api_base"),
+            api_key=model_api_dict.get("api_key"),
+            generation_args=model_api_dict.get("recommended_config"),
         )
     else:
         raise NotImplementedError()
@@ -1279,15 +1280,15 @@ def metagen_api_stream_iter(
 
 
 def bailing_api_stream_iter(
-        model_name,
-        messages,
-        temperature,
-        top_p,
-        max_tokens,
-        api_base=None,
-        api_key=None,
-        generation_args=None,
-        ):
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_tokens,
+    api_base=None,
+    api_key=None,
+    generation_args=None,
+):
     url = api_base if api_base else "https://bailingchat.alipay.com/chat/arena"
     token = api_key if api_key else os.environ.get("BAILING_API_KEY")
     if token:
@@ -1303,27 +1304,38 @@ def bailing_api_stream_iter(
     request["temperature"] = 0.4
     request["top_p"] = 1.0
     request["top_k"] = -1
-    request["max_tokens"] = 4096
+    request["n"] = 1
+    request["logprobs"] = 1
+    request["use_beam_search"] = False
+    request["max_tokens"] = 16384
+
     if generation_args:
         request.update(generation_args)
 
+    total_text = ""
+    timeout = httpx.Timeout(
+        300.0, read=200.0
+    )  # timeout is 300s, and read timeout is 200s
+    client = httpx.Client(timeout=timeout, http2=True)
     retry_num = 0
     while retry_num < 3:
         try:
-            sess = requests.Session()
-            resp = sess.post(url, json=request, headers=headers, stream=True, timeout=180)
-            if resp.status_code != 200:
-                logger.error(f"Error occurs and retry if possible. status_code={res.status_code}: status_text={resp.text}")
-            else:
+            with client.stream("POST", url, json=request, headers=headers) as resp:
+                if resp.status_code == 200:
+                    for line in resp.iter_lines():
+                        total_text += line
+                        yield {"text": total_text, "error_code": 0}
+                    break
+                else:
+                    logger.error(
+                        f"Error occurs and retry if possible. status_code={resp.status_code}"
+                    )
+        except Exception as exc:
+            if total_text:
+                logger.error(f"Reading interrupted. Info:{exc.args}")
                 break
-        except Exception as e:
-            logger.error(f"Exception happens and retry if possible. info:{e.args}")
+            else:
+                logger.error(f"Error occurs and retry if possible. Info:{exc.args}")
         retry_num += 1
     else:
-        raise ValueError(f'Exceed the maximal retry times.')
-    total_text = ""
-    for line in resp.iter_lines():
-        if line:
-            total_text += line.decode("utf-8")
-            yield {"text": total_text, "error_code": 0}
-
+        raise ValueError(f"Exceed the maximal retry times.")
