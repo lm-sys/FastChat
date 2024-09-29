@@ -1755,7 +1755,9 @@ class QwenChatAdapter(BaseModelAdapter):
         )
         # NOTE: if you use the old version of model file, please remove the comments below
         # config.use_flash_attn = False
-        self.float_set(config, "fp16")
+        # Due to the removal of the "fp16" attribute from Qwen2's config, the following conditional statement needs to be added if a Qwen2 model is to be used:
+        if( "qwen2" not in str(config.__class__) ): 
+            self.float_set(config, "fp16")
         generation_config = GenerationConfig.from_pretrained(
             model_path, trust_remote_code=True
         )
