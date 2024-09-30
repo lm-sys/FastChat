@@ -1323,7 +1323,7 @@ def bailing_api_stream_iter(
             with client.stream("POST", url, json=request, headers=headers) as resp:
                 if resp.status_code == 200:
                     for line in resp.iter_lines():
-                        total_text += line
+                        total_text += line + "\n"
                         yield {"text": total_text, "error_code": 0}
                     break
                 else:
