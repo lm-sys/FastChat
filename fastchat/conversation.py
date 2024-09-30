@@ -2354,7 +2354,7 @@ if __name__ == "__main__":
 
     print("\n")
 
-    print("-- Baling template --")
+    print("-- Bailing template --")
     conv = get_conv_template("bailing")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
