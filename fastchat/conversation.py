@@ -343,7 +343,7 @@ class Conversation:
             if i % 2 == 0:
                 if type(msg) is tuple:
                     for image in msg[1]:
-                        images.append(image.base64_str)
+                        images.append(image)
 
         return images
 

@@ -428,6 +428,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         return error_check_ret
 
     worker_addr = await get_worker_address(request.model)
+    logger.info(f"worker_addr: {worker_addr}")
 
     gen_params = await get_gen_params(
         request.model,
@@ -443,6 +444,8 @@ async def create_chat_completion(request: ChatCompletionRequest):
         stop=request.stop,
         seed=request.seed,
     )
+
+    print(gen_params["prompt"])
 
     max_new_tokens, error_check_ret = await check_length(
         request,

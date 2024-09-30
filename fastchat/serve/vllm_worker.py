@@ -22,6 +22,9 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 from vllm.inputs import TextPrompt
+from vllm.assets.image import ImageAsset
+from vllm.assets.video import VideoAsset
+from vllm.utils import FlexibleArgumentParser
 
 from fastchat.conversation import IMAGE_PLACEHOLDER_STR
 from fastchat.serve.base_model_worker import BaseModelWorker
@@ -86,6 +89,39 @@ def replace_placeholders_with_images(prompt: str, placeholder: str, images: List
     for img in images:
         prompt = prompt.replace(placeholder, img, 1)  # 只替换第一个出现的占位符
     return prompt
+
+
+def get_multi_modal_input(args):
+    """
+    return {
+        "data": image or video,
+        "question": question,
+    }
+    """
+    if args.modality == "image":
+        # Input image and question
+        image = ImageAsset("cherry_blossom") \
+            .pil_image.convert("RGB")
+        img_question = "What is the content of this image?"
+
+        return {
+            "data": image,
+            "question": img_question,
+        }
+
+    if args.modality == "video":
+        # Input video and question
+        video = VideoAsset(name="sample_demo_1.mp4",
+                           num_frames=args.num_frames).np_ndarrays
+        vid_question = "Why is this video funny?"
+
+        return {
+            "data": video,
+            "question": vid_question,
+        }
+
+    msg = f"Modality {args.modality} is not supported."
+    raise ValueError(msg)
 
 
 class VLLMWorker(BaseModelWorker):
@@ -214,13 +250,18 @@ class VLLMWorker(BaseModelWorker):
         skip_special_tokens = params.get("skip_special_tokens", True)
 
         request = params.get("request", None)
+        image_token = params.get("image_token", IMAGE_PLACEHOLDER_STR)
+
+        if images is None:
+            images = []
+
 
         # split prompt by image token
-        # split_prompt = prompt.split("<image>")
-        # if prompt.count("<image>") != len(images):
-        #     raise ValueError(
-        #         "The number of images passed in does not match the number of <image> tokens in the prompt!"
-        #     )
+        # split_prompt = prompt.split(IMAGE_PLACEHOLDER_STR)
+        if prompt.count(image_token) != len(images):
+            raise ValueError(
+                "The number of images passed in does not match the number of <image> tokens in the prompt!"
+            )
 
         # context: List[TextPrompt] = []
         # for i in range(len(split_prompt)):
@@ -232,7 +273,8 @@ class VLLMWorker(BaseModelWorker):
             "prompt": prompt,
         }
         if len(images) > 0:
-            context["multi_modal_data"] = {"image": load_image(images[0])},
+            # context["multi_modal_data"] = {"image": [load_image(url) for url in images]},
+            context["multi_modal_data"] = {"image": [load_image(url) for url in images]},
 
         # Handle stop_str
         stop = set()

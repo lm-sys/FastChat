@@ -72,6 +72,7 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
+    seed: Optional[int] = None
 
 
 class ChatMessage(BaseModel):
