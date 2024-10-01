@@ -190,6 +190,8 @@ OUTAGE_MODELS = []
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
     if model in outage_models:
         return 0
+    if len(sampling_weights) == 0:
+        return 1
     weight = sampling_weights.get(model, 0)
     if model in sampling_boost_models:
         weight *= 5
