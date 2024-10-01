@@ -2095,7 +2095,7 @@ register_conv_template(
     Conversation(
         name="llm-jp-3",
         system_message="以下は、タスクを説明する指示です。要求を適切に満たす応答を書きなさい。",
-        roles=("### 指示", "### 応答"),
+        roles=("### 指示:", "### 応答:"),
         sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
         sep="\n\n",
         sep2="</s>",
