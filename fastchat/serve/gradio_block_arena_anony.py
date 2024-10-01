@@ -283,18 +283,19 @@ def add_text(
             + [""]
         )
 
-    model_list = [states[i].model_name for i in range(num_sides)]
-    # turn on moderation in battle mode
-    all_conv_text_left = states[0].conv.get_prompt()
-    all_conv_text_right = states[0].conv.get_prompt()
-    all_conv_text = (
-        all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
-    )
-    flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
-    if flagged:
-        logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
+    # NOTE: We disable moderation check as we use Chatbot Arena for internal testing.
+    # model_list = [states[i].model_name for i in range(num_sides)]
+    # # turn on moderation in battle mode
+    # all_conv_text_left = states[0].conv.get_prompt()
+    # all_conv_text_right = states[0].conv.get_prompt()
+    # all_conv_text = (
+    #     all_conv_text_left[-1000:] + all_conv_text_right[-1000:] + "\nuser: " + text
+    # )
+    # flagged = moderation_filter(all_conv_text, model_list, do_moderation=True)
+    # if flagged:
+    #     logger.info(f"violate moderation (anony). ip: {ip}. text: {text}")
+    #     # overwrite the original text
+    #     text = MODERATION_MSG
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
