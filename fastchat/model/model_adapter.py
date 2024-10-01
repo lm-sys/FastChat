@@ -2450,7 +2450,7 @@ class Llmjp3Adapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return "llm-jp-3" in model_path.lower()
-    
+
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
         model.config.eos_token_id = tokenizer.eos_token_id
@@ -2459,6 +2459,22 @@ class Llmjp3Adapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llm-jp-3")
+
+
+class TankukiAdapter(BaseModelAdapter):
+    """The model adapter for Tanuki"""
+
+    def match(self, model_path: str):
+        return "tanuki" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("tanuki")
 
 
 # Note: the registration order matters.

@@ -2103,6 +2103,20 @@ register_conv_template(
     )
 )
 
+# Tanuki
+# reference: https://huggingface.co/weblab-GENIAC/Tanuki-8B-dpo-v1.0
+register_conv_template(
+    Conversation(
+        name="tanuki",
+        system_message="以下は、タスクを説明する指示です。要求を適切に満たす応答を書きなさい。",
+        roles=("### 指示:", "### 応答:"),
+        sep_style=SeparatorStyle.ADD_NEW_LINE_SINGLE,
+        sep="\n\n",
+        sep2="</s>",
+        stop_str="</s>",
+    )
+)
+
 register_conv_template(
     Conversation(
         name="yandexgpt",
@@ -2157,6 +2171,14 @@ if __name__ == "__main__":
 
     print("-- LLM-jp-3 template --")
     conv = get_conv_template("llm-jp-3")
+    conv.append_message(conv.roles[0], "Hello!")
+    conv.append_message(conv.roles[1], "Hi!")
+    conv.append_message(conv.roles[0], "How are you?")
+    conv.append_message(conv.roles[1], None)
+    print(conv.get_prompt())
+
+    print("-- Tankuki template --")
+    conv = get_conv_template("tanuki")
     conv.append_message(conv.roles[0], "Hello!")
     conv.append_message(conv.roles[1], "Hi!")
     conv.append_message(conv.roles[0], "How are you?")
