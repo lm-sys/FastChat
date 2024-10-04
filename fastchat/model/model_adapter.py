@@ -2275,9 +2275,9 @@ class GeminiAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if "gemini-1.5-pro-002-test-sp" in model_path:
-            return get_conv_template("gemini-1.5-pro-002-test-sp")
-        if "gemini-1.5-flash-test-5" in model_path:
+        if ("gemini-1.5-pro-002-test-sp" in model_path or
+            "gemini-1.5-flash-test-5" in model_path or 
+            "gemini-1.5-flash-8b-exp-0924" in model_path):
             return get_conv_template("gemini-1.5-pro-002-test-sp")
         if "gemini-1.5-pro" in model_path:
             return get_conv_template("gemini-1.5-pro")

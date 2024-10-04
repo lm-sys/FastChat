@@ -219,10 +219,13 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "column":
-        messages = conv.to_openai_api_messages()
+        if model_api_dict.get("vision-arena", False):
+            prompt = conv.to_openai_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = column_api_stream_iter(
             model_name=model_api_dict["model_name"],
-            messages=messages,
+            messages=prompt,
             temperature=temperature,
             top_p=top_p,
             max_new_tokens=max_new_tokens,
@@ -352,16 +355,25 @@ def column_api_stream_iter(
     api_key=None,
 ):
     try:
-        payload = {
+        messages_no_img = []
+        for msg in messages:
+            msg_no_img = msg.copy()
+            msg_no_img.pop("attachment", None)
+            messages_no_img.append(msg_no_img)
+
+        gen_params = {
             "model": model_name,
-            "messages": messages,
+            "messages": messages_no_img,
             "temperature": temperature,
             "top_p": top_p,
-            "max_tokens": max_new_tokens,
+            "max_new_tokens": max_new_tokens,
             "seed": 42,
-            "stream": True,
+            
         }
-        logger.info(f"==== request ====\n{payload}")
+        logger.info(f"==== request ====\n{gen_params}")
+        
+        gen_params["messages"] = messages
+        gen_params["stream"] = True
 
         # payload.pop("model")
 
@@ -369,7 +381,7 @@ def column_api_stream_iter(
         for i in range(3):
             try:
                 response = requests.post(
-                    api_base, json=payload, stream=True, timeout=30
+                    api_base, json=gen_params, stream=True, timeout=30
                 )
                 break
             except Exception as e:
@@ -1253,15 +1265,20 @@ def metagen_api_stream_iter(
     api_base,
 ):
     try:
-        messages_no_img = []
-        for msg in messages:
-            msg_no_img = msg.copy()
-            msg_no_img.pop("attachment", None)
-            messages_no_img.append(msg_no_img)
-
+        text_messages = []
+        for message in messages:
+            if type(message["content"]) == str:  # text-only model
+                text_messages.append(message)
+            else:  # vision model
+                filtered_content_list = [
+                    content for content in message["content"] if content["type"] == "text"
+                ]
+                text_messages.append(
+                    {"role": message["role"], "content": filtered_content_list}
+                )
         gen_params = {
             "model": model_name,
-            "prompt": messages_no_img,
+            "prompt": text_messages,
             "temperature": temperature,
             "top_p": top_p,
             "max_new_tokens": max_new_tokens,

@@ -276,6 +276,7 @@ def bot_response_multi(
             "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
             "qwen-plus-0828",
+            "qwen-max-0919",
             "the-real-chatbot-v1",
             "the-real-chatbot-v2",
             "llama-3.1-405b-instruct-bf16",

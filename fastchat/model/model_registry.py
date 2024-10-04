@@ -67,30 +67,6 @@ register_model_info(
 
 register_model_info(
     [
-        "gemini-1.5-pro-exp-0827",
-        "gemini-1.5-pro-exp-0801",
-        "gemini-1.5-flash-exp-0827",
-        "gemini-1.5-flash-8b-exp-0827",
-        "gemini-1.5-pro-api-0409-preview",
-        "gemini-1.5-pro-tuned",
-        "gemini-1.5-pro-api-preview",
-        "gemini-1.5-flash-api-preview",
-        "gemini-1.5-pro-api-0514",
-        "gemini-1.5-flash-api-0514",
-        "gemini-advanced-0514",
-        "gemini-test-2",
-        "gemini-test-1",
-        "gemini-test-3",
-        "engine-test",
-        "little-engine-test",
-    ],
-    "Gemini",
-    "https://deepmind.google/technologies/gemini/",
-    "Gemini by Google",
-)
-
-register_model_info(
-    [
         "claude-3-5-sonnet-20240620",
     ],
     "Claude 3.5",
@@ -100,6 +76,10 @@ register_model_info(
 
 register_model_info(
     [
+        "llama-3.2-vision-90b-instruct",
+        "llama-3.2-vision-11b-instruct",
+        "llama-3.2-3b-instruct",
+        "llama-3.2-1b-instruct",
         "llama-3.1-405b-instruct-bf16",
         "llama-3.1-405b-instruct-fp8",
         "llama-3.1-405b-instruct",
@@ -121,6 +101,30 @@ register_model_info(
     "Llama 3.1",
     "https://llama.meta.com/",
     "Open foundation and chat models by Meta",
+)
+
+register_model_info(
+    [
+        "gemini-1.5-pro-exp-0827",
+        "gemini-1.5-pro-exp-0801",
+        "gemini-1.5-flash-exp-0827",
+        "gemini-1.5-flash-8b-exp-0827",
+        "gemini-1.5-pro-api-0409-preview",
+        "gemini-1.5-pro-tuned",
+        "gemini-1.5-pro-api-preview",
+        "gemini-1.5-flash-api-preview",
+        "gemini-1.5-pro-api-0514",
+        "gemini-1.5-flash-api-0514",
+        "gemini-advanced-0514",
+        "gemini-test-2",
+        "gemini-test-1",
+        "gemini-test-3",
+        "engine-test",
+        "little-engine-test",
+    ],
+    "Gemini",
+    "https://deepmind.google/technologies/gemini/",
+    "Gemini by Google",
 )
 
 register_model_info(
@@ -217,6 +221,7 @@ register_model_info(
         "qwen2-72b-instruct",
         "qwen-max-0403",
         "qwen-max-0428",
+        "qwen-max-0919",
         "qwen-plus-0828",
         "qwen2-vl-7b-instruct",
         "qwen-vl-max-0809",
@@ -240,7 +245,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["yi-large-preview", "yi-large", "yi-vision"],
+    ["yi-lightning", "yi-lightning-lite", "yi-large-preview", "yi-large", "yi-vision"],
     "Yi-Large",
     "https://x.com/01AI_Yi/status/1789894091620458667",
     "State-of-the-art model by 01 AI",
@@ -263,6 +268,7 @@ register_model_info(
         "phi-3-vision-128k-instruct",
         "phi-3.5-vision-instruct",
         "llava-onevision-qwen2-72b-ov",
+        "llava-onevision-qwen2-72b-ov-chat",
     ],
     "Phi-3",
     "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
@@ -382,9 +388,9 @@ register_model_info(
 )
 
 register_model_info(
-    ["glm-4-0520", "glm-4-0116"],
+    ["glm-4-plus", "glm-4-0520", "glm-4-0116"],
     "GLM-4",
-    "https://zhipuai.cn/devday",
+    "https://bigmodel.cn/dev/howuse/model",
     "Next-Gen Foundation Model by Zhipu AI",
 )
 
@@ -838,7 +844,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["internlm-chat-7b", "internlm-chat-7b-8k"],
+    ["internlm-chat-7b", "internlm-chat-7b-8k", "internlm2_5-20b-chat"],
     "InternLM",
     "https://huggingface.co/internlm/internlm-chat-7b",
     "A multi-language large-scale language model (LLM), developed by SHLAB.",
