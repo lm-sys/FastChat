@@ -127,14 +127,12 @@ def build_demo(
     if args.ga_id is not None:
         head_js += f"""
 <script async src="https://www.googletagmanager.com/gtag/js?id={args.ga_id}"></script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-82JVGLVRQH"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){{dataLayer.push(arguments);}}
 gtag('js', new Date());
 
 gtag('config', '{args.ga_id}');
-gtag('config', 'G-82JVGLVRQH');
 window.__gradio_mode__ = "app";
 </script>
         """
