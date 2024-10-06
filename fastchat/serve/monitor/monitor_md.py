@@ -46,7 +46,7 @@ cat_name_to_explanation = {
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
-    "Coding w/ Style Control": "Coding w/ Style Control",
+    "Coding w/ Style Control": "Coding with Style Control",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Hard Prompts (Overall) w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
@@ -88,7 +88,7 @@ def make_default_md_1(mirror=False):
 
 
 def make_default_md_2(mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://lmarena.ai/leaderboard' style='color: #B00020; text-decoration: none;'>https://lmarena.ai/leaderboard</a> for citation purposes.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained at <a href='https://lmarena.ai/leaderboard' style='color: #B00020; text-decoration: none;'>https://lmarena.ai/leaderboard</a>. Please link to the original URL for citation purposes.</span>"
     leaderboard_md = f"""
 {mirror_str if mirror else ""}
 
