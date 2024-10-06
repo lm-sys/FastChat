@@ -84,12 +84,9 @@ OPENAI_MODEL_LIST = (
     "gpt2-chatbot",
     "im-also-a-good-gpt2-chatbot",
     "im-a-good-gpt2-chatbot",
-    "upcoming-gpt-mini",
     "gpt-4o-mini-2024-07-18",
     "gpt-4o-2024-05-13",
     "gpt-4o-2024-08-06",
-    "anonymous-chatbot",
-    "anonymous-chatbot-0903",
     "chatgpt-4o-latest-20240903",
     "chatgpt-4o-latest",
     "o1-preview",
@@ -1622,14 +1619,6 @@ class Llama31Adapter(BaseModelAdapter):
         return get_conv_template("meta-llama-3.1")
 
 
-class ColumnAdapter(BaseModelAdapter):
-    def match(self, model_path: str):
-        return "sus-column-r" in model_path.lower()
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("column-r")
-
-
 class GrokAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "grok" in model_path.lower()
@@ -1638,14 +1627,6 @@ class GrokAdapter(BaseModelAdapter):
         if "mini" in model_path.lower():
             return get_conv_template("grok-2-mini")
         return get_conv_template("grok-2")
-
-
-class TotoAdapter(BaseModelAdapter):
-    def match(self, model_path: str):
-        return "toto" in model_path.lower()
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("toto")
 
 
 class CuteGPTAdapter(BaseModelAdapter):
@@ -2619,8 +2600,6 @@ register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
 register_model_adapter(Llama3Adapter)
 register_model_adapter(Llama31Adapter)
-register_model_adapter(ColumnAdapter)
-register_model_adapter(TotoAdapter)
 register_model_adapter(GrokAdapter)
 register_model_adapter(NoSystemAdapter)
 
