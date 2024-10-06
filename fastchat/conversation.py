@@ -403,14 +403,15 @@ class Conversation:
                         if is_mistral:
                             content = {"type": "image_url", "image_url": image_url}
                         else:
-                            content = {"type": "image_url", "image_url": {"url": image_url}}
+                            content = {
+                                "type": "image_url",
+                                "image_url": {"url": image_url},
+                            }
                         content_list.append(content)
 
                     ret.append({"role": "user", "content": content_list})
                 else:
-                    ret.append(
-                        {"role": "user", "content": msg}
-                    )
+                    ret.append({"role": "user", "content": msg})
             else:
                 if msg is not None:
                     ret.append(

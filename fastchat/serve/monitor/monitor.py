@@ -554,7 +554,7 @@ def build_arena_tab(
 
     md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
     gr.Markdown(md, elem_id="leaderboard_markdown")
-    
+
     # only keep category without style control
     category_choices = list(arena_dfs.keys())
     category_choices = [x for x in category_choices if "Style Control" not in x]
@@ -908,7 +908,7 @@ def build_leaderboard_tab(
             md_1 = gr.Markdown(default_md, elem_id="leaderboard_markdown")
         if mirror:
             with gr.Column(scale=1):
-                    vote_button = gr.Button("Vote!", link="https://lmarena.ai")
+                vote_button = gr.Button("Vote!", link="https://lmarena.ai")
     md2 = gr.Markdown(default_md_2, elem_id="leaderboard_markdown")
     if leaderboard_table_file:
         data = load_leaderboard_table_csv(leaderboard_table_file)

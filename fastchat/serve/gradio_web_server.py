@@ -137,7 +137,7 @@ class State:
 
         current_date_v2 = datetime.datetime.now().strftime("%d %b %Y")
         system_prompt = system_prompt.replace("{{currentDateTimev2}}", current_date_v2)
-        
+
         current_date_v3 = datetime.datetime.now().strftime("%B %Y")
         system_prompt = system_prompt.replace("{{currentDateTimev3}}", current_date_v3)
         conv.set_system_message(system_prompt)

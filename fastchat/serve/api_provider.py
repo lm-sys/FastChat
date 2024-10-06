@@ -60,7 +60,7 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
-            is_o1=True
+            is_o1=True,
         )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
@@ -368,10 +368,9 @@ def column_api_stream_iter(
             "top_p": top_p,
             "max_new_tokens": max_new_tokens,
             "seed": 42,
-            
         }
         logger.info(f"==== request ====\n{gen_params}")
-        
+
         gen_params["messages"] = messages
         gen_params["stream"] = True
 
@@ -1271,7 +1270,9 @@ def metagen_api_stream_iter(
                 text_messages.append(message)
             else:  # vision model
                 filtered_content_list = [
-                    content for content in message["content"] if content["type"] == "text"
+                    content
+                    for content in message["content"]
+                    if content["type"] == "text"
                 ]
                 text_messages.append(
                     {"role": message["role"], "content": filtered_content_list}
