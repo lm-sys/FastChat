@@ -277,17 +277,7 @@ def bot_response_multi(
             "qwen2-72b-instruct",
             "qwen-plus-0828",
             "qwen-max-0919",
-            "the-real-chatbot-v1",
-            "the-real-chatbot-v2",
             "llama-3.1-405b-instruct-bf16",
-            "sharp-game-player-v1",
-            "sharp-game-player-v2",
-            "zeus-flare-thunder-v1",
-            "zeus-flare-thunder-v2",
-            "dumbledore-v1",
-            "dumbledore-v2",
-            "potter-v1",
-            "potter-v2"
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)

@@ -175,135 +175,19 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {
-    # tier 0
-    # "gpt-4-0613": 2,
-    "gpt-4-1106-preview": 2,
-    "gpt-4-0125-preview": 2,
-    "gpt-4-turbo-2024-04-09": 2,
-    # "gpt-3.5-turbo-0125": 2,
-    "gpt-4o-2024-05-13": 4,
-    "gemini-1.5-pro-api-0514": 4,
-    "gemini-1.5-flash-api-0514": 2,
-    "gemma-2-27b-it": 4,
-    "gemma-2-9b-it": 2,
-    "gemma-2-2b-it": 2,
-    "claude-3-5-sonnet-20240620": 6,
-    "claude-3-opus-20240229": 4,
-    "claude-3-haiku-20240307": 2,
-    "qwen2.5-72b-instruct": 4,
-    "qwen-max-0919": 4,
-    "gpt-4o-mini-2024-07-18": 4,
-    "llama-3.1-405b-instruct-bf16": 4,
-    "llama-3.1-405b-instruct-fp8": 4,
-    "llama-3.1-70b-instruct": 4,
-    "llama-3.1-8b-instruct": 4,
-    "mistral-large-2407": 4,
-    "chatgpt-4o-latest-20240903": 4,
-    "gpt-4o-2024-08-06": 4,
-    "grok-2-2024-08-13": 6,
-    "grok-2-mini-2024-08-13": 4,
-    # "gemini-1.5-pro-exp-0827": 4,
-    # "gemini-1.5-flash-exp-0827": 4,
-    # "gemini-1.5-flash-8b-exp-0827": 4,
-    "command-r-08-2024": 2,
-    "command-r-plus-08-2024": 2,
-    "qwen-plus-0828": 4,
-    "deepseek-v2.5": 4,
-    # "the-real-chatbot-v1": 4,
-    # "the-real-chatbot-v2": 4,
-    # "llama-3.1-8b-dpo-test-1": 2,
-    # "llama-3.1-8b-dpo-test-2": 2,
-    # "llama-3.1-8b-dpo-test-3": 2,
-    # "llama-3.1-8b-dpo-test-4": 2,
-    # "llama-3.1-8b-dpo-test-5": 2,
-    # "llama-3.1-8b-dpo-test-6": 2,
-    # "llama-3.1-8b-dpo-test-7": 2,
-    # "llama-3.1-8b-dpo-test-8": 2,
-    # "llama-3.1-8b-dpo-test-9": 2,
-    # "meta-llama-3.1-8b-instruct-temp-0.2": 2,
-    # "meta-llama-3.1-70b-instruct-temp-0.2": 2,
-    "reka-core-20240904": 2,
-    "reka-flash-20240904": 2,
-    # "pizza-model-large": 2,
-    # "pizza-model-small": 2,
-    "o1-mini": 6,
-    "o1-preview": 6,
-    "gemini-test-5": 4,
-    "gemini-1.5-pro-002-test-sp": 4,
-    "gemini-1.5-flash-test-5": 4,
-    "gemini-1.5-flash-8b-exp-0924": 4,
-    # "llama-3.2-1b-instruct": 6,
-    # "llama-3.2-3b-instruct": 6,
-    "glm-4-plus": 4,
-    "internlm2_5-20b-chat": 6,
-    "yi-lightning": 4,
-    "yi-lightning-lite": 4,
-}
+SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
 
-BATTLE_STRICT_TARGETS = {
-    "llama-3.1-8b-dpo-test-1": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-3": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-4": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-5": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-6": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-7": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-8": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "llama-3.1-8b-dpo-test-9": {"llama-3.1-8b-dpo-test-*", "meta-llama-*", "llama-3-8b-instruct"},
-    "meta-llama-3.1-8b-instruct-temp-0.2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*"},
-    "meta-llama-3.1-70b-instruct-temp-0.2": {"llama-3.1-8b-dpo-test-*", "meta-llama-*"},
-    "llama-3-8b-instruct": {"llama-3.1-8b-dpo-test-*"},
-}
+BATTLE_STRICT_TARGETS = {}
 
-ANON_MODELS = [
-    # "anonymous-chatbot",
-    "the-real-chatbot-v1",
-    "the-real-chatbot-v2",
-    "pizza-model-large",
-    "pizza-model-small",
-    "gemini-test-5",
-    "gemini-1.5-pro-002-test-sp",
-    "gemini-1.5-flash-test-5",
-    "gemini-1.5-flash-8b-exp-0924",
-]
+ANON_MODELS = []
 
-SAMPLING_BOOST_MODELS = [
-    # "sus-column-r",
-    # "anonymous-chatbot",
-    # "anonymous-chatbot-0903",
-    # "gemini-test-5",
-    # "gemini-1.5-pro-002-test-sp",
-    # "gemini-1.5-flash-test-5",
-    # "llama-3.2-1b-instruct",
-    # "llama-3.2-3b-instruct",
-    "chatgpt-4o-latest-20240903",
-    # "qwen2.5-72b-instruct",
-    "qwen-max-0919",
-    "glm-4-plus",
-    "gemini-1.5-flash-8b-exp-0924",
-    "yi-lightning",
-    "yi-lightning-lite",
-    # "the-real-chatbot-v1",
-    # "the-real-chatbot-v2",
-]
+SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = [
-    "zephyr-7b-beta",
-    "pplx-70b-online",
-    "wizardlm-70b",
-    "deepseek-llm-67b-chat",
-    "nous-hermes-2-mixtral-8x7b-dpo",
-    "openhermes-2.5-mistral-7b",
-    "claude-2.0",
-    "deluxe-chat-v1.3",
-    "glm-4-0116",
-    "gemma-1.1-7b-it",
-]
+OUTAGE_MODELS = []
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
@@ -530,17 +414,7 @@ def bot_response_multi(
             "qwen2-72b-instruct",
             "qwen-plus-0828",
             "qwen-max-0919",
-            "the-real-chatbot-v1",
-            "the-real-chatbot-v2",
             "llama-3.1-405b-instruct-bf16",
-            "sharp-game-player-v1",
-            "sharp-game-player-v2",
-            "zeus-flare-thunder-v1",
-            "zeus-flare-thunder-v2",
-            "dumbledore-v1",
-            "dumbledore-v2",
-            "potter-v1",
-            "potter-v2"
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)

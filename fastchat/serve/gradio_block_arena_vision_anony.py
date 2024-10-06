@@ -85,60 +85,13 @@ text_models = []
 vl_models = []
 
 # TODO(chris): fix sampling weights
-VISION_SAMPLING_WEIGHTS = {
-    "gpt-4o-2024-05-13": 4,
-    # "gpt-4-turbo-2024-04-09": 2,
-    # "claude-3-haiku-20240307": 2,
-    "claude-3-5-sonnet-20240620": 4,
-    "claude-3-opus-20240229": 4,
-    "gemini-1.5-flash-api-0514": 2,
-    "gemini-1.5-pro-api-0514": 4,
-    # "llava-v1.6-34b": 4,
-    # "reka-core-20240501": 2,
-    # "reka-flash-preview-20240611": 2,
-    # "cogvlm2-llama3-chat-19b": 4,
-    "gpt-4o-mini-2024-07-18": 2,
-    "internvl2-26b": 2,
-    # "gemini-1.5-pro-exp-0827": 4,
-    # "gemini-1.5-flash-exp-0827": 4,
-    # "gemini-1.5-flash-8b-exp-0827": 4,
-    # "phi-3.5-vision-instruct": 4,
-    "internvl2-4b": 2,
-    # "llava-onevision-qwen2-72b-ov": 4,
-    # "yi-vision": 4,
-    "qwen2-vl-7b-instruct": 4,
-    "gemini-1.5-pro-002-test-sp": 4,
-    "gemini-1.5-flash-test-5": 4,
-    "qwen-vl-max-0809": 4,
-    "chatgpt-4o-latest-20240903": 4,
-    "pixtral-12b-2409": 6,
-    "llava-onevision-qwen2-72b-ov-chat": 6,
-    "llama-3.2-vision-90b-instruct": 4,
-    "llama-3.2-vision-11b-instruct": 4,
-    "gemini-1.5-flash-8b-exp-0924": 4,
-}
+VISION_SAMPLING_WEIGHTS = {}
 
 # TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
-VISION_SAMPLING_BOOST_MODELS = [
-    # "internvl2-26b",
-    # "minicpm-v-2_6",
-    # "phi-3.5-vision-instruct",
-    #"gemini-1.5-flash-exp-0827",
-    #"gemini-1.5-flash-8b-exp-0827",
-    # "qwen2-vl-7b-instruct",
-    # "qwen-vl-max-0809",
-    # "pixtral-12b-2409",
-    "gemini-1.5-flash-test-5",
-    "gemini-1.5-pro-002-test-sp",
-    # "pixtral-12b-2409",
-    # "llama-3.2-vision-90b-instruct",
-    # "llama-3.2-vision-11b-instruct",
-    "gemini-1.5-flash-8b-exp-0924",
-    "chatgpt-4o-latest-20240903",
-]
+VISION_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
@@ -194,18 +147,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
 
     model_name_1 = states[0].model_name
     model_name_2 = states[1].model_name
-    model_name_map = {
-        "gemini-test-1": "gemini-1.5-pro-exp-0801",
-        "gemini-test-2": "gemini-1.5-pro-exp-0801",
-        "gemini-test-3": "gemini-test",
-        "gemini-test-4": "gemini-test",
-        "gemini-test-5": "gemini-test",
-        "engine-test-4": "engine-test",
-        "gemini-1.5-pro-002-test-sp": "gemini-test",
-        "gemini-1.5-flash-test-5": "engine-test",
-        "anonymous-chatbot-0903": "anonymous-chatbot",
-        "gemini-1.5-flash-8b-exp-0924": "little-engine-test",
-    }
+    model_name_map = {}
 
     if model_name_1 in model_name_map:
         model_name_1 = model_name_map[model_name_1]

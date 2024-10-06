@@ -1601,11 +1601,6 @@ class Llama31Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         keywords = [
             "llama-3.1",
-            "real-chatbot",
-            "sharp-game",
-            "zeus-flare",
-            "dumbledore",
-            "potter",
         ]
         for keyword in keywords:
             if keyword in model_path.lower():
@@ -1624,15 +1619,6 @@ class Llama31Adapter(BaseModelAdapter):
             "the-real-chatbot-v2",
         ]:
             return get_conv_template("meta-llama-3.1-sp")
-        elif model_path.lower() in [
-            "sharp-game-player-v2",
-            "zeus-flare-thunder-v2",
-        ]:
-            return get_conv_template("meta-llama-3.2")
-        elif model_path.lower() in ["dumbledore-v1"]:
-            return get_conv_template("dumbledore")
-        elif model_path.lower() in ["potter-v2"]:
-            return get_conv_template("potter")
         return get_conv_template("meta-llama-3.1")
 
 
@@ -2275,10 +2261,6 @@ class GeminiAdapter(BaseModelAdapter):
         raise NotImplementedError()
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        if ("gemini-1.5-pro-002-test-sp" in model_path or
-            "gemini-1.5-flash-test-5" in model_path or 
-            "gemini-1.5-flash-8b-exp-0924" in model_path):
-            return get_conv_template("gemini-1.5-pro-002-test-sp")
         if "gemini-1.5-pro" in model_path:
             return get_conv_template("gemini-1.5-pro")
         return get_conv_template("gemini")

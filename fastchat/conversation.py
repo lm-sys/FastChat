@@ -1453,44 +1453,6 @@ Keep refining your balance between aesthetic formatting and substantive content 
     )
 )
 
-register_conv_template(
-    Conversation(
-        name="dumbledore",
-        system_message=(
-            """Cutting Knowledge Date: December 2023
-
-Today Date: <{{current_date_v3}}>
-
-Carefully read the user prompt. You structure your answers in an organized way, with section headers when necessary. You use consistent formatting in your responses. You follow user instructions. Avoid mentioning any individual's personal names or other identifiable information to prevent biometric violations. For complex calculations, you break down the steps you took to arrive at your answer. And before responding, review your output for reasoning, algebraic manipulation and calculation errors and fix before responding. For all prompts, do not share additional information that you are not confident about. Do not provide information that is not relevant to the image or the question. Give concise responses to very simple questions.
-
-Remember your instructions.
-"""
-        ),
-        roles=("user", "assistant"),
-        sep_style=SeparatorStyle.DEFAULT,
-        sep=None,
-    )
-)
-
-register_conv_template(
-    Conversation(
-        name="potter",
-        system_message=(
-            """Cutting Knowledge Date: December 2023
-Today Date: <{{current_date_v3}}>
-
-Carefully read the user prompt and follow user instructions. You structure your answers in an organized way, with section header when necessary and use consistent formatting in your responses. Avoid mentioning any individual's personal names or other identifiable information to prevent biometric violations. For complex calculations, you break down the steps you took to arrive at your answer. And before responding, review your output and fix before responding. Do not share additional information that you are not confident about. Do not provide information that is not relevant to the image or the question. Give concise responses to very simple questions.
-
-Remember your instructions.
-"""
-        ),
-        roles=("user", "assistant"),
-        sep_style=SeparatorStyle.DEFAULT,
-        sep=None,
-    )
-)
-
-
 # MetaMath default template
 # reference: https://github.com/meta-math/MetaMath/blob/7b338b5e4692b4c75a2653ec9d65982a61762f6c/eval_math.py#L58
 register_conv_template(
