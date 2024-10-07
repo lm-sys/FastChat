@@ -243,6 +243,14 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "jab":
+        messages = conv.to_jab_api_messages()
+        stream_iter = jab_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )           
     else:
         raise NotImplementedError()
 
@@ -1326,5 +1334,45 @@ def metagen_api_stream_iter(
         logger.error(f"==== error ====\n{e}")
         yield {
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
+            "error_code": 1,
+        }
+
+def jab_api_stream_iter(
+    model_name,
+    messages,
+    api_base,
+    api_key,    
+):
+    import requests
+
+    logger.info(f"==== JAB request ({model_name}) ====\n")
+
+    payload = messages[-1]
+    headers = {'Content-Type': 'application/json', 'x-api-key': api_key}
+
+    logger.info(payload)
+
+    try:
+        response = requests.post(api_base, json=payload, headers=headers)
+
+        if response.status_code != 200:
+            logger.error(f"Unexpected response ({response.status_code})")
+            raise ValueError("Unexpected response: ", response.json())
+
+        text = response.json()["response"]
+        pos = 0
+        while pos < len(text):
+            # simulate token streaming
+            pos += 3
+            time.sleep(0.001)
+            data = {
+                "text": text[:pos],
+                "error_code": 0,
+            }
+            yield data
+    except Exception as e:
+        logger.error(f"==== JAB error ====\n{e}")
+        yield {
+            "text": f"**JAB request error** Reason: {e}.",
             "error_code": 1,
         }

@@ -1000,3 +1000,10 @@ register_model_info(
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
 )
+
+register_model_info(
+    ["jab-0.3"],
+    "JAB",
+    "https://github.com/Applied-General-Intelligence-Inc",
+    "Development system by AGI.",
+)

@@ -608,6 +608,12 @@ class Conversation:
                     ret.append({"role": "ai", "text": msg})
         return ret
 
+    def to_jab_api_messages(self):
+        """Convert the conversation to JAB format."""
+        
+        # TODO: handle multi-turn
+        return [{"prompt": self.messages[-2][1]}]
+    
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR

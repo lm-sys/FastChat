@@ -105,7 +105,7 @@ After these steps, the new model should be compatible with most FastChat feature
 ## API-Based Models
 To support an API-based model, consider learning from the existing OpenAI example.
 If the model is compatible with OpenAI APIs, then a configuration file is all that's needed without any additional code.
-For custom protocols, implementation of a streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) is required, following the provided examples. Currently, FastChat is compatible with OpenAI, Anthropic, Google Vertex AI, Mistral, Nvidia NGC, YandexGPT and Reka.
+For custom protocols, implementation of a streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) is required, following the provided examples. Currently, FastChat is compatible with OpenAI, Anthropic, Google Vertex AI, Mistral, Nvidia NGC, YandexGPT, Reka, and JAB.
 
 ### Steps to Launch a WebUI with an API Model
 1. Specify the endpoint information in a JSON configuration file. For instance, create a file named `api_endpoints.json`:
@@ -126,7 +126,7 @@ For custom protocols, implementation of a streaming generator in [fastchat/serve
   }
 }
 ```
-  - "api_type" can be one of the following: openai, anthropic, gemini, mistral, yandexgpt or reka. For custom APIs, add a new type and implement it accordingly.
+  - "api_type" can be one of the following: openai, anthropic, gemini, mistral, yandexgpt, reka, or jab. For custom APIs, add a new type and implement it accordingly.
   - "anony_only" indicates whether to display this model in anonymous mode only.
   - "recommended_config" indicates the recommended generation parameters for temperature and top_p.
   - "text-arena" indicates whether the model should be displayed in the Text Arena.

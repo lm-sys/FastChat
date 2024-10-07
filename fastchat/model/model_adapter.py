@@ -2500,6 +2500,15 @@ class NoSystemAdapter(BaseModelAdapter):
         return get_conv_template("api_based_default")
 
 
+class JABAdapter(BaseModelAdapter):
+    """The model adapter for JAB"""
+
+    def match(self, model_path: str):
+        return "jab" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
 register_model_adapter(PeftModelAdapter)
