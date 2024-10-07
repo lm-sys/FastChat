@@ -105,9 +105,9 @@ def load_demo(context: Context, request: gr.Request):
 
     tabs_list = (
         [gr.Tabs(selected=inner_selected)]
-        + side_by_side_anony_updates
-        + side_by_side_named_updates
-        + direct_chat_updates
+        + list(side_by_side_anony_updates)
+        + list(side_by_side_named_updates)
+        + list(direct_chat_updates)
     )
 
     return tabs_list
