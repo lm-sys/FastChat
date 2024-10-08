@@ -565,7 +565,11 @@ function (a, b, c, d) {
     multimodal_textbox.submit(
         add_text,
         states + model_selectors + [multimodal_textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -577,7 +581,11 @@ function (a, b, c, d) {
     textbox.submit(
         add_text,
         states + model_selectors + [textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -589,7 +597,11 @@ function (a, b, c, d) {
     send_btn.click(
         add_text,
         states + model_selectors + [textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
