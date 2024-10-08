@@ -199,12 +199,17 @@ def create_background_tasks(request_id):
 async def api_generate_stream(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
-    request_id = random_uuid()
-    params["request_id"] = request_id
-    params["request"] = request
-    generator = worker.generate_stream(params)
-    background_tasks = create_background_tasks(request_id)
-    return StreamingResponse(generator, background=background_tasks)
+    try:
+        request_id = random_uuid()
+        params["request_id"] = request_id
+        params["request"] = request
+        generator = worker.generate_stream(params)
+        background_tasks = create_background_tasks(request_id)
+        return StreamingResponse(generator, background=background_tasks)
+    except Exception as e:
+        background_tasks = create_background_tasks(request_id)
+        await background_tasks()
+        raise e
 
 
 @app.post("/worker_generate")
