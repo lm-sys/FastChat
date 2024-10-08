@@ -162,18 +162,28 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
     gr.Info(
         "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
     )
+
+    model_name_1 = states[0].model_name
+    model_name_2 = states[1].model_name
+    model_name_map = {}
+
+    if model_name_1 in model_name_map:
+        model_name_1 = model_name_map[model_name_1]
+    if model_name_2 in model_name_map:
+        model_name_2 = model_name_map[model_name_2]
+
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
+                "### Model A: " + model_name_1,
+                "### Model B: " + model_name_2,
             )
             yield names + (disable_text,) + (disable_btn,) * 4
             time.sleep(0.1)
     else:
         names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
+            "### Model A: " + model_name_1,
+            "### Model B: " + model_name_2,
         )
         yield names + (disable_text,) + (disable_btn,) * 4
 
@@ -406,20 +416,21 @@ def add_text(
 
 
 def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
-    notice_markdown = """
-# ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+    notice_markdown = f"""
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
-## 📜 Rules
-- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
-- You can continue chatting until you identify a winner.
-- Vote won't be counted if model identity is revealed during conversation.
-- **NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> on your first turn to unlock the multimodal arena! Images should be less than 15MB.
+## 📜 How It Works
+- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
+- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
+- **Play Fair**: If AI identity reveals, your vote won't count.
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** human votes to compute an LLM Elo leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
+**NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> to unlock the multimodal arena!
+
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """
@@ -492,6 +503,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             placeholder="👉 Enter your prompt and press ENTER",
             elem_id="input_box",
             visible=False,
+            scale=3,
         )
 
         multimodal_textbox = gr.MultimodalTextbox(
@@ -500,9 +512,11 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             container=True,
             placeholder="Enter your prompt or add image here",
             elem_id="input_box",
+            scale=3,
         )
+
         send_btn = gr.Button(
-            value="Send", variant="primary", scale=0, visible=False, interactive=False
+            value="Send", variant="primary", scale=1, visible=False, interactive=False
         )
 
     with gr.Row() as button_row:
@@ -535,7 +549,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1800,
+            value=2000,
             step=64,
             interactive=True,
             label="Max output tokens",

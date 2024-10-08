@@ -34,17 +34,24 @@ from fastchat.serve.gradio_block_arena_vision import (
     add_image,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
+<<<<<<< HEAD
     enable_multimodal_keep_input,
     enable_multimodal_clear_input,
+=======
+    enable_multimodal,
+>>>>>>> main
     disable_multimodal,
     invisible_text,
     invisible_btn,
     visible_text,
 )
+<<<<<<< HEAD
 from fastchat.serve.moderation.moderator import (
     BaseContentModerator,
     AzureAndOpenAIContentModerator,
 )
+=======
+>>>>>>> main
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.gradio_web_server import (
     State,
@@ -79,7 +86,7 @@ def load_demo_side_by_side_vision_named(context: Context):
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
+        weights = ([1] * 128)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
@@ -333,17 +340,17 @@ def add_text(
 
 
 def build_side_by_side_vision_ui_named(context: Context, random_questions=None):
-    notice_markdown = """
-# ⚔️  LMSYS Chatbot Arena (Multimodal): Benchmarking LLMs and VLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+    notice_markdown = f"""
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
-## 📜 Rules
-- Chat with any two models side-by-side and vote!
-- You can continue chatting for multiple rounds.
-- Click "Clear history" to start a new round.
-- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+## 📜 How It Works
+- Ask any question to two chosen models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
+- You can chat for multiple turns until you identify a winner.
+
+Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
 
 **❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
 

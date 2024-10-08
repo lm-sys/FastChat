@@ -54,9 +54,9 @@ from fastchat.utils import (
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 
-def load_demo(context: Context, url_params, request: gr.Request):
+def load_demo(context: Context, request: gr.Request):
     ip = get_ip(request)
-    logger.info(f"load_demo. ip: {ip}. params: {url_params}")
+    logger.info(f"load_demo. ip: {ip}. params: {request.query_params}")
 
     inner_selected = 0
     if "arena" in request.query_params:
@@ -113,7 +113,9 @@ def load_demo(context: Context, url_params, request: gr.Request):
     return tabs_list
 
 
-def build_demo(context: Context, elo_results_file: str, leaderboard_table_file):
+def build_demo(
+    context: Context, elo_results_file: str, leaderboard_table_file, arena_hard_table
+):
     if args.show_terms_of_use:
         load_js = get_window_url_params_with_tos_js
     else:
@@ -136,7 +138,7 @@ window.__gradio_mode__ = "app";
         """
     text_size = gr.themes.sizes.text_lg
     with gr.Blocks(
-        title="Chat with Open Large Language Models",
+        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
         theme=gr.themes.Default(text_size=text_size),
         css=block_css,
         head=head_js,
@@ -194,7 +196,7 @@ window.__gradio_mode__ = "app";
                     build_leaderboard_tab(
                         elo_results_file,
                         leaderboard_table_file,
-                        arena_hard_leaderboard=None,
+                        arena_hard_table,
                         show_plot=True,
                     )
 
@@ -209,7 +211,7 @@ window.__gradio_mode__ = "app";
 
         demo.load(
             load_demo,
-            [context_state, url_params],
+            [context_state],
             demo_tabs,
             js=load_js,
         )
@@ -279,6 +281,9 @@ if __name__ == "__main__":
         "--leaderboard-table-file", type=str, help="Load leaderboard results and plots"
     )
     parser.add_argument(
+        "--arena-hard-table", type=str, help="Load leaderboard results and plots"
+    )
+    parser.add_argument(
         "--gradio-root-path",
         type=str,
         help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
@@ -331,6 +336,7 @@ if __name__ == "__main__":
         context,
         args.elo_results_file,
         args.leaderboard_table_file,
+        args.arena_hard_table,
     )
     demo.queue(
         default_concurrency_limit=args.concurrency_count,

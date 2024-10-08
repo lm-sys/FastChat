@@ -260,7 +260,7 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
         gr.Warning(MODERATION_MSG)
         return (state, gradio_chatbot_before_user_input, None, "", no_change_btn) + (
             no_change_btn,
-        ) * 5
+        ) + (no_change_btn,) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -291,7 +291,7 @@ def build_single_vision_language_model_ui(
 ):
     promotion = (
         f"""
-- [GitHub](https://github.com/lm-sys/FastChat) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx)
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
@@ -303,7 +303,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     )
 
     notice_markdown = f"""
-# 🏔️ Chat with Large Vision-Language Models
+# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
 {promotion}
 """
 
@@ -340,7 +340,10 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
             )
         with gr.Column(scale=8):
             chatbot = gr.Chatbot(
-                elem_id="chatbot", label="Scroll down and start chatting", height=650
+                elem_id="chatbot",
+                label="Scroll down and start chatting",
+                height=650,
+                show_copy_button=True,
             )
 
     with gr.Row():
@@ -379,7 +382,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
-            value=0.2,
+            value=0.7,
             step=0.1,
             interactive=True,
             label="Temperature",
