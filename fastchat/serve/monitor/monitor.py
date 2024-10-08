@@ -884,6 +884,7 @@ def build_leaderboard_tab(
     elo_results_file,
     leaderboard_table_file,
     arena_hard_leaderboard,
+    vision=True,
     show_plot=False,
     mirror=False,
 ):
@@ -991,7 +992,6 @@ def build_leaderboard_tab(
                             "avg_tokens": "Average Tokens",
                         }
                     )
-                    model_to_score = {}
                     for i in range(len(dataFrame)):
                         model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
                             i, "Win-rate"
