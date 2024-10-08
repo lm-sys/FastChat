@@ -631,12 +631,8 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
         elem_id="leaderboard_markdown",
     )
 
-<<<<<<< HEAD
-    leader_component_values[:] = [default_md, p1, p2, p3, p4]
-=======
     if not vision:
         leader_component_values[:] = [default_md, p1, p2, p3, p4]
->>>>>>> main
 
     if show_plot:
         more_stats_md = gr.Markdown(
@@ -968,26 +964,6 @@ def build_leaderboard_tab(
             """,
                     elem_id="leaderboard_markdown",
                 )
-<<<<<<< HEAD
-            with gr.Tab("Arena", id=1):
-                gr_plots = build_arena_tab(
-                    elo_results_text,
-                    model_table_df,
-                    default_md,
-                    show_plot=show_plot,
-                )
-
-            if vision:
-                with gr.Tab("Arena (Vision)", id=2):
-                    build_arena_tab(
-                        elo_results_vision,
-                        model_table_df,
-                        default_md,
-                        vision=True,
-                        show_plot=show_plot,
-                    )
-
-=======
             with gr.Tab("Arena (Vision)", id=2):
                 build_arena_tab(
                     elo_results_vision,
@@ -996,7 +972,6 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
->>>>>>> main
             model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):

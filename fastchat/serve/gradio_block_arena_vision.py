@@ -258,9 +258,11 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
         state.conv.append_message(state.conv.roles[0], post_processed_text)
         state.skip_next = True
         gr.Warning(MODERATION_MSG)
-        return (state, gradio_chatbot_before_user_input, None, "", no_change_btn) + (
-            no_change_btn,
-        ) + (no_change_btn,) * 5
+        return (
+            (state, gradio_chatbot_before_user_input, None, "", no_change_btn)
+            + (no_change_btn,)
+            + (no_change_btn,) * 5
+        )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")

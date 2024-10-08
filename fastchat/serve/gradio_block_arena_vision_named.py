@@ -34,24 +34,17 @@ from fastchat.serve.gradio_block_arena_vision import (
     add_image,
     _prepare_text_with_image,
     convert_images_to_conversation_format,
-<<<<<<< HEAD
     enable_multimodal_keep_input,
     enable_multimodal_clear_input,
-=======
-    enable_multimodal,
->>>>>>> main
     disable_multimodal,
     invisible_text,
     invisible_btn,
     visible_text,
 )
-<<<<<<< HEAD
 from fastchat.serve.moderation.moderator import (
     BaseContentModerator,
     AzureAndOpenAIContentModerator,
 )
-=======
->>>>>>> main
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.gradio_web_server import (
     State,
