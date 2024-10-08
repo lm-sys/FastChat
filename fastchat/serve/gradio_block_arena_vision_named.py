@@ -58,6 +58,8 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
     enable_text,
+    show_vote_button,
+    dont_show_vote_button,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -241,6 +243,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [dont_show_vote_button]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
@@ -290,6 +293,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [dont_show_vote_button]
         )
 
     if text_flagged or nsfw_flag:
@@ -308,6 +312,7 @@ def add_text(
                 no_change_btn,
             ]
             * 6
+            + [dont_show_vote_button]
         )
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -329,6 +334,7 @@ def add_text(
             disable_btn,
         ]
         * 6
+        + [show_vote_button]
     )
 
 
@@ -353,6 +359,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
+    show_vote_buttons = gr.State(True)
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -558,37 +565,37 @@ function (a, b, c, d) {
     multimodal_textbox.submit(
         add_text,
         states + model_selectors + [multimodal_textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [show_vote_buttons], btn_list
     )
 
     textbox.submit(
         add_text,
         states + model_selectors + [textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [show_vote_buttons], btn_list
     )
 
     send_btn.click(
         add_text,
         states + model_selectors + [textbox, context_state],
-        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+        states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list + [show_vote_buttons],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        flash_buttons, [show_vote_buttons], btn_list
     )
 
     if random_questions:
