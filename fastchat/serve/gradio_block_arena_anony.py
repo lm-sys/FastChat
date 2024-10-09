@@ -5,6 +5,7 @@ Users chat with two anonymous models.
 
 import json
 import time
+import re
 
 import gradio as gr
 import numpy as np
@@ -179,6 +180,8 @@ SAMPLING_WEIGHTS = {}
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
 
+BATTLE_STRICT_TARGETS = {}
+
 ANON_MODELS = []
 
 SAMPLING_BOOST_MODELS = []
@@ -196,6 +199,16 @@ def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_mod
     return weight
 
 
+def is_model_match_pattern(model, patterns):
+    flag = False
+    for pattern in patterns:
+        pattern = pattern.replace("*", ".*")
+        if re.match(pattern, model) is not None:
+            flag = True
+            break
+    return flag
+
+
 def get_battle_pair(
     models, battle_targets, outage_models, sampling_weights, sampling_boost_models
 ):
@@ -210,6 +223,8 @@ def get_battle_pair(
         model_weights.append(weight)
     total_weight = np.sum(model_weights)
     model_weights = model_weights / total_weight
+    # print(models)
+    # print(model_weights)
     chosen_idx = np.random.choice(len(models), p=model_weights)
     chosen_model = models[chosen_idx]
     # for p, w in zip(models, model_weights):
@@ -222,6 +237,12 @@ def get_battle_pair(
             continue
         if model in ANON_MODELS and chosen_model in ANON_MODELS:
             continue
+        if chosen_model in BATTLE_STRICT_TARGETS:
+            if not is_model_match_pattern(model, BATTLE_STRICT_TARGETS[chosen_model]):
+                continue
+        if model in BATTLE_STRICT_TARGETS:
+            if not is_model_match_pattern(chosen_model, BATTLE_STRICT_TARGETS[model]):
+                continue
         weight = get_sample_weight(model, outage_models, sampling_weights)
         if (
             weight != 0
@@ -383,12 +404,17 @@ def bot_response_multi(
             token_per_yield = 30
         elif states[i].model_name in [
             "qwen-max-0428",
+            "qwen-vl-max-0809",
             "qwen1.5-110b-chat",
             "llava-v1.6-34b",
         ]:
             token_per_yield = 7
         elif states[i].model_name in [
+            "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
+            "qwen-plus-0828",
+            "qwen-max-0919",
+            "llama-3.1-405b-instruct-bf16",
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)
@@ -414,21 +440,21 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
 ## 📣 News
 - Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
 
-## 📜 Rules
-- Ask any question to two anonymous models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
-- You can chat for multiple turns until you identify a winner.
-- Votes won't be counted if model identities are revealed during the conversation.
+## 📜 How It Works
+- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
+- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
+- **Play Fair**: If AI identity reveals, your vote won't count.
 
-## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
-- We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """
@@ -510,7 +536,7 @@ def build_side_by_side_ui_anony(models):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1600,
+            value=2000,
             step=64,
             interactive=True,
             label="Max output tokens",

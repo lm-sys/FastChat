@@ -42,7 +42,118 @@ register_model_info(
 
 register_model_info(
     [
+        "chatgpt-4o-latest",
+        "chatgpt-4o-latest-20240903",
+        "gpt-4o-mini-2024-07-18",
+        "gpt-4o-2024-08-06",
+        "gpt-4o-2024-05-13",
+    ],
+    "GPT-4o",
+    "https://openai.com/index/hello-gpt-4o/",
+    "The flagship model across audio, vision, and text by OpenAI",
+)
+
+register_model_info(
+    [
+        "grok-2-2024-08-13",
+        "grok-2-mini-2024-08-13",
+    ],
+    "Grok-2",
+    "https://x.ai/blog/grok-2",
+    "Grok-2 by xAI",
+)
+
+register_model_info(
+    [
         "claude-3-5-sonnet-20240620",
+    ],
+    "Claude 3.5",
+    "https://www.anthropic.com/news/claude-3-5-sonnet",
+    "Claude by Anthropic",
+)
+
+register_model_info(
+    [
+        "llama-3.2-vision-90b-instruct",
+        "llama-3.2-vision-11b-instruct",
+        "llama-3.2-3b-instruct",
+        "llama-3.2-1b-instruct",
+        "llama-3.1-405b-instruct-bf16",
+        "llama-3.1-405b-instruct-fp8",
+        "llama-3.1-405b-instruct",
+        "llama-3.1-70b-instruct",
+        "llama-3.1-8b-instruct",
+    ],
+    "Llama 3.1",
+    "https://llama.meta.com/",
+    "Open foundation and chat models by Meta",
+)
+
+register_model_info(
+    [
+        "gemini-1.5-pro-exp-0827",
+        "gemini-1.5-pro-exp-0801",
+        "gemini-1.5-flash-exp-0827",
+        "gemini-1.5-flash-8b-exp-0827",
+        "gemini-1.5-pro-api-0409-preview",
+        "gemini-1.5-pro-tuned",
+        "gemini-1.5-pro-api-preview",
+        "gemini-1.5-flash-api-preview",
+        "gemini-1.5-pro-api-0514",
+        "gemini-1.5-flash-api-0514",
+        "gemini-advanced-0514",
+    ],
+    "Gemini",
+    "https://deepmind.google/technologies/gemini/",
+    "Gemini by Google",
+)
+
+register_model_info(
+    [
+        "mistral-large-2407",
+    ],
+    "Mistral",
+    "https://mistral.ai/news/mistral-large-2407/",
+    "Mistral Large 2",
+)
+
+register_model_info(
+    [
+        "gpt-4-turbo",
+        "gpt-4-turbo-2024-04-09",
+        "gpt-4-1106-preview",
+        "gpt-4-0125-preview",
+        "gpt2-chatbot",
+        "im-also-a-good-gpt2-chatbot",
+        "im-a-good-gpt2-chatbot",
+    ],
+    "GPT-4-Turbo",
+    "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
+    "GPT-4-Turbo by OpenAI",
+)
+
+register_model_info(
+    ["jamba-1.5-large", "jamba-1.5-mini"],
+    "Jamba 1.5",
+    "https://www.ai21.com/jamba",
+    "Jamba by AI21 Labs",
+)
+
+register_model_info(
+    [
+        "gemma-2-27b-it",
+        "gemma-2-9b-it",
+        "gemma-2-2b-it",
+        "eureka-chatbot",
+        "gemma-2-9b-it-simpo",
+    ],
+    "Gemma 2",
+    "https://ai.google.dev/gemma",
+    "Gemma 2 by Google",
+)
+
+register_model_info(
+    [
         "claude-3-haiku-20240307",
         "claude-3-sonnet-20240229",
         "claude-3-opus-20240229",
@@ -56,29 +167,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["gemma-2-27b-it", "gemma-2-9b-it"],
-    "Gemma 2",
-    "https://ai.google.dev/gemma",
-    "Gemma 2 by Google",
-)
-
-register_model_info(
-    [
-        "gemini-1.5-pro-api-0409-preview",
-        "gemini-1.5-pro-tuned",
-        "gemini-1.5-pro-api-preview",
-        "gemini-1.5-flash-api-preview",
-        "gemini-1.5-flash-api-0514",
-        "gemini-1.5-pro-api-0514",
-        "gemini-advanced-0514",
-    ],
-    "Gemini",
-    "https://deepmind.google/technologies/gemini/",
-    "Gemini by Google",
-)
-
-register_model_info(
-    ["deepseek-coder-v2"],
+    ["deepseek-coder-v2", "deepseek-v2-api-0628", "deepseek-v2.5"],
     "DeepSeek Coder v2",
     "https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct",
     "An advanced code model by DeepSeek",
@@ -99,39 +188,26 @@ register_model_info(
 )
 
 register_model_info(
+    ["athene-70b", "athene-70b-0725"],
+    "Athene-70B",
+    "https://nexusflow.ai/blogs/athene",
+    "A large language model by NexusFlow",
+)
+
+register_model_info(
     [
+        "qwen2.5-72b-instruct",
         "qwen2-72b-instruct",
         "qwen-max-0403",
         "qwen-max-0428",
+        "qwen-max-0919",
+        "qwen-plus-0828",
+        "qwen2-vl-7b-instruct",
+        "qwen-vl-max-0809",
     ],
     "Qwen Max",
     "https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction",
     "The Frontier Qwen Model by Alibaba",
-)
-
-register_model_info(
-    [
-        "gpt-4o-2024-05-13",
-    ],
-    "GPT-4o",
-    "https://openai.com/index/hello-gpt-4o/",
-    "The flagship model across audio, vision, and text by OpenAI",
-)
-
-register_model_info(
-    [
-        "gpt-4-turbo",
-        "gpt-4o-2024-05-13",
-        "gpt-4-turbo-2024-04-09",
-        "gpt-4-1106-preview",
-        "gpt-4-0125-preview",
-        "gpt2-chatbot",
-        "im-also-a-good-gpt2-chatbot",
-        "im-a-good-gpt2-chatbot",
-    ],
-    "GPT-4-Turbo",
-    "https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo",
-    "GPT-4-Turbo by OpenAI",
 )
 
 register_model_info(
@@ -148,7 +224,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["yi-large-preview", "yi-large"],
+    ["yi-lightning", "yi-lightning-lite", "yi-large-preview", "yi-large", "yi-vision"],
     "Yi-Large",
     "https://x.com/01AI_Yi/status/1789894091620458667",
     "State-of-the-art model by 01 AI",
@@ -166,7 +242,12 @@ register_model_info(
         "phi-3-medium-4k-instruct",
         "phi-3-small-8k-instruct",
         "phi-3-mini-4k-instruct",
+        "phi-3-mini-4k-instruct-june-2024",
         "phi-3-mini-128k-instruct",
+        "phi-3-vision-128k-instruct",
+        "phi-3.5-vision-instruct",
+        "llava-onevision-qwen2-72b-ov",
+        "llava-onevision-qwen2-72b-ov-chat",
     ],
     "Phi-3",
     "https://azure.microsoft.com/en-us/blog/introducing-phi-3-redefining-whats-possible-with-slms/",
@@ -174,7 +255,16 @@ register_model_info(
 )
 
 register_model_info(
-    ["reka-core-20240501"],
+    [
+        "minicpm-v-2_6",
+    ],
+    "MiniCPM-V 2.6",
+    "https://huggingface.co/openbmb/MiniCPM-V-2_6",
+    "MiniCPM-V 2.6 by OpenBMB",
+)
+
+register_model_info(
+    ["reka-core-20240904", "reka-core-20240722", "reka-core-20240501"],
     "Reka Core",
     "https://www.reka.ai/news/reka-core-our-frontier-class-multimodal-language-model",
     "Frontier Multimodal Language Model by Reka",
@@ -188,15 +278,21 @@ register_model_info(
 )
 
 register_model_info(
-    ["reka-flash-preview-20240611", "reka-flash", "reka-flash-online"],
+    [
+        "reka-flash-20240904",
+        "reka-flash-20240722",
+        "reka-flash-preview-20240611",
+        "reka-flash",
+        "reka-flash-online",
+    ],
     "Reka Flash",
     "https://www.reka.ai/news/reka-flash-efficient-and-capable-multimodal-language-models",
     "Multimodal model by Reka",
 )
 
 register_model_info(
-    ["command-r-plus", "command-r-plus-04-2024"],
-    "Command R+",
+    ["command-r-plus", "command-r-plus-04-2024", "command-r-plus-08-2024"],
+    "Command-R-Plus",
     "https://txt.cohere.com/command-r-plus-microsoft-azure/",
     "Command R+ by Cohere",
 )
@@ -229,10 +325,12 @@ register_model_info(
     [
         "mixtral-8x7b-instruct-v0.1",
         "mistral-large-2402",
+        "mistral-large-2407",
         "mistral-medium",
         "mistral-next",
         "mistral-7b-instruct-v0.2",
         "mistral-7b-instruct",
+        "pixtral-12b-2409",
     ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
@@ -265,9 +363,9 @@ register_model_info(
 )
 
 register_model_info(
-    ["glm-4-0520", "glm-4-0116"],
+    ["glm-4-plus", "glm-4-0520", "glm-4-0116"],
     "GLM-4",
-    "https://zhipuai.cn/devday",
+    "https://bigmodel.cn/dev/howuse/model",
     "Next-Gen Foundation Model by Zhipu AI",
 )
 
@@ -719,10 +817,17 @@ register_model_info(
 )
 
 register_model_info(
-    ["internlm-chat-7b", "internlm-chat-7b-8k"],
+    ["internlm-chat-7b", "internlm-chat-7b-8k", "internlm2_5-20b-chat"],
     "InternLM",
     "https://huggingface.co/internlm/internlm-chat-7b",
     "A multi-language large-scale language model (LLM), developed by SHLAB.",
+)
+
+register_model_info(
+    ["internvl2-26b", "internvl2-4b"],
+    "InternVL 2",
+    "https://internvl.github.io/blog/2024-07-02-InternVL-2.0/",
+    "Multimodal Model developed by OpenGVLab",
 )
 
 register_model_info(
@@ -866,6 +971,15 @@ register_model_info(
     "LLaVA",
     "https://github.com/haotian-liu/LLaVA",
     "an open large language and vision assistant",
+)
+
+register_model_info(
+    [
+        "cogvlm2-llama3-chat-19b",
+    ],
+    "CogVLM2",
+    "https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B",
+    "Open VLM by Tsinghua/Zhipu AI",
 )
 
 register_model_info(
