@@ -260,7 +260,8 @@ def load_demo(url_params, request: gr.Request):
             controller_url, args.register_api_endpoint_file, vision_arena=False
         )
 
-    return load_demo_single(models, url_params)
+    current_context = Context(text_models=models, models=models)
+    return load_demo_single(current_context, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
