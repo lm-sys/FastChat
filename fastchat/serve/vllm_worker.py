@@ -134,6 +134,7 @@ class VLLMWorker(BaseModelWorker):
             frequency_penalty=frequency_penalty,
             best_of=best_of,
         )
+        lora_request = None
         if self.lora_requests and len(self.lora_requests) > 0:
             lora_request = self.find_lora(model)
         results_generator = engine.generate(
