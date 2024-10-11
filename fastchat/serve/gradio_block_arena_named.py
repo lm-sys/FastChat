@@ -268,11 +268,16 @@ def bot_response_multi(
             token_per_yield = 30
         elif states[i].model_name in [
             "qwen-max-0428",
+            "qwen-vl-max-0809",
             "qwen1.5-110b-chat",
         ]:
             token_per_yield = 7
         elif states[i].model_name in [
+            "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
+            "qwen-plus-0828",
+            "qwen-max-0919",
+            "llama-3.1-405b-instruct-bf16",
         ]:
             token_per_yield = 4
         model_tpy.append(token_per_yield)
@@ -308,12 +313,12 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
-# ⚔️  LMSYS Chatbot Arena: Benchmarking LLMs in the Wild
-[Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
 {SURVEY_LINK}
 
-## 📜 Rules
+## 📜 How It Works
 - Ask any question to two chosen models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
 - You can chat for multiple turns until you identify a winner.
 

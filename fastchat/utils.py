@@ -185,6 +185,7 @@ def moderation_filter(text, model_list, do_moderation=False):
         "dbrx",
         "gemini",
         "reka",
+        "eureka",
     ]
 
     custom_thresholds = {"sexual": 0.3}
