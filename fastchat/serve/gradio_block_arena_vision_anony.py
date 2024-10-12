@@ -560,7 +560,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         + model_selectors
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
-        + [random_btn]
+        + ([random_btn] if random_questions else [])
         + [slow_warning],
     )
 
@@ -605,7 +605,7 @@ function (a, b, c, d) {
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
-        + [random_btn]
+        + ([random_btn] if random_questions else [])
         + [slow_warning],
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response_multi,
@@ -643,7 +643,7 @@ function (a, b, c, d) {
         + chatbots
         + [multimodal_textbox, textbox, send_btn]
         + btn_list
-        + [random_btn]
+        + ([random_btn] if random_questions else [])
         + [slow_warning],
     ).then(
         bot_response_multi,
@@ -668,7 +668,7 @@ function (a, b, c, d) {
             + model_selectors
             + [multimodal_textbox, textbox, send_btn]
             + btn_list
-            + [random_btn],
+            + ([random_btn] if random_questions else []),
         )
 
     return states + model_selectors
