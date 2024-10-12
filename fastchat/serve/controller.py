@@ -154,6 +154,7 @@ class Controller:
         return list(model_names)
 
     def get_worker_address(self, model_name: str):
+        model_name = model_name.lower()
         if self.dispatch_method == DispatchMethod.LOTTERY:
             worker_names = []
             worker_speeds = []
