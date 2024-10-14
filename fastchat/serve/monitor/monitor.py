@@ -609,7 +609,7 @@ def build_arena_tab(
             )
         with gr.Column(scale=2):
             category_checkbox = gr.CheckboxGroup(
-                ["Style Control Score", "Show Deprecated"],
+                ["Style Control", "Show Deprecated"],
                 label="Apply filter",
                 info="",
             )
