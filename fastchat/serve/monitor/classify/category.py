@@ -28,8 +28,20 @@ class Category:
             return CategoryMath()
         elif name == "refusal_v0.1":
             return CategoryRefusal()
-        elif name == "vision_v0.1":
-            return CategoryVision()
+        elif name == "captioning_v0.1":
+            return CategoryCaptioning()
+        elif name == "counting_v0.1":
+            return CategoryCounting()
+        elif name == "creative_writing_v0.1":
+            return CategoryCreativeWriting()
+        elif name == "entity_recognition_v0.1":
+            return CategoryEntityRecognition()
+        elif name == "ocr_v0.1":
+            return CategoryOpticalCharacterRecognition()
+        elif name == "humor_v0.1":
+            return CategoryHumor()
+        elif name == "homework_v0.1":
+            return CategoryHomework()
 
         raise Exception(f"Category name is incorrect: {name}")
 
@@ -178,33 +190,155 @@ class CategoryRefusal(Category):
             or bool(score == "both"),
         }
 
+class CategoryCaptioning(Category):
 
-class CategoryVision(Category):
     def __init__(self):
         super().__init__()
-        self.name_tag = "vision_v0.1"
-        self.system_prompt = """You are an AI assistant specialized in classifying Visual Question Answering (VQA) questions into appropriate categories. When presented with a question or multiple questions about an image, you will analyze both the question and the image and categorize it based on the following criteria:
+        self.name_tag = "captioning_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = "You are tasked with determining if a given VQA question is a captioning question. A captioning question asks for a general, overall description of the entire image. It must be a single, open-ended query that does NOT ask about particular objects, people, or parts of the image, nor require interpretation beyond a broad description of what is visually present. Examples include 'What is happening in this image?', 'Describe this picture.', 'Explain', etc. An example of a non-captioning question is 'Describe what is funny in this picture.' because it asks for a specific interpretation of the image content. \n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
+        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
 
-Categories ([text only] means classification of this category should be based on the text question alone):
-1. Captioning[text only]: Questions that ask for a general, overall description of the entire image. A captioning question must be a single, open-ended query that does NOT ask about particular objects, people, or parts of the image, nor require interpretation beyond a broad description of what is visually present. Examples include "What is happening in this image?", "Describe this picture.", "explain", etc.
-2. Counting[text only]: Questions requiring counting or identifying the number of objects in the image.
-3. Optical Character Recognition: Questions requiring reading and understanding text in the image to answer. If there is some amount of text in the image and the question requires reading the text in any capacity it should be classified as Optical Character Recognition.
-4. Entity Recognition: Questions that ask for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.
-5. Spatial Reasoning[text only]: Questions that explicitly ask about the spatial relationships, locations, or arrangements of objects or elements within the image. This includes queries about relative positions (e.g., left, right, top, bottom), sizes, orientations, or distances between objects.
-6. Creative Writing: Questions that explicitly ask for creative or imaginative responses based on the image, such as composing a story, poem, or providing a fictional interpretation. This excludes questions that simply ask for factual observations, interpretations, or speculations about the image content.
+    
+    def get_score(self, judgment):
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
 
-Your task is to classify each question(s) into one or more of these categories. Provide your answer in the following format, with category names separated by commas and no additional information:
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt["prompt"]}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
 
-{category name}, {category name}
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {"captioning": bool(score == "yes") if score else False}
+    
+class CategoryCounting(Category):
 
-If none of the categories apply, enter 'Other'.
-
-Remember to consider all aspects of the question and assign all relevant categories. Do not answer the question, only classify it."""
-
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "counting_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = "You are tasked with determining if a given VQA question is a counting question. A counting question explicitly asks for counting or identifying the number of objects in the image. Your task is to analyze the question and determine if it is a counting question.\n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
         self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
 
     def get_score(self, judgment):
-        return judgment.replace("\n", "").replace("[text only]", "").lower()
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
+
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt["prompt"]}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {"counting": bool(score == "yes") if score else False}
+    
+class CategoryCreativeWriting(Category):
+
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "creative_writing_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = "You are tasked with determining if a given VQA question is a creative writing question. A creative writing question explicitly asks for creative or imaginative responses based on the image, such as composing a story, poem, or providing a fictional interpretation. This excludes questions that simply ask for factual observations, interpretations, or speculations about the image content.\n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
+        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
+    
+    def get_score(self, judgment):
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
+
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt["prompt"]}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {"creative_writing": bool(score == "yes") if score else False}
+        
+class CategoryEntityRecognition(Category):
+
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "entity_recognition_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = "You are tasked with determining if a given VQA question is an entity recognition question. An entity recognition question asks for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.\n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
+
+    def get_score(self, judgment):
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
+
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt["prompt"]}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        return {"creative_writing": bool(score == "yes") if score else False}
+    
+import io
+import base64
+def pil_to_base64(image):
+  buffered = io.BytesIO()
+  image.save(buffered, format="PNG")
+  img_str = base64.b64encode(buffered.getvalue()).decode()
+  return img_str
+    
+class CategoryOpticalCharacterRecognition(Category):
+
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "ocr_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = "You are tasked with determining if a given VQA question is an optical character recognition (OCR) question. An OCR question requires reading and understanding text in the image to answer. If there is some amount of text in the image and the question requires reading the text in any capacity it should be classified as Optical Character Recognition.\n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
+
+    def get_score(self, judgment):
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
 
     def pre_process(self, prompt):
         args = {"PROMPT": prompt["prompt"]}
