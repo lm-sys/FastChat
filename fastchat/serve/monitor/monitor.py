@@ -52,6 +52,7 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
+
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -283,7 +284,9 @@ def arena_hard_process(leaderboard_table_file, filepath):
     return arena_hard
 
 
-def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_models=None, use_delta=True):
+def get_arena_table(
+    arena_df, model_table_df, arena_subset_df=None, hidden_models=None, use_delta=True
+):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
@@ -487,7 +490,9 @@ def build_arena_tab(
         arena_values = get_arena_table(
             arena_df,
             model_table_df,
-            arena_subset_df=arena_subset_df if category != "Overall" else arena_overall_sc_df,
+            arena_subset_df=arena_subset_df
+            if category != "Overall"
+            else arena_overall_sc_df,
             hidden_models=(
                 None
                 if len(filters) > 0 and "Show Deprecate" in filters
@@ -578,7 +583,9 @@ def build_arena_tab(
 
     # arena table
     arena_table_vals = get_arena_table(
-        arena_df, model_table_df, hidden_models=deprecated_model_name,
+        arena_df,
+        model_table_df,
+        hidden_models=deprecated_model_name,
         arena_subset_df=arena_overall_sc_df,
         use_delta=False,
     )
@@ -599,7 +606,9 @@ def build_arena_tab(
             )
         with gr.Column(scale=2):
             category_checkbox = gr.CheckboxGroup(
-                ["Style Control Score", "Show Deprecated"], label="Apply filter", info=""
+                ["Style Control Score", "Show Deprecated"],
+                label="Apply filter",
+                info="",
             )
         default_category_details = make_category_arena_leaderboard_md(
             arena_df, arena_df, name="Overall"
