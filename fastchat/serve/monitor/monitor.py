@@ -285,7 +285,7 @@ def arena_hard_process(leaderboard_table_file, filepath):
 
 
 def get_arena_table(
-    arena_df, model_table_df, arena_subset_df=None, hidden_models=None, use_delta=True
+    arena_df, model_table_df, arena_subset_df=None, hidden_models=None, is_overall=False
 ):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
@@ -297,18 +297,22 @@ def get_arena_table(
     arena_df["final_ranking"] = recompute_final_ranking(arena_df)
 
     if arena_subset_df is not None:
+        if is_overall:
+            # swap arena_subset_df and arena_df for style control
+            arena_subset_df, arena_df = arena_df, arena_subset_df
+
         arena_subset_df = arena_subset_df[arena_subset_df.index.isin(arena_df.index)]
         arena_subset_df = arena_subset_df.sort_values(by=["rating"], ascending=False)
         arena_subset_df["final_ranking"] = recompute_final_ranking(arena_subset_df)
 
         arena_df = arena_df[arena_df.index.isin(arena_subset_df.index)]
-        arena_df["final_ranking"] = recompute_final_ranking(arena_df)
+        arena_df.loc[:, "final_ranking"] = recompute_final_ranking(arena_df)
 
         arena_df = arena_subset_df.join(
             arena_df["final_ranking"], rsuffix="_global", how="inner"
         )
 
-        if use_delta:
+        if not is_overall:
             arena_df["ranking_difference"] = (
                 arena_df["final_ranking_global"] - arena_df["final_ranking"]
             )
@@ -497,7 +501,7 @@ def build_arena_tab(
                 if len(filters) > 0 and "Show Deprecate" in filters
                 else deprecated_model_name
             ),
-            use_delta=category != "Overall",
+            is_overall=category == "Overall",
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
@@ -586,7 +590,7 @@ def build_arena_tab(
         model_table_df,
         hidden_models=deprecated_model_name,
         arena_subset_df=arena_overall_sc_df,
-        use_delta=False,
+        is_overall=True,
     )
 
     md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
