@@ -333,7 +333,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
         )
 
         arena_df["ranking_difference"] = (
-            arena_df["final_ranking"] - arena_df["final_ranking_style_control"]
+            arena_df["final_ranking_style_control"]
         )
 
         temp["final_ranking_no_tie"] = np.arange(1, len(temp) + 1)
@@ -422,7 +422,7 @@ def update_leaderboard_df(arena_table_vals):
 def update_overall_leaderboard_df(arena_table_vals):
     columns = [
         "Rank* (UB)",
-        "StyleCtrl Rank Δ",
+        "Rank (StyleCtrl)",
         "Model",
         "Arena Score",
         "95% CI",
@@ -440,17 +440,16 @@ def update_overall_leaderboard_df(arena_table_vals):
         return [("color: green; font-weight: bold") for v in s]
 
     comparison = elo_dataframe.apply(
-        lambda row: "same"
-        if row["StyleCtrl Rank Δ"] == 0
-        else row["StyleCtrl Rank Δ"] < 0,
+        lambda row: 0 if row["StyleCtrl Rank"] == row["Rank* (UB)"] else
+        1 if row["StyleCtrl Rank"] < row["Rank* (UB)"] else -1,
         axis=1,
     )
-    indices_red = [i for i, value in enumerate(comparison) if value and value != "same"]
-    indices_green = [i for i, value in enumerate(comparison) if not value]
+    indices_red = [i for i, value in enumerate(comparison) if value == -1]
+    indices_green = [i for i, value in enumerate(comparison) if value == 1]
 
     return elo_dataframe.style.apply(
-        highlight_red, subset=pd.IndexSlice[indices_red, ["StyleCtrl Rank Δ"]]
-    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["StyleCtrl Rank Δ"]])
+        highlight_red, subset=pd.IndexSlice[indices_red, ["StyleCtrl Rank"]]
+    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["StyleCtrl Rank"]])
 
 
 def build_arena_tab(
@@ -550,7 +549,7 @@ def build_arena_tab(
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
-                    "StyleCtrl Rank Δ",
+                    "StyleCtrl Rank",
                     "Model",
                     "Arena Score",
                     "95% CI",
@@ -630,7 +629,7 @@ def build_arena_tab(
     elo_display_df = gr.Dataframe(
         headers=[
             "Rank* (UB)",
-            "StyleCtrl Rank Δ",
+            "StyleCtrl Rank",
             "Model",
             "Arena Elo",
             "95% CI",
@@ -664,9 +663,7 @@ def build_arena_tab(
 Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
 See Figure 1 below for visualization of the confidence intervals of model scores.
 
-**StyleCtrl Rank Δ**: Change in model's rank if we apply Style Control. 
-The resulting ranking separates model performances from pontential confounders such as answer length and markdown usage. 
-See [blog post](https://blog.lmarena.ai/blog/2024/style-control/) for more details.
+**StyleCtrl Rank**: model's ranking with style control, which accounts for factors like response length and markdown usage to decouple model performance from these potential confounding variables.
 
 Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
 """,
@@ -1095,7 +1092,7 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
 
     text_size = gr.themes.sizes.text_lg
     # load theme from theme.json
-    theme = gr.themes.Default.load("/home/tim/FastChat/theme.json")
+    theme = gr.themes.Default.load("theme.json")
     # set text size to large
     theme.text_size = text_size
     theme.set(
