@@ -498,7 +498,7 @@ def build_arena_tab(
             else arena_overall_sc_df,
             hidden_models=(
                 None
-                if len(filters) > 0 and "Show Deprecate" in filters
+                if len(filters) > 0 and "Show Deprecated" in filters
                 else deprecated_model_name
             ),
             is_overall=category == "Overall",
@@ -609,7 +609,7 @@ def build_arena_tab(
             )
         with gr.Column(scale=2):
             category_checkbox = gr.CheckboxGroup(
-                ["Style Control Score", "Show Deprecated"],
+                ["Style Control", "Show Deprecated"],
                 label="Apply filter",
                 info="",
             )
