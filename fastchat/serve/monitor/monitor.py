@@ -332,9 +332,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
             temp["final_ranking"], rsuffix="_style_control", how="inner"
         )
 
-        arena_df["ranking_difference"] = (
-            arena_df["final_ranking_style_control"]
-        )
+        arena_df["ranking_difference"] = arena_df["final_ranking_style_control"]
 
         temp["final_ranking_no_tie"] = np.arange(1, len(temp) + 1)
         arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
@@ -440,8 +438,11 @@ def update_overall_leaderboard_df(arena_table_vals):
         return [("color: green; font-weight: bold") for v in s]
 
     comparison = elo_dataframe.apply(
-        lambda row: 0 if row["Rank (StyleCtrl)"] == row["Rank* (UB)"] else
-        1 if row["Rank (StyleCtrl)"] < row["Rank* (UB)"] else -1,
+        lambda row: 0
+        if row["Rank (StyleCtrl)"] == row["Rank* (UB)"]
+        else 1
+        if row["Rank (StyleCtrl)"] < row["Rank* (UB)"]
+        else -1,
         axis=1,
     )
     indices_red = [i for i, value in enumerate(comparison) if value == -1]
