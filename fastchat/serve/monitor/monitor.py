@@ -541,7 +541,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[70, 70, 210, 90, 90, 90, 120, 150, 100],
+                column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
                 wrap=True,
             )
         else:
@@ -572,7 +572,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
+                column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
                 wrap=True,
             )
 
@@ -653,7 +653,7 @@ def build_arena_tab(
         value=arena_vals,
         elem_id="arena_leaderboard_dataframe",
         height=1000,
-        column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
+        column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
         wrap=True,
     )
 
