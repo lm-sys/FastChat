@@ -343,11 +343,6 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
             by=["final_ranking", "rating"], ascending=[True, False]
         )
 
-        arena_df["final_ranking"] = arena_df.final_ranking.map(int)
-        arena_df[
-            "final_ranking_style_control"
-        ] = arena_df.final_ranking_style_control.map(int)
-
     # Handle potential duplicate keys in model_table_df
     model_table_dict = model_table_df.groupby("key").first().to_dict(orient="index")
 
@@ -427,7 +422,7 @@ def update_leaderboard_df(arena_table_vals):
 def update_overall_leaderboard_df(arena_table_vals):
     columns = [
         "Rank* (UB)",
-        "Rank Δ StyleCtrl",
+        "StyleCtrl Rank Δ",
         "Model",
         "Arena Score",
         "95% CI",
@@ -446,16 +441,16 @@ def update_overall_leaderboard_df(arena_table_vals):
 
     comparison = elo_dataframe.apply(
         lambda row: "same"
-        if row["Rank Δ StyleCtrl"] == 0
-        else row["Rank Δ StyleCtrl"] < 0,
+        if row["StyleCtrl Rank Δ"] == 0
+        else row["StyleCtrl Rank Δ"] < 0,
         axis=1,
     )
     indices_red = [i for i, value in enumerate(comparison) if value and value != "same"]
     indices_green = [i for i, value in enumerate(comparison) if not value]
 
     return elo_dataframe.style.apply(
-        highlight_red, subset=pd.IndexSlice[indices_red, ["Rank Δ StyleCtrl"]]
-    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["Rank Δ StyleCtrl"]])
+        highlight_red, subset=pd.IndexSlice[indices_red, ["StyleCtrl Rank Δ"]]
+    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["StyleCtrl Rank Δ"]])
 
 
 def build_arena_tab(
@@ -555,7 +550,7 @@ def build_arena_tab(
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
-                    "Rank Δ StyleCtrl",
+                    "StyleCtrl Rank Δ",
                     "Model",
                     "Arena Score",
                     "95% CI",
@@ -578,7 +573,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
+                column_widths=[60, 85, 220, 90, 90, 90, 120, 150, 100],
                 wrap=True,
             )
 
@@ -635,7 +630,7 @@ def build_arena_tab(
     elo_display_df = gr.Dataframe(
         headers=[
             "Rank* (UB)",
-            "Rank Δ StyleCtrl",
+            "StyleCtrl Rank Δ",
             "Model",
             "Arena Elo",
             "95% CI",
@@ -659,7 +654,7 @@ def build_arena_tab(
         value=arena_vals,
         elem_id="arena_leaderboard_dataframe",
         height=1000,
-        column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
+        column_widths=[60, 85, 220, 90, 90, 90, 120, 150, 100],
         wrap=True,
     )
 
@@ -669,7 +664,7 @@ def build_arena_tab(
 Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
 See Figure 1 below for visualization of the confidence intervals of model scores.
 
-**Rank Δ StyleCtrl**: Change in model's rank if we apply Style Control. 
+**StyleCtrl Rank Δ**: Change in model's rank if we apply Style Control. 
 The resulting ranking separates model performances from pontential confounders such as answer length and markdown usage. 
 See [blog post](https://blog.lmarena.ai/blog/2024/style-control/) for more details.
 
