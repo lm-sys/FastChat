@@ -2,7 +2,7 @@
 
 input_file: "../arena-data-analysis/data/vision_clean_battle_conv_20240822_with_image_hash.json" # json
 cache_file: False # json
-output_file: "fastchat/serve/monitor/classify/results/vision_clean_battle_conv_20240822_with_image_hash-labeled.json" # json line
+output_file: "fastchat/serve/monitor/classify/results/vision_clean_battle_conv_20240822_with_image_hash-new-per-category-llama.json" # json line
 
 convert_to_json: True
 
@@ -10,12 +10,18 @@ task_name:
   - refusal_v0.1
   - criteria_v0.1
   - if_v0.1
-  - vision_v0.1
+  - captioning_v0.1
+  - homework_v0.1
+  - ocr_v0.1
+  - counting_v0.1
+  - humor_v0.1
+  - entity_recognition_v0.1
+  - creative_writing_v0.1
 
-model_name: gpt-4o
-name: gpt-4o
+model_name: gpt-4o-mini
+name: gpt-4o-mini
 endpoints:
-  - api_base: # BASE URL
+  - api_base: # API BASE
     api_key: # API KEY
 
 parallel: 50
