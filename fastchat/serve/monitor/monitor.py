@@ -52,6 +52,8 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
+arena_overall_sc_df = None
+
 
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
@@ -284,15 +286,6 @@ def arena_hard_process(leaderboard_table_file, filepath):
     return arena_hard
 
 
-def create_ranking_str(ranking, ranking_difference):
-    if ranking_difference > 0:
-        return f"{int(ranking)} \u2191"
-    elif ranking_difference < 0:
-        return f"{int(ranking)} \u2193"
-    else:
-        return f"{int(ranking)}"
-
-
 def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_models=None):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
@@ -324,12 +317,36 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
         arena_df = arena_df.sort_values(
             by=["final_ranking", "rating"], ascending=[True, False]
         )
-        arena_df["final_ranking"] = arena_df.apply(
-            lambda x: create_ranking_str(x["final_ranking"], x["ranking_difference"]),
-            axis=1,
+    else:
+        # show style control delta on overall leaderboard
+        temp = arena_overall_sc_df[
+            arena_overall_sc_df.index.isin(arena_df.index)
+        ].copy()
+        temp = temp.sort_values(by=["rating"], ascending=False)
+        temp["final_ranking"] = recompute_final_ranking(temp)
+
+        arena_df = arena_df[arena_df.index.isin(temp.index)]
+        arena_df["final_ranking"] = recompute_final_ranking(arena_df)
+
+        arena_df = arena_df.join(
+            temp["final_ranking"], rsuffix="_style_control", how="inner"
         )
 
-    arena_df["final_ranking"] = arena_df["final_ranking"].astype(str)
+        arena_df["ranking_difference"] = (
+            arena_df["final_ranking"] - arena_df["final_ranking_style_control"]
+        )
+
+        temp["final_ranking_no_tie"] = np.arange(1, len(temp) + 1)
+        arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
+
+        arena_df = arena_df.sort_values(
+            by=["final_ranking", "rating"], ascending=[True, False]
+        )
+
+        arena_df["final_ranking"] = arena_df.final_ranking.map(int)
+        arena_df[
+            "final_ranking_style_control"
+        ] = arena_df.final_ranking_style_control.map(int)
 
     # Handle potential duplicate keys in model_table_df
     model_table_dict = model_table_df.groupby("key").first().to_dict(orient="index")
@@ -343,15 +360,19 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
             return None
 
         ranking = row.get("final_ranking") or row.name + 1
-        result = [ranking]
+        result = [ranking if type(ranking) is str else int(ranking)]
 
         if arena_subset_df is not None:
-            result.append(row.get("ranking_difference", 0))
+            ranking = row.get("ranking_difference", 0)
+            result.append(ranking if type(ranking) is str else int(ranking))
+        else:
+            ranking = row.get("ranking_difference", 0)
+            result.append(ranking if type(ranking) is str else int(ranking))
 
         result.extend(
             [
                 model_info.get("Model", "Unknown"),
-                f"{round(row['rating'])}",
+                int(round(row["rating"])),
                 f"+{round(row['rating_q975'] - row['rating'])}/-{round(row['rating'] - row['rating_q025'])}",
                 round(row["num_battles"]),
                 model_info.get("Organization", "Unknown"),
@@ -363,7 +384,6 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
                 ),
             ]
         )
-
         return result
 
     values = [
@@ -389,18 +409,6 @@ def update_leaderboard_df(arena_table_vals):
     ]
     elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
 
-    def highlight_max(s):
-        return [
-            (
-                "color: green; font-weight: bold"
-                if "\u2191" in str(v)
-                else "color: red; font-weight: bold"
-                if "\u2193" in str(v)
-                else ""
-            )
-            for v in s
-        ]
-
     def highlight_rank_max(s):
         return [
             (
@@ -413,9 +421,41 @@ def update_leaderboard_df(arena_table_vals):
             for v in s
         ]
 
-    return elo_dataframe.style.apply(highlight_max, subset=["Rank* (UB)"]).apply(
-        highlight_rank_max, subset=["Delta"]
+    return elo_dataframe.style.apply(highlight_rank_max, subset=["Delta"])
+
+
+def update_overall_leaderboard_df(arena_table_vals):
+    columns = [
+        "Rank* (UB)",
+        "Rank Δ StyleCtrl",
+        "Model",
+        "Arena Score",
+        "95% CI",
+        "Votes",
+        "Organization",
+        "License",
+        "Knowledge Cutoff",
+    ]
+    elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
+
+    def highlight_red(s):
+        return [("color: red; font-weight: bold") for v in s]
+
+    def highlight_green(s):
+        return [("color: green; font-weight: bold") for v in s]
+
+    comparison = elo_dataframe.apply(
+        lambda row: "same"
+        if row["Rank Δ StyleCtrl"] == 0
+        else row["Rank Δ StyleCtrl"] < 0,
+        axis=1,
     )
+    indices_red = [i for i, value in enumerate(comparison) if value and value != "same"]
+    indices_green = [i for i, value in enumerate(comparison) if not value]
+
+    return elo_dataframe.style.apply(
+        highlight_red, subset=pd.IndexSlice[indices_red, ["Rank Δ StyleCtrl"]]
+    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["Rank Δ StyleCtrl"]])
 
 
 def build_arena_tab(
@@ -444,6 +484,15 @@ def build_arena_tab(
 
     arena_df = arena_dfs["Overall"]
 
+    global arena_overall_sc_df
+    if arena_overall_sc_df is None:
+        arena_overall_sc_df = arena_dfs[
+            "Overall w/ Style Control"
+        ]  # for incorporating style control on the overall leaderboard
+        arena_overall_sc_df = arena_overall_sc_df[
+            arena_overall_sc_df["num_battles"] > 300
+        ]
+
     def update_leaderboard_and_plots(category, filters):
         if len(filters) > 0 and "Style Control" in filters:
             cat_name = f"{category} w/ Style Control"
@@ -454,6 +503,7 @@ def build_arena_tab(
 
         arena_subset_df = arena_dfs[category]
         arena_subset_df = arena_subset_df[arena_subset_df["num_battles"] > 300]
+
         elo_subset_results = category_elo_results[category]
 
         baseline_category = cat_name_to_baseline.get(category, "Overall")
@@ -484,7 +534,7 @@ def build_arena_tab(
                     "Knowledge Cutoff",
                 ],
                 datatype=[
-                    "str",
+                    "number",
                     "number",
                     "markdown",
                     "number",
@@ -501,9 +551,11 @@ def build_arena_tab(
                 wrap=True,
             )
         else:
+            arena_values = update_overall_leaderboard_df(arena_values)
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
+                    "Rank Δ StyleCtrl",
                     "Model",
                     "Arena Score",
                     "95% CI",
@@ -513,6 +565,7 @@ def build_arena_tab(
                     "Knowledge Cutoff",
                 ],
                 datatype=[
+                    "number",
                     "number",
                     "markdown",
                     "number",
@@ -525,7 +578,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[70, 220, 90, 90, 90, 120, 150, 100],
+                column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
                 wrap=True,
             )
 
@@ -578,22 +631,11 @@ def build_arena_tab(
                 default_category_details, elem_id="category_deets"
             )
 
-    arena_vals = pd.DataFrame(
-        arena_table_vals,
-        columns=[
-            "Rank* (UB)",
-            "Model",
-            "Arena Score",
-            "95% CI",
-            "Votes",
-            "Organization",
-            "License",
-            "Knowledge Cutoff",
-        ],
-    )
+    arena_vals = update_overall_leaderboard_df(arena_table_vals)
     elo_display_df = gr.Dataframe(
         headers=[
             "Rank* (UB)",
+            "Rank Δ StyleCtrl",
             "Model",
             "Arena Elo",
             "95% CI",
@@ -604,6 +646,7 @@ def build_arena_tab(
         ],
         datatype=[
             "number",
+            "number",
             "markdown",
             "number",
             "str",
@@ -613,10 +656,10 @@ def build_arena_tab(
             "str",
         ],
         # value=highlight_top_models(arena_vals.style),
-        value=arena_vals.style,
+        value=arena_vals,
         elem_id="arena_leaderboard_dataframe",
         height=1000,
-        column_widths=[70, 220, 90, 90, 90, 120, 150, 100],
+        column_widths=[60, 80, 220, 90, 90, 90, 120, 150, 100],
         wrap=True,
     )
 
@@ -625,6 +668,10 @@ def build_arena_tab(
 ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
 Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval).
 See Figure 1 below for visualization of the confidence intervals of model scores.
+
+**Rank Δ StyleCtrl**: Change in model's rank if we apply Style Control. 
+The resulting ranking separates model performances from pontential confounders such as answer length and markdown usage. 
+See [blog post](https://blog.lmarena.ai/blog/2024/style-control/) for more details.
 
 Note: in each category, we exclude models with fewer than 300 votes as their confidence intervals can be large.
 """,
@@ -833,9 +880,7 @@ selected_categories = [
     "long_user",
     # "no_refusal",
 ]
-# selected_categories_width = [95, 85, 100, 75, 120, 100, 95, 100,100]
 selected_categories_width = [110, 110, 110, 110, 110, 80, 80, 80, 80]
-# selected_categories_width = [100] * len(selected_categories)
 
 language_categories = [
     "english",
@@ -1055,7 +1100,7 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
 
     text_size = gr.themes.sizes.text_lg
     # load theme from theme.json
-    theme = gr.themes.Default.load("theme.json")
+    theme = gr.themes.Default.load("/home/tim/FastChat/theme.json")
     # set text size to large
     theme.text_size = text_size
     theme.set(
