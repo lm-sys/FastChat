@@ -470,7 +470,6 @@ def build_arena_tab(
         arena_overall_sc_df = arena_overall_sc_df[
             arena_overall_sc_df["num_battles"] > 300
         ]
-    print(arena_overall_sc_df)
 
     def update_leaderboard_and_plots(category, filters):
         if len(filters) > 0 and "Style Control" in filters:
