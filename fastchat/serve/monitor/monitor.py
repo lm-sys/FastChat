@@ -498,7 +498,7 @@ def build_arena_tab(
             else arena_overall_sc_df,
             hidden_models=(
                 None
-                if len(filters) > 0 and "Show Deprecate" in filters
+                if len(filters) > 0 and "Show Deprecated" in filters
                 else deprecated_model_name
             ),
             is_overall=category == "Overall",
