@@ -52,9 +52,6 @@ notebook_url = (
 basic_component_values = [None] * 6
 leader_component_values = [None] * 5
 
-arena_overall_sc_df = None
-
-
 def recompute_final_ranking(arena_df):
     # compute ranking based on CI
     ranking = {}
@@ -286,7 +283,7 @@ def arena_hard_process(leaderboard_table_file, filepath):
     return arena_hard
 
 
-def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_models=None):
+def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_models=None, use_delta=True):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
     )
@@ -304,38 +301,16 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
         arena_df = arena_df[arena_df.index.isin(arena_subset_df.index)]
         arena_df["final_ranking"] = recompute_final_ranking(arena_df)
 
-        arena_subset_df["final_ranking_no_tie"] = np.arange(1, len(arena_subset_df) + 1)
-        arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
-
         arena_df = arena_subset_df.join(
             arena_df["final_ranking"], rsuffix="_global", how="inner"
         )
-        arena_df["ranking_difference"] = (
-            arena_df["final_ranking_global"] - arena_df["final_ranking"]
-        )
 
-        arena_df = arena_df.sort_values(
-            by=["final_ranking", "rating"], ascending=[True, False]
-        )
-    else:
-        # show style control delta on overall leaderboard
-        temp = arena_overall_sc_df[
-            arena_overall_sc_df.index.isin(arena_df.index)
-        ].copy()
-        temp = temp.sort_values(by=["rating"], ascending=False)
-        temp["final_ranking"] = recompute_final_ranking(temp)
-
-        arena_df = arena_df[arena_df.index.isin(temp.index)]
-        arena_df["final_ranking"] = recompute_final_ranking(arena_df)
-
-        arena_df = arena_df.join(
-            temp["final_ranking"], rsuffix="_style_control", how="inner"
-        )
-
-        arena_df["ranking_difference"] = arena_df["final_ranking_style_control"]
-
-        temp["final_ranking_no_tie"] = np.arange(1, len(temp) + 1)
-        arena_df["final_ranking_no_tie"] = np.arange(1, len(arena_df) + 1)
+        if use_delta:
+            arena_df["ranking_difference"] = (
+                arena_df["final_ranking_global"] - arena_df["final_ranking"]
+            )
+        else:
+            arena_df["ranking_difference"] = arena_df["final_ranking_global"]
 
         arena_df = arena_df.sort_values(
             by=["final_ranking", "rating"], ascending=[True, False]
@@ -359,8 +334,7 @@ def get_arena_table(arena_df, model_table_df, arena_subset_df=None, hidden_model
             ranking = row.get("ranking_difference", 0)
             result.append(ranking if isinstance(ranking, str) else int(ranking))
         else:
-            ranking = row.get("ranking_difference", 0)
-            result.append(ranking if isinstance(ranking, str) else int(ranking))
+            result.append(None)
 
         result.extend(
             [
@@ -437,12 +411,18 @@ def update_overall_leaderboard_df(arena_table_vals):
     def highlight_green(s):
         return [("color: green; font-weight: bold") for v in s]
 
+    def compare_func(row):
+        if row["Rank (StyleCtrl)"] is None:
+            return 0
+        if row["Rank (StyleCtrl)"] == row["Rank* (UB)"]:
+            return 0
+        elif row["Rank (StyleCtrl)"] < row["Rank* (UB)"]:
+            return 1
+        else:
+            return -1
+
     comparison = elo_dataframe.apply(
-        lambda row: 0
-        if row["Rank (StyleCtrl)"] == row["Rank* (UB)"]
-        else 1
-        if row["Rank (StyleCtrl)"] < row["Rank* (UB)"]
-        else -1,
+        compare_func,
         axis=1,
     )
     indices_red = [i for i, value in enumerate(comparison) if value == -1]
@@ -479,14 +459,15 @@ def build_arena_tab(
 
     arena_df = arena_dfs["Overall"]
 
-    global arena_overall_sc_df
-    if arena_overall_sc_df is None:
+    arena_overall_sc_df = None
+    if "Overall w/ Style Control" in arena_dfs:
         arena_overall_sc_df = arena_dfs[
             "Overall w/ Style Control"
         ]  # for incorporating style control on the overall leaderboard
         arena_overall_sc_df = arena_overall_sc_df[
             arena_overall_sc_df["num_battles"] > 300
         ]
+    print(arena_overall_sc_df)
 
     def update_leaderboard_and_plots(category, filters):
         if len(filters) > 0 and "Style Control" in filters:
@@ -506,16 +487,16 @@ def build_arena_tab(
         arena_values = get_arena_table(
             arena_df,
             model_table_df,
-            arena_subset_df=arena_subset_df if category != "Overall" else None,
+            arena_subset_df=arena_subset_df if category != "Overall" else arena_overall_sc_df,
             hidden_models=(
                 None
                 if len(filters) > 0 and "Show Deprecate" in filters
                 else deprecated_model_name
             ),
+            use_delta=category != "Overall",
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
-            # arena_values = highlight_top_models(arena_values)
             arena_values = gr.Dataframe(
                 headers=[
                     "Rank* (UB)",
@@ -542,7 +523,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
+                column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
                 wrap=True,
             )
         else:
@@ -573,7 +554,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
+                column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
                 wrap=True,
             )
 
@@ -597,7 +578,9 @@ def build_arena_tab(
 
     # arena table
     arena_table_vals = get_arena_table(
-        arena_df, model_table_df, hidden_models=deprecated_model_name
+        arena_df, model_table_df, hidden_models=deprecated_model_name,
+        arena_subset_df=arena_overall_sc_df,
+        use_delta=False,
     )
 
     md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
@@ -616,12 +599,12 @@ def build_arena_tab(
             )
         with gr.Column(scale=2):
             category_checkbox = gr.CheckboxGroup(
-                ["Style Control", "Show Deprecate"], label="Apply filter", info=""
+                ["Style Control Score", "Show Deprecated"], label="Apply filter", info=""
             )
         default_category_details = make_category_arena_leaderboard_md(
             arena_df, arena_df, name="Overall"
         )
-        with gr.Column(scale=4, variant="panel"):
+        with gr.Column(scale=3, variant="panel"):
             category_deets = gr.Markdown(
                 default_category_details, elem_id="category_deets"
             )
@@ -650,11 +633,10 @@ def build_arena_tab(
             "str",
             "str",
         ],
-        # value=highlight_top_models(arena_vals.style),
         value=arena_vals,
         elem_id="arena_leaderboard_dataframe",
         height=1000,
-        column_widths=[75, 75, 180, 60, 60, 60, 80, 80, 60],
+        column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
         wrap=True,
     )
 
