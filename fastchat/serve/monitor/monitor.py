@@ -895,7 +895,10 @@ def get_combined_table(elo_results, model_table_df):
 
     combined_table = []
     for category in elo_results.keys():
-        df = elo_results[category]["leaderboard_table_df"]
+        df = elo_results[category]["leaderboard_table_df"].copy()
+        # # remove deprecated models
+        df = df.loc[~df.index.isin(deprecated_model_name)]
+
         ranking = recompute_final_ranking(df)
         df["ranking"] = ranking
         df["category"] = key_to_category_name[category]
