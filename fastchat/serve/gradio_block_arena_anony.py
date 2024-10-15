@@ -175,10 +175,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {
-    "jab-0.3": 1,
-    "claude-3-5-sonnet-20240620": 1,
-}
+SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
