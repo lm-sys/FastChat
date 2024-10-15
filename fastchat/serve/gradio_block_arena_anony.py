@@ -57,11 +57,11 @@ def load_demo_side_by_side_anony(models_, url_params):
     global models
     models = models_
 
-    states = (None,) * num_sides
-    selector_updates = (
+    states = [None] * num_sides
+    selector_updates = [
         gr.Markdown(visible=True),
         gr.Markdown(visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -175,7 +175,10 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {}
+SAMPLING_WEIGHTS = {
+    "jab-0.3": 1,
+    "claude-3-5-sonnet-20240620": 1,
+}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
