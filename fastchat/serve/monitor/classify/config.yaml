@@ -10,6 +10,7 @@ task_name:
   - criteria_v0.1
   - if_v0.1
   - math_v0.1
+  - creative_writing_v0.1
 
 model_name: null
 name: llama-3-70b-instruct
