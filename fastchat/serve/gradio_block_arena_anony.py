@@ -57,11 +57,11 @@ def load_demo_side_by_side_anony(models_, url_params):
     global models
     models = models_
 
-    states = (None,) * num_sides
-    selector_updates = (
+    states = [None] * num_sides
+    selector_updates = [
         gr.Markdown(visible=True),
         gr.Markdown(visible=True),
-    )
+    ]
 
     return states + selector_updates
 
