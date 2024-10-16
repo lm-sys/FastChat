@@ -1,8 +1,8 @@
 ## Download dataset
-We have pre-generated several category classifier benchmarks and ground truths. You can download them (with [`git-lfs`](https://git-lfs.com) installed) to the current directory `classify/` by running
+We have pre-generated several category classifier benchmarks and ground truths. You can download them (with [`git-lfs`](https://git-lfs.com) installed) to the directory `classify/` by running
 ```console
-> git clone lmarena-ai/categories-benchmark-eval
-// copy the label_bench directory to the current directory
+> git clone https://huggingface.co/datasets/lmarena-ai/categories-benchmark-eval
+// cd into classify/ and then copy the label_bench directory to the current directory
 > cp -r categories-benchmark-eval/label_bench . 
 ```
 Your label_bench directory should follow the structure:
