@@ -25,7 +25,8 @@ from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
 
 
-from fastchat.serve.monitor.monitor_md import (
+# from fastchat.serve.monitor.monitor_md import (
+from monitor_md import (
     cat_name_to_baseline,
     key_to_category_name,
     cat_name_to_explanation,
@@ -249,12 +250,38 @@ def get_full_table(arena_df, model_table_df, model_to_score):
 
 
 def arena_hard_process(leaderboard_table_file, filepath):
-    arena_hard = pd.read_csv(filepath)
+    with open(filepath, "rb") as f:  # 'rb' is for reading in binary mode
+        combined_arena_hard = pickle.load(f) # normal + styled results
+    
+    arena_hard_normal = pd.DataFrame(combined_arena_hard["normal"]) # normal
+    arena_hard_style = pd.DataFrame(combined_arena_hard["style_control"]) # style
+    
+    
+    normal_rankings = recompute_final_ranking(arena_hard_normal)
+    style_rankings =  recompute_final_ranking(arena_hard_style)
+    
+    
+    arena_hard_normal.insert(loc=0, column="Rank* (UB)", value=normal_rankings) # normal rankings 
+    arena_hard_style.insert(loc=0, column="Rank (StyleCtrl)", value=style_rankings) # style rankings 
+    
+    arena_hard_normal["avg_tokens"] = arena_hard_normal["avg_tokens"].astype(int)
+    
+    # combine together
+    combined_df = pd.merge(arena_hard_normal, arena_hard_style[['model', 'Rank (StyleCtrl)']],
+                       on='model', how='left')
+
+    # Move 'Rank (StyleCtrl)' to position 1 (second column)
+    columns = list(combined_df.columns)
+    columns.insert(1, columns.pop(columns.index('Rank (StyleCtrl)')))
+    combined_df = combined_df[columns]
+    
+    
     leaderboard_table = pd.read_csv(leaderboard_table_file)
     links = leaderboard_table.get("Link")
     display_name = leaderboard_table.get("Model")
     model_name = leaderboard_table.get("key")
     organization = leaderboard_table.get("Organization")
+    
 
     info = {}
     for i in range(len(model_name)):
@@ -265,23 +292,21 @@ def arena_hard_process(leaderboard_table_file, filepath):
         info[model_name[i]] = model_info
 
     organization = []
-    for i in range(len(arena_hard)):
+    for i in range(len(combined_df)):
         assert (
-            arena_hard.loc[i, "model"] in info
-        ), f"need to update leaderboard_table info by adding {arena_hard.loc[i, 'model']}"
-        organization.append(info[arena_hard.loc[i, "model"]]["org"])
-        link = info[arena_hard.loc[i, "model"]]["link"]
-        arena_hard.loc[i, "model"] = model_hyperlink(
-            info[arena_hard.loc[i, "model"]]["display"], link
+            combined_df.loc[i, "model"] in info
+        ), f"need to update leaderboard_table info by adding {combined_df.loc[i, 'model']}"
+        organization.append(info[combined_df.loc[i, "model"]]["org"])
+        link = info[combined_df.loc[i, "model"]]["link"]
+        combined_df.loc[i, "model"] = model_hyperlink(
+            info[combined_df.loc[i, "model"]]["display"], link
         )
 
-    arena_hard.insert(
-        loc=len(arena_hard.columns), column="Organization", value=organization
+    combined_df.insert(
+        loc=len(combined_df.columns), column="Organization", value=organization
     )
 
-    rankings = recompute_final_ranking(arena_hard)
-    arena_hard.insert(loc=0, column="Rank* (UB)", value=rankings)
-    return arena_hard
+    return combined_df
 
 
 def get_arena_table(
@@ -440,6 +465,49 @@ def update_overall_leaderboard_df(arena_table_vals):
     ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["Rank (StyleCtrl)"]])
 
 
+
+def update_hard_leaderboard_df(arena_table_vals):
+    columns = [
+        "Rank* (UB)",
+        "Rank (StyleCtrl)",
+        "Model",
+        "Win-rate",
+        "95% CI",
+        "Average Tokens",
+        "Organization"
+    ]
+    dataframe = pd.DataFrame(arena_table_vals, columns=columns)
+
+
+    def highlight_red(s):
+        return [("color: red; font-weight: bold") for v in s]
+
+    def highlight_green(s):
+        return [("color: green; font-weight: bold") for v in s]
+
+    def compare_func(row):
+        if row["Rank (StyleCtrl)"] is None:
+            return 0
+        if row["Rank (StyleCtrl)"] == row["Rank* (UB)"]:
+            return 0
+        elif row["Rank (StyleCtrl)"] < row["Rank* (UB)"]:
+            return 1
+        else:
+            return -1
+
+    comparison = dataframe.apply(
+        compare_func,
+        axis=1,
+    )
+    indices_red = [i for i, value in enumerate(comparison) if value == -1]
+    indices_green = [i for i, value in enumerate(comparison) if value == 1]
+
+    return dataframe.style.apply(
+        highlight_red, subset=pd.IndexSlice[indices_red, ["Rank (StyleCtrl)"]]
+    ).apply(highlight_green, subset=pd.IndexSlice[indices_green, ["Rank (StyleCtrl)"]])
+
+
+
 def build_arena_tab(
     elo_results,
     model_table_df,
@@ -453,7 +521,7 @@ def build_arena_tab(
             """,
         )
         return
-
+    
     arena_dfs = {}
     category_elo_results = {}
     last_updated_time = elo_results["full"]["last_updated_datetime"].split(" ")[0]
@@ -728,6 +796,7 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
         ],
     )
     return [plot_1, plot_2, plot_3, plot_4]
+
 
 
 def build_full_leaderboard_tab(elo_results, model_table_df, model_to_score):
@@ -1013,12 +1082,15 @@ def build_leaderboard_tab(
                     dataFrame = arena_hard_process(
                         leaderboard_table_file, arena_hard_leaderboard
                     )
+                    
+                    
                     date = dataFrame["date"][0]
                     dataFrame = dataFrame.drop(
                         columns=["rating_q025", "rating_q975", "date"]
                     )
                     dataFrame["CI"] = dataFrame.CI.map(ast.literal_eval)
-                    dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/-{x[0]}")
+                    dataFrame["CI"] = dataFrame.CI.map(lambda x: f"+{x[1]}/{x[0]}")
+                    
                     dataFrame = dataFrame.rename(
                         columns={
                             "model": "Model",
@@ -1027,24 +1099,35 @@ def build_leaderboard_tab(
                             "avg_tokens": "Average Tokens",
                         }
                     )
+                    dataFrame['Win-rate'] = dataFrame['Win-rate'].apply(lambda x: f'{x:g}' if pd.notnull(x) else x)
+                   
                     model_to_score = {}
                     for i in range(len(dataFrame)):
-                        model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
-                            i, "Win-rate"
-                        ]
+                        model_name = dataFrame.loc[i, "Model"]
+                        win_rate = dataFrame.loc[i, "Win-rate"]
+                        
+                        model_to_score[model_name] = win_rate
+                        
                     md = arena_hard_title(date)
                     gr.Markdown(md, elem_id="leaderboard_markdown")
+                    
+                    dataFrame = update_hard_leaderboard_df(dataFrame)
                     gr.DataFrame(
                         dataFrame,
-                        datatype=[
-                            "markdown" if col == "Model" else "str"
-                            for col in dataFrame.columns
+                         datatype=[
+                            "number",
+                            "number",
+                            "markdown",
+                            "str",
+                            "str",
+                            "number",
+                            "str"
                         ],
                         elem_id="arena_hard_leaderboard",
-                        height=1000,
+                        height = 1000,
                         wrap=True,
-                        column_widths=[70, 190, 80, 80, 90, 150],
-                    )
+                        column_widths=[70, 70, 190, 80, 80, 90, 150],
+                    ) 
 
             with gr.Tab("Full Leaderboard", id=4):
                 build_full_leaderboard_tab(
@@ -1099,10 +1182,10 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
         button_small_text_size="20px",
         button_large_text_weight="100",
         button_small_text_weight="100",
-        button_shadow="*shadow_drop_lg",
-        button_shadow_hover="*shadow_drop_lg",
+        # button_shadow="*shadow_drop_lg",
+        # button_shadow_hover="*shadow_drop_lg",
         checkbox_label_shadow="*shadow_drop_lg",
-        button_shadow_active="*shadow_inset",
+        # button_shadow_active="*shadow_inset",
         button_secondary_background_fill="*primary_300",
         button_secondary_background_fill_dark="*primary_700",
         button_secondary_background_fill_hover="*primary_200",
