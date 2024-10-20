@@ -428,14 +428,17 @@ def update_leaderboard_df(arena_table_vals):
     return elo_dataframe.style.apply(highlight_rank_max, subset=["Delta"])
 
 
+# highlight the style control rank value as red
 def highlight_red(s):
     return [("color: red; font-weight: bold") for v in s]
 
 
+# highlight the style control rank value as green
 def highlight_green(s):
     return [("color: green; font-weight: bold") for v in s]
 
 
+# decide whether to highlight the style control rank value as green or red
 def compare_func(row):
     if row["Rank (StyleCtrl)"] is None:
         return 0
