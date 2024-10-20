@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
         wandb.log({"categories": wandb.Table(dataframe=output[columns])})
 
-    if config["convert_to_json"] and os.path.isfile(config["output_file"]):
+    if config["convert_to_json"]:
         # merge two data frames, but only take the fields from the cache data to overwrite the input data
         merge_columns = [category.name_tag for category in categories]
         print(f"Columns to be merged:\n{merge_columns}")

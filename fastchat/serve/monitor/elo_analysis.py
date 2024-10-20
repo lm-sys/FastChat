@@ -26,10 +26,14 @@ STYLE_CONTROL_ELEMENTS_V1 = [
     "header_count_a",
     "list_count_a",
     "bold_count_a",
+    "friendliness_a",
+    "hesitant_a",
     "sum_assistant_b_tokens",
     "header_count_b",
     "list_count_b",
     "bold_count_b",
+    "friendliness_b",
+    "hesitant_b",
 ]
 
 
@@ -435,11 +439,12 @@ def fit_mle_elo(X, Y, models, indices=None, SCALE=400, INIT_RATING=1000):
 def construct_style_matrices(
     df,
     BASE=10,
-    apply_ratio=[1, 1, 1, 1],
+    apply_ratio=[1, 1, 1, 1, 1],
     style_elements=STYLE_CONTROL_ELEMENTS_V1,
     add_one=True,
 ):
     models = pd.concat([df["model_a"], df["model_b"]]).unique()
+    print(df.columns)
     models = pd.Series(np.arange(len(models)), index=models)
 
     # duplicate battles
@@ -458,7 +463,7 @@ def construct_style_matrices(
         [
             df.conv_metadata.map(
                 lambda x: x[element]
-                if type(x[element]) is int
+                if type(x[element]) is int or type(x[element]) is float
                 else sum(x[element].values())
             ).tolist()
             for element in style_elements
@@ -720,21 +725,15 @@ if __name__ == "__main__":
         "vietnamese": lambda x: x["language"] == "Vietnamese",
         "multiturn": lambda x: x["turn"] > 1,
         "exclude_preset": lambda x: not x["preset"],
-        "no_refusal": lambda x: not x["is_refusal"],
-        "is_captioning": lambda x: x["category_tag"]["vision_v0.1"]["is_captioning"],
-        "is_entity_recognition": lambda x: x["category_tag"]["vision_v0.1"][
-            "is_entity_recognition"
-        ],
-        "is_ocr": lambda x: x["category_tag"]["vision_v0.1"]["is_ocr"],
-        "is_counting": lambda x: x["category_tag"]["vision_v0.1"]["is_counting"],
-        "is_creative_composition": lambda x: x["category_tag"]["vision_v0.1"][
-            "is_creative_composition"
-        ],
-        "is_spatial_reasoning": lambda x: x["category_tag"]["vision_v0.1"][
-            "is_spatial_reasoning"
-        ],
+        "no_refusal": lambda x: not x['category_tag']['refusal_v0.1']['refusal'],
+        "captioning": lambda x: x["category_tag"]["captioning_v0.1"]["captioning"],
+        "entity_recognition": lambda x: x["category_tag"]["entity_recognition_v0.1"]['entity_recognition'],
+        "ocr": lambda x: x["category_tag"]["ocr_v0.1"]["ocr"],
         "if": lambda x: x["category_tag"]["if_v0.1"]["if"],
         "math": lambda x: x["category_tag"]["math_v0.1"]["math"],
+        "homework":  lambda x: x["category_tag"]["homework_v0.1"]["homework"],
+        "humor": lambda x: x["category_tag"]["humor_v0.1"]["humor"],
+        "coding": lambda x: x["is_coding"],
     }
     assert all(
         [cat in filter_func_map for cat in args.category]
