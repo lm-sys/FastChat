@@ -251,7 +251,7 @@ def load_demo_single(context: Context, query_params):
 
 def load_demo(url_params, request: gr.Request):
     global models
-
+    all_models = models
     ip = get_ip(request)
     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
 
@@ -259,8 +259,16 @@ def load_demo(url_params, request: gr.Request):
         models, all_models = get_model_list(
             controller_url, args.register_api_endpoint_file, vision_arena=False
         )
-
-    return load_demo_single(models, url_params)
+    # We're serving a single-model demo without vision_arena support, so we can just use the text models
+    context = Context(
+        models,
+        all_models,
+        [],  # vision_models
+        [],  # all_vision_models
+        models,
+        all_models,
+    )
+    return load_demo_single(context, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
