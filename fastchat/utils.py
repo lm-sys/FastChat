@@ -483,3 +483,16 @@ def image_moderation_filter(image):
         csam_flagged = image_moderation_provider(image_bytes, "csam")
 
     return nsfw_flagged, csam_flagged
+
+
+def parse_json_from_string(input_string):
+    # Find the first occurrence of '{'
+    start_index = input_string.find("{")
+    # Find the last occurrence of '}'
+    end_index = input_string.rfind("}") + 1
+    # Extract the substring that is expected to be in JSON format
+    json_data_string = input_string[start_index:end_index]
+    # Convert the string to a JSON object
+    json_data = json.loads(json_data_string)
+
+    return json_data

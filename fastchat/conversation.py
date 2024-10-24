@@ -55,6 +55,57 @@ class Conversation:
     # The system message
     system_message: str = ""
     system_message_vision: str = ""
+    # Agent template
+    agent_query: str = ""
+    agent_template: str = """
+You are a ReAct (Reasoning and Acting) agent. Your goal is to reason about the given query and decide on the best course of action to answer it accurately.
+
+Query: {query}
+
+Previous reasoning steps and observations: 
+
+{history}
+
+Available Tools (function call)
+- Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
+
+Currently available tools:
+- google_search(key_words: list[str], topk: int = 5) -> Returns search results from Google.
+
+Instructions:
+1. Analyze the query, previous reasoning steps, and observations.
+2. Decide on the next action: use a tool or provide a final answer.
+3. Respond using the following JSON format:
+
+If you need to use a tool:
+{{
+    "thought": "Detailed reasoning explaining your next steps",
+    "action": {{
+        "name": "Tool name (choose from available tools)",
+        "reason": "Why you chose this tool",
+        "arguments": {{
+            "arg_name_1": "value_1",
+            "arg_name_2": "value_2",
+            ...
+        }}
+    }}
+}}
+
+If you have enough information to answer the query:
+{{
+    "thought": "Your reasoning process leading to the conclusion",
+    "answer": "A thorough and well-supported answer"
+}}
+
+Key Points to Remember:
+- Be thorough in your reasoning.
+- Use tools when you need more information.
+- Always base your reasoning on the actual observations from tool use.
+- If a tool returns no results or fails, acknowledge this and consider using a different tool or approach.
+- Provide a final answer only when you're confident you have sufficient information.
+- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently.
+"""
+
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
     # All messages. Each item is (role, message).
@@ -436,6 +487,43 @@ class Conversation:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
         return ret
+
+    def to_openai_agent_api_messages(self):
+        """Convert the conversation to OpenAI chat completion format."""
+        if self.system_message == "":
+            ret = []
+        else:
+            ret = [{"role": "system", "content": self.system_message}]
+        # Register the actual agent_query for the first user message
+        # Future work: It'd be interesting to see if the model can automatically register and de-register the query
+        if len(self.messages[self.offset :]) == 2:
+            self.agent_query = self.messages[self.offset :][0][1]
+
+        # rewrite the last message
+        self.messages[-2] = [
+            "Human",
+            self.agent_template.format(
+                query=self.agent_query, history=self.get_history()
+            ),
+        ]
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                ret.append({"role": "user", "content": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "assistant", "content": msg})
+        return ret
+
+    def get_history(self):
+        """
+        Retrieves the conversation history.
+
+        Returns:
+            str: Formatted history of messages.
+        """
+        return "\n".join(
+            [f"{message[0]}: {message[1]}" for message in self.messages[self.offset :]]
+        )
 
     def to_gemini_api_messages(self):
         from fastchat.utils import load_image
