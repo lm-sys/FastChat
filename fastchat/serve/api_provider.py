@@ -8,7 +8,6 @@ from typing import Optional
 import time
 
 import requests
-from huggingface_hub.lfs import PayloadPartT
 
 from fastchat.utils import build_logger
 
