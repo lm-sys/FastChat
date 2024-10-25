@@ -1005,5 +1005,5 @@ register_model_info(
     ["jab-0.3"],
     "JAB",
     "https://github.com/Applied-General-Intelligence-Inc",
-    "Just Another Bot - prototype by AGI.",
+    "Just Another Bot prototype by AGI.",
 )
