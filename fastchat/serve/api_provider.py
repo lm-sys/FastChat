@@ -8,6 +8,7 @@ from typing import Optional
 import time
 
 import requests
+from huggingface_hub.lfs import PayloadPartT
 
 from fastchat.utils import build_logger
 
@@ -1280,22 +1281,28 @@ def jab_api_stream_iter(
 
     logger.info(f"==== JAB request ({model_name}) ====\n")
 
-    payload = messages[-1]
     headers = {'Content-Type': 'application/json', 'x-api-key': api_key}
 
-    logger.info(payload)
+    text_messages = []
+    for message in messages:
+        text_messages.append(message)
+        
+    payload = {
+        "model": model_name,
+        "messages": text_messages,
+    }         
 
     try:
         response = requests.post(api_base, json=payload, headers=headers)
 
         if response.status_code != 200:
             logger.error(f"Unexpected response ({response.status_code}): {response.text}")
-        yield {
-            "text": f"**API REQUEST FAILED** Reason: {response.status_code}.",
-            "error_code": 1,
-        }
+            yield {
+                "text": f"**API REQUEST FAILED** Reason: {response.status_code}.",
+                "error_code": 1,
+            }
 
-        text = response.json()["response"]
+        text = response.json()["choices"][0]["message"]["content"]
         pos = 0
         while pos < len(text):
             # simulate token streaming
