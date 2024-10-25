@@ -1279,8 +1279,6 @@ def jab_api_stream_iter(
 ):
     import requests
 
-    logger.info(f"==== JAB request ({model_name}) ====\n")
-
     headers = {'Content-Type': 'application/json', 'x-api-key': api_key}
 
     text_messages = []
@@ -1290,7 +1288,9 @@ def jab_api_stream_iter(
     payload = {
         "model": model_name,
         "messages": text_messages,
-    }         
+    }
+
+    logger.info(f"==== request ====\n{payload}")
 
     try:
         response = requests.post(api_base, json=payload, headers=headers)
