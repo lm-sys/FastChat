@@ -1289,8 +1289,11 @@ def jab_api_stream_iter(
         response = requests.post(api_base, json=payload, headers=headers)
 
         if response.status_code != 200:
-            logger.error(f"Unexpected response ({response.status_code})")
-            raise ValueError("Unexpected response: ", response.json())
+            logger.error(f"Unexpected response ({response.status_code}): {response.text}")
+        yield {
+            "text": f"**API REQUEST FAILED** Reason: {response.status_code}.",
+            "error_code": 1,
+        }
 
         text = response.json()["response"]
         pos = 0
@@ -1304,8 +1307,8 @@ def jab_api_stream_iter(
             }
             yield data
     except Exception as e:
-        logger.error(f"==== JAB error ====\n{e}")
+        logger.error(f"==== error ====\n{e}")
         yield {
-            "text": f"**JAB request error** Reason: {e}.",
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
