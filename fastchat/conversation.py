@@ -622,7 +622,7 @@ class Conversation:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
         return ret
-    
+
     def save_new_images(self, has_csam_images=False, use_remote_storage=False):
         import hashlib
         from fastchat.constants import LOGDIR

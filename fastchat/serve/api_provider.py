@@ -252,7 +252,7 @@ def get_api_provider_stream_iter(
             messages=messages,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
-        )           
+        )
     else:
         raise NotImplementedError()
 
@@ -1270,20 +1270,21 @@ def metagen_api_stream_iter(
             "error_code": 1,
         }
 
+
 def jab_api_stream_iter(
     model_name,
     messages,
     api_base,
-    api_key,    
+    api_key,
 ):
     import requests
 
-    headers = {'Content-Type': 'application/json', 'x-api-key': api_key}
+    headers = {"Content-Type": "application/json", "x-api-key": api_key}
 
     text_messages = []
     for message in messages:
         text_messages.append(message)
-        
+
     payload = {
         "model": model_name,
         "messages": text_messages,
@@ -1295,7 +1296,9 @@ def jab_api_stream_iter(
         response = requests.post(api_base, json=payload, headers=headers)
 
         if response.status_code != 200:
-            logger.error(f"Unexpected response ({response.status_code}): {response.text}")
+            logger.error(
+                f"Unexpected response ({response.status_code}): {response.text}"
+            )
             yield {
                 "text": f"**API REQUEST FAILED** Reason: {response.status_code}.",
                 "error_code": 1,
