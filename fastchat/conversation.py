@@ -56,20 +56,11 @@ class Conversation:
     system_message: str = ""
     system_message_vision: str = ""
     # Agent template
-    agent_query: str = ""
-    agent_template: str = """
-You are a ReAct (Reasoning and Acting) agent. Your goal is to reason about the given query and decide on the best course of action to answer it accurately.
-
-Query: {query}
-
-Previous reasoning steps and observations: 
-
-{history}
+    agent_prompt: str = """You are a helpful assistant. Your goal is to reason about the user query and decide on the best course of action to answer it accurately.
 
 Available Tools (function call)
 - Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
 
-Currently available tools:
 - google_search(key_words: list[str], topk: int = 5) -> Returns search results from Google.
 
 Instructions:
@@ -103,8 +94,7 @@ Key Points to Remember:
 - Always base your reasoning on the actual observations from tool use.
 - If a tool returns no results or fails, acknowledge this and consider using a different tool or approach.
 - Provide a final answer only when you're confident you have sufficient information.
-- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently.
-"""
+- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently."""
 
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
@@ -491,21 +481,18 @@ Key Points to Remember:
     def to_openai_agent_api_messages(self):
         """Convert the conversation to OpenAI chat completion format."""
         if self.system_message == "":
-            ret = []
+            ret = [{"role": "system", "content": self.agent_prompt}]
         else:
-            ret = [{"role": "system", "content": self.system_message}]
-        # Register the actual agent_query for the first user message
-        # Future work: It'd be interesting to see if the model can automatically register and de-register the query
+            ret = [
+                {
+                    "role": "system",
+                    "content": self.system_message + "\n\n" + self.agent_prompt,
+                }
+            ]
+            ret = []
         if len(self.messages[self.offset :]) == 2:
             self.agent_query = self.messages[self.offset :][0][1]
 
-        # rewrite the last message
-        self.messages[-2] = [
-            "Human",
-            self.agent_template.format(
-                query=self.agent_query, history=self.get_history()
-            ),
-        ]
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append({"role": "user", "content": msg})
