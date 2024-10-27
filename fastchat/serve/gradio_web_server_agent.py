@@ -45,7 +45,7 @@ from fastchat.utils import (
     load_image,
     parse_json_from_string,
 )
-from fastchat.tools.search import google_search
+from fastchat.tools.search import web_search
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -116,6 +116,7 @@ api_endpoint_info = {}
 class State:
     def __init__(self, model_name, is_vision=False):
         self.conv = get_conversation_template(model_name)
+        self.system_conv = get_conversation_template(model_name)
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
@@ -360,7 +361,7 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
+    # flagged = moderation_filter(all_conv_text, [state.model_name])
     # flagged = moderation_filter(text, [state.model_name])
     if False:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
@@ -377,6 +378,8 @@ def add_text(state, model_selector, text, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
+    state.system_conv.append_message(state.system_conv.roles[0], text)
+    state.system_conv.append_message(state.system_conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -467,7 +470,7 @@ def bot_response(
             yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
             return
 
-    conv, model_name = state.conv, state.model_name
+    conv, system_conv, model_name = state.conv, state.system_conv, state.model_name
     model_api_dict = (
         api_endpoint_info[model_name] if model_name in api_endpoint_info else None
     )
@@ -520,7 +523,6 @@ def bot_response(
         custom_system_prompt = model_api_dict.get("custom_system_prompt", False)
         if not custom_system_prompt:
             conv.set_system_message("")
-
         if use_recommended_config:
             recommended_config = model_api_dict.get("recommended_config", None)
             if recommended_config is not None:
@@ -530,50 +532,73 @@ def bot_response(
                     "max_new_tokens", max_new_tokens
                 )
 
-        stream_iter = get_api_provider_stream_iter(
-            conv,
-            model_name,
-            model_api_dict,
-            temperature,
-            top_p,
-            max_new_tokens,
-            state,
-        )
     if model_api_dict.get("agent-mode", False):
         html_code = ' <span class="cursor"></span> '
-
-        # conv.update_last_message("▌")
         conv.update_last_message(html_code)
+        
         yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
         try:
-            data = {"text": ""}
-            for i, data in enumerate(stream_iter):
-                output = data["text"].strip()
-                conv.update_last_message(output + "▌")
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-
-            conv.update_last_message(output)
-            try:
-                parsed_response = parse_json_from_string(output)
-            except json.JSONDecodeError as e:
-                parsed_response = {"answer": output}
-                # TODO: We need to gracefully handle this error!
-            yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-            print(parsed_response, flush=True)
+            while True:
+                try:
+                    stream_iter = get_api_provider_stream_iter(
+                        system_conv,
+                        model_name,
+                        model_api_dict,
+                        temperature,
+                        top_p,
+                        max_new_tokens,
+                        state,
+                        )
+                    data = {"text": ""}
+                    conv.update_last_message("Thinking...")
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                    for i, data in enumerate(stream_iter):
+                        output = data["text"].strip()
+                    system_conv.update_last_message(output)
+                    parsed_response = parse_json_from_string(output)
+                    break
+                except json.JSONDecodeError as e:
+                    print('JSONDecodeError: ', e)
+            
             if "action" in parsed_response:
+                conv.update_last_message(f"Web search with {parsed_response['action']['arguments']['key_words']} keywords...")
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 action = parsed_response["action"]
-                assert "google_search" == action["name"]
+                assert "web_search" == action["name"]
                 arguments = action["arguments"]
-                result = google_search(arguments)
-                conv.append_message(conv.roles[0], "")
-                conv.append_message(
-                    conv.roles[1], "Observation from google_search: " + result
-                )
-
+                web_search_result = web_search(**arguments)
+                system_conv.append_message(system_conv.roles[1], f"Web search result: {web_search_result}")
+                system_conv.append_message(system_conv.roles[1], None)
+                conv.update_last_message(f'Web search result:\n\n{web_search_result}')
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                
+                # generate answer after web search
+                last_message = conv.messages[-1][1]
+                stream_iter = get_api_provider_stream_iter(
+                    system_conv,
+                    model_name,
+                    model_api_dict,
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    state,
+                    )
+                data = {"text": ""}
+                for i, data in enumerate(stream_iter):
+                    output = data["text"].strip()
+                    system_conv.update_last_message(output)
+                    conv.update_last_message(f"{last_message}\n\n{output}▌")
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                parsed_response = parse_json_from_string(output)
+                
+                if "answer" in parsed_response:
+                    conv.update_last_message(f"{last_message}\n\n{parsed_response['answer'].strip()}")
+                    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                
             elif "answer" in parsed_response:
-                output = data["text"].strip()
-
-            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                conv.update_last_message(parsed_response["answer"].strip())
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                            
         except requests.exceptions.RequestException as e:
             conv.update_last_message(
                 f"{SERVER_ERROR_MSG}\n\n"
@@ -602,6 +627,15 @@ def bot_response(
             return
 
     else:  # Normal chatting mode
+        stream_iter = get_api_provider_stream_iter(
+            conv,
+            model_name,
+            model_api_dict,
+            temperature,
+            top_p,
+            max_new_tokens,
+            state,
+            )
         html_code = ' <span class="cursor"></span> '
 
         # conv.update_last_message("▌")

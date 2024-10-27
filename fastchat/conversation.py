@@ -61,7 +61,7 @@ class Conversation:
 Available Tools (function call)
 - Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
 
-- google_search(key_words: list[str], topk: int = 5) -> Returns search results from Google.
+- web_search(key_words: list[str], topk: int = 3) -> Returns search results from Google.
 
 Instructions:
 1. Analyze the query, previous reasoning steps, and observations.
@@ -779,6 +779,18 @@ register_conv_template(
         roles=("", ""),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
+    )
+)
+
+# A template for ReAct agent.
+register_conv_template(
+    Conversation(
+        name="react-agent",
+        system_message=Conversation.agent_prompt,
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
     )
 )
 

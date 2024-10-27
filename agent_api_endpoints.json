@@ -1,0 +1,17 @@
+{
+  "react-agent": {
+    "model_name": "gpt-4o-2024-08-06",
+    "api_type": "openai",
+    "api_base": "https://api.openai.com/v1",
+    "api_key": "YOUR API KEY",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.7,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": true,
+    "custom_system_prompt": true
+  }
+}
