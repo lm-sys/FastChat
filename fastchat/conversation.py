@@ -69,24 +69,24 @@ Instructions:
 3. Respond using the following JSON format:
 
 If you need to use a tool:
-{{
+{
     "thought": "Detailed reasoning explaining your next steps",
-    "action": {{
+    "action": {
         "name": "Tool name (choose from available tools)",
         "reason": "Why you chose this tool",
         "arguments": {{
             "arg_name_1": "value_1",
             "arg_name_2": "value_2",
             ...
-        }}
-    }}
-}}
+        }
+    }
+}
 
 If you have enough information to answer the query:
-{{
+{
     "thought": "Your reasoning process leading to the conclusion",
     "answer": "A thorough and well-supported answer"
-}}
+}
 
 Key Points to Remember:
 - Be thorough in your reasoning.
@@ -489,9 +489,6 @@ Key Points to Remember:
                     "content": self.system_message + "\n\n" + self.agent_prompt,
                 }
             ]
-            ret = []
-        if len(self.messages[self.offset :]) == 2:
-            self.agent_query = self.messages[self.offset :][0][1]
 
         for i, (_, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -500,17 +497,6 @@ Key Points to Remember:
                 if msg is not None:
                     ret.append({"role": "assistant", "content": msg})
         return ret
-
-    def get_history(self):
-        """
-        Retrieves the conversation history.
-
-        Returns:
-            str: Formatted history of messages.
-        """
-        return "\n".join(
-            [f"{message[0]}: {message[1]}" for message in self.messages[self.offset :]]
-        )
 
     def to_gemini_api_messages(self):
         from fastchat.utils import load_image
