@@ -145,7 +145,6 @@ class BaseModelAdapter:
 
 
 class ReActAgentAdapter(BaseModelAdapter):
-
     def match(self, model_path: str):
         return "react-agent" in model_path.lower()
 
