@@ -1308,7 +1308,7 @@ def jab_api_stream_iter(
         pos = 0
         while pos < len(text):
             # simulate token streaming
-            pos += 3
+            pos += 5
             time.sleep(0.001)
             data = {
                 "text": text[:pos],
