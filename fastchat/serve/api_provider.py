@@ -27,6 +27,8 @@ def get_api_provider_stream_iter(
     if model_api_dict["api_type"] == "openai":
         if model_api_dict.get("vision-arena", False):
             prompt = conv.to_openai_vision_api_messages()
+        elif model_api_dict.get("agent-mode", False):
+            prompt = conv.to_openai_agent_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
@@ -281,6 +283,7 @@ def openai_api_stream_iter(
 
     # Make requests for logging
     text_messages = []
+    print(messages)
     for message in messages:
         if type(message["content"]) == str:  # text-only model
             text_messages.append(message)

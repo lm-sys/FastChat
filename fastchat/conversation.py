@@ -55,6 +55,47 @@ class Conversation:
     # The system message
     system_message: str = ""
     system_message_vision: str = ""
+    # Agent template
+    agent_prompt: str = """You are a helpful assistant. Your goal is to reason about the user query and decide on the best course of action to answer it accurately.
+
+Available Tools (function call)
+- Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
+
+- web_search(key_words: list[str], topk: int = 3) -> Returns search results from Google.
+
+Instructions:
+1. Analyze the query, previous reasoning steps, and observations.
+2. Decide on the next action: use a tool or provide a final answer.
+3. Respond using the following JSON format:
+
+If you need to use a tool:
+{
+    "thought": "Detailed reasoning explaining your next steps",
+    "action": {
+        "name": "Tool name (choose from available tools)",
+        "reason": "Why you chose this tool",
+        "arguments": {{
+            "arg_name_1": "value_1",
+            "arg_name_2": "value_2",
+            ...
+        }
+    }
+}
+
+If you have enough information to answer the query:
+{
+    "thought": "Your reasoning process leading to the conclusion",
+    "answer": "A thorough and well-supported answer"
+}
+
+Key Points to Remember:
+- Be thorough in your reasoning.
+- Use tools when you need more information.
+- Always base your reasoning on the actual observations from tool use.
+- If a tool returns no results or fails, acknowledge this and consider using a different tool or approach.
+- Provide a final answer only when you're confident you have sufficient information.
+- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently."""
+
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
     # All messages. Each item is (role, message).
@@ -437,6 +478,26 @@ class Conversation:
                     ret.append({"role": "assistant", "content": msg})
         return ret
 
+    def to_openai_agent_api_messages(self):
+        """Convert the conversation to OpenAI chat completion format."""
+        if self.system_message == "":
+            ret = [{"role": "system", "content": self.agent_prompt}]
+        else:
+            ret = [
+                {
+                    "role": "system",
+                    "content": self.system_message + "\n\n" + self.agent_prompt,
+                }
+            ]
+
+        for i, (_, msg) in enumerate(self.messages[self.offset :]):
+            if i % 2 == 0:
+                ret.append({"role": "user", "content": msg})
+            else:
+                if msg is not None:
+                    ret.append({"role": "assistant", "content": msg})
+        return ret
+
     def to_gemini_api_messages(self):
         from fastchat.utils import load_image
 
@@ -718,6 +779,18 @@ register_conv_template(
         roles=("", ""),
         sep_style=SeparatorStyle.NO_COLON_SINGLE,
         sep="",
+    )
+)
+
+# A template for ReAct agent.
+register_conv_template(
+    Conversation(
+        name="react-agent",
+        system_message=Conversation.agent_prompt,
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
     )
 )
 
