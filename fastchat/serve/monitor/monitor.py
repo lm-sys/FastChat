@@ -895,6 +895,8 @@ def get_combined_table(elo_results, model_table_df):
 
     combined_table = []
     for category in elo_results.keys():
+        if category not in key_to_category_name:
+            continue
         df = elo_results[category]["leaderboard_table_df"].copy()
         # remove deprecated models
         df = df.loc[~df.index.isin(deprecated_model_name)]
