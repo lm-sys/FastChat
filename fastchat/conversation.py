@@ -74,7 +74,7 @@ If you need to use a tool:
     "action": {
         "name": "Tool name (choose from available tools)",
         "reason": "Why you chose this tool",
-        "arguments": {{
+        "arguments": {
             "arg_name_1": "value_1",
             "arg_name_2": "value_2",
             ...
