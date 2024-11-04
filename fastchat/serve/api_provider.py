@@ -244,6 +244,7 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
+            conversation_id=state.conv_id,
         )
     elif model_api_dict["api_type"] == "jab":
         messages = conv.to_jab_api_messages()
@@ -1203,6 +1204,7 @@ def metagen_api_stream_iter(
     max_new_tokens,
     api_key,
     api_base,
+    conversation_id,
 ):
     try:
         text_messages = []
@@ -1235,6 +1237,7 @@ def metagen_api_stream_iter(
                 "model": model_name,
                 "chunks_delimited": True,
                 "messages": messages,
+                "conversation_id": conversation_id,
                 "options": {
                     "max_tokens": max_new_tokens,
                     "generation_algorithm": "top_p",
