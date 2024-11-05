@@ -1,5 +1,17 @@
 # Agent Arena Working Area
 
+## The latest status
+
+- Done:
+  - [x] Complete the basic google search function in `fastchat/tools/search.py`. The pipeline now works for OpenAI search.
+  - [x] Find some successful and failure cases using our naive search tool.
+- TODOs:
+  - [ ] Set an option to display the web search result or not (UI-related stuffs).
+  - [ ] Scale the searching functions to other LLMs.
+  - [ ] Run our pipeline on Arena Datasets to see if this naive search is sufficient.
+
+- Note: Please run `./format.sh` before merging into the main branch.
+
 **Note**: Please install packages and ensure you can successfully execute [Launch a WebUI with an API Model](https://github.com/tsunghan-wu/Agent_FastChat/blob/main/docs/model_support.md#api-based-models).
 
 ## Launch agent-enabled Chatbot Arena (for OpenAI APIs currently)
@@ -66,11 +78,3 @@ GPT-4:
     "answer": "I'm just a virtual assistant, so I don't have feelings or states of being, but I'm here and ready to help you with any questions or tasks you have!"
 }
 ```
-
-TODOs:
-
-- [ ] Complete the function in `fastchat/tools/search.py`
-- [ ] Discuss the format of "history message" in the prompt. Also, we should probably refine the frontend interface. Reference: https://github.com/reworkd/AgentGPT
-- [ ] Discuss how to scale the searching functions to all LLMs and the code structure.
-
-- Note: Please run `./format.sh` before merging into the main branch.
