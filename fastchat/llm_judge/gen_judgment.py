@@ -237,6 +237,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Print all arguments
+    print(vars(args))
+
     question_file = f"data/{args.bench_name}/question.jsonl"
     
     if args.answer_dir:
