@@ -1,6 +1,6 @@
 import requests
 
-YOU_SEARCH_API_KEY = "YOUR API KEY"
+YOU_SEARCH_API_KEY = ""
 
 
 def get_ai_snippets_for_query(query, num_web_results=1):
@@ -15,17 +15,21 @@ def get_ai_snippets_for_query(query, num_web_results=1):
 
 def format_search_results(results):
     formatted_results = ""
+    formatted_results_display = ""
     results = results["hits"]
     for idx, result in enumerate(results):
         formatted_results += (
+            f"{idx+1}. [" + result["title"] + "](" + result["url"] + ")" + "\n"
+        )
+        formatted_results_display += (
             f"{idx+1}. [" + result["title"] + "](" + result["url"] + ")" + "\n"
         )
         if len(result["snippets"]) > 0:
             formatted_results += "Descriptions: \n"
         for snippet in result["snippets"]:
             formatted_results += "- " + snippet + "\n"
-        formatted_results += "--------------------------------\n"
-    return formatted_results
+    # formatted_results += "--------------------------------"
+    return formatted_results, formatted_results_display
 
 
 def web_search(key_words, topk=1):

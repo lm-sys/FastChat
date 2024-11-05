@@ -555,7 +555,6 @@ def bot_response(
             yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
             for i, data in enumerate(stream_iter):
-                print(data, flush=True)
                 if data["error_code"] == 0:
                     output = data["text"].strip()
                 else:
@@ -587,27 +586,22 @@ def bot_response(
             # 1. action -> web_search (max 5 times)
             # 2. answer -> return the answer
             last_message = ""
-            for curr_action_step in range(args.maximum_action_steps):
-                if "action" not in parsed_response:
-                    break
-                # do web search and analyze the result
+            if "action" in parsed_response:
                 action = parsed_response["action"]
                 assert "web_search" == action["name"]
                 arguments = action["arguments"]
-                web_search_result = web_search(**arguments)
+                conv.update_last_message("Searching...")
+                web_search_result, web_search_display = web_search(**arguments)
                 system_conv.append_message(
-                    system_conv.roles[1], f"Web search result: {web_search_result}"
+                    system_conv.roles[1], f"Reference Website: \n\n{web_search_result}"
                 )
                 system_conv.append_message(system_conv.roles[1], None)
                 conv.update_last_message(
-                    f"Web search result: \n\n{web_search_result}"
+                    f"Reference Website: \n\n{web_search_display}"
                 )
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
                 # generate answer after web search
                 last_message = conv.messages[-1][1]
-                if curr_action_step == args.maximum_action_steps - 1:
-                    system_conv.append(system_conv.roles[1], "Please generate the answer for the user anyway.")
                 stream_iter = get_api_provider_stream_iter(
                     system_conv,
                     model_name,
@@ -618,12 +612,10 @@ def bot_response(
                     state,
                 )
                 data = {"text": ""}
+                conv.update_last_message("Reasoning...")
                 for i, data in enumerate(stream_iter):
                     if data["error_code"] == 0:
                         output = data["text"].strip()
-                        system_conv.update_last_message(output)
-                        conv.update_last_message(f"{last_message}{output}▌")
-                        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                     else:
                         output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                         conv.update_last_message(output)
@@ -635,13 +627,17 @@ def bot_response(
                             enable_btn,
                         )
                         return
+                # print("*" * 50)
+                # print(output, flush=True)
+                # print("*" * 50)
+                system_conv.update_last_message(output)
                 parsed_response = parse_json_from_string(output)
 
             assert (
                 "answer" in parsed_response
             ), f"parsed_response: {parsed_response}"
             conv.update_last_message(
-                f"{last_message}{parsed_response['answer'].strip()}"
+                f"{last_message}\n{parsed_response['answer'].strip()}"
             )
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
@@ -1189,8 +1185,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Enable content moderation to block unsafe inputs",
     )
-    parser.add_argument("--maximum_action_steps", type=int, default=5,
-                        help="The maximum number of action steps allowed in the agent mode")
     parser.add_argument(
         "--show-terms-of-use",
         action="store_true",

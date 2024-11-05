@@ -92,9 +92,8 @@ Key Points to Remember:
 - Be thorough in your reasoning.
 - Use tools when you need more information.
 - Always base your reasoning on the actual observations from tool use.
-- If a tool returns no results or fails, acknowledge this and consider using a different tool or approach.
-- Provide a final answer only when you're confident you have sufficient information.
-- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently."""
+- If a tool returns no results or fails, acknowledge this but still provide a response (answer) with at least the result from the tool.
+- If you can find the result, provide a detailed answer."""
 
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
