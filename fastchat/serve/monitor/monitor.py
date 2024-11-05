@@ -249,7 +249,7 @@ def get_full_table(arena_df, model_table_df, model_to_score):
         row.append(model_table_df.iloc[i]["input_token_price"])
         # Output Price
         row.append(model_table_df.iloc[i]["output_token_price"])
-        
+
         values.append(row)
     values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
     return values
@@ -363,7 +363,7 @@ def get_arena_table(
                 #     if model_info.get("Knowledge cutoff date", "-") == "-"
                 #     else model_info.get("Knowledge cutoff date", "Unknown")
                 # ),
-                model_info.get("input_token_price", "-"),   
+                model_info.get("input_token_price", "-"),
                 model_info.get("output_token_price", "-"),
             ]
         )
@@ -389,8 +389,8 @@ def update_leaderboard_df(arena_table_vals):
         "Organization",
         # "License",
         # "Knowledge Cutoff",
-        "Input Token Price",  
-        "Output Token Price",  
+        "Input Token Price",
+        "Output Token Price",
     ]
     elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
 
@@ -1208,4 +1208,3 @@ if __name__ == "__main__":
         max_threads=200,
         auth=(args.password[0], args.password[1]) if args.password else None,
     )
-    
