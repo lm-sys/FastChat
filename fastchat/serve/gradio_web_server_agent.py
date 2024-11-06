@@ -593,11 +593,11 @@ def bot_response(
                 conv.update_last_message("Searching...")
                 web_search_result, web_search_display = web_search(**arguments)
                 system_conv.append_message(
-                    system_conv.roles[1], f"Reference Website: \n\n{web_search_result}"
+                    system_conv.roles[1], f"Observation: \n\n{web_search_result}"
                 )
                 system_conv.append_message(system_conv.roles[1], None)
                 conv.update_last_message(
-                    f"Reference Website: \n\n{web_search_display}"
+                    f"Reference Website(s): \n\n{web_search_display}"
                 )
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
                 # generate answer after web search
@@ -612,7 +612,8 @@ def bot_response(
                     state,
                 )
                 data = {"text": ""}
-                conv.update_last_message("Reasoning...")
+                conv.update_last_message(f"{last_message}\n\nReasoning...")
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 for i, data in enumerate(stream_iter):
                     if data["error_code"] == 0:
                         output = data["text"].strip()
