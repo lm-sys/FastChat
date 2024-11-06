@@ -1,4 +1,5 @@
 # Python
+agent_api_endpoints.json
 __pycache__
 *.pyc
 *.egg-info
