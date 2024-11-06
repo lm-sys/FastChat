@@ -78,3 +78,9 @@ GPT-4:
     "answer": "I'm just a virtual assistant, so I don't have feelings or states of being, but I'm here and ready to help you with any questions or tasks you have!"
 }
 ```
+
+## Comparsing Responses Between Agent and Non-Agent Modes
+
+You can use `compare_agents.ipynb` notebook to compare the response between standard LM and one augmented with our search ability
+1. Start the server as usual
+2. Run the notebook
