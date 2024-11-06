@@ -364,13 +364,17 @@ def load_model(
 
             if not os.path.exists(model_path):
                 try:
-                    model_path = snapshot_download(model_id=model_path, revision=revision)
+                    model_path = snapshot_download(
+                        model_id=model_path, revision=revision
+                    )
                 except NotExistError as e:
                     # Default model revision could be "master" when use ModelScope.
                     if revision == "main":
                         revision = "master"
                         kwargs["revision"] = revision
-                    model_path = snapshot_download(model_id=model_path, revision=revision)
+                    model_path = snapshot_download(
+                        model_id=model_path, revision=revision
+                    )
         except ImportError as e:
             warnings.warn(
                 "Use model from www.modelscope.cn need pip install modelscope"
