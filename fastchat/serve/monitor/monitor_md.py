@@ -4,15 +4,25 @@ import gradio as gr
 
 from fastchat.constants import SURVEY_LINK
 
+deprecated_model_name = [
+    "gemini-1.5-pro-exp-0801",
+    "gemini-1.5-pro-api-0409-preview",
+    "bard-jan-24-gemini-pro",
+    "chatgpt-4o-latest-20240808",
+]
+
 key_to_category_name = {
     "full": "Overall",
+    "full_style_control": "Overall w/ Style Control",
     "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
     "math": "Math",
     "if": "Instruction Following",
     "multiturn": "Multi-Turn",
     "coding": "Coding",
+    "coding_style_control": "Coding w/ Style Control",
     "hard_6": "Hard Prompts (Overall)",
     "hard_english_6": "Hard Prompts (English)",
+    "hard_6_style_control": "Hard Prompts (Overall) w/ Style Control",
     "long_user": "Longer Query",
     "english": "English",
     "chinese": "Chinese",
@@ -30,12 +40,15 @@ key_to_category_name = {
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
+    "Overall w/ Style Control": "Overall Leaderboard with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Math": "Math",
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
+    "Coding w/ Style Control": "Coding with Style Control",
     "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
+    "Hard Prompts (Overall) w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Longer Query": "Longer Query (>= 500 tokens)",
     "English": "English Prompts",
@@ -67,20 +80,21 @@ leader_component_values = [None] * 5
 def make_default_md_1(mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
-    # 🏆 LMSYS Chatbot Arena Leaderboard 
-    [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+    # 🏆 Chatbot Arena LLM Leaderboard: Community-driven Evaluation for Best LLM and AI chatbots
+    [Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
     """
 
     return leaderboard_md
 
 
 def make_default_md_2(mirror=False):
-    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained by the <a href='https://lmsys.org' style='color: red; text-decoration: none;'>LMSYS Organization</a>. Please link to <a href='https://lmarena.ai/leaderboard' style='color: #B00020; text-decoration: none;'>https://lmarena.ai/leaderboard</a> for citation purposes.</span>"
+    mirror_str = "<span style='color: red; font-weight: bold'>This is a mirror of the live leaderboard created and maintained at <a href='https://lmarena.ai/leaderboard' style='color: #B00020; text-decoration: none;'>https://lmarena.ai/leaderboard</a>. Please link to the original URL for citation purposes.</span>"
     leaderboard_md = f"""
 {mirror_str if mirror else ""}
 
-LMSYS Chatbot Arena is a crowdsourced open platform for LLM evals. We've collected over 1,000,000 human pairwise comparisons to rank LLMs with the Bradley-Terry model and display the model ratings in Elo-scale.
-You can find more details in our paper. **Chatbot arena is dependent on community participation, please contribute by casting your vote!**
+Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). With over 1,000,000 user votes, the platform ranks best LLM and AI chatbots using the Bradley-Terry model to generate live leaderboards. For technical details, check out our [paper](https://arxiv.org/abs/2403.04132).
+
+**Chatbot Arena thrives on community engagement — cast your vote to help improve AI evaluation!**
 
 {SURVEY_LINK}
 """

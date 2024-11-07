@@ -19,14 +19,8 @@ class Monitor:
         self.log_dir_list = log_dir_list
         self.model_call = {}
         self.user_call = {}
-        self.model_call_limit_global = {
-            "gpt-4-1106-preview": 100,
-            "gpt-4-0125-preview": 100,
-        }
-        self.model_call_day_limit_per_user = {
-            "gpt-4-1106-preview": 5,
-            "gpt-4-0125-preview": 5,
-        }
+        self.model_call_limit_global = {}
+        self.model_call_day_limit_per_user = {}
 
     async def update_stats(self, num_file=1) -> None:
         while True:
@@ -40,7 +34,11 @@ class Monitor:
             user_call = {}
             for json_file in json_files:
                 for line in open(json_file, "r", encoding="utf-8"):
-                    obj = json.loads(line)
+                    try:
+                        obj = json.loads(line)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding json: {json_file} {line}")
+                        continue
                     if obj["type"] != "chat":
                         continue
                     if obj["model"] not in model_call:

@@ -64,14 +64,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     datasets_info = {
-        "realworldqa": {
-            "path": "visheratin/realworldqa",
-            "image_key": "image",
-            "question_key": "question",
-            "id_key": "index",
-            "subset": False,
-            "split": "test",
-        },
         "Memes": {
             "path": "not-lain/meme-dataset",
             "image_key": "image",

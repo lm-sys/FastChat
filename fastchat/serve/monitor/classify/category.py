@@ -24,6 +24,8 @@ class Category:
             return CategoryIF()
         elif name == "math_v0.1":
             return CategoryMath()
+        elif name == "creative_writing_v0.1":
+            return CategoryCreativeWriting()
 
         raise Exception(f"Category name is incorrect: {name}")
 
@@ -134,3 +136,41 @@ class CategoryMath(Category):
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"math": bool(score == "yes") if score else False}
+
+
+class CategoryCreativeWriting(Category):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "creative_writing_v0.1"
+        self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
+        self.system_prompt = 'You are tasked with determining whether a given user prompt is asking for creative writing. Creative writing is defined as any form of writing that goes beyond standard professional, journalistic, academic, or technical literature. It typically involves imagination, originality, and expression of thoughts and emotions. Creative writing can include, but is not limited to, the following formats:\n- Fiction (e.g., short stories, novels)\n- Poetry (e.g., sonnets, free verse)\n- Dramatic writing (e.g., screenplays, monologues, scripts)\n- Personal essays (focusing on subjective experiences or narrative storytelling)\n- Songs and lyrics\n\nCarefully analyze the user prompt and consider whether it primarily requires creative writing. Think about the following aspects:\n1. Does the prompt ask for fictional content, speculative scenarios, or the use of imagination to construct narratives?\n2. Does it encourage the expression of thoughts, emotions, or personal experiences beyond mere factual reporting or analysis?\n3. Is it asking for writing in a specific creative format (e.g., story, poem, script, etc)?\n4. Is the primary purpose of the prompt to foster creative expression or originality rather than information delivery, technical documentation, or analytical reasoning?\n5. Does the prompt request stylistic or rhetorical elements often associated with creative writing, such as metaphor, imagery, dialogue, etc?\n6. Does the prompt expect a response in natural language (e.g., sentences, paragraphs) rather than visual, mathematical, or non-linguistic output?\n\nOutput your verdict as either "yes" or "no"in the following format:\n<decision>\n[yes/no]\n</decision>. Do NOT explain.'
+        self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
+
+    def get_score(self, judgment):
+        matches = self.pattern.findall(
+            judgment.replace("\n", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace(" ", "")
+            .lower()
+        )
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
+
+    def pre_process(self, prompt):
+        args = {"PROMPT": prompt}
+        conv = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": self.prompt_template.format(**args)},
+        ]
+        return conv
+
+    def post_process(self, judgment):
+        score = self.get_score(judgment=judgment)
+        bool_score = bool(score == "yes") if score else False
+        return {"creative_writing": bool_score, "score": score}
