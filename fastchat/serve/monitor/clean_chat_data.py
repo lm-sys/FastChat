@@ -10,6 +10,7 @@ import os
 import hashlib
 from pytz import timezone
 from functools import partial
+from math import ceil
 from datetime import datetime, timedelta
 import time
 import multiprocessing as mp
@@ -134,11 +135,13 @@ def process_data(row, action_type):
     }
 
 
-def clean_chat_data(log_files, action_type):
-    with mp.Pool() as pool:
+def clean_chat_data(log_files, action_type, num_parallel):
+    with mp.Pool(num_parallel) as pool:
         # Use partial to pass action_type to get_action_type_data
         func = partial(get_action_type_data, action_type=action_type)
-        file_data = pool.map(func, log_files, chunksize=1)
+        file_data = pool.map(
+            func, log_files, chunksize=ceil(len(log_files) / len(pool._pool))
+        )
     # filter out Nones as some files may not contain any data belong to action_type
     raw_data = []
     for data in file_data:
@@ -146,9 +149,11 @@ def clean_chat_data(log_files, action_type):
     raw_data = [r for r in raw_data if r is not None]
 
     # Use the multiprocessing Pool
-    with mp.Pool() as pool:
+    with mp.Pool(num_parallel) as pool:
         func = partial(process_data, action_type=action_type)
-        results = pool.map(func, raw_data, chunksize=1)
+        results = pool.map(
+            func, raw_data, chunksize=ceil(len(log_files) / len(pool._pool))
+        )
 
     # Aggregate results from child processes
     ct_invalid_conv_id = sum(
@@ -192,10 +197,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--action-type", type=str, default="chat")
     parser.add_argument("--max-num-files", type=int)
+    parser.add_argument("--num-parallel", type=int, default=1)
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
-    chats = clean_chat_data(log_files, args.action_type)
+    chats = clean_chat_data(log_files, args.action_type, args.num_parallel)
     last_updated_tstamp = chats[-1]["tstamp"]
     cutoff_date = datetime.fromtimestamp(
         last_updated_tstamp, tz=timezone("US/Pacific")
