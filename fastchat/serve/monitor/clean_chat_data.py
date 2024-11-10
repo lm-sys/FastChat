@@ -85,30 +85,18 @@ def process_data(row, action_type):
         conversation_id = state["conv_id"]
     except KeyError:
         return {
-            "result": None,
             "ct_invalid_conv_id": 1,
-            "ct_invalid": 0,
-            "ct_network_error": 0,
-            "model": None,
         }
 
     if conversation_id is None:
         return {
-            "result": None,
             "ct_invalid_conv_id": 1,
-            "ct_invalid": 0,
-            "ct_network_error": 0,
-            "model": None,
         }
 
     conversation = to_openai_format(state["messages"][state["offset"] :])
     if not isinstance(model, str):
         return {
-            "result": None,
-            "ct_invalid_conv_id": 0,
             "ct_invalid": 1,
-            "ct_network_error": 0,
-            "model": None,
         }
     model = replace_model_name(model, row["tstamp"])
 
@@ -116,30 +104,18 @@ def process_data(row, action_type):
         lang_code = detect_language(state["messages"][state["offset"]][1])
     except IndexError:
         return {
-            "result": None,
-            "ct_invalid_conv_id": 0,
             "ct_invalid": 1,
-            "ct_network_error": 0,
-            "model": None,
         }
 
     if not all(isinstance(x["content"], str) for x in conversation):
         return {
-            "result": None,
-            "ct_invalid_conv_id": 0,
             "ct_invalid": 1,
-            "ct_network_error": 0,
-            "model": None,
         }
 
     messages = "".join([x["content"] for x in conversation]).lower()
     if NETWORK_ERROR_MSG in messages:
         return {
-            "result": None,
-            "ct_invalid_conv_id": 0,
-            "ct_invalid": 0,
             "ct_network_error": 1,
-            "model": None,
         }
     user_id = hashlib.md5(row["ip"].encode()).hexdigest()
 
@@ -156,9 +132,6 @@ def process_data(row, action_type):
 
     return {
         "result": result,
-        "ct_invalid_conv_id": 0,
-        "ct_invalid": 0,
-        "ct_network_error": 0,
         "model": model,
     }
 
@@ -180,11 +153,15 @@ def clean_chat_data(log_files, action_type):
         results = pool.map(func, raw_data, chunksize=1)
 
     # Aggregate results from child processes
-    ct_invalid_conv_id = sum([data["ct_invalid_conv_id"] for data in results])
-    ct_invalid = sum([data["ct_invalid"] for data in results])
-    ct_network_error = sum([data["ct_network_error"] for data in results])
-    all_models = set([data["model"] for data in results if not (data["model"] is None)])
-    chats = [data["result"] for data in results if not (data["result"] is None)]
+    ct_invalid_conv_id = sum(
+        [data["ct_invalid_conv_id"] for data in results if "ct_invalid_conv_id" in data]
+    )
+    ct_invalid = sum([data["ct_invalid"] for data in results if "ct_invalid" in data])
+    ct_network_error = sum(
+        [data["ct_network_error"] for data in results if "ct_network_error" in data]
+    )
+    all_models = set([data["model"] for data in results if "model" in data])
+    chats = [data["result"] for data in results if "result" in data]
 
     chats.sort(key=lambda x: x["tstamp"])
     last_updated_tstamp = chats[-1]["tstamp"]
