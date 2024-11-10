@@ -25,8 +25,6 @@ from fastchat.utils import detect_language
 NETWORK_ERROR_MSG = (
     "NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.".lower()
 )
-MANAGER = mp.Manager()
-LOCK = MANAGER.Lock()
 
 
 def date_range(start="2023-04-01"):
