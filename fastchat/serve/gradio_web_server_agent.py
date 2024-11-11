@@ -45,7 +45,7 @@ from fastchat.utils import (
     load_image,
     parse_json_from_string,
 )
-from fastchat.tools.search_naive import web_search
+from fastchat.tools.search import web_search
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 

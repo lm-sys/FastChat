@@ -33,8 +33,8 @@ def scrape_url(url: str) -> str:
     response = app.scrape_url(url=url, params={'formats': ['markdown']})
     return response['markdown']
 
-def web_search(query: str, topk: int) -> str:
-    results = search_results_you(query, topk)
+def web_search(key_words: str, topk: int) -> str:
+    results = search_results_you(key_words, topk)
     scraped_results = [f"Title: {result['title']}:\n{scrape_url(result['url'])}\n" for result in results]
-    return "\n".join(scraped_results)
+    return "\n".join(scraped_results), "\n".join([f"- [{result['title']}]({result['url']})" for result in results])
         
