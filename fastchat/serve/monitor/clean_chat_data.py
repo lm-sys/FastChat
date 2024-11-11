@@ -146,13 +146,13 @@ def clean_chat_data(log_files, action_type, num_parallel):
     raw_data = []
     for data in file_data:
         raw_data.extend(data)
-    raw_data = [r for r in raw_data if r is not None]
+    raw_data = [r for r in raw_data if not (r is None)]
 
     # Use the multiprocessing Pool
     with mp.Pool(num_parallel) as pool:
         func = partial(process_data, action_type=action_type)
         results = pool.map(
-            func, raw_data, chunksize=ceil(len(log_files) / len(pool._pool))
+            func, raw_data, chunksize=ceil(len(raw_data) / len(pool._pool))
         )
 
     # Aggregate results from child processes
