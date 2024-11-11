@@ -556,6 +556,7 @@ def bot_response(
 
             for i, data in enumerate(stream_iter):
                 if data["error_code"] == 0:
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                     output = data["text"].strip()
                 else:
                     output = data["text"] + f"\n\n(error_code: {data['error_code']})"
@@ -616,6 +617,7 @@ def bot_response(
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 for i, data in enumerate(stream_iter):
                     if data["error_code"] == 0:
+                        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                         output = data["text"].strip()
                     else:
                         output = data["text"] + f"\n\n(error_code: {data['error_code']})"
