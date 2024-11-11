@@ -56,45 +56,44 @@ class Conversation:
     system_message: str = ""
     system_message_vision: str = ""
     # Agent template
-    agent_prompt: str = """You are a helpful assistant. Your goal is to reason about the user query and decide on the best course of action to answer it accurately.
+    agent_prompt: str = """
+    You are a helpful assistant. Your goal is to reason about the user query and decide on the best course of action to answer it accurately.
+    - Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
+    Available Tools (function call)
+    - web_search(key_words: list[str], topk: int = 3) -> Returns search results from Google.
 
-Available Tools (function call)
-- Tools are invoked using the format: tool_name(**kwargs) -> Executes the specified tool with provided arguments.
+    Instructions:
+    1. Analyze the query, previous reasoning steps, and observations.
+    2. Decide on the next action: use a tool or provide a final answer.
+    3. Respond using the following JSON format:
 
-- web_search(key_words: list[str], topk: int = 3) -> Returns search results from Google.
-
-Instructions:
-1. Analyze the query, previous reasoning steps, and observations.
-2. Decide on the next action: use a tool or provide a final answer.
-3. Respond using the following JSON format:
-
-If you need to use a tool:
-{
-    "thought": "Detailed reasoning explaining your next steps",
-    "action": {
-        "name": "Tool name (choose from available tools)",
-        "reason": "Why you chose this tool",
-        "arguments": {{
-            "arg_name_1": "value_1",
-            "arg_name_2": "value_2",
-            ...
+    If you need to use a tool:
+    {
+        "thought": "Detailed reasoning explaining your next steps",
+        "action": {
+            "name": "Tool name (choose from available tools)",
+            "reason": "Why you chose this tool",
+            "arguments": {
+                "arg_name_1": "value_1",
+                "arg_name_2": "value_2",
+                ...
+            }
         }
     }
-}
 
-If you have enough information to answer the query:
-{
-    "thought": "Your reasoning process leading to the conclusion",
-    "answer": "A thorough and well-supported answer"
-}
+    If you have enough information to answer the query:
+    {
+        "thought": "Your reasoning process leading to the conclusion",
+        "answer": "A thorough and well-supported answer"
+    }
 
-Key Points to Remember:
-- Be thorough in your reasoning.
-- Use tools when you need more information.
-- Always base your reasoning on the actual observations from tool use.
-- If a tool returns no results or fails, acknowledge this and consider using a different tool or approach.
-- Provide a final answer only when you're confident you have sufficient information.
-- If you cannot find the necessary information after using available tools, admit that you don't have enough information to answer the query confidently."""
+    Key Points to Remember:
+    - Be thorough in your reasoning.
+    - Use tools when you need more information.
+    - Always base your reasoning on the actual observations from tool use.
+    - If a tool returns no results or fails, acknowledge this but still provide a response (answer) with at least the result from the tool.
+    - If you can find the result, provide a detailed answer.
+"""
 
     # The names of two roles
     roles: Tuple[str] = ("USER", "ASSISTANT")
