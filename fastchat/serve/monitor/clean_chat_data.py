@@ -218,7 +218,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--action-type", type=str, default="chat")
     parser.add_argument("--max-num-files", type=int)
-    parser.add_argument("--num-parallel", type=int, default=1)
+    parser.add_argument("--num-parallel", type=int, default=16)
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
