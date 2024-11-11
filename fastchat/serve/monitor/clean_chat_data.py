@@ -12,6 +12,7 @@ from pytz import timezone
 from functools import partial
 from math import ceil
 from datetime import datetime, timedelta
+from tqdm import tqdm
 import time
 import multiprocessing as mp
 
@@ -139,8 +140,14 @@ def clean_chat_data(log_files, action_type, num_parallel):
     with mp.Pool(num_parallel) as pool:
         # Use partial to pass action_type to get_action_type_data
         func = partial(get_action_type_data, action_type=action_type)
-        file_data = pool.map(
-            func, log_files, chunksize=ceil(len(log_files) / len(pool._pool))
+        file_data = list(
+            tqdm(
+                pool.imap(
+                    func, log_files, chunksize=ceil(len(log_files) / len(pool._pool))
+                ),
+                total=len(log_files),
+                desc="Processing Log Files",
+            )
         )
     # filter out Nones as some files may not contain any data belong to action_type
     raw_data = []
@@ -151,8 +158,14 @@ def clean_chat_data(log_files, action_type, num_parallel):
     # Use the multiprocessing Pool
     with mp.Pool(num_parallel) as pool:
         func = partial(process_data, action_type=action_type)
-        results = pool.map(
-            func, raw_data, chunksize=ceil(len(raw_data) / len(pool._pool))
+        results = list(
+            tqdm(
+                pool.imap(
+                    func, raw_data, chunksize=ceil(len(raw_data) / len(pool._pool))
+                ),
+                total=len(raw_data),
+                desc="Processing Raw Data",
+            )
         )
 
     # Aggregate results from child processes
@@ -161,7 +174,7 @@ def clean_chat_data(log_files, action_type, num_parallel):
     ct_network_error = 0
     all_models = set()
     chats = []
-    for data in results:
+    for data in tqdm(results):
         if "ct_invalid_conv_id" in data:
             ct_invalid_conv_id += data["ct_invalid_conv_id"]
             continue
