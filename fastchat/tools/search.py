@@ -1,40 +1,40 @@
+import os
 import requests
+from firecrawl import FirecrawlApp
+from typing import List, Dict, Any
 
-YOU_SEARCH_API_KEY = ""
+from dotenv import load_dotenv
+load_dotenv('keys.env')
 
+def search_results_you(query: str, topk: int) -> List[Dict[str, Any]]:
+    api_key = os.getenv("YDC_API_KEY")
+    headers = {
+        "X-API-Key": api_key,
+        "Content-type": "application/json; charset=UTF-8",
+    }
+    params = params = {"query": query, "num_web_results": topk}
+    response = requests.get(f"https://api.ydc-index.io/search", params=params, headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"You.com API returned error code {response.status_code} - {response.reason}")
+    data = response.json()
+    hits = data.get("hits", [])
+    formatted_results = [
+        {
+            "title": hit["title"],
+            "url": hit["url"],
+            "text": "\n".join(hit.get("snippets", []))
+        }
+        for hit in hits
+    ]
+    return formatted_results
 
-def get_ai_snippets_for_query(query, num_web_results=1):
-    headers = {"X-API-Key": YOU_SEARCH_API_KEY}
-    params = {"query": query, "num_web_results": num_web_results}
-    return requests.get(
-        f"https://api.ydc-index.io/search",
-        params=params,
-        headers=headers,
-    ).json()
+def scrape_url(url: str) -> str:
+    app = FirecrawlApp(api_key=os.getenv("FIRECRAWL_API_KEY"))
+    response = app.scrape_url(url=url, params={'formats': ['markdown']})
+    return response['markdown']
 
-
-def format_search_results(results):
-    formatted_results = ""
-    formatted_results_display = ""
-    results = results["hits"]
-    for idx, result in enumerate(results):
-        formatted_results += (
-            f"{idx+1}. [" + result["title"] + "](" + result["url"] + ")" + "\n"
-        )
-        formatted_results_display += (
-            f"{idx+1}. [" + result["title"] + "](" + result["url"] + ")" + "\n"
-        )
-        if len(result["snippets"]) > 0:
-            formatted_results += "Descriptions: \n"
-        for snippet in result["snippets"]:
-            formatted_results += "- " + snippet + "\n"
-    # formatted_results += "--------------------------------"
-    return formatted_results, formatted_results_display
-
-
-def web_search(key_words, topk=1):
-    web_search_results = get_ai_snippets_for_query(
-        query=key_words, num_web_results=topk
-    )
-    web_search_results = format_search_results(web_search_results)
-    return web_search_results
+def web_search(query: str, topk: int) -> str:
+    results = search_results_you(query, topk)
+    scraped_results = [f"Title: {result['title']}:\n{scrape_url(result['url'])}\n" for result in results]
+    return "\n".join(scraped_results)
+        
