@@ -184,10 +184,8 @@ def clean_chat_data(log_files, action_type, num_parallel):
         if "ct_network_error" in data:
             ct_network_error += data["ct_network_error"]
             continue
-        if "model" in data:
-            all_models.update([data["model"]])
-        if "result" in data:
-            chats.append(data["result"])
+        all_models.update([data["model"]])
+        chats.append(data["result"])
 
     chats.sort(key=lambda x: x["tstamp"])
     last_updated_tstamp = chats[-1]["tstamp"]
