@@ -156,15 +156,25 @@ def clean_chat_data(log_files, action_type, num_parallel):
         )
 
     # Aggregate results from child processes
-    ct_invalid_conv_id = sum(
-        [data["ct_invalid_conv_id"] for data in results if "ct_invalid_conv_id" in data]
-    )
-    ct_invalid = sum([data["ct_invalid"] for data in results if "ct_invalid" in data])
-    ct_network_error = sum(
-        [data["ct_network_error"] for data in results if "ct_network_error" in data]
-    )
-    all_models = set([data["model"] for data in results if "model" in data])
-    chats = [data["result"] for data in results if "result" in data]
+    ct_invalid_conv_id = 0
+    ct_invalid = 0
+    ct_network_error = 0
+    all_models = set()
+    chats = []
+    for data in results:
+        if "ct_invalid_conv_id" in data:
+            ct_invalid_conv_id += data["ct_invalid_conv_id"]
+            continue
+        if "ct_invalid" in data:
+            ct_invalid += data["ct_invalid"]
+            continue
+        if "ct_network_error" in data:
+            ct_network_error += data["ct_network_error"]
+            continue
+        if "model" in data:
+            all_models.update([data["model"]])
+        if "result" in data:
+            chats.append(data["result"])
 
     chats.sort(key=lambda x: x["tstamp"])
     last_updated_tstamp = chats[-1]["tstamp"]
