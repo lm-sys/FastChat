@@ -17,6 +17,7 @@ import time
 import pandas as pd
 import gradio as gr
 import numpy as np
+import requests
 
 from fastchat.constants import SURVEY_LINK
 from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
@@ -855,6 +856,105 @@ def build_category_leaderboard_tab(
         sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard]
     )
 
+def compute_ub_ranking(arena_df):
+    # Sort models based on their scores
+    sorted_models = arena_df.sort_values('score', ascending=False).index.tolist()
+    
+    ub_ranking = {}
+    current_rank = 1
+    i = 0
+    
+    while i < len(sorted_models):
+        current_model = sorted_models[i]
+        current_lower = arena_df.loc[current_model]['lower']
+        tied_models = [current_model]
+        
+        # Find ties
+        j = i + 1
+        while j < len(sorted_models):
+            next_model = sorted_models[j]
+            if arena_df.loc[next_model]['upper'] >= current_lower:
+                tied_models.append(next_model)
+                j += 1
+            else:
+                break
+        
+        # Assign ranks to tied models
+        for model in tied_models:
+            ub_ranking[model] = current_rank
+        
+        # Move to the next unprocessed model
+        i = j
+        # Next rank is at least the position in the sorted list
+        current_rank = max(current_rank + 1, i + 1)
+    
+    return ub_ranking
+
+def process_copilot_arena_leaderboard(leaderboard):
+    leaderboard['score'] = leaderboard['score'].round().astype(int)
+    leaderboard['upper'] = leaderboard['upper'].round().astype(int)
+    leaderboard['lower'] = leaderboard['lower'].round().astype(int)
+
+    leaderboard['upper_diff'] = leaderboard['upper'] - leaderboard['score']
+    leaderboard['lower_diff'] = leaderboard['score'] - leaderboard['lower']
+
+    leaderboard['confidence_interval'] = '+' + leaderboard['upper_diff'].astype(str) + ' / -' + leaderboard['lower_diff'].astype(str)
+
+    rankings_ub = compute_ub_ranking(leaderboard)
+    leaderboard.insert(loc=0, column="Rank* (UB)", value=rankings_ub)
+    leaderboard['Rank'] = leaderboard['score'].rank(ascending=False).astype(int)
+
+    leaderboard = leaderboard.sort_values(by=['Rank'], ascending=[True])
+    
+    return leaderboard 
+
+def build_copilot_arena_tab():
+    copilot_arena_leaderboard_url = "https://leaderboard-server.fly.dev/elo"
+    response = requests.get(copilot_arena_leaderboard_url)
+    if response.status_code == 200:
+        leaderboard = pd.DataFrame(response.json()["elo_data"])
+        leaderboard = process_copilot_arena_leaderboard(leaderboard)
+        leaderboard = leaderboard.rename(
+            columns= {
+                "name": "Model",
+                "confidence_interval": "Confidence Interval",
+                "score": "Arena Score",
+                "organization": "Organization",
+                "votes": "Votes",
+            }
+        )
+
+        column_order = ["Rank* (UB)", "Model", "Arena Score", "Confidence Interval", "Votes", "Organization"]
+        leaderboard = leaderboard[column_order]
+        num_models = len(leaderboard) 
+        total_battles = int(leaderboard['Votes'].sum())//2
+        md = f"This is the leaderboard of all {num_models} models, and their relative performance in Copilot Arena. There are currently a total of {total_battles} battles."
+
+        gr.Markdown(md, elem_id="leaderboard_markdown")
+        gr.DataFrame(
+            leaderboard,
+            datatype=[
+                "str"
+                for _ in leaderboard.columns 
+            ],
+            elem_id="arena_hard_leaderboard",
+            height=600,
+            wrap=True,
+            interactive=False,
+            column_widths=[70, 130, 60, 80, 50, 80],
+        )
+
+        gr.Markdown(
+            """
+    ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
+    Model A is statistically better than model B when A's lower-bound score is greater than B's upper-bound score (in 95% confidence interval). \n
+    **Confidence Interval**: represents the range of uncertainty around the Arena Score. It's displayed as +X / -Y, where X is the difference between the upper bound and the score, and Y is the difference between the score and the lower bound.
+    """,
+            elem_id="leaderboard_markdown",
+        )
+    else:
+        gr.Markdown("Error with fetching Copilot Arena data. Check back in later.")
+
 
 selected_categories = [
     "full",
@@ -916,7 +1016,6 @@ def get_combined_table(elo_results, model_table_df):
     # drop any rows with nan values
     combined_table = combined_table.dropna()
     return combined_table
-
 
 def build_leaderboard_tab(
     elo_results_file,
@@ -1052,6 +1151,8 @@ def build_leaderboard_tab(
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
+            with gr.Tab("Copilot Arena Leaderboard", id=5):
+                build_copilot_arena_tab()
 
         if not show_plot:
             gr.Markdown(
