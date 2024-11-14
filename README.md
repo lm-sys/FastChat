@@ -237,7 +237,7 @@ This is the user interface that users will interact with.
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 If the models do not show up, try to reboot the gradio web server.
 
-## Launch Chatbot Arena
+## Launch Chatbot Arena (side-by-side battle UI)
 
 Currently, Chatbot Arena is powered by FastChat. Here is how you can launch an instance of Chatbot Arena locally.
 
