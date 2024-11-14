@@ -928,7 +928,9 @@ def build_copilot_arena_tab():
         leaderboard = leaderboard[column_order]
         num_models = len(leaderboard) 
         total_battles = int(leaderboard['Votes'].sum())//2
-        md = f"This is the leaderboard of all {num_models} models, and their relative performance in Copilot Arena. There are currently a total of {total_battles} battles."
+        md = f"""
+        Copilot Arena is a free AI coding assistant that provides paired responses from different state-of-the-art LLMs. This leaderboard contains the relative performance and ranking of {num_models} models over {total_battles} battles.
+        """
 
         gr.Markdown(md, elem_id="leaderboard_markdown")
         gr.DataFrame(
