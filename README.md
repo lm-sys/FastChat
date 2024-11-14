@@ -259,7 +259,7 @@ For Anthropic models, specify `"api_type": "anthropic_message"` with your Anthro
 
 To serve your own model using local gpus, follow the instructions in [Serving with Web GUI](#serving-with-web-gui).
 
-To launch a gradio web server, run `gradio_web_server_multi.py`.
+Now you're ready to launch the server:
 ```
 cd fastchat/serve
 python gradio_web_server_multi.py --port 8080 --share --register-api-endpoint-file api_endpoint.json
