@@ -856,57 +856,65 @@ def build_category_leaderboard_tab(
         sort_rating, inputs=[rating_button], outputs=[overall_ranking_leaderboard]
     )
 
+
 def compute_ub_ranking(arena_df):
     # Sort models based on their scores
-    sorted_models = arena_df.sort_values('score', ascending=False).index.tolist()
-    
+    sorted_models = arena_df.sort_values("score", ascending=False).index.tolist()
+
     ub_ranking = {}
     current_rank = 1
     i = 0
-    
+
     while i < len(sorted_models):
         current_model = sorted_models[i]
-        current_lower = arena_df.loc[current_model]['lower']
+        current_lower = arena_df.loc[current_model]["lower"]
         tied_models = [current_model]
-        
+
         # Find ties
         j = i + 1
         while j < len(sorted_models):
             next_model = sorted_models[j]
-            if arena_df.loc[next_model]['upper'] >= current_lower:
+            if arena_df.loc[next_model]["upper"] >= current_lower:
                 tied_models.append(next_model)
                 j += 1
             else:
                 break
-        
+
         # Assign ranks to tied models
         for model in tied_models:
             ub_ranking[model] = current_rank
-        
+
         # Move to the next unprocessed model
         i = j
         # Next rank is at least the position in the sorted list
         current_rank = max(current_rank + 1, i + 1)
-    
+
     return ub_ranking
 
+
 def process_copilot_arena_leaderboard(leaderboard):
-    leaderboard['score'] = leaderboard['score'].round().astype(int)
-    leaderboard['upper'] = leaderboard['upper'].round().astype(int)
-    leaderboard['lower'] = leaderboard['lower'].round().astype(int)
+    leaderboard["score"] = leaderboard["score"].round().astype(int)
+    leaderboard["upper"] = leaderboard["upper"].round().astype(int)
+    leaderboard["lower"] = leaderboard["lower"].round().astype(int)
 
-    leaderboard['upper_diff'] = leaderboard['upper'] - leaderboard['score']
-    leaderboard['lower_diff'] = leaderboard['score'] - leaderboard['lower']
+    leaderboard["upper_diff"] = leaderboard["upper"] - leaderboard["score"]
+    leaderboard["lower_diff"] = leaderboard["score"] - leaderboard["lower"]
 
-    leaderboard['confidence_interval'] = '+' + leaderboard['upper_diff'].astype(str) + ' / -' + leaderboard['lower_diff'].astype(str)
+    leaderboard["confidence_interval"] = (
+        "+"
+        + leaderboard["upper_diff"].astype(str)
+        + " / -"
+        + leaderboard["lower_diff"].astype(str)
+    )
 
     rankings_ub = compute_ub_ranking(leaderboard)
     leaderboard.insert(loc=0, column="Rank* (UB)", value=rankings_ub)
-    leaderboard['Rank'] = leaderboard['score'].rank(ascending=False).astype(int)
+    leaderboard["Rank"] = leaderboard["score"].rank(ascending=False).astype(int)
 
-    leaderboard = leaderboard.sort_values(by=['Rank'], ascending=[True])
-    
-    return leaderboard 
+    leaderboard = leaderboard.sort_values(by=["Rank"], ascending=[True])
+
+    return leaderboard
+
 
 def build_copilot_arena_tab():
     copilot_arena_leaderboard_url = "https://leaderboard-server.fly.dev/elo"
@@ -915,7 +923,7 @@ def build_copilot_arena_tab():
         leaderboard = pd.DataFrame(response.json()["elo_data"])
         leaderboard = process_copilot_arena_leaderboard(leaderboard)
         leaderboard = leaderboard.rename(
-            columns= {
+            columns={
                 "name": "Model",
                 "confidence_interval": "Confidence Interval",
                 "score": "Arena Score",
@@ -924,10 +932,17 @@ def build_copilot_arena_tab():
             }
         )
 
-        column_order = ["Rank* (UB)", "Model", "Arena Score", "Confidence Interval", "Votes", "Organization"]
+        column_order = [
+            "Rank* (UB)",
+            "Model",
+            "Arena Score",
+            "Confidence Interval",
+            "Votes",
+            "Organization",
+        ]
         leaderboard = leaderboard[column_order]
-        num_models = len(leaderboard) 
-        total_battles = int(leaderboard['Votes'].sum())//2
+        num_models = len(leaderboard)
+        total_battles = int(leaderboard["Votes"].sum()) // 2
         md = f"""
         [Copilot Arena](https://blog.lmarena.ai/blog/2024/copilot-arena/) is a free AI coding assistant that provides paired responses from different state-of-the-art LLMs. This leaderboard contains the relative performance and ranking of {num_models} models over {total_battles} battles.
         """
@@ -935,10 +950,7 @@ def build_copilot_arena_tab():
         gr.Markdown(md, elem_id="leaderboard_markdown")
         gr.DataFrame(
             leaderboard,
-            datatype=[
-                "str"
-                for _ in leaderboard.columns 
-            ],
+            datatype=["str" for _ in leaderboard.columns],
             elem_id="arena_hard_leaderboard",
             height=600,
             wrap=True,
@@ -1018,6 +1030,7 @@ def get_combined_table(elo_results, model_table_df):
     # drop any rows with nan values
     combined_table = combined_table.dropna()
     return combined_table
+
 
 def build_leaderboard_tab(
     elo_results_file,
