@@ -261,8 +261,7 @@ To serve your own model using local gpus, follow the instructions in [Serving wi
 
 Now you're ready to launch the server:
 ```
-cd fastchat/serve
-python gradio_web_server_multi.py --port 8080 --share --register-api-endpoint-file api_endpoint.json
+python3 -m fastchat.serve.gradio_web_server_multi --port 8080 --share --register-api-endpoint-file api_endpoint.json
 ```
 
 #### (Optional): Advanced Features, Scalability, Third Party UI
