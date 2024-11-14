@@ -929,7 +929,7 @@ def build_copilot_arena_tab():
         num_models = len(leaderboard) 
         total_battles = int(leaderboard['Votes'].sum())//2
         md = f"""
-        Copilot Arena is a free AI coding assistant that provides paired responses from different state-of-the-art LLMs. This leaderboard contains the relative performance and ranking of {num_models} models over {total_battles} battles.
+        [Copilot Arena](https://blog.lmarena.ai/blog/2024/copilot-arena/) is a free AI coding assistant that provides paired responses from different state-of-the-art LLMs. This leaderboard contains the relative performance and ranking of {num_models} models over {total_battles} battles.
         """
 
         gr.Markdown(md, elem_id="leaderboard_markdown")
