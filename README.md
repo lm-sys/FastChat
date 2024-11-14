@@ -253,7 +253,7 @@ Create a JSON configuration file `api_endpoint.json` with the api endpoints of t
         "api_base": "https://api.openai.com/v1",
         "api_type": "openai",
         "api_key": [Insert API Key],
-        "anony_only": falseg
+        "anony_only": false
     }
 }
 ```
