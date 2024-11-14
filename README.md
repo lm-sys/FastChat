@@ -237,6 +237,32 @@ This is the user interface that users will interact with.
 By following these steps, you will be able to serve your models using the web UI. You can open your browser and chat with a model now.
 If the models do not show up, try to reboot the gradio web server.
 
+## Launch Chatbot Arena
+
+Currently, Chatbot Arena is powered by FastChat. Here is how you can launch an instance of Chatbot Arena locally.
+
+Create a file `api_endpoint.json` and record the the api endpoints of the models you want to serve, for example:
+```
+{
+    "gpt-4o-2024-05-13": {
+        "model_name": "gpt-4o-2024-05-13",
+        "api_base": "https://api.openai.com/v1",
+        "api_type": "openai",
+        "api_key": [Insert API Key],
+        "anony_only": false
+    }
+}
+```
+Then make sure to export `OPENAI_API_KEY` with your openai key. For anthropic model, set `api_type` to `"anthropic_message"` and export `ANTHROPIC_API_KEY` with your anthropic key. For gemini model, set `api_type` to `"gemini"` and export `GEMINI_API_KEY` with your gemini key. For additional information, you can refer to `fastchat/serve/api_provider.py` for implementation details of other model types.
+
+If you want to serve your own model using local gpus, following the instructions in [Serving with Web GUI](#serving-with-web-gui).
+
+To launch a gradio web server, run `gradio_web_server_multi.py`.
+```
+cd fastchat/serve
+python gradio_web_server_multi.py --port 8080 --share --register-api-endpoint-file api_endpoint.json
+```
+
 #### (Optional): Advanced Features, Scalability, Third Party UI
 - You can register multiple model workers to a single controller, which can be used for serving a single model with higher throughput or serving multiple models at the same time. When doing so, please allocate different GPUs and ports for different model workers.
 ```
