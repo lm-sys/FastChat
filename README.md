@@ -255,7 +255,7 @@ Create a JSON configuration file `api_endpoint.json` with the api endpoints of t
     }
 }
 ```
-For anthropic model, set `api_type` to `"anthropic_message"` and replace `api_key` with your anthropic key. For gemini model, set `api_type` to `"gemini"` and replace `api_key` with your gemini key.
+For Anthropic models, specify `"api_type": "anthropic_message"` with your Anthropic key. Similarly, for gemini model, specify `"api_type": "gemini"`. More details can be found in [api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py).
 
 If you want to serve your own model using local gpus, following the instructions in [Serving with Web GUI](#serving-with-web-gui).
 
