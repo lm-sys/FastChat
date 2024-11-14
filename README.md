@@ -241,7 +241,7 @@ If the models do not show up, try to reboot the gradio web server.
 
 Currently, Chatbot Arena is powered by FastChat. Here is how you can launch an instance of Chatbot Arena locally.
 
-Create a file `api_endpoint.json` and record the the api endpoints of the models you want to serve, for example:
+Create a file `api_endpoint.json` with the api endpoints of the models you want to serve, for example:
 ```
 {
     "gpt-4o-2024-05-13": {
