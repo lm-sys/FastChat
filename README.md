@@ -253,7 +253,7 @@ Create a file `api_endpoint.json` with the api endpoints of the models you want 
     }
 }
 ```
-Then make sure to export `OPENAI_API_KEY` with your openai key. For anthropic model, set `api_type` to `"anthropic_message"` and export `ANTHROPIC_API_KEY` with your anthropic key. For gemini model, set `api_type` to `"gemini"` and export `GEMINI_API_KEY` with your gemini key. For additional information, you can refer to `fastchat/serve/api_provider.py` for implementation details of other model types.
+For anthropic model, set `api_type` to `"anthropic_message"` and replace `api_key` with your anthropic key. For gemini model, set `api_type` to `"gemini"` and replace `api_key` with your gemini key. For additional information, you can refer to `fastchat/serve/api_provider.py` for implementation details of other model types.
 
 If you want to serve your own model using local gpus, following the instructions in [Serving with Web GUI](#serving-with-web-gui).
 
