@@ -241,9 +241,7 @@ If the models do not show up, try to reboot the gradio web server.
 
 Currently, Chatbot Arena is powered by FastChat. Here is how you can launch an instance of Chatbot Arena locally.
 
-To support an API-based model, consider using the existing OpenAI api code for example.
-If the model is compatible with OpenAI APIs, then only modifying the configuration file is required without any additional code.
-For custom protocols, implementation of a streaming generator in [fastchat/serve/api_provider.py](https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/api_provider.py) is required, following the provided examples. Currently, FastChat is compatible with OpenAI, Anthropic, Google Vertex AI, Mistral, Nvidia NGC, YandexGPT and Reka. For more information about model support, please refer to the model support [Doc](./docs/model_support.md).
+FastChat supports popular API-based models such as OpenAI, Anthropic, Gemini, Mistral and more. To add a custom API, please refer to the model support [doc](./docs/model_support.md). Below we take OpenAI models as an example.
 
 Create a JSON configuration file `api_endpoint.json` with the api endpoints of the models you want to serve, for example:
 ```
