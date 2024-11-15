@@ -24,9 +24,10 @@ def process_copilot_arena_leaderboard(leaderboard):
 
     rankings_ub = recompute_final_ranking(leaderboard)
     leaderboard.insert(loc=0, column="Rank* (UB)", value=rankings_ub)
-    leaderboard["Rank"] = leaderboard["score"].rank(ascending=False).astype(int)
 
-    leaderboard = leaderboard.sort_values(by=["Rank"], ascending=[True])
+    leaderboard = leaderboard.sort_values(
+        by=["Rank* (UB)", "score"], ascending=[True, False]
+    )
 
     return leaderboard
 
