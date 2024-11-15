@@ -4,9 +4,8 @@ import requests
 
 from fastchat.serve.monitor.monitor import recompute_final_ranking
 
-copilot_arena_leaderboard_url = (
-    "https://leaderboard-server.fly.dev/elo"
-)
+copilot_arena_leaderboard_url = "https://leaderboard-server.fly.dev/elo"
+
 
 def process_copilot_arena_leaderboard(leaderboard):
     leaderboard["score"] = leaderboard["score"].round().astype(int)
