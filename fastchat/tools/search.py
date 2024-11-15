@@ -3,8 +3,8 @@ import requests
 from firecrawl import FirecrawlApp
 from typing import List, Dict, Any
 
-from dotenv import load_dotenv
-load_dotenv('keys.env')
+os.environ["YDC_API_KEY"] = "YOUR_KEY"
+os.environ["FIRECRAWL_API_KEY"] = "YOUR_KEY"
 
 def search_results_you(query: str, topk: int) -> List[Dict[str, Any]]:
     api_key = os.getenv("YDC_API_KEY")
@@ -12,7 +12,7 @@ def search_results_you(query: str, topk: int) -> List[Dict[str, Any]]:
         "X-API-Key": api_key,
         "Content-type": "application/json; charset=UTF-8",
     }
-    params = params = {"query": query, "num_web_results": topk}
+    params = {"query": query, "num_web_results": int(topk)}
     response = requests.get(f"https://api.ydc-index.io/search", params=params, headers=headers)
     if response.status_code != 200:
         raise Exception(f"You.com API returned error code {response.status_code} - {response.reason}")
@@ -34,7 +34,7 @@ def scrape_url(url: str) -> str:
     return response['markdown']
 
 
-def formulate_web_summary(results: List[Dict[str, Any]], query: str, topk: int) -> str:
+def formulate_web_summary(results: List[Dict[str, Any]], query: str, topk: int = 3) -> str:
     search_summary = f"Here are the summary of top {topk} search results for '{query}':\n"
     for result in results:
         search_summary += f"- [{result['title']}]({result['url']})\n"

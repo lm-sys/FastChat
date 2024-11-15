@@ -13,10 +13,10 @@
                         },
                         "topk": {
                             "type": "integer",
-                            "description": "The number of search results to return."
+                            "description": "The number of search results to return (default value set to 3)."
                         }
                     },
-                    "required": ["key_words"],
+                    "required": ["key_words", "topk"],
                     "additionalProperties": false
                 }
             },
