@@ -785,7 +785,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="react-agent",
-        system_message=Conversation.agent_prompt,
+        system_message=Conversation.system_message,
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.ADD_COLON_SINGLE,
         sep="\n### ",

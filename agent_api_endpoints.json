@@ -3,7 +3,7 @@
     "model_name": "gpt-4o-2024-08-06",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
-    "api_key": "YOUR API KEY",
+    "api_key": "sk-xxxxxx",
     "anony_only": false,
     "recommended_config": {
       "temperature": 0.7,

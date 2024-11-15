@@ -555,8 +555,12 @@ def bot_response(
             yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
             for i, data in enumerate(stream_iter):
+                print(i, data)
                 if data["error_code"] == 0:
-                    output = data["text"].strip()
+                    if data["text"] is None:
+                        output =""
+                    else:
+                        output = data["text"].strip()
                 else:
                     output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                     conv.update_last_message(output)
@@ -568,28 +572,35 @@ def bot_response(
                         enable_btn,
                     )
                     return
+            print(data)
             system_conv.update_last_message(output)
-            try:
-                parsed_response = parse_json_from_string(output)
-            except json.JSONDecodeError as e:
-                output = data["text"] + f"\n\n(JSONDecodeError: {e})"
-                conv.update_last_message(output)
-                yield (state, state.to_gradio_chatbot()) + (
-                    disable_btn,
-                    disable_btn,
-                    disable_btn,
-                    enable_btn,
-                    enable_btn,
-                )
-                return
+            # try:
+            #     parsed_response = parse_json_from_string(output)
+            # except json.JSONDecodeError as e:
+            #     output = data["text"] + f"\n\n(JSONDecodeError: {e})"
+            #     conv.update_last_message(output)
+            #     yield (state, state.to_gradio_chatbot()) + (
+            #         disable_btn,
+            #         disable_btn,
+            #         disable_btn,
+            #         enable_btn,
+            #         enable_btn,
+            #     )
+            #     return
+            #
             # Decide the execution flow based on the parsed response
-            # 1. action -> web_search (max 5 times)
+            # 1. action -> web_search (max 1 times)
             # 2. answer -> return the answer
+
             last_message = ""
-            if "action" in parsed_response:
-                action = parsed_response["action"]
-                assert "web_search" == action["name"]
-                arguments = action["arguments"]
+            if data["function_name"] is not None:
+            #if "action" in parsed_response:
+                function_name = data["function_name"]
+
+                #action = parsed_response["action"]
+                assert "web_search" == function_name, f"function_name: {function_name}"
+                arguments = data["arguments"]
+
                 conv.update_last_message("Searching...")
                 web_search_result, web_search_display = web_search(**arguments)
                 system_conv.append_message(
@@ -615,7 +626,10 @@ def bot_response(
                 conv.update_last_message("Reasoning...")
                 for i, data in enumerate(stream_iter):
                     if data["error_code"] == 0:
-                        output = data["text"].strip()
+                        if data["text"] is None:
+                            output = ""
+                        else:
+                            output = data["text"].strip()
                     else:
                         output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                         conv.update_last_message(output)
@@ -631,13 +645,17 @@ def bot_response(
                 # print(output, flush=True)
                 # print("*" * 50)
                 system_conv.update_last_message(output)
-                parsed_response = parse_json_from_string(output)
+                # parsed_response = parse_json_from_string(output)
+    
 
-            assert (
-                "answer" in parsed_response
-            ), f"parsed_response: {parsed_response}"
+            # assert (
+            #     "answer" in parsed_response
+            # ), f"parsed_response: {parsed_response}"
+            # conv.update_last_message(
+            #     f"{last_message}\n{parsed_response['answer'].strip()}"
+            # )
             conv.update_last_message(
-                f"{last_message}\n{parsed_response['answer'].strip()}"
+                f"{last_message}\n{output}"
             )
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
