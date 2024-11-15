@@ -23,19 +23,24 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
+    tools=None
 ):
     if model_api_dict["api_type"] == "openai":
+        # use our own streaming implementation for agent mode
         if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
             stream_iter = openai_api_stream_iter_agent(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
-        )
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_base=model_api_dict["api_base"],
+                api_key=model_api_dict["api_key"],
+                stream=False,
+                tools=tools
+                # Set it to False for simplicity cuz we're not showing words one by one
+            )
         else:
             if model_api_dict.get("vision-arena", False):
                 prompt = conv.to_openai_vision_api_messages()
@@ -369,32 +374,12 @@ def openai_api_stream_iter_agent(
     api_key=None,
     stream=False,
     is_o1=False,
-    agent_mode=False,
+    tools=None,
 ):
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "web_search",
-                "description": "Get the website links, titles and snippets given some key words. Please call this function whenever you need to search for information on the web.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "key_words": {
-                            "type": "string",
-                            "description": "The key words to search for."
-                        },
-                        "topk": {
-                            "type": "integer",
-                            "description": "The number of search results to return."
-                        }
-                    },
-                    "required": ["key_words"],
-                    "additionalProperties": False
-                }
-            }
-        }
-    ]
+    assert stream == False, "Hasn't supported streaming for agent mode yet"
+    if tools is None:
+        # write a warning
+        logger.info("tools is None for agent mode")
 
     import openai
 
@@ -443,7 +428,6 @@ def openai_api_stream_iter_agent(
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
-            tools=tools
         )
         text = ""
         for chunk in res:
@@ -475,24 +459,25 @@ def openai_api_stream_iter_agent(
 
         print("res:", res)
 
-        text = res.choices[0].message.content
+        text = res.choices[0].message.content or ""
         tool_calls = res.choices[0].message.tool_calls
-        if tool_calls is None:
-            data = {
-                "text": text,
-                "error_code": 0,
-                "function_name": None,
-                "arguments": None
+        function_name = None
+        arguments = None
+        if tool_calls is not None:
+            try:
+                function_name = tool_calls[0].function.name
+                arguments = json.loads(tool_calls[0].function.arguments)
+                text += f"\n\n**Function Call:** {function_name}\n**Arguments:** {arguments}"
+            except Exception as e:
+                logger.error(f"==== OpenAI function call parsing error ====\n{e}")
+                function_name = None
+                arguments = None
+        data = {
+            "text": text,
+            "error_code": 0,
+            "function_name": function_name,
+            "arguments": arguments
         }
-        else:
-            function_name = tool_calls[0].function.name
-            arguments = json.loads(tool_calls[0].function.arguments)
-            data = {
-                    "text": text,
-                    "error_code": 0,
-                    "function_name": function_name,
-                    "arguments": arguments
-            }
         yield data
 
 

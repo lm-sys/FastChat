@@ -533,6 +533,23 @@ def bot_response(
                 )
 
     if model_api_dict.get("agent-mode", False):
+        # Agent mode --> load tools first
+        tool_config_file = model_api_dict.get("tool_config_file", "")
+        try:
+            tools = json.load(open(tool_config_file))
+        except Exception as e:
+            conv.update_last_message(f"No tools are available for this model for agent mode. Provided tool_config_file {tool_config_file} is invalid.")
+            yield (
+                state,
+                state.to_gradio_chatbot(),
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+        
         stream_iter = get_api_provider_stream_iter(
             system_conv,
             model_name,
@@ -541,6 +558,7 @@ def bot_response(
             top_p,
             max_new_tokens,
             state,
+            tools
         )
 
         html_code = ' <span class="cursor"></span> '
@@ -550,44 +568,26 @@ def bot_response(
 
         try:
             # first-round QA
-            data = {"text": ""}
             conv.update_last_message("Thinking...")
             yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+            # no stream mode so we can get the response directly
+            data = next(stream_iter)
+            if data["error_code"] == 0:
+                output = data["text"].strip()
+            else:
+                output = data["text"] + f"\n\n(error_code: {data['error_code']})"
+                conv.update_last_message(output)
+                yield (state, state.to_gradio_chatbot()) + (
+                    disable_btn,
+                    disable_btn,
+                    disable_btn,
+                    enable_btn,
+                    enable_btn,
+                )
+                return
 
-            for i, data in enumerate(stream_iter):
-                print(i, data)
-                if data["error_code"] == 0:
-                    if data["text"] is None:
-                        output =""
-                    else:
-                        output = data["text"].strip()
-                else:
-                    output = data["text"] + f"\n\n(error_code: {data['error_code']})"
-                    conv.update_last_message(output)
-                    yield (state, state.to_gradio_chatbot()) + (
-                        disable_btn,
-                        disable_btn,
-                        disable_btn,
-                        enable_btn,
-                        enable_btn,
-                    )
-                    return
-            print(data)
             system_conv.update_last_message(output)
-            # try:
-            #     parsed_response = parse_json_from_string(output)
-            # except json.JSONDecodeError as e:
-            #     output = data["text"] + f"\n\n(JSONDecodeError: {e})"
-            #     conv.update_last_message(output)
-            #     yield (state, state.to_gradio_chatbot()) + (
-            #         disable_btn,
-            #         disable_btn,
-            #         disable_btn,
-            #         enable_btn,
-            #         enable_btn,
-            #     )
-            #     return
-            #
+
             # Decide the execution flow based on the parsed response
             # 1. action -> web_search (max 1 times)
             # 2. answer -> return the answer
@@ -613,6 +613,7 @@ def bot_response(
                 yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
                 # generate answer after web search
                 last_message = conv.messages[-1][1]
+                # Force no web search in the second round
                 stream_iter = get_api_provider_stream_iter(
                     system_conv,
                     model_name,
@@ -621,39 +622,26 @@ def bot_response(
                     top_p,
                     max_new_tokens,
                     state,
+                    tools=None
                 )
-                data = {"text": ""}
                 conv.update_last_message("Reasoning...")
-                for i, data in enumerate(stream_iter):
-                    if data["error_code"] == 0:
-                        if data["text"] is None:
-                            output = ""
-                        else:
-                            output = data["text"].strip()
-                    else:
-                        output = data["text"] + f"\n\n(error_code: {data['error_code']})"
-                        conv.update_last_message(output)
-                        yield (state, state.to_gradio_chatbot()) + (
-                            disable_btn,
-                            disable_btn,
-                            disable_btn,
-                            enable_btn,
-                            enable_btn,
-                        )
-                        return
-                # print("*" * 50)
-                # print(output, flush=True)
-                # print("*" * 50)
-                system_conv.update_last_message(output)
-                # parsed_response = parse_json_from_string(output)
-    
+                data = next(stream_iter)
+                if data["error_code"] == 0:
+                    output = data["text"].strip()
+                else:
+                    output = data["text"] + f"\n\n(error_code: {data['error_code']})"
+                    conv.update_last_message(output)
+                    yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn,
+                        disable_btn,
+                        disable_btn,
+                        enable_btn,
+                        enable_btn,
+                    )
+                    return
 
-            # assert (
-            #     "answer" in parsed_response
-            # ), f"parsed_response: {parsed_response}"
-            # conv.update_last_message(
-            #     f"{last_message}\n{parsed_response['answer'].strip()}"
-            # )
+                system_conv.update_last_message(output)
+
             conv.update_last_message(
                 f"{last_message}\n{output}"
             )

@@ -12,6 +12,6 @@
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
-    "custom_system_prompt": true
+    "tool_config_file": "tools.json"
   }
 }
