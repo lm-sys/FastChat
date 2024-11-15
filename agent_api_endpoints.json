@@ -12,7 +12,8 @@
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
-    "custom_system_prompt": true
+    "custom_system_prompt": true,
+    "tool_config_file": "tools.json"
   },
   "gpt-mini-agent": {
     "model_name": "gpt-4o-mini-2024-07-18",
@@ -57,6 +58,5 @@
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
-    "custom_system_prompt": true
   }
 }

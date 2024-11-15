@@ -23,23 +23,38 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
+    tools=None
 ):
     if model_api_dict["api_type"] == "openai":
-        if model_api_dict.get("vision-arena", False):
-            prompt = conv.to_openai_vision_api_messages()
-        elif model_api_dict.get("agent-mode", False):
-            prompt = conv.to_openai_agent_api_messages()
-        else:
+        # use our own streaming implementation for agent mode
+        if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
-        stream_iter = openai_api_stream_iter(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_base=model_api_dict["api_base"],
-            api_key=model_api_dict["api_key"],
-        )
+            stream_iter = openai_api_stream_iter_agent(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_base=model_api_dict["api_base"],
+                api_key=model_api_dict["api_key"],
+                stream=False,
+                tools=tools
+                # Set it to False for simplicity cuz we're not showing words one by one
+            )
+        else:
+            if model_api_dict.get("vision-arena", False):
+                prompt = conv.to_openai_vision_api_messages()
+            else:
+                prompt = conv.to_openai_api_messages()
+            stream_iter = openai_api_stream_iter(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_base=model_api_dict["api_base"],
+                api_key=model_api_dict["api_key"],
+            )
     elif model_api_dict["api_type"] == "openai_no_stream":
         prompt = conv.to_openai_api_messages()
         stream_iter = openai_api_stream_iter(
@@ -348,6 +363,122 @@ def openai_api_stream_iter(
                 "error_code": 0,
             }
             yield data
+
+def openai_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+    stream=False,
+    is_o1=False,
+    tools=None,
+):
+    assert stream == False, "Hasn't supported streaming for agent mode yet"
+    if tools is None:
+        # write a warning
+        logger.info("tools is None for agent mode")
+
+    import openai
+
+    api_key = api_key or os.environ["OPENAI_API_KEY"]
+
+    if "azure" in model_name:
+        client = openai.AzureOpenAI(
+            api_version="2023-07-01-preview",
+            azure_endpoint=api_base or "https://api.openai.com/v1",
+            api_key=api_key,
+        )
+    else:
+        client = openai.OpenAI(
+            base_url=api_base or "https://api.openai.com/v1",
+            api_key=api_key,
+            timeout=180,
+        )
+
+    # Make requests for logging
+    text_messages = []
+    print(messages)
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    if stream and not is_o1:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=True,
+        )
+        text = ""
+        for chunk in res:
+            print("Chunk:", chunk)
+            if len(chunk.choices) > 0:
+                text += chunk.choices[0].delta.content or ""
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    else:
+        if is_o1:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=1.0,
+                stream=False,
+            )
+        else:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_new_tokens,
+                stream=False,
+                tools=tools
+            )
+
+        print("res:", res)
+
+        text = res.choices[0].message.content or ""
+        tool_calls = res.choices[0].message.tool_calls
+        function_name = None
+        arguments = None
+        if tool_calls is not None:
+            try:
+                function_name = tool_calls[0].function.name
+                arguments = json.loads(tool_calls[0].function.arguments)
+                text += f"\n\n**Function Call:** {function_name}\n**Arguments:** {arguments}"
+            except Exception as e:
+                logger.error(f"==== OpenAI function call parsing error ====\n{e}")
+                function_name = None
+                arguments = None
+        data = {
+            "text": text,
+            "error_code": 0,
+            "function_name": function_name,
+            "arguments": arguments
+        }
+        yield data
 
 
 def column_api_stream_iter(
