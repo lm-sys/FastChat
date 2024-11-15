@@ -602,7 +602,7 @@ def bot_response(
                 arguments = data["arguments"]
 
                 conv.update_last_message("Searching...")
-                web_search_result, web_search_display = web_search(**arguments)
+                web_search_display, web_search_summary, web_search_result = web_search(**arguments)
                 system_conv.append_message(
                     system_conv.roles[1], f"Reference Website: \n\n{web_search_result}"
                 )
@@ -642,6 +642,8 @@ def bot_response(
                     return
 
                 system_conv.update_last_message(output)
+                # Save only summary to prevent context length explosion
+                system_conv.messages[-2][1] = web_search_summary
 
             conv.update_last_message(
                 f"{output}\n{last_message}"

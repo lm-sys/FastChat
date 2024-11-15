@@ -33,8 +33,23 @@ def scrape_url(url: str) -> str:
     response = app.scrape_url(url=url, params={'formats': ['markdown']})
     return response['markdown']
 
+
+def formulate_web_summary(results: List[Dict[str, Any]], query: str, topk: int) -> str:
+    search_summary = f"Here are the summary of top {topk} search results for '{query}':\n"
+    for result in results:
+        search_summary += f"- [{result['title']}]({result['url']})\n"
+        # add the snippets to the summary
+        for snippet in result['text']:
+            search_summary += f"    - {snippet}\n"
+    return search_summary
+
 def web_search(key_words: str, topk: int) -> str:
     results = search_results_you(key_words, topk)
-    scraped_results = [f"Title: {result['title']}:\n{scrape_url(result['url'])}\n" for result in results]
-    return "\n".join(scraped_results), "\n".join([f"- [{result['title']}]({result['url']})" for result in results])
+    # We only display the titles and urls in the search display
+    search_display = "\n".join([f"- [{result['title']}]({result['url']})" for result in results])
+    # We will store the search summary to the LLM context window
+    search_summary = formulate_web_summary(results, key_words, topk)
+    # We will scrape the content of the top search results for the very single-turn LLM response
+    scraped_results = "\n".join([f"Title: {result['title']}:\n{scrape_url(result['url'])}\n" for result in results])
+    return search_display, search_summary, scraped_results
         
