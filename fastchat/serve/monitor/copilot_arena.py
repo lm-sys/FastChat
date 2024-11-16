@@ -8,6 +8,7 @@ copilot_arena_leaderboard_url = "https://leaderboard-server.fly.dev/elo"
 
 
 def process_copilot_arena_leaderboard(leaderboard):
+    leaderboard = leaderboard.copy().loc[leaderboard["visibility"] == "public"]
     leaderboard["score"] = leaderboard["score"].round().astype(int)
     leaderboard["rating_q975"] = leaderboard["upper"].round().astype(int)
     leaderboard["rating_q025"] = leaderboard["lower"].round().astype(int)
