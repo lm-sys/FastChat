@@ -38,6 +38,15 @@ FastChat's core features include:
 - [Fine-tuning](#fine-tuning)
 - [Citation](#citation)
 
+----
+
+For Software Areana, please follow the following extra steps:
+1. Set your E2B API Key: `export E2B_API_KEY=<YOUR_API_KEY>`
+2. Custom Component Build: Follow https://www.gradio.app/guides/custom-components-in-five-minutes to set up environment. Go into `custom_components/sandboxcomponent` and run `gradio cc build`.
+3.  Use `pip install custom_components/sandboxcomponent/dist/gradio_sandboxcomponent-xxx-py3-none-any.whl` to install the custom components.
+
+----
+
 ## Install
 
 ### Method 1: With pip
