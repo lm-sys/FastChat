@@ -12,6 +12,7 @@ import random
 import time
 import uuid
 from typing import List
+from gradio_sandboxcomponent import SandboxComponent
 
 import gradio as gr
 import requests
@@ -29,6 +30,7 @@ from fastchat.constants import (
     SESSION_EXPIRATION_TIME,
     SURVEY_LINK,
 )
+from fastchat.conversation import Conversation
 from fastchat.model.model_adapter import (
     get_conversation_template,
 )
@@ -36,6 +38,7 @@ from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
+from fastchat.serve.sandbox.code_runner import RUN_CODE_BUTTON_HTML, ChatbotSandboxState
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -427,7 +430,11 @@ def bot_response(
     request: gr.Request,
     apply_rate_limit=True,
     use_recommended_config=False,
+    sandbox_state: ChatbotSandboxState | None = None,
 ):
+    '''
+    The main function for generating responses from the model.
+    '''
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
     start_tstamp = time.time()
@@ -450,7 +457,9 @@ def bot_response(
             yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
             return
 
-    conv, model_name = state.conv, state.model_name
+    conv: Conversation = state.conv
+    model_name: str = state.model_name
+
     model_api_dict = (
         api_endpoint_info[model_name] if model_name in api_endpoint_info else None
     )
@@ -550,6 +559,14 @@ def bot_response(
                 return
         output = data["text"].strip()
         conv.update_last_message(output)
+
+        # Add a "Run in Sandbox" button to the last message if code is detected
+        if sandbox_state is not None and sandbox_state["enable_sandbox"]:
+            last_message = conv.messages[-1]
+            if "```" in last_message[1]:
+                if not last_message[1].endswith(RUN_CODE_BUTTON_HTML):
+                    last_message[1] += "\n\n" + RUN_CODE_BUTTON_HTML
+
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     except requests.exceptions.RequestException as e:
         conv.update_last_message(
@@ -880,6 +897,17 @@ def build_single_model_ui(models, add_promotion_links=False):
                 {"left": r"\[", "right": r"\]", "display": True},
             ],
         )
+
+        # Add containers for the sandbox output and JavaScript
+        # with gr.Column():
+        #     sandbox_output = gr.Markdown(value="", visible=False)
+        #     sandbox = SandboxComponent(
+        #         label="Sandbox",
+        #         value=("", ""),
+        #         show_label=True,
+        #         visible=False,
+        #     )
+
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
@@ -969,10 +997,15 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, chatbot] + btn_list,
     )
 
+    # trigger sandbox run
+    # chatbot.select(on_click_run_code,
+    #                inputs=[state, sandbox_output, sandbox],
+    #                outputs=[sandbox_output, sandbox])
+
     return [state, model_selector]
 
 
-def build_demo(models):
+def build_demo(models) -> gr.Blocks:
     with gr.Blocks(
         title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
         theme=gr.themes.Default(),

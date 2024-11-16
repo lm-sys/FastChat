@@ -7,6 +7,7 @@ import json
 import time
 
 import gradio as gr
+from gradio_sandboxcomponent import SandboxComponent
 import numpy as np
 
 from fastchat.constants import (
@@ -30,6 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
+from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTION, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -152,7 +154,10 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0, state1,
+    model_selector0, model_selector1,
+    sandbox_state0, sandbox_state1,
+    text, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
@@ -204,6 +209,10 @@ def add_text(
             * 6
         )
 
+    # add snadbox instructions if enabled
+    if sandbox_state0['enable_sandbox']:
+        text = f"> {sandbox_state0['sandbox_instruction']}\n\n" + text
+
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         states[i].conv.append_message(states[i].conv.roles[0], text)
@@ -227,6 +236,8 @@ def bot_response_multi(
     temperature,
     top_p,
     max_new_tokens,
+    sandbox_state0,
+    sandbox_state1,
     request: gr.Request,
 ):
     logger.info(f"bot_response_multi (named). ip: {get_ip(request)}")
@@ -251,6 +262,7 @@ def bot_response_multi(
                 top_p,
                 max_new_tokens,
                 request,
+                sandbox_state=sandbox_state0,
             )
         )
 
@@ -327,7 +339,7 @@ def build_side_by_side_ui_named(models):
 
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
-    chatbots = [None] * num_sides
+    chatbots: list[gr.Chatbot | None] = [None] * num_sides
 
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -366,6 +378,38 @@ def build_side_by_side_ui_named(models):
                         ],
                     )
 
+    # sandbox states and components
+    sandbox_states: list[gr.State | None] = [None for _ in range(num_sides)]
+    sandboxes_components: list[tuple[
+        gr.Markdown, # sandbox_output
+        SandboxComponent,  # sandbox_ui
+        gr.Code, # sandbox_code
+    ] | None] = [None for _ in range(num_sides)]
+
+    with gr.Group():
+        with gr.Row():
+            for chatbotIdx in range(num_sides):
+                with gr.Column(scale=1):
+                    sandbox_state = gr.State(create_chatbot_sandbox_state())
+                    # Add containers for the sandbox output
+                    sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=True)
+                    with gr.Tab(label="Output"):
+                        sandbox_output = gr.Markdown(value="", visible=False)
+                        sandbox_ui = SandboxComponent(
+                            value=("", ""),
+                            show_label=True,
+                            visible=False,
+                        )
+                    with gr.Tab(label="Code"):
+                        sandbox_code = gr.Code(value="", interactive=False, visible=False)
+
+                    sandbox_states[chatbotIdx] = sandbox_state
+                    sandboxes_components[chatbotIdx] = (
+                        sandbox_output,
+                        sandbox_ui,
+                        sandbox_code,
+                    )
+
     with gr.Row():
         leftvote_btn = gr.Button(
             value="👈  A is better", visible=False, interactive=False
@@ -376,6 +420,30 @@ def build_side_by_side_ui_named(models):
         tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
         bothbad_btn = gr.Button(
             value="👎  Both are bad", visible=False, interactive=False
+        )
+
+
+    # chatbox sandbox global config
+    with gr.Group():
+        with gr.Row():
+            enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
+            sandbox_env_choice = gr.Dropdown(choices=["React", "Auto"], label="Sandbox Environment", interactive=True)
+        with gr.Group():
+            with gr.Accordion("Sandbox Instructions", open=False):
+                sandbox_instruction_textarea = gr.TextArea(
+                    value=DEFAULT_SANDBOX_INSTRUCTION
+                )
+
+        # update sandbox global config
+        enable_sandbox_checkbox.change(
+            fn=update_sandbox_config,
+            inputs=[
+                enable_sandbox_checkbox,
+                sandbox_env_choice,
+                sandbox_instruction_textarea,
+                *sandbox_states
+            ],
+            outputs=[*sandbox_states]
         )
 
     with gr.Row():
@@ -452,7 +520,7 @@ def build_side_by_side_ui_named(models):
         regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
         bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
         flash_buttons, [], btn_list
@@ -488,25 +556,38 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + sandbox_states + [textbox],
         states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
         flash_buttons, [], btn_list
     )
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
+        states + model_selectors + sandbox_states + [textbox],
         states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
-        states + [temperature, top_p, max_output_tokens],
+        states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
         flash_buttons, [], btn_list
     )
+
+    for chatbotIdx in range(num_sides):
+        chatbot = chatbots[chatbotIdx]
+        state = states[chatbotIdx]
+        sandbox_state = sandbox_states[chatbotIdx]
+        sandbox_components = sandboxes_components[chatbotIdx]
+
+        # trigger sandbox run
+        chatbot.select(
+            fn=on_click_run_code,
+            inputs=[state, sandbox_state, *sandbox_components],
+            outputs=[*sandbox_components],
+        )
 
     return states + model_selectors
