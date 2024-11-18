@@ -7,7 +7,7 @@ from . import *
 def general_tools_loading(tool_config_file, model_api_dict):
     tools = json.load(open(tool_config_file))
 
-    if model_api_dict['api_type'] == 'openai':
+    if model_api_dict['api_type'] in ['openai', 'nvidia_llama31']:
         return tools
     elif model_api_dict['api_type'] == 'anthropic_message':
         return_tools = []

@@ -16,10 +16,8 @@
                             "description": "The number of search results to return (default value set to 3)."
                         }
                     },
-                    "required": ["key_words", "topk"],
-                    "additionalProperties": false
+                    "required": ["key_words", "topk"]
                 }
-            },
-            "strict": true
+            }
         }
 ]
