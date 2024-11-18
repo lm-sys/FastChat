@@ -16,6 +16,7 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
+SUPPORTED_SANDBOX_ENVIRONMENTS = ['React', 'PyGame', 'Auto']
 
 VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
                                'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 'sql-esper']
@@ -28,10 +29,61 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-DEFAULT_SANDBOX_INSTRUCTION = "Generate typescript for a single-file react component tsx file. Do not use external libs or import external files. Surround code with ``` in markdown."
+DEFAULT_REACT_SANDBOX_INSTRUCTION = "Generate typescript for a single-file react component tsx file. Do not use external libs or import external files. Surround code with ``` in markdown."
 '''
 Default sandbox prompt instruction.
 '''
+
+DEFAULT_PYGAME_SANDBOX_INSTRUCTION = (
+'''
+Generate a pygame code snippet for a single file. Surround code with ``` in markdown.
+Write pygame main method in a sync function like:
+```python
+import asyncio
+import pygame
+
+pygame.init()
+
+def menu(events):
+    # draw
+    # check events
+    # change state
+    pass
+
+
+def play(events):
+    # draw
+    # check events
+    # change state
+    pass
+
+game_state = menu
+
+async def main():
+    global game_state
+    
+    # You can initialise pygame here as well
+
+    while game_state:
+        game_state(pygame.event.get())
+        pygame.display.update()
+        await asyncio.sleep(0) # do not forget that one, it must be called on every frame
+        
+    # Closing the game (not strictly required)
+    pygame.quit()
+    sys.exit()
+        
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+'''
+)
+
+DEFAULT_SANDBOX_INSTRUCTIONS = {
+    "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
+    "React": DEFAULT_REACT_SANDBOX_INSTRUCTION,
+    "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION,
+}
 
 
 class ChatbotSandboxState(TypedDict):
@@ -65,8 +117,8 @@ def update_sandbox_config(
     '''
     for state in states:
         state["enable_sandbox"] = enable_sandbox
-        state["sandbox_environment"] = sandbox_environment
         state["sandbox_instruction"] = sandbox_instruction
+        state["sandbox_environment"] = sandbox_environment
     return list(states)
 
 
@@ -162,8 +214,6 @@ def run_code_interpreter(code: str, code_language: str | None) -> tuple[str, str
                 results.append(rendered_result)
         return output, "\n".join(results), js_code
 
-        
-
 def run_react_sandbox(code: str) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
@@ -190,6 +240,44 @@ def run_react_sandbox(code: str) -> str:
     # get the sandbox url
     sandbox_url = 'https://' + sandbox.get_host(3000)
     return sandbox_url
+
+def run_pygame_sandbox(code: str) -> str:
+    """
+    Executes the provided code within a sandboxed environment and returns the output.
+
+    Args:
+        code (str): The code to be executed.
+
+    Returns:
+        url for remote sandbox
+    """
+    sandbox = Sandbox(
+        api_key=E2B_API_KEY,
+    )
+
+    sandbox.files.make_dir('mygame')
+    file_path = "~/mygame/main.py"
+    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+
+    sandbox.commands.run("pip install pygame pygbag black",
+                        timeout=60 * 3,
+                        # on_stdout=lambda message: print(message),
+                        on_stderr=lambda message: print(message),)
+
+    # build the pygame code
+    sandbox.commands.run(
+        "pygbag --build ~/mygame", # build game
+        timeout=60 * 5,
+        # on_stdout=lambda message: print(message),
+        # on_stderr=lambda message: print(message),
+    )
+
+    process = sandbox.commands.run("python -m http.server 3000", background=True) # start http server
+
+    # get game server url
+    host = sandbox.get_host(3000)
+    url = f"https://{host}"
+    return url + '/mygame/build/web/'
 
 def on_click_run_code(
         state,
@@ -227,8 +315,20 @@ def on_click_run_code(
         gr.Code(value=code, language=code_language, visible=True),
     )
 
-    if is_web_page:
+    if sandbox_state['sandbox_environment'] == 'React':
         url = run_react_sandbox(code)
+        yield (
+            gr.Markdown(value="### Running Sandbox", visible=True),
+            SandboxComponent(
+                value=(url, code),
+                label="Example",
+                visible=True,
+                key="newsandbox",
+            ),
+            gr.skip(),
+        )
+    elif sandbox_state['sandbox_environment'] == 'PyGame':
+        url = run_pygame_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
             SandboxComponent(
