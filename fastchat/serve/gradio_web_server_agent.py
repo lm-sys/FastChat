@@ -533,6 +533,23 @@ def bot_response(
                 )
 
     if model_api_dict.get("agent-mode", False):
+        # Agent mode --> load tools first
+        tool_config_file = model_api_dict.get("tool_config_file", "")
+        try:
+            tools = json.load(open(tool_config_file))
+        except Exception as e:
+            conv.update_last_message(f"No tools are available for this model for agent mode. Provided tool_config_file {tool_config_file} is invalid.")
+            yield (
+                state,
+                state.to_gradio_chatbot(),
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+        
         stream_iter = get_api_provider_stream_iter(
             system_conv,
             model_name,
@@ -541,6 +558,7 @@ def bot_response(
             top_p,
             max_new_tokens,
             state,
+            tools
         )
 
         html_code = ' <span class="cursor"></span> '
@@ -550,11 +568,64 @@ def bot_response(
 
         try:
             # first-round QA
-            data = {"text": ""}
             conv.update_last_message("Thinking...")
             yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+            # no stream mode so we can get the response directly
+            data = next(stream_iter)
+            if data["error_code"] == 0:
+                output = data["text"].strip()
+            else:
+                output = data["text"] + f"\n\n(error_code: {data['error_code']})"
+                conv.update_last_message(output)
+                yield (state, state.to_gradio_chatbot()) + (
+                    disable_btn,
+                    disable_btn,
+                    disable_btn,
+                    enable_btn,
+                    enable_btn,
+                )
+                return
 
-            for i, data in enumerate(stream_iter):
+            system_conv.update_last_message(output)
+
+            # Decide the execution flow based on the parsed response
+            # 1. action -> function_call (web_search) -> answer
+            # 2. answer -> return the answer
+
+            last_message = ""
+            if data["function_name"] is not None:
+            #if "action" in parsed_response:
+                function_name = data["function_name"]
+
+                #action = parsed_response["action"]
+                assert "web_search" == function_name, f"function_name: {function_name}"
+                arguments = data["arguments"]
+
+                conv.update_last_message("Searching...")
+                web_search_display, web_search_summary, web_search_result = web_search(**arguments)
+                system_conv.append_message(
+                    system_conv.roles[1], f"Reference Website: \n\n{web_search_result}"
+                )
+                system_conv.append_message(system_conv.roles[1], None)
+                conv.update_last_message(
+                    f"Reference Website: \n\n{web_search_display}"
+                )
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
+                # generate answer after web search
+                last_message = conv.messages[-1][1]
+                # Force no web search in the second round
+                stream_iter = get_api_provider_stream_iter(
+                    system_conv,
+                    model_name,
+                    model_api_dict,
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    state,
+                    tools=None
+                )
+                conv.update_last_message(last_message + "\nReasoning...")
+                data = next(stream_iter)
                 if data["error_code"] == 0:
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                     output = data["text"].strip()
@@ -569,78 +640,13 @@ def bot_response(
                         enable_btn,
                     )
                     return
-            system_conv.update_last_message(output)
-            try:
-                parsed_response = parse_json_from_string(output)
-            except json.JSONDecodeError as e:
-                output = data["text"] + f"\n\n(JSONDecodeError: {e})"
-                conv.update_last_message(output)
-                yield (state, state.to_gradio_chatbot()) + (
-                    disable_btn,
-                    disable_btn,
-                    disable_btn,
-                    enable_btn,
-                    enable_btn,
-                )
-                return
-            # Decide the execution flow based on the parsed response
-            # 1. action -> web_search (max 5 times)
-            # 2. answer -> return the answer
-            last_message = ""
-            if "action" in parsed_response:
-                action = parsed_response["action"]
-                assert "web_search" == action["name"]
-                arguments = action["arguments"]
-                conv.update_last_message("Searching...")
-                web_search_result, web_search_display = web_search(**arguments)
-                system_conv.append_message(
-                    system_conv.roles[1], f"Observation: \n\n{web_search_result}"
-                )
-                system_conv.append_message(system_conv.roles[1], None)
-                conv.update_last_message(
-                    f"Reference Website(s): \n\n{web_search_display}"
-                )
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
-                # generate answer after web search
-                last_message = conv.messages[-1][1]
-                stream_iter = get_api_provider_stream_iter(
-                    system_conv,
-                    model_name,
-                    model_api_dict,
-                    temperature,
-                    top_p,
-                    max_new_tokens,
-                    state,
-                )
-                data = {"text": ""}
-                conv.update_last_message(f"{last_message}\n\nReasoning...")
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-                for i, data in enumerate(stream_iter):
-                    if data["error_code"] == 0:
-                        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-                        output = data["text"].strip()
-                    else:
-                        output = data["text"] + f"\n\n(error_code: {data['error_code']})"
-                        conv.update_last_message(output)
-                        yield (state, state.to_gradio_chatbot()) + (
-                            disable_btn,
-                            disable_btn,
-                            disable_btn,
-                            enable_btn,
-                            enable_btn,
-                        )
-                        return
-                # print("*" * 50)
-                # print(output, flush=True)
-                # print("*" * 50)
-                system_conv.update_last_message(output)
-                parsed_response = parse_json_from_string(output)
 
-            assert (
-                "answer" in parsed_response
-            ), f"parsed_response: {parsed_response}"
+                system_conv.update_last_message(output)
+                # Save only summary to prevent context length explosion
+                system_conv.messages[-2][1] = web_search_summary
+
             conv.update_last_message(
-                f"{last_message}\n{parsed_response['answer'].strip()}"
+                f"{output}\n{last_message}"
             )
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 

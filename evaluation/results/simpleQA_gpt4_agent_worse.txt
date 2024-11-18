@@ -1,0 +1,57 @@
+# comments
+GPT-4o agent with search was worse than base GPT-4o for 4 prompts.
+1. web search result tricked?
+2. no web search
+3. confusion
+4. no web search
+
+Prompt: In what year did Augustus De Morgan publish the article "Trochoidal Curve" in the Penny Cyclopaedia?
+Label: 1843
+------------------------------
+GPT-4o Grade Result: A
+GPT-4o Answer: Augustus De Morgan published the article "Trochoidal Curve" in the Penny Cyclopaedia in the year 1843.
+------------------------------
+GPT-4o Agent Grade Result: B
+GPT-4o Agent Answer: Augustus De Morgan published the article "Trochoidal Curve" in the Penny Cyclopaedia in 1836.
+Reference Website: 
+
+- [Augustus De Morgan - Wikipedia](https://en.wikipedia.org/wiki/Augustus_De_Morgan)
+- [On the dissecting table | plus.maths.org](https://plus.maths.org/content/dissecting-table)
+- [Bibliography | plus.maths.org](https://plus.maths.org/content/bibliography)
+
+==================================================
+Prompt: In what month and year was Nikolai Talyzin dismissed from Nikolai Ryzhkov's government, along with many other conservatives, during the period of perestroika?
+Label: September 1989
+------------------------------
+GPT-4o Grade Result: A
+GPT-4o Answer: Nikolai Talyzin was dismissed from Nikolai Ryzhkov's government in September 1989, during the period of perestroika.
+------------------------------
+GPT-4o Agent Grade Result: B
+GPT-4o Agent Answer: Nikolai Talyzin was dismissed from Nikolai Ryzhkov's government in September 1988, during the period of perestroika.
+
+
+==================================================
+Prompt: In which month and year was Hakyung Lee, the mother of the children whose bodies were found in a suitcase in New Zealand, arrested in South Korea?
+Label: September 2022
+------------------------------
+GPT-4o Grade Result: A
+GPT-4o Answer: Hakyung Lee was arrested in South Korea in September 2022.
+------------------------------
+GPT-4o Agent Grade Result: B
+GPT-4o Agent Answer: Hakyung Lee was arrested in South Korea in 2022. She was extradited to New Zealand in November 2022 to face charges related to the deaths of her children.
+Reference Website: 
+
+- [New double-murder trial date set for Hakyung Lee, accused of killing children in Auckland - NZ Herald](https://www.nzherald.co.nz/nz/crime/new-double-murder-trial-date-set-for-hakyung-lee-accused-of-killing-children-in-auckland/2LRCRANFFRHNXNJRLW4R6A5CBA/)
+
+==================================================
+Prompt: Who was Christopher Hornsrud's Minister of Justice and the Police when he formed his Labour Party cabinet in 1928?
+Label: Cornelius Holmboe
+------------------------------
+GPT-4o Grade Result: A
+GPT-4o Answer: When Christopher Hornsrud formed his Labour Party cabinet in 1928, his Minister of Justice and the Police was Cornelius Holmboe.
+------------------------------
+GPT-4o Agent Grade Result: B
+GPT-4o Agent Answer: When Christopher Hornsrud formed his Labour Party cabinet in Norway in 1928, the Minister of Justice and the Police was Cornelius Middelthon.
+
+
+==================================================

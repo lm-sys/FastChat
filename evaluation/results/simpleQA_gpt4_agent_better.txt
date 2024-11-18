@@ -1,0 +1,95 @@
+# comments
+7 prompts for which GPT-4o with web search was better than GPT-4o.
+2 out of 7, the model did not do web search (lucky?)
+
+Prompt: What was composer Sigrid Ingeborg Henriette Wienecke's mother's name?
+Label: Anna Bruun Tordenskjold
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: Sigrid Ingeborg Henriette Wienecke's mother's name was Ingeborg Wienecke.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: Sigrid Ingeborg Henriette Wienecke's mother was named Anna Bruun Tordenskjold.
+Reference Website: 
+
+- [Henriette Wienecke - Wikipedia](https://en.wikipedia.org/wiki/Henriette_Wienecke)
+- [Henriette Wienecke - Wikiwand](https://www.wikiwand.com/en/articles/Henriette_Wienecke)
+- [Henriette Wienecke Biography | HowOld.co](https://www.howold.co/person/henriette-wienecke/biography)
+
+==================================================
+Prompt: What is the surname of the psychiatrist who prescribes medication for Marie Hanson for her periodic blackouts in Season 1, Episode 20 of Ally McBeal?
+Label: Peters
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: In Season 1, Episode 20 of "Ally McBeal," the psychiatrist who prescribes medication for Marie Hanson is Dr. Neiman.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: The psychiatrist who prescribes medication for Marie Hanson in Season 1, Episode 20 of *Ally McBeal* is Dr. Peters.
+Reference Website: 
+
+- [The Inmates | Ally McBeal Wiki | Fandom](https://allymcbeal.fandom.com/wiki/The_Inmates)
+
+==================================================
+Prompt: What is the surname of the individual who won the Herman Skolnik Award in 1977?
+Label: Garfield
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: The Herman Skolnik Award, given by the American Chemical Society's Division of Chemical Information, was first awarded in 1976. Therefore, there is no recipient for the year 1977.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: The Herman Skolnik Award was established by the American Chemical Society's Division of Chemical Information in 1976, and the first award was given in 1977. The recipient of the first Herman Skolnik Award in 1977 was Eugene Garfield. Therefore, the surname of the individual who won the award in 1977 is "Garfield."
+
+
+==================================================
+Prompt: In which year was John B. Mortimer appointed a Judge of the High Court of Hong Kong?
+Label: 1985
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: John B. Mortimer was appointed as a Judge of the High Court of Hong Kong in 1979.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: John B. Mortimer was appointed a Judge of the High Court of Hong Kong in 1985.
+Reference Website: 
+
+- [John B. Mortimer - Wikipedia](https://en.wikipedia.org/wiki/John_B._Mortimer)
+- [Hong Kong Court of Final Appeal - Former Judges - Mr John Barry MORTIMER, GBS](https://www.hkcfa.hk/en/about/who/judges/former/index_id_52.html)
+- [Hong Kong Judiciary - List of Judges and Judicial Officers](https://www.judiciary.hk/en/about_us/judges.html)
+
+==================================================
+Prompt: In what key was "I Offer My Life" by Don Moen composed?
+Label: F Major
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: "I Offer My Life" by Don Moen is composed in the key of D major.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: "I Offer My Life" by Don Moen is composed in the key of F major.
+
+
+==================================================
+Prompt: On what date (month, day, year) was politician George John Sandys promoted to Lieutenant?
+Label: 28 August 1901.
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: George John Sandys was promoted to the rank of lieutenant on June 15, 1898.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: George John Sandys was promoted to Lieutenant on 28 August 1901 while he was serving in South Africa.
+Reference Website: 
+
+- [George Sandys (politician) - Wikipedia](https://en.wikipedia.org/wiki/George_Sandys_(politician))
+
+==================================================
+Prompt: What were the month and year when Telegram announced that the app had 60 million active users and delivered 12 billion daily messages?
+Label: September 2015.
+------------------------------
+GPT-4o Grade Result: B
+GPT-4o Answer: Telegram announced that it had 60 million active users and was delivering 12 billion daily messages in March 2015.
+------------------------------
+GPT-4o Agent Grade Result: A
+GPT-4o Agent Answer: Telegram announced in September 2015 that the app had 60 million active users and delivered 12 billion daily messages.
+Reference Website: 
+
+- [Telegram (software) - Wikipedia](https://en.wikipedia.org/wiki/Telegram_(software))
+
+==================================================

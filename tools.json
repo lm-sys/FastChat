@@ -1,0 +1,25 @@
+[
+        {
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": "Retrieve website links, titles, and snippets based on provided keywords. Invoke this function whenever web information is needed.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "key_words": {
+                            "type": "string",
+                            "description": "The key words to search for."
+                        },
+                        "topk": {
+                            "type": "integer",
+                            "description": "The number of search results to return (default value set to 3)."
+                        }
+                    },
+                    "required": ["key_words", "topk"],
+                    "additionalProperties": false
+                }
+            },
+            "strict": true
+        }
+]
