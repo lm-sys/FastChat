@@ -10,6 +10,6 @@ Runtimes: GPT-4o (5 sec/prompt), GPT-4o-agent (13 sec/prompt)
 Results: results/arena_search_helpful.txt
 
 ## Search not helpful
-Runtimes: GPT-4o (40 sec/prompt), GPT-4o-agent (47 sec/prompt)
+Runtimes: GPT-4o (4.0 sec/prompt), GPT-4o-agent (4.7 sec/prompt)
 Results: results/arena_search_not_helpful.txt
 
