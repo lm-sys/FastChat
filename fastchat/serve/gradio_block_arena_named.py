@@ -31,7 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTION, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config
+from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -427,12 +427,38 @@ def build_side_by_side_ui_named(models):
     with gr.Group():
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
-            sandbox_env_choice = gr.Dropdown(choices=["React", "Auto"], label="Sandbox Environment", interactive=True)
+            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True)
         with gr.Group():
             with gr.Accordion("Sandbox Instructions", open=False):
                 sandbox_instruction_textarea = gr.TextArea(
-                    value=DEFAULT_SANDBOX_INSTRUCTION
+                    value=''
                 )
+
+        sandbox_env_choice.change(
+            fn=lambda env: DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            inputs=[sandbox_env_choice],
+            outputs=[sandbox_instruction_textarea]
+        ).then(
+            fn=update_sandbox_config,
+            inputs=[
+                enable_sandbox_checkbox,
+                sandbox_env_choice,
+                sandbox_instruction_textarea,
+                *sandbox_states
+            ],
+            outputs=[*sandbox_states]
+        )
+
+        sandbox_instruction_textarea.change(
+            fn=update_sandbox_config,
+            inputs=[
+                enable_sandbox_checkbox,
+                sandbox_env_choice,
+                sandbox_instruction_textarea,
+                *sandbox_states
+            ],
+            outputs=[*sandbox_states]
+        )
 
         # update sandbox global config
         enable_sandbox_checkbox.change(
