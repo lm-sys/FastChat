@@ -6,7 +6,7 @@
     "api_key": "OPENAI_API_KEY",
     "anony_only": false,
     "recommended_config": {
-      "temperature": 0.7,
+      "temperature": 0.0,
       "top_p": 1.0
     },
     "text-arena": true,
@@ -20,14 +20,14 @@
     "api_key": "OPENAI_API_KEY",
     "anony_only": false,
     "recommended_config": {
-      "temperature": 0.7,
+      "temperature": 0.0,
       "top_p": 1.0
     },
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
     "custom_system_prompt": true,
-    "tool_config_file": "tools.json"
+    "tool_config_file": "search_configs/tools.json"
   },
   "gpt-4o-mini-agent": {
     "model_name": "gpt-4o-mini-2024-07-18",
@@ -36,14 +36,14 @@
     "api_key": "OPENAI_API_KEY",
     "anony_only": false,
     "recommended_config": {
-      "temperature": 0.7,
+      "temperature": 0.0,
       "top_p": 1.0
     },
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
     "custom_system_prompt": true,
-    "tool_config_file": "tools.json"
+    "tool_config_file": "search_configs/tools.json"
   },
   "llama-agent": {
     "model_name": "llama3.1-405b",
@@ -52,14 +52,14 @@
     "api_key": "LLAMA_API_KEY",
     "anony_only": false,
     "recommended_config": {
-      "temperature": 0.7,
+      "temperature": 0.0,
       "top_p": 1.0
     },
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
     "custom_system_prompt": true,
-    "tool_config_file": "tools.json"
+    "tool_config_file": "search_configs/tools.json"
   },
   "qwen-agent": {
     "model_name": "Qwen2-72B-Instruct",
@@ -68,12 +68,12 @@
     "api_key": "LLAMA_API_KEY",
     "anony_only": false,
     "recommended_config": {
-      "temperature": 0.7,
+      "temperature": 0.0,
       "top_p": 1.0
     },
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
-    "tool_config_file": "tools.json"
+    "tool_config_file": "search_configs/tools.json"
   }
 }

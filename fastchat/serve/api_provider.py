@@ -96,13 +96,24 @@ def get_api_provider_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message":
-        if model_api_dict.get("vision-arena", False):
-            prompt = conv.to_anthropic_vision_api_messages()
-        else:
+        if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
-        stream_iter = anthropic_message_api_stream_iter(
-            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
-        )
+            stream_iter = anthropic_message_api_stream_iter_agent(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                tools=tools
+            )
+        else:
+            if model_api_dict.get("vision-arena", False):
+                prompt = conv.to_anthropic_vision_api_messages()
+            else:
+                prompt = conv.to_openai_api_messages()
+            stream_iter = anthropic_message_api_stream_iter(
+                model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
+            )
     elif model_api_dict["api_type"] == "anthropic_message_vertex":
         if model_api_dict.get("vision-arena", False):
             prompt = conv.to_anthropic_vision_api_messages()
@@ -803,6 +814,101 @@ def anthropic_message_api_stream_iter(
                 "error_code": 0,
             }
             yield data
+
+
+def anthropic_message_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    vertex_ai=False,
+    tools=None,
+):
+    import anthropic
+
+    if vertex_ai:
+        client = anthropic.AnthropicVertex(
+            region=os.environ["GCP_LOCATION"],
+            project_id=os.environ["GCP_PROJECT_ID"],
+            max_retries=5
+        )
+    else:
+        client = anthropic.Anthropic(
+            api_key=os.environ["ANTHROPIC_API_KEY"],
+            max_retries=5
+        )
+
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    # Make requests for logging
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+        "tools": tools
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    system_prompt = ""
+    if messages[0]["role"] == "system":
+        if type(messages[0]["content"]) == dict:
+            system_prompt = messages[0]["content"]["text"]
+        elif type(messages[0]["content"]) == str:
+            system_prompt = messages[0]["content"]
+        # remove system prompt
+        messages = messages[1:]
+    
+    # Convert it to the format that the API expects
+    if tools is None:
+        tools = []
+    res = client.messages.create(
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_new_tokens,
+        messages=messages,
+        model=model_name,
+        system=system_prompt,
+        stream=False,
+        tools=tools,
+    )
+
+    logger.info(res)
+    data = {
+        "text": "",
+        "error_code": 0,
+        "function_name": None,
+        "arguments": None
+    }
+    if res.stop_reason == "tool_use":
+        for chunk in res.content:
+            if chunk.type == "tool_use":
+                try:
+                    data['function_name'] = chunk.name
+                    data['arguments'] = chunk.input
+                    data['text'] += f"\n\n**Function Call:** {data['function_name']}\n**Arguments:** {data['arguments']}"
+                except Exception as e:
+                    logger.error(f"==== Anthroopic function call parsing error ====\n{e}")
+            # drop the text block as it is uninformative
+    else:
+        assert res.stop_reason == "end_turn", "Unexpected step reason"
+        for chunk in res.content:
+            if chunk.type == "text":
+                data['text'] += chunk.text
+    yield data
+
 
 
 def gemini_api_stream_iter(

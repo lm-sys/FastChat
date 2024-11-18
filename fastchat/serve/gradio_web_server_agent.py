@@ -46,6 +46,7 @@ from fastchat.utils import (
     parse_json_from_string,
 )
 from fastchat.tools.search import web_search
+from fastchat.tools import general_tools_loading
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -446,7 +447,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=False,
-    use_recommended_config=False,
+    use_recommended_config=True,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -536,7 +537,7 @@ def bot_response(
         # Agent mode --> load tools first
         tool_config_file = model_api_dict.get("tool_config_file", "")
         try:
-            tools = json.load(open(tool_config_file))
+            tools = general_tools_loading(tool_config_file, model_api_dict)
         except Exception as e:
             conv.update_last_message(f"No tools are available for this model for agent mode. Provided tool_config_file {tool_config_file} is invalid.")
             yield (
