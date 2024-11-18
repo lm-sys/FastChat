@@ -1,10 +1,17 @@
 import gradio as gr
 import pandas as pd
 import requests
+import os
 
 from fastchat.serve.monitor.monitor import recompute_final_ranking
 
-copilot_arena_leaderboard_url = "https://leaderboard-server.fly.dev/elo"
+copilot_arena_leaderboard_url = os.getenv("COPILOT_ARENA_LEADERBOARD_URL")
+
+if not copilot_arena_leaderboard_url:
+    raise ValueError(
+        "COPILOT_ARENA_LEADERBOARD_URL environment variable is not set. "
+        "Please configure it to a valid URL."
+    )
 
 
 def process_copilot_arena_leaderboard(leaderboard):
