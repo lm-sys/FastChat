@@ -253,6 +253,7 @@ def get_api_provider_stream_iter(
             messages=messages,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
+            conversation_id=state.conv_id,
         )
     else:
         raise NotImplementedError()
@@ -1279,6 +1280,7 @@ def jab_api_stream_iter(
     messages,
     api_base,
     api_key,
+    conversation_id
 ):
     import requests
 
@@ -1291,6 +1293,7 @@ def jab_api_stream_iter(
     payload = {
         "model": model_name,
         "messages": text_messages,
+        "conversation_id": conversation_id,
     }
 
     logger.info(f"==== request ====\n{payload}")
