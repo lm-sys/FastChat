@@ -1275,13 +1275,7 @@ def metagen_api_stream_iter(
         }
 
 
-def jab_api_stream_iter(
-    model_name,
-    messages,
-    api_base,
-    api_key,
-    conversation_id
-):
+def jab_api_stream_iter(model_name, messages, api_base, api_key, conversation_id):
     import requests
 
     headers = {"Content-Type": "application/json", "x-api-key": api_key}
