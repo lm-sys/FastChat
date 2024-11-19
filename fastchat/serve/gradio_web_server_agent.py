@@ -46,7 +46,6 @@ from fastchat.utils import (
     parse_json_from_string,
 )
 from fastchat.tools.search import web_search
-from fastchat.tools import general_tools_loading
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -537,7 +536,7 @@ def bot_response(
         # Agent mode --> load tools first
         tool_config_file = model_api_dict.get("tool_config_file", "")
         try:
-            tools = general_tools_loading(tool_config_file, model_api_dict)
+            tools = json.load(open(tool_config_file))
         except Exception as e:
             conv.update_last_message(f"No tools are available for this model for agent mode. Provided tool_config_file {tool_config_file} is invalid.")
             yield (

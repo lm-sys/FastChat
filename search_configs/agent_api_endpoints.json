@@ -1,9 +1,9 @@
 {
-  "gpt-4o": {
-    "model_name": "gpt-4o-2024-08-06",
+  "gpt-4o-mini": {
+    "model_name": "gpt-4o-mini-2024-07-18",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
-    "api_key": "OPENAI_API_KEY",
+    "api_key": "***",
     "anony_only": false,
     "recommended_config": {
       "temperature": 0.0,
@@ -13,27 +13,11 @@
     "vision-arena": false,
     "agent-mode": false
   },
-  "gpt-4o-agent": {
-    "model_name": "gpt-4o-2024-08-06",
-    "api_type": "openai",
-    "api_base": "https://api.openai.com/v1",
-    "api_key": "OPENAI_API_KEY",
-    "anony_only": false,
-    "recommended_config": {
-      "temperature": 0.0,
-      "top_p": 1.0
-    },
-    "text-arena": true,
-    "vision-arena": false,
-    "agent-mode": true,
-    "custom_system_prompt": true,
-    "tool_config_file": "search_configs/tools.json"
-  },
   "gpt-4o-mini-agent": {
     "model_name": "gpt-4o-mini-2024-07-18",
     "api_type": "openai",
     "api_base": "https://api.openai.com/v1",
-    "api_key": "OPENAI_API_KEY",
+    "api_key": "***",
     "anony_only": false,
     "recommended_config": {
       "temperature": 0.0,
@@ -45,11 +29,25 @@
     "custom_system_prompt": true,
     "tool_config_file": "search_configs/tools.json"
   },
-  "llama-agent": {
-    "model_name": "llama3.1-405b",
-    "api_type": "openai",
-    "api_base": "https://api.llama-api.com",
-    "api_key": "LLAMA_API_KEY",
+  "nvidia-llama31": {
+    "model_name": "meta/llama-3.1-405b-instruct",
+    "api_type": "nvidia_llama31",
+    "api_base": "https://integrate.api.nvidia.com/v1",
+    "api_key": "***",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": false
+  },
+  "nvidia-llama31-agent": {
+    "model_name": "meta/llama-3.1-405b-instruct",
+    "api_type": "nvidia_llama31",
+    "api_base": "https://integrate.api.nvidia.com/v1",
+    "api_key": "***",
     "anony_only": false,
     "recommended_config": {
       "temperature": 0.0,
@@ -58,14 +56,50 @@
     "text-arena": true,
     "vision-arena": false,
     "agent-mode": true,
-    "custom_system_prompt": true,
     "tool_config_file": "search_configs/tools.json"
   },
-  "qwen-agent": {
-    "model_name": "Qwen2-72B-Instruct",
-    "api_type": "openai",
-    "api_base": "https://api.llama-api.com",
-    "api_key": "LLAMA_API_KEY",
+  "gemini-v1.5-flash": {
+    "model_name": "gemini-1.5-flash-002",
+    "api_type": "gemini",
+    "api_key": "***",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": false
+  },
+  "gemini-v1.5-flash-agent": {
+    "model_name": "gemini-1.5-flash-002",
+    "api_type": "gemini",
+    "api_key": "***",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": true,
+    "tool_config_file": "search_configs/tools.json"
+  },
+  "claude-3.5-sonnet": {
+    "model_name": "claude-3-5-sonnet-20241022",
+    "api_type": "anthropic_message",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": false
+  },
+  "claude-3.5-sonnet-agent": {
+    "model_name": "claude-3-5-sonnet-20241022",
+    "api_type": "anthropic_message",
     "anony_only": false,
     "recommended_config": {
       "temperature": 0.0,

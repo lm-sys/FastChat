@@ -10,6 +10,7 @@ import time
 import requests
 
 from fastchat.utils import build_logger
+from fastchat.tools import api_tools_loading
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -29,6 +30,7 @@ def get_api_provider_stream_iter(
         # use our own streaming implementation for agent mode
         if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
             stream_iter = openai_api_stream_iter_agent(
                 model_api_dict["model_name"],
                 prompt,
@@ -98,6 +100,7 @@ def get_api_provider_stream_iter(
     elif model_api_dict["api_type"] == "anthropic_message":
         if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
             stream_iter = anthropic_message_api_stream_iter_agent(
                 model_api_dict["model_name"],
                 prompt,
@@ -129,14 +132,26 @@ def get_api_provider_stream_iter(
         )
     elif model_api_dict["api_type"] == "gemini":
         prompt = conv.to_gemini_api_messages()
-        stream_iter = gemini_api_stream_iter(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_key=model_api_dict["api_key"],
-        )
+        if model_api_dict.get("agent-mode", False):
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
+            stream_iter = gemini_api_stream_iter_agent(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_key=model_api_dict["api_key"],
+                tools=tools
+            )
+        else:
+            stream_iter = gemini_api_stream_iter(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_key=model_api_dict["api_key"],
+            )
     elif model_api_dict["api_type"] == "gemini_no_stream":
         prompt = conv.to_gemini_api_messages()
         stream_iter = gemini_api_stream_iter(
@@ -185,6 +200,10 @@ def get_api_provider_stream_iter(
         )
     elif model_api_dict["api_type"] == "nvidia_llama31":
         prompt = conv.to_openai_api_messages()
+        if model_api_dict.get("agent-mode", False):
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
+        else:
+            tools = None
         stream_iter = nvidia_llama31_api_stream_iter_agent(
             model_api_dict["model_name"],
             prompt,
@@ -885,8 +904,6 @@ def anthropic_message_api_stream_iter_agent(
         messages = messages[1:]
     
     # Convert it to the format that the API expects
-    if tools is None:
-        tools = []
     res = client.messages.create(
         temperature=temperature,
         top_p=top_p,
@@ -1012,6 +1029,104 @@ def gemini_api_stream_iter(
                 "text": f"**API REQUEST ERROR** Reason: {e}.",
                 "error_code": 1,
             }
+
+
+def gemini_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key=None,
+    use_stream=False,
+    tools=None,
+):
+    assert use_stream == False, "Hasn't supported streaming for agent mode yet"
+    import google.generativeai as genai  # pip install google-generativeai
+
+    if api_key is None:
+        api_key = os.environ["GEMINI_API_KEY"]
+    genai.configure(api_key=api_key)
+
+    generation_config = {
+        "temperature": temperature,
+        "max_output_tokens": max_new_tokens,
+        "top_p": top_p,
+    }
+    params = {
+        "model": model_name,
+        "prompt": messages,
+    }
+    params.update(generation_config)
+    logger.info(f"==== request ====\n{params}")
+
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
+
+    history = []
+    system_prompt = None
+    for message in messages[:-1]:
+        if message["role"] == "system":
+            system_prompt = message["content"]
+            continue
+        history.append({"role": message["role"], "parts": message["content"]})
+
+    model = genai.GenerativeModel(
+        model_name=model_name,
+        system_instruction=system_prompt,
+        generation_config=generation_config,
+        safety_settings=safety_settings,
+    )
+    convo = model.start_chat(history=history)
+
+    
+    try:
+        if tools is None:
+            response = convo.send_message(messages[-1]["content"], stream=False)
+            text = response.candidates[0].content.parts[0].text
+            data = {
+                "function_name": None,
+                "arguments": None,
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+        else:
+            # Automatically predict function calls
+            tool_config = genai.protos.ToolConfig(
+                function_calling_config=genai.protos.FunctionCallingConfig(
+                    mode=genai.protos.FunctionCallingConfig.Mode.AUTO,  # The default model behavior. The model decides whether to predict a function call or a natural language response.
+                )
+            )
+            response = convo.send_message(messages[-1]["content"], stream=False, tools=tools, tool_config=tool_config)
+            if "function_call" in response.candidates[0].content.parts[0]:
+                function_call = response.candidates[0].content.parts[0].function_call
+                function_name = function_call.name
+                arguments = function_call.args
+                text = f"\n\n**Function Call:** {function_name}\n**Arguments:** {arguments}"
+            else:
+                text = response.candidates[0].content.parts[0].text
+                function_name = None
+                arguments = None
+            data = {
+                "function_name": function_name,
+                "arguments": arguments,
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: {e}.",
+            "error_code": 1,
+            "function_name": None,
+            "arguments": None
+        }
 
 
 def ai2_api_stream_iter(
