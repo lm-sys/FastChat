@@ -8,12 +8,13 @@ import numpy as np
 from transformers import AutoTokenizer
 from litellm import completion
 
+
 def litellm_completion(args, tokenizer, image_url=None):
     try:
         if image_url:
             messages = [
                 {
-                    "role": "user", 
+                    "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": image_url}},
                         {"type": "text", "text": "Tell me a story about this image."},
@@ -26,7 +27,7 @@ def litellm_completion(args, tokenizer, image_url=None):
             ]
 
         start = time.time()
-        
+
         response = completion(
             model=args.model,
             api_base=args.api_base,
@@ -55,6 +56,7 @@ def litellm_completion(args, tokenizer, image_url=None):
             error_log.write(f"Error during completion: {str(e)}\n")
         return str(e)
 
+
 def main(args):
     n = args.num_total_responses
     batch_size = args.req_per_sec  # Requests per second
@@ -62,12 +64,12 @@ def main(args):
 
     all_results = []
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    
+
     with ThreadPoolExecutor(max_workers=batch_size) as executor:
         for i in range(0, n, batch_size):
             batch_futures = []
             batch = range(i, min(i + batch_size, n))
-            
+
             for _ in batch:
                 if args.include_image:
                     if args.randomize_image_dimensions:
@@ -75,15 +77,17 @@ def main(args):
                     else:
                         y_dimension = 512
                     image_url = f"https://placehold.co/1024x{y_dimension}/png"
-                    future = executor.submit(litellm_completion, args, tokenizer, image_url)
+                    future = executor.submit(
+                        litellm_completion, args, tokenizer, image_url
+                    )
                 else:
                     future = executor.submit(litellm_completion, args, tokenizer)
                 batch_futures.append(future)
-                
+
             # Wait for batch to complete
             for future in batch_futures:
                 all_results.append(future.result())
-                
+
             if i + batch_size < n:
                 time.sleep(1)  # Wait 1 second before next batch
 
@@ -110,6 +114,7 @@ def main(args):
     print(f"Mean TTFT: {np.mean(ttft_list)}")
     print(f"P99 ITL: {np.percentile(itl_list_flattened, 99)}")
     print(f"Mean ITL: {np.mean(itl_list_flattened)}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
