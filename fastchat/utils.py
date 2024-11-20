@@ -252,7 +252,7 @@ function() {
     console.log("url_params", url_params);
 
     const urlContainsLeaderboard = Object.keys(url_params).some(key => key.toLowerCase().includes("leaderboard"));
-    const msg = "Users of this website are required to agree to the following terms:\\n\\nThe service is a research preview. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.\\nPlease do not upload any private information.\\nThe service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.";
+    const msg = "以下の利用規約に同意の上でご利用ください:\\n\\n・本サイトはLLM-jp 参加者のみ使用することができます。サイトのアドレスやユーザ名・パスワードを LLM-jp 参加者以外に知らせないでください。\\n・本サイトで入力した情報は、LLM-jp における研究開発に利用します。また、LLM 開発のためのデータとして一般公開する可能性があります。秘密情報を漏洩しないよう注意ください。\\n・本サイトでモデルが出力したデータの再利用はしないようお願いします。モデルによって利用条件が異なるため、出力データの利用がライセンス違反となる場合もあります。\\n・本サイトではユーザに関する情報は収集しません。\\n・本サイトは限定公開用であり、高負荷に耐えられるようには設計されていません。アクセスが集中した場合には動作が不安定になる可能性があることを了承ください。都合により事前アナウンスなしで閉鎖する可能性もあります。\\n・LLM-jp は、本サイトを使用することによる損害は一切負いません。自己責任で利用をお願いします。";
     if (!urlContainsLeaderboard) {
         if (window.alerted_before) return;
         alert(msg);

@@ -143,21 +143,21 @@ window.__gradio_mode__ = "app";
                     arena_tab.select(None, None, None, js=load_js)
                     side_by_side_anony_list = build_side_by_side_ui_anony(models)
 
-            with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
-                side_by_side_tab.select(None, None, None, js=alert_js)
-                side_by_side_named_list = build_side_by_side_ui_named(models)
+            # with gr.Tab("⚔️ Arena (side-by-side)", id=2) as side_by_side_tab:
+            #     side_by_side_tab.select(None, None, None, js=alert_js)
+            #     side_by_side_named_list = build_side_by_side_ui_named(models)
 
-            with gr.Tab("💬 Direct Chat", id=3) as direct_tab:
-                direct_tab.select(None, None, None, js=alert_js)
-                single_model_list = build_single_model_ui(
-                    models, add_promotion_links=True
-                )
+            # with gr.Tab("💬 Direct Chat", id=3) as direct_tab:
+            #     direct_tab.select(None, None, None, js=alert_js)
+            #     single_model_list = build_single_model_ui(
+            #         models, add_promotion_links=True
+            #     )
 
             demo_tabs = (
                 [inner_tabs]
-                + single_model_list
+                # + single_model_list
                 + side_by_side_anony_list
-                + side_by_side_named_list
+                # + side_by_side_named_list
             )
 
             if elo_results_file:
@@ -166,8 +166,8 @@ window.__gradio_mode__ = "app";
                         elo_results_file, leaderboard_table_file, show_plot=True
                     )
 
-            with gr.Tab("ℹ️ About Us", id=5):
-                about = build_about()
+            # with gr.Tab("ℹ️ About Us", id=5):
+            #     about = build_about()
 
         url_params = gr.JSON(visible=False)
 
