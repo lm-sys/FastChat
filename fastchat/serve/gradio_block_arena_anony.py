@@ -3,6 +3,7 @@ Chatbot Arena (battle) tab.
 Users chat with two anonymous models.
 """
 
+import copy
 import json
 import time
 
@@ -17,7 +18,6 @@ from fastchat.constants import (
     CONVERSATION_TURN_LIMIT,
     SURVEY_LINK,
 )
-from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import flash_buttons
 from fastchat.serve.gradio_web_server import (
     State,
@@ -29,6 +29,9 @@ from fastchat.serve.gradio_web_server import (
     invisible_btn,
     enable_text,
     disable_text,
+    disable_radio,
+    visible_radio,
+    invisible_radio,
     acknowledgment_md,
     get_ip,
     get_model_description_md,
@@ -80,22 +83,15 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
     gr.Info(
         "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
     )
-    if ":" not in model_selectors[0]:
-        for i in range(5):
-            names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
-            )
-            # yield names + ("",) + (disable_btn,) * 4
-            yield names + (disable_text,) + (disable_btn,) * 5
-            time.sleep(0.1)
+
+    if vote_type == "leftvote":
+        context_selector = "Model A"
+    elif vote_type == "rightvote":
+        context_selector = "Model B"
     else:
-        names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
-        )
-        # yield names + ("",) + (disable_btn,) * 4
-        yield names + (disable_text,) + (disable_btn,) * 5
+        context_selector = None
+
+    yield (disable_btn,) * 4 + (context_selector,)
 
 
 def leftvote_last_response(
@@ -145,11 +141,11 @@ def regenerate(state0, state1, request: gr.Request):
         for i in range(num_sides):
             states[i].conv.update_last_message(None)
         return (
-            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
+            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 7
         )
     states[0].skip_next = True
     states[1].skip_next = True
-    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 6
+    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 7
 
 
 def clear_history(request: gr.Request):
@@ -160,9 +156,10 @@ def clear_history(request: gr.Request):
         + anony_names
         + [enable_text]
         + [invisible_btn] * 4
-        + [disable_btn] * 2
+        + [disable_btn] * 3
         + [""]
         + [enable_btn]
+        + [invisible_radio]
     )
 
 
@@ -172,6 +169,23 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         vote_last_response(
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
+
+
+def disclose_models(state0, state1):
+    return (
+        [f"### Model A: {state0.model_name}", f"### Model B: {state1.model_name}"]  # model_selectors
+        +[disable_text]  # textbox
+        + [disable_btn] * 4  # vote buttons
+        + [disable_btn]  # send_btn
+        + [disable_btn]  # regenerate_btn
+        + [enable_btn]  # clear_btn
+        + [disable_radio]  # context_selector
+        + [disable_btn]  # disclose_btn
+    )
+
+
+def enable_buttons():
+    return [enable_btn] * 7
 
 
 SAMPLING_WEIGHTS = {}
@@ -248,12 +262,15 @@ def get_battle_pair(
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, request: gr.Request
+    state0,
+    state1,
+    text,
+    context_selector,
+    request: gr.Request,
 ):
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
-    model_selectors = [model_selector0, model_selector1]
 
     # Init states if necessary
     if states[0] is None:
@@ -272,18 +289,41 @@ def add_text(
         ]
 
     if len(text) <= 0:
+        gr.Warning("Enter your prompt")
         for i in range(num_sides):
             states[i].skip_next = True
         return (
-            states
-            + [x.to_gradio_chatbot() for x in states]
-            + ["", None]
-            + [
-                no_change_btn,
-            ]
-            * 6
-            + [""]
+            states  # states
+            + [x.to_gradio_chatbot() for x in states]  # chatbots
+            + [""]  # textbox
+            + [no_change_btn] * 7  # btn_list
+            + [""]  # slow_warning
+            + [visible_radio if states[0].conv.messages else invisible_radio]  # context_selector
         )
+
+    if context_selector is None and states[0].conv.messages:
+        gr.Warning("Select the context in which you want to continue the conversation.")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states  # states
+            + [x.to_gradio_chatbot() for x in states]  # chatbots
+            + [text]  # textbox
+            + [no_change_btn] * 7  # btn_list
+            + [""]  # slow_warning
+            + [visible_radio]  # context_selector
+        )
+
+    # Apply the chosen context
+    if context_selector:
+        if context_selector == "Model A":
+            chosen_context = states[0].conv.messages
+        elif context_selector == "Model B":
+            chosen_context = states[1].conv.messages
+        else:
+            raise ValueError("Invalid model")
+        for i in range(num_sides):
+            states[i].conv.messages = copy.deepcopy(chosen_context)
 
     # NOTE: We disable moderation check as we use Chatbot Arena for internal testing.
     # model_list = [states[i].model_name for i in range(num_sides)]
@@ -305,14 +345,12 @@ def add_text(
         for i in range(num_sides):
             states[i].skip_next = True
         return (
-            states
-            + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG]
-            + [
-                no_change_btn,
-            ]
-            * 6
-            + [""]
+            states  # states
+            + [x.to_gradio_chatbot() for x in states]  # chatbots
+            + [CONVERSATION_LIMIT_MSG]  # textbox
+            + [no_change_btn] * 7  # btn_list
+            + [""]  # warning
+            + [visible_radio]  # context_selector
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -325,15 +363,14 @@ def add_text(
     for i in range(num_sides):
         if "deluxe" in states[i].model_name:
             hint_msg = SLOW_MODEL_MSG
+    
     return (
-        states
-        + [x.to_gradio_chatbot() for x in states]
-        + [""]
-        + [
-            disable_btn,
-        ]
-        * 6
-        + [hint_msg]
+        states  # states
+        + [x.to_gradio_chatbot() for x in states]  # chatbots
+        + [""]  # textbox
+        + [disable_btn] * 7  # btn_list
+        + [hint_msg]  # slow_warning
+        + [visible_radio]  # context_selector
     )
 
 
@@ -350,11 +387,10 @@ def bot_response_multi(
     if state0 is None or state0.skip_next:
         # This generate call is skipped due to invalid inputs
         yield (
-            state0,
-            state1,
-            state0.to_gradio_chatbot(),
-            state1.to_gradio_chatbot(),
-        ) + (no_change_btn,) * 6
+            [state0, state1]  # states
+            + [state0.to_gradio_chatbot(), state1.to_gradio_chatbot()]  # chatbots
+            + [no_change_btn] * 7  # btn_list
+        )
         return
 
     states = [state0, state1]
@@ -410,7 +446,7 @@ def bot_response_multi(
                 stop = False
             except StopIteration:
                 pass
-        yield states + chatbots + [disable_btn] * 6
+        yield states + chatbots + [disable_btn] * 7
         if stop:
             break
 
@@ -432,7 +468,7 @@ def build_side_by_side_ui_anony(models):
 
 ## 🏆 Chatbot Arena [Leaderboard](https://lmarena.ai/?leaderboard)
 - We've collected **1,000,000+** human votes to compute an LLM leaderboard for 100+ models. Find out who is the 🥇LLM Champion [here](https://lmarena.ai/?leaderboard)!
-
+｀
 ## 👇 Chat now!
 """
 
@@ -478,6 +514,20 @@ def build_side_by_side_ui_anony(models):
         tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
         bothbad_btn = gr.Button(
             value="👎  Both are bad", visible=False, interactive=False
+        )
+    
+    with gr.Row():
+        disclose_btn = gr.Button(
+            value="End the conversation and disclose the model names",
+            visible=False,
+        )
+
+    with gr.Row():
+        context_selector = gr.Radio(
+            choices=["Model A", "Model B"],
+            label="Select the context in which you would like to continue the conversation",
+            elem_id="context_selector",
+            visible=False,
         )
 
     with gr.Row():
@@ -527,32 +577,29 @@ def build_side_by_side_ui_anony(models):
         rightvote_btn,
         tie_btn,
         bothbad_btn,
+        disclose_btn,
         regenerate_btn,
         clear_btn,
     ]
     leftvote_btn.click(
         leftvote_last_response,
         states + model_selectors,
-        model_selectors
-        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, context_selector],
     )
     rightvote_btn.click(
         rightvote_last_response,
         states + model_selectors,
-        model_selectors
-        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, context_selector],
     )
     tie_btn.click(
         tievote_last_response,
         states + model_selectors,
-        model_selectors
-        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, context_selector],
     )
     bothbad_btn.click(
         bothbad_vote_last_response,
         states + model_selectors,
-        model_selectors
-        + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
+        [leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, context_selector],
     )
     regenerate_btn.click(
         regenerate, states, states + chatbots + [textbox] + btn_list
@@ -561,7 +608,7 @@ def build_side_by_side_ui_anony(models):
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        enable_buttons, [], btn_list
     )
     clear_btn.click(
         clear_history,
@@ -572,7 +619,8 @@ def build_side_by_side_ui_anony(models):
         + [textbox]
         + btn_list
         + [slow_warning]
-        + [send_btn],
+        + [send_btn]
+        + [context_selector],
     )
 
     share_js = """
@@ -599,28 +647,43 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list + [slow_warning],
+        states + [textbox] + [context_selector],
+        states + chatbots + [textbox] + btn_list + [slow_warning] + [context_selector],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons,
-        [],
-        btn_list,
+        enable_buttons, [], btn_list
     )
 
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + [textbox] + [context_selector],
+        states + chatbots + [textbox] + btn_list + [slow_warning] + [context_selector],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
     ).then(
-        flash_buttons, [], btn_list
+        enable_buttons, [], btn_list
+    )
+
+    disclose_btn.click(
+        disclose_models,
+        states,
+        model_selectors + [
+            textbox,
+            leftvote_btn,
+            rightvote_btn,
+            tie_btn,
+            bothbad_btn,
+            send_btn,
+            regenerate_btn,
+            clear_btn,
+            context_selector,
+            disclose_btn,
+        ],
     )
 
     return states + model_selectors
