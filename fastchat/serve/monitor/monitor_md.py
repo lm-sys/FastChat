@@ -9,6 +9,7 @@ deprecated_model_name = [
     "gemini-1.5-pro-api-0409-preview",
     "bard-jan-24-gemini-pro",
     "chatgpt-4o-latest-20240808",
+    "chatgpt-4o-latest-20240903",
 ]
 
 key_to_category_name = {
