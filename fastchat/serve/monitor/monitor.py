@@ -842,14 +842,15 @@ selected_categories = [
     "full_style_control",
     "hard_6",
     "hard_6_style_control",
-    "if",
     "coding",
     "math",
-    "multiturn",
+    "creative_writing",
+    "if",
     "long_user",
+    "multiturn",
     # "no_refusal",
 ]
-selected_categories_width = [110, 110, 110, 110, 110, 80, 80, 80, 80]
+selected_categories_width = [110, 110, 110, 110, 80, 80, 80, 110, 80, 80]
 
 language_categories = [
     "english",
