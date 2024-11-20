@@ -56,13 +56,13 @@ leader_component_values = [None] * 5
 def recompute_final_ranking(arena_df):
     q025 = arena_df["rating_q025"].values
     q975 = arena_df["rating_q975"].values
-    
+
     sorted_q025 = np.sort(q025)
     insertion_indices = np.searchsorted(sorted_q025, q975, side="right")
     counts = len(sorted_q025) - insertion_indices
-    
+
     rankings = 1 + counts
-    ranking_series = pd.Series(rankings, index=arena_df.index)   
+    ranking_series = pd.Series(rankings, index=arena_df.index)
     return ranking_series.tolist()
 
 
