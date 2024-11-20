@@ -28,11 +28,17 @@ def litellm_completion(args, tokenizer, image_url=None):
 
         start = time.time()
 
+        additional_api_kwargs = {}
+        if args.api_key:
+            additional_api_kwargs["api_key"] = args.api_key
+        if args.api_base:
+            additional_api_kwargs["api_base"] = args.api_base
+
         response = completion(
             model=args.model,
-            api_base=args.api_base,
             messages=messages,
             stream=True,
+            **additional_api_kwargs,
         )
         ttft = None
 
@@ -120,6 +126,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="azure-gpt-3.5")
     parser.add_argument("--api-base", type=str, default=None)
+    parser.add_argument("--api-key", type=str, default=None)
     parser.add_argument("--num-total-responses", type=int, default=50)
     parser.add_argument("--req-per-sec", type=int, default=5)
     parser.add_argument("--include-image", action="store_true")
