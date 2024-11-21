@@ -3,7 +3,7 @@
             "type": "function",
             "function": {
                 "name": "web_search",
-                "description": "Retrieve relevant websites based on provided keywords. This function should be invoked whenever answering the problem requires up-to-date information or specific details that are not available within existing knowledge.",
+                "description": "Retrieve content of top-k relevant websites based on the provided keywords.",
                 "parameters": {
                     "type": "object",
                     "properties": {
