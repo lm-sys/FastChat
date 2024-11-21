@@ -10,6 +10,7 @@ import time
 import requests
 
 from fastchat.utils import build_logger
+from fastchat.tools import api_tools_loading
 
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -29,6 +30,7 @@ def get_api_provider_stream_iter(
         # use our own streaming implementation for agent mode
         if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
             stream_iter = openai_api_stream_iter_agent(
                 model_api_dict["model_name"],
                 prompt,
@@ -96,13 +98,25 @@ def get_api_provider_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message":
-        if model_api_dict.get("vision-arena", False):
-            prompt = conv.to_anthropic_vision_api_messages()
-        else:
+        if model_api_dict.get("agent-mode", False):
             prompt = conv.to_openai_api_messages()
-        stream_iter = anthropic_message_api_stream_iter(
-            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
-        )
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
+            stream_iter = anthropic_message_api_stream_iter_agent(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                tools=tools
+            )
+        else:
+            if model_api_dict.get("vision-arena", False):
+                prompt = conv.to_anthropic_vision_api_messages()
+            else:
+                prompt = conv.to_openai_api_messages()
+            stream_iter = anthropic_message_api_stream_iter(
+                model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
+            )
     elif model_api_dict["api_type"] == "anthropic_message_vertex":
         if model_api_dict.get("vision-arena", False):
             prompt = conv.to_anthropic_vision_api_messages()
@@ -118,14 +132,26 @@ def get_api_provider_stream_iter(
         )
     elif model_api_dict["api_type"] == "gemini":
         prompt = conv.to_gemini_api_messages()
-        stream_iter = gemini_api_stream_iter(
-            model_api_dict["model_name"],
-            prompt,
-            temperature,
-            top_p,
-            max_new_tokens,
-            api_key=model_api_dict["api_key"],
-        )
+        if model_api_dict.get("agent-mode", False):
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
+            stream_iter = gemini_api_stream_iter_agent(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_key=model_api_dict["api_key"],
+                tools=tools
+            )
+        else:
+            stream_iter = gemini_api_stream_iter(
+                model_api_dict["model_name"],
+                prompt,
+                temperature,
+                top_p,
+                max_new_tokens,
+                api_key=model_api_dict["api_key"],
+            )
     elif model_api_dict["api_type"] == "gemini_no_stream":
         prompt = conv.to_gemini_api_messages()
         stream_iter = gemini_api_stream_iter(
@@ -171,6 +197,23 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             model_api_dict["api_base"],
             model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "nvidia_llama31":
+        prompt = conv.to_openai_api_messages()
+        if model_api_dict.get("agent-mode", False):
+            tools = api_tools_loading(tools, model_api_dict["api_type"])
+        else:
+            tools = None
+        stream_iter = nvidia_llama31_api_stream_iter_agent(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            stream=False,
+            tools=tools
         )
     elif model_api_dict["api_type"] == "ai2":
         prompt = conv.to_openai_api_messages()
@@ -805,6 +848,99 @@ def anthropic_message_api_stream_iter(
             yield data
 
 
+def anthropic_message_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    vertex_ai=False,
+    tools=None,
+):
+    import anthropic
+
+    if vertex_ai:
+        client = anthropic.AnthropicVertex(
+            region=os.environ["GCP_LOCATION"],
+            project_id=os.environ["GCP_PROJECT_ID"],
+            max_retries=5
+        )
+    else:
+        client = anthropic.Anthropic(
+            api_key=os.environ["ANTHROPIC_API_KEY"],
+            max_retries=5
+        )
+
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    # Make requests for logging
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+        "tools": tools
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    system_prompt = ""
+    if messages[0]["role"] == "system":
+        if type(messages[0]["content"]) == dict:
+            system_prompt = messages[0]["content"]["text"]
+        elif type(messages[0]["content"]) == str:
+            system_prompt = messages[0]["content"]
+        # remove system prompt
+        messages = messages[1:]
+    
+    # Convert it to the format that the API expects
+    res = client.messages.create(
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_new_tokens,
+        messages=messages,
+        model=model_name,
+        system=system_prompt,
+        stream=False,
+        tools=tools,
+    )
+
+    logger.info(res)
+    data = {
+        "text": "",
+        "error_code": 0,
+        "function_name": None,
+        "arguments": None
+    }
+    if res.stop_reason == "tool_use":
+        for chunk in res.content:
+            if chunk.type == "tool_use":
+                try:
+                    data['function_name'] = chunk.name
+                    data['arguments'] = chunk.input
+                    data['text'] += f"\n\n**Function Call:** {data['function_name']}\n**Arguments:** {data['arguments']}"
+                except Exception as e:
+                    logger.error(f"==== Anthroopic function call parsing error ====\n{e}")
+            # drop the text block as it is uninformative
+    else:
+        assert res.stop_reason == "end_turn", "Unexpected step reason"
+        for chunk in res.content:
+            if chunk.type == "text":
+                data['text'] += chunk.text
+    yield data
+
+
+
 def gemini_api_stream_iter(
     model_name,
     messages,
@@ -893,6 +1029,104 @@ def gemini_api_stream_iter(
                 "text": f"**API REQUEST ERROR** Reason: {e}.",
                 "error_code": 1,
             }
+
+
+def gemini_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key=None,
+    use_stream=False,
+    tools=None,
+):
+    assert use_stream == False, "Hasn't supported streaming for agent mode yet"
+    import google.generativeai as genai  # pip install google-generativeai
+
+    if api_key is None:
+        api_key = os.environ["GEMINI_API_KEY"]
+    genai.configure(api_key=api_key)
+
+    generation_config = {
+        "temperature": temperature,
+        "max_output_tokens": max_new_tokens,
+        "top_p": top_p,
+    }
+    params = {
+        "model": model_name,
+        "prompt": messages,
+    }
+    params.update(generation_config)
+    logger.info(f"==== request ====\n{params}")
+
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
+
+    history = []
+    system_prompt = None
+    for message in messages[:-1]:
+        if message["role"] == "system":
+            system_prompt = message["content"]
+            continue
+        history.append({"role": message["role"], "parts": message["content"]})
+
+    model = genai.GenerativeModel(
+        model_name=model_name,
+        system_instruction=system_prompt,
+        generation_config=generation_config,
+        safety_settings=safety_settings,
+    )
+    convo = model.start_chat(history=history)
+
+    
+    try:
+        if tools is None:
+            response = convo.send_message(messages[-1]["content"], stream=False)
+            text = response.candidates[0].content.parts[0].text
+            data = {
+                "function_name": None,
+                "arguments": None,
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+        else:
+            # Automatically predict function calls
+            tool_config = genai.protos.ToolConfig(
+                function_calling_config=genai.protos.FunctionCallingConfig(
+                    mode=genai.protos.FunctionCallingConfig.Mode.AUTO,  # The default model behavior. The model decides whether to predict a function call or a natural language response.
+                )
+            )
+            response = convo.send_message(messages[-1]["content"], stream=False, tools=tools, tool_config=tool_config)
+            if "function_call" in response.candidates[0].content.parts[0]:
+                function_call = response.candidates[0].content.parts[0].function_call
+                function_name = function_call.name
+                arguments = function_call.args
+                text = f"\n\n**Function Call:** {function_name}\n**Arguments:** {arguments}"
+            else:
+                text = response.candidates[0].content.parts[0].text
+                function_name = None
+                arguments = None
+            data = {
+                "function_name": function_name,
+                "arguments": arguments,
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: {e}.",
+            "error_code": 1,
+            "function_name": None,
+            "arguments": None
+        }
 
 
 def ai2_api_stream_iter(
@@ -1395,3 +1629,93 @@ def metagen_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
+
+
+def nvidia_llama31_api_stream_iter_agent(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+    stream=False,
+    tools=None,
+):
+    assert stream == False, "Hasn't supported streaming for agent mode yet"
+    if tools is None:
+        # write a warning
+        logger.info("tools is None for agent mode")
+
+    import openai
+
+    api_key = api_key or os.environ["NVIDIA_API_KEY"]
+
+    client = openai.OpenAI(
+        base_url=api_base or "https://integrate.api.nvidia.com/v1",
+        api_key=api_key,
+        timeout=180,
+    )
+
+    # Make requests for logging
+    text_messages = []
+    print(messages)
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+    if tools is None:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=False,
+        )
+    else:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=False,
+            tools=tools
+        )
+
+    print("res:", res)
+
+    text = res.choices[0].message.content or ""
+    tool_calls = res.choices[0].message.tool_calls
+    function_name = None
+    arguments = None
+    if tool_calls is not None:
+        try:
+            function_name = tool_calls[0].function.name
+            arguments = json.loads(tool_calls[0].function.arguments)
+            text += f"\n\n**Function Call:** {function_name}\n**Arguments:** {arguments}"
+        except Exception as e:
+            logger.error(f"==== OpenAI function call parsing error ====\n{e}")
+            function_name = None
+            arguments = None
+    data = {
+        "text": text,
+        "error_code": 0,
+        "function_name": function_name,
+        "arguments": arguments
+    }
+    yield data

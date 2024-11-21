@@ -3,7 +3,7 @@
             "type": "function",
             "function": {
                 "name": "web_search",
-                "description": "Retrieve website links, titles, and snippets based on provided keywords. Invoke this function whenever web information is needed.",
+                "description": "Retrieve relevant websites based on provided keywords. This function should be invoked whenever answering the problem requires up-to-date information or specific details that are not available within existing knowledge.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -13,13 +13,11 @@
                         },
                         "topk": {
                             "type": "integer",
-                            "description": "The number of search results to return (default value set to 3)."
+                            "description": "The number of search results to return (default value set to 1)."
                         }
                     },
-                    "required": ["key_words", "topk"],
-                    "additionalProperties": false
+                    "required": ["key_words", "topk"]
                 }
-            },
-            "strict": true
+            }
         }
 ]

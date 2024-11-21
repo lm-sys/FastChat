@@ -39,8 +39,7 @@ def formulate_web_summary(results: List[Dict[str, Any]], query: str, topk: int =
     for result in results:
         search_summary += f"- [{result['title']}]({result['url']})\n"
         # add the snippets to the summary
-        for snippet in result['text']:
-            search_summary += f"    - {snippet}\n"
+        search_summary += f"Description: {result['text']}\n"
     return search_summary
 
 def web_search(key_words: str, topk: int) -> str:

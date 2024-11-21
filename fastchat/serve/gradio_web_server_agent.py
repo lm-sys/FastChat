@@ -446,7 +446,7 @@ def bot_response(
     max_new_tokens,
     request: gr.Request,
     apply_rate_limit=False,
-    use_recommended_config=False,
+    use_recommended_config=True,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
