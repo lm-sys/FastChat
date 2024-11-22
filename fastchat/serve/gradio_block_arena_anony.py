@@ -224,10 +224,7 @@ def get_battle_pair(
         )
         model_weights.append(weight)
     total_weight = np.sum(model_weights)
-    if np.isnan(total_weight) or total_weight == 0:
-        logger.error(f"total weight: {total_weight}")
-        logger.error("Invalid total_weight in get_battle_pair.")
-        raise ValueError("Invalid total_weight: must be greater than zero and not NaN.")
+    
     model_weights = model_weights / total_weight
     # print(models)
     # print(model_weights)
@@ -476,10 +473,6 @@ def build_side_by_side_ui_anony(models):
 """
 
     states = [gr.State() for _ in range(num_sides)]
-    logger.debug(f"Initialized states in UI: {states}")
-    logger.info(f"num_sides: {num_sides}")
-    logger.info(f"models: {models}")
-    logger.info(f"states: {states}")
     model_selectors = [None] * num_sides
     chatbots: list[gr.Chatbot | None] = [None] * num_sides
 
@@ -739,7 +732,6 @@ function (a, b, c, d) {
         [],
         btn_list,
     )
-    logger.debug(f"Textbox submit binding: states={states}")
 
     send_btn.click(
         add_text,
@@ -752,7 +744,6 @@ function (a, b, c, d) {
     ).then(
         flash_buttons, [], btn_list
     )
-    logger.debug(f"Textbox submit binding: states={states}")
 
     for chatbotIdx in range(num_sides):
         chatbot = chatbots[chatbotIdx]
