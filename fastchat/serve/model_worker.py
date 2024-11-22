@@ -34,6 +34,9 @@ from fastchat.utils import (
 worker_id = str(uuid.uuid4())[:8]
 logger = build_logger("model_worker", f"model_worker_{worker_id}.log")
 
+GRITLM_USER_INSTRUCTION = "<|user|>\n"
+GRITLM_EMBED_INSTRUCTION = "<|embed|>\n"
+
 
 class ModelWorker(BaseModelWorker):
     def __init__(
@@ -148,9 +151,30 @@ class ModelWorker(BaseModelWorker):
             pass
         return json.loads(x[:-1].decode())
 
-    def __process_embed_chunk(self, input_ids, attention_mask, **model_type_dict):
-        if model_type_dict.get("is_bert"):
-            model_output = self.model(input_ids)
+    def __process_embed_chunk(
+        self,
+        input_ids,
+        attention_mask,
+        instruction_lengths=None,
+        **model_type_dict,
+    ):
+        if model_type_dict.get("is_bert") or model_type_dict.get("is_gritlm"):
+            if model_type_dict.get("is_gritlm"):
+                model_output = self.model.model(
+                    input_ids,
+                    attention_mask=attention_mask,
+                    is_causal=False,
+                )
+
+                if instruction_lengths:
+                    # The list contains the first index after the embedding
+                    # instruction for each sequence.
+                    for i, instruction_length in enumerate(
+                        instruction_lengths,
+                    ):
+                        attention_mask[i, :instruction_length] = 0
+            else:
+                model_output = self.model(input_ids)
             if model_type_dict.get("is_robert"):
                 data = model_output.last_hidden_state
             else:
@@ -181,6 +205,44 @@ class ModelWorker(BaseModelWorker):
             base64.b64encode(e.numpy().tobytes()).decode("utf-8") for e in embeddings
         ]
 
+    def _gritlm_prepare_embedding_prompts(self, texts):
+        instruction_lengths = []
+
+        for i, text in enumerate(texts):
+            # Custom embedding instruction as supplied by user.
+            if text.startswith(GRITLM_USER_INSTRUCTION):
+                embed_instr_start_index = text.find(
+                    GRITLM_EMBED_INSTRUCTION,
+                )
+                if embed_instr_start_index == -1:
+                    # We couldn't find an embedding instruction, so we
+                    # just put it at the start.
+                    instruction = GRITLM_EMBED_INSTRUCTION
+                    texts[i] = instruction + text
+                else:
+                    after_embed_instr_index = embed_instr_start_index + len(
+                        GRITLM_EMBED_INSTRUCTION
+                    )
+                    instruction = text[:after_embed_instr_index]
+            # Standard embedding instruction as supplied by user.
+            elif text.startswith(GRITLM_EMBED_INSTRUCTION):
+                instruction = GRITLM_EMBED_INSTRUCTION
+            # No embedding instruction supplied by user, so we
+            # add it ourselves.
+            else:
+                instruction = GRITLM_EMBED_INSTRUCTION
+                texts[i] = instruction + text
+            instruction_length = len(
+                self.tokenizer.encode_plus(
+                    instruction,
+                    padding=False,
+                    truncation=True,
+                    max_length=self.context_len,
+                )["input_ids"],
+            )
+            instruction_lengths.append(instruction_length)
+        return instruction_lengths
+
     @torch.inference_mode()
     def get_embeddings(self, params):
         self.call_ct += 1
@@ -195,7 +257,15 @@ class ModelWorker(BaseModelWorker):
                 "is_chatglm": "chatglm" in str(type(self.model)),
                 "is_bert": "bert" in str(type(self.model)),
                 "is_robert": "robert" in str(type(self.model)),
+                "is_gritlm": "gritlm" in str(type(self.model)),
             }
+
+            if model_type_dict.get("is_gritlm"):
+                instruction_lengths = self._gritlm_prepare_embedding_prompts(
+                    params["input"]
+                )
+            else:
+                instruction_lengths = None
 
             if self.embed_in_truncate:
                 encoding = tokenizer.batch_encode_plus(
@@ -207,16 +277,24 @@ class ModelWorker(BaseModelWorker):
                 )
             else:
                 encoding = tokenizer.batch_encode_plus(
-                    params["input"], padding=True, return_tensors="pt"
+                    params["input"],
+                    padding=True,
+                    return_tensors="pt",
                 )
             input_ids = encoding["input_ids"].to(self.device)
             attention_mask = input_ids != tokenizer.pad_token_id
+            if (
+                model_type_dict.get("is_gritlm")
+                and tokenizer.pad_token_id == tokenizer.bos_token_id
+            ):
+                # BOS == PAD here, so fix it up.
+                attention_mask[:, 0] = 1
 
             base64_encode = params.get("encoding_format", None)
 
             if self.embed_in_truncate:
                 embedding, token_num = self.__process_embed_chunk(
-                    input_ids, attention_mask, **model_type_dict
+                    input_ids, attention_mask, instruction_lengths, **model_type_dict
                 )
                 if (
                     not hasattr(self.model, "use_cls_pooling")
@@ -258,7 +336,10 @@ class ModelWorker(BaseModelWorker):
                         )
 
                     chunk_embeddings, token_num = self.__process_embed_chunk(
-                        chunk_input_ids, chunk_attention_mask, **model_type_dict
+                        chunk_input_ids,
+                        chunk_attention_mask,
+                        instruction_lengths,
+                        **model_type_dict,
                     )
                     if (
                         hasattr(self.model, "use_cls_pooling")
@@ -268,6 +349,11 @@ class ModelWorker(BaseModelWorker):
                     else:
                         all_embeddings.append(chunk_embeddings)
                     all_token_num += token_num
+
+                    # We simply assume that we don't need to mask
+                    # instructions anymore. This use case is broken
+                    # anyway.
+                    instruction_lengths = None
 
                 all_embeddings_tensor = torch.stack(all_embeddings)
                 embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
