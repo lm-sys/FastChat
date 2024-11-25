@@ -435,16 +435,18 @@ def bot_response(
     temperature,
     top_p,
     max_new_tokens,
+    sandbox_state:ChatbotSandboxState,
     request: gr.Request,
     apply_rate_limit=True,
     use_recommended_config=False,
-    sandbox_state: ChatbotSandboxState | None = None,
 ):
     '''
     The main function for generating responses from the model.
     '''
-    ip = get_ip(request)
-    logger.info(f"bot_response. ip: {ip}")
+    if request:
+        ip = get_ip(request)
+        logger.info(f"bot_response. ip: {ip}")
+    
     start_tstamp = time.time()
     temperature = float(temperature)
     top_p = float(top_p)
