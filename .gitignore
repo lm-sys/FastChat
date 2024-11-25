@@ -21,6 +21,7 @@ dist
 wandb
 output
 checkpoints_flant5_3b
+.gradio/certificate.pem
 
 # Data
 *.pkl

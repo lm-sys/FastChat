@@ -121,6 +121,20 @@ def update_sandbox_config(
         state["sandbox_environment"] = sandbox_environment
     return list(states)
 
+def update_sandbox_config_single_model(
+    enable_sandbox: bool,
+    sandbox_environment: str,
+    sandbox_instruction: str,
+    state: ChatbotSandboxState
+) -> ChatbotSandboxState:
+    '''
+    Fn to update sandbox config for single model.
+    '''
+    state["enable_sandbox"] = enable_sandbox
+    state["sandbox_instruction"] = sandbox_instruction
+    state["sandbox_environment"] = sandbox_environment
+
+    return state
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
     '''
