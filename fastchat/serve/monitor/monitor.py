@@ -1075,10 +1075,10 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
 
     text_size = gr.themes.sizes.text_lg
     # load theme from theme.json
-    #theme = gr.themes.Default.load("theme.json")
+    # theme = gr.themes.Default.load("theme.json")
     # set text size to large
-    #theme.text_size = text_size
-    #theme.set(
+    # theme.text_size = text_size
+    # theme.set(
     #    button_large_text_size="20px",
     #    button_small_text_size="20px",
     #    button_large_text_weight="100",
@@ -1093,12 +1093,12 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
     #    button_secondary_background_fill_hover_dark="*primary_500",
     #    button_secondary_text_color="*primary_800",
     #    button_secondary_text_color_dark="white",
-    #)
+    # )
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
         theme=gr.themes.Default(text_size=text_size),
-        #theme=theme,
+        # theme=theme,
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
