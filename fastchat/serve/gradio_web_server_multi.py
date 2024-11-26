@@ -200,6 +200,14 @@ window.__gradio_mode__ = "app";
                         show_plot=True,
                     )
 
+            with gr.Tab("🔍 Data Explorer", id=5):
+                frame = """
+                    <iframe width="100%" style="height: 1000px;" 
+                            src="https://storage.googleapis.com/public-arena-no-cors/index.html">
+                    </iframe>
+                """
+                gr.HTML(frame)
+
             with gr.Tab("ℹ️ About Us", id=4):
                 about = build_about()
 
