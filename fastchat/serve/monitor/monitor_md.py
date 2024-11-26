@@ -9,6 +9,7 @@ deprecated_model_name = [
     "gemini-1.5-pro-api-0409-preview",
     "bard-jan-24-gemini-pro",
     "chatgpt-4o-latest-20240808",
+    "chatgpt-4o-latest-20240903",
 ]
 
 key_to_category_name = {
@@ -18,11 +19,12 @@ key_to_category_name = {
     "math": "Math",
     "if": "Instruction Following",
     "multiturn": "Multi-Turn",
+    "creative_writing": "Creative Writing",
     "coding": "Coding",
     "coding_style_control": "Coding w/ Style Control",
-    "hard_6": "Hard Prompts (Overall)",
+    "hard_6": "Hard Prompts",
     "hard_english_6": "Hard Prompts (English)",
-    "hard_6_style_control": "Hard Prompts (Overall) w/ Style Control",
+    "hard_6_style_control": "Hard Prompts w/ Style Control",
     "long_user": "Longer Query",
     "english": "English",
     "chinese": "Chinese",
@@ -47,8 +49,8 @@ cat_name_to_explanation = {
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
     "Coding w/ Style Control": "Coding with Style Control",
-    "Hard Prompts (Overall)": "Hard Prompts (Overall): details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Hard Prompts (Overall) w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
+    "Hard Prompts": "Hard Prompts: details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
+    "Hard Prompts w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Longer Query": "Longer Query (>= 500 tokens)",
     "English": "English Prompts",
@@ -64,6 +66,7 @@ cat_name_to_explanation = {
     "Exclude Refusal": 'Exclude model responses with refusal (e.g., "I cannot answer")',
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
     "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
+    "Creative Writing": "Creative Writing",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
@@ -81,7 +84,7 @@ def make_default_md_1(mirror=False):
     link_color = "#1976D2"  # This color should be clear in both light and dark mode
     leaderboard_md = f"""
     # 🏆 Chatbot Arena LLM Leaderboard: Community-driven Evaluation for Best LLM and AI chatbots
-    [Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+    [Twitter](https://twitter.com/lmarena_ai) | [Discord](https://discord.gg/6GXcFg3TH8) | [Blog](https://blog.lmarena.ai/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Kaggle Competition](https://www.kaggle.com/competitions/wsdm-cup-multilingual-chatbot-arena)
     """
 
     return leaderboard_md

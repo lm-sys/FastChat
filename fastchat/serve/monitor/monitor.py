@@ -54,19 +54,16 @@ leader_component_values = [None] * 5
 
 
 def recompute_final_ranking(arena_df):
-    # compute ranking based on CI
-    ranking = {}
-    for i, model_a in enumerate(arena_df.index):
-        ranking[model_a] = 1
-        for j, model_b in enumerate(arena_df.index):
-            if i == j:
-                continue
-            if (
-                arena_df.loc[model_b]["rating_q025"]
-                > arena_df.loc[model_a]["rating_q975"]
-            ):
-                ranking[model_a] += 1
-    return list(ranking.values())
+    q025 = arena_df["rating_q025"].values
+    q975 = arena_df["rating_q975"].values
+
+    sorted_q025 = np.sort(q025)
+    insertion_indices = np.searchsorted(sorted_q025, q975, side="right")
+    counts = len(sorted_q025) - insertion_indices
+
+    rankings = 1 + counts
+    ranking_series = pd.Series(rankings, index=arena_df.index)
+    return ranking_series.tolist()
 
 
 def arena_hard_title(date):
@@ -79,22 +76,6 @@ We prompt GPT-4-Turbo as judge to compare the models' responses against a baseli
 [[Paper](https://arxiv.org/abs/2406.11939) | [Repo](https://github.com/lm-sys/arena-hard-auto)]
     """
     return arena_hard_title
-
-
-def recompute_final_ranking(arena_df):
-    # compute ranking based on CI
-    ranking = {}
-    for i, model_a in enumerate(arena_df.index):
-        ranking[model_a] = 1
-        for j, model_b in enumerate(arena_df.index):
-            if i == j:
-                continue
-            if (
-                arena_df.loc[model_b]["rating_q025"]
-                > arena_df.loc[model_a]["rating_q975"]
-            ):
-                ranking[model_a] += 1
-    return list(ranking.values())
 
 
 def update_elo_components(
@@ -861,14 +842,15 @@ selected_categories = [
     "full_style_control",
     "hard_6",
     "hard_6_style_control",
-    "if",
     "coding",
     "math",
-    "multiturn",
+    "creative_writing",
+    "if",
     "long_user",
+    "multiturn",
     # "no_refusal",
 ]
-selected_categories_width = [110, 110, 110, 110, 110, 80, 80, 80, 80]
+selected_categories_width = [110, 110, 110, 110, 80, 80, 80, 110, 80, 80]
 
 language_categories = [
     "english",
