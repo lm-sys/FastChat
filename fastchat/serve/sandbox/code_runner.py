@@ -16,7 +16,7 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
-SUPPORTED_SANDBOX_ENVIRONMENTS = ['React', 'PyGame', 'Auto']
+SUPPORTED_SANDBOX_ENVIRONMENTS = ['React','Vue','PyGame', 'Auto']
 
 VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
                                'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 'sql-esper']
@@ -29,9 +29,14 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-DEFAULT_REACT_SANDBOX_INSTRUCTION = "Generate typescript for a single-file react component tsx file. Do not use external libs or import external files. Surround code with ``` in markdown."
+DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. Surround code with ``` in markdown. Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
 '''
 Default sandbox prompt instruction.
+'''
+
+DEFAULT_VUE_SANDBOX_INSTRUCTION = """ Generate TypeScript for a single-file Vue.js 3+ component (SFC) in .vue format. The component should be a simple custom page in a styled `<div>` element. Do not include <NuxtWelcome /> or reference any external components. Surround the code with ``` in markdown. Do not use external libraries or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"], """
+'''
+Default sandbox prompt instruction for vue.
 '''
 
 DEFAULT_PYGAME_SANDBOX_INSTRUCTION = (
@@ -82,6 +87,7 @@ if __name__ == "__main__":
 DEFAULT_SANDBOX_INSTRUCTIONS = {
     "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
     "React": DEFAULT_REACT_SANDBOX_INSTRUCTION,
+    "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION,
     "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION,
 }
 
@@ -156,7 +162,7 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
         return None
 
     # Determine if the code is related to a webpage
-    if any(word in message.lower() for word in ['typescript', 'javascript', 'react']):
+    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue']):
         is_webpage = True
     else:
         is_webpage = False
@@ -255,6 +261,33 @@ def run_react_sandbox(code: str) -> str:
     sandbox_url = 'https://' + sandbox.get_host(3000)
     return sandbox_url
 
+def run_vue_sandbox(code: str) -> str:
+    """
+    Executes the provided Vue code within a sandboxed environment and returns the output.
+
+    Args:
+        code (str): The Vue code to be executed.
+
+    Returns:
+        url for remote sandbox
+    """
+    sandbox = Sandbox(
+        template="vue-developer",
+        metadata={
+            "template": "vue-developer"
+        },
+        api_key=E2B_API_KEY,
+    )
+
+    # Set up the sandbox
+    sandbox.files.make_dir('src')
+    file_path = "~/app.vue"
+    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+
+    # Get the sandbox URL
+    sandbox_url = 'https://' + sandbox.get_host(3000) 
+    return sandbox_url
+
 def run_pygame_sandbox(code: str) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
@@ -292,7 +325,7 @@ def run_pygame_sandbox(code: str) -> str:
     host = sandbox.get_host(3000)
     url = f"https://{host}"
     return url + '/mygame/build/web/'
-
+   
 def on_click_run_code(
         state,
         sandbox_state: ChatbotSandboxState,
@@ -331,6 +364,18 @@ def on_click_run_code(
 
     if sandbox_state['sandbox_environment'] == 'React':
         url = run_react_sandbox(code)
+        yield (
+            gr.Markdown(value="### Running Sandbox", visible=True),
+            SandboxComponent(
+                value=(url, code),
+                label="Example",
+                visible=True,
+                key="newsandbox",
+            ),
+            gr.skip(),
+        )
+    elif sandbox_state['sandbox_environment'] == 'Vue':
+        url = run_vue_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
             SandboxComponent(

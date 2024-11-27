@@ -261,8 +261,8 @@ def bot_response_multi(
                 temperature,
                 top_p,
                 max_new_tokens,
-                request,
-                sandbox_state=sandbox_state0,
+                sandbox_state0,
+                request
             )
         )
 
