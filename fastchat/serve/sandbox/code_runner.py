@@ -29,12 +29,12 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-DEFAULT_REACT_SANDBOX_INSTRUCTION = "Generate typescript for a single-file react component tsx file. Do not use external libs or import external files. Surround code with ``` in markdown."
+DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. Surround code with ``` in markdown. Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
 '''
 Default sandbox prompt instruction.
 '''
 
-DEFAULT_VUE_SANDBOX_INSTRUCTION = " Generate TypeScript for a single-file Vue component (SFC) in .vue format. The component should be a simple custom page in a styled `<div>` element. Do not include <NuxtWelcome /> or reference any external components.Do not use external libraries or import external files.Surround the code with ``` in markdown."
+DEFAULT_VUE_SANDBOX_INSTRUCTION = """ Generate TypeScript for a single-file Vue.js 3+ component (SFC) in .vue format. The component should be a simple custom page in a styled `<div>` element. Do not include <NuxtWelcome /> or reference any external components. Surround the code with ``` in markdown. Do not use external libraries or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"], """
 '''
 Default sandbox prompt instruction for vue.
 '''
@@ -281,7 +281,7 @@ def run_vue_sandbox(code: str) -> str:
 
     # Set up the sandbox
     sandbox.files.make_dir('src')
-    file_path = "~/src/Index.vue"
+    file_path = "~/app.vue"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
     # Get the sandbox URL
