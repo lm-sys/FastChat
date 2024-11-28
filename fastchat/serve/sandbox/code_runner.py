@@ -16,7 +16,7 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
-SUPPORTED_SANDBOX_ENVIRONMENTS = ['React','Vue','PyGame', 'Streamlit','Gradio','Auto']
+SUPPORTED_SANDBOX_ENVIRONMENTS = ['React','Vue','PyGame','Gradio','Auto']
 
 VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
                                'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 'sql-esper']
@@ -84,13 +84,6 @@ if __name__ == "__main__":
 '''
 )
 
-DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION = """
-Generate Python code for a single-file Streamlit application using the Streamlit library. 
-Surround code with ``` in markdown. 
-Do not use external libraries or import external files outside of the allowed list.
-Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
-"""
-
 DEFAULT_GRADIO_SANDBOX_INSTRUCTION = """
 Generate Python code for a single-file Gradio application using the Gradio library. 
 Surround code with ``` in markdown. 
@@ -103,10 +96,8 @@ DEFAULT_SANDBOX_INSTRUCTIONS = {
     "React": DEFAULT_REACT_SANDBOX_INSTRUCTION,
     "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION,
     "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION,
-    "Streamlit": DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION,
     "Gradio": DEFAULT_GRADIO_SANDBOX_INSTRUCTION
 }
-
 
 class ChatbotSandboxState(TypedDict):
     '''
@@ -178,7 +169,7 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
         return None
 
     # Determine if the code is related to a webpage
-    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue','streamlit','gradio']):
+    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue','gradio']):
         is_webpage = True
     else:
         is_webpage = False
@@ -341,31 +332,6 @@ def run_pygame_sandbox(code: str) -> str:
     url = f"https://{host}"
     return url + '/mygame/build/web/'
 
-def run_streamlit_sandbox(code: str) -> str:
-    """
-    Executes the provided code within a sandboxed environment and returns the output.
-
-    Args:
-        code (str): The code to be executed.
-
-    Returns:
-        url for remote sandbox
-    """
-    sandbox = Sandbox(
-        template="streamlit-developer",
-        metadata={
-            "template": "streamlit-developer"
-        },
-        api_key=E2B_API_KEY,
-    )
-
-    # set up the sandbox
-    file_path = "~/app.py"
-    sandbox.files.write(path=file_path, data=code, request_timeout=60)
-
-    # get the sandbox url
-    sandbox_url = 'https://' + sandbox.get_host(8501)
-    return sandbox_url
 
 def run_gradio_sandbox(code: str) -> str:
     """
@@ -455,18 +421,6 @@ def on_click_run_code(
         )
     elif sandbox_state['sandbox_environment'] == 'PyGame':
         url = run_pygame_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == 'Streamlit':
-        url = run_streamlit_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
             SandboxComponent(
