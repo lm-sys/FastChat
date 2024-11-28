@@ -310,8 +310,8 @@ if __name__ == "__main__":
 
     # Set global variables
     set_global_vars(args.controller_url, args.moderate, args.use_remote_storage)
-    set_global_vars_named(args.moderate)
-    set_global_vars_anony(args.moderate)
+    set_global_vars_named(args.moderate, args.use_remote_storage)
+    set_global_vars_anony(args.moderate, args.use_remote_storage)
     text_models, all_text_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
@@ -324,20 +324,7 @@ if __name__ == "__main__":
         vision_arena=True,
     )
 
-    models = text_models + [
-        model for model in vision_models if model not in text_models
-    ]
-    all_models = all_text_models + [
-        model for model in all_vision_models if model not in all_text_models
-    ]
-    context = Context(
-        text_models,
-        all_text_models,
-        vision_models,
-        all_vision_models,
-        models,
-        all_models,
-    )
+    context = Context(text_models, all_text_models, vision_models, all_vision_models)
 
     # Set authorization credentials
     auth = None

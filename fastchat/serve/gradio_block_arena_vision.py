@@ -39,11 +39,10 @@ from fastchat.serve.gradio_web_server import (
     get_conv_log_filename,
     get_remote_logger,
 )
+from fastchat.serve.moderation.moderator import AzureAndOpenAIContentModerator
 from fastchat.serve.vision.image import ImageFormat, Image
 from fastchat.utils import (
     build_logger,
-    moderation_filter,
-    image_moderation_filter,
 )
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
@@ -54,8 +53,16 @@ disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 visible_image_column = gr.Image(visible=True)
 invisible_image_column = gr.Image(visible=False)
-enable_multimodal = gr.MultimodalTextbox(
-    interactive=True, visible=True, placeholder="Enter your prompt or add image here"
+enable_multimodal_keep_input = gr.MultimodalTextbox(
+    interactive=True,
+    visible=True,
+    placeholder="Enter your prompt or add image here",
+)
+enable_multimodal_clear_input = gr.MultimodalTextbox(
+    interactive=True,
+    visible=True,
+    placeholder="Enter your prompt or add image here",
+    value={"text": "", "files": []},
 )
 invisible_text = gr.Textbox(visible=False, value="", interactive=False)
 visible_text = gr.Textbox(
@@ -140,6 +147,7 @@ def regenerate(state, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
     state.conv.update_last_message(None)
+    state.content_moderator.update_last_moderation_response(None)
     return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
 
 
@@ -147,7 +155,7 @@ def clear_history(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal, invisible_text, invisible_btn) + (
+    return (state, [], enable_multimodal_clear_input, invisible_text, invisible_btn) + (
         disable_btn,
     ) * 5
 
@@ -156,7 +164,7 @@ def clear_history_example(request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history_example. ip: {ip}")
     state = None
-    return (state, [], enable_multimodal, invisible_text, invisible_btn) + (
+    return (state, [], enable_multimodal_keep_input, invisible_text, invisible_btn) + (
         disable_btn,
     ) * 5
 
@@ -166,7 +174,7 @@ def report_csam_image(state, image):
     pass
 
 
-def _prepare_text_with_image(state, text, images, csam_flag):
+def _prepare_text_with_image(state, text, images):
     if len(images) > 0:
         if len(state.conv.get_images()) > 0:
             # reset convo with new image
@@ -191,38 +199,7 @@ def convert_images_to_conversation_format(images):
     return conv_images
 
 
-def moderate_input(state, text, all_conv_text, model_list, images, ip):
-    text_flagged = moderation_filter(all_conv_text, model_list)
-    # flagged = moderation_filter(text, [state.model_name])
-    nsfw_flagged, csam_flagged = False, False
-    if len(images) > 0:
-        nsfw_flagged, csam_flagged = image_moderation_filter(images[0])
-
-    image_flagged = nsfw_flagged or csam_flagged
-    if text_flagged or image_flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {all_conv_text}")
-        if text_flagged and not image_flagged:
-            # overwrite the original text
-            text = TEXT_MODERATION_MSG
-        elif not text_flagged and image_flagged:
-            text = IMAGE_MODERATION_MSG
-        elif text_flagged and image_flagged:
-            text = MODERATION_MSG
-
-    if csam_flagged:
-        state.has_csam_image = True
-        report_csam_image(state, images[0])
-
-    return text, image_flagged, csam_flagged
-
-
-def add_text(
-    state,
-    model_selector,
-    chat_input: Union[str, dict],
-    context: Context,
-    request: gr.Request,
-):
+def add_text(state, model_selector, chat_input, context: Context, request: gr.Request):
     if isinstance(chat_input, dict):
         text, images = chat_input["text"], chat_input["files"]
     else:
@@ -235,7 +212,6 @@ def add_text(
     ):
         gr.Warning(f"{model_selector} is a text-only model. Image is ignored.")
         images = []
-
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
@@ -256,20 +232,37 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    text, image_flagged, csam_flag = moderate_input(
-        state, text, all_conv_text, [state.model_name], images, ip
+    # Use the first state to get the moderation response because this is based on user input so it is independent of the model
+    moderation_image_input = images[0] if len(images) > 0 else None
+    moderation_type_to_response_map = (
+        state.content_moderator.image_and_text_moderation_filter(
+            moderation_image_input, text, [state.model_name], do_moderation=False
+        )
     )
 
-    if image_flagged:
-        logger.info(f"image flagged. ip: {ip}. text: {text}")
+    text_flagged, nsfw_flag, csam_flag = (
+        state.content_moderator.text_flagged,
+        state.content_moderator.nsfw_flagged,
+        state.content_moderator.csam_flagged,
+    )
+
+    if csam_flag:
+        state.has_csam_image = True
+
+    state.content_moderator.append_moderation_response(moderation_type_to_response_map)
+
+    if text_flagged or nsfw_flag:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        gradio_chatbot_before_user_input = state.to_gradio_chatbot()
+        post_processed_text = _prepare_text_with_image(state, text, images)
+        state.conv.append_message(state.conv.roles[0], post_processed_text)
         state.skip_next = True
+        gr.Warning(MODERATION_MSG)
         return (
-            state,
-            state.to_gradio_chatbot(),
-            {"text": IMAGE_MODERATION_MSG},
-            "",
-            no_change_btn,
-        ) + (no_change_btn,) * 5
+            (state, gradio_chatbot_before_user_input, None, "", no_change_btn)
+            + (no_change_btn,)
+            + (no_change_btn,) * 5
+        )
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -283,7 +276,7 @@ def add_text(
         ) + (no_change_btn,) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, images, csam_flag=csam_flag)
+    text = _prepare_text_with_image(state, text, images)
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (
@@ -318,10 +311,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
 
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
-    vision_not_in_text_models = [
-        model for model in context.vision_models if model not in context.text_models
-    ]
-    text_and_vision_models = context.text_models + vision_not_in_text_models
+    text_and_vision_models = list(set(context.text_models + context.vision_models))
     context_state = gr.State(context)
 
     with gr.Group():

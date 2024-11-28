@@ -1011,7 +1011,6 @@ def build_leaderboard_tab(
                             "avg_tokens": "Average Tokens",
                         }
                     )
-                    model_to_score = {}
                     for i in range(len(dataFrame)):
                         model_to_score[dataFrame.loc[i, "Model"]] = dataFrame.loc[
                             i, "Win-rate"
