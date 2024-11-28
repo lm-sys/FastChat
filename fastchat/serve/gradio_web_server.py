@@ -460,6 +460,8 @@ def _write_to_json(
         }
         fout.write(json.dumps(data) + "\n")
 
+    return data
+
 
 def bot_response(
     state,
@@ -664,7 +666,7 @@ def bot_response(
     )
     state.content_moderator.append_moderation_response(moderation_type_to_response_map)
 
-    _write_to_json(
+    data = _write_to_json(
         filename,
         start_tstamp,
         finish_tstamp,

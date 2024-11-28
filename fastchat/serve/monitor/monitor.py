@@ -904,7 +904,6 @@ def build_leaderboard_tab(
     elo_results_file,
     leaderboard_table_file,
     arena_hard_leaderboard,
-    vision=True,
     show_plot=False,
     mirror=False,
 ):
