@@ -257,7 +257,9 @@ def add_text(
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
     moderation_image_input = images[0] if len(images) > 0 else None
-    moderation_type_to_response_map = states[0].content_moderator.image_and_text_moderation_filter(
+    moderation_type_to_response_map = states[
+        0
+    ].content_moderator.image_and_text_moderation_filter(
         moderation_image_input, text, model_list, do_moderation=False
     )
     text_flagged, nsfw_flag, csam_flag = (
