@@ -333,15 +333,13 @@ def add_text(
 
     # Use the first state to get the moderation response because this is based on user input so it is independent of the model
     moderation_image_input = images[0] if len(images) > 0 else None
-    moderation_type_to_response_map = states[
-        0
-    ].content_moderator.image_and_text_moderation_filter(
+    moderation_type_to_response_map = states[0].content_moderator.image_and_text_moderation_filter(
         moderation_image_input, text, model_list, do_moderation=True
     )
     text_flagged, nsfw_flag, csam_flag = (
-        moderation_type_to_response_map["text_moderation"]["flagged"],
-        moderation_type_to_response_map["nsfw_moderation"]["flagged"],
-        moderation_type_to_response_map["csam_moderation"]["flagged"],
+        states[0].content_moderator.text_flagged,
+        states[0].content_moderator.nsfw_flagged,
+        states[0].content_moderator.csam_flagged,
     )
 
     if csam_flag:

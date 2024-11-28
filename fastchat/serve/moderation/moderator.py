@@ -136,9 +136,11 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
         self.nsfw_flagged = nsfw_flagged_map["flagged"]
         self.csam_flagged = csam_flagged_map["flagged"]
 
+        # We save only the boolean value instead of the entire response dictionary
+        # to save space. nsfw_flagged_map and csam_flagged_map will contain the whole dictionary
         return {
-            "nsfw_moderation": nsfw_flagged_map,
-            "csam_moderation": csam_flagged_map,
+            "nsfw_moderation": {"flagged": self.nsfw_flagged},
+            "csam_moderation": {"flagged": self.csam_flagged},
         }
 
     def _openai_moderation_filter(
@@ -205,12 +207,17 @@ class AzureAndOpenAIContentModerator(BaseContentModerator):
 
         moderation_response_map = {"flagged": False}
         if do_moderation:
+            # We save the entire response dictionary here
             moderation_response_map = self._openai_moderation_filter(
                 text, custom_thresholds
             )
             self.text_flagged = moderation_response_map["flagged"]
+        else:
+            self.text_flagged = False
 
-        return {"text_moderation": moderation_response_map}
+        # We only save whether the text was flagged or not instead of the entire response dictionary
+        # to save space. moderation_response_map will contain the whole dictionary
+        return {"text_moderation": {"flagged": self.text_flagged}}
 
     def image_and_text_moderation_filter(
         self, image: Image, text: str, model_list: List[str], do_moderation=True

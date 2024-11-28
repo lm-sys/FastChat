@@ -241,9 +241,9 @@ def add_text(state, model_selector, chat_input, context: Context, request: gr.Re
     )
 
     text_flagged, nsfw_flag, csam_flag = (
-        moderation_type_to_response_map["text_moderation"]["flagged"],
-        moderation_type_to_response_map["nsfw_moderation"]["flagged"],
-        moderation_type_to_response_map["csam_moderation"]["flagged"],
+        state.content_moderator.text_flagged,
+        state.content_moderator.nsfw_flagged,
+        state.content_moderator.csam_flagged,
     )
 
     if csam_flag:
