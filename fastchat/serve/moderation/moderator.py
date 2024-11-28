@@ -41,7 +41,7 @@ class BaseContentModerator:
         self.text_flagged = False
         self.csam_flagged = False
         self.nsfw_flagged = False
-    
+
     def image_and_text_moderation_filter(
         self, image: Image, text: str
     ) -> Dict[str, Dict[str, Union[str, Dict[str, float]]]]:
