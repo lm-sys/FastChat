@@ -90,20 +90,7 @@ text_models = []
 vl_models = []
 
 # TODO(chris): fix sampling weights
-VISION_SAMPLING_WEIGHTS = {
-    "gpt-4o-2024-05-13": 4,
-    "gpt-4-turbo-2024-04-09": 4,
-    "claude-3-haiku-20240307": 4,
-    "claude-3-sonnet-20240229": 4,
-    "claude-3-5-sonnet-20240620": 4,
-    "claude-3-opus-20240229": 4,
-    "gemini-1.5-flash-api-0514": 4,
-    "gemini-1.5-pro-api-0514": 4,
-    "llava-v1.6-34b": 4,
-    "reka-core-20240501": 4,
-    "reka-flash-preview-20240611": 4,
-    "reka-flash": 4,
-}
+VISION_SAMPLING_WEIGHTS = {}
 
 # TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
