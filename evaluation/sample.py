@@ -56,7 +56,7 @@ def main():
         raise ValueError("question_id not found in the dataset.")
     
     if not args.output_path:
-        output_path = "eval_outputs/{dataset_name}_{model_name}.jsonl".format(dataset_name=dataset_name, model_name=args.model_name)
+        output_path = "eval_samples/{dataset_name}_{model_name}.jsonl".format(dataset_name=dataset_name, model_name=args.model_name)
     else:
         output_path = args.output_path
     with open(output_path, "w") as f:
