@@ -23,6 +23,12 @@ DUMMY_MODELS = ["stable-diffusion-3p5-medium",
                 ]
 ANONY_NAMES = ["", ""]
 
+# TODO(CHRIS): 
+# 1. add params such as num inferecne steps, aspect ratio
+# 2. accordion of model descriptions
+# 3. connect model_endpoint_infos
+# 4. add as a separate tab in the arena
+
 class State:
     def __init__(self, model_name):
         self.model_name = model_name
