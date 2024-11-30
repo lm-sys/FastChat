@@ -2,7 +2,6 @@ import argparse
 import json
 import pandas as pd
 import os
-import time
 import concurrent.futures
 import tqdm
 import yaml
@@ -12,17 +11,16 @@ import orjson
 
 from category import Category
 
+from utils import (
+    api_config,
+    chat_completion_openai
+)
 
 LOCK = threading.RLock()
 
 TASKS = None
 CACHE_DICT = None
 OUTPUT_DICT = None
-
-# API setting constants
-API_MAX_RETRY = None
-API_RETRY_SLEEP = None
-API_ERROR_OUTPUT = None
 
 
 # load config args from config yaml files
@@ -40,53 +38,6 @@ def get_endpoint(endpoint_list):
     # randomly pick one
     api_dict = random.choices(endpoint_list)[0]
     return api_dict
-
-
-def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=None):
-    import openai
-
-    if api_dict:
-        client = openai.OpenAI(
-            base_url=api_dict["api_base"],
-            api_key=api_dict["api_key"],
-        )
-    else:
-        client = openai.OpenAI()
-
-    output = API_ERROR_OUTPUT
-    for _ in range(API_MAX_RETRY):
-        try:
-            # print(messages)
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
-            )
-            output = completion.choices[0].message.content
-            # print(output)
-            break
-        except openai.RateLimitError as e:
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.BadRequestError as e:
-            print(messages)
-            print(type(e), e)
-            break
-        except openai.APIConnectionError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.InternalServerError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except Exception as e:
-            print(type(e), e)
-            break
-
-    return output
 
 
 def get_answer(
@@ -107,16 +58,38 @@ def get_answer(
     output_log = {}
 
     for category in categories:
-        conv = category.pre_process(question["prompt"])
-        output = chat_completion_openai(
-            model=model_name,
-            messages=conv,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            api_dict=api_dict,
-        )
-        # Dump answers
-        category_tag[category.name_tag] = category.post_process(output)
+        
+        if category.name_tag == "refusal_v0.2":
+            refusal_classifier = category.classifier
+
+            conv_a = category.pre_process(question["conversation_a"])
+            conv_b = category.pre_process(question["conversation_b"])
+
+            refusal_prompts = conv_a + conv_b
+            batch_size = 16
+            refusal_results = []
+            for i in range(0, len(refusal_prompts), batch_size):
+                batch_prompts = refusal_prompts[i:i + batch_size]
+                batch_results = refusal_classifier.classify_batch(batch_prompts)
+                refusal_results.extend(batch_results)
+            
+            # If any query/resp classified as refusal, entire conversation is refusal
+            output = any(refusal_results)
+
+            # Dump answers
+            category_tag[category.name_tag] = output
+
+        else:
+            conv = category.pre_process(question["prompt"])
+            output = chat_completion_openai(
+                model=model_name,
+                messages=conv,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                api_dict=api_dict,
+            )
+            # Dump answers
+            category_tag[category.name_tag] = category.post_process(output)
 
         if testing:
             output_log[category.name_tag] = output
@@ -178,10 +151,7 @@ if __name__ == "__main__":
         exit()
 
     config = make_config(args.config)
-
-    API_MAX_RETRY = config["max_retry"]
-    API_RETRY_SLEEP = config["retry_sleep"]
-    API_ERROR_OUTPUT = config["error_output"]
+    api_config(config)
 
     categories = [Category.create_category(name) for name in config["task_name"]]
     TASKS = config["task_name"]

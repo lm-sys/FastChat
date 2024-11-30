@@ -11,6 +11,10 @@
 import ast
 import re
 
+from utils import (
+    HuggingFaceRefusalClassifier
+)
+
 
 class Category:
     def __init__(self):
@@ -26,6 +30,8 @@ class Category:
             return CategoryMath()
         elif name == "creative_writing_v0.1":
             return CategoryCreativeWriting()
+        elif name == "refusal_v0.2":
+            return CategoryRefusalFineTuned()
 
         raise Exception(f"Category name is incorrect: {name}")
 
@@ -174,3 +180,18 @@ class CategoryCreativeWriting(Category):
         score = self.get_score(judgment=judgment)
         bool_score = bool(score == "yes") if score else False
         return {"creative_writing": bool_score, "score": score}
+
+
+class CategoryRefusalFineTuned(Category):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "refusal_v0.2"
+        self.prompt_template = "Here is the user query:\n<user_query>\n{QUERY}\n</user_query>\n\nHere is the LLM response to the user:\n<llm_response>\n{RESPONSE}\n</llm_response>"
+        self.classifier = HuggingFaceRefusalClassifier()
+
+    def pre_process(self, conversation):
+        conv = []
+        for i in range(0, len(conversation), 2):
+            args = {"QUERY": conversation[i]["content"], "RESPONSE": conversation[i+1]["content"]}
+            conv.append(self.prompt_template.format(**args))
+        return conv
