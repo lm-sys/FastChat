@@ -11,9 +11,7 @@
 import ast
 import re
 
-from utils import (
-    HuggingFaceRefusalClassifier
-)
+from utils import HuggingFaceRefusalClassifier
 
 
 class Category:
@@ -192,6 +190,9 @@ class CategoryRefusalFineTuned(Category):
     def pre_process(self, conversation):
         conv = []
         for i in range(0, len(conversation), 2):
-            args = {"QUERY": conversation[i]["content"], "RESPONSE": conversation[i+1]["content"]}
+            args = {
+                "QUERY": conversation[i]["content"],
+                "RESPONSE": conversation[i + 1]["content"],
+            }
             conv.append(self.prompt_template.format(**args))
         return conv

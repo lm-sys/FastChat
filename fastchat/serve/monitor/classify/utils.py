@@ -66,24 +66,24 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
 class HuggingFaceRefusalClassifier:
     def __init__(self):
         print("Loading model and tokenizer...")
-        self.tokenizer = AutoTokenizer.from_pretrained("derixu/refusal_classifier-mlm_then_classifier_v3") #TODO: Migrate to LMSYS account and change path
-        self.model = AutoModelForSequenceClassification.from_pretrained("derixu/refusal_classifier-mlm_then_classifier_v3")
-        self.model.eval() 
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "derixu/refusal_classifier-mlm_then_classifier_v3"
+        )  # TODO: Migrate to LMSYS account and change path
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            "derixu/refusal_classifier-mlm_then_classifier_v3"
+        )
+        self.model.eval()
 
     def classify_batch(self, input_texts):
         inputs = self.tokenizer(
-            input_texts, 
-            truncation=True, 
-            max_length=512, 
-            return_tensors="pt", 
-            padding=True
+            input_texts,
+            truncation=True,
+            max_length=512,
+            return_tensors="pt",
+            padding=True,
         )
-        with torch.no_grad(): 
+        with torch.no_grad():
             outputs = self.model(**inputs)
             probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
             pred_classes = torch.argmax(probabilities, dim=-1).tolist()
         return [bool(pred) for pred in pred_classes]
-
-
-
-

@@ -11,10 +11,7 @@ import orjson
 
 from category import Category
 
-from utils import (
-    api_config,
-    chat_completion_openai
-)
+from utils import api_config, chat_completion_openai
 
 LOCK = threading.RLock()
 
@@ -58,7 +55,6 @@ def get_answer(
     output_log = {}
 
     for category in categories:
-        
         if category.name_tag == "refusal_v0.2":
             refusal_classifier = category.classifier
 
@@ -69,10 +65,10 @@ def get_answer(
             batch_size = 16
             refusal_results = []
             for i in range(0, len(refusal_prompts), batch_size):
-                batch_prompts = refusal_prompts[i:i + batch_size]
+                batch_prompts = refusal_prompts[i : i + batch_size]
                 batch_results = refusal_classifier.classify_batch(batch_prompts)
                 refusal_results.extend(batch_results)
-            
+
             # If any query/resp classified as refusal, entire conversation is refusal
             output = any(refusal_results)
 
