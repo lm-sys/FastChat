@@ -1,0 +1,872 @@
+{
+    "o1-preview": {
+      "model_key": "o1-preview",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "15",
+      "output_token_price": "60"
+    },
+    "chatgpt-4o-latest-20240903": {
+      "model_key": "chatgpt-4o-latest-20240903",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "5",
+      "output_token_price": "15"
+    },
+    "o1-mini": {
+      "model_key": "o1-mini",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "3",
+      "output_token_price": "12"
+    },
+    "gemini-1.5-pro-exp-0827": {
+      "model_key": "gemini-1.5-pro-exp-0827",
+      "source": "https://ai.google.dev/pricing, https://ai.google.dev/gemini-api/docs/models/experimental-models",
+      "input_token_price": "1.25",
+      "output_token_price": "5"
+    },
+    "grok-2-2024-08-13": {
+      "model_key": "grok-2-2024-08-13",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "gpt-4o-2024-05-13": {
+      "model_key": "gpt-4o-2024-05-13",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "5",
+      "output_token_price": "15"
+    },
+    "gpt-4o-mini-2024-07-18": {
+      "model_key": "gpt-4o-mini-2024-07-18",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "0.15",
+      "output_token_price": "0.6"
+    },
+    "claude-3-5-sonnet-20240620": {
+      "model_key": "claude-3-5-sonnet-20240620",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "3",
+      "output_token_price": "15"
+    },
+    "gemini-1.5-flash-exp-0827": {
+      "model_key": "gemini-1.5-flash-exp-0827",
+      "source": "https://ai.google.dev/pricing",
+      "input_token_price": "0.075",
+      "output_token_price": "0.3"
+    },
+    "grok-2-mini-2024-08-13": {
+      "model_key": "grok-2-mini-2024-08-13",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "gemini-advanced-0514": {
+      "model_key": "gemini-advanced-0514",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "llama-3.1-405b-instruct-bf16": {
+      "model_key": "llama-3.1-405b-instruct-bf16",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "null",
+      "output_token_price": " null"
+    },
+    "llama-3.1-405b-instruct": {
+      "model_key": "llama-3.1-405b-instruct",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "3",
+      "output_token_price": "3"
+    },
+    "gpt-4o-2024-08-06": {
+      "model_key": "gpt-4o-2024-08-06",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "2.5",
+      "output_token_price": "10"
+    },
+    "qwen2.5-72b-instruct": {
+      "model_key": "qwen2.5-72b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "gemini-1.5-pro-api-0514": {
+      "model_key": "gemini-1.5-pro-api-0514",
+      "source": "https://ai.google.dev/pricing",
+      "input_token_price": "1.25",
+      "output_token_price": "5"
+    },
+    "gpt-4-turbo-2024-04-09": {
+      "model_key": "gpt-4-turbo-2024-04-09",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "10",
+      "output_token_price": "30"
+    },
+    "deepseek-v2.5": {
+      "model_key": "deepseek-v2.5",
+      "source": "https://github.com/deepseek-ai/DeepSeek-V2",
+      "input_token_price": "0.14",
+      "output_token_price": "0.28"
+    },
+    "mistral-large-2407": {
+      "model_key": "mistral-large-2407",
+      "source": "https://mistral.ai/technology/#pricing",
+      "input_token_price": "2",
+      "output_token_price": "6"
+    },
+    "gpt-4-1106-preview": {
+      "model_key": "gpt-4-1106-preview",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "10",
+      "output_token_price": "30"
+    },
+    "athene-70b-0725": {
+      "model_key": "athene-70b-0725",
+      "source": "https://huggingface.co/Nexusflow/Athene-70B",
+      "input_token_price": "0.59",
+      "output_token_price": "0.79"
+    },
+    "llama-3.1-70b-instruct": {
+      "model_key": "llama-3.1-70b-instruct",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.52",
+      "output_token_price": "0.75"
+    },
+    "claude-3-opus-20240229": {
+      "model_key": "claude-3-opus-20240229",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "15",
+      "output_token_price": "75"
+    },
+    "gpt-4-0125-preview": {
+      "model_key": "gpt-4-0125-preview",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "10",
+      "output_token_price": "30"
+    },
+    "yi-large-preview": {
+      "model_key": "yi-large-preview",
+      "source": "https://platform.lingyiwanwu.com/docs#%E6%A8%A1%E5%9E%8B",
+      "input_token_price": "2.85",
+      "output_token_price": "2.85"
+    },
+    "reka-core-20240722": {
+      "model_key": "reka-core-20240722",
+      "source": "https://www.reka.ai/reka-deploy#pricing",
+      "input_token_price": "2",
+      "output_token_price": "6"
+    },
+    "qwen-plus-0828": {
+      "model_key": "qwen-plus-0828",
+      "source": "https://www.alibabacloud.com/help/en/model-studio/developer-reference/billing-for-tongyiqianwen",
+      "input_token_price": "3",
+      "output_token_price": "1.2"
+    },
+    "gemini-1.5-flash-api-0514": {
+      "model_key": "gemini-1.5-flash-api-0514",
+      "source": "https://ai.google.dev/pricing, https://ai.google.dev/gemini-api/docs/models/experimental-models",
+      "input_token_price": "0.075",
+      "output_token_price": "0.3"
+    },
+    "jamba-1.5-large": {
+      "model_key": "jamba-1.5-large",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "1.8",
+      "output_token_price": "1.8"
+    },
+    "deepseek-v2-api-0628": {
+      "model_key": "deepseek-v2-api-0628",
+      "source": "https://github.com/deepseek-ai/DeepSeek-V2",
+      "input_token_price": "0.14",
+      "output_token_price": "0.28"
+    },
+    "gemma-2-9b-it-simpo": {
+      "model_key": "gemma-2-9b-it-simpo",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "gemma-2-27b-it": {
+      "model_key": "gemma-2-27b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "deepseek-coder-v2-0724": {
+      "model_key": "deepseek-coder-v2-0724",
+      "source": "https://github.com/deepseek-ai/DeepSeek-V2",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "yi-large": {
+      "model_key": "yi-large",
+      "source": "https://platform.01.ai/docs#models-and-pricing",
+      "input_token_price": "3",
+      "output_token_price": "3"
+    },
+    "command-r-plus-08-2024": {
+      "model_key": "command-r-plus-08-2024",
+      "source": "https://cohere.com/blog/command-r-plus-microsoft-azure",
+      "input_token_price": "3",
+      "output_token_price": "15"
+    },
+    "nemotron-4-340b-instruct": {
+      "model_key": "nemotron-4-340b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "2.4",
+      "output_token_price": "2.4"
+    },
+    "glm-4-0520": {
+      "model_key": "glm-4-0520",
+      "source": "https://open.bigmodel.cn/pricing",
+      "input_token_price": "0.67",
+      "output_token_price": "0.67"
+    },
+    "llama-3-70b-instruct": {
+      "model_key": "llama-3-70b-instruct",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.59",
+      "output_token_price": "0.79"
+    },
+    "gemini-1.5-flash-8b-exp-0827": {
+      "model_key": "gemini-1.5-flash-8b-exp-0827",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "reka-flash-20240722": {
+      "model_key": "reka-flash-20240722",
+      "source": "https://www.reka.ai/ourmodels",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "claude-3-sonnet-20240229": {
+      "model_key": "claude-3-sonnet-20240229",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "3",
+      "output_token_price": "15"
+    },
+    "reka-core-20240501": {
+      "model_key": "reka-core-20240501",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "command-r-plus": {
+      "model_key": "command-r-plus",
+      "source": "https://cohere.com/blog/command-r-plus-microsoft-azure",
+      "input_token_price": "3",
+      "output_token_price": "15"
+    },
+    "gemma-2-9b-it": {
+      "model_key": "gemma-2-9b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "qwen2-72b-instruct": {
+      "model_key": "qwen2-72b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "gpt-4-0314": {
+      "model_key": "gpt-4-0314",
+      "source": "https://openai.com/index/gpt-4-research/",
+      "input_token_price": "30",
+      "output_token_price": "60"
+    },
+    "glm-4-0116": {
+      "model_key": "glm-4-0116",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "qwen-max-0428": {
+      "model_key": "qwen-max-0428",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "claude-3-haiku-20240307": {
+      "model_key": "claude-3-haiku-20240307",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "0.25",
+      "output_token_price": "1.25"
+    },
+    "deepseek-coder-v2": {
+      "model_key": "deepseek-coder-v2",
+      "source": "https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "jamba-1.5-mini": {
+      "model_key": "jamba-1.5-mini",
+      "source": "https://huggingface.co/ai21labs/AI21-Jamba-1.5-Large",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "command-r-08-2024": {
+      "model_key": "command-r-08-2024",
+      "source": "https://cohere.com/blog/command-r-plus-microsoft-azure",
+      "input_token_price": "0.5",
+      "output_token_price": "1.5"
+    },
+    "llama-3.1-8b-instruct": {
+      "model_key": "llama-3.1-8b-instruct",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.09",
+      "output_token_price": "0.09"
+    },
+    "reka-flash-preview-20240611": {
+      "model_key": "reka-flash-preview-20240611",
+      "source": "https://www.reka.ai/ourmodels",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "gpt-4-0613": {
+      "model_key": "gpt-4-0613",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "30",
+      "output_token_price": "60"
+    },
+    "qwen1.5-110b-chat": {
+      "model_key": "qwen1.5-110b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "1.8",
+      "output_token_price": "1.8"
+    },
+    "yi-1.5-34b-chat": {
+      "model_key": "yi-1.5-34b-chat",
+      "source": "https://huggingface.co/01-ai/Yi-1.5-34B-Chat",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "mistral-large-2402": {
+      "model_key": "mistral-large-2402",
+      "source": "https://mistral.ai/technology/",
+      "input_token_price": "2",
+      "output_token_price": "6"
+    },
+    "reka-flash-21b-20240226-online": {
+      "model_key": "reka-flash-21b-20240226-online",
+      "source": "https://www.reka.ai/ourmodels",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "llama-3-8b-instruct": {
+      "model_key": "llama-3-8b-instruct",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.08",
+      "output_token_price": "0.08"
+    },
+    "internlm2_5-20b-chat": {
+      "model_key": "internlm2_5-20b-chat",
+      "source": "https://huggingface.co/internlm/internlm2_5-20b-chat",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "claude-1": {
+      "model_key": "claude-1",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "command-r": {
+      "model_key": "command-r",
+      "source": "https://cohere.com/blog/command-r-plus-microsoft-azure",
+      "input_token_price": "0.5",
+      "output_token_price": "1.5"
+    },
+    "mistral-medium": {
+      "model_key": "mistral-medium",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "reka-flash-21b-20240226": {
+      "model_key": "reka-flash-21b-20240226",
+      "source": "https://www.reka.ai/ourmodels",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "mixtral-8x22b-instruct-v0.1": {
+      "model_key": "mixtral-8x22b-instruct-v0.1",
+      "source": "https://mistral.ai/technology/#pricing",
+      "input_token_price": "2",
+      "output_token_price": "6"
+    },
+    "qwen1.5-72b-chat": {
+      "model_key": "qwen1.5-72b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "gemma-2-2b-it": {
+      "model_key": "gemma-2-2b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "claude-2.0": {
+      "model_key": "claude-2.0",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "8",
+      "output_token_price": "24"
+    },
+    "gemini-pro-dev-api": {
+      "model_key": "gemini-pro-dev-api",
+      "source": "https://ai.google.dev/pricing",
+      "input_token_price": "0.5",
+      "output_token_price": "1.5"
+    },
+    "zephyr-orpo-141b-A35b-v0.1": {
+      "model_key": "zephyr-orpo-141b-A35b-v0.1",
+      "source": "",
+      "input_token_price": "1.8",
+      "output_token_price": "1.8"
+    },
+    "qwen1.5-32b-chat": {
+      "model_key": "qwen1.5-32b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "mistral-next": {
+      "model_key": "mistral-next",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "phi-3-medium-4k-instruct": {
+      "model_key": "phi-3-medium-4k-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "starling-lm-7b-beta": {
+      "model_key": "starling-lm-7b-beta",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "claude-2.1": {
+      "model_key": "claude-2.1",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "8",
+      "output_token_price": "24"
+    },
+    "gpt-3.5-turbo-0613": {
+      "model_key": "gpt-3.5-turbo-0613",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "1.5",
+      "output_token_price": "2"
+    },
+    "gemini-pro": {
+      "model_key": "gemini-pro",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "claude-instant-1": {
+      "model_key": "claude-instant-1",
+      "source": "https://www.anthropic.com/pricing#anthropic-api",
+      "input_token_price": "0.8",
+      "output_token_price": "2.4"
+    },
+    "yi-34b-chat": {
+      "model_key": "yi-34b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "gpt-3.5-turbo-0314": {
+      "model_key": "gpt-3.5-turbo-0314",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "1.5",
+      "output_token_price": "2"
+    },
+    "mixtral-8x7b-instruct-v0.1": {
+      "model_key": "mixtral-8x7b-instruct-v0.1",
+      "source": "https://mistral.ai/technology/#pricing",
+      "input_token_price": "0.7",
+      "output_token_price": "0.7"
+    },
+    "qwen1.5-14b-chat": {
+      "model_key": "qwen1.5-14b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "wizardlm-70b": {
+      "model_key": "wizardlm-70b",
+      "source": "https://huggingface.co/WizardLMTeam/WizardLM-70B-V1.0",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "gpt-3.5-turbo-0125": {
+      "model_key": "gpt-3.5-turbo-0125",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "0.5",
+      "output_token_price": "1.5"
+    },
+    "llama-3.2-3b-instruct": {
+      "model_key": "llama-3.2-3b-instruct",
+      "source": "https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/",
+      "input_token_price": "0.06",
+      "output_token_price": "0.06"
+    },
+    "dbrx-instruct-preview": {
+      "model_key": "dbrx-instruct-preview",
+      "source": "https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm, https://huggingface.co/databricks/dbrx-instruct",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "phi-3-small-8k-instruct": {
+      "model_key": "phi-3-small-8k-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "tulu-2-dpo-70b": {
+      "model_key": "tulu-2-dpo-70b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "llama-2-70b-chat": {
+      "model_key": "llama-2-70b-chat",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.64",
+      "output_token_price": "0.8"
+    },
+    "openchat-3.5-0106": {
+      "model_key": "openchat-3.5-0106",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "vicuna-33b": {
+      "model_key": "vicuna-33b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "snowflake-arctic-instruct": {
+      "model_key": "snowflake-arctic-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "2.4",
+      "output_token_price": "2.4"
+    },
+    "starling-lm-7b-alpha": {
+      "model_key": "starling-lm-7b-alpha",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "nous-hermes-2-mixtral-8x7b-dpo": {
+      "model_key": "nous-hermes-2-mixtral-8x7b-dpo",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "llama2-70b-steerlm-chat": {
+      "model_key": "llama2-70b-steerlm-chat",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.65",
+      "output_token_price": "2.75"
+    },
+    "gemma-1.1-7b-it": {
+      "model_key": "gemma-1.1-7b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "pplx-70b-online": {
+      "model_key": "pplx-70b-online",
+      "source": "https://docs.perplexity.ai/guides/pricing",
+      "input_token_price": "1",
+      "output_token_price": "1"
+    },
+    "deepseek-llm-67b-chat": {
+      "model_key": "deepseek-llm-67b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "openchat-3.5": {
+      "model_key": "openchat-3.5",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "openhermes-2.5-mistral-7b": {
+      "model_key": "openhermes-2.5-mistral-7b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "mistral-7b-instruct-v0.2": {
+      "model_key": "mistral-7b-instruct-v0.2",
+      "source": "https://mistral.ai/technology/#pricing",
+      "input_token_price": "0.25",
+      "output_token_price": "0.25"
+    },
+    "qwen1.5-7b-chat": {
+      "model_key": "qwen1.5-7b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "phi-3-mini-4k-instruct-june-2024": {
+      "model_key": "phi-3-mini-4k-instruct-june-2024",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "gpt-3.5-turbo-1106": {
+      "model_key": "gpt-3.5-turbo-1106",
+      "source": "https://openai.com/api/pricing/",
+      "input_token_price": "1",
+      "output_token_price": "2"
+    },
+    "dolphin-2.2.1-mistral-7b": {
+      "model_key": "dolphin-2.2.1-mistral-7b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "phi-3-mini-4k-instruct": {
+      "model_key": "phi-3-mini-4k-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "solar-10.7b-instruct-v1.0": {
+      "model_key": "solar-10.7b-instruct-v1.0",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "llama-3.2-1b-instruct": {
+      "model_key": "llama-3.2-1b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "llama-2-13b-chat": {
+      "model_key": "llama-2-13b-chat",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.1",
+      "output_token_price": "0.5"
+    },
+    "wizardlm-13b": {
+      "model_key": "wizardlm-13b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "zephyr-7b-beta": {
+      "model_key": "zephyr-7b-beta",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "mpt-30b-chat": {
+      "model_key": "mpt-30b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "codellama-70b-instruct": {
+      "model_key": "codellama-70b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.9",
+      "output_token_price": "0.9"
+    },
+    "zephyr-7b-alpha": {
+      "model_key": "zephyr-7b-alpha",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "falcon-180b-chat": {
+      "model_key": "falcon-180b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "1.8",
+      "output_token_price": "1.8"
+    },
+    "pplx-7b-online": {
+      "model_key": "pplx-7b-online",
+      "source": "https://docs.perplexity.ai/guides/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "codellama-34b-instruct": {
+      "model_key": "codellama-34b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "vicuna-13b": {
+      "model_key": "vicuna-13b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "gemma-7b-it": {
+      "model_key": "gemma-7b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "llama-2-7b-chat": {
+      "model_key": "llama-2-7b-chat",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "phi-3-mini-128k-instruct": {
+      "model_key": "phi-3-mini-128k-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "qwen-14b-chat": {
+      "model_key": "qwen-14b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "guanaco-33b": {
+      "model_key": "guanaco-33b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.8",
+      "output_token_price": "0.8"
+    },
+    "gemma-1.1-2b-it": {
+      "model_key": "gemma-1.1-2b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "stripedhyena-nous-7b": {
+      "model_key": "stripedhyena-nous-7b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "olmo-7b-instruct": {
+      "model_key": "olmo-7b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "mistral-7b-instruct": {
+      "model_key": "mistral-7b-instruct",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.25",
+      "output_token_price": "0.25"
+    },
+    "vicuna-7b": {
+      "model_key": "vicuna-7b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "palm-2": {
+      "model_key": "palm-2",
+      "source": "null",
+      "input_token_price": "null",
+      "output_token_price": "null"
+    },
+    "gemma-2b-it": {
+      "model_key": "gemma-2b-it",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "qwen1.5-4b-chat": {
+      "model_key": "qwen1.5-4b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "koala-13b": {
+      "model_key": "koala-13b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "chatglm3-6b": {
+      "model_key": "chatglm3-6b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "gpt4all-13b-snoozy": {
+      "model_key": "gpt4all-13b-snoozy",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "mpt-7b-chat": {
+      "model_key": "mpt-7b-chat",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "chatglm2-6b": {
+      "model_key": "chatglm2-6b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "RWKV-4-Raven-14B": {
+      "model_key": "RWKV-4-Raven-14B",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "alpaca-13b": {
+      "model_key": "alpaca-13b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "oasst-pythia-12b": {
+      "model_key": "oasst-pythia-12b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "chatglm-6b": {
+      "model_key": "chatglm-6b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "fastchat-t5-3b": {
+      "model_key": "fastchat-t5-3b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.1",
+      "output_token_price": "0.1"
+    },
+    "stablelm-tuned-alpha-7b": {
+      "model_key": "stablelm-tuned-alpha-7b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.2",
+      "output_token_price": "0.2"
+    },
+    "dolly-v2-12b": {
+      "model_key": "dolly-v2-12b",
+      "source": "https://www.together.ai/pricing",
+      "input_token_price": "0.3",
+      "output_token_price": "0.3"
+    },
+    "llama-13b": {
+      "model_key": "llama-13b",
+      "source": "https://llmpricecheck.com/aws/llama-2-chat-13b/",
+      "input_token_price": "0.1",
+      "output_token_price": "0.5"
+    }
+}
