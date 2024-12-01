@@ -66,11 +66,9 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
 class HuggingFaceRefusalClassifier:
     def __init__(self):
         print("Loading model and tokenizer...")
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "lmarena-ai/RefusalClassifier"
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained("lmarena-ai/RefusalClassifier")
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            "derixu/refusal_classifier-mlm_then_classifier_v3"
+            "lmarena-ai/RefusalClassifier"
         )
         self.model.eval()
 
