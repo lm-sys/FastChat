@@ -52,7 +52,7 @@ class ArenaHardGrader():
             {"role": "user", "content": grader_prompt}
         ]
         grading_response = self.grader_model(prompt_messages)
-        match = re.search(r"(A|B|C)", grading_response)
+        match = re.search(r"\[\[(A|B|C)\]\]", grading_response)
         verdict = match.group(0) if match else "C"
         if verdict == "C":
              return "tie"
