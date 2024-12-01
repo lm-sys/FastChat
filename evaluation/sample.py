@@ -11,6 +11,8 @@ from typing import Dict
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
+os.environ["PERPLEXITY_API_KEY"] = ""
+
 def sample_gradio(prompt: str, model_name: str) -> str:
     GRADIO_CLIENT = Client("http://0.0.0.0:7860")
     GRADIO_CLIENT.predict(
@@ -42,7 +44,7 @@ def sample_perplexity(prompt: str, model_name: str) -> str:
         "frequency_penalty": 1
     }
     headers = {
-        "Authorization": "Bearer YOUR KEY",
+        "Authorization": "Bearer " + os.getenv("PERPLEXITY_API_KEY"),
         "Content-Type": "application/json"
     }
     while True:
