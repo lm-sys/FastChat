@@ -67,8 +67,8 @@ class HuggingFaceRefusalClassifier:
     def __init__(self):
         print("Loading model and tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(
-            "derixu/refusal_classifier-mlm_then_classifier_v3"
-        )  # TODO: Migrate to LMSYS account and change path
+            "lmarena-ai/RefusalClassifier"
+        )
         self.model = AutoModelForSequenceClassification.from_pretrained(
             "derixu/refusal_classifier-mlm_then_classifier_v3"
         )
