@@ -15,6 +15,8 @@ load_dotenv('keys.env')
 
 from openai import OpenAI
 OpenAI_CLIENT = OpenAI()
+random.seed(42)
+
 
 import prompts
 
@@ -26,7 +28,9 @@ class ArenaHardGrader():
     def grader_model(self, prompt_messages: List[Dict]) -> str:
             completion = OpenAI_CLIENT.chat.completions.create(
                 model=self.grader_model_name,
-                messages=prompt_messages
+                messages=prompt_messages,
+                temperature=0.0,
+                top_p=1.0,
             )
             return completion.choices[0].message.content
     
@@ -76,6 +80,7 @@ def main():
     parser.add_argument("--eval_inputs_path", type=str, required=True, help="File path for the input evaluation dataset.")
     parser.add_argument("--sample_outputs_base_path", type=str, required=True, help="File path for the sample outputs of the base model.")
     parser.add_argument("--sample_outputs_agent_path", type=str, required=True, help="File path for the sample outputs of the agent model.")
+    parser.add_argument("--output_path", type=str, help="Path to save the generated responses.")
     parser.add_argument("--grader_model_name", type=str, default="gpt-4o", help="Model used to evaluate.")
     args = parser.parse_args()
     
@@ -93,7 +98,7 @@ def main():
     
     data = pd.merge(input_data, base_model_samples, on="question_id", how="inner")
     data = pd.merge(data, agent_model_samples, on="question_id", how="inner")
-    output_path = "eval_results/arena_hard_gpt-4o.jsonl"
+    output_path = args.output_path
     with open(output_path, "w") as f:
         pass
     lock = Lock()

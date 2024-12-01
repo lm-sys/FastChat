@@ -25,7 +25,9 @@ class SimpleQAGrader():
     def grader_model(self, prompt_messages: List[Dict]) -> str:
         completion = OpenAI_CLIENT.chat.completions.create(
             model=self.grader_model_name,
-            messages=prompt_messages
+            messages=prompt_messages,
+            temperature=0.0,
+            top_p=1.0,
         )
         return completion.choices[0].message.content
 
