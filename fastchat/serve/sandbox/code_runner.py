@@ -106,6 +106,7 @@ class ChatbotSandboxState(TypedDict):
     enable_sandbox: bool
     sandbox_environment: str | None
     sandbox_instruction: str | None
+    enabled_round: int
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -116,6 +117,7 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "enable_sandbox": False,
         "sandbox_environment": None,
         "sandbox_instruction": None,
+        "enabled_round": 0
     }
 
 
@@ -146,6 +148,10 @@ def update_sandbox_config_single_model(
     state["enable_sandbox"] = enable_sandbox
     state["sandbox_instruction"] = sandbox_instruction
     state["sandbox_environment"] = sandbox_environment
+
+    # if enable_sandbox and state["enabled_round"] == 0:
+    #     state["sandbox_instruction"] = DEFAULT_SANDBOX_INSTRUCTIONS.get(sandbox_environment, "")
+    #     state["enabled_round"] += 1
 
     return state
 
