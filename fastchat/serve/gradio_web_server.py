@@ -964,8 +964,8 @@ def build_single_model_ui(models, add_promotion_links=False):
                     value=''
                 )
         sandbox_env_choice.change(
-            fn=lambda env: DEFAULT_SANDBOX_INSTRUCTIONS[env],
-            inputs=[sandbox_env_choice],
+            fn=lambda env, enable: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            inputs=[sandbox_env_choice, enable_sandbox_checkbox],
             outputs=[sandbox_instruction_textarea]
         ).then(
             fn=update_sandbox_config_single_model,
@@ -989,6 +989,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         )    
         # update sandbox global config
         enable_sandbox_checkbox.change(
+            fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            inputs=[enable_sandbox_checkbox, sandbox_env_choice],
+            outputs=[sandbox_instruction_textarea]
+        ).then(
             fn=update_sandbox_config_single_model,
             inputs=[
                 enable_sandbox_checkbox,
@@ -998,7 +1002,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             ],
             outputs=[sandbox_state]
         )
-
 
     with gr.Row():
         textbox = gr.Textbox(
