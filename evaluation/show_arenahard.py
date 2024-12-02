@@ -2,7 +2,7 @@ import json
 
 # show general result
 
-dataset_model_names = ["gpt-4o-mini", "gpt-4o", "llama31-70b", "llama31-405b", "gemini-v1.5-pro", "claude-3.5-sonnet"]
+dataset_model_names = ["gpt-4o-mini", "gpt-4o", "llama31-70b", "llama31-405b", "gemini-v1.5-pro", "claude-3.5-sonnet", "gpt-4o-mini_serp", "gpt-4o_serp"]
 
 # dataset_model_names = ["claude-3.5-sonnet"]
 
@@ -33,7 +33,10 @@ for dataset_model_name in dataset_model_names:
     agent_results = [json.loads(line) for line in lines]
     agent_results = sorted(agent_results, key=lambda x: x["question_id"])
 
-    base_sample_files = "eval_samples/arena_hard_50_{}.jsonl".format(dataset_model_name)
+    if "serp" in dataset_model_name:
+        base_sample_files = "eval_samples/arena_hard_50_{}.jsonl".format(dataset_model_name.replace("_serp", ""))
+    else:
+        base_sample_files = "eval_samples/arena_hard_50_{}.jsonl".format(dataset_model_name)
     with open(base_sample_files, "r") as f:
         lines = f.readlines()
     base_results = [json.loads(line) for line in lines]
