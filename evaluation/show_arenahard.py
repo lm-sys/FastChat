@@ -43,6 +43,8 @@ for dataset_model_name in dataset_model_names:
     # count "search_done": True
     search_done_count = 0
     non_search_done_count = 0
+    search_tie_count = 0
+    non_search_tie_count = 0
     search_agent_better = 0
     non_search_agent_better = 0
     for i in range(len(results)):
@@ -51,7 +53,9 @@ for dataset_model_name in dataset_model_names:
         llm_as_judge_result = results[i]
         if agent_result["search_done"]:
             search_done_count += 1
-            if llm_as_judge_result["grade"] == "agent":
+            if llm_as_judge_result["grade"] == "tie":
+                search_tie_count += 1
+            elif llm_as_judge_result["grade"] == "agent":
                 search_agent_better += 1
         if agent_result["search_done"] == False:
             # print("Agent Result =====================")
@@ -61,6 +65,8 @@ for dataset_model_name in dataset_model_names:
             # print("LLM as Judge Result =====================")
             # print(llm_as_judge_result["grade"])
             non_search_done_count += 1
+            if llm_as_judge_result["grade"] == "tie":
+                non_search_tie_count += 1
             if llm_as_judge_result["grade"] == "agent":
                 non_search_agent_better += 1
                 # print("-" * 50)
@@ -82,14 +88,27 @@ for dataset_model_name in dataset_model_names:
     # print("    - Overall: {} ({}/{})".format(1-(search_agent_better+non_search_agent_better)/total, total-search_agent_better-non_search_agent_better, total))
     print(f"Model: {dataset_model_name}")
     print(f"Search Done: {search_done_count/total:.2%} ({search_done_count}/{total})")
-    print("  - Agent")
-    print(f"    - No search Acc: {non_search_agent_better/non_search_done_count:.2%} ({non_search_agent_better}/{non_search_done_count})")
-    print(f"    - Search Acc: {search_agent_better/search_done_count:.2%} ({search_agent_better}/{search_done_count})")
-    print(f"    - Overall: {(search_agent_better+non_search_agent_better)/total:.2%} ({search_agent_better+non_search_agent_better}/{total})")
-    print("  - Base")
-    print(f"    - No search Acc: {1-non_search_agent_better/non_search_done_count:.2%} ({non_search_done_count-non_search_agent_better}/{non_search_done_count})")
-    print(f"    - Search Acc: {1-search_agent_better/search_done_count:.2%} ({search_done_count-search_agent_better}/{search_done_count})")
-    print(f"    - Overall: {1-(search_agent_better+non_search_agent_better)/total:.2%} ({total-search_agent_better-non_search_agent_better}/{total})")
+    # No search resule: agent vs base vs tie
+    print("Non-Search Result")
+    print(f"  - Agent Better: {non_search_agent_better/non_search_done_count:.2%} ({non_search_agent_better}/{non_search_done_count})")
+    print(f"  - Base Better: {1-(non_search_agent_better+non_search_tie_count)/non_search_done_count:.2%} ({non_search_done_count-non_search_agent_better-non_search_tie_count}/{non_search_done_count})")
+    print(f"  - Tie: {non_search_tie_count/non_search_done_count:.2%} ({non_search_tie_count}/{non_search_done_count})")
+    print("Search Result")
+    print(f"  - Agent Better: {search_agent_better/search_done_count:.2%} ({search_agent_better}/{search_done_count})")
+    print(f"  - Base Better: {1-(search_agent_better+search_tie_count)/search_done_count:.2%} ({search_done_count-search_agent_better-search_tie_count}/{search_done_count})")
+    print(f"  - Tie: {search_tie_count/search_done_count:.2%} ({search_tie_count}/{search_done_count})")
+    print("Overall")
+    print(f"  - Agent Better: {(search_agent_better+non_search_agent_better)/total:.2%} ({search_agent_better+non_search_agent_better}/{total})")
+    print(f"  - Base Better: {1-(search_agent_better+non_search_agent_better+search_tie_count+non_search_tie_count)/total:.2%} ({total-search_agent_better-non_search_agent_better-search_tie_count-non_search_tie_count}/{total})")
+    print(f"  - Tie: {(search_tie_count+non_search_tie_count)/total:.2%} ({search_tie_count+non_search_tie_count}/{total})")
+    # print("  - Agent")
+    # print(f"    - No search Acc: {non_search_agent_better/non_search_done_count:.2%} ({non_search_agent_better}/{non_search_done_count})")
+    # print(f"    - Search Acc: {search_agent_better/search_done_count:.2%} ({search_agent_better}/{search_done_count})")
+    # print(f"    - Overall: {(search_agent_better+non_search_agent_better)/total:.2%} ({search_agent_better+non_search_agent_better}/{total})")
+    # print("  - Base")
+    # print(f"    - No search Acc: {1-(non_search_agent_better-non_search_tie_count)/non_search_done_count:.2%} ({non_search_done_count-non_search_agent_better}/{non_search_done_count})")
+    # print(f"    - Search Acc: {1-search_agent_better/search_done_count:.2%} ({search_done_count-search_agent_better}/{search_done_count})")
+    # print(f"    - Overall: {1-(search_agent_better+non_search_agent_better)/total:.2%} ({total-search_agent_better-non_search_agent_better}/{total})")
 
     # # show preference count
     # print(f"Model: {dataset_model_name}")

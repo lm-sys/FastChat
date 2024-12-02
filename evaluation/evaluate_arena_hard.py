@@ -39,10 +39,12 @@ class ArenaHardGrader():
             answer_a = base_answer
             answer_b = agent_answer
             agent_answer_order = "B"
+            base_answer_order = "A"
         else:
             answer_a = agent_answer
             answer_b = base_answer
             agent_answer_order = "A"
+            base_answer_order = "B"
         grader_prompt = self.GRADER_PROMTP.format(
             question=question,
             answer_a=answer_a,
@@ -53,12 +55,13 @@ class ArenaHardGrader():
         ]
         grading_response = self.grader_model(prompt_messages)
         match = re.search(r"\[\[(A|B|C)\]\]", grading_response)
+        return_str = f"Base: {base_answer_order}; Agent: {agent_answer_order}\n\nGrading Response: {grading_response}"
         verdict = match.group(0) if match else "C"
-        if verdict == "C":
-             return "tie"
-        elif verdict == agent_answer_order:
-            return "agent"
-        return "base"
+        if "C" in verdict:
+             return "tie", return_str
+        elif agent_answer_order in verdict:
+            return "agent", return_str
+        return "base", return_str
 
 def write_to_file_safe(output_path, data, lock):
     with lock:
@@ -71,9 +74,10 @@ def process_row(row: pd.Series):
     base_answer = row["base_response"]
     agent_answer = row["agent_response"]
     question_id = row["question_id"]
+    do_search = row["search_done_y"]
     grader = ArenaHardGrader()
-    grade = grader.grade_sample(question, base_answer, agent_answer)
-    return {"question_id": question_id, "grade": grade}
+    grade, raw_response = grader.grade_sample(question, base_answer, agent_answer)
+    return {"question_id": question_id, "question": question, "grade": grade, "base_response": base_answer, "agent_response": agent_answer, "do_search": do_search, "raw_response": raw_response}
 
 def main():
     parser = argparse.ArgumentParser(description="Process evaluation arguments.")
