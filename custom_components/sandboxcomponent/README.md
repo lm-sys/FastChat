@@ -1,8 +1,8 @@
 
 # `gradio_sandboxcomponent`
-<img alt="Static Badge" src="https://img.shields.io/badge/version%20-%200.0.9%20-%20orange">  
+<a href="https://pypi.org/project/gradio_sandboxcomponent/" target="_blank"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/gradio_sandboxcomponent"></a>  
 
-Python library for easily interacting with trained machine learning models
+Gradio library for easily interacting with remote sandbox.
 
 ## Installation
 
@@ -17,18 +17,17 @@ pip install gradio_sandboxcomponent
 import gradio as gr
 from gradio_sandboxcomponent import SandboxComponent
 
-
 example = SandboxComponent().example_value()
 
 
 with gr.Blocks() as demo:
-    with gr.Tab("My iFrame"):
+    with gr.Tab("Sandbox Demo"):
         with gr.Row():
-            gr.Markdown("## Baidu iFrame")
+            gr.Markdown("## Sandbox")
         with gr.Row():
             SandboxComponent(
-                label="iFrame Example",
-                value=("https://www.baidu.com/", "Hello World"),
+                label="Sandbox Example",
+                value=("https://www.gradio.app/", "Hello World"),
                 show_label=True)
 
 

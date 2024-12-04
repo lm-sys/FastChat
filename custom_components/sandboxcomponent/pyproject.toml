@@ -8,8 +8,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradio_sandboxcomponent"
-version = "0.0.9"
-description = "Python library for easily interacting with trained machine learning models"
+version = "0.0.10"
+description = "Gradio library for easily interacting with remote sandbox."
 readme = "README.md"
 license = "apache-2.0"
 requires-python = ">=3.10"
