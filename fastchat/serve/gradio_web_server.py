@@ -923,7 +923,9 @@ def build_single_model_ui(models, add_promotion_links=False):
         SandboxComponent,  # sandbox_ui
         gr.Code, # sandbox_code
     ] | None] = []
-    with gr.Group():
+
+    sandbox_ui_code_group = gr.Group(visible=False)
+    with sandbox_ui_code_group:
         sandbox_column = gr.Column(visible=False,scale=1)
         with sandbox_column:
             sandbox_state = gr.State(create_chatbot_sandbox_state())
@@ -966,11 +968,13 @@ def build_single_model_ui(models, add_promotion_links=False):
     with gr.Group():
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
-            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True)
+            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
         with gr.Group():
-            with gr.Accordion("Sandbox Instructions", open=False):
+            sandbox_instruction_accordion = gr.Accordion("Sandbox Instructions", open=False, visible=False)
+            with sandbox_instruction_accordion:
                 sandbox_instruction_textarea = gr.TextArea(
-                    value=''
+                    value='',
+                    visible=False
                 )
         sandbox_env_choice.change(
             fn=lambda env, enable: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
@@ -1015,10 +1019,14 @@ def build_single_model_ui(models, add_promotion_links=False):
                 gr.update(visible=enable),
                 gr.update(visible=enable),
                 gr.update(visible=enable),
-                gr.update(visible=enable)
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
             ),
             inputs=[enable_sandbox_checkbox],
-            outputs=[sandbox_column,sandbox_title,sandbox_code_tab,sandbox_output_tab]
+            outputs=[sandbox_ui_code_group,sandbox_column,sandbox_title,sandbox_code_tab,sandbox_output_tab,sandbox_env_choice,sandbox_instruction_accordion,sandbox_instruction_textarea]
         )
 
     with gr.Row():
