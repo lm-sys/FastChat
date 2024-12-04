@@ -471,17 +471,43 @@ def openai_api_stream_iter_agent(
             temperature=temperature,
             max_tokens=max_new_tokens,
             stream=True,
+            tools=tools,
         )
         text = ""
+        function_name = ""
+        function_arguments = ""
+        is_collecting_function_args = False
+        # add streaming to FC TODO (test)
         for chunk in res:
             print("Chunk:", chunk)
-            if len(chunk.choices) > 0:
-                text += chunk.choices[0].delta.content or ""
+            delta = chunk.choices[0].delta
+            finish_reason = chunk.choices[0].finish_reason
+            if 'content' in delta:
+                text += delta.content or ""
+            if delta.tool_calls:
+                is_collecting_function_args = True
+                tool_call = delta.tool_calls[0]
+                if tool_call.function.name:
+                    function_name += tool_call.function.name
+                if tool_call.function.arguments:
+                    function_arguments += tool_call.function.arguments
+            if finish_reason == "tool_calls" and is_collecting_function_args:
+                args = json.loads(function_arguments)
                 data = {
                     "text": text,
                     "error_code": 0,
+                    "function_name": function_name,
+                    "arguments": args
                 }
-                yield data
+            else:
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                    "function_name": None,
+                    "arguments": None
+                }
+            yield data
+        
     else:
         if is_o1:
             res = client.chat.completions.create(

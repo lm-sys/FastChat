@@ -563,12 +563,11 @@ def bot_response(
 
         html_code = ' <span class="cursor"></span> '
         conv.update_last_message(html_code)
-
         yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
         try:
             # first-round QA
-            conv.update_last_message("Thinking...")
+            conv.update_last_message("Thinking..." + html_code)
             yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             # no stream mode so we can get the response directly
             data = next(stream_iter)
@@ -586,34 +585,38 @@ def bot_response(
                 )
                 return
 
-            system_conv.update_last_message(output)
-
             # Decide the execution flow based on the parsed response
             # 1. action -> function_call (web_search) -> answer
             # 2. answer -> return the answer
 
-            last_message = ""
             if data["function_name"] is not None:
-            #if "action" in parsed_response:
+                # update system conversation that the function has been called
+                system_conv.update_last_message(f"{data['function_name']} ({str(data['arguments'])})")
+                
                 function_name = data["function_name"]
-
-                #action = parsed_response["action"]
                 assert "web_search" == function_name, f"function_name: {function_name}"
                 arguments = data["arguments"]
 
-                conv.update_last_message("Searching...")
+                conv.update_last_message("Searching..." + html_code)
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                
                 web_search_display, web_search_summary, web_search_result = web_search(**arguments)
+                web_search_result = web_search_result[:300000] # truncate
+                
+                # update system conversation with web search results
                 system_conv.append_message(
-                    system_conv.roles[1], f"Reference Website: \n\n{web_search_result}"
+                    system_conv.roles[1], f"Reference Website(s):\n{web_search_result}"
                 )
                 system_conv.append_message(system_conv.roles[1], None)
+                
                 conv.update_last_message(
-                    f"Reference Website: \n\n{web_search_display}"
+                    f"Reference Website(s):\n{web_search_display}"
                 )
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5                
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                
                 # generate answer after web search
-                last_message = conv.messages[-1][1]
-                # Force no web search in the second round
+                message_after_web_search = conv.messages[-1][1]
+                # force no web search in the second round
                 stream_iter = get_api_provider_stream_iter(
                     system_conv,
                     model_name,
@@ -624,7 +627,8 @@ def bot_response(
                     state,
                     tools=None
                 )
-                conv.update_last_message(last_message + "\nReasoning...")
+                conv.update_last_message(message_after_web_search + "\n\nReasoning..." + html_code)
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 data = next(stream_iter)
                 if data["error_code"] == 0:
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
@@ -642,13 +646,15 @@ def bot_response(
                     return
 
                 system_conv.update_last_message(output)
-                # Save only summary to prevent context length explosion
+                # save only summary to prevent context length explosion
                 system_conv.messages[-2][1] = web_search_summary
-
-            conv.update_last_message(
-                f"{output}\n{last_message}"
-            )
-            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                
+                conv.update_last_message(f"{output}\n\n{message_after_web_search}")
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                
+            else:
+                conv.update_last_message(output)
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
         except requests.exceptions.RequestException as e:
             conv.update_last_message(
@@ -698,7 +704,7 @@ def bot_response(
             for i, data in enumerate(stream_iter):
                 if data["error_code"] == 0:
                     output = data["text"].strip()
-                    conv.update_last_message(output + "▌")
+                    # conv.update_last_message(output + "▌")
                     # conv.update_last_message(output + html_code)
                     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
                 else:
