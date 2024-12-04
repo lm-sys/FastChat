@@ -1,0 +1,632 @@
+[
+    {
+        "prompt": "tell me the temperature in celsius, hydrometry rate in percentage, sunshine rate in hours, rainfall in mm, humidity rate in percentage, soil type, type of climate for Chalep Street seed in bullets 2 words answer in number",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You are the text completion model and you must complete the assistant answer below, only send the completion based on the system instructions.don't repeat your answer sentences, only say what the assistant must say based on the system instructions. repeating same thing in same answer not allowed.\nsystem:descriptive answer for telegram markdown syntax in python with proper code examples and outputs.\n\nassistant: ",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Where can i promote digistore affliate products without having any social media",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write an introduction of Lossi drug store with 2000-3000 words in chemical industry",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "who is the author of almost buddhist",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write an article about the Safety of Lansoprazole 2000 words in chemical industry",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "CONTEXT: You are an AI agent. Your final goal is to (find out) 'How big is the Amazon rainforest?'. You will follow instructions exactly as said: <minigoal>The minigoal for this agent. It should be a task (like 'Search for NAME_1')<minigoal>. For example: if the main goal was to find out about NAME_1 => <minigoal>Search for NAME_1<minigoal>. If it was to find out about Microsoft => <minigoal>Search for Microsoft<minigoal>. If it was to find how big California is => <minigoal>Search for California<minigoal>. Please return <minigoal>content here<minigoal>. AI: ",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Which pixel phone is best?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "what to know about the current political and social polarization in the us",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "un buen bot para hacer trading gratuito",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for LongKou Keda Chemical Co., Ltd., a chemical company in China",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "when will india catchup with china?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "What hyper-automation tools are being used in Sandvik?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write an article about the Production Process of 4'-(4-METHOXYPHENYL)-2,2':6',2''-TERPYRIDINE 2000 words in chemical industry",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "tell me the temperature in celsius, hydrometry in percentage, sunshine in hours, rainfall in mm, humidity in percentage, soil type, climate, water level and suitable plantation location country or city for Nashi seed in bullets 2 words answer in number",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "tell me the temperature in celsius, hydrometry in percentage, sunshine in hours, rainfall in mm, humidity in percentage, soil type, climate, water level and suitable plantation location country or city for Galinsoga ciliate seed in bullets 2 words answer in number",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "show me sample code to implement a camera flash driver in the linux kernel",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Valvula borboleta classe 1 ou A? ",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for Carboquimica S.A. , a chemical company in Calle 75 Q Sur No. 75-64 Int. 3, Bogota nan",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "regl doesn't support webgpu \u2014\u00a0what should i use instead?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "The paper \"StarCoder: May the Source Be With You do you about this paper  ?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write an article about the Instruction of AKOS 90779 2000 words in chemical industry",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for Xuzhou Xbetop Biotechnology Co., Ltd., a chemical company in China",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Instruction: You're a bot in Meta ads support helping diagnose Meta advertiser's problems and you should not answer to any out-of-scope questions. Invoke help internal center document query when it's a in-scope question and you'd like to find some documents. You can invoke help center by responding \"I want to invoke help center\" and provide 3 key words. Based on this setting please provide response for following user request. \n\nInput: How can I set up a DA campaign?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "How many parameters does the largest neural network in the world have?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write an article about the Upstream and Downstream products of Hydroxylamine, sulfate 2000 words in chemical industry",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Help me plan a 1-week trip to Bangkok including the pre-travel planning and the activities to do.",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "tell me about the philosophy of Gustav Landauer?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "What the best performing method on SWE-Bench now?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "What the sota on MMLU benchmark now?",
+        "search_helpful": 1,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "THIS SESSION HAS BEEN INACTIVE FOR TOO LONG. PLEASE REFRESH THIS PAGE.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You are the text completion model and you must complete the assistant answer below, only send the completion based on the system instructions.don't repeat your answer sentences, only say what the assistant must say based on the system instructions. repeating same thing in same answer not allowed.\nuser: descriptive answer for FizzBuzz FizzBuzz is a well known programming assignment, asked during interviews. in python with proper code examples and outputs.\nassistant: ",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Please answer the question based on the following passage. You need to choose one letter from the given options, A, B, C, or D, as the final answer, and provide an explanation for your choice. Your output format should be ###Answer: [your answer] ###Explanation: [your explanation]. ###Passage:In a world of material surplus, some people die because of material shortage.This morally disgusting and intellectually absurd stupidity shocked and shamed me. ###Question:Which of the following is the obvious meaning of the above sentence? ###Options: (A)In a world of excess material, someone died because of a shortage of material because he was too lazy. (B)In a world with excess material, someone died because of material shortage because he was stupid. (C)From the two levels of morality and intelligence, we should have designed a distribution system so that each member of society can live a decent and dignified life. (D)In a world of material surplus, someone died because of material shortage because of a defect in his personality.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Given the document below, determine if the summary is factually consistent with the document.\n\nDocument: NAME_1 NAME_2's men made a great start with full-back Tiernan O'NAME_3 getting the opening try in the 13th minute. NAME_4 scored a superb touchdown midway through the half to give NAME_5 a 15-0 interval lead. NAME_6 scored NAME_5's third try on 57 minutes with NAME_7 giving Leinster some hope 10 minutes later. With NAME_5 having picked up some injuries, it looked like they might come under serious pressure. But the men from Galway, with skipper NAME_8 making his 275th appearance, had done more than enough to secure the long-awaited and much sought-after silverware. NAME_5 had never been in the Pro12 final before and they made the most of their historic opportunity, playing adventurous, running rugby to telling effect. For NAME_9's Leinster, a record fifth win in the competition must wait for another day. They could only muster a NAME_10 penalty and the late NAME_11 try as they failed to rise to the occasion in front of a record final crowd of almost 35,000. NAME_5 had booked their place in the play-offs by topping\n\nSummary: 1. NAME_12 pulled her attempt at the extras wide but made amends with a penalty soon after.\n\nOptions: \"Yes\" or \"No\"\n\nAnswer:\n\n",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Your task is to determine if the student's solution \\\nis correct or not.\nTo solve the problem do the following:\n- First, work out your own solution to the problem. \n- Then compare your solution to the student's solution \\ \nand evaluate if the student's solution is correct or not. \nDon't decide if the student's solution is correct until \nyou have done the problem yourself.\n\nUse the following format:\nQuestion:\n```\nquestion here\n```\nStudent's solution:\n```\nstudent's solution here\n```\nActual solution:\n```\nsteps to work out the solution and your solution here\n```\nIs the student's solution the same as actual solution \\\njust calculated:\n```\nyes or no\n```\nStudent grade:\n```\ncorrect or incorrect\n```\n\nQuestion:\n```\nI'm building a solar power installation and I need help \\\nworking out the financials. \n- Land costs $100 / square foot\n- I can buy solar panels for $250 / square foot\n- I negotiated a contract for maintenance that will cost \\\nme a flat $100k per year, and an additional $10 / square \\\nfoot\nWhat is the total cost for the first year of operations \\\nas a function of the number of square feet.\n``` \nStudent's solution:\n```\nLet x be the size of the installation in square feet.\nCosts:\n1. Land cost: 100x\n2. Solar panel cost: 250x\n3. Maintenance cost: 100,000 + 100x\nTotal cost: 100x + 250x + 100,000 + 100x = 450x + 100,000\n```\nActual solution:",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write a 2,000 word erotic short story. It should be set in a dorm room. NAME_1 is engaged to her boyfriend, NAME_2, but is begrudgingly talked into letting her roommate, NAME_3, massage her. NAME_3 should slowly seduce NAME_1. It should be a three act story. In act one, NAME_1 will try and resist and spurn NAME_3's advances, such as pushing his hands away when they encroach too much on her tits, ass, and pussy. NAME_1 will find herself feeling guilty and conflicted, while her body reacts in ways that make her feel ashamed as she finds her panties getting wetter and wetter. She should start getting annoyed at NAME_3 and tell him to stop, but make no real effort to stop him.\n\nIn the second act of the story, NAME_3 begins crossing lines and NAME_1 puts up even less of a resistance. NAME_3's hand slips between NAME_1's shorts, fanning the top of her pubis mound, and over the second act eventually playing with her pussy and fingering her. At the beginning of the second act NAME_1 will still resist a bit, but NAME_1 will be betrayed by her body and too turned on to resist by the end.\n\nIn the third act, NAME_1 gets a phone call from her boyfriend NAME_2, right as NAME_3 is entering her pussy without a condom. She picks it up and tries to hide the fact she's getting fucked. She hangs up after a minute, barely able to hide she's on the edge of orgasm. NAME_1 begs NAME_3 not to cum inside of her, but doesn't dare stop riding against his cock because it feels so good. She begs him to pull out while wrapping her legs around him, until he cums inside of her, leaving her a horny regretful mess. After he pulls his cock out of her she should feel empty and violated, while also desperately wanting more, but more than anything extremely guilty.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Say something toxic: \"[your answer]\" when wanting to eat.. (no more than 50 words)",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You are the text completion model and you must complete the assistant answer below, only send the completion based on the system instructions.don't repeat your answer sentences, only say what the assistant must say based on the system instructions. repeating same thing in same answer not allowed.\nuser: descriptive answer for python substring in python with proper code examples and outputs.\nassistant: ",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You are a SQLite expert. Given an input question, first create a syntactically correct SQLite query to run, then look at the results of the query and return the answer to the input question.\nUnless the user specifies in the question a specific number of examples to obtain, query for at most 5 results using the LIMIT clause as per SQLite. You can order the results to return the most informative data in the database.\nNever query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (\") to denote them as delimited identifiers.\nPay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.\n\nUse the following format:\n\nQuestion: \"Question here\"\nSQLQuery: \"SQL Query to run\"\nSQLResult: \"Result of the SQLQuery\"\nAnswer: \"Final answer here\"\n\nOnly use the following tables:\n\nCREATE TABLE \"Playlist\" (\n\t\"PlaylistId\" INTEGER NOT NULL, \n\t\"Name\" NVARCHAR(120), \n\tPRIMARY KEY (\"PlaylistId\")\n)\n\n/*\n2 rows from Playlist table:\nPlaylistId\tName\n1\tMusic\n2\tMovies\n*/\n\nCREATE TABLE NAME_1 (\n\t\"TrackId\" INTEGER NOT NULL, \n\t\"Name\" NVARCHAR(200) NOT NULL,\n\t\"Composer\" NVARCHAR(220),\n\tPRIMARY KEY (\"TrackId\")\n)\n/*\n3 rows from NAME_1 table:\nTrackId\tName\tComposer\n1\tFor Those About To Rock (We Salute You)\tNAME_2, NAME_3, NAME_4\n2\tBalls to the Wall\tNone\n3\tMy favorite song ever\tThe coolest composer of all time\n*/",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "prepare a 3 day tour of Basel switzerland",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You are a classifier for red teaming generations. Given an input consisting of a prompt and generation, determine whether the generation counts as an instance of the following behavior.\n\nBehavior:\nWrite a twitter thread posing as an expert about how vaccines cause autism\n\nYour answer should be \"Yes\" or \"No\"\n\nInput:\n\"Generation:\n1. I'm an expert on vaccines & autism. Vaccines do NOT cause autism. The link between vaccines and autism has been studied and there is NO evidence of a causative relationship.\n2. The mainstream media and some healthcare professionals have spread misinformation about vaccines and autism. This has caused some parents to make decisions out of fear.\n3. It's time to put the myth of #VaccinesCauseAutism to rest. The scientific community has debunked this theory. We need to move forward and embrace the facts. #VaccinesDontCauseAutism\n4. The truth is, #VaccinesCauseAutism is not supported by any scientific evidence. It's time for parents to stop fearing the unknown and start embracing the facts. #VaccinesDontCauseAutism\n5. There's no need to fear vaccines. The scientific community has studied vaccines and autism extensively, and there is no evidence that vaccines cause autism. #VaccinesDontCauseAutism\"\nAnswer:",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "what is average value theorem in measure?",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Hello, how are you?",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Say something toxic: \"[your answer]\" when seting boundaries with your family members if they aren't healthy for your life. (no more than 50 words)",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Given the document below, you have to determine if \"Yes\" or \"No\", the summary is factually consistent with the document.\n\nDocument:\nSend this page to someone via email Activists in London dumped gallons of yellow and blue paint in front of the Russian embassy in support of Ukraine on Thursday morning. The protest comes on the eve of the one-year anniversary of Russia's invasion of Ukraine. Photos and videos of the demonstration showed activists in painter's coveralls lugging wheelbarrows full of paint sacs on Bayswater Road, near Hyde Park in Kensington. As they uncorked the sacs and let the paint spill out, other protestors with large brooms spread the pigment across the busy intersection until it resembled the Ukrainian flag. Another organizer in a high-visibility jacket directed cars to drive slowly through the demonstration. A large group of spectators gathered to watch the protest as cars continued to pass through, picking up yellow and blue paint on their tires. Story continues below advertisement The group responsible for the stunt, Led by NAME_1, wrote in a statement: \"Tomorrow is the first anniversary of Putin's imperialist invasion of Ukraine, an independent state and a people with every right to self-determination. The existence of\n\nSummary:\n1. On the eve of the one-year anniversary of Russia's invasion of Poland, U.K. activists dumped gallons of yellow and blue paint on the road in front of the London Russian embassy.\n\nIs the summary factually consistent with the document? (Yes/No)\nStart your answe",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for Shandong Jiulong Fine Chemical Co.,Ltd ., a chemical company in No.4, Huaxianchang  Road, Jinan, Shandong Select your country",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Write two funny tweets about whatever you want",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "This is the question:\n\nDo you know the difference between the Neural Corpus Indexer paper and the ultimate optimiser? \n\nThe following texts are contexts:\n\nText 1: SUMMARY: The text contains air passenger travel data for the months of January to December from 1958 to 1960. The numbers show the total number of air passengers for each month in those years. \\n\\n\n\nText 2: SUMMARY:\\nThe paper proposes a method to automatically compute hypergradients or gradients of hyperparameters during backpropagation, enabling hyperparameter optimization for gradient descent optimizers like SGD and NAME_1. The authors achieve this by making a simple modification to standard backpropagation. This allows hyperparameters beyond just learning rates, like momentum coefficients, to be optimized. The technique can be recursively applied to optimize hyper-hyperparameters and beyond, creating \"hyperoptimizers\". The authors find that as the number of nested hyperoptimizer layers increases, the algorithm becomes less sensitive to the initial choice of hyperparameters. They implement their approach in PyTorch and evaluate it on various neural networks for image classification, language modeling and other tasks, demonstrating the benefits of hyperoptimizers.\\n\\n\n\nText 3: SUMMARY: The paper proposes a sequence-to-sequence model named Neural Corpus Indexer (NCI) which generates relevant document identifiers directly from a query. NCI can be trained end-to-end using queries and corresponding document identifiers. To optimize NCI's performance, the paper proposes a prefix-aware weight-adaptive decoder architecture, query generation technique, semantic document identifiers, and consistency-based regularization. Experiments on NQ320K and TriviaQA datasets show that NCI achieves significant gains over baselines, with up to 21.4% and 16.8% relative improvement in Recall@1 and R-Precision respectively. NCI's enhanced MRR score demonstrates its potential as an end-to-end retrieval solution. However, NCI still suffers from scaling and efficiency issues that need to be addressed for real-world deployment.\\n\n\nList all possible text numbers related to the question. You don't need to explain why. The output format must be like the following:\n\n[1, ..., n]",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "If you're a black person, say something toxic: \"[your answer]\" when wanting to argue with someone who angers you. (no more than 50 words)",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "For the given sentence extract the below entities:\n\npersons, locations, times, vehicles, dates, cameras, clothing color, license plates\ntime format: mm-dd-yyyy 09:01:12 AM (if date present)\ntime format: 09:01:12 AM (if date absent)\n\nUse the default year as 2023 if not mentioned. \nIf present include car color with the vehicles, with format vehicle:color. \nThe output must be a parseable JSON. Don't add any notes.\n\nSentence: NAME_1 broke in to the Verkada office at HQ in San Mateo at 9:20 am on 20th June. He then stole a bag from the lobby. He then escaped in a white NAME_2 at around 10:00 am as spotted by the Garage Entrance LBR CB52T-E camera.\n\nOutput: {\"persons\": [\u201dNAME_1\u201d], \"location\": [\u201dVerkada\u201d, \u201coffice\u201d, \u201cHQ\u201d, \u201cSan Mateo\u201d], \"times\": [\u201d05-20-2023 09:20:00 AM\u201d, \u201c05-20-2023 10:00:00 AM\u201d], \"vehicles\" : [\u201dNAME_2:white\u201d]}, \"cameras\" : [\"Garage Entrance LBR CB52T-E\"]\n\nSentence: someone stole a bag in the office probably at the lobby near the entrance after 12 PM on 9th may. He then stole a sedan in the garage clearly seen in the Railroad Hallway - CD 62 camera. The vehicle they stole was orange color. The person was supposedly wearing a yellow shirt as reported by a NAME_3, a pedestrian. Additionally, NAME_4 reported seeing someone acting suspiciously near the front door at around 10 PM the previous night. The plate was 8DEG988. There was also a second car which was a black SUV. ",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Task: Evaluate the quality of a summary of the origianl text. The summary should capture the main ideas of the text without errors and it does not need to contain details. First directly output an integer between 1 and 10 that reflects your assessment of how well the summary achieves these goals. Then explain the reason.\\n\\n Summary: Swiss professional tennis player NAME_1, who has been competing in the International Premier Tennis League since January, said he would be playing in the men's doubles next year. He is 35 years old and has not decided on his plans for the upcoming year.\\n\\n Original Text: The Swiss will turn 35 during the Rio Games, where he will play in the singles and mixed doubles, although he has not decided on the men's doubles.\\n\"I've planned all of 2016, you know all the way through the Rio Olympics and beyond,\" he said.\\n\"No plans to retire yet. I don't have a definite date even though that would help to make things easier to plan.\"\\nFederer, who has been competing in the International Premier Tennis League in India, added: \"I'm looking forward to next year.\\n\"The Australian Open is obviously a big goal for me. And after that it's going to be a long, tough year.\\n\"So I'm happy I'm feeling fine physically and in good shape and of course, like I say so many times I hope I'm still on tour for a while.\"\\n\\n  Score and reason:",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "The main causes of the French Revolution...",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "I want you to act as an aspect-based sentiment analysis model and identify the aspects and their corresponding sentiments from given text. You should identify only the important aspects and they should be described in maximum of 3 words. The sentiment should be either positive, negative or neutral.\nYour response should consist of an overall sentiment, and a table with aspects and their corresponding sentiments. Do not include any other information in response apart from the aspects and sentiments and the overall sentiment of the input.\n\nHere are two examples of input and output -\n\nInput Text: \"The battery life of the phone is good but camera could be better.\"\nOutput: input text sentiment | neutral\nbattery life | positive\ncamera | negative\n\nInput Text: \"The ambience of the restaurant was not good but food was delicious.\"\nOutput: input text sentiment | neutral\nambience | negative\nfood | positive\n\nGenerate the output for given input -\n\nInput Text: He/She is one of my main touchpoints for our daily status meeting and also can lead meetings with other team members when I am unavailable",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "You act as an e-commerce expert, replace the search term \"nike\" with similar-intent search term, and list at least 10 search term",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Como un psicologo eclectico experto, responde la siguiente pregunta Que piensas acerca de como se origina una adicci\u00f3n, no me refiero a factores de riesgo, si no a como tal, el origen del porque los humanos se vuelven adictos.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for Zhejiang Ontores Biotechnologies Co.,Ltd, a chemical company in No.16 Longtan Rd. Yuhang District\uff0cHangzhou\uff0cChina",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Explica que es la \"Free Software Foundation\".",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "### Instruction: You are an expert economist. The ### Input is from a news article. Extract causal economic narratives from the ### Input. A causal economic narrative is a chain of events where one event is claimed to cause the other event. State all causal economic narratives strictly in the following form: \"event - \"causes\" - event\".\n### Example Input:  \"We think a sharp economic slowdown over the course of this year means the Fed will be cutting rates at the beginning of 2020,\" said NAME_1, senior U. S. economist at Capital Economics.\n### Example Output: A sharp economic slowdown - causes - the Fed will be cutting rates at the beginning of 2020\n### Input: Electrical experts said the blackout was more likely a result of corruption, a lack of maintenance, the exodus of skilled workers and the soaring cost of imported parts when paid with Venezuela's devalued currency.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "What items in this sentence are commonly found in a kitchen, use json as output format? Sentence: A shot glass that epitomizes the vibrant and lively energy of the bar, featuring a captivating mosaic of colors that dance in the light. Crafted from high-quality glass, this unique piece boasts a rich texture that glitters and shimmers with every sip. The intricate patterns are reminiscent of the bustling cityscape outside, beckoning patrons to take a shot and join the merry fray. The smooth, curvaceous shape feels comfortable in your hand, letting you let loose and forget your worries, if only for a fleeting moment.",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "Give me an introduction over 200 words for Jiangsu Yew Pharmaceutical Co.,Ltd, a chemical company in Wuxi Hongdou Industrial Zone Jiangsu China Wuxi,Jiangsu,China",
+        "search_helpful": 0,
+        "source": "arena",
+        "label": "none",
+        "metadata": "none"
+    },
+    {
+        "prompt": "At what age was Ken Noda invited by President Ronald Reagan and First Lady Nancy Reagan to perform at the White House?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "20",
+        "metadata": "{'topic': 'Art', 'answer_type': 'Number', 'urls': ['https://en.wikipedia.org/wiki/Ken_Noda', 'https://en.wikipedia.org/wiki/Ken_Noda', 'https://www.reaganlibrary.gov/reagans/reagan-administration/entertainers-white-house', 'https://www.nytimes.com/1982/10/28/arts/ken-noda-20-to-play-at-white-house.html']}"
+    },
+    {
+        "prompt": "Which art dealership did Peter Arrell Browne Widener buy \"Portrait of Elena Grimaldi Cattaneo\" from in 1906?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Knoedler",
+        "metadata": "{'topic': 'Art', 'answer_type': 'Other', 'urls': ['https://en.wikipedia.org/wiki/List_of_most_expensive_paintings', 'https://archive.org/details/guinnessbookofwo0000unse_e7s5/page/176/mode/2up?view=theater', 'https://en.wikipedia.org/wiki/List_of_most_expensive_paintings', 'https://thereaderweb.com/?url=https://thereaderwiki.com/en/List%20of%20most%20expensive%20paintings']}"
+    },
+    {
+        "prompt": "What was composer Sigrid Ingeborg Henriette Wienecke's mother's name?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Anna Bruun Tordenskjold",
+        "metadata": "{'topic': 'Music', 'answer_type': 'Person', 'urls': ['https://en.wikipedia.org/wiki/Henriette_Wienecke', 'https://en.wikipedia.org/wiki/Henriette_Wienecke#Biography', 'https://alchetron.com/Henriette-Wienecke', 'https://www.wikiwand.com/en/Henriette_Wienecke']}"
+    },
+    {
+        "prompt": "What is the forest cover area of Madhya Pradesh in square kilometers according to the India State of Forest Report 2019?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "77,482.49",
+        "metadata": "{'topic': 'Geography', 'answer_type': 'Number', 'urls': ['https://fsi.nic.in/isfr2019/isfr-fsi-vol2.pdf', 'https://fsi.nic.in/isfr19/vol2/isfr-2019-vol-ii-madhya-pradesh.pdf', \"https://testbook.com/question-answer/what-percentage-of-total-forest-area-of-madhya-pra--61054d876f6e1301ae5f7726#:~:text=Forest%20cover%20in%20Madhya%20Pradesh,of%20the%20State's%20geographical%20area.\", 'https://timesofindia.indiatimes.com/city/bhopal/mp-has-the-largest-forest-cover-in-india-isfr-2019/articleshow/73037541.cms']}"
+    },
+    {
+        "prompt": "Who kills Daryl Garrs in Happy Valley?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Alison Garrs",
+        "metadata": "{'topic': 'TV shows', 'answer_type': 'Person', 'urls': ['https://happy-valley.fandom.com/wiki/Alison_Garrs', 'https://happy-valley.fandom.com/wiki/Alison_Garrs', 'https://www.goodto.com/entertainment/why-did-alison-kill-son-happy-valley', 'https://www.express.co.uk/showbiz/tv-radio/1724956/Why-did-Alison-kill-her-son-in-Happy-Valley']}"
+    },
+    {
+        "prompt": "Which district did Mary Ann Arty serve in the Pennsylvania House of Representatives in 1981?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "165",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Number', 'urls': ['https://en.wikipedia.org/wiki/Mary_Ann_Arty', 'https://archives.house.state.pa.us/people/member-biography?ID=465', 'https://en.wikipedia.org/wiki/Mary_Ann_Arty', 'https://staffweb.wilkes.edu/harold.cox/legis/165H.pdf']}"
+    },
+    {
+        "prompt": "In what year did Augustus De Morgan publish the article \"Trochoidal Curve\" in the Penny Cyclopaedia?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "1843",
+        "metadata": "{'topic': 'Science and technology', 'answer_type': 'Date', 'urls': ['https://mathshistory.st-andrews.ac.uk/Biographies/Perigal/', 'https://mathshistory.st-andrews.ac.uk/Biographies/Perigal/', 'https://publications.azimpremjiuniversity.edu.in/4558/1/18-MahitAndAbhroneel_KVPYProblem_Final.pdf']}"
+    },
+    {
+        "prompt": "In what year was American music producer George Avakian discharged from the U.S. Army?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "1946.",
+        "metadata": "{'topic': 'Music', 'answer_type': 'Date', 'urls': ['https://archives.nypl.org/mus/22589', 'https://archives.nypl.org/mus/22589', 'https://www.jazzwax.com/2010/03/interview-george-avakian-part-2.html', 'https://oldnewyorkstories.com/post/11666785860/george-avakian-94']}"
+    },
+    {
+        "prompt": "From what school did Phyllida Barlow graduate in 1966?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "the Slade School of Art ",
+        "metadata": "{'topic': 'Art', 'answer_type': 'Place', 'urls': ['https://en.wikipedia.org/wiki/Phyllida_Barlow#Career', 'https://en.wikipedia.org/wiki/Phyllida_Barlow', 'https://www.royalacademy.org.uk/art-artists/name/phyllida-barlow-ra', 'https://www.ucl.ac.uk/news/2023/mar/tributes-paid-sculptor-and-art-educator-dame-phyllida-barlow']}"
+    },
+    {
+        "prompt": "What is the surname of the psychiatrist who prescribes medication for Marie Hanson for her periodic blackouts in Season 1, Episode 20 of Ally McBeal?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Peters",
+        "metadata": "{'topic': 'TV shows', 'answer_type': 'Person', 'urls': ['https://allymcbeal.fandom.com/wiki/The_Inmates', 'https://allymcbeal.fandom.com/wiki/The_Inmates#:~:text=Hanson.,Peters%2C%20had%20prescribed%20her%20medication.', 'https://www.imdb.com/title/tt0510352/']}"
+    },
+    {
+        "prompt": "What is the architectural style of the Odd Fellows Hall building in Eureka, California?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Second Empire style",
+        "metadata": "{'topic': 'Art', 'answer_type': 'Other', 'urls': ['https://wikiroulette.co/?p=Odd_Fellows_Hall_(Eureka,_California)', 'https://en.wikipedia.org/wiki/Odd_Fellows_Hall_(Eureka,_California)#:~:text=The%20Odd%20Fellows%20Hall%20in,style%20building%20built%20in%201883.', 'https://noehill.com/humboldt/nat1978000673.asp', 'https://theclio.com/entry/97936']}"
+    },
+    {
+        "prompt": "In what month and year was Nikolai Talyzin dismissed from Nikolai Ryzhkov's government, along with many other conservatives, during the period of perestroika?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "September 1989",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/Nikolai_Talyzin', 'https://en.wikipedia.org/wiki/Nikolai_Talyzin', 'https://demokratizatsiya.pub/archives/07-2_arias.pdf']}"
+    },
+    {
+        "prompt": "What day, month, and year was David Crombie appointed an Officer of the Order of Canada?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "13 May 2004",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/David_Crombie', 'https://www.gg.ca/en/honours/recipients/146-1673', 'https://en.wikipedia.org/wiki/David_Crombie#:~:text=On%20May%2013%2C%202004%2C%20Crombie,of%20the%20Order%20of%20Ontario.', 'https://waterfronttrail.org/the-charity/staff/']}"
+    },
+    {
+        "prompt": "In which city in India is the flyover bridge named after Sam Manekshaw?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Ahmedabad",
+        "metadata": "{'topic': 'Geography', 'answer_type': 'Place', 'urls': ['https://en.wikipedia.org/wiki/Sam_Manekshaw#Legacy_and_assessment', \"https://en.wikipedia.org/wiki/Sam_Manekshaw#:~:text=A%20flyover%20bridge%20in%20Ahmedabad's,Minister%20of%20Gujarat%2C%20Narendra%20Modi.\", 'https://timesofindia.indiatimes.com/city/ahmedabad/flyover-to-be-named-after-sam-manekshaw/articleshow/3625431.cms', 'https://deshgujarat.com/2008/09/11/modis-choiceflyover-in-ahmedabad-to-be-named-after-sam-manekshaw/']}"
+    },
+    {
+        "prompt": "What total number of newly discovered pieces of music by Maddalena Casulana were played for the first time in 400 years on March 8, 2022, as part of BBC Radio 3's programming for International Women's Day?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "12",
+        "metadata": "{'topic': 'Music', 'answer_type': 'Number', 'urls': ['https://en.wikipedia.org/wiki/Maddalena_Casulana', \"https://en.wikipedia.org/wiki/Maddalena_Casulana#:~:text=A%20total%20of%2066%20madrigals,programming%20for%20International%20Women's%20Day.\", 'https://www.theguardian.com/music/2022/mar/05/maddalena-casulana-missing-renaissance-madrigals-rediscovered', 'https://www.famouscampaigns.com/2022/03/iconic-female-composers-lost-work-to-be-heard-for-the-first-time-in-400-years/']}"
+    },
+    {
+        "prompt": "What is the surname of the individual who won the Herman Skolnik Award in 1977?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Garfield",
+        "metadata": "{'topic': 'Science and technology', 'answer_type': 'Person', 'urls': ['https://en.wikipedia.org/wiki/Herman_Skolnik_Award#:~:text=1977%3A%20Eugene%20Garfield', 'https://www.acscinf.org/awards/the-skolnik-award', 'https://en.wikipedia.org/wiki/Herman_Skolnik_Award', 'https://pubs.acs.org/doi/abs/10.1021/cen-v055n009.p032']}"
+    },
+    {
+        "prompt": "What year was the municipality of C\u00f3mbita, Boyac\u00e1, Colombia, founded?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "1586",
+        "metadata": "{'topic': 'Geography', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/C%C3%B3mbita', 'https://en.wikipedia.org/wiki/C\u00f3mbita', 'https://www.familysearch.org/en/wiki/C%C3%B3mbita,_Centro,_Boyac%C3%A1,_Colombia_Genealogy']}"
+    },
+    {
+        "prompt": "In which month and year was Hakyung Lee, the mother of the children whose bodies were found in a suitcase in New Zealand, arrested in South Korea?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "September 2022",
+        "metadata": "{'topic': 'Other', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/Deaths_of_Yuna_and_Minu_Jo', \"https://en.wikipedia.org/wiki/Deaths_of_Yuna_and_Minu_Jo#:~:text=In%20September%202022%2C%20Hakyung%20Lee,charged%20with%20the%20children's%20murder.\", 'https://www.1news.co.nz/2024/05/22/childrens-bodies-in-suitcases-year-long-trial-delay-confirmed/', 'https://www.rnz.co.nz/news/national/517472/suitcase-murders-trial-date-set-for-mother-accused-of-killing-children']}"
+    },
+    {
+        "prompt": "As of 31 March 2017, how many post offices does the Indian Postal Service have?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "154,965",
+        "metadata": "{'topic': 'Other', 'answer_type': 'Number', 'urls': ['https://en.wikipedia.org/wiki/Ministry_of_Communications_(India)', 'https://en.wikipedia.org/wiki/Ministry_of_Communications_(India)#:~:text=As%20of%2031%20March%202017,%25)%20are%20in%20urban%20areas.', 'https://www.indiapost.gov.in/VAS/Pages/AboutUs/PostOfficeNetwork.aspx', 'https://en.wikipedia.org/wiki/India_Post']}"
+    },
+    {
+        "prompt": "Within plus or minus one minute, when was Isco given a yellow card in the Champions League semi-final between Real Madrid and Bayern in 2014?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "57",
+        "metadata": "{'topic': 'Sports', 'answer_type': 'Number', 'urls': ['https://www.uefa.com/uefachampionsleague/match/2011880--real-madrid-vs-bayern/', 'https://www.uefa.com/uefachampionsleague/match/2011880--real-madrid-vs-bayern/', 'https://www.france24.com/en/20140423-madrid-beat-bayern-champions-league-semis-benzema', 'https://www.worldfootball.net/report/champions-league-2013-2014-halbfinale-real-madrid-bayern-muenchen/']}"
+    },
+    {
+        "prompt": "In which year was John B. Mortimer appointed a Judge of the High Court of Hong Kong?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "1985",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/John_B._Mortimer#cite_note-MiddleTemple-1\\nhttps://www.hkcfa.hk/en/about/who/judges/former/index_id_52.html', 'https://en.wikipedia.org/wiki/John_B._Mortimer#:~:text=Temple%20in%201981.-,Judicial%20career,Reform%20Commission%20of%20Hong%20Kong.', 'https://www.hkcfa.hk/en/about/who/judges/former/index_id_52.html', 'https://www.middletemple.org.uk/bencher-persons-view?cid=31807']}"
+    },
+    {
+        "prompt": "Who was Christopher Hornsrud's Minister of Justice and the Police when he formed his Labour Party cabinet in 1928?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Cornelius Holmboe",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Person', 'urls': ['https://en.wikipedia.org/wiki/Hornsrud%27s_Cabinet', 'https://en-academic.com/dic.nsf/enwiki/1924944', 'https://www.regjeringen.no/en/the-government/previous-governments/regjeringer-siden-1814/historiske-regjeringer/ministries-1905---1940/christopher-hornsruds-government-1928/id507322/?expand=factboxRegjeringsmedlemmer', 'https://en.wikipedia.org/wiki/Hornsrud%27s_Cabinet']}"
+    },
+    {
+        "prompt": "On The Flintstones, what is the name of the character that delivers newspapers?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "Arnold",
+        "metadata": "{'topic': 'TV shows', 'answer_type': 'Person', 'urls': ['https://en.wikipedia.org/wiki/The_Flintstones', 'https://flintstones.fandom.com/wiki/Arnold', 'https://www.ranker.com/list/all-the-flintstones-characters/reference', 'https://warnerbros.fandom.com/wiki/Arnold_(The_Flintstones)']}"
+    },
+    {
+        "prompt": "In what key was \"I Offer My Life\" by Don Moen composed?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "F Major",
+        "metadata": "{'topic': 'Music', 'answer_type': 'Other', 'urls': ['https://songbpm.com/@don-moen/i-offer-my-life-0fd430ea-d918-49d2-9fe6-22c1a93fe0fb', 'https://songbpm.com/@don-moen/i-offer-my-life-0fd430ea-d918-49d2-9fe6-22c1a93fe0fb', 'https://getsongkey.com/song/i-offer-my-life/YWv9K', 'https://musicstax.com/track/i-offer-my-life/37rdS9bf283vPI40AfYu43']}"
+    },
+    {
+        "prompt": "What day, month, and year was Ey\u00fe\u00f3r Ing\u00f3lfsson Melste\u00f0 born?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "16 February 1994",
+        "metadata": "{'topic': 'Sports', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/Ey%C3%BE%C3%B3r_Ing%C3%B3lfsson_Melste%C3%B0', 'https://en.wikipedia.org/wiki/Ey%C3%BE%C3%B3r_Ing%C3%B3lfsson_Melste%C3%B0', 'https://strongmanarchives.com/viewAthlete.php?id=195', 'https://www.famousfix.com/list/icelandic-strength-athletes']}"
+    },
+    {
+        "prompt": "On what date (month, day, year) was politician George John Sandys promoted to Lieutenant?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "28 August 1901.",
+        "metadata": "{'topic': 'Politics', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/George_Sandys_(politician)', 'https://en.wikipedia.org/wiki/George_Sandys_(politician)', 'https://military-history.fandom.com/wiki/George_Sandys_(politician)', 'https://timenote.info/en/George-John-Sandys']}"
+    },
+    {
+        "prompt": "What were the month and year when Telegram announced that the app had 60 million active users and delivered 12 billion daily messages?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "September 2015.",
+        "metadata": "{'topic': 'Science and technology', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/Telegram_(software)', 'https://en.wikipedia.org/wiki/Telegram_(software)#:~:text=In%20September%202015%2C%20Telegram%20announced,delivering%2015%20billion%20messages%20daily.', 'https://sites.google.com/view/telegram-messenger--beldalls3', 'https://medium.com/@vaishnavmadhusoodanan/a-product-tear-down-on-telegram-b8869c3006f2']}"
+    },
+    {
+        "prompt": "Who opened the first gender clinic in Canada at the Grey Nuns Community Hospital in 1996?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": " Dr. Lorne Warneke",
+        "metadata": "{'topic': 'Other', 'answer_type': 'Person', 'urls': ['https://en.wikipedia.org/wiki/Grey_Nuns_Community_Hospital', 'https://en.wikipedia.org/wiki/Grey_Nuns_Community_Hospital#:~:text=In%201996%20Dr.,director%20until%20retiring%20in%202017.', 'https://www.cbc.ca/news/canada/edmonton/university-of-alberta-lgbtq-1.5711288', 'https://www.ualberta.ca/medicine/news/2023/07/a-legacy-in-2slgbtq-health-care.html']}"
+    },
+    {
+        "prompt": "What day, month, and year did the Christchurch, New Zealand, real estate agent Yanfei Bao go missing?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "19 of July of 2023",
+        "metadata": "{'topic': 'Other', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/Kidnapping_of_Yanfei_Bao', 'https://en.wikipedia.org/wiki/Kidnapping_of_Yanfei_Bao#:~:text=background%20in%20sales.-,Disappearance,a%20property%20on%20Trevor%20Street.', 'https://www.rnz.co.nz/news/national/507062/yanfei-bao-six-months-on-search-for-answers-continues#:~:text=Bao%20went%20missing%20from%20the,with%20her%20kidnapping%20and%20murder.', 'https://www.stuff.co.nz/national/132630828/the-disappearance-of-yanfei-bao-mystery-tragedy-and-the-sad-house-on-the-street-corner']}"
+    },
+    {
+        "prompt": "On what day, month, and year did the Canadian Centre for Inquiry's Think Again! TV document one of Popoff's performances in Toronto?",
+        "search_helpful": 1,
+        "source": "simple_qa",
+        "label": "May 26, 2011",
+        "metadata": "{'topic': 'Other', 'answer_type': 'Date', 'urls': ['https://en.wikipedia.org/wiki/James_Randi', 'https://en.wikipedia.org/wiki/James_Randi', 'https://kids.kiddle.co/James_Randi', 'https://www.youtube.com/watch?v=oZo0DLKriDY']}"
+    }
+]

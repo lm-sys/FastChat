@@ -1,0 +1,16 @@
+{
+  "claude-3.5-sonnet-agent": {
+    "model_name": "claude-3-5-sonnet-20241022",
+    "api_type": "anthropic_message",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": true,
+    "tool_config_file": "search_configs/tools.json"
+  }
+}
+
