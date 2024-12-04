@@ -25,7 +25,9 @@
     "@gradio/icons": "0.8.1",
     "@gradio/statustracker": "0.9.4",
     "@gradio/utils": "0.7.0",
-    "dequal": "^2.0.3"
+    "@tailwindcss/vite": "^4.0.0-beta.4",
+    "dequal": "^2.0.3",
+    "tailwindcss": "^4.0.0-beta.4"
   },
   "devDependencies": {
     "@gradio/preview": "0.13.0",
