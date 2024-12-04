@@ -1,5 +1,8 @@
+import tailwindcss from "@tailwindcss/vite";
 export default {
-  plugins: [],
+  plugins: [
+    tailwindcss(),
+  ],
   svelte: {
     preprocess: [],
   },
