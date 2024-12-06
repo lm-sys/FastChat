@@ -149,10 +149,6 @@ def update_sandbox_config_single_model(
     state["sandbox_instruction"] = sandbox_instruction
     state["sandbox_environment"] = sandbox_environment
 
-    # if enable_sandbox and state["enabled_round"] == 0:
-    #     state["sandbox_instruction"] = DEFAULT_SANDBOX_INSTRUCTIONS.get(sandbox_environment, "")
-    #     state["enabled_round"] += 1
-
     return state
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
