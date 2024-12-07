@@ -1007,7 +1007,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         )    
         # update sandbox global config
         enable_sandbox_checkbox.change(
-            fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS.get(env, ""),
             inputs=[enable_sandbox_checkbox, sandbox_env_choice],
             outputs=[sandbox_instruction_textarea]
         ).then(
