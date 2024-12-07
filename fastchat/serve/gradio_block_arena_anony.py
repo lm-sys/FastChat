@@ -172,6 +172,11 @@ def clear_history(sandbox_state0, sandbox_state1, request: gr.Request):
         + [enable_btn]
     )
 
+def clear_sandbox_components(*components):
+    updates = []
+    for component in components:
+        updates.append(gr.update(value="", visible=False))
+    return updates
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
     logger.info(f"share (anony). ip: {get_ip(request)}")
@@ -708,8 +713,8 @@ def build_side_by_side_ui_anony(models):
         flash_buttons, [], btn_list
     )
     clear_btn.click(
-        clear_history,
-        sandbox_states,
+        clear_history, 
+        sandbox_states, 
         sandbox_states
         + states
         + chatbots
@@ -718,6 +723,10 @@ def build_side_by_side_ui_anony(models):
         + btn_list
         + [slow_warning]
         + [send_btn],
+    ).then(
+        clear_sandbox_components,
+        inputs=[component for components in sandboxes_components for component in components],
+        outputs=[component for components in sandboxes_components for component in components]
     ).then(
         lambda: gr.update(interactive=True),
         outputs=[sandbox_env_choice]

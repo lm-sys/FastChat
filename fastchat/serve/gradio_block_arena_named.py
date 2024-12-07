@@ -148,6 +148,11 @@ def clear_history(sandbox_state0, sandbox_state1, request: gr.Request):
         + [disable_btn] * 2
     )
 
+def clear_sandbox_components(*components):
+    updates = []
+    for component in components:
+        updates.append(gr.update(value="", visible=False))
+    return updates
 
 def share_click(state0, state1, model_selector0, model_selector1, request: gr.Request):
     logger.info(f"share (named). ip: {get_ip(request)}")
@@ -578,6 +583,10 @@ def build_side_by_side_ui_named(models):
             sandbox_states, 
             sandbox_states + states + chatbots + [textbox] + btn_list 
         ).then(
+            clear_sandbox_components,
+            inputs=[component for components in sandboxes_components for component in components],
+            outputs=[component for components in sandboxes_components for component in components]
+        ).then(
             lambda: gr.update(interactive=True),
             outputs=[sandbox_env_choice]
         )
@@ -606,7 +615,16 @@ function (a, b, c, d) {
 
     for i in range(num_sides):
         model_selectors[i].change(
-            clear_history, sandbox_states, states + chatbots + [textbox] + btn_list
+            clear_history, 
+            sandbox_states, 
+            sandbox_states + states + chatbots + [textbox] + btn_list 
+        ).then(
+            clear_sandbox_components,
+            inputs=[component for components in sandboxes_components for component in components],
+            outputs=[component for components in sandboxes_components for component in components]
+        ).then(
+            lambda: gr.update(interactive=True),
+            outputs=[sandbox_env_choice]
         )
 
     textbox.submit(

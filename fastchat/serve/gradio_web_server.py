@@ -326,6 +326,11 @@ def clear_history(sandbox_state,request: gr.Request):
     sandbox_state['enabled_round'] = 0
     return (state, [], "") + (disable_btn,) * 5 + (sandbox_state,)
 
+def clear_sandbox_components(*components):
+    updates = []
+    for component in components:
+        updates.append(gr.update(value="", visible=False))
+    return updates
 
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
@@ -1102,6 +1107,10 @@ def build_single_model_ui(models, add_promotion_links=False):
     ).then(
         lambda: gr.update(interactive=True),
         outputs=[sandbox_env_choice]
+    ).then(
+        clear_sandbox_components,
+        inputs=[sandbox_output, sandbox_ui, sandbox_code],
+        outputs=[sandbox_output, sandbox_ui, sandbox_code]
     )
 
 
@@ -1112,6 +1121,10 @@ def build_single_model_ui(models, add_promotion_links=False):
     ).then(
         lambda: gr.update(interactive=True),
         outputs=[sandbox_env_choice]
+    ).then(
+        clear_sandbox_components,
+        inputs=[sandbox_output, sandbox_ui, sandbox_code],
+        outputs=[sandbox_output, sandbox_ui, sandbox_code]
     )
 
 
