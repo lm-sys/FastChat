@@ -106,6 +106,7 @@ class ChatbotSandboxState(TypedDict):
     enable_sandbox: bool
     sandbox_environment: str | None
     sandbox_instruction: str | None
+    enabled_round: int
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -116,6 +117,7 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "enable_sandbox": False,
         "sandbox_environment": None,
         "sandbox_instruction": None,
+        "enabled_round": 0
     }
 
 

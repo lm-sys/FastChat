@@ -314,12 +314,23 @@ def regenerate(state, request: gr.Request):
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
-def clear_history(request: gr.Request):
-    ip = get_ip(request)
-    logger.info(f"clear_history. ip: {ip}")
+def clear_history(sandbox_state,request: gr.Request):
+    # ip = get_ip(request)
+    # logger.info(f"clear_history. ip: {ip}")
+    if request:
+        print("Request headers dictionary:", request.headers)
+        print("IP address:", request.client.host)
+        print("Query parameters:", dict(request.query_params))
+    
     state = None
-    return (state, [], "") + (disable_btn,) * 5
+    sandbox_state['enabled_round'] = 0
+    return (state, [], "") + (disable_btn,) * 5 + (sandbox_state,)
 
+def clear_sandbox_components(*components):
+    updates = []
+    for component in components:
+        updates.append(gr.update(value="", visible=False))
+    return updates
 
 def get_ip(request: gr.Request):
     if "cf-connecting-ip" in request.headers:
@@ -364,8 +375,9 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
 
     # add sandbox instructions if enabled
     try:
-        if sandbox_state['enable_sandbox']:
+        if sandbox_state['enable_sandbox'] and sandbox_state['enabled_round']==0:
             text = f"> {sandbox_state['sandbox_instruction']}\n\n" + text
+            sandbox_state['enabled_round'] += 1 
     except (TypeError, KeyError) as e:
         print("Error accessing sandbox_state:", e)
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
@@ -916,28 +928,32 @@ def build_single_model_ui(models, add_promotion_links=False):
         SandboxComponent,  # sandbox_ui
         gr.Code, # sandbox_code
     ] | None] = []
-    with gr.Group():
-        with gr.Row():    
-            with gr.Column(scale=1):
-                sandbox_state = gr.State(create_chatbot_sandbox_state())
-                # Add containers for the sandbox output
-                sandbox_title = gr.Markdown(value=f"### Model Sandbox", visible=True)
-                with gr.Tab(label="Output"):
-                    sandbox_output = gr.Markdown(value="", visible=False)
-                    sandbox_ui = SandboxComponent(
-                        value=("", ""),
-                        show_label=True,
-                        visible=False,
-                    )
-                with gr.Tab(label="Code"):
-                    sandbox_code = gr.Code(value="", interactive=False, visible=False)
 
-                sandbox_states.append(sandbox_state)
-                sandboxes_components.append((
-                    sandbox_output,
-                    sandbox_ui,
-                    sandbox_code,
-                ))
+    sandbox_ui_code_group = gr.Group(visible=False)
+    with sandbox_ui_code_group:
+        sandbox_column = gr.Column(visible=False,scale=1)
+        with sandbox_column:
+            sandbox_state = gr.State(create_chatbot_sandbox_state())
+            # Add containers for the sandbox output
+            sandbox_title = gr.Markdown(value=f"### Model Sandbox", visible=False)
+            sandbox_output_tab = gr.Tab(label="Output", visible=False)
+            sandbox_code_tab = gr.Tab(label="Code", visible=False)
+            with sandbox_output_tab:
+                sandbox_output = gr.Markdown(value="", visible=False)
+                sandbox_ui = SandboxComponent(
+                    value=("", ""),
+                    show_label=True,
+                    visible=False,
+                )
+            with sandbox_code_tab:
+                sandbox_code = gr.Code(value="", interactive=False, visible=False)
+
+            sandbox_states.append(sandbox_state)
+            sandboxes_components.append((
+                sandbox_output,
+                sandbox_ui,
+                sandbox_code,
+            ))
 
         
         # Add containers for the sandbox output and JavaScript
@@ -957,15 +973,17 @@ def build_single_model_ui(models, add_promotion_links=False):
     with gr.Group():
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
-            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True)
+            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
         with gr.Group():
-            with gr.Accordion("Sandbox Instructions", open=False):
+            sandbox_instruction_accordion = gr.Accordion("Sandbox Instructions", open=False, visible=False)
+            with sandbox_instruction_accordion:
                 sandbox_instruction_textarea = gr.TextArea(
-                    value=''
+                    value='',
+                    visible=False
                 )
         sandbox_env_choice.change(
-            fn=lambda env: DEFAULT_SANDBOX_INSTRUCTIONS[env],
-            inputs=[sandbox_env_choice],
+            fn=lambda env, enable: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            inputs=[sandbox_env_choice, enable_sandbox_checkbox],
             outputs=[sandbox_instruction_textarea]
         ).then(
             fn=update_sandbox_config_single_model,
@@ -989,6 +1007,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         )    
         # update sandbox global config
         enable_sandbox_checkbox.change(
+            fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
+            inputs=[enable_sandbox_checkbox, sandbox_env_choice],
+            outputs=[sandbox_instruction_textarea]
+        ).then(
             fn=update_sandbox_config_single_model,
             inputs=[
                 enable_sandbox_checkbox,
@@ -997,8 +1019,20 @@ def build_single_model_ui(models, add_promotion_links=False):
                 sandbox_state
             ],
             outputs=[sandbox_state]
+        ).then(
+            fn=lambda enable: (
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+                gr.update(visible=enable),
+            ),
+            inputs=[enable_sandbox_checkbox],
+            outputs=[sandbox_ui_code_group,sandbox_column,sandbox_title,sandbox_code_tab,sandbox_output_tab,sandbox_env_choice,sandbox_instruction_accordion,sandbox_instruction_textarea]
         )
-
 
     with gr.Row():
         textbox = gr.Textbox(
@@ -1066,18 +1100,46 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
     )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+    clear_btn.click(
+        clear_history, 
+        [sandbox_state], 
+        [state, chatbot, textbox] + btn_list + [sandbox_state]
+    ).then(
+        lambda: gr.update(interactive=True),
+        outputs=[sandbox_env_choice]
+    ).then(
+        clear_sandbox_components,
+        inputs=[sandbox_output, sandbox_ui, sandbox_code],
+        outputs=[sandbox_output, sandbox_ui, sandbox_code]
+    )
 
-    model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
+
+    model_selector.change(
+        clear_history, 
+        [sandbox_state], 
+        [state, chatbot, textbox] + btn_list + [sandbox_state]
+    ).then(
+        lambda: gr.update(interactive=True),
+        outputs=[sandbox_env_choice]
+    ).then(
+        clear_sandbox_components,
+        inputs=[sandbox_output, sandbox_ui, sandbox_code],
+        outputs=[sandbox_output, sandbox_ui, sandbox_code]
+    )
+
 
     textbox.submit(
         add_text,
         [state, model_selector, sandbox_state, textbox],
-        [state, chatbot, textbox] + btn_list,
+        [state, chatbot, textbox, sandbox_state] + btn_list,
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
+    ).then(
+        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+        inputs=[sandbox_state],
+        outputs=[sandbox_env_choice]
     )
     send_btn.click(
         add_text,
@@ -1087,6 +1149,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         bot_response,
         [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
+    ).then(
+        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+        inputs=[sandbox_state],
+        outputs=[sandbox_env_choice]
     )
 
     sandbox_components = sandboxes_components[0]
