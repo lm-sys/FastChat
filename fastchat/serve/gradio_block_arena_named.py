@@ -573,7 +573,10 @@ def build_side_by_side_ui_named(models):
     ).then(
         flash_buttons, [], btn_list
     )
-    clear_btn.click(clear_history, sandbox_states, sandbox_states + states + chatbots + [textbox] + btn_list
+    clear_btn.click(
+            clear_history, 
+            sandbox_states, 
+            sandbox_states + states + chatbots + [textbox] + btn_list 
         ).then(
             lambda: gr.update(interactive=True),
             outputs=[sandbox_env_choice]
@@ -603,7 +606,7 @@ function (a, b, c, d) {
 
     for i in range(num_sides):
         model_selectors[i].change(
-            clear_history, None, states + chatbots + [textbox] + btn_list
+            clear_history, sandbox_states, states + chatbots + [textbox] + btn_list
         )
 
     textbox.submit(
