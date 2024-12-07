@@ -9,8 +9,8 @@ REPO_PATH = os.path.dirname(os.path.dirname(__file__))
 
 # Survey Link URL (to be removed) #00729c
 SURVEY_LINK = """<div style='text-align: left; margin: 20px 0;'>
-    <div style='display: inline-block; border: 2px solid #C41E3A; padding: 20px; padding-bottom: 10px; padding-top: 10px; border-radius: 5px;'>
-        <span style='color: #C41E3A; font-weight: bold;'>New Launch! Jailbreak models at <a href='https://redarena.ai' style='color: #C41E3A; text-decoration: underline;'>RedTeam Arena</a>. </span>
+    <div style='display: inline-block; border: 2px solid #00729c; padding: 20px; padding-bottom: 10px; padding-top: 10px; border-radius: 5px;'>
+        <span style='color: #00729c; font-weight: bold;'>New Launch! Copilot Arena: <a href='https://marketplace.visualstudio.com/items?itemName=copilot-arena.copilot-arena' style='color: #00729c; text-decoration: underline;'>VS Code Extension</a> to compare Top LLMs</span>
     </div>
 </div>"""
 # SURVEY_LINK = ""
