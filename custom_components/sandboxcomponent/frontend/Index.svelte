@@ -105,7 +105,7 @@
     >
       <div class="bg-gray-800 p-2 rounded-t-md flex items-center mr-10">
         <span class="text-white bg-gray-700 px-3 py-1 rounded-r-md flex-1"
-          >URL: {sandboxUrl}</span
+          >{sandboxUrl}</span
         >
       </div>
       <div>
@@ -195,7 +195,7 @@
       style={isFullScreen ? `height: 100%; width: 100%` : `height: ${height}px; width: ${width}px;`}
     >
       {#key iframeKey}
-        <div class="h-full p-10 bg-white backdrop-blur">
+        <div class="h-full p-10 bg-slate-600 backdrop-blur">
           <IFrameContainer
             min_height={loading_status && loading_status?.status !== "complete"}
             value={sandboxUrl}
