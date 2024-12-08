@@ -423,7 +423,8 @@ def add_text(
             + [""]
         )
 
-    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    if file_extension != ".pdf":
+        text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
