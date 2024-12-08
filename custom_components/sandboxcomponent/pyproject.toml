@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradio_sandboxcomponent"
-version = "0.0.10"
+version = "0.0.11"
 description = "Gradio library for easily interacting with remote sandbox."
 readme = "README.md"
 license = "apache-2.0"

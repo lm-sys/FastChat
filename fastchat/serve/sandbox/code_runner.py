@@ -16,7 +16,19 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
-SUPPORTED_SANDBOX_ENVIRONMENTS = ['React','Vue','PyGame','Gradio','Auto']
+SUPPORTED_SANDBOX_ENVIRONMENTS = [
+    # TODO:
+    # 'Python',
+    # 'Java',
+    # 'Javascript',
+    # 'Streamlit',
+    'React',
+    'Vue',
+    'Gradio',
+    'NiceGUI',
+    'PyGame',
+    # 'Auto' # TODO: Implement auto-detection of sandbox environment
+]
 
 VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
                                'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 'sql-esper']
@@ -91,12 +103,17 @@ Do not use external libraries or import external files outside of the allowed li
 Allowed libraries: ["gradio", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
 """
 
+DEFAULT_NICEGUI_SANDBOX_INSTRUCTION = """
+Generate a Python NiceGUI code snippet for a single file. Surround code with ``` in markdown.
+"""
+
 DEFAULT_SANDBOX_INSTRUCTIONS = {
-    "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
-    "React": DEFAULT_REACT_SANDBOX_INSTRUCTION,
-    "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION,
-    "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION,
-    "Gradio": DEFAULT_GRADIO_SANDBOX_INSTRUCTION
+    # "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
+    "React": DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
+    "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
+    "NiceGUI": DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
+    "Gradio": DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
+    "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
 
 class ChatbotSandboxState(TypedDict):
@@ -334,6 +351,43 @@ def run_pygame_sandbox(code: str) -> str:
     url = f"https://{host}"
     return url + '/mygame/build/web/'
 
+def run_nicegui_sandbox(code: str) -> str:
+    """
+    Executes the provided code within a sandboxed environment and returns the output.
+
+    Args:
+        code (str): The code to be executed.
+
+    Returns:
+        url for remote sandbox
+    """
+    sandbox = Sandbox(
+        api_key=E2B_API_KEY,
+    )
+
+    # set up sandbox
+    setup_commands = [
+        "pip install --upgrade nicegui",
+    ]
+    for command in setup_commands:
+        sandbox.commands.run(
+            command,
+            timeout=60 * 3,
+            on_stdout=lambda message: print(message),
+            on_stderr=lambda message: print(message),
+        )
+
+    # write code to file
+    sandbox.files.make_dir('mynicegui')
+    file_path = "~/mynicegui/main.py"
+    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+
+    process = sandbox.commands.run("python ~/mynicegui/main.py", background=True)
+
+    # get web gui url
+    host = sandbox.get_host(port=8080)
+    url = f"https://{host}"
+    return url
 
 def run_gradio_sandbox(code: str) -> str:
     """
@@ -435,6 +489,18 @@ def on_click_run_code(
         )
     elif sandbox_state['sandbox_environment'] == 'Gradio':
         url = run_gradio_sandbox(code)
+        yield (
+            gr.Markdown(value="### Running Sandbox", visible=True),
+            SandboxComponent(
+                value=(url, code),
+                label="Example",
+                visible=True,
+                key="newsandbox",
+            ),
+            gr.skip(),
+        )
+    elif sandbox_state['sandbox_environment'] == 'NiceGUI':
+        url = run_nicegui_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
             SandboxComponent(
