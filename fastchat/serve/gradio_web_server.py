@@ -972,7 +972,12 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     with gr.Group():
         with gr.Row():
-            enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
+            enable_sandbox_checkbox = gr.Checkbox(
+                value=False,
+                label="Enable Sandbox",
+                info="Run generated code in a remote sandbox",
+                interactive=True,
+            )
             sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
         with gr.Group():
             sandbox_instruction_accordion = gr.Accordion("Sandbox Instructions", open=False, visible=False)

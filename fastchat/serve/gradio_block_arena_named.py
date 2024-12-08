@@ -444,7 +444,12 @@ def build_side_by_side_ui_named(models):
 
     with gr.Group():
         with gr.Row():
-            enable_sandbox_checkbox = gr.Checkbox(value=False, label="Enable Sandbox", interactive=True)
+            enable_sandbox_checkbox = gr.Checkbox(
+                value=False,
+                label="Enable Sandbox",
+                info="Run generated code in a remote sandbox",
+                interactive=True,
+            )
             sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
         with gr.Group():
             with gr.Accordion("Sandbox Instructions", open=False, visible=False) as sandbox_instruction_accordion:
