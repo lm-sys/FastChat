@@ -348,8 +348,6 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"add_text. ip: {ip}. len: {len(text)}")
 
-    print("sandbox_state:", sandbox_state)
-
     if state is None:
         state = State(model_selector)
 
@@ -373,13 +371,15 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
             no_change_btn,
         ) * 5
 
-    # add sandbox instructions if enabled
+    # [CODE SANDBOX] add sandbox instructions if enabled
     try:
-        if sandbox_state['enable_sandbox'] and sandbox_state['enabled_round']==0:
-            text = f"> {sandbox_state['sandbox_instruction']}\n\n" + text
-            sandbox_state['enabled_round'] += 1 
+        # only add sandbox instructions if enabled for the first round
+        if sandbox_state['enable_sandbox'] and sandbox_state['enabled_round'] == 0:
+            text = f"> {sandbox_state['sandbox_instruction'].strip()}\n\n" + text
+            sandbox_state['enabled_round'] += 1
     except (TypeError, KeyError) as e:
         print("Error accessing sandbox_state:", e)
+
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
@@ -582,7 +582,7 @@ def bot_response(
         output = data["text"].strip()
         conv.update_last_message(output)
 
-        # Add a "Run in Sandbox" button to the last message if code is detected
+        # [CODE SANDBOX] Add a "Run in Sandbox" button to the last message if code is detected
         if sandbox_state is not None and sandbox_state["enable_sandbox"]:
             last_message = conv.messages[-1]
             if "```" in last_message[1]:
