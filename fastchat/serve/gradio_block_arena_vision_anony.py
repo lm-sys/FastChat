@@ -258,28 +258,43 @@ def extract_text_from_pdf(pdf_file_path):
     except Exception as e:
         logger.error(f"Failed to extract text from PDF: {e}")
         return None
+    
+import os
+import nest_asyncio
+from llama_parse import LlamaParse
 
-def llama_parse(pdf_path):
-    os.environ['LLAMA_CLOUD_API_KEY'] = 'LLAMA KEY'
+nest_asyncio.apply()  # Ensure compatibility with async environments
 
-    output_dir = 'outputs'
+def pdf_parse(pdf_path):
+    # Set API key, can also be configured in the environment
+    api_key = "LLAMA API"
+
+    # Initialize the LlamaParse object
+    parser = LlamaParse(
+        api_key=api_key, 
+        result_type="markdown",  # Output in Markdown format
+        num_workers=4,           # Number of API calls for batch processing
+        verbose=True,            # Print detailed logs
+        language="en"            # Set language (default is English)
+    )
+
+    # Prepare the output directory and file name
+    output_dir = "outputs"
     os.makedirs(output_dir, exist_ok=True)
 
     pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    markdown_file_path = os.path.join(output_dir, f'{pdf_name}.md')
+    markdown_file_path = os.path.join(output_dir, f"{pdf_name}.md")
 
-    command = [
-        'llama-parse',
-        pdf_path,
-        '--result-type', 'markdown',
-        '--output-file', markdown_file_path
-    ]
+    # Load and parse the PDF
+    extra_info = {"file_name": pdf_name}
 
-    subprocess.run(command, check=True)
+    with open(pdf_path, "rb") as pdf_file:
+        # Pass the file object and extra info for parsing
+        documents = parser.load_data(pdf_file, extra_info=extra_info)
 
-    with open(markdown_file_path, 'r', encoding='utf-8') as file:
-        markdown_content = file.read()
-    
+    # Save the parsed content to a Markdown file
+    markdown_content = documents[0].text if documents else ""
+
     return markdown_content
 
 def wrap_query_context(user_query, query_context):
@@ -423,7 +438,7 @@ def add_text(
             hint_msg = SLOW_MODEL_MSG
     
     if file_extension == ".pdf":
-        document_text = llama_parse(files[0])
+        document_text = pdf_parse(files[0])
         post_processed_text = f"""
         The following is the content of a document:
 
@@ -436,7 +451,7 @@ def add_text(
     
     post_processed_text = wrap_query_context(text, post_processed_text)
 
-    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    # text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
@@ -553,7 +568,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             file_types=["file"],
             show_label=False,
             container=True,
-            placeholder="Enter your prompt or add a PDF file here",
+            placeholder="Enter your prompt here. You can also upload image or PDF file",
             elem_id="input_box",
             scale=3,
         )
@@ -563,11 +578,11 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
 
     with gr.Row() as button_row:
         random_btn = gr.Button(value="🔮 Random Image", interactive=True) 
-        if random_questions:
-            global vqa_samples
-            with open(random_questions, "r") as f:
-                vqa_samples = json.load(f)
-            random_btn = gr.Button(value="🔮 Random Image", interactive=True)
+        # if random_questions:
+        #     global vqa_samples
+        #     with open(random_questions, "r") as f:
+        #         vqa_samples = json.load(f)
+        #     random_btn = gr.Button(value="🔮 Random Image", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
