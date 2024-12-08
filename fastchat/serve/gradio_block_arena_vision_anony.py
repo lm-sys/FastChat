@@ -4,7 +4,6 @@ Users chat with two anonymous models.
 """
 
 import json
-import subprocess
 import time
 
 import gradio as gr
@@ -13,6 +12,8 @@ from typing import Union
 
 import os
 import PyPDF2
+import nest_asyncio
+from llama_parse import LlamaParse
 
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
@@ -246,22 +247,37 @@ def clear_history(request: gr.Request):
         + [""]
     )
 
-def extract_text_from_pdf(pdf_file_path):
-    """Extract text from a PDF file."""
+def is_pdf(file_path):
     try:
-        with open(pdf_file_path, 'rb') as f:
-            reader = PyPDF2.PdfReader(f)
-            pdf_text = ""
-            for page in reader.pages:
-                pdf_text += page.extract_text()
-            return pdf_text
+        with open(file_path, 'rb') as file:
+            header = file.read(5)  # Read the first 5 bytes
+            return header == b'%PDF-'
     except Exception as e:
-        logger.error(f"Failed to extract text from PDF: {e}")
-        return None
-    
-import os
-import nest_asyncio
-from llama_parse import LlamaParse
+        print(f"Error: {e}")
+        return False
+
+def is_image(file_path):
+    magic_numbers = {
+        b'\xff\xd8\xff': 'JPEG',
+        b'\x89PNG\r\n\x1a\n': 'PNG',
+        b'GIF87a': 'GIF',
+        b'GIF89a': 'GIF',
+        b'BM': 'BMP',
+        b'\x00\x00\x01\x00': 'ICO',
+        b'\x49\x49\x2a\x00': 'TIFF',
+        b'\x4d\x4d\x00\x2a': 'TIFF',
+        b'RIFF': 'WebP',
+    }
+    try:
+        with open(file_path, 'rb') as file:
+            header = file.read(8)  # Read the first 8 bytes
+            for magic in magic_numbers:
+                if header.startswith(magic):
+                    return True
+        return False
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return False
 
 nest_asyncio.apply()  # Ensure compatibility with async environments
 
@@ -278,14 +294,7 @@ def pdf_parse(pdf_path):
         language="en"            # Set language (default is English)
     )
 
-    # Prepare the output directory and file name
-    output_dir = "outputs"
-    os.makedirs(output_dir, exist_ok=True)
-
     pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    markdown_file_path = os.path.join(output_dir, f"{pdf_name}.md")
-
-    # Load and parse the PDF
     extra_info = {"file_name": pdf_name}
 
     with open(pdf_path, "rb") as pdf_file:
@@ -326,10 +335,14 @@ def add_text(
     else:
         text = chat_input
         files = []
-    
+
     images = []
 
-    file_extension = os.path.splitext(files[0])[1].lower()
+    # currently support up to one pdf or one image
+    # if is_pdf(files[0]):
+    #     pdfs = files
+    if is_image(files[0]):
+        images = files
 
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
@@ -340,7 +353,7 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        if len(files) > 0 and file_extension != ".pdf":
+        if len(files) > 0 and is_image(files[0]):
             model_left, model_right = get_battle_pair(
                 context.all_vision_models,
                 VISION_BATTLE_TARGETS,
@@ -423,7 +436,7 @@ def add_text(
             + [""]
         )
 
-    if file_extension != ".pdf":
+    if is_image(files[0]):
         text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
@@ -438,9 +451,9 @@ def add_text(
         if "deluxe" in states[i].model_name:
             hint_msg = SLOW_MODEL_MSG
     
-    if file_extension == ".pdf":
+    if is_pdf(files[0]):
         document_text = pdf_parse(files[0])
-        post_processed_text = f"""
+        prompt_text = f"""
         The following is the content of a document:
 
         {document_text}
@@ -449,8 +462,7 @@ def add_text(
 
         {text}
         """
-    
-    post_processed_text = wrap_query_context(text, post_processed_text)
+        post_processed_text = wrap_query_context(text, prompt_text)
 
     # text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
