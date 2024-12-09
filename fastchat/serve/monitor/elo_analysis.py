@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
-from transformers import AutoTokenizer
 
 from fastchat.model.model_registry import get_model_info
 from fastchat.serve.monitor.basic_stats import get_log_files
