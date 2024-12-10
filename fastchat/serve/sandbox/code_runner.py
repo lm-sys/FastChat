@@ -2,6 +2,7 @@
 Run generated code in a sandbox environment.
 '''
 
+from enum import StrEnum
 from typing import Generator, TypedDict
 import gradio as gr
 import re
@@ -16,18 +17,23 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
-SUPPORTED_SANDBOX_ENVIRONMENTS = [
-    # TODO: Support Code Interpreter
-    # 'Python',
-    # 'Java',
-    # 'Javascript',
-    'React',
-    'Vue',
-    'Gradio',
-    'Streamlit',
-    'NiceGUI',
-    'PyGame',
-    # 'Auto' # TODO: Implement auto-detection of sandbox environment
+
+class SandboxEnvironment(StrEnum):
+    # Code Interpreter
+    PYTHON_CODE_INTERPRETER = 'Python Code Interpreter'
+    JAVASCRIPT_CODE_INTERPRETER = 'Javascript Code Interpreter'
+    # Web UI Frameworks
+    REACT = 'React'
+    VUE = 'Vue'
+    GRADIO = 'Gradio'
+    STREAMLIT = 'Streamlit'
+    NICEGUI = 'NiceGUI'
+    PYGAME = 'PyGame'
+    # AUTO = 'Auto' # TODO: Implement auto-detection of sandbox environment
+
+
+SUPPORTED_SANDBOX_ENVIRONMENTS: list[str] = [
+    env.value for env in SandboxEnvironment
 ]
 
 VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
@@ -50,6 +56,18 @@ GENERAL_SANDBOX_INSTRUCTION = """ Generate code for a single file to be executed
 ```
 """
 
+DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
+Generate Python code suitable for execution in a code interpreter environment.
+Ensure the code is self-contained and does not use external libraries beyond the standard library.
+You can output in stdout, stderr, or render images, plots, and tables.
+"""
+
+DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION = """
+Generate JavaScript code suitable for execution in a code interpreter environment.
+Ensure the code is self-contained and does not rely on browser-specific APIs.
+You can output in stdout, stderr, or render images, plots, and tables.
+"""
+
 DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. . Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
 '''
 Default sandbox prompt instruction.
@@ -61,7 +79,7 @@ Default sandbox prompt instruction for vue.
 '''
 
 DEFAULT_PYGAME_SANDBOX_INSTRUCTION = (
-'''
+    '''
 Generate a pygame code snippet for a single file.
 Write pygame main method in a sync function like:
 ```python
@@ -100,13 +118,15 @@ Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "s
 
 DEFAULT_SANDBOX_INSTRUCTIONS = {
     # "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
-    "React": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
-    "Vue": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
-    "Gradio": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
-    "Streamlit": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
-    "NiceGUI": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
-    "PyGame": GENERAL_SANDBOX_INSTRUCTION +DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.PYTHON_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip(),
+    SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip(),
+    SandboxEnvironment.REACT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(), SandboxEnvironment.VUE: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.GRADIO: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.STREAMLIT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.NICEGUI: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.PYGAME: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
+
 
 class ChatbotSandboxState(TypedDict):
     '''
@@ -145,6 +165,7 @@ def update_sandbox_config(
         state["sandbox_environment"] = sandbox_environment
     return list(states)
 
+
 def update_sandbox_config_single_model(
     enable_sandbox: bool,
     sandbox_environment: str,
@@ -159,6 +180,7 @@ def update_sandbox_config_single_model(
     state["sandbox_environment"] = sandbox_environment
 
     return state
+
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
     '''
@@ -186,7 +208,7 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
         return None
 
     # Determine if the code is related to a webpage
-    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue','gradio','streamlit']):
+    if any(word in message.lower() for word in ['typescript', 'javascript', 'react', 'vue', 'gradio', 'streamlit']):
         is_webpage = True
     else:
         is_webpage = False
@@ -233,30 +255,32 @@ def run_code_interpreter(code: str, code_language: str | None) -> tuple[str, str
     Returns:
         tuple[str, str, str]: A tuple containing the standard output, rendered results, and JavaScript code.
     """
-    with CodeSandbox() as sandbox:
-        execution = sandbox.run_code(
-            code=code,
-            language=code_language
-        )
+    sandbox = CodeSandbox()
 
-        # collect stdout, stderr from sandbox
-        stdout = "\n".join(execution.logs.stdout)
-        stderr = "\n".join(execution.logs.stderr)
-        output = ""
-        if stdout:
-            output += f"### Stdout:\n```\n{stdout}\n```\n\n"
-        if stderr:
-            output += f"### Stderr:\n```\n{stderr}\n```\n\n"
+    execution = sandbox.run_code(
+        code=code,
+        language=code_language
+    )
 
-        results = []
-        js_code = ""
-        for result in execution.results:
-            rendered_result = render_result(result)
-            if result.javascript:
-                js_code += rendered_result + "\n"
-            else:
-                results.append(rendered_result)
-        return output, "\n".join(results), js_code
+    # collect stdout, stderr from sandbox
+    stdout = "\n".join(execution.logs.stdout)
+    stderr = "\n".join(execution.logs.stderr)
+    output = ""
+    if stdout:
+        output += f"### Stdout:\n```\n{stdout}\n```\n\n"
+    if stderr:
+        output += f"### Stderr:\n```\n{stderr}\n```\n\n"
+
+    results = []
+    js_code = ""
+    for result in execution.results:
+        rendered_result = render_result(result)
+        if result.javascript:
+            js_code += rendered_result + "\n"
+        else:
+            results.append(rendered_result)
+    return output, "\n".join(results), js_code
+
 
 def run_react_sandbox(code: str) -> str:
     """
@@ -285,6 +309,7 @@ def run_react_sandbox(code: str) -> str:
     sandbox_url = 'https://' + sandbox.get_host(3000)
     return sandbox_url
 
+
 def run_vue_sandbox(code: str) -> str:
     """
     Executes the provided Vue code within a sandboxed environment and returns the output.
@@ -308,8 +333,9 @@ def run_vue_sandbox(code: str) -> str:
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
     # Get the sandbox URL
-    sandbox_url = 'https://' + sandbox.get_host(3000) 
+    sandbox_url = 'https://' + sandbox.get_host(3000)
     return sandbox_url
+
 
 def run_pygame_sandbox(code: str) -> str:
     """
@@ -330,24 +356,26 @@ def run_pygame_sandbox(code: str) -> str:
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
     sandbox.commands.run("pip install pygame pygbag black",
-                        timeout=60 * 3,
-                        # on_stdout=lambda message: print(message),
-                        on_stderr=lambda message: print(message),)
+                         timeout=60 * 3,
+                         # on_stdout=lambda message: print(message),
+                         on_stderr=lambda message: print(message),)
 
     # build the pygame code
     sandbox.commands.run(
-        "pygbag --build ~/mygame", # build game
+        "pygbag --build ~/mygame",  # build game
         timeout=60 * 5,
         # on_stdout=lambda message: print(message),
         # on_stderr=lambda message: print(message),
     )
 
-    process = sandbox.commands.run("python -m http.server 3000", background=True) # start http server
+    process = sandbox.commands.run(
+        "python -m http.server 3000", background=True)  # start http server
 
     # get game server url
     host = sandbox.get_host(3000)
     url = f"https://{host}"
     return url + '/mygame/build/web/'
+
 
 def run_nicegui_sandbox(code: str) -> str:
     """
@@ -380,12 +408,14 @@ def run_nicegui_sandbox(code: str) -> str:
     file_path = "~/mynicegui/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
-    process = sandbox.commands.run("python ~/mynicegui/main.py", background=True)
+    process = sandbox.commands.run(
+        "python ~/mynicegui/main.py", background=True)
 
     # get web gui url
     host = sandbox.get_host(port=8080)
     url = f"https://{host}"
     return url
+
 
 def run_gradio_sandbox(code: str) -> str:
     """
@@ -413,11 +443,12 @@ def run_gradio_sandbox(code: str) -> str:
     sandbox_url = 'https://' + sandbox.get_host(7860)
     return sandbox_url
 
+
 def run_streamlit_sandbox(code: str) -> str:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
     setup_commands = ["pip install --upgrade streamlit"]
-                    
+
     for command in setup_commands:
         sandbox.commands.run(
             command,
@@ -425,28 +456,29 @@ def run_streamlit_sandbox(code: str) -> str:
             on_stdout=lambda message: print(message),
             on_stderr=lambda message: print(message),
         )
-  
+
     sandbox.files.make_dir('mystreamlit')
     file_path = "~/mystreamlit/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
-    
+
     process = sandbox.commands.run(
-        "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true", 
+        "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true",
         background=True
     )
-    
+
     host = sandbox.get_host(port=8501)
     url = f"https://{host}"
     return url
 
+
 def on_click_run_code(
-        state,
-        sandbox_state: ChatbotSandboxState,
-        sandbox_output: gr.Markdown,
-        sandbox_ui: SandboxComponent,
-        sandbox_code: gr.Code,
-        evt: gr.SelectData
-    ):
+    state,
+    sandbox_state: ChatbotSandboxState,
+    sandbox_output: gr.Markdown,
+    sandbox_ui: SandboxComponent,
+    sandbox_code: gr.Code,
+    evt: gr.SelectData
+):
     '''
     gradio fn when run code is clicked. Update Sandbox components.
     '''
@@ -466,16 +498,18 @@ def on_click_run_code(
     code, code_language, is_web_page = extract_result
     if code_language == 'tsx':
         code_language = 'typescript'
-    code_language = code_language.lower() if code_language and code_language.lower() in VALID_GRADIO_CODE_LANGUAGES else None # ensure gradio supports the code language
+    code_language = code_language.lower() if code_language and code_language.lower(
+        # ensure gradio supports the code language
+    ) in VALID_GRADIO_CODE_LANGUAGES else None
 
     # show loading
     yield (
-        gr.Markdown(value="### Running Sandbox (Loading)", visible=True),
+        gr.Markdown(value="### Loading Sandbox", visible=True),
         gr.skip(),
         gr.Code(value=code, language=code_language, visible=True),
     )
 
-    if sandbox_state['sandbox_environment'] == 'React':
+    if sandbox_state['sandbox_environment'] == SandboxEnvironment.REACT:
         url = run_react_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -487,7 +521,7 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    elif sandbox_state['sandbox_environment'] == 'Vue':
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.VUE:
         url = run_vue_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -499,7 +533,7 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    elif sandbox_state['sandbox_environment'] == 'PyGame':
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.PYGAME:
         url = run_pygame_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -511,7 +545,7 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    elif sandbox_state['sandbox_environment'] == 'Gradio':
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.GRADIO:
         url = run_gradio_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -523,7 +557,7 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    elif sandbox_state['sandbox_environment'] == 'Streamlit':
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.STREAMLIT:
         url = run_streamlit_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -535,7 +569,7 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    elif sandbox_state['sandbox_environment'] == 'NiceGUI':
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.NICEGUI:
         url = run_nicegui_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
@@ -547,11 +581,36 @@ def on_click_run_code(
             ),
             gr.skip(),
         )
-    else:
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.PYTHON_CODE_INTERPRETER:
         output, results, js_code = run_code_interpreter(
-            code=code, code_language=code_language)
+            code=code, code_language='python'
+        )
+        # TODO: results and js_code are not used
         yield (
             gr.Markdown(value=output, visible=True),
-            None,
+            SandboxComponent(
+                value=('', ''),
+                label="Example",
+                visible=False,
+                key="newsandbox",
+            ),  # hide the sandbox component
             gr.skip()
         )
+    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
+        output, results, js_code = run_code_interpreter(
+            code=code, code_language='javascript'
+        )
+        # TODO: results and js_code are not used
+        yield (
+            gr.Markdown(value=output, visible=True),
+            SandboxComponent(
+                value=('', ''),
+                label="Example",
+                visible=False,
+                key="newsandbox",
+            ),  # hide the sandbox component
+            gr.skip()
+        )
+    else:
+        raise ValueError(
+            f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
