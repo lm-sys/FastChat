@@ -37,6 +37,7 @@ from fastchat.serve.gradio_web_server import (
     set_global_vars,
     block_css,
     build_single_model_ui,
+    build_visualizer,
     build_about,
     get_model_list,
     load_demo_single,
@@ -200,13 +201,8 @@ window.__gradio_mode__ = "app";
                         show_plot=True,
                     )
 
-            with gr.Tab("🔍 Data Explorer", id=5):
-                frame = """
-                    <iframe width="100%" style="height: 1000px;" 
-                            src="https://storage.googleapis.com/public-arena-no-cors/index.html">
-                    </iframe>
-                """
-                gr.HTML(frame)
+            with gr.Tab("🔍 Data Visualizer", id=5):
+                build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
                 about = build_about()
