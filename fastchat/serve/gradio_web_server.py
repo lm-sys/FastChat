@@ -791,6 +791,7 @@ def get_model_description_md(models):
         ct += 1
     return model_description_md
 
+
 def build_visualizer():
     visualizer_markdown = """
     # 🧭 Arena Visualizer
@@ -833,6 +834,7 @@ def build_visualizer():
             """
             gr.Markdown(price_markdown)
     
+
 def build_about():
     about_markdown = """
 # About Us
