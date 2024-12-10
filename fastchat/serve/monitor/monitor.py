@@ -45,6 +45,7 @@ for k, v in key_to_category_name.items():
     k2c[k + "_style_control"] = v + "_style_control"
 key_to_category_name = k2c
 
+
 notebook_url = (
     "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
 )

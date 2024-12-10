@@ -136,7 +136,10 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
     total_subset_votes = sum(arena_subset_df["num_battles"]) // 2
     total_subset_models = len(arena_subset_df)
     if "w/ Style Control" in name:
-        explanation = cat_name_to_explanation[name.replace(" w/ Style Control", "")] + " with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/)."
+        explanation = (
+            cat_name_to_explanation[name.replace(" w/ Style Control", "")]
+            + " with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/)."
+        )
     else:
         explanation = cat_name_to_explanation[name]
     leaderboard_md = f"""### {explanation}
