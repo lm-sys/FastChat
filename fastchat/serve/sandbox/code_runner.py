@@ -17,14 +17,14 @@ API key for the e2b API.
 '''
 
 SUPPORTED_SANDBOX_ENVIRONMENTS = [
-    # TODO:
+    # TODO: Support Code Interpreter
     # 'Python',
     # 'Java',
     # 'Javascript',
-    # 'Streamlit',
     'React',
     'Vue',
     'Gradio',
+    'Streamlit',
     'NiceGUI',
     'PyGame',
     # 'Auto' # TODO: Implement auto-detection of sandbox environment
@@ -107,12 +107,21 @@ DEFAULT_NICEGUI_SANDBOX_INSTRUCTION = """
 Generate a Python NiceGUI code snippet for a single file. Surround code with ``` in markdown.
 """
 
+DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION = """
+Generate Python code for a single-file Streamlit application using the Streamlit library. 
+Surround code with ``` in markdown. 
+The app should automatically reload when changes are made. 
+Do not use external libraries or import external files outside of the allowed list.
+Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
+"""
+
 DEFAULT_SANDBOX_INSTRUCTIONS = {
     # "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
     "React": DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
     "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
-    "NiceGUI": DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
     "Gradio": DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
+    "Streamlit": DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
+    "NiceGUI": DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
     "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
 
@@ -188,7 +197,7 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
         return None
 
     # Determine if the code is related to a webpage
-    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue','gradio']):
+    if any(word in message.lower() for word in ['typescript', 'javascript', 'react','vue','gradio','streamlit']):
         is_webpage = True
     else:
         is_webpage = False
@@ -415,6 +424,32 @@ def run_gradio_sandbox(code: str) -> str:
     sandbox_url = 'https://' + sandbox.get_host(7860)
     return sandbox_url
 
+def run_streamlit_sandbox(code: str) -> str:
+    sandbox = Sandbox(api_key=E2B_API_KEY)
+
+    setup_commands = ["pip install --upgrade streamlit"]
+                    
+    for command in setup_commands:
+        sandbox.commands.run(
+            command,
+            timeout=60 * 3,
+            on_stdout=lambda message: print(message),
+            on_stderr=lambda message: print(message),
+        )
+  
+    sandbox.files.make_dir('mystreamlit')
+    file_path = "~/mystreamlit/app.py"
+    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+    
+    process = sandbox.commands.run(
+        "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true", 
+        background=True
+    )
+    
+    host = sandbox.get_host(port=8501)
+    url = f"https://{host}"
+    return url
+
 def on_click_run_code(
         state,
         sandbox_state: ChatbotSandboxState,
@@ -489,6 +524,18 @@ def on_click_run_code(
         )
     elif sandbox_state['sandbox_environment'] == 'Gradio':
         url = run_gradio_sandbox(code)
+        yield (
+            gr.Markdown(value="### Running Sandbox", visible=True),
+            SandboxComponent(
+                value=(url, code),
+                label="Example",
+                visible=True,
+                key="newsandbox",
+            ),
+            gr.skip(),
+        )
+    elif sandbox_state['sandbox_environment'] == 'Streamlit':
+        url = run_streamlit_sandbox(code)
         yield (
             gr.Markdown(value="### Running Sandbox", visible=True),
             SandboxComponent(
