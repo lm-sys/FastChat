@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import pipeline
 import torch
 import time
 
@@ -63,27 +63,18 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
     return output
 
 
-class HuggingFaceRefusalClassifier:
-    def __init__(self):
+class HuggingFaceClassifier:
+    def __init__(self, model_path, device=None):
         print("Loading model and tokenizer...")
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "derixu/refusal_classifier-mlm_then_classifier_v3"
-        )  # TODO: Migrate to LMSYS account and change path
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            "derixu/refusal_classifier-mlm_then_classifier_v3"
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.pipeline = pipeline(
+            "text-classification",
+            model=model_path,
+            tokenizer=model_path,
+            device=self.device
         )
-        self.model.eval()
 
-    def classify_batch(self, input_texts):
-        inputs = self.tokenizer(
-            input_texts,
-            truncation=True,
-            max_length=512,
-            return_tensors="pt",
-            padding=True,
-        )
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-            pred_classes = torch.argmax(probabilities, dim=-1).tolist()
-        return [bool(pred) for pred in pred_classes]
+    def classify_batch(self, input_texts, batch_size=8):
+        results = self.pipeline(input_texts, batch_size=batch_size, truncation=True)
+        return [res['label'] == "LABEL_1" for res in results]
+
