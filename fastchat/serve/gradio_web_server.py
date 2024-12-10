@@ -800,11 +800,13 @@ def build_visualizer():
 
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
 
-    with gr.Tabs() as tabs:
+    with gr.Tabs():
         with gr.Tab("Topic Explorer", id=0):
             topic_markdown = """
             ## *Welcome to the Topic Explorer*
-            This tool lets you dive into user-submitted prompts, organized into general categories and detailed subcategories. Using the sunburst chart, you can easily explore the data and understand how different topics are distributed.
+            This tool lets you dive into user-submitted prompts, organized into general 
+            categories and detailed subcategories. Using the sunburst chart, you can easily 
+            explore the data and understand how different topics are distributed.
 
             ### How to Use:
             - Hover Over Segments: View the category name, the number of prompts, and their percentage.
@@ -825,7 +827,6 @@ def build_visualizer():
             """
             gr.HTML(frame)
 
-
         with gr.Tab("Price Analysis", id=1):
             price_markdown = """
             ## *Price Control Data Visualizations*
@@ -833,7 +834,7 @@ def build_visualizer():
             and output token price.
             """
             gr.Markdown(price_markdown)
-    
+
 
 def build_about():
     about_markdown = """
