@@ -79,7 +79,7 @@ class CategoryHardPrompt(Category):
 
     def pre_process(self, prompt):
         conv = [{"role": "system", "content": self.sys_prompt}]
-        conv.append({"role": "user", "content": prompt['prompt']})
+        conv.append({"role": "user", "content": prompt["prompt"]})
         return conv
 
     def post_process(self, judgment):
@@ -106,7 +106,7 @@ class CategoryIF(Category):
             return None
 
     def pre_process(self, prompt):
-        args = {"PROMPT": prompt['prompt']}
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -140,7 +140,7 @@ class CategoryMath(Category):
             return None
 
     def pre_process(self, prompt):
-        args = {"PROMPT": prompt['prompt']}
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -177,7 +177,7 @@ class CategoryCreativeWriting(Category):
             return None
 
     def pre_process(self, prompt):
-        args = {"PROMPT": prompt['prompt']}
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -188,12 +188,12 @@ class CategoryCreativeWriting(Category):
         score = self.get_score(judgment=judgment)
         bool_score = bool(score == "yes") if score else False
         return {"creative_writing": bool_score, "score": score}
-    
+
+
 #####################
 # Vision Categories #
 #####################
 class CategoryCaptioning(Category):
-
     def __init__(self):
         super().__init__()
         self.name_tag = "captioning_v0.1"
@@ -201,7 +201,6 @@ class CategoryCaptioning(Category):
         self.system_prompt = "You are tasked with determining if a given VQA question is a captioning question. A captioning question asks for a general, overall description of the entire image. It must be a single, open-ended query that does NOT ask about particular objects, people, or parts of the image, nor require interpretation beyond a broad description of what is visually present. Examples include 'What is happening in this image?', 'Describe this picture.', 'Explain', etc. An example of a non-captioning question is 'Describe what is funny in this picture.' because it asks for a specific interpretation of the image content. \n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
         self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
 
-    
     def get_score(self, judgment):
         matches = self.pattern.findall(judgment.replace("\n", "").lower())
         matches = [m for m in matches if m != ""]
@@ -212,7 +211,7 @@ class CategoryCaptioning(Category):
         else:
             return None
 
-    def pre_process(self, prompt, api_type='openai'):
+    def pre_process(self, prompt, api_type="openai"):
         args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
@@ -223,7 +222,8 @@ class CategoryCaptioning(Category):
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"captioning": bool(score == "yes") if score else False}
-    
+
+
 class CategoryCreativeWritingVision(Category):
     def __init__(self):
         super().__init__()
@@ -248,8 +248,8 @@ class CategoryCreativeWritingVision(Category):
         else:
             return None
 
-    def pre_process(self, prompt, api_type='openai'):
-        args = {"PROMPT": prompt['prompt']}
+    def pre_process(self, prompt, api_type="openai"):
+        args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
@@ -260,16 +260,16 @@ class CategoryCreativeWritingVision(Category):
         score = self.get_score(judgment=judgment)
         bool_score = bool(score == "yes") if score else False
         return {"creative_writing": bool_score, "score": score}
-    
-class CategoryEntityRecognition(Category):
 
+
+class CategoryEntityRecognition(Category):
     def __init__(self):
         super().__init__()
         self.name_tag = "entity_recognition_v0.1"
         self.pattern = re.compile(r"<decision>(\w+)<\/decision>")
         self.system_prompt = "You are tasked with determining if a given VQA question is an entity recognition question. An entity recognition question asks for the identification of specific objects or people in the image. This does NOT include questions that ask for a general description of the image, questions that only ask for object counts, or questions that only require reading text in the image.\n\nOutput your verdict in the following format:<decision>\n[yes/no]\n</decision>. Do NOT explain."
         self.prompt_template = "<user_prompt>\n{PROMPT}\n</user_prompt>"
-        
+
     def get_score(self, judgment):
         matches = self.pattern.findall(judgment.replace("\n", "").lower())
         matches = [m for m in matches if m != ""]
@@ -280,7 +280,7 @@ class CategoryEntityRecognition(Category):
         else:
             return None
 
-    def pre_process(self, prompt, api_type='openai'):
+    def pre_process(self, prompt, api_type="openai"):
         args = {"PROMPT": prompt["prompt"]}
         conv = [
             {"role": "system", "content": self.system_prompt},
@@ -291,10 +291,13 @@ class CategoryEntityRecognition(Category):
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"entity_recognition": bool(score == "yes") if score else False}
-    
+
+
 import base64
 import io
 from PIL import Image
+
+
 def pil_to_base64(image_path):
     image = Image.open(image_path)
     buffered = io.BytesIO()
@@ -302,8 +305,8 @@ def pil_to_base64(image_path):
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return img_str
 
-class CategoryOpticalCharacterRecognition(Category):
 
+class CategoryOpticalCharacterRecognition(Category):
     def __init__(self):
         super().__init__()
         self.name_tag = "ocr_v0.1"
@@ -321,21 +324,23 @@ class CategoryOpticalCharacterRecognition(Category):
         else:
             return None
 
-    def pre_process(self, prompt, api_type='openai'):
+    def pre_process(self, prompt, api_type="openai"):
         args = {"PROMPT": prompt["prompt"]}
         base64_image = pil_to_base64(prompt["image_path"])
-        if api_type == 'anthropic':
+        if api_type == "anthropic":
             conv = [
                 {"role": "system", "content": self.system_prompt},
                 {
                     "role": "user",
                     "content": [
-                            {
+                        {
                             "type": "image",
                             "source": {
                                 "type": "base64",
                                 "media_type": "image/jpeg",
-                                "data": base64.b64encode(prompt["image_path"].content).decode("utf-8"),
+                                "data": base64.b64encode(
+                                    prompt["image_path"].content
+                                ).decode("utf-8"),
                             },
                         },
                         {"type": "text", "text": self.prompt_template.format(**args)},
@@ -363,9 +368,9 @@ class CategoryOpticalCharacterRecognition(Category):
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"ocr": bool(score == "yes") if score else False}
-    
-class CategoryHumor(Category):
 
+
+class CategoryHumor(Category):
     def __init__(self):
         super().__init__()
         self.name_tag = "humor_v0.1"
@@ -382,17 +387,17 @@ class CategoryHumor(Category):
             return matches[0]
         else:
             return None
-        
-    def pre_process(self, prompt, api_type='openai'):
+
+    def pre_process(self, prompt, api_type="openai"):
         args = {"PROMPT": prompt["prompt"]}
         base64_image = pil_to_base64(prompt["image_path"])
-        if api_type == 'anthropic':
+        if api_type == "anthropic":
             conv = [
                 {"role": "system", "content": self.system_prompt},
                 {
                     "role": "user",
                     "content": [
-                            {
+                        {
                             "type": "image",
                             "source": {
                                 "type": "base64",
@@ -421,14 +426,16 @@ class CategoryHumor(Category):
                 },
             ]
         return conv
-    
+
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"humor": bool(score == "yes") if score else False}
-    
-import os
-class CategoryHomework(Category):
 
+
+import os
+
+
+class CategoryHomework(Category):
     def __init__(self):
         super().__init__()
         self.name_tag = "homework_v0.1"
@@ -449,21 +456,21 @@ Output your verdict in the following format:<decision>
             return matches[0]
         else:
             return None
-        
-    def pre_process(self, prompt, api_type='openai'):
+
+    def pre_process(self, prompt, api_type="openai"):
         base64_image = pil_to_base64(prompt["image_path"])
 
         # Open the local image file in binary mode and encode it as base64
         assert os.path.exists(prompt["image_path"])
         with open(prompt["image_path"], "rb") as image_file:
             image_data = base64.b64encode(image_file.read()).decode("utf-8")
-        if api_type == 'anthropic':
+        if api_type == "anthropic":
             conv = [
                 {"role": "system", "content": self.system_prompt},
                 {
                     "role": "user",
                     "content": [
-                            {
+                        {
                             "type": "image",
                             "source": {
                                 "type": "base64",
@@ -492,13 +499,13 @@ Output your verdict in the following format:<decision>
                 },
             ]
         return conv
-    
+
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"homework": bool(score == "yes") if score else False}
-    
-class CategoryDiagram(Category):
 
+
+class CategoryDiagram(Category):
     def __init__(self):
         super().__init__()
         self.name_tag = "diagram_v0.1"
@@ -523,21 +530,21 @@ Output your verdict in the following format:<decision>
             return matches[0]
         else:
             return None
-        
-    def pre_process(self, prompt, api_type='openai'):
+
+    def pre_process(self, prompt, api_type="openai"):
         base64_image = pil_to_base64(prompt["image_path"])
 
         # Open the local image file in binary mode and encode it as base64
         assert os.path.exists(prompt["image_path"])
         with open(prompt["image_path"], "rb") as image_file:
             image_data = base64.b64encode(image_file.read()).decode("utf-8")
-        if api_type == 'anthropic':
+        if api_type == "anthropic":
             conv = [
                 {"role": "system", "content": self.system_prompt},
                 {
                     "role": "user",
                     "content": [
-                            {
+                        {
                             "type": "image",
                             "source": {
                                 "type": "base64",
@@ -566,7 +573,7 @@ Output your verdict in the following format:<decision>
                 },
             ]
         return conv
-    
+
     def post_process(self, judgment):
         score = self.get_score(judgment=judgment)
         return {"diagram": bool(score == "yes") if score else False}

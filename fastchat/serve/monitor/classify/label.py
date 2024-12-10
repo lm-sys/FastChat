@@ -88,6 +88,7 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
 
     return output
 
+
 def chat_completion_anthropic(model, messages, temperature, max_tokens, api_dict=None):
     import anthropic
 
@@ -111,7 +112,7 @@ def chat_completion_anthropic(model, messages, temperature, max_tokens, api_dict
                 stop_sequences=[anthropic.HUMAN_PROMPT],
                 max_tokens=max_tokens,
                 temperature=temperature,
-                system=sys_msg
+                system=sys_msg,
             )
             output = response.content[0].text
             break
@@ -120,7 +121,10 @@ def chat_completion_anthropic(model, messages, temperature, max_tokens, api_dict
             time.sleep(API_RETRY_SLEEP)
     return output
 
-def chat_completion_gemini(model, messages, temperature, max_tokens, api_dict=None, image_path=None):
+
+def chat_completion_gemini(
+    model, messages, temperature, max_tokens, api_dict=None, image_path=None
+):
     import google
     import google.generativeai as genai
     from google.generativeai.types import HarmCategory, HarmBlockThreshold
@@ -139,9 +143,9 @@ def chat_completion_gemini(model, messages, temperature, max_tokens, api_dict=No
 
     prompt = messages[0]["content"]
     if type(prompt) == list:
-        prompt = [prompt[0]['text'], Image.open(image_path).convert('RGB')]
+        prompt = [prompt[0]["text"], Image.open(image_path).convert("RGB")]
 
-    safety_settings={
+    safety_settings = {
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
@@ -156,7 +160,9 @@ def chat_completion_gemini(model, messages, temperature, max_tokens, api_dict=No
             gemini.temperature = temperature
             response = gemini.generate_content(prompt, safety_settings=safety_settings)
             if response.candidates[0].finish_reason != 1:
-                print(f"Gemini did not finish generating content: {response.candidates[0].finish_reason}")
+                print(
+                    f"Gemini did not finish generating content: {response.candidates[0].finish_reason}"
+                )
                 output = "Gemini did not finish generating content"
             else:
                 output = response.text
@@ -215,7 +221,7 @@ def get_answer(
                 temperature=temperature,
                 max_tokens=max_tokens,
                 api_dict=api_dict,
-                image_path=question.get("image_path")
+                image_path=question.get("image_path"),
             )
         else:
             raise ValueError(f"api_type {api_type} not supported")
@@ -309,7 +315,9 @@ if __name__ == "__main__":
         input_data["image_hash"] = input_data.conversation_a.map(
             lambda convo: convo[0]["content"][1][0]
         )
-        input_data["image_path"] = input_data.image_hash.map(lambda x: f"{config['image_dir']}/{x}.png")
+        input_data["image_path"] = input_data.image_hash.map(
+            lambda x: f"{config['image_dir']}/{x}.png"
+        )
 
     if config["cache_file"]:
         print("loading cache data")
@@ -360,11 +368,15 @@ if __name__ == "__main__":
 
     if args.vision:
         not_labeled["prompt"] = not_labeled.conversation_a.map(
-            lambda convo: "\n".join([convo[i]["content"][0] for i in range(0, len(convo), 2)])
+            lambda convo: "\n".join(
+                [convo[i]["content"][0] for i in range(0, len(convo), 2)]
+            )
         )
     else:
         not_labeled["prompt"] = not_labeled.conversation_a.map(
-            lambda convo: "\n".join([convo[i]["content"] for i in range(0, len(convo), 2)])
+            lambda convo: "\n".join(
+                [convo[i]["content"] for i in range(0, len(convo), 2)]
+            )
         )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
 
