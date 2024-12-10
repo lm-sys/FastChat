@@ -399,6 +399,7 @@ if __name__ == "__main__":
                     if category.name_tag in row["required_tasks"]
                 ],
                 args.testing,
+                config["api_type"],
             )
             futures.append(future)
         for future in tqdm.tqdm(
