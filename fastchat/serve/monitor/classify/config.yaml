@@ -3,7 +3,7 @@
 # input_file: "/home/derryxu/FastChatRefusal/fastchat/serve/monitor/classify/refusal_test/unlabeled.json" # json
 input_file: "/home/derryxu/arena-data-analysis/refusal/json/battles_derry_50k_sample.json"
 cache_file: null # json
-output_file: "/home/derryxu/FastChatRefusal/fastchat/serve/monitor/classify/refusal_test/labeled.jsonl" # json line
+output_file: null # json line
 
 convert_to_json: True
 
