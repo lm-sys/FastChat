@@ -65,7 +65,7 @@ def get_answer(
     for uid in uid_to_row:
         output = outputs[uid]
         TASK_COMPLETIONS[uid].add(category.name_tag)
-        TASK_TRACKER[uid][category.name_tag] = category.post_process(output)
+        TASK_TRACKER[uid][category.name_tag] = output
         
         row = uid_to_row[uid]
         if TASK_COMPLETIONS[uid] == row["required_tasks"]:
