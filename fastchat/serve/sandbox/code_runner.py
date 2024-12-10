@@ -41,7 +41,16 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. Surround code with ``` in markdown. Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
+SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE:***"
+
+GENERAL_SANDBOX_INSTRUCTION = """ Generate code for a single file to be executed in a sandbox. You can output other information if needed. The code should be in the markdown format:
+***REMOTE SANDBOX CODE:***
+```<language>
+<code>
+```
+"""
+
+DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. . Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
 '''
 Default sandbox prompt instruction.
 '''
@@ -53,43 +62,19 @@ Default sandbox prompt instruction for vue.
 
 DEFAULT_PYGAME_SANDBOX_INSTRUCTION = (
 '''
-Generate a pygame code snippet for a single file. Surround code with ``` in markdown.
+Generate a pygame code snippet for a single file.
 Write pygame main method in a sync function like:
 ```python
 import asyncio
 import pygame
 
-pygame.init()
-
-def menu(events):
-    # draw
-    # check events
-    # change state
-    pass
-
-
-def play(events):
-    # draw
-    # check events
-    # change state
-    pass
-
-game_state = menu
-
 async def main():
     global game_state
-    
-    # You can initialise pygame here as well
-
     while game_state:
         game_state(pygame.event.get())
         pygame.display.update()
-        await asyncio.sleep(0) # do not forget that one, it must be called on every frame
-        
-    # Closing the game (not strictly required)
-    pygame.quit()
-    sys.exit()
-        
+        await asyncio.sleep(0) # it must be called on every frame
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
@@ -97,19 +82,17 @@ if __name__ == "__main__":
 )
 
 DEFAULT_GRADIO_SANDBOX_INSTRUCTION = """
-Generate Python code for a single-file Gradio application using the Gradio library. 
-Surround code with ``` in markdown. 
+Generate Python code for a single-file Gradio application using the Gradio library.
 Do not use external libraries or import external files outside of the allowed list.
 Allowed libraries: ["gradio", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
 """
 
 DEFAULT_NICEGUI_SANDBOX_INSTRUCTION = """
-Generate a Python NiceGUI code snippet for a single file. Surround code with ``` in markdown.
+Generate a Python NiceGUI code snippet for a single file.
 """
 
 DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION = """
-Generate Python code for a single-file Streamlit application using the Streamlit library. 
-Surround code with ``` in markdown. 
+Generate Python code for a single-file Streamlit application using the Streamlit library.
 The app should automatically reload when changes are made. 
 Do not use external libraries or import external files outside of the allowed list.
 Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
@@ -117,12 +100,12 @@ Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "s
 
 DEFAULT_SANDBOX_INSTRUCTIONS = {
     # "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
-    "React": DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
-    "Vue": DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
-    "Gradio": DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
-    "Streamlit": DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
-    "NiceGUI": DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
-    "PyGame": DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
+    "React": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
+    "Vue": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
+    "Gradio": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
+    "Streamlit": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
+    "NiceGUI": GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
+    "PyGame": GENERAL_SANDBOX_INSTRUCTION +DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
 
 class ChatbotSandboxState(TypedDict):
@@ -185,8 +168,14 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
         tuple[str, str, bool]: A tuple containing the code, code language, and a boolean indicating whether the code is a webpage.
     '''
     # Regular expression to match code blocks with optional language
-    code_block_regex = r'```(\w+)?\n(.*?)```'
-    matches = re.findall(code_block_regex, message, re.DOTALL)
+    code_block_regexes = [
+        rf'{re.escape(SANDBOX_CODE_TAG)}\s*```(\w+)?\n(.*?)```',
+        r'```(\w+)?\n(.*?)```'
+    ]
+    for code_block_regex in code_block_regexes:
+        matches = re.findall(code_block_regex, message, re.DOTALL)
+        if matches:
+            break
 
     if matches:
         # Extract code language and code
