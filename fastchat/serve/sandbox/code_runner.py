@@ -57,9 +57,9 @@ GENERAL_SANDBOX_INSTRUCTION = """ Generate code for a single file to be executed
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
-Generate Python code suitable for execution in a code interpreter environment.
-Ensure the code is self-contained and does not use external libraries beyond the standard library.
-You can output in stdout, stderr, or render images, plots, and tables.
+Generate self-contained Python code for execution in a code interpreter.
+Use only the standard library or these pre-installed libraries: aiohttp, beautifulsoup4, bokeh, gensim, imageio, joblib, librosa, matplotlib, nltk, numpy, opencv-python, openpyxl, pandas, plotly, pytest, python-docx, pytz, requests, scikit-image, scikit-learn, scipy, seaborn, soundfile, spacy, textblob, tornado, urllib3, xarray, xlrd, sympy.
+Output via stdout, stderr, or render images, plots, and tables.
 """
 
 DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION = """
@@ -135,9 +135,8 @@ class ChatbotSandboxState(TypedDict):
     enable_sandbox: bool
     sandbox_environment: str | None
     sandbox_instruction: str | None
-    code_to_execute : str | None
+    code_to_execute: str | None
     enabled_round: int
-    
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -148,7 +147,7 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "enable_sandbox": False,
         "sandbox_environment": None,
         "sandbox_instruction": None,
-        "code_to_execute":"",
+        "code_to_execute": "",
         "enabled_round": 0
     }
 
@@ -184,11 +183,14 @@ def update_sandbox_config_single_model(
 
     return state
 
+
 def update_visibility(visible):
     return [gr.update(visible=visible)] * 13
 
+
 def update_visibility_for_single_model(visible):
-    return [gr.update(visible=visible) ] * 8
+    return [gr.update(visible=visible)] * 8
+
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
     '''
@@ -230,15 +232,20 @@ def render_result(result):
             img_str = result.png
         else:
             img_str = base64.b64encode(result.png).decode()
-        return f"<img src='data:image/png;base64,{img_str}'>"
+        return f"![png image](data:image/png;base64,{img_str})"
     elif result.jpeg:
         if isinstance(result.jpeg, str):
             img_str = result.jpeg
         else:
             img_str = base64.b64encode(result.jpeg).decode()
-        return f"<img src='data:image/jpeg;base64,{img_str}'>"
+        return f"![jpeg image](data:image/jpeg;base64,{img_str})"
     elif result.svg:
-        return result.svg
+        if isinstance(result.svg, str):
+            svg_data = result.svg
+        else:
+            svg_data = result.svg.decode()
+        svg_base64 = base64.b64encode(svg_data.encode()).decode()
+        return f"![svg image](data:image/svg+xml;base64,{svg_base64})"
     elif result.html:
         return result.html
     elif result.markdown:
@@ -253,15 +260,12 @@ def render_result(result):
         return str(result)
 
 
-def run_code_interpreter(code: str, code_language: str | None) -> tuple[str, str, str]:
+def run_code_interpreter(code: str, code_language: str | None) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
     Args:
         code (str): The code to be executed.
-
-    Returns:
-        tuple[str, str, str]: A tuple containing the standard output, rendered results, and JavaScript code.
     """
     sandbox = CodeSandbox()
 
@@ -284,10 +288,15 @@ def run_code_interpreter(code: str, code_language: str | None) -> tuple[str, str
     for result in execution.results:
         rendered_result = render_result(result)
         if result.javascript:
-            js_code += rendered_result + "\n"
+            # TODO: js_code are not used
+            # js_code += rendered_result + "\n"
+            print("JavaScript code:", rendered_result)
         else:
             results.append(rendered_result)
-    return output, "\n".join(results), js_code
+    if results:
+        output += "\n### Results:\n" + "\n".join(results)
+
+    return output
 
 
 def run_react_sandbox(code: str) -> str:
@@ -515,7 +524,6 @@ def on_click_run_code(
             gr.skip()
         )
         return
-    
     sandbox_state['code_to_execute'] = code
 
     if code_language == 'tsx':
@@ -604,12 +612,11 @@ def on_click_run_code(
             gr.skip(),
         )
     elif sandbox_state['sandbox_environment'] == SandboxEnvironment.PYTHON_CODE_INTERPRETER:
-        output, results, js_code = run_code_interpreter(
+        output = run_code_interpreter(
             code=code, code_language='python'
         )
-        # TODO: results and js_code are not used
         yield (
-            gr.Markdown(value=output, visible=True),
+            gr.Markdown(value=output, sanitize_html=False, visible=True),
             SandboxComponent(
                 value=('', ''),
                 label="Example",
@@ -619,10 +626,9 @@ def on_click_run_code(
             gr.skip()
         )
     elif sandbox_state['sandbox_environment'] == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
-        output, results, js_code = run_code_interpreter(
+        output = run_code_interpreter(
             code=code, code_language='javascript'
         )
-        # TODO: results and js_code are not used
         yield (
             gr.Markdown(value=output, visible=True),
             SandboxComponent(
