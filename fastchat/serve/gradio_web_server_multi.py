@@ -243,7 +243,6 @@ window.__gradio_mode__ = "app";
                         arena_hard_table,
                         show_plot=True,
                     )
-                    
             if args.show_visualizer:
                 with gr.Tab("🔍 Data Visualizer", id=5):
                     build_visualizer()

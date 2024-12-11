@@ -792,7 +792,6 @@ def get_model_description_md(models):
     return model_description_md
 
 
-
 def build_about():
     about_markdown = """
 # About Us
