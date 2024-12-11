@@ -1289,7 +1289,7 @@ def bailing_api_stream_iter(
     api_key=None,
     generation_args=None,
 ):
-    url = api_base if api_base else "https://bailingchat.alipay.com/chat/arena"
+    url = api_base if api_base else "https://bailingchat.alipay.com/chat/completions"
     token = api_key if api_key else os.environ.get("BAILING_API_KEY")
     if token:
         headers = {"Authorization": f"Bearer {token}"}
