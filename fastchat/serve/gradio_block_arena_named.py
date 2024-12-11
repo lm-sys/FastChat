@@ -31,7 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config
+from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config, update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -486,6 +486,10 @@ def build_side_by_side_ui_named(models):
 
         # update sandbox global config
         enable_sandbox_checkbox.change(
+            fn=update_visibility,
+            inputs=[enable_sandbox_checkbox],
+            outputs=hidden_components
+        ).then(
             fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS.get(env, ""),
             inputs=[enable_sandbox_checkbox, sandbox_env_choice],
             outputs=[sandbox_instruction_textarea]
@@ -498,10 +502,6 @@ def build_side_by_side_ui_named(models):
                 *sandbox_states
             ],
             outputs=[*sandbox_states]
-        ).then(
-            fn=lambda enable: [gr.update(visible=enable) for _ in hidden_components],
-            inputs=[enable_sandbox_checkbox],
-            outputs=hidden_components
         )
 
     with gr.Row():
