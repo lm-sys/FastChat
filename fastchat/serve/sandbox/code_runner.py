@@ -135,7 +135,9 @@ class ChatbotSandboxState(TypedDict):
     enable_sandbox: bool
     sandbox_environment: str | None
     sandbox_instruction: str | None
+    code_to_execute : str | None
     enabled_round: int
+    
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -146,6 +148,7 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "enable_sandbox": False,
         "sandbox_environment": None,
         "sandbox_instruction": None,
+        "code_to_execute":"",
         "enabled_round": 0
     }
 
@@ -501,6 +504,20 @@ def on_click_run_code(
         raise ValueError("E2B_API_KEY is not set in env vars.")
 
     code, code_language, is_web_page = extract_result
+
+    # validate whether code to execute has been updated.
+    previous_code = sandbox_state.get('code_to_execute', '')
+    if previous_code == code:
+        print("Code has not changed. Skipping execution.")
+        yield (
+            gr.skip(),
+            gr.skip(),
+            gr.skip()
+        )
+        return
+    
+    sandbox_state['code_to_execute'] = code
+
     if code_language == 'tsx':
         code_language = 'typescript'
     code_language = code_language.lower() if code_language and code_language.lower(

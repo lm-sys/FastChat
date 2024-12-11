@@ -324,6 +324,7 @@ def clear_history(sandbox_state,request: gr.Request):
     
     state = None
     sandbox_state['enabled_round'] = 0
+    sandbox_state['code_to_execute'] = ""
     return (state, [], "") + (disable_btn,) * 5 + (sandbox_state,)
 
 def clear_sandbox_components(*components):
@@ -1157,7 +1158,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     # trigger sandbox run
     chatbot.select(fn=on_click_run_code,
                    inputs=[state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code],
-                   outputs=[*sandbox_components])
+                   outputs=[sandbox_output, sandbox_ui, sandbox_code])
 
     return [state, model_selector]
 
