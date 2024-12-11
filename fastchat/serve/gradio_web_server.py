@@ -38,7 +38,7 @@ from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import RUN_CODE_BUTTON_HTML, ChatbotSandboxState, DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_single_model
+from fastchat.serve.sandbox.code_runner import RUN_CODE_BUTTON_HTML, ChatbotSandboxState, DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_single_model, update_visibility_for_single_model
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -830,7 +830,6 @@ def get_model_description_md(models):
         ct += 1
     return model_description_md
 
-
 def build_about():
     about_markdown = """
 # About Us
@@ -929,8 +928,8 @@ def build_single_model_ui(models, add_promotion_links=False):
         gr.Code, # sandbox_code
     ] | None] = []
 
-    sandbox_ui_code_group = gr.Group(visible=False)
-    with sandbox_ui_code_group:
+    sandbox_group = gr.Group(visible=False)
+    with sandbox_group:
         sandbox_column = gr.Column(visible=False,scale=1)
         with sandbox_column:
             sandbox_state = gr.State(create_chatbot_sandbox_state())
@@ -986,6 +985,10 @@ def build_single_model_ui(models, add_promotion_links=False):
                     value='',
                     visible=False
                 )
+
+        hidden_components = []
+        hidden_components.extend([sandbox_group,sandbox_column,sandbox_title,sandbox_code_tab,sandbox_output_tab,sandbox_env_choice,sandbox_instruction_accordion,sandbox_instruction_textarea])
+
         sandbox_env_choice.change(
             fn=lambda env, enable: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
             inputs=[sandbox_env_choice, enable_sandbox_checkbox],
@@ -1011,32 +1014,22 @@ def build_single_model_ui(models, add_promotion_links=False):
             outputs=[sandbox_state]
         )    
         # update sandbox global config
-        enable_sandbox_checkbox.change(
+        enable_sandbox_checkbox.change (
+            fn=update_visibility_for_single_model,
+            inputs=[enable_sandbox_checkbox], 
+            outputs=hidden_components
+        ).then(
             fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS.get(env, ""),
             inputs=[enable_sandbox_checkbox, sandbox_env_choice],
             outputs=[sandbox_instruction_textarea]
-        ).then(
+        ) .then(
             fn=update_sandbox_config_single_model,
             inputs=[
                 enable_sandbox_checkbox,
                 sandbox_env_choice,
                 sandbox_instruction_textarea,
-                sandbox_state
-            ],
+                sandbox_state],
             outputs=[sandbox_state]
-        ).then(
-            fn=lambda enable: (
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-                gr.update(visible=enable),
-            ),
-            inputs=[enable_sandbox_checkbox],
-            outputs=[sandbox_ui_code_group,sandbox_column,sandbox_title,sandbox_code_tab,sandbox_output_tab,sandbox_env_choice,sandbox_instruction_accordion,sandbox_instruction_textarea]
         )
 
     with gr.Row():

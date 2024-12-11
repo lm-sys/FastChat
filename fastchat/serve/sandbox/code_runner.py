@@ -181,6 +181,11 @@ def update_sandbox_config_single_model(
 
     return state
 
+def update_visibility(visible):
+    return [gr.update(visible=visible)] * 13
+
+def update_visibility_for_single_model(visible):
+    return [gr.update(visible=visible) ] * 8
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
     '''
