@@ -5,6 +5,7 @@
   export let value: string;
   export let visible = true;
   export let min_height = false;
+  export let isDarkMode = false;
 
   const dispatch = createEventDispatcher<{ change: undefined }>();
 
@@ -12,7 +13,7 @@
 </script>
 
 <div
-  class={`relative w-full h-full ${min_height ? "min" : ""} ${!visible ? "hidden" : ""} bg-white`}
+  class={`relative flex flex-col flex-1 w-full h-full ${min_height ? "min" : ""} ${!visible ? "hidden" : ""} ${isDarkMode ? "bg-black" : "bg-white"}`}
 >
   <iframe
     id="sandboxIframe"
@@ -22,6 +23,6 @@
     sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts allow-modals"
     allowtransparency
     allowfullscreen
-    class="w-full h-full"
+    class="w-full h-full flex-1"
   />
 </div>
