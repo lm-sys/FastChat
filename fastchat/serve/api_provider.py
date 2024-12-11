@@ -1301,7 +1301,7 @@ def bailing_api_stream_iter(
     request = {"model": model_name, "messages": messages}
     request["stream"] = True
     # default value
-    request["temperature"] = 0.4
+    request["temperature"] = 0.01
     request["top_p"] = 1.0
     request["top_k"] = -1
     request["n"] = 1
