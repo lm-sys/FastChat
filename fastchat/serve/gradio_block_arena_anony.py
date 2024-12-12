@@ -36,7 +36,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config,update_visibility
+from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_multi,update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -523,41 +523,6 @@ def build_side_by_side_ui_anony(models):
         with gr.Row():
             slow_warning = gr.Markdown("")
 
-        # sandbox states and components
-    sandbox_states: list[gr.State | None] = [None for _ in range(num_sides)]
-    sandboxes_components: list[tuple[
-        gr.Markdown, # sandbox_output
-        SandboxComponent,  # sandbox_ui
-        gr.Code, # sandbox_code
-    ] | None] = [None for _ in range(num_sides)]
-    
-    hidden_components = []
-
-    with gr.Group(visible=False) as sandbox_group:
-        hidden_components.append(sandbox_group)
-        with gr.Row(visible=False) as sandbox_row:
-            hidden_components.append(sandbox_row)
-            for chatbotIdx in range(num_sides):
-                with gr.Column(scale=1, visible=False) as column:
-                    sandbox_state = gr.State(create_chatbot_sandbox_state())
-                    # Add containers for the sandbox output
-                    sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=False)
-                    with gr.Tab(label="Output", visible=False) as sandbox_output_tab:
-                        sandbox_output = gr.Markdown(value="", visible=False)
-                        sandbox_ui = SandboxComponent(
-                            value=("", ""),
-                            show_label=True,
-                            visible=False,
-                        )
-                    with gr.Tab(label="Code", visible=False) as sandbox_code_tab:
-                        sandbox_code = gr.Code(value="", interactive=False, visible=False)
-                    sandbox_states[chatbotIdx] = sandbox_state
-                    sandboxes_components[chatbotIdx] = (
-                        sandbox_output,
-                        sandbox_ui,
-                        sandbox_code,
-                    )
-                    hidden_components.extend([column, sandbox_title, sandbox_output_tab, sandbox_code_tab])
     with gr.Row():
         leftvote_btn = gr.Button(
             value="👈  A is better", visible=False, interactive=False
@@ -569,9 +534,19 @@ def build_side_by_side_ui_anony(models):
         bothbad_btn = gr.Button(
             value="👎  Both are bad", visible=False, interactive=False
         )
-    
-        # chatbox sandbox global config
+
+    # sandbox states and components
+    sandbox_states: list[gr.State] = [] # state for each chatbot
+    sandboxes_components: list[tuple[
+        gr.Markdown, # sandbox_output
+        SandboxComponent,  # sandbox_ui
+        gr.Code, # sandbox_code
+    ]] = [] # components for each chatbot
+    sandbox_hidden_components = []
+
+    # chatbot sandbox
     with gr.Group():
+        # chatbot sandbox config
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(
                 value=False,
@@ -581,53 +556,58 @@ def build_side_by_side_ui_anony(models):
             )
             sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
         with gr.Group():
-            with gr.Accordion("Sandbox Instructions", open=False, visible=False) as sandbox_instruction_accordion:
-                sandbox_instruction_textarea = gr.TextArea(
-                    value='',visible=False
-                )
-        hidden_components.extend([sandbox_env_choice, sandbox_instruction_accordion, sandbox_instruction_textarea])
+            with gr.Accordion("Sandbox & Output", open=True, visible=False) as sandbox_instruction_accordion:
+                with gr.Group(visible=False) as sandbox_group:
+                    sandbox_hidden_components.append(sandbox_group)
+                    with gr.Row(visible=False) as sandbox_row:
+                        sandbox_hidden_components.append(sandbox_row)
+                        for chatbotIdx in range(num_sides):
+                            with gr.Column(scale=1, visible=False) as column:
+                                sandbox_state = gr.State(create_chatbot_sandbox_state())
+                                # Add containers for the sandbox output
+                                sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=False)
+
+                                with gr.Tab(label="Output", visible=False) as sandbox_output_tab:
+                                    sandbox_output = gr.Markdown(value="", visible=False)
+                                    sandbox_ui = SandboxComponent(
+                                        value=("", ""),
+                                        show_label=True,
+                                        visible=False,
+                                    )
+
+                                with gr.Tab(label="Code", visible=False) as sandbox_code_tab:
+                                    sandbox_code = gr.Code(value="", interactive=False, visible=False)
+
+                                sandbox_states.append(sandbox_state)
+                                sandboxes_components.append((
+                                    sandbox_output,
+                                    sandbox_ui,
+                                    sandbox_code,
+                                ))
+                                sandbox_hidden_components.extend([column, sandbox_title, sandbox_output_tab, sandbox_code_tab])
+
+        sandbox_hidden_components.extend([sandbox_env_choice, sandbox_instruction_accordion])
 
         sandbox_env_choice.change(
-            fn=lambda env, enable: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS[env],
-            inputs=[sandbox_env_choice, enable_sandbox_checkbox],
-            outputs=[sandbox_instruction_textarea]
-        ).then(
-            fn=update_sandbox_config,
+            fn=update_sandbox_config_multi,
             inputs=[
                 enable_sandbox_checkbox,
                 sandbox_env_choice,
-                sandbox_instruction_textarea,
                 *sandbox_states
             ],
             outputs=[*sandbox_states]
         )
 
-        sandbox_instruction_textarea.change(
-            fn=update_sandbox_config,
-            inputs=[
-                enable_sandbox_checkbox,
-                sandbox_env_choice,
-                sandbox_instruction_textarea,
-                *sandbox_states
-            ],
-            outputs=[*sandbox_states]
-        )    
-
         # update sandbox global config
         enable_sandbox_checkbox.change(
             fn=update_visibility,
             inputs=[enable_sandbox_checkbox],
-            outputs=hidden_components
+            outputs=sandbox_hidden_components
         ).then(
-            fn=lambda enable, env: "" if not enable else DEFAULT_SANDBOX_INSTRUCTIONS.get(env, ""),
-            inputs=[enable_sandbox_checkbox, sandbox_env_choice],
-            outputs=[sandbox_instruction_textarea]
-        ).then(            
-            fn=update_sandbox_config,
+            fn=update_sandbox_config_multi,
             inputs=[
                 enable_sandbox_checkbox,
                 sandbox_env_choice,
-                sandbox_instruction_textarea,
                 *sandbox_states
             ],
             outputs=[*sandbox_states]
