@@ -38,7 +38,7 @@ from fastchat.model.model_registry import get_model_info, model_info
 from fastchat.serve.api_provider import get_api_provider_stream_iter
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import RUN_CODE_BUTTON_HTML, ChatbotSandboxState, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config, update_visibility_for_single_model
+from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, RUN_CODE_BUTTON_HTML, ChatbotSandboxState, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config, update_visibility_for_single_model
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -344,6 +344,22 @@ def get_ip(request: gr.Request):
         ip = request.client.host
     return ip
 
+def update_sandbox_system_message(state, sandbox_state, model_selector):
+    '''
+    Add sandbox instructions to the system message.
+    '''
+    if sandbox_state is None or sandbox_state['enable_sandbox'] is False or sandbox_state["enabled_round"] > 0:
+        pass
+    else:
+        if state is None:
+            state = State(model_selector)
+
+        sandbox_state['enabled_round'] += 1 # avoid dup
+        environment_instruction = sandbox_state['sandbox_instruction']
+        current_system_message = state.conv.get_system_message(state.is_vision)
+        new_system_message = f"{current_system_message}\n\n{environment_instruction}"
+        state.conv.set_system_message(new_system_message)
+    return state, state.to_gradio_chatbot()
 
 def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
     ip = get_ip(request)
@@ -371,15 +387,6 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
             no_change_btn,
         ) * 5
-
-    # [CODE SANDBOX] add sandbox instructions if enabled
-    try:
-        # only add sandbox instructions if enabled for the first round
-        if sandbox_state['enable_sandbox'] and sandbox_state['enabled_round'] == 0:
-            text = f"> {sandbox_state['sandbox_instruction'].strip()}\n\n" + text
-            sandbox_state['enabled_round'] += 1
-    except (TypeError, KeyError) as e:
-        print("Error accessing sandbox_state:", e)
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
@@ -532,7 +539,8 @@ def bot_response(
         )
     else:
         # Remove system prompt for API-based models unless specified
-        custom_system_prompt = model_api_dict.get("custom_system_prompt", False)
+        # Code Sandbox needs system prompt
+        custom_system_prompt = model_api_dict.get("custom_system_prompt", False) or sandbox_state['enable_sandbox']
         if not custom_system_prompt:
             conv.set_system_message("")
 
@@ -1092,6 +1100,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, model_selector, sandbox_state, textbox],
         [state, chatbot, textbox] + btn_list,
     ).then(
+        update_sandbox_system_message,
+        [state, sandbox_state, model_selector],
+        [state, chatbot]
+    ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
@@ -1104,6 +1116,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         add_text,
         [state, model_selector, sandbox_state, textbox],
         [state, chatbot, textbox] + btn_list,
+    ).then(
+        update_sandbox_system_message,
+        [state, sandbox_state, model_selector],
+        [state, chatbot]
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens, sandbox_state],

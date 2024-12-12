@@ -31,7 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_multi, update_visibility
+from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, ChatbotSandboxState, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_multi, update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -161,6 +161,28 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
+def update_sandbox_system_messages_multi(state0, state1, sandbox_state0, sandbox_state1, model_selector0, model_selector1):
+    '''
+    Add sandbox instructions to the system message.
+    '''
+    states = [state0, state1]
+    model_selectors = [model_selector0, model_selector1]
+    sandbox_states: list[ChatbotSandboxState] = [sandbox_state0, sandbox_state1]
+
+    # Init states if necessary
+    for i in range(num_sides):
+        if states[i] is None:
+            states[i] = State(model_selectors[i])
+        sandbox_state = sandbox_states[i]
+        if sandbox_state is None or sandbox_state['enable_sandbox'] is False or sandbox_state["enabled_round"] > 0:
+            continue
+        sandbox_state['enabled_round'] += 1 # avoid dup
+        environment_instruction = sandbox_state['sandbox_instruction']
+        current_system_message = states[i].conv.get_system_message(states[i].is_vision)
+        new_system_message = f"{current_system_message}\n\n{environment_instruction}"
+        states[i].conv.set_system_message(new_system_message)
+
+    return states + [x.to_gradio_chatbot() for x in states]
 
 def add_text(
     state0, state1,
@@ -220,12 +242,6 @@ def add_text(
             ]
             * 6
         )
-
-    # add snadbox instructions if enabled
-    if sandbox_state0['enable_sandbox'] and sandbox_state0['enabled_round'] == 0:
-        text = f"> {sandbox_state0['sandbox_instruction']}\n\n" + text
-        sandbox_state0['enabled_round'] += 1
-        sandbox_state1['enabled_round'] += 1
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
@@ -617,6 +633,10 @@ function (a, b, c, d) {
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
     ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
+    ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
@@ -627,10 +647,15 @@ function (a, b, c, d) {
         inputs=[sandbox_states[0]],
         outputs=[sandbox_env_choice]
     )
+
     send_btn.click(
         add_text,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
+    ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,

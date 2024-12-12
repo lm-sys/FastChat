@@ -20,7 +20,7 @@ from fastchat.constants import (
     SURVEY_LINK,
 )
 from fastchat.model.model_adapter import get_conversation_template
-from fastchat.serve.gradio_block_arena_named import flash_buttons
+from fastchat.serve.gradio_block_arena_named import flash_buttons, update_sandbox_system_messages_multi
 from fastchat.serve.gradio_web_server import (
     State,
     bot_response,
@@ -351,11 +351,6 @@ def add_text(
             * 6
             + [""]
         )
-    # add snadbox instructions if enabled
-    if sandbox_state0['enable_sandbox'] and sandbox_state0['enabled_round'] == 0:
-        text = f"> {sandbox_state0['sandbox_instruction']}\n\n" + text
-        sandbox_state0['enabled_round'] += 1
-        sandbox_state1['enabled_round'] += 1
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
@@ -743,6 +738,10 @@ function (a, b, c, d) {
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list + [slow_warning],
     ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
+    ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
@@ -760,6 +759,10 @@ function (a, b, c, d) {
         add_text,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
+    ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
