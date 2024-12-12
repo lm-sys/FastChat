@@ -152,35 +152,31 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
     }
 
 
-def update_sandbox_config(
+def update_sandbox_config_multi(
     enable_sandbox: bool,
-    sandbox_environment: str,
-    sandbox_instruction: str,
+    sandbox_environment: SandboxEnvironment,
     *states: ChatbotSandboxState
 ) -> list[ChatbotSandboxState]:
     '''
     Fn to update sandbox config.
     '''
-    for state in states:
-        state["enable_sandbox"] = enable_sandbox
-        state["sandbox_instruction"] = sandbox_instruction
-        state["sandbox_environment"] = sandbox_environment
-    return list(states)
+    return [
+        update_sandbox_config(enable_sandbox, sandbox_environment, state) 
+        for state
+        in states
+    ]
 
-
-def update_sandbox_config_single_model(
+def update_sandbox_config(
     enable_sandbox: bool,
-    sandbox_environment: str,
-    sandbox_instruction: str,
+    sandbox_environment: SandboxEnvironment,
     state: ChatbotSandboxState
 ) -> ChatbotSandboxState:
     '''
     Fn to update sandbox config for single model.
     '''
     state["enable_sandbox"] = enable_sandbox
-    state["sandbox_instruction"] = sandbox_instruction
     state["sandbox_environment"] = sandbox_environment
-
+    state['sandbox_instruction'] = DEFAULT_SANDBOX_INSTRUCTIONS.get(sandbox_environment, None)
     return state
 
 
@@ -188,8 +184,8 @@ def update_visibility(visible):
     return [gr.update(visible=visible)] * 13
 
 
-def update_visibility_for_single_model(visible):
-    return [gr.update(visible=visible)] * 8
+def update_visibility_for_single_model(visible: bool, component_cnt: int):
+    return [gr.update(visible=visible)] * component_cnt
 
 
 def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
