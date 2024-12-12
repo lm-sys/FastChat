@@ -56,7 +56,7 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
 def build_visualizer():
     visualizer_markdown = """
-    # 🧭 Arena Visualizer
+    # 🔍 Arena Visualizer
     Data explorer provides interactive tools to explore and draw insights from our leaderboard data. 
     """
 
@@ -92,8 +92,7 @@ def build_visualizer():
         with gr.Tab("Price Analysis", id=1):
             price_markdown = """
             ## *Price Control Data Visualizations*
-            Below are scatter-plots depicting a model's arena score against its cost effectiveness 
-            and output token price.
+            Coming soon: Visualizations showing models' arena scores compared to their cost-effectiveness and output token prices.
             """
             gr.Markdown(price_markdown)
 
@@ -244,7 +243,7 @@ window.__gradio_mode__ = "app";
                         show_plot=True,
                     )
             if args.show_visualizer:
-                with gr.Tab("🔍 Data Visualizer", id=5):
+                with gr.Tab("🔍 Arena Visualizer", id=5):
                     build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
