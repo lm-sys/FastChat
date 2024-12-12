@@ -49,7 +49,7 @@ Button in the chat to run the code in the sandbox.
 
 SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE:***"
 
-GENERAL_SANDBOX_INSTRUCTION = """ Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
+GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
 ***REMOTE SANDBOX CODE:***
 ```<language>
 <code>
