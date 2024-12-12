@@ -13,14 +13,14 @@
 </script>
 
 <div
-  class={`relative flex flex-col flex-1 w-full h-full ${min_height ? "min" : ""} ${!visible ? "hidden" : ""} ${isDarkMode ? "bg-black" : "bg-white"}`}
+  class={`relative flex flex-col flex-1 w-full h-full ${min_height ? "min" : ""} ${!visible ? "hidden" : ""} ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}
 >
   <iframe
     id="sandboxIframe"
     title="iframe component"
     src={value}
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; display-capture"
-    sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts allow-modals"
+    sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts"
     allowtransparency
     allowfullscreen
     class="w-full h-full flex-1"
