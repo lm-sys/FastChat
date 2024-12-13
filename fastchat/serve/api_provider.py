@@ -1326,21 +1326,25 @@ def bailing_api_stream_iter(
                         curr_buf += new_buf
                         while True:
                             x_part = curr_buf.split("\n\n", 1)
-                            if len(x_part) > 1: # part can be sent
-                                y_part = x_part[0][len("data:"):].strip()
+                            if len(x_part) > 1:  # part can be sent
+                                y_part = x_part[0][len("data:") :].strip()
                                 try:
                                     y = json.loads(y_part)
                                     output_text = y["choices"][0]["delta"]["content"]
                                 except Exception as e:
-                                    curr_buf = x_part[1] # finish one response
-                                    logger.error(f"Read the error content. Content: {y_part}, Info:{e}")
+                                    curr_buf = x_part[1]  # finish one response
+                                    logger.error(
+                                        f"Read the error content. Content: {y_part}, Info:{e}"
+                                    )
                                     continue  # skip current part
                                 total_text += output_text
-                                curr_buf = x_part[1] # finish one response and look to leftover
+                                curr_buf = x_part[
+                                    1
+                                ]  # finish one response and look to leftover
                                 yield {"text": total_text, "error_code": 0}
-                            else: # no part can be sent and continue to read
+                            else:  # no part can be sent and continue to read
                                 break
-                    return # finish the total
+                    return  # finish the total
                 else:
                     logger.error(
                         f"Error occurs and retry if possible. status_code={resp.status_code}"
