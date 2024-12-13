@@ -1312,7 +1312,6 @@ def bailing_api_stream_iter(
     if generation_args:
         request.update(generation_args)
 
-    total_text = ""
     timeout = httpx.Timeout(
         300.0, read=200.0
     )  # timeout is 300s, and read timeout is 200s
@@ -1320,22 +1319,38 @@ def bailing_api_stream_iter(
     retry_num = 0
     while retry_num < 3:
         try:
+            total_text, curr_buf = "", ""
             with client.stream("POST", url, json=request, headers=headers) as resp:
                 if resp.status_code == 200:
-                    for line in resp.iter_lines():
-                        total_text += line + "\n"
-                        yield {"text": total_text, "error_code": 0}
-                    break
+                    for new_buf in resp.iter_text():
+                        curr_buf += new_buf
+                        while True:
+                            x_part = curr_buf.split("\n\n", 1)
+                            if len(x_part) > 1: # part can be sent
+                                y_part = x_part[0][len("data:"):].strip()
+                                try:
+                                    y = json.loads(y_part)
+                                    output_text = y["choices"][0]["delta"]["content"]
+                                except Exception as e:
+                                    curr_buf = x_part[1] # finish one response
+                                    logger.error(f"Read the error content. Content: {y_part}, Info:{e}")
+                                    continue  # skip current part
+                                total_text += output_text
+                                curr_buf = x_part[1] # finish one response and look to leftover
+                                yield {"text": total_text, "error_code": 0}
+                            else: # no part can be sent and continue to read
+                                break
+                    return # finish the total
                 else:
                     logger.error(
                         f"Error occurs and retry if possible. status_code={resp.status_code}"
                     )
         except Exception as exc:
             if total_text:
-                logger.error(f"Reading interrupted. Info:{exc.args}")
+                logger.error(f"Reading interrupted. Info:{exc}")
                 break
             else:
-                logger.error(f"Error occurs and retry if possible. Info:{exc.args}")
+                logger.error(f"Error occurs and retry if possible. Info:{exc}")
         retry_num += 1
     else:
         raise ValueError(f"Exceed the maximal retry times.")
