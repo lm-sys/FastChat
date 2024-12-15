@@ -31,7 +31,7 @@ from fastchat.serve.gradio_web_server import (
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, ChatbotSandboxState, create_chatbot_sandbox_state, on_click_run_code, update_sandbox_config_multi, update_visibility
+from fastchat.serve.sandbox.code_runner import SandboxGradioSandboxComponents, DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, ChatbotSandboxState, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi, update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -426,11 +426,7 @@ def build_side_by_side_ui_named(models):
 
     # sandbox states and components
     sandbox_states: list[gr.State] = [] # state for each chatbot
-    sandboxes_components: list[tuple[
-        gr.Markdown, # sandbox_output
-        SandboxComponent,  # sandbox_ui
-        gr.Code, # sandbox_code
-    ]] = [] # components for each chatbot
+    sandboxes_components: list[SandboxGradioSandboxComponents] = [] # components for each chatbot
     sandbox_hidden_components = []
 
     with gr.Group():
@@ -463,7 +459,19 @@ def build_side_by_side_ui_named(models):
                                     )
 
                                 with gr.Tab(label="Code", visible=False) as sandbox_code_tab:
-                                    sandbox_code = gr.Code(value="", interactive=False, visible=False)
+                                    sandbox_code = gr.Code(
+                                        value="",
+                                        interactive=True, # allow user edit
+                                        visible=False
+                                    )
+                                    with gr.Row():
+                                        sandbox_code_submit_btn = gr.Button(value="Apply Changes", visible=True, interactive=True, variant='primary', size='sm')
+                                        # run code when click apply changes
+                                        sandbox_code_submit_btn.click(
+                                            fn=on_edit_code,
+                                            inputs=[states[chatbotIdx], sandbox_state, sandbox_output, sandbox_ui, sandbox_code],
+                                            outputs=[sandbox_output, sandbox_ui, sandbox_code]
+                                        )
 
                                 sandbox_states.append(sandbox_state)
                                 sandboxes_components.append((
@@ -674,9 +682,9 @@ function (a, b, c, d) {
         sandbox_state = sandbox_states[chatbotIdx]
         sandbox_components = sandboxes_components[chatbotIdx]
 
-        # trigger sandbox run
+        # trigger sandbox run when click code message
         chatbot.select(
-            fn=on_click_run_code,
+            fn=on_click_code_message_run,
             inputs=[state, sandbox_state, *sandbox_components],
             outputs=[*sandbox_components],
         )
