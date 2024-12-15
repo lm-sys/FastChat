@@ -18,6 +18,7 @@ API key for the e2b API.
 '''
 
 class SandboxEnvironment(StrEnum):
+    AUTO = 'Auto'
     # Code Interpreter
     PYTHON_CODE_INTERPRETER = 'Python Code Interpreter'
     JAVASCRIPT_CODE_INTERPRETER = 'Javascript Code Interpreter'
@@ -28,15 +29,17 @@ class SandboxEnvironment(StrEnum):
     STREAMLIT = 'Streamlit'
     NICEGUI = 'NiceGUI'
     PYGAME = 'PyGame'
-    # AUTO = 'Auto' # TODO: Implement auto-detection of sandbox environment
 
 
 SUPPORTED_SANDBOX_ENVIRONMENTS: list[str] = [
     env.value for env in SandboxEnvironment
 ]
 
-VALID_GRADIO_CODE_LANGUAGES = ['python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
-                               'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 'sql-esper']
+VALID_GRADIO_CODE_LANGUAGES = [
+    'python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
+    'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 
+    'sql-esper'
+]
 '''
 Languages that gradio code component can render.
 '''
@@ -46,10 +49,10 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE:***"
+SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE***"
 
 GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
-***REMOTE SANDBOX CODE:***
+***REMOTE SANDBOX CODE***:
 ```<language>
 <code>
 ```
@@ -115,16 +118,38 @@ Do not use external libraries or import external files outside of the allowed li
 Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
 """
 
-DEFAULT_SANDBOX_INSTRUCTIONS = {
-    # "Auto": "Auto-detect the code language and run in the appropriate sandbox.",
+AUTO_SANDBOX_INSTRUCTION = (
+"""
+You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
+***REMOTE SANDBOX CODE***[<sandbox_environment_name>]:
+```<language>
+<code>
+```
+
+You can choose from the following sandbox environments:
+"""
++ 'Sandbox Environment Name: ' + SandboxEnvironment.PYTHON_CODE_INTERPRETER + '\n' + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER + '\n' + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.REACT + '\n' + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.VUE + '\n' + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.GRADIO + '\n' + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.STREAMLIT + '\n' + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.NICEGUI + '\n' + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.PYGAME + '\n' + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip() + '\n------\n'
+)
+
+DEFAULT_SANDBOX_INSTRUCTIONS: dict[SandboxEnvironment, str] = {
+    SandboxEnvironment.AUTO: AUTO_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.PYTHON_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip(),
     SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip(),
-    SandboxEnvironment.REACT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(), SandboxEnvironment.VUE: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.REACT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.VUE: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.GRADIO: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.STREAMLIT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.NICEGUI: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.PYGAME: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
+
 
 type SandboxGradioSandboxComponents = tuple[
     gr.Markdown | Any,  # sandbox_output
@@ -155,6 +180,10 @@ class ChatbotSandboxState(TypedDict):
     '''
     The sandbox environment to run the code.
     '''
+    auto_selected_sandbox_environment: SandboxEnvironment | None
+    '''
+    The sandbox environment selected automatically.
+    '''
     code_to_execute: str | None
     '''
     The code to execute in the sandbox.
@@ -176,6 +205,7 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
     return {
         "enable_sandbox": False,
         "sandbox_environment": None,
+        "auto_selected_sandbox_environment": None,
         "sandbox_instruction": None,
         "code_to_execute": "",
         "code_language": None,
@@ -220,30 +250,39 @@ def update_visibility_for_single_model(visible: bool, component_cnt: int):
     return [gr.update(visible=visible)] * component_cnt
 
 
-def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
+def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, bool, SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message.
 
     Returns:
-        tuple[str, str, bool]: A tuple containing the code, code language, and a boolean indicating whether the code is a webpage.
+        tuple[str, str, bool]: A tuple:
+            1. code,
+            2. code language, 
+            3. a boolean indicating whether the code is a webpage
+            4. sandbox environment if auto environment is enabled, otherwise None
     '''
     # Regular expression to match code blocks with optional language
-    code_block_regexes = [
-        rf'{re.escape(SANDBOX_CODE_TAG)}\s*```(\w+)?\n(.*?)```',
-        r'```(\w+)?\n(.*?)```'
-    ]
-    for code_block_regex in code_block_regexes:
-        matches = re.findall(code_block_regex, message, re.DOTALL)
-        if matches:
-            break
+    code_block_regex = rf'{re.escape(SANDBOX_CODE_TAG)}(\[(?P<sandbox_env_name>[^\]]+)\])?:\s*```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
 
-    if matches:
-        # Extract code language and code
-        code_lang = matches[0][0] or ''
-        code = matches[0][1].strip()
-    else:
-        # if no code block is found, return None
+    match = re.search(code_block_regex, message, re.DOTALL)
+    if not match:
+        # if no re matched code block is found, return None
         return None
+
+    sandbox_env_name = match.group('sandbox_env_name') or None
+    code_lang = match.group('code_lang') or ''
+    code = match.group('code').strip()
+
+    if enable_auto_env and sandbox_env_name is None:
+        # auto must come with a sandbox environment name
+        return None
+
+    if sandbox_env_name is not None:
+        try :
+            sandbox_env_name = SandboxEnvironment(sandbox_env_name)
+        except ValueError:
+            # if the sandbox environment name is not valid, return None
+            return None
 
     # Determine if the code is related to a webpage
     if any(word in message.lower() for word in ['typescript', 'javascript', 'react', 'vue', 'gradio', 'streamlit']):
@@ -251,7 +290,7 @@ def extract_code_from_markdown(message: str) -> tuple[str, str, bool] | None:
     else:
         is_webpage = False
 
-    return code, code_lang, is_webpage
+    return code, code_lang, is_webpage, sandbox_env_name
 
 
 def render_result(result):
@@ -553,11 +592,14 @@ def on_click_code_message_run(
         return
 
     message = evt.value.replace(RUN_CODE_BUTTON_HTML, "").strip()
-    extract_result = extract_code_from_markdown(message)
+    extract_result = extract_code_from_markdown(
+        message=message,
+        enable_auto_env=sandbox_state['sandbox_environment'] == SandboxEnvironment.AUTO
+    )
     if extract_result is None:
         yield gr.skip(), gr.skip(), gr.skip()
         return
-    code, code_language, is_web_page = extract_result
+    code, code_language, is_web_page, env_selection = extract_result
 
     # validate whether code to execute has been updated.
     previous_code = sandbox_state['code_to_execute']
@@ -574,7 +616,8 @@ def on_click_code_message_run(
     sandbox_state['code_to_execute'] = code
     sandbox_state['code_language'] = code_language
     sandbox_state['is_web_page'] = is_web_page
-
+    if sandbox_state['sandbox_environment'] == SandboxEnvironment.AUTO:
+        sandbox_state['auto_selected_sandbox_environment'] = env_selection
     yield from on_run_code(state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code)
 
 def on_run_code(
@@ -613,106 +656,109 @@ def on_run_code(
         gr.Code(value=code, language=code_language, visible=True),
     )
 
-    if sandbox_state['sandbox_environment'] == SandboxEnvironment.REACT:
-        url = run_react_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.VUE:
-        url = run_vue_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.PYGAME:
-        url = run_pygame_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.GRADIO:
-        url = run_gradio_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.STREAMLIT:
-        url = run_streamlit_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.NICEGUI:
-        url = run_nicegui_sandbox(code)
-        yield (
-            gr.Markdown(value="### Running Sandbox", visible=True),
-            SandboxComponent(
-                value=(url, code),
-                label="Example",
-                visible=True,
-                key="newsandbox",
-            ),
-            gr.skip(),
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.PYTHON_CODE_INTERPRETER:
-        output = run_code_interpreter(
-            code=code, code_language='python'
-        )
-        yield (
-            gr.Markdown(value=output, sanitize_html=False, visible=True),
-            SandboxComponent(
-                value=('', ''),
-                label="Example",
-                visible=False,
-                key="newsandbox",
-            ),  # hide the sandbox component
-            gr.skip()
-        )
-    elif sandbox_state['sandbox_environment'] == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
-        output = run_code_interpreter(
-            code=code, code_language='javascript'
-        )
-        yield (
-            gr.Markdown(value=output, visible=True),
-            SandboxComponent(
-                value=('', ''),
-                label="Example",
-                visible=False,
-                key="newsandbox",
-            ),  # hide the sandbox component
-            gr.skip()
-        )
-    else:
-        raise ValueError(
-            f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
+    sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
+
+    match sandbox_env:
+        case SandboxEnvironment.REACT:
+            url = run_react_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.VUE:
+            url = run_vue_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.PYGAME:
+            url = run_pygame_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.GRADIO:
+            url = run_gradio_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.STREAMLIT:
+            url = run_streamlit_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.NICEGUI:
+            url = run_nicegui_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
+        case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
+            output = run_code_interpreter(
+                code=code, code_language='python'
+            )
+            yield (
+                gr.Markdown(value=output, sanitize_html=False, visible=True),
+                SandboxComponent(
+                    value=('', ''),
+                    label="Example",
+                    visible=False,
+                    key="newsandbox",
+                ),  # hide the sandbox component
+                gr.skip()
+            )
+        case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
+            output = run_code_interpreter(
+                code=code, code_language='javascript'
+            )
+            yield (
+                gr.Markdown(value=output, visible=True),
+                SandboxComponent(
+                    value=('', ''),
+                    label="Example",
+                    visible=False,
+                    key="newsandbox",
+                ),  # hide the sandbox component
+                gr.skip()
+            )
+        case _:
+            raise ValueError(
+                f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
