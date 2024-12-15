@@ -965,7 +965,9 @@ def build_single_model_ui(models, add_promotion_links=False):
                             sandbox_code = gr.Code(
                                 value="",
                                 interactive=True, # allow user edit
-                                visible=False
+                                visible=False,
+                                wrap_lines=True,
+                                label='Sandbox Code',
                             )
                             with gr.Row():
                                 sandbox_code_submit_btn = gr.Button(value="Apply Changes", visible=True, interactive=True, variant='primary', size='sm')

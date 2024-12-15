@@ -462,7 +462,9 @@ def build_side_by_side_ui_named(models):
                                     sandbox_code = gr.Code(
                                         value="",
                                         interactive=True, # allow user edit
-                                        visible=False
+                                        visible=False,
+                                        wrap_lines=True,
+                                        label='Sandbox Code',
                                     )
                                     with gr.Row():
                                         sandbox_code_submit_btn = gr.Button(value="Apply Changes", visible=True, interactive=True, variant='primary', size='sm')
