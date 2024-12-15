@@ -3,7 +3,7 @@ Run generated code in a sandbox environment.
 '''
 
 from enum import StrEnum
-from typing import Generator, TypedDict
+from typing import Any, Generator, TypedDict
 import gradio as gr
 import re
 import os
@@ -16,7 +16,6 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 '''
 API key for the e2b API.
 '''
-
 
 class SandboxEnvironment(StrEnum):
     # Code Interpreter
@@ -127,16 +126,47 @@ DEFAULT_SANDBOX_INSTRUCTIONS = {
     SandboxEnvironment.PYGAME: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
 
+type SandboxGradioSandboxComponents = tuple[
+    gr.Markdown | Any,  # sandbox_output
+    SandboxComponent | Any,  # sandbox_ui
+    gr.Code | Any,  # sandbox_code
+]
+'''
+Gradio components for the sandbox.
+'''
 
 class ChatbotSandboxState(TypedDict):
     '''
     Chatbot sandbox state in gr.state.
     '''
     enable_sandbox: bool
-    sandbox_environment: str | None
+    '''
+    Whether the code sandbox is enabled.
+    '''
     sandbox_instruction: str | None
-    code_to_execute: str | None
+    '''
+    The sandbox instruction to display.
+    '''
     enabled_round: int
+    '''
+    The chat round after which the sandbox is enabled.
+    '''
+    sandbox_environment: SandboxEnvironment | None
+    '''
+    The sandbox environment to run the code.
+    '''
+    code_to_execute: str | None
+    '''
+    The code to execute in the sandbox.
+    '''
+    code_language: str | None
+    '''
+    The code language to execute in the sandbox.
+    '''
+    is_web_page: bool | None
+    '''
+    Whether the code is a webpage.
+    '''
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -148,6 +178,8 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "sandbox_environment": None,
         "sandbox_instruction": None,
         "code_to_execute": "",
+        "code_language": None,
+        "is_web_page": False,
         "enabled_round": 0
     }
 
@@ -483,44 +515,90 @@ def run_streamlit_sandbox(code: str) -> str:
     url = f"https://{host}"
     return url
 
-
-def on_click_run_code(
+def on_edit_code(
     state,
     sandbox_state: ChatbotSandboxState,
     sandbox_output: gr.Markdown,
     sandbox_ui: SandboxComponent,
-    sandbox_code: gr.Code,
+    sandbox_code: str,
+) -> Generator[tuple[Any, Any, Any], None, None]:
+    '''
+    Gradio Handler when code is edited.
+    '''
+    if sandbox_state['enable_sandbox'] is False:
+        yield None, None, None
+        return
+    if len(sandbox_code.strip()) == 0 or sandbox_code == sandbox_state['code_to_execute']:
+        yield gr.skip(), gr.skip(), gr.skip()
+        return
+    sandbox_state['code_to_execute'] = sandbox_code
+    yield from on_run_code(state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code)
+
+def on_click_code_message_run(
+    state,
+    sandbox_state: ChatbotSandboxState,
+    sandbox_output: gr.Markdown,
+    sandbox_ui: SandboxComponent,
+    sandbox_code: str,
     evt: gr.SelectData
-):
+) -> Generator[SandboxGradioSandboxComponents, None, None]:
     '''
-    gradio fn when run code is clicked. Update Sandbox components.
+    Gradio Handler when run code button in message is clicked. Update Sandbox components.
     '''
-    if sandbox_state['enable_sandbox'] is not True or not evt.value.endswith(RUN_CODE_BUTTON_HTML):
-        return None, None, None
+    if sandbox_state['enable_sandbox'] is False:
+        yield None, None, None
+        return
+    if not evt.value.endswith(RUN_CODE_BUTTON_HTML):
+        yield gr.skip(), gr.skip(), gr.skip()
+        return
 
     message = evt.value.replace(RUN_CODE_BUTTON_HTML, "").strip()
-
     extract_result = extract_code_from_markdown(message)
     if extract_result is None:
-        return gr.skip(), gr.skip(), gr.skip()
+        yield gr.skip(), gr.skip(), gr.skip()
+        return
+    code, code_language, is_web_page = extract_result
+
+    # validate whether code to execute has been updated.
+    previous_code = sandbox_state['code_to_execute']
+    if previous_code == code:
+        yield gr.skip(), gr.skip(), gr.skip()
+        return
+
+    if code_language == 'tsx':
+        code_language = 'typescript'
+    code_language = code_language.lower() if code_language and code_language.lower(
+        # ensure gradio supports the code language
+    ) in VALID_GRADIO_CODE_LANGUAGES else None
+
+    sandbox_state['code_to_execute'] = code
+    sandbox_state['code_language'] = code_language
+    sandbox_state['is_web_page'] = is_web_page
+
+    yield from on_run_code(state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code)
+
+def on_run_code(
+    state,
+    sandbox_state: ChatbotSandboxState,
+    sandbox_output: gr.Markdown,
+    sandbox_ui: SandboxComponent,
+    sandbox_code: str
+) -> Generator[tuple[Any, Any, Any], None, None]:
+    '''
+    gradio fn when run code button is clicked. Update Sandbox components.
+    '''
+    if sandbox_state['enable_sandbox'] is False:
+        yield None, None, None
+        return
 
     # validate e2b api key
     if not E2B_API_KEY:
         raise ValueError("E2B_API_KEY is not set in env vars.")
 
-    code, code_language, is_web_page = extract_result
-
-    # validate whether code to execute has been updated.
-    previous_code = sandbox_state.get('code_to_execute', '')
-    if previous_code == code:
-        print("Code has not changed. Skipping execution.")
-        yield (
-            gr.skip(),
-            gr.skip(),
-            gr.skip()
-        )
+    code, code_language, is_web_page = sandbox_state['code_to_execute'], sandbox_state['code_language'], sandbox_state['is_web_page']
+    if code is None or code_language is None or is_web_page is None:
+        yield None, None, None
         return
-    sandbox_state['code_to_execute'] = code
 
     if code_language == 'tsx':
         code_language = 'typescript'
