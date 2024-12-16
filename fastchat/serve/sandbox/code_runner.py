@@ -35,6 +35,15 @@ SUPPORTED_SANDBOX_ENVIRONMENTS: list[str] = [
     env.value for env in SandboxEnvironment
 ]
 
+WEB_UI_SANDBOX_ENVIRONMENTS = [
+    SandboxEnvironment.REACT,
+    SandboxEnvironment.VUE,
+    SandboxEnvironment.GRADIO,
+    SandboxEnvironment.STREAMLIT,
+    SandboxEnvironment.NICEGUI,
+    SandboxEnvironment.PYGAME,
+]
+
 VALID_GRADIO_CODE_LANGUAGES = [
     'python', 'c', 'cpp', 'markdown', 'json', 'html', 'css', 'javascript', 'jinja2', 'typescript', 'yaml', 'dockerfile', 'shell', 'r', 'sql',
     'sql-msSQL', 'sql-mySQL', 'sql-mariaDB', 'sql-sqlite', 'sql-cassandra', 'sql-plSQL', 'sql-hive', 'sql-pgSQL', 'sql-gql', 'sql-gpSQL', 'sql-sparkSQL', 
@@ -192,10 +201,6 @@ class ChatbotSandboxState(TypedDict):
     '''
     The code language to execute in the sandbox.
     '''
-    is_web_page: bool | None
-    '''
-    Whether the code is a webpage.
-    '''
 
 
 def create_chatbot_sandbox_state() -> ChatbotSandboxState:
@@ -209,7 +214,6 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "sandbox_instruction": None,
         "code_to_execute": "",
         "code_language": None,
-        "is_web_page": False,
         "enabled_round": 0
     }
 
@@ -250,7 +254,7 @@ def update_visibility_for_single_model(visible: bool, component_cnt: int):
     return [gr.update(visible=visible)] * component_cnt
 
 
-def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, bool, SandboxEnvironment | None] | None:
+def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message.
 
@@ -258,8 +262,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         tuple[str, str, bool]: A tuple:
             1. code,
             2. code language, 
-            3. a boolean indicating whether the code is a webpage
-            4. sandbox environment if auto environment is enabled, otherwise None
+            3. sandbox environment if auto environment is enabled, otherwise None
     '''
     # Regular expression to match code blocks with optional language
     code_block_regex = rf'{re.escape(SANDBOX_CODE_TAG)}(\[(?P<sandbox_env_name>[^\]]+)\])?:\s*```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
@@ -284,13 +287,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
             # if the sandbox environment name is not valid, return None
             return None
 
-    # Determine if the code is related to a webpage
-    if any(word in message.lower() for word in ['typescript', 'javascript', 'react', 'vue', 'gradio', 'streamlit']):
-        is_webpage = True
-    else:
-        is_webpage = False
-
-    return code, code_lang, is_webpage, sandbox_env_name
+    return code, code_lang, sandbox_env_name
 
 
 def render_result(result):
@@ -599,7 +596,7 @@ def on_click_code_message_run(
     if extract_result is None:
         yield gr.skip(), gr.skip(), gr.skip()
         return
-    code, code_language, is_web_page, env_selection = extract_result
+    code, code_language, env_selection = extract_result
 
     # validate whether code to execute has been updated.
     previous_code = sandbox_state['code_to_execute']
@@ -615,7 +612,6 @@ def on_click_code_message_run(
 
     sandbox_state['code_to_execute'] = code
     sandbox_state['code_language'] = code_language
-    sandbox_state['is_web_page'] = is_web_page
     if sandbox_state['sandbox_environment'] == SandboxEnvironment.AUTO:
         sandbox_state['auto_selected_sandbox_environment'] = env_selection
     yield from on_run_code(state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code)
@@ -638,8 +634,8 @@ def on_run_code(
     if not E2B_API_KEY:
         raise ValueError("E2B_API_KEY is not set in env vars.")
 
-    code, code_language, is_web_page = sandbox_state['code_to_execute'], sandbox_state['code_language'], sandbox_state['is_web_page']
-    if code is None or code_language is None or is_web_page is None:
+    code, code_language = sandbox_state['code_to_execute'], sandbox_state['code_language']
+    if code is None or code_language is None:
         yield None, None, None
         return
 
