@@ -466,7 +466,6 @@ def bot_response(
     if request:
         ip = get_ip(request)
         logger.info(f"bot_response. ip: {ip}")
-        logger.info(f"bot_response. btn_list_length: {sandbox_state['btn_list_length']}")
     
     start_tstamp = time.time()
     temperature = float(temperature)

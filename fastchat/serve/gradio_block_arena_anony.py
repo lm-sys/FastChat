@@ -34,6 +34,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    update_sandbox_system_message
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
@@ -41,6 +42,7 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
 )
+from fastchat.constants import INPUT_CHAR_LEN_LIMIT
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -278,7 +280,7 @@ def get_battle_pair(
         return rival_model, chosen_model
 
 
-def add_text(
+def add_text_multi(
     #state0, state1, model_selector0, model_selector1, text, request: gr.Request
     state0, state1,
     model_selector0, model_selector1,
@@ -306,6 +308,7 @@ def add_text(
             State(model_left),
             State(model_right),
         ]
+        logger.info(f"model: {states[0].model_name}, {states[1].model_name}")
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -374,6 +377,48 @@ def add_text(
         + [hint_msg]
     )
 
+def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
+    ip = get_ip(request)
+    logger.info(f"add_text. ip: {ip}. len: {len(text)}.")
+
+    if state is None:
+        state = State(model_selector)
+
+    if state.model_name == "":
+        model_left, model_right = get_battle_pair(
+            models,
+            BATTLE_TARGETS,
+            OUTAGE_MODELS,
+            SAMPLING_WEIGHTS,
+            SAMPLING_BOOST_MODELS,
+        )
+        state = State(model_left)
+        logger.info(f"model: {state.model_name}")
+
+    if len(text) <= 0:
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * sandbox_state["btn_list_length"]
+
+    all_conv_text = state.conv.get_prompt()
+    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
+    flagged = moderation_filter(all_conv_text, [state.model_name])
+    # flagged = moderation_filter(text, [state.model_name])
+    if flagged:
+        logger.info(f"violate moderation. ip: {ip}. text: {text}")
+        # overwrite the original text
+        text = MODERATION_MSG
+
+    if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
+        logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
+        state.skip_next = True
+        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
+            no_change_btn,
+        ) * sandbox_state["btn_list_length"]
+
+    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    state.conv.append_message(state.conv.roles[0], text)
+    state.conv.append_message(state.conv.roles[1], None)
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * sandbox_state["btn_list_length"]
 
 def bot_response_multi(
     state0,
@@ -625,6 +670,9 @@ def build_side_by_side_ui_anony(models):
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
+        send_btn_left = gr.Button(value="Send to Left", variant="primary", scale=0)
+        send_btn_right = gr.Button(value="Send to Right", variant="primary", scale=0)
+        send_btns_one_side = [send_btn_left, send_btn_right]
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
@@ -744,7 +792,7 @@ function (a, b, c, d) {
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     textbox.submit(
-        add_text,
+        add_text_multi,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list + [slow_warning],
     ).then(
@@ -766,7 +814,7 @@ function (a, b, c, d) {
     )
 
     send_btn.click(
-        add_text,
+        add_text_multi,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
     ).then(
@@ -790,6 +838,27 @@ function (a, b, c, d) {
         state = states[chatbotIdx]
         sandbox_state = sandbox_states[chatbotIdx]
         sandbox_components = sandboxes_components[chatbotIdx]
+        model_selector = model_selectors[chatbotIdx]
+
+        send_btns_one_side[chatbotIdx].click(
+            add_text,
+            [state, model_selector, sandbox_state, textbox],
+            [state, chatbot, textbox] + btn_list,
+        ).then(
+            update_sandbox_system_message,
+            [state, sandbox_state, model_selector],
+            [state, chatbot]
+        ).then(
+            bot_response,
+            [state, temperature, top_p, max_output_tokens, sandbox_state],
+            [state, chatbot] + btn_list,
+        ).then(
+            flash_buttons, [], btn_list
+        ).then(
+            lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+            inputs=[sandbox_state],
+            outputs=[sandbox_env_choice])
+             
         # trigger sandbox run when click code message
         chatbot.select(
             fn=on_click_code_message_run,
