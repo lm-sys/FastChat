@@ -370,7 +370,7 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
 
     if len(text) <= 0:
         state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 5
+        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * sandbox_state["btn_list_length"]
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
@@ -386,12 +386,12 @@ def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
             no_change_btn,
-        ) * 5
+        ) * sandbox_state["btn_list_length"]
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * sandbox_state["btn_list_length"]
 
 
 def model_worker_stream_iter(
@@ -466,6 +466,7 @@ def bot_response(
     if request:
         ip = get_ip(request)
         logger.info(f"bot_response. ip: {ip}")
+        logger.info(f"bot_response. btn_list_length: {sandbox_state['btn_list_length']}")
     
     start_tstamp = time.time()
     temperature = float(temperature)
@@ -475,7 +476,7 @@ def bot_response(
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
-        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * sandbox_state["btn_list_length"]
         return
 
     if apply_rate_limit:
@@ -484,7 +485,7 @@ def bot_response(
             error_msg = RATE_LIMIT_MSG + "\n\n" + ret["reason"]
             logger.info(f"rate limit reached. ip: {ip}. error_msg: {ret['reason']}")
             state.conv.update_last_message(error_msg)
-            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * sandbox_state["btn_list_length"]
             return
 
     conv: Conversation = state.conv
@@ -509,11 +510,7 @@ def bot_response(
             yield (
                 state,
                 state.to_gradio_chatbot(),
-                disable_btn,
-                disable_btn,
-                disable_btn,
-                enable_btn,
-                enable_btn,
+                (disable_btn,) * sandbox_state["btn_list_length"],
             )
             return
 
@@ -567,7 +564,7 @@ def bot_response(
 
     # conv.update_last_message("▌")
     conv.update_last_message(html_code)
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * (sandbox_state["btn_list_length"])
 
     try:
         data = {"text": ""}
@@ -576,14 +573,12 @@ def bot_response(
                 output = data["text"].strip()
                 conv.update_last_message(output + "▌")
                 # conv.update_last_message(output + html_code)
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * sandbox_state["btn_list_length"]
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 conv.update_last_message(output)
                 yield (state, state.to_gradio_chatbot()) + (
-                    disable_btn,
-                    disable_btn,
-                    disable_btn,
+                    (disable_btn,) * (sandbox_state["btn_list_length"]-2),
                     enable_btn,
                     enable_btn,
                 )
@@ -598,16 +593,14 @@ def bot_response(
                 if not last_message[1].endswith(RUN_CODE_BUTTON_HTML):
                     last_message[1] += "\n\n" + RUN_CODE_BUTTON_HTML
 
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * sandbox_state["btn_list_length"]
     except requests.exceptions.RequestException as e:
         conv.update_last_message(
             f"{SERVER_ERROR_MSG}\n\n"
             f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
         )
         yield (state, state.to_gradio_chatbot()) + (
-            disable_btn,
-            disable_btn,
-            disable_btn,
+            (disable_btn,) * (sandbox_state["btn_list_length"]-2),
             enable_btn,
             enable_btn,
         )
@@ -618,9 +611,7 @@ def bot_response(
             f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
         )
         yield (state, state.to_gradio_chatbot()) + (
-            disable_btn,
-            disable_btn,
-            disable_btn,
+            (disable_btn,) * (sandbox_state["btn_list_length"]-2),
             enable_btn,
             enable_btn,
         )
@@ -929,7 +920,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         )
 
     # Sandbox state and components
-    sandbox_state = None
     sandboxes_components: list[SandboxGradioSandboxComponents] = []
     sandbox_hidden_components = []
 
@@ -949,7 +939,7 @@ def build_single_model_ui(models, add_promotion_links=False):
                 with sandbox_group:
                     sandbox_column = gr.Column(visible=False,scale=1)
                     with sandbox_column:
-                        sandbox_state = gr.State(create_chatbot_sandbox_state())
+                        sandbox_state = gr.State(create_chatbot_sandbox_state(btn_list_length=5))
                         # Add containers for the sandbox output
                         sandbox_title = gr.Markdown(value=f"### Model Sandbox", visible=False)
                         sandbox_output_tab = gr.Tab(label="Output", visible=False)
@@ -1130,6 +1120,10 @@ def build_single_model_ui(models, add_promotion_links=False):
         update_sandbox_system_message,
         [state, sandbox_state, model_selector],
         [state, chatbot]
+    ).then(
+        lambda sandbox_state: gr.update(sandbox_state['btn_list_length'] == len(btn_list)),
+        inputs=[sandbox_state],
+        outputs=[sandbox_state]
     ).then(
         bot_response,
         [state, temperature, top_p, max_output_tokens, sandbox_state],

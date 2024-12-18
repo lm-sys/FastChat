@@ -554,7 +554,7 @@ def build_side_by_side_ui_anony(models):
                         sandbox_hidden_components.append(sandbox_row)
                         for chatbotIdx in range(num_sides):
                             with gr.Column(scale=1, visible=False) as column:
-                                sandbox_state = gr.State(create_chatbot_sandbox_state())
+                                sandbox_state = gr.State(create_chatbot_sandbox_state(btn_list_length=6))
                                 # Add containers for the sandbox output
                                 sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=False)
 
