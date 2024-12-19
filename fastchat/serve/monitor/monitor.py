@@ -1035,11 +1035,17 @@ def build_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
             try:
-                with gr.Tab("Copilot Arena Leaderboard", id=5):
-                    from fastchat.serve.monitor.copilot_arena import (
-                        build_copilot_arena_tab,
-                    )
+                from fastchat.serve.monitor.copilot_arena import (
+                    build_copilot_arena_tab,
+                    copilot_arena_leaderboard_url,
+                )
 
+                if not copilot_arena_leaderboard_url:
+                    raise ValueError(
+                        "COPILOT_ARENA_LEADERBOARD_URL environment variable is not set. "
+                        "Please configure it to a valid URL."
+                    )
+                with gr.Tab("Copilot Arena Leaderboard", id=5):
                     build_copilot_arena_tab()
             except Exception as e:
                 print(f"Unable to build Copilot Arena's Leaderboard. Error: {e}")
