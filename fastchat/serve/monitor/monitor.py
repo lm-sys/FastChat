@@ -1052,10 +1052,15 @@ def build_leaderboard_tab(
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
-            with gr.Tab("Copilot Arena Leaderboard", id=5):
-                from fastchat.serve.monitor.copilot_arena import build_copilot_arena_tab
+            try:
+                with gr.Tab("Copilot Arena Leaderboard", id=5):
+                    from fastchat.serve.monitor.copilot_arena import (
+                        build_copilot_arena_tab,
+                    )
 
-                build_copilot_arena_tab()
+                    build_copilot_arena_tab()
+            except Exception as e:
+                print(f"Unable to build Copilot Arena's Leaderboard. Error: {e}")
 
         if not show_plot:
             gr.Markdown(
