@@ -7,6 +7,7 @@ import argparse
 import pickle
 import time
 from typing import List
+import plotly.express as px
 
 import gradio as gr
 
@@ -52,6 +53,56 @@ from fastchat.utils import (
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+
+
+def build_visualizer():
+    visualizer_markdown = """
+    # 🔍 Arena Visualizer
+    Data explorer provides interactive tools to explore and draw insights from our leaderboard data. 
+    """
+
+    gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
+
+    with gr.Tabs():
+        with gr.Tab("Topic Explorer", id=0):
+            topic_markdown = """
+            ## *Welcome to the Topic Explorer*
+            This tool lets you dive into user-submitted prompts, organized into general 
+            categories and detailed subcategories. Using the sunburst chart, you can easily 
+            explore the data and understand how different topics are distributed.
+
+            ### How to Use:
+            - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+            - Click to Explore: 
+                - Click on a main category to see its subcategories.
+                - Click on subcategories to see example prompts in the sidebar.
+            - Undo and Reset: Click the center of the chart to return to the top level.
+
+            Start exploring and discover interesting trends in the data!
+            
+            """
+            gr.Markdown(topic_markdown)
+
+            frame = """
+                <iframe width="100%" scrolling="no" style="height: 800px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/index.html">
+                </iframe>
+            """
+            gr.HTML(frame)
+
+        with gr.Tab("Price Analysis", id=1):
+            price_markdown = """
+            ## *Price Analysis Visualizations*
+            Below is a scatterplot depicting a subset of the arena's models' score against their cost effectiveness. Start exploring and discover some interesting trends in the data!
+            """
+            gr.Markdown(price_markdown)
+            frame = """
+                <iframe width="100%" scrolling="no" style="height: 1050px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/price-scatterplot.html">
+                </iframe>
+            """
+            gr.HTML(frame)
+
 
 
 def load_demo(context: Context, request: gr.Request):
@@ -199,6 +250,9 @@ window.__gradio_mode__ = "app";
                         arena_hard_table,
                         show_plot=True,
                     )
+            if args.show_visualizer:
+                with gr.Tab("🔍 Arena Visualizer", id=5):
+                    build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
                 about = build_about()
@@ -304,6 +358,12 @@ if __name__ == "__main__":
         "--password",
         type=str,
         help="Set the password for the gradio web server",
+    )
+    parser.add_argument(
+        "--show-visualizer",
+        action="store_true",
+        default=False,
+        help="Show the Data Visualizer tab",
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
