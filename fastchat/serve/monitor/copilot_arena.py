@@ -7,12 +7,6 @@ from fastchat.serve.monitor.monitor import recompute_final_ranking
 
 copilot_arena_leaderboard_url = os.getenv("COPILOT_ARENA_LEADERBOARD_URL")
 
-if not copilot_arena_leaderboard_url:
-    raise ValueError(
-        "COPILOT_ARENA_LEADERBOARD_URL environment variable is not set. "
-        "Please configure it to a valid URL."
-    )
-
 
 def process_copilot_arena_leaderboard(leaderboard):
     leaderboard = leaderboard.copy().loc[leaderboard["visibility"] == "public"]
@@ -41,9 +35,6 @@ def process_copilot_arena_leaderboard(leaderboard):
 
 
 def build_copilot_arena_tab():
-    if copilot_arena_leaderboard_url is None:
-        print("Copilot Arena Leaderboard URL is not set. Skipping this leaderboard.")
-        return
     response = requests.get(copilot_arena_leaderboard_url)
     if response.status_code == 200:
         leaderboard = pd.DataFrame(response.json()["elo_data"])
