@@ -1,8 +1,10 @@
+import os
+import time
+
 import argparse
 import json
 import pandas as pd
-import os
-import time
+import numpy as np
 import concurrent.futures
 import tqdm
 import yaml
@@ -10,19 +12,18 @@ import random
 import threading
 import orjson
 
+from collections import defaultdict
 from category import Category
+from utils import api_config
 
+TASK_COMPLETIONS = defaultdict(lambda: set())
+TASK_TRACKER = defaultdict(lambda: {})
 
 LOCK = threading.RLock()
 
 TASKS = None
 CACHE_DICT = None
 OUTPUT_DICT = None
-
-# API setting constants
-API_MAX_RETRY = None
-API_RETRY_SLEEP = None
-API_ERROR_OUTPUT = None
 
 
 # load config args from config yaml files
@@ -42,94 +43,37 @@ def get_endpoint(endpoint_list):
     return api_dict
 
 
-def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=None):
-    import openai
-
-    if api_dict:
-        client = openai.OpenAI(
-            base_url=api_dict["api_base"],
-            api_key=api_dict["api_key"],
-        )
-    else:
-        client = openai.OpenAI()
-
-    output = API_ERROR_OUTPUT
-    for _ in range(API_MAX_RETRY):
-        try:
-            # print(messages)
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
-            )
-            output = completion.choices[0].message.content
-            # print(output)
-            break
-        except openai.RateLimitError as e:
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.BadRequestError as e:
-            print(messages)
-            print(type(e), e)
-            break
-        except openai.APIConnectionError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.InternalServerError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except Exception as e:
-            print(type(e), e)
-            break
-
-    return output
-
-
 def get_answer(
-    question: dict,
+    batch: pd.DataFrame,
     model_name: str,
     max_tokens: int,
     temperature: float,
     answer_file: str,
     api_dict: dict,
-    categories: list,
+    category: object,
     testing: bool,
 ):
-    if "category_tag" in question:
-        category_tag = question["category_tag"]
-    else:
-        category_tag = {}
+    uid_to_row = {}
+    for _, row in batch.iterrows():
+        uid = row["uid"]      
+        uid_to_row[uid] = row
+        if "category_tag" in row:
+            TASK_TRACKER[uid].update(row["category_tag"])
+    
+    outputs = category.get_answer(batch, model_name, max_tokens, temperature, api_dict)
 
-    output_log = {}
-
-    for category in categories:
-        conv = category.pre_process(question["prompt"])
-        output = chat_completion_openai(
-            model=model_name,
-            messages=conv,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            api_dict=api_dict,
-        )
-        # Dump answers
-        category_tag[category.name_tag] = category.post_process(output)
-
-        if testing:
-            output_log[category.name_tag] = output
-
-    question["category_tag"] = category_tag
-    if testing:
-        question["output_log"] = output_log
-
-    question.drop(["prompt", "uid", "required_tasks"], inplace=True)
-
-    with LOCK:
-        with open(answer_file, "a") as fout:
-            fout.write(json.dumps(question.to_dict()) + "\n")
+    for uid in uid_to_row:
+        output = outputs[uid]
+        TASK_COMPLETIONS[uid].add(category.name_tag)
+        TASK_TRACKER[uid][category.name_tag] = output
+        
+        row = uid_to_row[uid]
+        if TASK_COMPLETIONS[uid] == row["required_tasks"]:
+            row["category_tag"] = TASK_TRACKER[uid]
+            row.drop(["prompt", "uid", "required_tasks"], inplace=True)
+            with LOCK:
+                with open(answer_file, "a") as fout:
+                    fout.write(json.dumps(row.to_dict()) + "\n")
 
 
 def category_merge(row):
@@ -156,13 +100,13 @@ def find_required_tasks(row):
     cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
     output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
 
-    return [
+    return set([
         name
         for name in TASKS
         if not (
             name in input_category or name in cache_category or name in output_category
         )
-    ]
+    ])
 
 
 if __name__ == "__main__":
@@ -178,12 +122,12 @@ if __name__ == "__main__":
         exit()
 
     config = make_config(args.config)
-
-    API_MAX_RETRY = config["max_retry"]
-    API_RETRY_SLEEP = config["retry_sleep"]
-    API_ERROR_OUTPUT = config["error_output"]
+    api_config(config)
 
     categories = [Category.create_category(name) for name in config["task_name"]]
+    parallel_categories = [category for category in categories if category.is_parallel]
+    not_parallel_categories = [category for category in categories if not category.is_parallel]
+
     TASKS = config["task_name"]
     print(
         f"Following categories will be labeled:\n{[category.name_tag for category in categories]}"
@@ -251,27 +195,40 @@ if __name__ == "__main__":
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
 
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=config["parallel"]
-    ) as executor:
-        futures = []
-        for index, row in tqdm.tqdm(not_labeled.iterrows()):
-            future = executor.submit(
-                get_answer,
-                row,
+    for category in not_parallel_categories:
+        category_not_labeled = not_labeled[not_labeled['required_tasks'].apply(lambda x: category.name_tag in x)]
+        print(category.name_tag)
+        for index, batch in tqdm.tqdm(category_not_labeled.groupby(np.arange(len(category_not_labeled)) // category.batch_size)):
+            get_answer(
+                batch,
                 config["model_name"],
                 config["max_token"],
                 config["temperature"],
                 config["output_file"],
                 get_endpoint(config["endpoints"]),
-                [
-                    category
-                    for category in categories
-                    if category.name_tag in row["required_tasks"]
-                ],
-                args.testing,
+                category,
+                args.testing
             )
-            futures.append(future)
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=config["parallel"]
+    ) as executor:
+        futures = []
+        for category in parallel_categories:
+            category_not_labeled = not_labeled[not_labeled['required_tasks'].apply(lambda x: category.name_tag in x)]
+            for index, batch in tqdm.tqdm(category_not_labeled.groupby(np.arange(len(category_not_labeled)) // category.batch_size)):
+                future = executor.submit(
+                    get_answer,
+                    batch,
+                    config["model_name"],
+                    config["max_token"],
+                    config["temperature"],
+                    config["output_file"],
+                    get_endpoint(config["endpoints"]),
+                    category,
+                    args.testing
+                )
+                futures.append(future)
         for future in tqdm.tqdm(
             concurrent.futures.as_completed(futures), total=len(futures)
         ):
