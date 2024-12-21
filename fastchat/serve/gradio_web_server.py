@@ -472,6 +472,10 @@ def bot_response(
     top_p = float(top_p)
     max_new_tokens = int(max_new_tokens)
 
+    if state is None:
+        yield (None, None) + (no_change_btn,) * sandbox_state["btn_list_length"]
+        return
+
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         state.skip_next = False
@@ -562,6 +566,9 @@ def bot_response(
     html_code = ' <span class="cursor"></span> '
 
     # conv.update_last_message("▌")
+    if conv is None:
+        yield (state, None) + (no_change_btn,) * sandbox_state["btn_list_length"]
+        return
     conv.update_last_message(html_code)
     yield (state, state.to_gradio_chatbot()) + (disable_btn,) * (sandbox_state["btn_list_length"])
 
