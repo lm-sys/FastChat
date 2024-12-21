@@ -246,6 +246,15 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
             conversation_id=state.conv_id,
         )
+    elif model_api_dict["api_type"] == "jab":
+        messages = conv.to_jab_api_messages()
+        stream_iter = jab_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            conversation_id=state.conv_id,
+        )
     else:
         raise NotImplementedError()
 
@@ -1258,6 +1267,54 @@ def metagen_api_stream_iter(
                     "error_code": 0,
                 }
                 yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
+            "error_code": 1,
+        }
+
+
+def jab_api_stream_iter(model_name, messages, api_base, api_key, conversation_id):
+    import requests
+
+    headers = {"Content-Type": "application/json", "x-api-key": api_key}
+
+    text_messages = []
+    for message in messages:
+        text_messages.append(message)
+
+    payload = {
+        "model": model_name,
+        "messages": text_messages,
+        "conversation_id": conversation_id,
+    }
+
+    logger.info(f"==== request ====\n{payload}")
+
+    try:
+        response = requests.post(api_base, json=payload, headers=headers)
+
+        if response.status_code != 200:
+            logger.error(
+                f"Unexpected response ({response.status_code}): {response.text}"
+            )
+            yield {
+                "text": f"**API REQUEST FAILED** Reason: {response.status_code}.",
+                "error_code": 1,
+            }
+
+        text = response.json()["choices"][0]["message"]["content"]
+        pos = 0
+        while pos < len(text):
+            # simulate token streaming
+            pos += 5
+            time.sleep(0.001)
+            data = {
+                "text": text[:pos],
+                "error_code": 0,
+            }
+            yield data
     except Exception as e:
         logger.error(f"==== error ====\n{e}")
         yield {
