@@ -7,6 +7,7 @@ import re
 from typing import Optional
 import time
 
+import httpx
 import requests
 
 from fastchat.utils import build_logger
@@ -245,6 +246,18 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
             conversation_id=state.conv_id,
+        )
+    elif model_api_dict["api_type"] == "bailing":
+        messages = conv.to_openai_api_messages()
+        stream_iter = bailing_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_new_tokens,
+            api_base=model_api_dict.get("api_base"),
+            api_key=model_api_dict.get("api_key"),
+            generation_args=model_api_dict.get("recommended_config"),
         )
     else:
         raise NotImplementedError()
@@ -1264,3 +1277,84 @@ def metagen_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
+
+
+def bailing_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_tokens,
+    api_base=None,
+    api_key=None,
+    generation_args=None,
+):
+    url = api_base if api_base else "https://bailingchat.alipay.com/chat/completions"
+    token = api_key if api_key else os.environ.get("BAILING_API_KEY")
+    if token:
+        headers = {"Authorization": f"Bearer {token}"}
+    else:
+        raise ValueError(f"There is not valid token.")
+
+    headers["Content-Type"] = "application/json"
+
+    request = {"model": model_name, "messages": messages}
+    request["stream"] = True
+    # default value
+    request["temperature"] = 0.01
+    request["top_p"] = 1.0
+    request["top_k"] = -1
+    request["n"] = 1
+    request["logprobs"] = 1
+    request["use_beam_search"] = False
+    request["max_tokens"] = 16384
+
+    if generation_args:
+        request.update(generation_args)
+
+    timeout = httpx.Timeout(
+        300.0, read=200.0
+    )  # timeout is 300s, and read timeout is 200s
+    client = httpx.Client(timeout=timeout, http2=True)
+    retry_num = 0
+    while retry_num < 3:
+        try:
+            total_text, curr_buf = "", ""
+            with client.stream("POST", url, json=request, headers=headers) as resp:
+                if resp.status_code == 200:
+                    for new_buf in resp.iter_text():
+                        curr_buf += new_buf
+                        while True:
+                            x_part = curr_buf.split("\n\n", 1)
+                            if len(x_part) > 1:  # part can be sent
+                                y_part = x_part[0][len("data:") :].strip()
+                                try:
+                                    y = json.loads(y_part)
+                                    output_text = y["choices"][0]["delta"]["content"]
+                                except Exception as e:
+                                    curr_buf = x_part[1]  # finish one response
+                                    logger.error(
+                                        f"Read the error content. Content: {y_part}, Info:{e}"
+                                    )
+                                    continue  # skip current part
+                                total_text += output_text
+                                curr_buf = x_part[
+                                    1
+                                ]  # finish one response and look to leftover
+                                yield {"text": total_text, "error_code": 0}
+                            else:  # no part can be sent and continue to read
+                                break
+                    return  # finish the total
+                else:
+                    logger.error(
+                        f"Error occurs and retry if possible. status_code={resp.status_code}"
+                    )
+        except Exception as exc:
+            if total_text:
+                logger.error(f"Reading interrupted. Info:{exc}")
+                break
+            else:
+                logger.error(f"Error occurs and retry if possible. Info:{exc}")
+        retry_num += 1
+    else:
+        raise ValueError(f"Exceed the maximal retry times.")
