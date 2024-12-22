@@ -3,7 +3,7 @@ Run generated code in a sandbox environment.
 '''
 
 from enum import StrEnum
-from typing import Any, Generator, TypedDict
+from typing import Any, Generator, TypeAlias, TypedDict
 import gradio as gr
 import re
 import os
@@ -23,6 +23,7 @@ class SandboxEnvironment(StrEnum):
     PYTHON_CODE_INTERPRETER = 'Python Code Interpreter'
     JAVASCRIPT_CODE_INTERPRETER = 'Javascript Code Interpreter'
     # Web UI Frameworks
+    HTML = 'HTML'
     REACT = 'React'
     VUE = 'Vue'
     GRADIO = 'Gradio'
@@ -36,6 +37,7 @@ SUPPORTED_SANDBOX_ENVIRONMENTS: list[str] = [
 ]
 
 WEB_UI_SANDBOX_ENVIRONMENTS = [
+    SandboxEnvironment.HTML,
     SandboxEnvironment.REACT,
     SandboxEnvironment.VUE,
     SandboxEnvironment.GRADIO,
@@ -77,6 +79,10 @@ DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION = """
 Generate JavaScript code suitable for execution in a code interpreter environment.
 Ensure the code is self-contained and does not rely on browser-specific APIs.
 You can output in stdout, stderr, or render images, plots, and tables.
+"""
+
+DEFAULT_HTML_SANDBOX_INSTRUCTION = """
+Generate HTML code for a single HTML file to be executed in a sandbox. You can add style and javascript. Do not use external libraries or import external files.
 """
 
 DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. . Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
@@ -139,6 +145,7 @@ You can choose from the following sandbox environments:
 """
 + 'Sandbox Environment Name: ' + SandboxEnvironment.PYTHON_CODE_INTERPRETER + '\n' + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER + '\n' + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.HTML + '\n' + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.REACT + '\n' + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.VUE + '\n' + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.GRADIO + '\n' + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip() + '\n------\n'
@@ -151,6 +158,7 @@ DEFAULT_SANDBOX_INSTRUCTIONS: dict[SandboxEnvironment, str] = {
     SandboxEnvironment.AUTO: AUTO_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.PYTHON_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip(),
     SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip(),
+    SandboxEnvironment.HTML: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.REACT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.VUE: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.GRADIO: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
@@ -160,7 +168,7 @@ DEFAULT_SANDBOX_INSTRUCTIONS: dict[SandboxEnvironment, str] = {
 }
 
 
-type SandboxGradioSandboxComponents = tuple[
+SandboxGradioSandboxComponents: TypeAlias =  tuple[
     gr.Markdown | Any,  # sandbox_output
     SandboxComponent | Any,  # sandbox_ui
     gr.Code | Any,  # sandbox_code
@@ -361,6 +369,33 @@ def run_code_interpreter(code: str, code_language: str | None) -> str:
         output += "\n### Results:\n" + "\n".join(results)
 
     return output
+
+
+def run_html_sandbox(code: str) -> str:
+    """
+    Executes the provided code within a sandboxed environment and returns the output.
+
+    Args:
+        code (str): The code to be executed.
+
+    Returns:
+        url for remote sandbox
+    """
+    sandbox = Sandbox(
+        api_key=E2B_API_KEY,
+    )
+
+    sandbox.files.make_dir('myhtml')
+    file_path = "~/myhtml/main.html"
+    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+
+    process = sandbox.commands.run(
+        "python -m http.server 3000", background=True)  # start http server
+
+    # get game server url
+    host = sandbox.get_host(3000)
+    url = f"https://{host}"
+    return url + '/myhtml/main.html'
 
 
 def run_react_sandbox(code: str) -> str:
@@ -655,6 +690,18 @@ def on_run_code(
     sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
 
     match sandbox_env:
+        case SandboxEnvironment.HTML:
+            url = run_html_sandbox(code)
+            yield (
+                gr.Markdown(value="### Running Sandbox", visible=True),
+                SandboxComponent(
+                    value=(url, code),
+                    label="Example",
+                    visible=True,
+                    key="newsandbox",
+                ),
+                gr.skip(),
+            )
         case SandboxEnvironment.REACT:
             url = run_react_sandbox(code)
             yield (
