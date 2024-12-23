@@ -1,9 +1,11 @@
 # Python
+agent_api_endpoints.json
 __pycache__
 *.pyc
 *.egg-info
 dist
 .venv
+keys.env
 
 # Log
 *.log
@@ -11,6 +13,8 @@ dist
 *.json
 !playground/deepspeed_config_s2.json
 !playground/deepspeed_config_s3.json
+!evaluation/**/*.json
+!evaluation/**/*.csv
 
 # Editor
 .idea
@@ -21,10 +25,12 @@ dist
 wandb
 output
 checkpoints_flant5_3b
+.gradio/
 
 # Data
 *.pkl
 *.csv
+!evaluation/**/*.csv
 tests/state_of_the_union.txt
 
 # Build

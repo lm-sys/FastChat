@@ -1,0 +1,17 @@
+{
+  "gpt4o-agent": {
+    "model_name": "gpt-4o-2024-08-06",
+    "api_type": "openai",
+    "api_base": "https://api.openai.com/v1",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false,
+    "agent-mode": true,
+    "tool_config_file": "search_configs/tools.json"
+  }
+}
+
