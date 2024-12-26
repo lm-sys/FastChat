@@ -283,7 +283,7 @@ nest_asyncio.apply()  # Ensure compatibility with async environments
 
 def pdf_parse(pdf_path):
     # Set API key, can also be configured in the environment
-    api_key = "LLAMA API"
+    api_key = os.environ["LLAMA_PARSE_KEY"]
 
     # Initialize the LlamaParse object
     parser = LlamaParse(
