@@ -90,7 +90,8 @@ class CategoryAPI(Category):
             uid (str): UID of the battle to be labeled
 
         Returns:
-            output (Dict[str, Dict[str, str]]: Keys is battle uid, value is the output associated with that battle (usually a dictionary)
+            output (Dict[str, Dict[str, str]]: Key is battle UID, value is the output associated with that battle (usually a dictionary)
+            raw_ouput (Dict[str, str]): Key is battle UID, value is the unprocessed LLM output
         """
         pass
 
@@ -132,7 +133,8 @@ class CategoryHF(Category):
             to_label_uids (List[str]): Battle UIDs corresponding to each string that was labeled
 
         Returns:
-            output (Dict[str, Dict[str, str]]: Key are battle uids, value is the output associated with that battle (usually a dictionary)
+            output (Dict[str, Dict[str, str]]: Keys are battle uids, values are the outputs associated with that battle (usually a dictionary)
+            raw_ouput (Dict[str, str]): Keys is battle UIDs, value is the unprocessed HF model output or None
         """
         pass
 
