@@ -34,7 +34,6 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    update_sandbox_system_message
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
@@ -42,7 +41,6 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
 )
-from fastchat.constants import INPUT_CHAR_LEN_LIMIT
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -71,10 +69,6 @@ def load_demo_side_by_side_anony(models_, url_params):
 
 
 def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
-    if states[0] is None or states[1] is None:
-        yield (None, None) + (disable_text,) + (disable_btn,) * 7
-        return
-    
     with open(get_conv_log_filename(), "a") as fout:
         data = {
             "tstamp": round(time.time(), 4),
@@ -96,7 +90,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
                 "### Model B: " + states[1].model_name,
             )
             # yield names + ("",) + (disable_btn,) * 4
-            yield names + (disable_text,) + (disable_btn,) * 7
+            yield names + (disable_text,) + (disable_btn,) * 5
             time.sleep(0.1)
     else:
         names = (
@@ -104,7 +98,7 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
             "### Model B: " + states[1].model_name,
         )
         # yield names + ("",) + (disable_btn,) * 4
-        yield names + (disable_text,) + (disable_btn,) * 7
+        yield names + (disable_text,) + (disable_btn,) * 5
 
 
 def leftvote_last_response(
@@ -146,44 +140,19 @@ def bothbad_vote_last_response(
     ):
         yield x
 
-def regenerate(state, request: gr.Request):
-    ip = get_ip(request)
-    logger.info(f"regenerate. ip: {ip}")
-    if state is None:
-        return (None, None, "") + (no_change_btn,) * 8
-    if not state.regen_support:
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * 8
-    state.conv.update_last_message(None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 8
 
-def regenerate_multi(state0, state1, request: gr.Request):
-    logger.info(f"regenerate_multi (anony). ip: {get_ip(request)}")
+def regenerate(state0, state1, request: gr.Request):
+    logger.info(f"regenerate (anony). ip: {get_ip(request)}")
     states = [state0, state1]
-
-    if state0 is None and state1 is not None:
-        if not state1.regen_support:
-            state1.skip_next = True
-            return states + [None, state1.to_gradio_chatbot()] + [""] + [no_change_btn] * 8  
-        state1.conv.update_last_message(None)
-        return states + [None, state1.to_gradio_chatbot()] + [""] + [disable_btn] * 8
-
-    if state1 is None and state0 is not None:
-        if not state0.regen_support:
-            state0.skip_next = True
-            return states + [state0.to_gradio_chatbot(), None] + [""] + [no_change_btn] * 8    
-        state0.conv.update_last_message(None)
-        return states + [state0.to_gradio_chatbot(), None] + [""] + [disable_btn] * 8
-    
     if state0.regen_support and state1.regen_support:
         for i in range(num_sides):
             states[i].conv.update_last_message(None)
         return (
-            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 8
+            states + [x.to_gradio_chatbot() for x in states] + [""] + [disable_btn] * 6
         )
     states[0].skip_next = True
     states[1].skip_next = True
-    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 8    
+    return states + [x.to_gradio_chatbot() for x in states] + [""] + [no_change_btn] * 6
 
 
 def clear_history(sandbox_state0, sandbox_state1, request: gr.Request):
@@ -198,9 +167,7 @@ def clear_history(sandbox_state0, sandbox_state1, request: gr.Request):
         + anony_names
         + [enable_text]
         + [invisible_btn] * 4
-        + [disable_btn] * 1
-        + [invisible_btn] * 2
-        + [disable_btn] * 1
+        + [disable_btn] * 2
         + [""]
         + [enable_btn]
     )
@@ -311,7 +278,7 @@ def get_battle_pair(
         return rival_model, chosen_model
 
 
-def add_text_multi(
+def add_text(
     #state0, state1, model_selector0, model_selector1, text, request: gr.Request
     state0, state1,
     model_selector0, model_selector1,
@@ -325,8 +292,8 @@ def add_text_multi(
     model_selectors = [model_selector0, model_selector1]
 
     # Init states if necessary
-    if states[0] is None or states[1] is None:
-        # assert states[1] is None
+    if states[0] is None:
+        assert states[1] is None
 
         model_left, model_right = get_battle_pair(
             models,
@@ -335,11 +302,10 @@ def add_text_multi(
             SAMPLING_WEIGHTS,
             SAMPLING_BOOST_MODELS,
         )
-        if states[0] is None:
-            states[0] = State(model_left)
-        if states[1] is None:
-            states[1] = State(model_right)
-        logger.info(f"model: {states[0].model_name}, {states[1].model_name}")
+        states = [
+            State(model_left),
+            State(model_right),
+        ]
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -352,7 +318,7 @@ def add_text_multi(
             + [
                 no_change_btn,
             ]
-            * 8
+            * 6
             + [""]
         )
 
@@ -382,7 +348,7 @@ def add_text_multi(
             + [
                 no_change_btn,
             ]
-            * 8
+            * 6
             + [""]
         )
 
@@ -404,52 +370,10 @@ def add_text_multi(
         + [
             disable_btn,
         ]
-        * 8
+        * 6
         + [hint_msg]
     )
 
-def add_text(state, model_selector, sandbox_state, text, request: gr.Request):
-    ip = get_ip(request)
-    logger.info(f"add_text. ip: {ip}. len: {len(text)}.")
-
-    if state is None:
-        state = State(model_selector)
-
-    if state.model_name == "":
-        model_left, model_right = get_battle_pair(
-            models,
-            BATTLE_TARGETS,
-            OUTAGE_MODELS,
-            SAMPLING_WEIGHTS,
-            SAMPLING_BOOST_MODELS,
-        )
-        state = State(model_left)
-        logger.info(f"model: {state.model_name}")
-
-    if len(text) <= 0:
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), "", None) + (no_change_btn,) * sandbox_state["btn_list_length"]
-
-    all_conv_text = state.conv.get_prompt()
-    all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
-    # flagged = moderation_filter(text, [state.model_name])
-    if flagged:
-        logger.info(f"violate moderation. ip: {ip}. text: {text}")
-        # overwrite the original text
-        text = MODERATION_MSG
-
-    if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
-        logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
-        state.skip_next = True
-        return (state, state.to_gradio_chatbot(), CONVERSATION_LIMIT_MSG, None) + (
-            no_change_btn,
-        ) * sandbox_state["btn_list_length"]
-
-    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    state.conv.append_message(state.conv.roles[0], text)
-    state.conv.append_message(state.conv.roles[1], None)
-    return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * sandbox_state["btn_list_length"]
 
 def bot_response_multi(
     state0,
@@ -463,16 +387,15 @@ def bot_response_multi(
 ):
     logger.info(f"bot_response_multi (anony). ip: {get_ip(request)}")
 
-    if state0 is not None and state1 is not None: 
-        if state0.skip_next or state1.skip_next:
-            # This generate call is skipped due to invalid inputs
-            yield (
-                state0,
-                state1,
-                state0.to_gradio_chatbot() ,
-                state1.to_gradio_chatbot() ,
-            ) + (no_change_btn,) * 8
-            return
+    if state0 is None or state0.skip_next:
+        # This generate call is skipped due to invalid inputs
+        yield (
+            state0,
+            state1,
+            state0.to_gradio_chatbot(),
+            state1.to_gradio_chatbot(),
+        ) + (no_change_btn,) * 6
+        return
 
     states = [state0, state1]
     gen = []
@@ -491,7 +414,7 @@ def bot_response_multi(
     model_tpy = []
     for i in range(num_sides):
         token_per_yield = 1
-        if states[i] is not None and states[i].model_name in [
+        if states[i].model_name in [
             "gemini-pro",
             "gemma-1.1-2b-it",
             "gemma-1.1-7b-it",
@@ -500,14 +423,14 @@ def bot_response_multi(
             "snowflake-arctic-instruct",
         ]:
             token_per_yield = 30
-        elif states[i] is not None and  states[i].model_name in [
+        elif states[i].model_name in [
             "qwen-max-0428",
             "qwen-vl-max-0809",
             "qwen1.5-110b-chat",
             "llava-v1.6-34b",
         ]:
             token_per_yield = 7
-        elif states[i] is not None and states[i].model_name in [
+        elif states[i].model_name in [
             "qwen2.5-72b-instruct",
             "qwen2-72b-instruct",
             "qwen-plus-0828",
@@ -531,7 +454,7 @@ def bot_response_multi(
                 stop = False
             except StopIteration:
                 pass
-        yield states + chatbots + [disable_btn] * 8
+        yield states + chatbots + [disable_btn] * 6
         if stop:
             break
 
@@ -631,7 +554,7 @@ def build_side_by_side_ui_anony(models):
                         sandbox_hidden_components.append(sandbox_row)
                         for chatbotIdx in range(num_sides):
                             with gr.Column(scale=1, visible=False) as column:
-                                sandbox_state = gr.State(create_chatbot_sandbox_state(btn_list_length=8))
+                                sandbox_state = gr.State(create_chatbot_sandbox_state())
                                 # Add containers for the sandbox output
                                 sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=False)
 
@@ -702,17 +625,11 @@ def build_side_by_side_ui_anony(models):
             elem_id="input_box",
         )
         send_btn = gr.Button(value="Send", variant="primary", scale=0)
-        send_btn_left = gr.Button(value="Send to Left", variant="primary", scale=0)
-        send_btn_right = gr.Button(value="Send to Right", variant="primary", scale=0)
-        send_btns_one_side = [send_btn_left, send_btn_right]
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        left_regenerate_btn = gr.Button(value="🔄  Regenerate Left", interactive=False, visible=False)
-        right_regenerate_btn = gr.Button(value="🔄  Regenerate Right", interactive=False, visible=False)
         share_btn = gr.Button(value="📷  Share")
-        regenerate_one_side_btns = [left_regenerate_btn, right_regenerate_btn]
 
     with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
@@ -749,8 +666,6 @@ def build_side_by_side_ui_anony(models):
         tie_btn,
         bothbad_btn,
         regenerate_btn,
-        left_regenerate_btn,
-        right_regenerate_btn,
         clear_btn,
     ]
     leftvote_btn.click(
@@ -778,7 +693,7 @@ def build_side_by_side_ui_anony(models):
         + [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn],
     )
     regenerate_btn.click(
-        regenerate_multi, states, states + chatbots + [textbox] + btn_list
+        regenerate, states, states + chatbots + [textbox] + btn_list
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
@@ -829,7 +744,7 @@ function (a, b, c, d) {
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     textbox.submit(
-        add_text_multi,
+        add_text,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list + [slow_warning],
     ).then(
@@ -851,7 +766,7 @@ function (a, b, c, d) {
     )
 
     send_btn.click(
-        add_text_multi,
+        add_text,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
     ).then(
@@ -875,34 +790,6 @@ function (a, b, c, d) {
         state = states[chatbotIdx]
         sandbox_state = sandbox_states[chatbotIdx]
         sandbox_components = sandboxes_components[chatbotIdx]
-        model_selector = model_selectors[chatbotIdx]
-
-        send_btns_one_side[chatbotIdx].click(
-            add_text,
-            [state, model_selector, sandbox_state, textbox],
-            [state, chatbot, textbox] + btn_list,
-        ).then(
-            update_sandbox_system_message,
-            [state, sandbox_state, model_selector],
-            [state, chatbot]
-        ).then(
-            bot_response,
-            [state, temperature, top_p, max_output_tokens, sandbox_state],
-            [state, chatbot] + btn_list,
-        ).then(
-            flash_buttons, [], btn_list
-        ).then(
-            lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
-            inputs=[sandbox_state],
-            outputs=[sandbox_env_choice])
-        
-        regenerate_one_side_btns[chatbotIdx].click(regenerate, state, [state, chatbot, textbox] + btn_list
-        ).then(
-            bot_response,
-            [state, temperature, top_p, max_output_tokens, sandbox_state],
-            [state, chatbot] + btn_list,
-       )
-    
         # trigger sandbox run when click code message
         chatbot.select(
             fn=on_click_code_message_run,
