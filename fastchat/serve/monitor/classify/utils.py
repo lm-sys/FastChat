@@ -66,15 +66,16 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
 class HuggingFaceClassifier:
     def __init__(self, model_path, device=None):
         print("Loading model and tokenizer...")
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.pipeline = pipeline(
             "text-classification",
             model=model_path,
             tokenizer=model_path,
-            device=self.device
+            device=self.device,
         )
 
     def classify_batch(self, input_texts, batch_size=8):
         results = self.pipeline(input_texts, batch_size=batch_size, truncation=True)
-        return [res['label'] == "LABEL_1" for res in results]
-
+        return [res["label"] == "LABEL_1" for res in results]
