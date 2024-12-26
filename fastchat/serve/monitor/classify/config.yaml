@@ -1,18 +1,17 @@
 # Yaml config file for category classification
 
-# input_file: "/home/derryxu/FastChatRefusal/fastchat/serve/monitor/classify/refusal_test/unlabeled.json" # json
-input_file: "/home/derryxu/arena-data-analysis/refusal/json/battles_derry_50k_sample.json"
+input_file: null # json
 cache_file: null # json
 output_file: null # json line
 
 convert_to_json: True
 
 task_name:
-  # - criteria_v0.1
-  # - if_v0.1
-  # - math_v0.1
+  - criteria_v0.1
+  - if_v0.1
+  - math_v0.1
   - creative_writing_v0.1
-  # - refusal_v0.2
+  - refusal_v0.2
 
 model_name: null
 name: llama-3-70b-instruct

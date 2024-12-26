@@ -16,8 +16,14 @@ from collections import defaultdict
 from category import Category
 from utils import api_config
 
-TASK_COMPLETIONS = defaultdict(lambda: set())
+# Tracks which category tasks have been completed for each row/battle - key: uid, value: set of category tags
+TASKS_REQUIRED = defaultdict(lambda: set())
+
+# Tracks in progress labels - key: uid, value: current incomplete category labels
 TASK_TRACKER = defaultdict(lambda: {})
+
+# Tracks in progress raw outputs for debugging - key: uid, value: current incomplete raw outputs
+LOGS_TRACKER = defaultdict(lambda: {})
 
 LOCK = threading.RLock()
 
@@ -55,21 +61,33 @@ def get_answer(
 ):
     uid_to_row = {}
     for _, row in batch.iterrows():
-        uid = row["uid"]      
+        uid = row["uid"]
         uid_to_row[uid] = row
         if "category_tag" in row:
             TASK_TRACKER[uid].update(row["category_tag"])
-    
-    outputs = category.get_answer(batch, model_name, max_tokens, temperature, api_dict)
+
+    outputs, raw_outputs = category.get_answer(
+        batch, model_name, max_tokens, temperature, api_dict
+    )
 
     for uid in uid_to_row:
         output = outputs[uid]
-        TASK_COMPLETIONS[uid].add(category.name_tag)
+        TASKS_REQUIRED[uid]["required_tasks"].remove(category.name_tag)
         TASK_TRACKER[uid][category.name_tag] = output
-        
+
+        if testing:
+            raw_output = raw_outputs[uid]
+            LOGS_TRACKER[uid][category.name_tag] = raw_output
+
         row = uid_to_row[uid]
-        if TASK_COMPLETIONS[uid] == row["required_tasks"]:
+        if not TASKS_REQUIRED[uid][
+            "required_tasks"
+        ]:  # Check if all required tasks completed
             row["category_tag"] = TASK_TRACKER[uid]
+
+            if testing:
+                row["output_log"] = LOGS_TRACKER[uid]
+
             row.drop(["prompt", "uid", "required_tasks"], inplace=True)
             with LOCK:
                 with open(answer_file, "a") as fout:
@@ -100,13 +118,17 @@ def find_required_tasks(row):
     cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
     output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
 
-    return set([
-        name
-        for name in TASKS
-        if not (
-            name in input_category or name in cache_category or name in output_category
-        )
-    ])
+    return set(
+        [
+            name
+            for name in TASKS
+            if not (
+                name in input_category
+                or name in cache_category
+                or name in output_category
+            )
+        ]
+    )
 
 
 if __name__ == "__main__":
@@ -124,9 +146,12 @@ if __name__ == "__main__":
     config = make_config(args.config)
     api_config(config)
 
+    # Divide categories into parallelized + non-parallel. Non-parallel for HF models - automatically parallelized
     categories = [Category.create_category(name) for name in config["task_name"]]
     parallel_categories = [category for category in categories if category.is_parallel]
-    not_parallel_categories = [category for category in categories if not category.is_parallel]
+    not_parallel_categories = [
+        category for category in categories if not category.is_parallel
+    ]
 
     TASKS = config["task_name"]
     print(
@@ -157,6 +182,7 @@ if __name__ == "__main__":
         cache_dict = cache_data[["uid", "category_tag"]].set_index("uid")
         print("finalizing cache_dict (should take less than 30 sec)")
         CACHE_DICT = cache_dict.to_dict("index")
+        TASK_TRACKER.update(CACHE_DICT)
     else:
         CACHE_DICT = {}
 
@@ -174,6 +200,9 @@ if __name__ == "__main__":
         output_dict = output_data[["uid", "category_tag"]].set_index("uid")
         print("finalizing output_dict (should take less than 30 sec)")
         OUTPUT_DICT = output_dict.to_dict("index")
+        TASK_TRACKER.update(
+            OUTPUT_DICT
+        )  # note: this will override rows from cache dict if uids overlap
     else:
         OUTPUT_DICT = {}
 
@@ -181,6 +210,12 @@ if __name__ == "__main__":
         "finding tasks needed to run... (should take around 1 minute or less on large dataset)"
     )
     input_data["required_tasks"] = input_data.apply(find_required_tasks, axis=1)
+
+    # Update task completion tracker with already completed tasks
+    required_tasks_dict = (
+        input_data[["uid", "required_tasks"]].set_index("uid").to_dict("index")
+    )
+    TASKS_REQUIRED.update(required_tasks_dict)
 
     not_labeled = input_data[input_data.required_tasks.map(lambda x: len(x) > 0)].copy()
 
@@ -195,10 +230,16 @@ if __name__ == "__main__":
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
 
+    # Label non-parallel categories
     for category in not_parallel_categories:
-        category_not_labeled = not_labeled[not_labeled['required_tasks'].apply(lambda x: category.name_tag in x)]
-        print(category.name_tag)
-        for index, batch in tqdm.tqdm(category_not_labeled.groupby(np.arange(len(category_not_labeled)) // category.batch_size)):
+        category_not_labeled = not_labeled[
+            not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
+        ]
+        for index, batch in tqdm.tqdm(
+            category_not_labeled.groupby(
+                np.arange(len(category_not_labeled)) // category.batch_size
+            )
+        ):
             get_answer(
                 batch,
                 config["model_name"],
@@ -207,16 +248,23 @@ if __name__ == "__main__":
                 config["output_file"],
                 get_endpoint(config["endpoints"]),
                 category,
-                args.testing
+                args.testing,
             )
 
+    # Loop over parallel categories
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=config["parallel"]
     ) as executor:
         futures = []
         for category in parallel_categories:
-            category_not_labeled = not_labeled[not_labeled['required_tasks'].apply(lambda x: category.name_tag in x)]
-            for index, batch in tqdm.tqdm(category_not_labeled.groupby(np.arange(len(category_not_labeled)) // category.batch_size)):
+            category_not_labeled = not_labeled[
+                not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
+            ]
+            for index, batch in tqdm.tqdm(
+                category_not_labeled.groupby(
+                    np.arange(len(category_not_labeled)) // category.batch_size
+                )
+            ):
                 future = executor.submit(
                     get_answer,
                     batch,
@@ -226,7 +274,7 @@ if __name__ == "__main__":
                     config["output_file"],
                     get_endpoint(config["endpoints"]),
                     category,
-                    args.testing
+                    args.testing,
                 )
                 futures.append(future)
         for future in tqdm.tqdm(
