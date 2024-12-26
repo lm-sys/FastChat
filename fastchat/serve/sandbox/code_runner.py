@@ -209,9 +209,10 @@ class ChatbotSandboxState(TypedDict):
     '''
     The code language to execute in the sandbox.
     '''
+    btn_list_length: int | None
 
 
-def create_chatbot_sandbox_state() -> ChatbotSandboxState:
+def create_chatbot_sandbox_state(btn_list_length: int) -> ChatbotSandboxState:
     '''
     Create a new chatbot sandbox state.
     '''
@@ -222,7 +223,8 @@ def create_chatbot_sandbox_state() -> ChatbotSandboxState:
         "sandbox_instruction": None,
         "code_to_execute": "",
         "code_language": None,
-        "enabled_round": 0
+        "enabled_round": 0,
+        "btn_list_length": btn_list_length
     }
 
 
