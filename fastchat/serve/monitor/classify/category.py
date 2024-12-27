@@ -321,13 +321,15 @@ class CategoryRefusalHF(CategoryHF):
         to_label_uids = []
 
         for _, row in batch.iterrows():
-            conv_a = self.conv_pre_process_helper(row["conversation_a"])
-            conv_b = self.conv_pre_process_helper(row["conversation_b"])
+            if "conversation_a" in row.index:
+                conv_a = self.conv_pre_process_helper(row["conversation_a"])
+                to_label.extend(conv_a)
+                to_label_uids.extend([row["uid"]] * len(conv_a))
 
-            to_label.extend(conv_a)
-            to_label.extend(conv_b)
-
-            to_label_uids.extend([row["uid"]] * (len(conv_a) + len(conv_b)))
+            if "conversation_b" in row.index:
+                conv_b = self.conv_pre_process_helper(row["conversation_b"])
+                to_label.extend(conv_b)
+                to_label_uids.extend([row["uid"]] * len(conv_b))
 
         return to_label, to_label_uids
 
