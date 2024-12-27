@@ -372,6 +372,12 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
                                 elem_id=f"chatbot",
                                 height=650,
                                 show_copy_button=True,
+                                latex_delimiters=[
+                                    {"left": "$", "right": "$", "display": False},
+                                    {"left": "$$", "right": "$$", "display": True},
+                                    {"left": r"\(", "right": r"\)", "display": False},
+                                    {"left": r"\[", "right": r"\]", "display": True},
+                                ],
                             )
 
     with gr.Row():
