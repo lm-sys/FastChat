@@ -22,27 +22,22 @@ from collections import defaultdict
 from utils import HuggingFaceClassifier, chat_completion_openai
 
 
-class Category:
-    def __init__(self):
-        pass
+def create_category(name):
+    if name == "criteria_v0.1":
+        return CategoryHardPrompt()
+    elif name == "if_v0.1":
+        return CategoryIF()
+    elif name == "math_v0.1":
+        return CategoryMath()
+    elif name == "creative_writing_v0.1":
+        return CategoryCreativeWriting()
+    elif name == "refusal_v0.2":
+        return CategoryRefusalHF()
 
-    @staticmethod
-    def create_category(name):
-        if name == "criteria_v0.1":
-            return CategoryHardPrompt()
-        elif name == "if_v0.1":
-            return CategoryIF()
-        elif name == "math_v0.1":
-            return CategoryMath()
-        elif name == "creative_writing_v0.1":
-            return CategoryCreativeWriting()
-        elif name == "refusal_v0.2":
-            return CategoryRefusalHF()
-
-        raise Exception(f"Category name is incorrect: {name}")
+    raise Exception(f"Category name is incorrect: {name}")
 
 
-class CategoryAPI(Category):
+class CategoryAPI:
     def __init__(self):
         self.batch_size = 1
         self.is_parallel = True
@@ -96,10 +91,10 @@ class CategoryAPI(Category):
         pass
 
 
-class CategoryHF(Category):
+class CategoryHF:
     def __init__(self):
         self.batch_size = 1
-        self.is_paraellel = False
+        self.is_parallel = False
 
     def get_answer(self, batch, model_name, max_tokens, temperature, api_dict):
         to_label, to_label_uids = self.pre_process(batch)
@@ -337,11 +332,11 @@ class CategoryRefusalHF(CategoryHF):
         return to_label, to_label_uids
 
     def post_process(self, labels, to_label_uids):
-        outputs = defaultdict(lambda: {"label": False})
+        outputs = defaultdict(lambda: {"refusal": False})
         query_refusals = np.where(labels)[0]
 
         for i in query_refusals:
-            outputs[to_label_uids[i]] = {"label": True}
+            outputs[to_label_uids[i]] = {"refusal": True}
 
         return outputs, defaultdict(
             lambda: None
