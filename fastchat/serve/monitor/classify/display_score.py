@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import os
+from pathlib import Path
 from glob import glob
 from sklearn.metrics import recall_score, precision_score
 
@@ -9,6 +10,7 @@ tag_names = {
     "math_bench": ("math_v0.1", "math"),
     "hard_bench": ("criteria_v0.1", "hard"),
     "creative_writing_bench": ("creative_writing_v0.1", "creative_writing"),
+    "refusal_bench": ("refusal_v0.2", "refusal"),
 }
 
 
@@ -39,7 +41,7 @@ if __name__ == "__main__":
         recall = recall_score(y_pred=test.pred, y_true=test.label)
         precision = precision_score(y_pred=test.pred, y_true=test.label)
 
-        print(f"Model: {output.model[0]}")
+        print(f"Classifier: {Path(file).stem}")
         print(f"Accuracy: {round(accuracy, 3)}")
         print(f"Precision: {round(precision, 3)}")
         print(f"Recall: {round(recall, 3)}")
