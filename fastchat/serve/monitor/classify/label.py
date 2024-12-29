@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
         print("finalizing output_dict (should take less than 30 sec)")
         OUTPUT_DICT = (
-            output_data.groupby("uid")["category_tag"]
+            temp.groupby("uid")["category_tag"]
             .apply(category_merge_helper)
             .reset_index(level=1, drop=True)  # get rid of dummy key/index
             .to_dict()
