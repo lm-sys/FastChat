@@ -6,7 +6,6 @@ import json
 import pandas as pd
 import numpy as np
 import concurrent.futures
-import tqdm
 import yaml
 import random
 import threading
@@ -15,6 +14,7 @@ import orjson
 from collections import defaultdict
 from category import create_category
 from utils import api_config
+from tqdm import tqdm
 
 LOCK = threading.RLock()
 
@@ -259,7 +259,8 @@ if __name__ == "__main__":
         category_not_labeled = not_labeled[
             not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
         ]
-        for index, batch in tqdm.tqdm(
+        print(f"Labeling {category.name_tag} using HF model.")
+        for index, batch in tqdm(
             category_not_labeled.groupby(
                 np.arange(len(category_not_labeled)) // category.batch_size
             )
@@ -284,7 +285,8 @@ if __name__ == "__main__":
             category_not_labeled = not_labeled[
                 not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
             ]
-            for index, batch in tqdm.tqdm(
+            print(f"Creating batches for {category.name_tag}.")
+            for index, batch in tqdm(
                 category_not_labeled.groupby(
                     np.arange(len(category_not_labeled)) // category.batch_size
                 )
@@ -301,7 +303,8 @@ if __name__ == "__main__":
                     args.testing,
                 )
                 futures.append(future)
-        for future in tqdm.tqdm(
+        print("Processing parallel api calls.")
+        for future in tqdm(
             concurrent.futures.as_completed(futures), total=len(futures)
         ):
             future.result()
