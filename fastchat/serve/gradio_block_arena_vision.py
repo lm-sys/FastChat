@@ -212,21 +212,24 @@ def report_csam_image(state, image):
 
 def wrap_pdfchat_query(query, document):
     # TODO: Considering redesign the context format.
-    document_context = f"""
-    The following is the content of a document:
-    {document}
-    Based on this document, answer the user query.
-    """
+    # document_context = f"""
+    # The following is the content of a document:
+    # {document}
+    # Based on this document, answer the following question:
+    # {query}
+    # """
 
     reformatted_query_context = (
+        f"Answer the user query given the context.\n"
         f"[QUERY CONTEXT]\n"
         f"<details>\n"
         f"<summary>Expand context details</summary>\n\n"
-        f"{document_context}\n\n"
+        f"{document}\n\n"
         f"</details>"
+        f"\n\n[USER QUERY]\n\n{query}"
     )
 
-    return reformatted_query_context + f"\n\n[USER QUERY]\n\n{query}"
+    return reformatted_query_context
 
 
 def parse_pdf(file_path):
@@ -241,7 +244,9 @@ def parse_pdf(file_path):
     ).load_data(file_path)
 
     assert len(documents) > 0
-    output = "\n".join([doc.text for doc in documents])
+    output = "\n".join(
+        [f"Page {i+1}:\n{doc.text}\n" for i, doc in enumerate(documents)]
+    )
 
     return output
 
