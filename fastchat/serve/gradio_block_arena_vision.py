@@ -240,7 +240,7 @@ def parse_pdf(file_path):
         result_type="markdown",
         verbose=True,
     ).load_data(file_path)
-    
+
     assert len(document) > 0
     output = document[0].text
 
