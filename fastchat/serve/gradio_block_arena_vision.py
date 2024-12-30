@@ -74,16 +74,60 @@ def get_vqa_sample():
     return (res, path)
 
 
+def is_image(file_path):
+    magic_numbers = {
+        b"\xff\xd8\xff": "JPEG",
+        b"\x89PNG\r\n\x1a\n": "PNG",
+        b"GIF87a": "GIF",
+        b"GIF89a": "GIF",
+        b"BM": "BMP",
+        b"\x00\x00\x01\x00": "ICO",
+        b"\x49\x49\x2a\x00": "TIFF",
+        b"\x4d\x4d\x00\x2a": "TIFF",
+        # For WebP, the first four bytes are "RIFF", but we also check for "WEBP"
+        # in bytes 8–12.
+    }
+
+    try:
+        with open(file_path, "rb") as f:
+            header = f.read(16)  # Read a bit more to handle WebP safely
+
+            # Check for WebP (RIFF + WEBP)
+            if header.startswith(b"RIFF") and header[8:12] == b"WEBP":
+                return True
+
+            # Check other formats
+            for magic in magic_numbers:
+                if header.startswith(magic):
+                    return True
+
+            return False
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return False
+
+
+def is_pdf(file_path):
+    try:
+        with open(file_path, "rb") as file:
+            header = file.read(5)  # Read the first 5 bytes
+            return header == b"%PDF-"
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+
 def set_visible_image(textbox):
-    images = textbox["files"]
-    if len(images) == 0:
+    files = textbox["files"]
+    if len(files) == 0:
         return invisible_image_column
-    elif len(images) > 1:
+    elif len(files) > 1:
         gr.Warning(
             "We only support single image conversations. Please start a new round if you would like to chat using this image."
         )
-
-    return visible_image_column
+    elif is_image(files[0]):
+        return visible_image_column
+    return invisible_image_column
 
 
 def set_invisible_image():
@@ -166,6 +210,40 @@ def report_csam_image(state, image):
     pass
 
 
+def wrap_pdfchat_query(query, document):
+    # TODO: Considering redesign the context format.
+    document_context = f"""
+    The following is the content of a document:
+    {document}
+    Based on this document, answer the following question:
+    {query}
+    """
+
+    reformatted_query_context = (
+        f"[QUERY CONTEXT]\n"
+        f"<details>\n"
+        f"<summary>Expand context details</summary>\n\n"
+        f"{document_context}\n\n"
+        f"</details>"
+    )
+
+    return reformatted_query_context + f"\n\n[USER QUERY]\n\n{query}"
+
+
+def parse_pdf(file_path):
+    from llama_parse import LlamaParse
+
+    assert (
+        "LLAMA_CLOUD_API_KEY" in os.environ
+    ), "Make sure to specify LlamaParse API key."
+    documents = LlamaParse(
+        result_type="markdown",
+        verbose=True,
+    ).load_data(file_path)
+
+    return documents
+
+
 def _prepare_text_with_image(state, text, images, csam_flag):
     if len(images) > 0:
         if len(state.conv.get_images()) > 0:
@@ -173,6 +251,18 @@ def _prepare_text_with_image(state, text, images, csam_flag):
             state.conv = get_conversation_template(state.model_name)
 
         text = text, [images[0]]
+
+    return text
+
+
+def _prepare_text_with_pdf(state, text, pdfs):
+    if len(pdfs) > 0:
+        # if len(state.conv.get_pdfs()) > 0:
+        state.conv = get_conversation_template(state.model_name)
+        assert len(text) > 0
+
+        document_content = parse_pdf(pdfs[0])
+        text = wrap_pdfchat_query(text, document_content)
 
     return text
 

@@ -10,11 +10,6 @@ import gradio as gr
 import numpy as np
 from typing import Union
 
-import os
-import PyPDF2
-import nest_asyncio
-from llama_parse import LlamaParse
-
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
@@ -68,10 +63,13 @@ from fastchat.serve.gradio_block_arena_vision import (
     moderate_input,
     enable_multimodal,
     _prepare_text_with_image,
+    _prepare_text_with_pdf,
     convert_images_to_conversation_format,
     invisible_text,
     visible_text,
     disable_multimodal,
+    is_image,
+    is_pdf,
 )
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
@@ -91,15 +89,19 @@ vl_models = []
 
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {}
+PDFCHAT_SAMPLING_WEIGHTS = {}
 
 # TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
+PDFCHAT_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = []
+PDFCHAT_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
+PDFCHAT_OUTAGE_MODELS = []
 
 
 def get_vqa_sample():
@@ -247,79 +249,6 @@ def clear_history(request: gr.Request):
         + [""]
     )
 
-def is_pdf(file_path):
-    try:
-        with open(file_path, 'rb') as file:
-            header = file.read(5)  # Read the first 5 bytes
-            return header == b'%PDF-'
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-
-def is_image(file_path):
-    magic_numbers = {
-        b'\xff\xd8\xff': 'JPEG',
-        b'\x89PNG\r\n\x1a\n': 'PNG',
-        b'GIF87a': 'GIF',
-        b'GIF89a': 'GIF',
-        b'BM': 'BMP',
-        b'\x00\x00\x01\x00': 'ICO',
-        b'\x49\x49\x2a\x00': 'TIFF',
-        b'\x4d\x4d\x00\x2a': 'TIFF',
-        b'RIFF': 'WebP',
-    }
-    try:
-        with open(file_path, 'rb') as file:
-            header = file.read(8)  # Read the first 8 bytes
-            for magic in magic_numbers:
-                if header.startswith(magic):
-                    return True
-        return False
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        return False
-
-nest_asyncio.apply()  # Ensure compatibility with async environments
-
-def pdf_parse(pdf_path):
-    # Set API key, can also be configured in the environment
-    api_key = os.environ["LLAMA_PARSE_KEY"]
-
-    # Initialize the LlamaParse object
-    parser = LlamaParse(
-        api_key=api_key, 
-        result_type="markdown",  # Output in Markdown format
-        num_workers=4,           # Number of API calls for batch processing
-        verbose=True,            # Print detailed logs
-        language="en"            # Set language (default is English)
-    )
-
-    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    extra_info = {"file_name": pdf_name}
-
-    with open(pdf_path, "rb") as pdf_file:
-        # Pass the file object and extra info for parsing
-        documents = parser.load_data(pdf_file, extra_info=extra_info)
-
-    # Save the parsed content to a Markdown file
-    markdown_content = documents[0].text if documents else ""
-
-    return markdown_content
-
-def wrap_query_context(user_query, query_context):
-        #TODO: refactor to split up user query and query context. 
-        # lines = input.split("\n\n[USER QUERY]", 1)
-        # user_query = lines[1].strip()
-        # query_context = lines[0][len('[QUERY CONTEXT]\n\n'): ]
-        reformatted_query_context = (
-            f"[QUERY CONTEXT]\n"
-            f"<details>\n"
-            f"<summary>Expand context details</summary>\n\n"
-            f"{query_context}\n\n"
-            f"</details>"
-        )
-        markdown = reformatted_query_context + f"\n\n[USER QUERY]\n\n{user_query}"
-        return markdown
 
 def add_text(
     state0,
@@ -336,24 +265,19 @@ def add_text(
         text = chat_input
         files = []
 
-    images = []
-
-    # currently support up to one pdf or one image
-    # if is_pdf(files[0]):
-    #     pdfs = files
-    if is_image(files[0]):
-        images = files
-
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
 
+    images = [file for file in files if is_image(file)]
+    pdfs = [file for file in files if is_pdf(file)]
+
     # Init states if necessary
     if states[0] is None:
         assert states[1] is None
 
-        if len(files) > 0 and is_image(files[0]):
+        if len(images) > 0:
             model_left, model_right = get_battle_pair(
                 context.all_vision_models,
                 VISION_BATTLE_TARGETS,
@@ -364,6 +288,18 @@ def add_text(
             states = [
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
+            ]
+        elif len(pdfs) > 0:
+            model_left, model_right = get_battle_pair(
+                context.all_pdfchat_models,
+                PDFCHAT_BATTLE_TARGETS,
+                PDFCHAT_OUTAGE_MODELS,
+                PDFCHAT_SAMPLING_WEIGHTS,
+                PDFCHAT_SAMPLING_BOOST_MODELS,
+            )
+            states = [
+                State(model_left, is_vision=False),
+                State(model_right, is_vision=False),
             ]
         else:
             model_left, model_right = get_battle_pair(
@@ -401,6 +337,8 @@ def add_text(
         state0, text, text, model_list, images, ip
     )
 
+    # TODO: add PDF moderator
+
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {get_ip(request)}. text: {text}")
@@ -436,12 +374,13 @@ def add_text(
             + [""]
         )
 
-    if is_image(files[0]):
-        text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
         )
+        post_processed_text = _prepare_text_with_pdf(states[i], text, pdfs
+        
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -450,26 +389,6 @@ def add_text(
     for i in range(num_sides):
         if "deluxe" in states[i].model_name:
             hint_msg = SLOW_MODEL_MSG
-    
-    if is_pdf(files[0]):
-        document_text = pdf_parse(files[0])
-        prompt_text = f"""
-        The following is the content of a document:
-
-        {document_text}
-
-        Based on this document, answer the following question:
-
-        {text}
-        """
-        post_processed_text = wrap_query_context(text, prompt_text)
-
-    # text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    for i in range(num_sides):
-        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
-        states[i].conv.append_message(states[i].conv.roles[1], None)
-        states[i].skip_next = False
-
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
@@ -578,10 +497,10 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
 
         multimodal_textbox = gr.MultimodalTextbox(
-            file_types=["file"],
+            file_types=["image", ".pdf"],
             show_label=False,
             container=True,
-            placeholder="Enter your prompt here. You can also upload image or PDF file",
+            placeholder="Enter your prompt or add image here",
             elem_id="input_box",
             scale=3,
         )
@@ -590,12 +509,11 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
 
     with gr.Row() as button_row:
-        random_btn = gr.Button(value="🔮 Random Image", interactive=True) 
-        # if random_questions:
-        #     global vqa_samples
-        #     with open(random_questions, "r") as f:
-        #         vqa_samples = json.load(f)
-        #     random_btn = gr.Button(value="🔮 Random Image", interactive=True)
+        if random_questions:
+            global vqa_samples
+            with open(random_questions, "r") as f:
+                vqa_samples = json.load(f)
+            random_btn = gr.Button(value="🔮 Random Image", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")

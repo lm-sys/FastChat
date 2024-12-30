@@ -183,7 +183,9 @@ def get_conv_log_filename(is_vision=False, has_csam_image=False):
     return name
 
 
-def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
+def get_model_list(
+    controller_url, register_api_endpoint_file, vision_arena=False, pdfchat_arena=False
+):
     global api_endpoint_info
 
     # Add models from the controller
@@ -205,10 +207,13 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
         api_endpoint_info = json.load(open(register_api_endpoint_file))
         for mdl, mdl_dict in api_endpoint_info.items():
             mdl_vision = mdl_dict.get("vision-arena", False)
+            mdl_pdfchat = mdl_dict.get("pdfchat-arena", False)
             mdl_text = mdl_dict.get("text-arena", True)
             if vision_arena and mdl_vision:
                 models.append(mdl)
-            if not vision_arena and mdl_text:
+            if pdfchat_arena and mdl_pdfchat:
+                models.append(mdl)
+            if not (vision_arena or pdfchat_arena) and mdl_text:
                 models.append(mdl)
 
     # Remove anonymous models
