@@ -379,8 +379,8 @@ def add_text(
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
         )
-        post_processed_text = _prepare_text_with_pdf(states[i], text, pdfs
-        
+        post_processed_text = _prepare_text_with_pdf(states[i], text, pdfs)
+
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
