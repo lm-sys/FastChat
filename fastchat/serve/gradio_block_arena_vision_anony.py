@@ -375,11 +375,12 @@ def add_text(
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    post_processed_text = _prepare_text_with_pdf(text, pdfs)
+    
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
-            states[i], text, images, csam_flag=csam_flag
+            states[i], post_processed_text, images, csam_flag=csam_flag
         )
-        post_processed_text = _prepare_text_with_pdf(states[i], text, pdfs)
 
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)

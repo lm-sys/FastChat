@@ -236,12 +236,15 @@ def parse_pdf(file_path):
     assert (
         "LLAMA_CLOUD_API_KEY" in os.environ
     ), "Make sure to specify LlamaParse API key."
-    documents = LlamaParse(
+    document = LlamaParse(
         result_type="markdown",
         verbose=True,
     ).load_data(file_path)
+    
+    assert len(document) > 0
+    output = document[0].text
 
-    return documents
+    return output
 
 
 def _prepare_text_with_image(state, text, images, csam_flag):
@@ -255,13 +258,10 @@ def _prepare_text_with_image(state, text, images, csam_flag):
     return text
 
 
-def _prepare_text_with_pdf(state, text, pdfs):
+def _prepare_text_with_pdf(text, pdfs):
     if len(pdfs) > 0:
-        # if len(state.conv.get_pdfs()) > 0:
-        state.conv = get_conversation_template(state.model_name)
-        assert len(text) > 0
-
         document_content = parse_pdf(pdfs[0])
+        print("Document processed")
         text = wrap_pdfchat_query(text, document_content)
 
     return text
