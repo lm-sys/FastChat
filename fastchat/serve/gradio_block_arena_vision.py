@@ -215,8 +215,7 @@ def wrap_pdfchat_query(query, document):
     document_context = f"""
     The following is the content of a document:
     {document}
-    Based on this document, answer the following question:
-    {query}
+    Based on this document, answer the user query.
     """
 
     reformatted_query_context = (
@@ -236,13 +235,13 @@ def parse_pdf(file_path):
     assert (
         "LLAMA_CLOUD_API_KEY" in os.environ
     ), "Make sure to specify LlamaParse API key."
-    document = LlamaParse(
+    documents = LlamaParse(
         result_type="markdown",
         verbose=True,
     ).load_data(file_path)
-    
-    assert len(document) > 0
-    output = document[0].text
+
+    assert len(documents) > 0
+    output = "\n".join([doc.text for doc in documents])
 
     return output
 
