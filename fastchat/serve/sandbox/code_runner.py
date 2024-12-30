@@ -62,35 +62,46 @@ Button in the chat to run the code in the sandbox.
 
 SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE***"
 
-GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
+GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
+
+The code must be in the markdown format:
 ***REMOTE SANDBOX CODE***:
 ```<language>
 <code>
 ```
+
+If python or npm packages are needed, you have to explicitly output the required packages in the markdown format:
+***REMOTE SANDBOX PACKAGES***:
+```
+pip install <package1> <package2> ...
+npm install <package1> <package2> ...
+```
+
+The optional sandbox packages cell must be output together with the code cell in the same message. You should not only output the sandbox packages cell.
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
 Generate self-contained Python code for execution in a code interpreter.
-Use only the standard library or these pre-installed libraries: aiohttp, beautifulsoup4, bokeh, gensim, imageio, joblib, librosa, matplotlib, nltk, numpy, opencv-python, openpyxl, pandas, plotly, pytest, python-docx, pytz, requests, scikit-image, scikit-learn, scipy, seaborn, soundfile, spacy, textblob, tornado, urllib3, xarray, xlrd, sympy.
+There are standard and pre-installed libraries: aiohttp, beautifulsoup4, bokeh, gensim, imageio, joblib, librosa, matplotlib, nltk, numpy, opencv-python, openpyxl, pandas, plotly, pytest, python-docx, pytz, requests, scikit-image, scikit-learn, scipy, seaborn, soundfile, spacy, textblob, tornado, urllib3, xarray, xlrd, sympy.
 Output via stdout, stderr, or render images, plots, and tables.
 """
 
 DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION = """
-Generate JavaScript code suitable for execution in a code interpreter environment.
+Generate JavaScript code suitable for execution in a code interpreter environment. This is not for web page apps.
 Ensure the code is self-contained and does not rely on browser-specific APIs.
 You can output in stdout, stderr, or render images, plots, and tables.
 """
 
 DEFAULT_HTML_SANDBOX_INSTRUCTION = """
-Generate HTML code for a single HTML file to be executed in a sandbox. You can add style and javascript. Do not use external libraries or import external files.
+Generate HTML code for a single vanilla HTML file to be executed in a sandbox. You can add style and javascript.
 """
 
-DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. . Do not use external libs or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
+DEFAULT_REACT_SANDBOX_INSTRUCTION = """ Generate typescript for a single-file Next.js 13+ React component tsx file. Pre-installed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"] """
 '''
 Default sandbox prompt instruction.
 '''
 
-DEFAULT_VUE_SANDBOX_INSTRUCTION = """ Generate TypeScript for a single-file Vue.js 3+ component (SFC) in .vue format. The component should be a simple custom page in a styled `<div>` element. Do not include <NuxtWelcome /> or reference any external components. Surround the code with ``` in markdown. Do not use external libraries or import external files. Allowed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"], """
+DEFAULT_VUE_SANDBOX_INSTRUCTION = """ Generate TypeScript for a single-file Vue.js 3+ component (SFC) in .vue format. The component should be a simple custom page in a styled `<div>` element. Do not include <NuxtWelcome /> or reference any external components. Surround the code with ``` in markdown. Pre-installed libs: ["nextjs@14.2.5", "typescript", "@types/node", "@types/react", "@types/react-dom", "postcss", "tailwindcss", "shadcn"], """
 '''
 Default sandbox prompt instruction for vue.
 '''
@@ -118,8 +129,6 @@ if __name__ == "__main__":
 
 DEFAULT_GRADIO_SANDBOX_INSTRUCTION = """
 Generate Python code for a single-file Gradio application using the Gradio library.
-Do not use external libraries or import external files outside of the allowed list.
-Allowed libraries: ["gradio", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
 """
 
 DEFAULT_NICEGUI_SANDBOX_INSTRUCTION = """
@@ -129,25 +138,32 @@ Generate a Python NiceGUI code snippet for a single file.
 DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION = """
 Generate Python code for a single-file Streamlit application using the Streamlit library.
 The app should automatically reload when changes are made. 
-Do not use external libraries or import external files outside of the allowed list.
-Allowed libraries: ["streamlit", "pandas", "numpy", "matplotlib", "requests", "seaborn", "plotly"]
 """
 
 AUTO_SANDBOX_INSTRUCTION = (
 """
-You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not use external libraries or import external files outside of the allowlist. You can output information if needed. The code should be in the markdown format:
+You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed. 
+
+The code should be in the markdown format:
 ***REMOTE SANDBOX CODE***[<sandbox_environment_name>]:
 ```<language>
 <code>
 ```
 
+If extra python or npm packages are needed, output the required packages in the markdown format:
+***REMOTE SANDBOX PACKAGES***:
+```
+pip install <package1> <package2> ...
+npm install <package1> <package2> ...
+```
+
 You can choose from the following sandbox environments:
 """
 + 'Sandbox Environment Name: ' + SandboxEnvironment.PYTHON_CODE_INTERPRETER + '\n' + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
-+ 'Sandbox Environment Name: ' + SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER + '\n' + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
-+ 'Sandbox Environment Name: ' + SandboxEnvironment.HTML + '\n' + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.REACT + '\n' + DEFAULT_REACT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.VUE + '\n' + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER + '\n' + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip() + '\n------\n'
++ 'Sandbox Environment Name: ' + SandboxEnvironment.HTML + '\n' + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.GRADIO + '\n' + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.STREAMLIT + '\n' + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.NICEGUI + '\n' + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip() + '\n------\n'
@@ -209,6 +225,10 @@ class ChatbotSandboxState(TypedDict):
     '''
     The code language to execute in the sandbox.
     '''
+    code_dependencies: tuple[list[str], list[str]]
+    '''
+    The code dependencies for the sandbox (python, npm).
+    '''
     btn_list_length: int | None
 
 
@@ -223,6 +243,7 @@ def create_chatbot_sandbox_state(btn_list_length: int) -> ChatbotSandboxState:
         "sandbox_instruction": None,
         "code_to_execute": "",
         "code_language": None,
+        "code_dependencies": ([], []),
         "enabled_round": 0,
         "btn_list_length": btn_list_length
     }
@@ -264,16 +285,32 @@ def update_visibility_for_single_model(visible: bool, component_cnt: int):
     return [gr.update(visible=visible)] * component_cnt
 
 
-def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, SandboxEnvironment | None] | None:
+def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message.
 
     Returns:
         tuple[str, str, bool]: A tuple:
             1. code,
-            2. code language, 
-            3. sandbox environment if auto environment is enabled, otherwise None
+            2. code language,
+            3. sandbox python and npm dependencies if any,
+            4. sandbox environment if auto environment is enabled, otherwise None
     '''
+    # Extract sandbox dependencies
+    python_packages: list[str] = []
+    npm_packages: list[str] = []
+
+    packages_block_regex = r'\*\*\*REMOTE SANDBOX PACKAGES\*\*\*:\s*```(?P<packages>.*?)```'
+    match_pkg = re.search(packages_block_regex, message, re.DOTALL)
+    if match_pkg:
+        pkg_block = match_pkg.group('packages').strip()
+        for line in pkg_block.splitlines():
+            line = line.strip()
+            if line.startswith("pip install "):
+                python_packages.extend(line[len("pip install "):].split())
+            elif line.startswith("npm install "):
+                npm_packages.extend(line[len("npm install "):].split())
+
     # Regular expression to match code blocks with optional language
     code_block_regex = rf'{re.escape(SANDBOX_CODE_TAG)}(\[(?P<sandbox_env_name>[^\]]+)\])?:\s*```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
 
@@ -297,7 +334,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
             # if the sandbox environment name is not valid, return None
             return None
 
-    return code, code_lang, sandbox_env_name
+    return code, code_lang, (python_packages, npm_packages), sandbox_env_name
 
 
 def render_result(result):
@@ -333,15 +370,48 @@ def render_result(result):
     else:
         return str(result)
 
+def install_pip_dependencies(sandbox: Sandbox, dependencies: list[str]):
+    '''
+    Install pip dependencies in the sandbox.
+    '''
+    if not dependencies:
+        return
+    sandbox.commands.run(
+        f"pip install {' '.join(dependencies)}",
+        timeout=60 * 3,
+        on_stdout=lambda message: print(message),
+        on_stderr=lambda message: print(message),
+    )
 
-def run_code_interpreter(code: str, code_language: str | None) -> str:
+
+def install_npm_dependencies(sandbox: Sandbox, dependencies: list[str]):
+    '''
+    Install npm dependencies in the sandbox.
+    '''
+    if not dependencies:
+        return
+    sandbox.commands.run(
+        f"npm install {' '.join(dependencies)}",
+        timeout=60 * 3,
+        on_stdout=lambda message: print(message),
+        on_stderr=lambda message: print(message),
+    )
+
+
+def run_code_interpreter(code: str, code_language: str | None, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
     Args:
         code (str): The code to be executed.
     """
-    sandbox = CodeSandbox()
+    sandbox = CodeSandbox(
+        api_key=E2B_API_KEY,
+    )
+
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
 
     execution = sandbox.run_code(
         code=code,
@@ -373,7 +443,7 @@ def run_code_interpreter(code: str, code_language: str | None) -> str:
     return output
 
 
-def run_html_sandbox(code: str) -> str:
+def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -386,6 +456,10 @@ def run_html_sandbox(code: str) -> str:
     sandbox = Sandbox(
         api_key=E2B_API_KEY,
     )
+
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
 
     sandbox.files.make_dir('myhtml')
     file_path = "~/myhtml/main.html"
@@ -400,7 +474,7 @@ def run_html_sandbox(code: str) -> str:
     return url + '/myhtml/main.html'
 
 
-def run_react_sandbox(code: str) -> str:
+def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -418,6 +492,10 @@ def run_react_sandbox(code: str) -> str:
         api_key=E2B_API_KEY,
     )
 
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
+
     # set up the sandbox
     sandbox.files.make_dir('pages')
     file_path = "~/pages/index.tsx"
@@ -428,7 +506,7 @@ def run_react_sandbox(code: str) -> str:
     return sandbox_url
 
 
-def run_vue_sandbox(code: str) -> str:
+def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided Vue code within a sandboxed environment and returns the output.
 
@@ -450,12 +528,16 @@ def run_vue_sandbox(code: str) -> str:
     file_path = "~/app.vue"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
+
     # Get the sandbox URL
     sandbox_url = 'https://' + sandbox.get_host(3000)
     return sandbox_url
 
 
-def run_pygame_sandbox(code: str) -> str:
+def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -477,6 +559,10 @@ def run_pygame_sandbox(code: str) -> str:
                          timeout=60 * 3,
                          # on_stdout=lambda message: print(message),
                          on_stderr=lambda message: print(message),)
+    
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
 
     # build the pygame code
     sandbox.commands.run(
@@ -495,7 +581,7 @@ def run_pygame_sandbox(code: str) -> str:
     return url + '/mygame/build/web/'
 
 
-def run_nicegui_sandbox(code: str) -> str:
+def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -526,6 +612,10 @@ def run_nicegui_sandbox(code: str) -> str:
     file_path = "~/mynicegui/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
+
     process = sandbox.commands.run(
         "python ~/mynicegui/main.py", background=True)
 
@@ -535,7 +625,7 @@ def run_nicegui_sandbox(code: str) -> str:
     return url
 
 
-def run_gradio_sandbox(code: str) -> str:
+def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -557,12 +647,16 @@ def run_gradio_sandbox(code: str) -> str:
     file_path = "~/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
+
     # get the sandbox url
     sandbox_url = 'https://' + sandbox.get_host(7860)
     return sandbox_url
 
 
-def run_streamlit_sandbox(code: str) -> str:
+def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
     setup_commands = ["pip install --upgrade streamlit"]
@@ -578,6 +672,10 @@ def run_streamlit_sandbox(code: str) -> str:
     sandbox.files.make_dir('mystreamlit')
     file_path = "~/mystreamlit/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
+
+    python_dependencies, npm_dependencies = code_dependencies
+    install_pip_dependencies(sandbox, python_dependencies)
+    install_npm_dependencies(sandbox, npm_dependencies)
 
     process = sandbox.commands.run(
         "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true",
@@ -596,7 +694,7 @@ def on_edit_code(
     sandbox_code: str,
 ) -> Generator[tuple[Any, Any, Any], None, None]:
     '''
-    Gradio Handler when code is edited.
+    Gradio Handler when code is edited manually by users.
     '''
     if sandbox_state['enable_sandbox'] is False:
         yield None, None, None
@@ -633,11 +731,10 @@ def on_click_code_message_run(
     if extract_result is None:
         yield gr.skip(), gr.skip(), gr.skip()
         return
-    code, code_language, env_selection = extract_result
+    code, code_language, code_dependencies, env_selection = extract_result
 
-    # validate whether code to execute has been updated.
-    previous_code = sandbox_state['code_to_execute']
-    if previous_code == code:
+    if sandbox_state['code_to_execute'] == code and sandbox_state['code_language'] == code_language and sandbox_state['code_dependencies'] == code_dependencies:
+        # skip if no changes
         yield gr.skip(), gr.skip(), gr.skip()
         return
 
@@ -649,6 +746,7 @@ def on_click_code_message_run(
 
     sandbox_state['code_to_execute'] = code
     sandbox_state['code_language'] = code_language
+    sandbox_state['code_dependencies'] = code_dependencies
     if sandbox_state['sandbox_environment'] == SandboxEnvironment.AUTO:
         sandbox_state['auto_selected_sandbox_environment'] = env_selection
     yield from on_run_code(state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code)
@@ -685,15 +783,16 @@ def on_run_code(
     # show loading
     yield (
         gr.Markdown(value="### Loading Sandbox", visible=True),
-        gr.skip(),
+        SandboxComponent(visible=False),
         gr.Code(value=code, language=code_language, visible=True),
     )
 
     sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
+    code_dependencies = sandbox_state['code_dependencies']
 
     match sandbox_env:
         case SandboxEnvironment.HTML:
-            url = run_html_sandbox(code)
+            url = run_html_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -705,7 +804,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.REACT:
-            url = run_react_sandbox(code)
+            url = run_react_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -717,7 +816,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.VUE:
-            url = run_vue_sandbox(code)
+            url = run_vue_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -729,7 +828,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.PYGAME:
-            url = run_pygame_sandbox(code)
+            url = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -741,7 +840,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.GRADIO:
-            url = run_gradio_sandbox(code)
+            url = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -753,7 +852,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.STREAMLIT:
-            url = run_streamlit_sandbox(code)
+            url = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -765,7 +864,7 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.NICEGUI:
-            url = run_nicegui_sandbox(code)
+            url = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
             yield (
                 gr.Markdown(value="### Running Sandbox", visible=True),
                 SandboxComponent(
@@ -778,7 +877,7 @@ def on_run_code(
             )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
             output = run_code_interpreter(
-                code=code, code_language='python'
+                code=code, code_language='python', code_dependencies=code_dependencies
             )
             yield (
                 gr.Markdown(value=output, sanitize_html=False, visible=True),
@@ -792,7 +891,7 @@ def on_run_code(
             )
         case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
             output = run_code_interpreter(
-                code=code, code_language='javascript'
+                code=code, code_language='javascript', code_dependencies=code_dependencies
             )
             yield (
                 gr.Markdown(value=output, visible=True),
