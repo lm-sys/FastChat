@@ -232,18 +232,80 @@ def wrap_pdfchat_query(query, document):
     return reformatted_query_context
 
 
+LLAMA_PARSE_MAX_RETRY = 2
+TESSERACT_SUPPORTED_LANGS = "+".join(
+    [
+        "en",
+        "chi_tra",
+        "chi_sim",
+        "rus",
+        "spa",
+        "jpn",
+        "kor",
+        "fra",
+        "deu",  # German
+        "vie",
+    ]
+)
+LLAMAPARSE_SUPPORTED_LANGS = {
+    "English": "en",
+    "Chinese": "ch_sim",
+    "Russian": "ru",
+    "Spanish": "es",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "French": "fr",
+    "German": "de",
+    "Vietnamese": "vi",
+}
+
+
+def detect_language_from_doc(pdf_file_path):
+    from pdf2image import convert_from_path
+    from polyglot.detect import Detector
+
+    import pytesseract  # Google's open-source OCR tool
+
+    assert os.environ[
+        "TESSDATA_PREFIX"
+    ], "Make sure to specify location of train data for Tesseract."
+
+    # Convert pdf into image (first page only for efficiency)
+    images = convert_from_path(pdf_file_path)
+    extracted_text = pytesseract.image_to_string(
+        images[0], lang=TESSERACT_SUPPORTED_LANGS
+    )
+
+    languages = Detector(extracted_text, quiet=True)
+    # return languages
+    return [lang.name for lang in languages.languages if lang.name != "un"]
+
+
 def parse_pdf(file_path):
     from llama_parse import LlamaParse
 
     assert (
         "LLAMA_CLOUD_API_KEY" in os.environ
     ), "Make sure to specify LlamaParse API key."
-    documents = LlamaParse(
-        result_type="markdown",
-        verbose=True,
-    ).load_data(file_path)
 
-    assert len(documents) > 0
+    doc_lang = detect_language_from_doc(file_path)
+    doc_lang = LLAMAPARSE_SUPPORTED_LANGS[doc_lang[0]]
+
+    print(doc_lang)
+
+    for _ in range(LLAMA_PARSE_MAX_RETRY):
+        try:
+            documents = LlamaParse(
+                result_type="markdown",
+                verbose=True,
+                language=doc_lang,
+                accurate_mode=True,
+            ).load_data(file_path)
+            assert len(documents) > 0
+            break
+        except AssertionError as e:
+            continue
+
     output = "\n".join(
         [f"Page {i+1}:\n{doc.text}\n" for i, doc in enumerate(documents)]
     )
