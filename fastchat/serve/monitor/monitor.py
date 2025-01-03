@@ -1035,6 +1035,21 @@ def build_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
                 )
 
+            from fastchat.serve.monitor.copilot_arena import (
+                build_copilot_arena_tab,
+                copilot_arena_leaderboard_url,
+            )
+
+            if copilot_arena_leaderboard_url:
+                with gr.Tab("Copilot Arena Leaderboard", id=5):
+                    build_copilot_arena_tab()
+            else:
+                print(
+                    "Unable to build Copilot Arena's Leaderboard. "
+                    "COPILOT_ARENA_LEADERBOARD_URL environment variable is not set. "
+                    "Please configure it to a valid URL."
+                )
+
         if not show_plot:
             gr.Markdown(
                 """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
