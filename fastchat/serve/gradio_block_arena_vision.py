@@ -265,23 +265,25 @@ def pdf_moderator(images):
     import base64
     from openai import OpenAI
     from io import BytesIO
-    
+
     base64_urls = []
     for image in images:
         buffer = BytesIO()
         image.save(buffer, format="JPEG")
-        
+
         image_bytes = buffer.getvalue()
         image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
         # convert to openai format
-        base64_urls.append({
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{image_b64}",
+        base64_urls.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{image_b64}",
+                },
             }
-        })
-    
+        )
+
     # OpenAI's maximum number of images is 1 at the moment.
     client = OpenAI()
     moderations = []
@@ -294,7 +296,7 @@ def pdf_moderator(images):
             moderations.append(response[0].results.flagged)
         except Exception as e:
             print(e)
-            
+
     return all(moderations)
 
 
@@ -310,7 +312,7 @@ def detect_language_from_doc(pdf_file_path):
 
     # Convert pdf into image (first page only for efficiency)
     images = convert_from_path(pdf_file_path)
-    
+
     extracted_text = pytesseract.image_to_string(
         images[0], lang=TESSERACT_SUPPORTED_LANGS
     )

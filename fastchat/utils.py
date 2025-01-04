@@ -468,8 +468,8 @@ def get_pdf_file_from_gcs(filename):
 
 def hash_pdf(file_path):
     import hashlib
-    
-    with open(file_path, 'rb') as f:
+
+    with open(file_path, "rb") as f:
         file_content = f.read()
     return hashlib.md5(file_content).hexdigest()
 

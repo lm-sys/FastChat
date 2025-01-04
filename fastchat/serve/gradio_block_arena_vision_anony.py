@@ -300,21 +300,13 @@ def add_text(
                 PDFCHAT_SAMPLING_WEIGHTS,
                 PDFCHAT_SAMPLING_BOOST_MODELS,
             )
-            
+
             # Save an unique id for mapping conversation back to the file on google cloud.
             unique_id = hash_pdf(pdfs[0])
-            
+
             states = [
-                State(
-                    model_left, 
-                    is_vision=False, 
-                    pdf_id=unique_id
-                ),
-                State(
-                    model_right, 
-                    is_vision=False, 
-                    pdf_id=unique_id
-                ),
+                State(model_left, is_vision=False, pdf_id=unique_id),
+                State(model_right, is_vision=False, pdf_id=unique_id),
             ]
             upload_pdf_file_to_gcs(
                 pdf_file_path=pdfs[0],
