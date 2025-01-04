@@ -13,6 +13,7 @@ from typing import Union
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
+    PDF_MODERATION_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -77,6 +78,8 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
+    upload_pdf_file_to_gcs,
+    hash_pdf,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -297,10 +300,26 @@ def add_text(
                 PDFCHAT_SAMPLING_WEIGHTS,
                 PDFCHAT_SAMPLING_BOOST_MODELS,
             )
+            
+            # Save an unique id for mapping conversation back to the file on google cloud.
+            unique_id = hash_pdf(pdfs[0])
+            
             states = [
-                State(model_left, is_vision=False),
-                State(model_right, is_vision=False),
+                State(
+                    model_left, 
+                    is_vision=False, 
+                    pdf_id=unique_id
+                ),
+                State(
+                    model_right, 
+                    is_vision=False, 
+                    pdf_id=unique_id
+                ),
             ]
+            upload_pdf_file_to_gcs(
+                pdf_file_path=pdfs[0],
+                filename=unique_id,
+            )
         else:
             model_left, model_right = get_battle_pair(
                 context.all_text_models,
@@ -309,7 +328,6 @@ def add_text(
                 SAMPLING_WEIGHTS,
                 SAMPLING_BOOST_MODELS,
             )
-
             states = [
                 State(model_left, is_vision=False),
                 State(model_right, is_vision=False),
@@ -333,11 +351,10 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
+    # TODO: add PDF moderator
     text, image_flagged, csam_flag = moderate_input(
         state0, text, text, model_list, images, ip
     )
-
-    # TODO: add PDF moderator
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:

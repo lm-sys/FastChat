@@ -430,6 +430,20 @@ def upload_image_file_to_gcs(image, filename):
     return blob.public_url
 
 
+def upload_pdf_file_to_gcs(pdf_file_path, filename):
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+    # upload file to GCS
+    bucket = storage_client.get_bucket("arena-pdf-dev")
+
+    blob = bucket.blob(filename)
+    # Automatically opens the file in binary read mode
+    blob.upload_from_filename(pdf_file_path, content_type="application/pdf")
+
+    return blob.public_url
+
+
 def get_image_file_from_gcs(filename):
     from google.cloud import storage
 
@@ -439,6 +453,25 @@ def get_image_file_from_gcs(filename):
     contents = blob.download_as_bytes()
 
     return contents
+
+
+def get_pdf_file_from_gcs(filename):
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket("arena-pdf-dev")
+    blob = bucket.blob(f"{filename}")
+    contents = blob.download_as_bytes()
+
+    return contents
+
+
+def hash_pdf(file_path):
+    import hashlib
+    
+    with open(file_path, 'rb') as f:
+        file_content = f.read()
+    return hashlib.md5(file_content).hexdigest()
 
 
 def image_moderation_request(image_bytes, endpoint, api_key):
