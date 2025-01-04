@@ -14,6 +14,8 @@ from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
     PDF_MODERATION_MSG,
+    PDF_LIMIT_MSG,
+    PDF_PAGE_LIMIT,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -78,6 +80,7 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
+    get_pdf_num_page,
     upload_pdf_file_to_gcs,
     hash_pdf,
 )
@@ -339,6 +342,25 @@ def add_text(
             + [""]
         )
 
+    if len(pdfs) > 0 and get_pdf_num_page(pdfs[0]) > PDF_PAGE_LIMIT:
+        logger.info(f"pdf page limit exceeded. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [
+                {
+                    "text": PDF_LIMIT_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                },
+                "",
+                no_change_btn,
+            ]
+            + [no_change_btn] * 7
+            + [""]
+        )
+
     model_list = [states[i].model_name for i in range(num_sides)]
 
     images = convert_images_to_conversation_format(images)
@@ -356,11 +378,12 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
             + [
+                {"text": CONVERSATION_LIMIT_MSG},
+                "",
                 no_change_btn,
             ]
-            * 7
+            + [no_change_btn] * 7
             + [""]
         )
 

@@ -474,6 +474,14 @@ def hash_pdf(file_path):
     return hashlib.md5(file_content).hexdigest()
 
 
+def get_pdf_num_page(file_path):
+    from pypdf import PdfReader
+
+    reader = PdfReader(file_path)
+
+    return len(reader.pages)
+
+
 def image_moderation_request(image_bytes, endpoint, api_key):
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
 
