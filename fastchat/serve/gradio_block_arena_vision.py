@@ -258,9 +258,7 @@ def parse_pdf(file_path):
             documents = LlamaParse(
                 result_type="markdown",
                 verbose=True,
-                languages=list(
-                    LLAMAPARSE_SUPPORTED_LANGS.values()
-                ),
+                languages=list(LLAMAPARSE_SUPPORTED_LANGS.values()),
                 accurate_mode=True,
             ).load_data(file_path)
             assert len(documents) > 0
