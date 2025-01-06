@@ -362,18 +362,39 @@ class Conversation:
     def to_gradio_chatbot(self):
         """Convert the conversation to gradio chatbot format."""
         from fastchat.serve.vision.image import ImageFormat
+        import re
 
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, images = msg
-                    image = images[0]  # Only one image on gradio at one time
-                    if image.image_format == ImageFormat.URL:
-                        img_str = f'<img src="{image.url}" alt="user upload image" />'
-                    elif image.image_format == ImageFormat.BYTES:
-                        img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace("<image>\n", "").strip()
+
+                    pattern = re.compile("!\[\]\(_page_\d_Figure_\d\.jpeg\)")
+                    embed_locations = pattern.findall(msg)
+
+                    pdfchat = False
+                    for i, embed_str in enumerate(embed_locations):
+                        if i >= len(images):
+                            break
+
+                        image = images[i]
+                        msg = msg.replace(
+                            embed_str,
+                            f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="document image" />',
+                        )
+                        pdfchat = True
+
+                    if not pdfchat:
+                        # vision arena only supports one image on gradio at one time
+                        image = images[0]
+                        if image.image_format == ImageFormat.URL:
+                            img_str = (
+                                f'<img src="{image.url}" alt="user upload image" />'
+                            )
+                        elif image.image_format == ImageFormat.BYTES:
+                            img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
+                        msg = img_str + msg.replace("<image>\n", "").strip()
 
                 ret.append([msg, None])
             else:

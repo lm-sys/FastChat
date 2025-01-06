@@ -232,10 +232,51 @@ def wrap_pdfchat_query(query, document):
     return reformatted_query_context
 
 
-LLAMA_PARSE_MAX_RETRY = 2
-LLAMAPARSE_SUPPORTED_LANGS = {
+# LLAMA_PARSE_MAX_RETRY = 2
+# LLAMAPARSE_SUPPORTED_LANGS = {
+#     "English": "en",
+#     "Chinese": "ch_sim",
+#     "Russian": "ru",
+#     "Spanish": "es",
+#     "Japanese": "ja",
+#     "Korean": "ko",
+#     "French": "fr",
+#     "German": "de",
+#     "Vietnamese": "vi",
+# }
+
+
+# def parse_pdf(file_path):
+#     from llama_parse import LlamaParse
+
+#     assert (
+#         "LLAMA_CLOUD_API_KEY" in os.environ
+#     ), "Make sure to specify LlamaParse API key."
+
+#     for _ in range(LLAMA_PARSE_MAX_RETRY):
+#         try:
+#             documents = LlamaParse(
+#                 result_type="markdown",
+#                 verbose=True,
+#                 languages=list(LLAMAPARSE_SUPPORTED_LANGS.values()),
+#                 accurate_mode=True,
+#             ).load_data(file_path)
+#             assert len(documents) > 0
+#             break
+#         except AssertionError as e:
+#             continue
+
+#     output = "\n".join(
+#         [f"Page {i+1}:\n{doc.text}\n" for i, doc in enumerate(documents)]
+#     )
+
+#     return output
+
+
+PDFPARSE_MAX_RETRY = 2
+PDFPARSE_SUPPORTED_LANGS = {
     "English": "en",
-    "Chinese": "ch_sim",
+    "Chinese": "zh",
     "Russian": "ru",
     "Spanish": "es",
     "Japanese": "ja",
@@ -244,33 +285,36 @@ LLAMAPARSE_SUPPORTED_LANGS = {
     "German": "de",
     "Vietnamese": "vi",
 }
+MARKER_PDFPARSE_CONFIG = {
+    "output_format": "markdown",
+    "languages": ",".join(PDFPARSE_SUPPORTED_LANGS.values()),
+}
 
 
 def parse_pdf(file_path):
-    from llama_parse import LlamaParse
+    from marker.config.parser import ConfigParser
+    from marker.models import create_model_dict
+    from marker.converters.pdf import PdfConverter
 
-    assert (
-        "LLAMA_CLOUD_API_KEY" in os.environ
-    ), "Make sure to specify LlamaParse API key."
-
-    for _ in range(LLAMA_PARSE_MAX_RETRY):
+    output_md, output_images = None, None
+    for _ in range(PDFPARSE_MAX_RETRY):
         try:
-            documents = LlamaParse(
-                result_type="markdown",
-                verbose=True,
-                languages=list(LLAMAPARSE_SUPPORTED_LANGS.values()),
-                accurate_mode=True,
-            ).load_data(file_path)
-            assert len(documents) > 0
+            config_parser = ConfigParser(MARKER_PDFPARSE_CONFIG)
+
+            converter = PdfConverter(
+                config=config_parser.generate_config_dict(),
+                artifact_dict=create_model_dict(),
+                processor_list=config_parser.get_processors(),
+                renderer=config_parser.get_renderer(),
+            )
+            rendered = converter(file_path)
+            output_md = rendered.markdown
+            output_images = list(rendered.images.values())
             break
         except AssertionError as e:
             continue
 
-    output = "\n".join(
-        [f"Page {i+1}:\n{doc.text}\n" for i, doc in enumerate(documents)]
-    )
-
-    return output
+    return output_md, output_images
 
 
 def _prepare_text_with_image(state, text, images, csam_flag):
@@ -284,12 +328,26 @@ def _prepare_text_with_image(state, text, images, csam_flag):
     return text
 
 
+# def _prepare_text_with_pdf(text, pdfs):
+#     if len(pdfs) > 0:
+#         document_content = parse_pdf(pdfs[0])
+#         print("Document processed")
+#         text = wrap_pdfchat_query(text, document_content)
+
+#     return text
+
+
 def _prepare_text_with_pdf(text, pdfs):
     if len(pdfs) > 0:
-        document_content = parse_pdf(pdfs[0])
+        parsed_text, imgs = parse_pdf(pdfs[0])
         print("Document processed")
-        text = wrap_pdfchat_query(text, document_content)
+        wrapped_text = wrap_pdfchat_query(text, parsed_text)
 
+        imgs = convert_pdf_images_to_conversation_format(imgs)
+
+        if len(imgs) > 0:
+            return wrapped_text, imgs
+        return wrapped_text
     return text
 
 
@@ -304,6 +362,20 @@ def convert_images_to_conversation_format(images):
         conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
         conv_images.append(conv_image)
 
+    return conv_images
+
+
+def convert_pdf_images_to_conversation_format(images):
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
+    conv_images = []
+    if len(images) > 0:
+        for img in images:
+            # pdf parser returns a PIL image object instead of path
+            conv_images.append(
+                Image(url="").to_conversation_format(
+                    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB, pil_img=img
+                )
+            )
     return conv_images
 
 
