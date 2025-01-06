@@ -538,23 +538,25 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
-
-{SURVEY_LINK}
-
-## 📣 News
-- Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
+# ⚔️ Software Arena: Free AI Platform to Compare and Vote on LLM-Generated Visual UIs
+[GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [Twitter](https://twitter.com/your-account) | [Discord](https://discord.gg/your-server)
 
 ## 📜 How It Works
-- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
-- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
-- **Play Fair**: If AI identity reveals, your vote won't count.
+- **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a game, generate a visualization, etc.).
+- **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox. Interact with the programs, explore their functionality, and evaluate the quality of the generated outputs.
+- **Vote for the Best**: After interacting with both programs, choose the one that best meets the requirements or offers the best experience.
+- **Play Fair**: If an AI reveals its identity, the match will be invalid, and your vote won’t count.
 
-## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
-- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
+## 💻 What Can You Create and Test?
+- Web apps and single-page HTML
+- Interactive visualizations and plots
+- Scalable Vector Graphics (SVG)
+- Tables, diagrams, and flowcharts
+- Games
+- UI components (e.g., React)
+- Programs in Python, Java, and more
 
-## 👇 Chat now!
+## 👇 Start Testing & Voting Now!
 """
 
     states = [gr.State() for _ in range(num_sides)]

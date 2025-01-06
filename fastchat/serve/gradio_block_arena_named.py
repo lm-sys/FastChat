@@ -387,14 +387,13 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
-
-{SURVEY_LINK}
+# ⚔️ Software Arena: Free AI Platform to Compare and Vote on LLM-Generated Visual UIs
+[GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [Twitter](https://twitter.com/your-account) | [Discord](https://discord.gg/your-server)
 
 ## 📜 How It Works
-- Ask any question to two chosen models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
-- You can chat for multiple turns until you identify a winner.
+- Interact with two chosen models (e.g., GPT, Gemini, Claude) as they generate programs with visual UIs.
+- Test the programs in a sandbox environment, interact with their functionality, and vote for the better one!
+- You can chat for multiple turns, explore the UIs, and continue testing until you identify a winner.
 
 ## 👇 Choose two models to compare
 """
