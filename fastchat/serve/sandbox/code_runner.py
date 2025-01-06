@@ -151,16 +151,8 @@ AUTO_SANDBOX_INSTRUCTION = (
 You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed. 
 
 The code should be in the markdown format:
-***REMOTE SANDBOX CODE***[<sandbox_environment_name>]:
 ```<language>
 <code>
-```
-
-If extra python or npm packages are needed, output the required packages in the markdown format:
-***REMOTE SANDBOX PACKAGES***:
-```
-pip install <package1> <package2> ...
-npm install <package1> <package2> ...
 ```
 
 You can choose from the following sandbox environments:
@@ -555,7 +547,7 @@ def install_pip_dependencies(sandbox: Sandbox, dependencies: list[str]):
     if not dependencies:
         return
     sandbox.commands.run(
-        f"uv pip install {' '.join(dependencies)}",
+        f"uv pip install --system {' '.join(dependencies)}",
         timeout=60 * 3,
         on_stdout=lambda message: print(message),
         on_stderr=lambda message: print(message),
@@ -740,7 +732,7 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
                          timeout=60 * 3,
                          # on_stdout=lambda message: print(message),
                          on_stderr=lambda message: print(message),)
-    sandbox.commands.run("uv pip install pygame pygbag black",
+    sandbox.commands.run("uv pip install --system pygame pygbag black",
                          timeout=60 * 3,
                          # on_stdout=lambda message: print(message),
                          on_stderr=lambda message: print(message),)
