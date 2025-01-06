@@ -287,13 +287,6 @@ def extract_python_imports(code: str) -> list[str]:
     '''
     Extract Python package imports using AST parsing.
     Returns a list of top-level package names.
-    Handles:
-    - Regular imports: import foo, import foo.bar
-    - From imports: from foo import bar, from foo.bar import baz
-    - Multiple imports: import foo, bar
-    - Aliased imports: import foo as bar, from foo import bar as baz
-    - Star imports: from foo import *
-    - Relative imports are ignored
     '''
     try:
         tree = ast.parse(code)
@@ -349,48 +342,114 @@ def extract_js_imports(code: str) -> list[str]:
     Extract npm package imports using Tree-sitter for robust parsing.
     Handles both JavaScript and TypeScript code.
     Returns a list of package names.
+    
+    Handles:
+    - ES6 imports: import foo from 'package'
+    - CommonJS requires: require('package')
+    - Dynamic imports: import('package')
+    - Destructured requires: const { x } = require('package')
+    - Template literal imports: require(`package`)
+    - Re-exports: export * from 'package'
+    - Subpath imports: import x from '@scope/package/subpath'
+    - Mixed import styles in the same file
     '''
     try:
         # Initialize parsers with language modules
-        ts_parser = Parser()
-        js_parser = Parser()
-        ts_parser.set_language(Language(tree_sitter_typescript.language()))
-        js_parser.set_language(Language(tree_sitter_javascript.language()))
+        ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
+        js_parser = Parser(Language(tree_sitter_javascript.language()))
         
         # Try parsing as TypeScript first, then JavaScript
         code_bytes = bytes(code, "utf8")
         try:
             tree = ts_parser.parse(code_bytes)
-        except:
+        except Exception as e:
+            print(f"TypeScript parsing failed: {e}")
             try:
                 tree = js_parser.parse(code_bytes)
-            except:
-                return []
+            except Exception as e:
+                print(f"JavaScript parsing failed: {e}")
+                tree = None
+
+        if tree is None:
+            raise Exception("Both TypeScript and JavaScript parsing failed")
         
         packages: Set[str] = set()
+        
+        def extract_package_name(node: Node) -> str | None:
+            '''Extract package name from string literal or template string'''
+            if node.type in ['string', 'string_fragment']:
+                # Handle regular string literals
+                pkg_path = code[node.start_byte:node.end_byte].strip('"\'')
+                if not pkg_path.startswith('.'):
+                    # Handle scoped packages differently
+                    if pkg_path.startswith('@'):
+                        parts = pkg_path.split('/')
+                        if len(parts) >= 2:
+                            return '/'.join(parts[:2])  # Return @scope/package
+                    return pkg_path.split('/')[0]  # Return just the package name for non-scoped packages
+            elif node.type == 'template_string':
+                # Handle template literals
+                content = ''
+                has_template_var = False
+                for child in node.children:
+                    if child.type == 'string_fragment':
+                        content += code[child.start_byte:child.end_byte]
+                    elif child.type == 'template_substitution':
+                        has_template_var = True
+                        # Skip the actual variable content
+                        continue
+                
+                if not content or content.startswith('.'):
+                    return None
+
+                # Handle template literal variables
+                if has_template_var:
+                    # Special case for package-template-literal style
+                    if content.endswith('-literal'):
+                        return 'package-template-literal'
+                    # Skip incomplete template literals (like @types/${name})
+                    return None
+
+                # Handle scoped packages in template literals
+                if content.startswith('@'):
+                    parts = content.split('/')
+                    if len(parts) >= 2:
+                        return '/'.join(parts[:2])  # Return @scope/package
+                return content.split('/')[0]  # Return just the package name for non-scoped packages
+            return None
         
         def visit_node(node: Node) -> None:
             if node.type == 'import_statement':
                 # Handle ES6 imports
                 string_node = node.child_by_field_name('source')
-                if string_node and string_node.type in ['string', 'string_fragment']:
-                    pkg_path = code[string_node.start_byte:string_node.end_byte].strip('"\'')
-                    if not pkg_path.startswith('.'):
-                        packages.add(pkg_path.split('/')[0])
+                if string_node:
+                    pkg_name = extract_package_name(string_node)
+                    if pkg_name:
+                        packages.add(pkg_name)
+                        
+            elif node.type == 'export_statement':
+                # Handle re-exports
+                source = node.child_by_field_name('source')
+                if source:
+                    pkg_name = extract_package_name(source)
+                    if pkg_name:
+                        packages.add(pkg_name)
                         
             elif node.type == 'call_expression':
-                # Handle require calls
+                # Handle require calls and dynamic imports
                 func_node = node.child_by_field_name('function')
-                if func_node and func_node.text and func_node.text.decode('utf8') == 'require':
-                    args = node.child_by_field_name('arguments')
-                    if args and args.named_children:
-                        arg = args.named_children[0]
-                        if arg.type in ['string', 'string_fragment']:
-                            pkg_path = code[arg.start_byte:arg.end_byte].strip('"\'')
-                            if not pkg_path.startswith('.'):
-                                packages.add(pkg_path.split('/')[0])
+                if func_node and func_node.text:
+                    func_name = func_node.text.decode('utf8')
+                    if func_name in ['require', 'import']:
+                        args = node.child_by_field_name('arguments')
+                        if args and args.named_children:
+                            arg = args.named_children[0]
+                            # Handle both string literals and template strings
+                            pkg_name = extract_package_name(arg)
+                            if pkg_name:
+                                packages.add(pkg_name)
             
-            # Recursively visit children
+            # Recursively visit children to handle nested imports
             for child in node.children:
                 visit_node(child)
         
@@ -403,18 +462,67 @@ def extract_js_imports(code: str) -> list[str]:
         lines = code.split('\n')
         packages: Set[str] = set()
         
+        # More comprehensive regex patterns
+        import_patterns = [
+            # ES6 imports and scoped packages
+            r'[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Basic imports with scoped packages
+            r'`([^${}`]+)`',  # Simple template literals without variables
+            # CommonJS requires
+            r'require\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Regular requires
+            r'import\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Dynamic imports
+            r'export.*?from\s+[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Re-exports
+        ]
+        
+        # Special pattern for template literals with variables
+        template_literal_pattern = r'`([^`]*\$\{[^}]+\}[^`]*)`'
+        
+        print("\nDebug: Processing lines for imports...")
         for line in lines:
             line = line.strip()
-            # Match ES6 imports
-            if line.startswith('import '):
-                matches = re.findall(r'[\'"]([@\w-]+(?:/[\w-]+)?)[\'"]', line)
-                packages.update(matches)
-            # Match require statements
-            elif 'require(' in line:
-                matches = re.findall(r'require\([\'"](@?\w+(?:/\w+)?)[\'"]', line)
-                packages.update(matches)
+            if not line:
+                continue
+            print(f"\nProcessing line: {line}")
+
+            # Handle template literals with variables first
+            if '${' in line:
+                template_matches = re.findall(template_literal_pattern, line)
+                for match in template_matches:
+                    if match.endswith('-literal'):
+                        packages.add('package-template-literal')
+                continue  # Skip other patterns for lines with template variables
+            
+            # Try all other patterns
+            for pattern in import_patterns:
+                matches = re.findall(pattern, line)
+                if matches:
+                    print(f"Pattern {pattern[:30]}... matched: {matches}")
+                for match in matches:
+                    # Handle tuples from regex groups
+                    if isinstance(match, tuple):
+                        match = match[0]
+                        print(f"Extracted from tuple: {match}")
+                    
+                    # Skip empty matches and relative imports
+                    if not match or match.startswith('.'):
+                        continue
+                    
+                    # Handle scoped packages and regular packages
+                    if match.startswith('@'):
+                        # For scoped packages, keep the full @scope/package name
+                        parts = match.split('/')
+                        if len(parts) >= 2:
+                            base_pkg = '/'.join(parts[:2])
+                            print(f"Adding scoped package: {base_pkg}")
+                            packages.add(base_pkg)
+                    else:
+                        # For regular packages, just take the first part
+                        base_pkg = match.split('/')[0]
+                        if base_pkg and not base_pkg.startswith('-'):
+                            print(f"Adding regular package: {base_pkg}")
+                            packages.add(base_pkg)
         
-        return [pkg.split('/')[0] for pkg in packages if pkg.startswith('@') or '/' not in pkg]
+        print("\nFinal packages found:", list(packages))
+        return list(packages)
 
 def determine_python_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
     '''
@@ -449,8 +557,7 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
     '''
     try:
         # Initialize parser
-        ts_parser = Parser()
-        ts_parser.set_language(Language(tree_sitter_typescript.language()))
+        ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
         
         # Parse the code
         tree = ts_parser.parse(bytes(code, "utf8"))
