@@ -154,7 +154,7 @@ class State:
             {
                 "conv_id": self.conv_id,
                 "model_name": self.model_name,
-                "pdf_id": self.pdf_id,
+                "pdf_id": [self.pdf_id],
             }
         )
 
