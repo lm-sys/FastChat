@@ -69,12 +69,9 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE***"
-
 GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
 
 The code must be in the markdown format:
-***REMOTE SANDBOX CODE***:
 ```<language>
 <code>
 ```
