@@ -74,39 +74,6 @@ def get_vqa_sample():
     return (res, path)
 
 
-def is_image(file_path):
-    magic_numbers = {
-        b"\xff\xd8\xff": "JPEG",
-        b"\x89PNG\r\n\x1a\n": "PNG",
-        b"GIF87a": "GIF",
-        b"GIF89a": "GIF",
-        b"BM": "BMP",
-        b"\x00\x00\x01\x00": "ICO",
-        b"\x49\x49\x2a\x00": "TIFF",
-        b"\x4d\x4d\x00\x2a": "TIFF",
-        # For WebP, the first four bytes are "RIFF", but we also check for "WEBP"
-        # in bytes 8–12.
-    }
-
-    try:
-        with open(file_path, "rb") as f:
-            header = f.read(16)  # Read a bit more to handle WebP safely
-
-            # Check for WebP (RIFF + WEBP)
-            if header.startswith(b"RIFF") and header[8:12] == b"WEBP":
-                return True
-
-            # Check other formats
-            for magic in magic_numbers:
-                if header.startswith(magic):
-                    return True
-
-            return False
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        return False
-
-
 def is_pdf(file_path):
     try:
         with open(file_path, "rb") as file:

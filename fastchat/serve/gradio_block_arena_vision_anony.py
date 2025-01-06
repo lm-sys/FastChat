@@ -5,6 +5,7 @@ Users chat with two anonymous models.
 
 import json
 import time
+import filetype
 
 import gradio as gr
 import numpy as np
@@ -71,7 +72,6 @@ from fastchat.serve.gradio_block_arena_vision import (
     invisible_text,
     visible_text,
     disable_multimodal,
-    is_image,
     is_pdf,
 )
 from fastchat.serve.gradio_global_state import Context
@@ -276,7 +276,7 @@ def add_text(
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
 
-    images = [file for file in files if is_image(file)]
+    images = [file for file in files if filetype.is_image(file)]
     pdfs = [file for file in files if is_pdf(file)]
 
     # Init states if necessary
