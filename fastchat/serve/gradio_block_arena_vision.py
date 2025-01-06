@@ -85,14 +85,16 @@ def is_pdf(file_path):
 
 
 def set_visible_image(textbox):
+    import filetype
+
     files = textbox["files"]
     if len(files) == 0:
         return invisible_image_column
     elif len(files) > 1:
         gr.Warning(
-            "We only support single image conversations. Please start a new round if you would like to chat using this image."
+            "We only support single image or document conversations. Please start a new round if you would like to chat using this image or document."
         )
-    elif is_image(files[0]):
+    elif filetype.is_image(files[0]):
         return visible_image_column
     return invisible_image_column
 
