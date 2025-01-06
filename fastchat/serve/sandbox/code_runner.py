@@ -287,6 +287,13 @@ def extract_python_imports(code: str) -> list[str]:
     '''
     Extract Python package imports using AST parsing.
     Returns a list of top-level package names.
+    Handles:
+    - Regular imports: import foo, import foo.bar
+    - From imports: from foo import bar, from foo.bar import baz
+    - Multiple imports: import foo, bar
+    - Aliased imports: import foo as bar, from foo import bar as baz
+    - Star imports: from foo import *
+    - Relative imports are ignored
     '''
     try:
         tree = ast.parse(code)
@@ -296,14 +303,38 @@ def extract_python_imports(code: str) -> list[str]:
     packages: Set[str] = set()
     
     for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for name in node.names:
-                # Get the top-level package name
-                packages.add(name.name.split('.')[0])
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0 and node.module:  # Absolute imports only
-                # Get the top-level package name
-                packages.add(node.module.split('.')[0])
+        try:
+            if isinstance(node, ast.Import):
+                for name in node.names:
+                    # Get the top-level package name from any dotted path
+                    # e.g., 'foo.bar.baz' -> 'foo'
+                    if name.name:  # Ensure there's a name
+                        packages.add(name.name.split('.')[0])
+                        
+            elif isinstance(node, ast.ImportFrom):
+                # Skip relative imports (those starting with dots)
+                if node.level == 0 and node.module:
+                    # Get the top-level package name
+                    # e.g., from foo.bar import baz -> 'foo'
+                    packages.add(node.module.split('.')[0])
+                    
+            # Also check for common dynamic import patterns
+            elif isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name) and node.func.id == 'importlib':
+                    # Handle importlib.import_module('package')
+                    if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                        packages.add(node.args[0].s.split('.')[0])
+                elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                    # Handle __import__('package') and importlib.import_module('package')
+                    if node.func.value.id == 'importlib' and node.func.attr == 'import_module':
+                        if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                            packages.add(node.args[0].s.split('.')[0])
+                    elif node.func.attr == '__import__':
+                        if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                            packages.add(node.args[0].s.split('.')[0])
+        except Exception as e:
+            print(f"Error processing node {type(node)}: {e}")
+            continue
     
     # Filter out standard library modules using sys.stdlib_module_names
     std_libs = set(sys.stdlib_module_names)
