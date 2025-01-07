@@ -4,9 +4,6 @@ It supports chatting with a single model or chatting with two models side-by-sid
 """
 
 import argparse
-import pickle
-import time
-from typing import List
 import gradio as gr
 
 from fastchat.serve.gradio_block_arena_anony import (
@@ -237,10 +234,9 @@ window.__gradio_mode__ = "app";
                     build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
-                about = build_about()
+                build_about()
 
         context_state = gr.State(context)
-        url_params = gr.JSON(visible=False)
 
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
@@ -307,7 +303,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-auth-path",
         type=str,
-        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        help='Set the gradio authentication file path. The file should contain one or \
+              more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
     parser.add_argument(
@@ -322,7 +319,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-root-path",
         type=str,
-        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a \
+              reverse-proxy or at a custom URL path prefix",
     )
     parser.add_argument(
         "--ga-id",
