@@ -548,13 +548,12 @@ def build_side_by_side_ui_anony(models):
 - **Play Fair**: If an AI reveals its identity, the match will be invalid, and your vote won’t count.
 
 ## 💻 What Can You Create and Test?
-- Web apps and single-page HTML
-- Interactive visualizations and plots
-- Scalable Vector Graphics (SVG)
-- Tables, diagrams, and flowcharts
-- Games
-- UI components (e.g., React)
-- Programs in Python, Java, and more
+- Web applications and UI frameworks (e.g., HTML, React, Vue)
+- Interactive visualizations and dashboards (e.g., Gradio, Streamlit, NiceGUI)
+- Python and JavaScript programs
+- Games (e.g., PyGame)
+- Diagrams and flowcharts (e.g., Mermaid)
+- And more coming soon!
 
 ## 👇 Start Testing & Voting Now!
 """
