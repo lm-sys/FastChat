@@ -579,7 +579,7 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
         pass
     
     # Check imports for framework detection
-    react_packages = {'react', '@react', 'next', '@next', 'vite'}
+    react_packages = {'react', '@react', 'next', '@next'}
     vue_packages = {'vue', '@vue', 'nuxt', '@nuxt'}
     
     if any(pkg in react_packages for pkg in imports):
