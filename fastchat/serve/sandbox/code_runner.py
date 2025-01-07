@@ -3,7 +3,7 @@ Run generated code in a sandbox environment.
 '''
 
 from enum import StrEnum
-from typing import Any, Generator, TypeAlias, TypedDict
+from typing import Any, Generator, TypeAlias, TypedDict, Set
 import gradio as gr
 import re
 import os
@@ -11,6 +11,15 @@ import base64
 from e2b import Sandbox
 from e2b_code_interpreter import Sandbox as CodeSandbox
 from gradio_sandboxcomponent import SandboxComponent
+import ast
+import subprocess
+import json
+from tempfile import NamedTemporaryFile
+from tree_sitter import Language, Node, Parser
+import tree_sitter_javascript
+import tree_sitter_typescript
+from pathlib import Path
+import sys
 
 E2B_API_KEY = os.environ.get("E2B_API_KEY")
 '''
@@ -60,12 +69,9 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-SANDBOX_CODE_TAG = "***REMOTE SANDBOX CODE***"
-
 GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
 
 The code must be in the markdown format:
-***REMOTE SANDBOX CODE***:
 ```<language>
 <code>
 ```
@@ -145,16 +151,8 @@ AUTO_SANDBOX_INSTRUCTION = (
 You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed. 
 
 The code should be in the markdown format:
-***REMOTE SANDBOX CODE***[<sandbox_environment_name>]:
 ```<language>
 <code>
-```
-
-If extra python or npm packages are needed, output the required packages in the markdown format:
-***REMOTE SANDBOX PACKAGES***:
-```
-pip install <package1> <package2> ...
-npm install <package1> <package2> ...
 ```
 
 You can choose from the following sandbox environments:
@@ -285,54 +283,354 @@ def update_visibility_for_single_model(visible: bool, component_cnt: int):
     return [gr.update(visible=visible)] * component_cnt
 
 
+def extract_python_imports(code: str) -> list[str]:
+    '''
+    Extract Python package imports using AST parsing.
+    Returns a list of top-level package names.
+    '''
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+
+    packages: Set[str] = set()
+    
+    for node in ast.walk(tree):
+        try:
+            if isinstance(node, ast.Import):
+                for name in node.names:
+                    # Get the top-level package name from any dotted path
+                    # e.g., 'foo.bar.baz' -> 'foo'
+                    if name.name:  # Ensure there's a name
+                        packages.add(name.name.split('.')[0])
+                        
+            elif isinstance(node, ast.ImportFrom):
+                # Skip relative imports (those starting with dots)
+                if node.level == 0 and node.module:
+                    # Get the top-level package name
+                    # e.g., from foo.bar import baz -> 'foo'
+                    packages.add(node.module.split('.')[0])
+                    
+            # Also check for common dynamic import patterns
+            elif isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name) and node.func.id == 'importlib':
+                    # Handle importlib.import_module('package')
+                    if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                        packages.add(node.args[0].s.split('.')[0])
+                elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                    # Handle __import__('package') and importlib.import_module('package')
+                    if node.func.value.id == 'importlib' and node.func.attr == 'import_module':
+                        if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                            packages.add(node.args[0].s.split('.')[0])
+                    elif node.func.attr == '__import__':
+                        if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+                            packages.add(node.args[0].s.split('.')[0])
+        except Exception as e:
+            print(f"Error processing node {type(node)}: {e}")
+            continue
+    
+    # Filter out standard library modules using sys.stdlib_module_names
+    std_libs = set(sys.stdlib_module_names)
+    
+    # Also filter out known pre-installed packages
+    preinstalled = {'pygame', 'gradio', 'streamlit', 'nicegui'}
+    
+    return list(packages - std_libs - preinstalled)
+
+def extract_js_imports(code: str) -> list[str]:
+    '''
+    Extract npm package imports using Tree-sitter for robust parsing.
+    Handles both JavaScript and TypeScript code.
+    Returns a list of package names.
+    '''
+    try:
+        # Initialize parsers with language modules
+        ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
+        js_parser = Parser(Language(tree_sitter_javascript.language()))
+        
+        # Try parsing as TypeScript first, then JavaScript
+        code_bytes = bytes(code, "utf8")
+        try:
+            tree = ts_parser.parse(code_bytes)
+        except Exception as e:
+            print(f"TypeScript parsing failed: {e}")
+            try:
+                tree = js_parser.parse(code_bytes)
+            except Exception as e:
+                print(f"JavaScript parsing failed: {e}")
+                tree = None
+
+        if tree is None:
+            raise Exception("Both TypeScript and JavaScript parsing failed")
+        
+        packages: Set[str] = set()
+        
+        def extract_package_name(node: Node) -> str | None:
+            '''Extract package name from string literal or template string'''
+            if node.type in ['string', 'string_fragment']:
+                # Handle regular string literals
+                pkg_path = code[node.start_byte:node.end_byte].strip('"\'')
+                if not pkg_path.startswith('.'):
+                    # Handle scoped packages differently
+                    if pkg_path.startswith('@'):
+                        parts = pkg_path.split('/')
+                        if len(parts) >= 2:
+                            return '/'.join(parts[:2])  # Return @scope/package
+                    return pkg_path.split('/')[0]  # Return just the package name for non-scoped packages
+            elif node.type == 'template_string':
+                # Handle template literals
+                content = ''
+                has_template_var = False
+                for child in node.children:
+                    if child.type == 'string_fragment':
+                        content += code[child.start_byte:child.end_byte]
+                    elif child.type == 'template_substitution':
+                        has_template_var = True
+                        # Skip the actual variable content
+                        continue
+                
+                if not content or content.startswith('.'):
+                    return None
+
+                # Handle template literal variables
+                if has_template_var:
+                    # Special case for package-template-literal style
+                    if content.endswith('-literal'):
+                        return 'package-template-literal'
+                    # Skip incomplete template literals (like @types/${name})
+                    return None
+
+                # Handle scoped packages in template literals
+                if content.startswith('@'):
+                    parts = content.split('/')
+                    if len(parts) >= 2:
+                        return '/'.join(parts[:2])  # Return @scope/package
+                return content.split('/')[0]  # Return just the package name for non-scoped packages
+            return None
+        
+        def visit_node(node: Node) -> None:
+            if node.type == 'import_statement':
+                # Handle ES6 imports
+                string_node = node.child_by_field_name('source')
+                if string_node:
+                    pkg_name = extract_package_name(string_node)
+                    if pkg_name:
+                        packages.add(pkg_name)
+                        
+            elif node.type == 'export_statement':
+                # Handle re-exports
+                source = node.child_by_field_name('source')
+                if source:
+                    pkg_name = extract_package_name(source)
+                    if pkg_name:
+                        packages.add(pkg_name)
+                        
+            elif node.type == 'call_expression':
+                # Handle require calls and dynamic imports
+                func_node = node.child_by_field_name('function')
+                if func_node and func_node.text:
+                    func_name = func_node.text.decode('utf8')
+                    if func_name in ['require', 'import']:
+                        args = node.child_by_field_name('arguments')
+                        if args and args.named_children:
+                            arg = args.named_children[0]
+                            # Handle both string literals and template strings
+                            pkg_name = extract_package_name(arg)
+                            if pkg_name:
+                                packages.add(pkg_name)
+            
+            # Recursively visit children to handle nested imports
+            for child in node.children:
+                visit_node(child)
+        
+        visit_node(tree.root_node)
+        return list(packages)
+        
+    except Exception as e:
+        print(f"Tree-sitter parsing failed: {e}")
+        # Fallback to basic regex parsing if tree-sitter fails
+        lines = code.split('\n')
+        packages: Set[str] = set()
+        
+        # More comprehensive regex patterns
+        import_patterns = [
+            # ES6 imports and scoped packages
+            r'[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Basic imports with scoped packages
+            r'`([^${}`]+)`',  # Simple template literals without variables
+            # CommonJS requires
+            r'require\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Regular requires
+            r'import\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Dynamic imports
+            r'export.*?from\s+[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Re-exports
+        ]
+        
+        # Special pattern for template literals with variables
+        template_literal_pattern = r'`([^`]*\$\{[^}]+\}[^`]*)`'
+        
+        print("\nDebug: Processing lines for imports...")
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            print(f"\nProcessing line: {line}")
+
+            # Handle template literals with variables first
+            if '${' in line:
+                template_matches = re.findall(template_literal_pattern, line)
+                for match in template_matches:
+                    if match.endswith('-literal'):
+                        packages.add('package-template-literal')
+                continue  # Skip other patterns for lines with template variables
+            
+            # Try all other patterns
+            for pattern in import_patterns:
+                matches = re.findall(pattern, line)
+                if matches:
+                    print(f"Pattern {pattern[:30]}... matched: {matches}")
+                for match in matches:
+                    # Handle tuples from regex groups
+                    if isinstance(match, tuple):
+                        match = match[0]
+                        print(f"Extracted from tuple: {match}")
+                    
+                    # Skip empty matches and relative imports
+                    if not match or match.startswith('.'):
+                        continue
+                    
+                    # Handle scoped packages and regular packages
+                    if match.startswith('@'):
+                        # For scoped packages, keep the full @scope/package name
+                        parts = match.split('/')
+                        if len(parts) >= 2:
+                            base_pkg = '/'.join(parts[:2])
+                            print(f"Adding scoped package: {base_pkg}")
+                            packages.add(base_pkg)
+                    else:
+                        # For regular packages, just take the first part
+                        base_pkg = match.split('/')[0]
+                        if base_pkg and not base_pkg.startswith('-'):
+                            print(f"Adding regular package: {base_pkg}")
+                            packages.add(base_pkg)
+        
+        print("\nFinal packages found:", list(packages))
+        return list(packages)
+
+def determine_python_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
+    '''
+    Determine Python sandbox environment based on imports and AST analysis.
+    '''
+    try:
+        tree = ast.parse(code)
+        for node in ast.walk(tree):
+            # Check for specific framework usage patterns
+            if isinstance(node, ast.Name) and node.id == 'gr':
+                return SandboxEnvironment.GRADIO
+            elif isinstance(node, ast.Name) and node.id == 'st':
+                return SandboxEnvironment.STREAMLIT
+    except SyntaxError:
+        pass
+
+    # Check imports for framework detection
+    if 'pygame' in imports:
+        return SandboxEnvironment.PYGAME
+    elif 'gradio' in imports:
+        return SandboxEnvironment.GRADIO
+    elif 'streamlit' in imports:
+        return SandboxEnvironment.STREAMLIT
+    elif 'nicegui' in imports:
+        return SandboxEnvironment.NICEGUI
+    
+    return SandboxEnvironment.PYTHON_CODE_INTERPRETER
+
+def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
+    '''
+    Determine JavaScript/TypeScript sandbox environment based on imports and AST analysis.
+    '''
+    try:
+        # Initialize parser
+        ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
+        
+        # Parse the code
+        tree = ts_parser.parse(bytes(code, "utf8"))
+        
+        def has_framework_patterns(node: Node) -> bool:
+            # Check for React patterns
+            if node.type in ['jsx_element', 'jsx_self_closing_element']:
+                return True
+            # Check for Vue template
+            elif node.type == 'template_element':
+                return True
+            return False
+        
+        # Check for framework-specific patterns in the AST
+        cursor = tree.walk()
+        reached_end = False
+        while not reached_end:
+            if has_framework_patterns(cursor.node):
+                if cursor.node.type.startswith('jsx'):
+                    return SandboxEnvironment.REACT
+                elif cursor.node.type == 'template_element':
+                    return SandboxEnvironment.VUE
+            
+            reached_end = not cursor.goto_next_sibling()
+            if reached_end and cursor.goto_parent():
+                reached_end = not cursor.goto_next_sibling()
+    
+    except Exception:
+        pass
+    
+    # Check imports for framework detection
+    react_packages = {'react', '@react', 'next', '@next'}
+    vue_packages = {'vue', '@vue', 'nuxt', '@nuxt'}
+    
+    if any(pkg in react_packages for pkg in imports):
+        return SandboxEnvironment.REACT
+    elif any(pkg in vue_packages for pkg in imports):
+        return SandboxEnvironment.VUE
+    
+    return SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER
+
 def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None] | None:
     '''
-    Extracts code from a markdown message.
+    Extracts code from a markdown message by parsing code blocks directly.
+    Determines sandbox environment based on code content and frameworks used.
 
     Returns:
-        tuple[str, str, bool]: A tuple:
-            1. code,
-            2. code language,
-            3. sandbox python and npm dependencies if any,
-            4. sandbox environment if auto environment is enabled, otherwise None
+        tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None]: A tuple:
+            1. code - the longest code block found
+            2. code language
+            3. sandbox python and npm dependencies (extracted using static analysis)
+            4. sandbox environment determined from code content
     '''
-    # Extract sandbox dependencies
+    # Find all code blocks
+    code_block_regex = r'```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
+    matches = list(re.finditer(code_block_regex, message, re.DOTALL))
+    
+    if not matches:
+        return None
+        
+    # Find the longest code block
+    longest_match = max(matches, key=lambda m: len(m.group('code')))
+    code = longest_match.group('code').strip()
+    code_lang = (longest_match.group('code_lang') or '').lower()
+    
+    # Extract package dependencies using static analysis
     python_packages: list[str] = []
     npm_packages: list[str] = []
-
-    packages_block_regex = r'\*\*\*REMOTE SANDBOX PACKAGES\*\*\*:\s*```(?P<packages>.*?)```'
-    match_pkg = re.search(packages_block_regex, message, re.DOTALL)
-    if match_pkg:
-        pkg_block = match_pkg.group('packages').strip()
-        for line in pkg_block.splitlines():
-            line = line.strip()
-            if line.startswith("pip install "):
-                python_packages.extend(line[len("pip install "):].split())
-            elif line.startswith("npm install "):
-                npm_packages.extend(line[len("npm install "):].split())
-
-    # Regular expression to match code blocks with optional language
-    code_block_regex = rf'{re.escape(SANDBOX_CODE_TAG)}(\[(?P<sandbox_env_name>[^\]]+)\])?:\s*```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
-
-    match = re.search(code_block_regex, message, re.DOTALL)
-    if not match:
-        # if no re matched code block is found, return None
-        return None
-
-    sandbox_env_name = match.group('sandbox_env_name') or None
-    code_lang = match.group('code_lang') or ''
-    code = match.group('code').strip()
+    
+    # Determine sandbox environment based on language and imports
+    if code_lang in ['py', 'python']:
+        python_packages = extract_python_imports(code)
+        sandbox_env_name = determine_python_environment(code, python_packages)
+    elif code_lang in ['js', 'javascript', 'ts', 'typescript', 'tsx', 'jsx']:
+        npm_packages = extract_js_imports(code)
+        sandbox_env_name = determine_js_environment(code, npm_packages)
+    elif code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in code or '<html' in code):
+        sandbox_env_name = SandboxEnvironment.HTML
+    else:
+        sandbox_env_name = None
 
     if enable_auto_env and sandbox_env_name is None:
-        # auto must come with a sandbox environment name
         return None
-
-    if sandbox_env_name is not None:
-        try :
-            sandbox_env_name = SandboxEnvironment(sandbox_env_name)
-        except ValueError:
-            # if the sandbox environment name is not valid, return None
-            return None
 
     return code, code_lang, (python_packages, npm_packages), sandbox_env_name
 
@@ -377,7 +675,7 @@ def install_pip_dependencies(sandbox: Sandbox, dependencies: list[str]):
     if not dependencies:
         return
     sandbox.commands.run(
-        f"pip install {' '.join(dependencies)}",
+        f"uv pip install --system {' '.join(dependencies)}",
         timeout=60 * 3,
         on_stdout=lambda message: print(message),
         on_stderr=lambda message: print(message),
@@ -409,6 +707,10 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
         api_key=E2B_API_KEY,
     )
 
+    sandbox.commands.run("pip install uv",
+                         timeout=60 * 3,
+                         on_stderr=lambda message: print(message),)
+    
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
@@ -554,8 +856,11 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     sandbox.files.make_dir('mygame')
     file_path = "~/mygame/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
-
-    sandbox.commands.run("pip install pygame pygbag black",
+    sandbox.commands.run("pip install uv",
+                         timeout=60 * 3,
+                         # on_stdout=lambda message: print(message),
+                         on_stderr=lambda message: print(message),)
+    sandbox.commands.run("uv pip install --system pygame pygbag black",
                          timeout=60 * 3,
                          # on_stdout=lambda message: print(message),
                          on_stderr=lambda message: print(message),)
