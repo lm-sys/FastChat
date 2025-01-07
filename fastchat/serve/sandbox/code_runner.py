@@ -995,7 +995,7 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
 
     # set up sandbox
     setup_commands = [
-        "pip install --upgrade nicegui",
+        "uv pip install --system --upgrade nicegui",
     ]
     for command in setup_commands:
         sandbox.commands.run(
