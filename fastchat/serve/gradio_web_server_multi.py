@@ -91,21 +91,21 @@ def build_visualizer():
         with gr.Tab("Price Analysis", id=1):
             price_markdown = """
             ## *Welcome to the Price Explorer*
-            This scatterplot displays a selection of the arena's models, showing their scores plotted against their cost-effectiveness. Using the plot, you can easily explore the model's price and compare it with their arena score.
+            This scatterplot displays a selection of the arena's models, showing their arena score plotted against their output token price (in USD). **Blue** points represent proprietary models, while **red** points represent non-proprietary models. Using the plot, you can easily explore the model's price and compare it with their arena score.
 
             ### How to Use:
-            - Hover Over Points: View the model's price, arena score, and organization.
-            - Click to Explore:
-                - Double-click a legend point to show only that organization's models on the scatterplot.
-                - Single-click a legend point to hide that organization's models from the scatterplot.
+            - Hover Over Points: View the model's price and arena score.
+            - Edit the Chart: Click on the chart and use the icons in the upper-right corner to manipulate the plot to your liking.
 
             Start exploring and discover interesting trends in the data!
+
+            Note: The price was obtained either from the model's website or through the [together.ai](https://www.together.ai/) pricing model.
             """
             
             gr.Markdown(price_markdown)
             frame = """
-                <iframe width="100%" scrolling="no" style="height: 1050px; border: 1px solid lightgrey; border-radius: 10px;" 
-                        src="https://storage.googleapis.com/public-arena-no-cors/2024-12-20-figure.html">
+                <iframe width="100%" scrolling="no" style="height: 800px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/2025-01-06-scatterplot.html">
                 </iframe>
             """
             gr.HTML(frame)
