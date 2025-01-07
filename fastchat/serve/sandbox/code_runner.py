@@ -340,10 +340,15 @@ def extract_python_imports(code: str) -> list[str]:
 def extract_js_imports(code: str) -> list[str]:
     '''
     Extract npm package imports using Tree-sitter for robust parsing.
-    Handles both JavaScript and TypeScript code.
+    Handles both JavaScript and TypeScript code, including Vue SFC.
     Returns a list of package names.
     '''
     try:
+        # For Vue SFC, extract the script section first
+        script_match = re.search(r'<script.*?>(.*?)</script>', code, re.DOTALL)
+        if script_match:
+            code = script_match.group(1).strip()
+
         # Initialize parsers with language modules
         ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
         js_parser = Parser(Language(tree_sitter_javascript.language()))
@@ -386,26 +391,21 @@ def extract_js_imports(code: str) -> list[str]:
                         content += code[child.start_byte:child.end_byte]
                     elif child.type == 'template_substitution':
                         has_template_var = True
-                        # Skip the actual variable content
                         continue
                 
                 if not content or content.startswith('.'):
                     return None
 
-                # Handle template literal variables
                 if has_template_var:
-                    # Special case for package-template-literal style
                     if content.endswith('-literal'):
                         return 'package-template-literal'
-                    # Skip incomplete template literals (like @types/${name})
                     return None
 
-                # Handle scoped packages in template literals
                 if content.startswith('@'):
                     parts = content.split('/')
                     if len(parts) >= 2:
-                        return '/'.join(parts[:2])  # Return @scope/package
-                return content.split('/')[0]  # Return just the package name for non-scoped packages
+                        return '/'.join(parts[:2])
+                return content.split('/')[0]
             return None
         
         def visit_node(node: Node) -> None:
@@ -434,12 +434,11 @@ def extract_js_imports(code: str) -> list[str]:
                         args = node.child_by_field_name('arguments')
                         if args and args.named_children:
                             arg = args.named_children[0]
-                            # Handle both string literals and template strings
                             pkg_name = extract_package_name(arg)
                             if pkg_name:
                                 packages.add(pkg_name)
             
-            # Recursively visit children to handle nested imports
+            # Recursively visit children
             for child in node.children:
                 visit_node(child)
         
@@ -449,69 +448,32 @@ def extract_js_imports(code: str) -> list[str]:
     except Exception as e:
         print(f"Tree-sitter parsing failed: {e}")
         # Fallback to basic regex parsing if tree-sitter fails
-        lines = code.split('\n')
         packages: Set[str] = set()
         
-        # More comprehensive regex patterns
+        # First try to extract script section for Vue SFC
+        script_match = re.search(r'<script.*?>(.*?)</script>', code, re.DOTALL)
+        if script_match:
+            code = script_match.group(1).strip()
+        
+        # Look for imports
         import_patterns = [
-            # ES6 imports and scoped packages
-            r'[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Basic imports with scoped packages
-            r'`([^${}`]+)`',  # Simple template literals without variables
-            # CommonJS requires
-            r'require\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Regular requires
-            r'import\([\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Dynamic imports
-            r'export.*?from\s+[\'"](@[\w-]+/[\w-]+(?:/[\w-]+)*|[\w-]+(?:/[\w-]+)*)[\'"]',  # Re-exports
+            r'(?:import|require)\s*\(\s*[\'"](@?[\w-]+(?:/[\w-]+)*)[\'"]',  # dynamic imports
+            r'(?:import|from)\s+[\'"](@?[\w-]+(?:/[\w-]+)*)[\'"]',  # static imports
+            r'require\s*\(\s*[\'"](@?[\w-]+(?:/[\w-]+)*)[\'"]',  # require statements
         ]
         
-        # Special pattern for template literals with variables
-        template_literal_pattern = r'`([^`]*\$\{[^}]+\}[^`]*)`'
-        
-        print("\nDebug: Processing lines for imports...")
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            print(f"\nProcessing line: {line}")
-
-            # Handle template literals with variables first
-            if '${' in line:
-                template_matches = re.findall(template_literal_pattern, line)
-                for match in template_matches:
-                    if match.endswith('-literal'):
-                        packages.add('package-template-literal')
-                continue  # Skip other patterns for lines with template variables
-            
-            # Try all other patterns
-            for pattern in import_patterns:
-                matches = re.findall(pattern, line)
-                if matches:
-                    print(f"Pattern {pattern[:30]}... matched: {matches}")
-                for match in matches:
-                    # Handle tuples from regex groups
-                    if isinstance(match, tuple):
-                        match = match[0]
-                        print(f"Extracted from tuple: {match}")
-                    
-                    # Skip empty matches and relative imports
-                    if not match or match.startswith('.'):
-                        continue
-                    
-                    # Handle scoped packages and regular packages
-                    if match.startswith('@'):
-                        # For scoped packages, keep the full @scope/package name
-                        parts = match.split('/')
+        for pattern in import_patterns:
+            matches = re.finditer(pattern, code)
+            for match in matches:
+                pkg_name = match.group(1)
+                if not pkg_name.startswith('.'):
+                    if pkg_name.startswith('@'):
+                        parts = pkg_name.split('/')
                         if len(parts) >= 2:
-                            base_pkg = '/'.join(parts[:2])
-                            print(f"Adding scoped package: {base_pkg}")
-                            packages.add(base_pkg)
+                            packages.add('/'.join(parts[:2]))
                     else:
-                        # For regular packages, just take the first part
-                        base_pkg = match.split('/')[0]
-                        if base_pkg and not base_pkg.startswith('-'):
-                            print(f"Adding regular package: {base_pkg}")
-                            packages.add(base_pkg)
+                        packages.add(pkg_name.split('/')[0])
         
-        print("\nFinal packages found:", list(packages))
         return list(packages)
 
 def determine_python_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
@@ -589,6 +551,98 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
     
     return SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER
 
+
+def detect_js_ts_code_lang(code: str) -> str:
+    '''
+    Detect whether code is JavaScript or TypeScript using Tree-sitter AST parsing.
+    Handles Vue SFC, React, and regular JS/TS files.
+    
+    Args:
+        code (str): The code to analyze
+        
+    Returns:
+        str: 'typescript' if TypeScript patterns are found, 'javascript' otherwise
+    '''
+    # Quick check for explicit TypeScript in Vue SFC
+    if '<script lang="ts">' in code or '<script lang="typescript">' in code:
+        return 'typescript'
+
+    try:
+        # Initialize TypeScript parser
+        ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
+        
+        # Parse the code
+        tree = ts_parser.parse(bytes(code, "utf8"))
+        
+        def has_typescript_patterns(node: Node) -> bool:
+            # Check for TypeScript-specific syntax
+            if node.type in {
+                'type_annotation',           # Type annotations
+                'type_alias_declaration',    # type Foo = ...
+                'interface_declaration',     # interface Foo
+                'enum_declaration',          # enum Foo
+                'implements_clause',         # implements Interface
+                'type_parameter',            # Generic type parameters
+                'type_assertion',            # Type assertions
+                'type_predicate',           # Type predicates in functions
+                'type_arguments',           # Generic type arguments
+                'readonly_type',            # readonly keyword
+                'mapped_type',              # Mapped types
+                'conditional_type',         # Conditional types
+                'union_type',               # Union types
+                'intersection_type',        # Intersection types
+                'tuple_type',              # Tuple types
+                'optional_parameter',       # Optional parameters
+                'decorator',                # Decorators
+                'ambient_declaration',      # Ambient declarations
+                'declare_statement',        # declare keyword
+                'accessibility_modifier',   # private/protected/public
+            }:
+                return True
+                
+            # Check for type annotations in variable declarations
+            if node.type == 'variable_declarator':
+                for child in node.children:
+                    if child.type == 'type_annotation':
+                        return True
+            
+            # Check for return type annotations in functions
+            if node.type in {'function_declaration', 'method_definition', 'arrow_function'}:
+                for child in node.children:
+                    if child.type == 'type_annotation':
+                        return True
+            
+            return False
+
+        # Walk the AST to find TypeScript patterns
+        cursor = tree.walk()
+        
+        def visit_node() -> bool:
+            if has_typescript_patterns(cursor.node):
+                return True
+                
+            # Check children
+            if cursor.goto_first_child():
+                while True:
+                    if visit_node():
+                        return True
+                    if not cursor.goto_next_sibling():
+                        break
+                cursor.goto_parent()
+            
+            return False
+
+        if visit_node():
+            return 'typescript'
+
+    except Exception as e:
+        print(f"Tree-sitter parsing error: {e}")
+        # Fallback to basic checks if parsing fails
+        pass
+
+    return 'javascript'
+
+
 def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message by parsing code blocks directly.
@@ -613,6 +667,10 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     code = longest_match.group('code').strip()
     code_lang = (longest_match.group('code_lang') or '').lower()
     
+    # Skip empty code blocks
+    if not code:
+        return None
+
     # Extract package dependencies using static analysis
     python_packages: list[str] = []
     npm_packages: list[str] = []
@@ -626,6 +684,14 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         sandbox_env_name = determine_js_environment(code, npm_packages)
     elif code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in code or '<html' in code):
         sandbox_env_name = SandboxEnvironment.HTML
+    elif code_lang in ['vue', 'vue3', 'vue2']:
+        npm_packages = extract_js_imports(code)
+        sandbox_env_name = SandboxEnvironment.VUE
+        code_lang = detect_js_ts_code_lang(code)
+    elif code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
+        npm_packages = extract_js_imports(code)
+        sandbox_env_name = SandboxEnvironment.REACT
+        code_lang = detect_js_ts_code_lang(code)
     else:
         sandbox_env_name = None
 
@@ -674,11 +740,15 @@ def install_pip_dependencies(sandbox: Sandbox, dependencies: list[str]):
     '''
     if not dependencies:
         return
+        
+    def log_output(message):
+        print(f"pip: {message}")
+        
     sandbox.commands.run(
         f"uv pip install --system {' '.join(dependencies)}",
         timeout=60 * 3,
-        on_stdout=lambda message: print(message),
-        on_stderr=lambda message: print(message),
+        on_stdout=log_output,
+        on_stderr=log_output,
     )
 
 
@@ -795,16 +865,39 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
     )
 
     python_dependencies, npm_dependencies = code_dependencies
-    install_pip_dependencies(sandbox, python_dependencies)
-    install_npm_dependencies(sandbox, npm_dependencies)
+    
+    # Stream logs for Python dependencies
+    if python_dependencies:
+        print("Installing Python dependencies...")
+        install_pip_dependencies(sandbox, python_dependencies)
+        print("Python dependencies installed.")
+    
+    # Stream logs for NPM dependencies
+    if npm_dependencies:
+        print("Installing NPM dependencies...")
+        def log_output(message):
+            print(f"npm: {message}")
+        
+        sandbox.commands.run(
+            f"npm install {' '.join(npm_dependencies)}",
+            timeout=60 * 3,
+            on_stdout=log_output,
+            on_stderr=log_output,
+        )
+        print("NPM dependencies installed.")
 
     # set up the sandbox
+    print("Setting up sandbox directory structure...")
     sandbox.files.make_dir('pages')
     file_path = "~/pages/index.tsx"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
+    print("Code files written successfully.")
 
     # get the sandbox url
+    print("Starting development server...")
     sandbox_url = 'https://' + sandbox.get_host(3000)
+    print(f"Sandbox URL ready: {sandbox_url}")
+    
     return sandbox_url
 
 
@@ -1085,9 +1178,10 @@ def on_run_code(
         # ensure gradio supports the code language
     ) in VALID_GRADIO_CODE_LANGUAGES else None
 
-    # show loading
+    # Initialize output with loading message
+    output_text = "### Sandbox Execution Log\n\n"
     yield (
-        gr.Markdown(value="### Loading Sandbox", visible=True),
+        gr.Markdown(value=output_text + "🔄 Initializing sandbox environment...", visible=True),
         SandboxComponent(visible=False),
         gr.Code(value=code, language=code_language, visible=True),
     )
@@ -1095,11 +1189,22 @@ def on_run_code(
     sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
     code_dependencies = sandbox_state['code_dependencies']
 
+    def update_output(message: str):
+        nonlocal output_text
+        output_text += f"\n{message}"
+        return (
+            gr.Markdown(value=output_text, visible=True, sanitize_html=False),
+            gr.skip(),
+            gr.skip(),
+        )
+
     match sandbox_env:
         case SandboxEnvironment.HTML:
+            yield update_output("🔄 Setting up HTML sandbox...")
             url = run_html_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ HTML sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1109,9 +1214,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.REACT:
+            yield update_output("🔄 Setting up React sandbox...")
+            yield update_output("⚙️ Installing dependencies...")
             url = run_react_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ React sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1121,9 +1229,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.VUE:
+            yield update_output("🔄 Setting up Vue sandbox...")
+            yield update_output("⚙️ Installing dependencies...")
             url = run_vue_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ Vue sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1133,9 +1244,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.PYGAME:
+            yield update_output("🔄 Setting up PyGame sandbox...")
+            yield update_output("⚙️ Installing PyGame dependencies...")
             url = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ PyGame sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1145,9 +1259,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.GRADIO:
+            yield update_output("🔄 Setting up Gradio sandbox...")
+            yield update_output("⚙️ Installing Gradio dependencies...")
             url = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ Gradio sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1157,9 +1274,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.STREAMLIT:
+            yield update_output("🔄 Setting up Streamlit sandbox...")
+            yield update_output("⚙️ Installing Streamlit dependencies...")
             url = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ Streamlit sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1169,9 +1289,12 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.NICEGUI:
+            yield update_output("🔄 Setting up NiceGUI sandbox...")
+            yield update_output("⚙️ Installing NiceGUI dependencies...")
             url = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
+            yield update_output("✅ NiceGUI sandbox ready!")
             yield (
-                gr.Markdown(value="### Running Sandbox", visible=True),
+                gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
                     value=(url, code),
                     label="Example",
@@ -1181,31 +1304,35 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
+            yield update_output("🔄 Running Python Code Interpreter...")
             output = run_code_interpreter(
                 code=code, code_language='python', code_dependencies=code_dependencies
             )
+            yield update_output("✅ Code execution complete!")
             yield (
-                gr.Markdown(value=output, sanitize_html=False, visible=True),
+                gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
                 SandboxComponent(
                     value=('', ''),
                     label="Example",
                     visible=False,
                     key="newsandbox",
-                ),  # hide the sandbox component
+                ),
                 gr.skip()
             )
         case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
+            yield update_output("🔄 Running JavaScript Code Interpreter...")
             output = run_code_interpreter(
                 code=code, code_language='javascript', code_dependencies=code_dependencies
             )
+            yield update_output("✅ Code execution complete!")
             yield (
-                gr.Markdown(value=output, visible=True),
+                gr.Markdown(value=output_text + "\n\n" + output, visible=True),
                 SandboxComponent(
                     value=('', ''),
                     label="Example",
                     visible=False,
                     key="newsandbox",
-                ),  # hide the sandbox component
+                ),
                 gr.skip()
             )
         case _:
