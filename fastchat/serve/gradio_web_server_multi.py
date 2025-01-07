@@ -56,6 +56,7 @@ def build_visualizer():
     Data explorer provides interactive tools to explore and draw insights from our leaderboard data. 
     """
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
+
     with gr.Tabs():
         with gr.Tab("Topic Explorer", id=0):
             topic_markdown = """
