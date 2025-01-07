@@ -595,7 +595,9 @@ def bot_response(
         # [CODE SANDBOX] Add a "Run in Sandbox" button to the last message if code is detected
         if sandbox_state is not None and sandbox_state["enable_sandbox"]:
             last_message = conv.messages[-1]
-            if "```" in last_message[1]:
+            # Count occurrences of ``` to ensure code blocks are properly closed
+            code_fence_count = last_message[1].count("```")
+            if code_fence_count > 0 and code_fence_count % 2 == 0:  # Even number means closed code blocks
                 if not last_message[1].endswith(RUN_CODE_BUTTON_HTML):
                     last_message[1] += "\n\n" + RUN_CODE_BUTTON_HTML
 
