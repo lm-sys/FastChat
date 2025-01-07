@@ -10,6 +10,7 @@ import os
 import base64
 from e2b import Sandbox
 from e2b_code_interpreter import Sandbox as CodeSandbox
+from e2b.sandbox.commands.command_handle import CommandExitException
 from gradio_sandboxcomponent import SandboxComponent
 import ast
 import subprocess
@@ -332,10 +333,7 @@ def extract_python_imports(code: str) -> list[str]:
     # Filter out standard library modules using sys.stdlib_module_names
     std_libs = set(sys.stdlib_module_names)
     
-    # Also filter out known pre-installed packages
-    preinstalled = {'pygame', 'gradio', 'streamlit', 'nicegui'}
-    
-    return list(packages - std_libs - preinstalled)
+    return list(packages - std_libs)
 
 def extract_js_imports(code: str) -> list[str]:
     '''
@@ -825,6 +823,7 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     Returns:
         url for remote sandbox
     """
+    stderr = ""
     sandbox = Sandbox(
         api_key=E2B_API_KEY,
     )
@@ -837,13 +836,17 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     file_path = "~/myhtml/main.html"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
-    process = sandbox.commands.run(
-        "python -m http.server 3000", background=True)  # start http server
-
+    try:
+        process = sandbox.commands.run(
+            "python -m http.server 3000", background=True)  # start http server
+    except CommandExitException as e:
+        print(f"Error starting http server: {e}")
+        stderr = "\n".join(e.stderr)
+    
     # get game server url
     host = sandbox.get_host(3000)
     url = f"https://{host}"
-    return url + '/myhtml/main.html'
+    return url + '/myhtml/main.html', stderr
 
 
 def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
@@ -942,6 +945,7 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     Returns:
         url for remote sandbox
     """
+    stderr = ""
     sandbox = Sandbox(
         api_key=E2B_API_KEY,
     )
@@ -963,20 +967,28 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     install_npm_dependencies(sandbox, npm_dependencies)
 
     # build the pygame code
-    sandbox.commands.run(
-        "pygbag --build ~/mygame",  # build game
-        timeout=60 * 5,
-        # on_stdout=lambda message: print(message),
-        # on_stderr=lambda message: print(message),
-    )
-
-    process = sandbox.commands.run(
-        "python -m http.server 3000", background=True)  # start http server
+    try:
+        sandbox.commands.run(
+            "pygbag --build ~/mygame",  # build game
+            timeout=60 * 5,
+            # on_stdout=lambda message: print(message),
+            # on_stderr=lambda message: print(message),
+        )
+    except CommandExitException as e:
+        print(f"Error building pygame code: {e}")
+        stderr = "\n".join(e.stderr)
+    
+    try:
+        process = sandbox.commands.run(
+            "python -m http.server 3000", background=True)  # start http server
+    except CommandExitException as e:
+        print(f"Error starting http server: {e}")
+        stderr = "\n".join(e.stderr)
 
     # get game server url
     host = sandbox.get_host(3000)
     url = f"https://{host}"
-    return url + '/mygame/build/web/'
+    return url + '/mygame/build/web/', stderr
 
 
 def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
@@ -1201,18 +1213,21 @@ def on_run_code(
     match sandbox_env:
         case SandboxEnvironment.HTML:
             yield update_output("🔄 Setting up HTML sandbox...")
-            url = run_html_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ HTML sandbox ready!")
-            yield (
-                gr.Markdown(value=output_text, visible=True),
-                SandboxComponent(
-                    value=(url, code),
-                    label="Example",
-                    visible=True,
-                    key="newsandbox",
-                ),
-                gr.skip(),
-            )
+            url, stderr = run_html_sandbox(code=code, code_dependencies=code_dependencies)
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ HTML sandbox ready!")
+                yield (
+                    gr.Markdown(value=output_text, visible=True),
+                    SandboxComponent(
+                        value=(url, code),
+                        label="Example",
+                        visible=True,
+                        key="newsandbox",
+                    ),
+                    gr.skip(),
+                )
         case SandboxEnvironment.REACT:
             yield update_output("🔄 Setting up React sandbox...")
             yield update_output("⚙️ Installing dependencies...")
@@ -1246,11 +1261,14 @@ def on_run_code(
         case SandboxEnvironment.PYGAME:
             yield update_output("🔄 Setting up PyGame sandbox...")
             yield update_output("⚙️ Installing PyGame dependencies...")
-            url = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ PyGame sandbox ready!")
-            yield (
-                gr.Markdown(value=output_text, visible=True),
-                SandboxComponent(
+            url, stderr = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ PyGame sandbox ready!")
+                yield (
+                    gr.Markdown(value=output_text, visible=True),
+                    SandboxComponent(
                     value=(url, code),
                     label="Example",
                     visible=True,
