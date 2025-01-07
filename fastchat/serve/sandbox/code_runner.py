@@ -342,16 +342,6 @@ def extract_js_imports(code: str) -> list[str]:
     Extract npm package imports using Tree-sitter for robust parsing.
     Handles both JavaScript and TypeScript code.
     Returns a list of package names.
-    
-    Handles:
-    - ES6 imports: import foo from 'package'
-    - CommonJS requires: require('package')
-    - Dynamic imports: import('package')
-    - Destructured requires: const { x } = require('package')
-    - Template literal imports: require(`package`)
-    - Re-exports: export * from 'package'
-    - Subpath imports: import x from '@scope/package/subpath'
-    - Mixed import styles in the same file
     '''
     try:
         # Initialize parsers with language modules
