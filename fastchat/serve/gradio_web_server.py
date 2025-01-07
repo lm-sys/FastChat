@@ -83,21 +83,13 @@ The service collects user data, including dialogue (text and images), editing hi
 
 ### Acknowledgments
 
-We thank the following organizations for their generous support and sponsorship:
-
-- [Organization 1](https://your-link.com)
-- [Organization 2](https://your-link.com)
-- [Organization 3](https://your-link.com)
-- [Organization 4](https://your-link.com)
-- [Organization 5](https://your-link.com)
-
-Special thanks to [Your Sponsor Details Page](https://your-sponsor-link) for their backing.
+We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://your-link.com/sponsor-image-1.png" alt="Sponsor 1">
-    <img src="https://your-link.com/sponsor-image-2.png" alt="Sponsor 2">
-    <img src="https://your-link.com/sponsor-image-3.png" alt="Sponsor 3">
-    <!-- Add more sponsor images as needed -->
+    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
+    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
+    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
+    <!-- Add more sponsor images as necessary -->
 </div>
 """
 
@@ -857,17 +849,12 @@ We welcome contributors to enhance the platform and encourage feedback to improv
 - Report issues on [GitHub](https://github.com/your-repo)
 
 ## Acknowledgments
-We thank the following organizations and teams for their support and contributions:
-- [Organization 1](https://your-link.com)
-- [Organization 2](https://your-link.com)
-- [Organization 3](https://your-link.com)
-
-Special thanks to our [sponsors](https://your-link.com/sponsors) for their generous backing.
+We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://your-link.com/sponsor-image-1.png" alt="Sponsor 1">
-    <img src="https://your-link.com/sponsor-image-2.png" alt="Sponsor 2">
-    <img src="https://your-link.com/sponsor-image-3.png" alt="Sponsor 3">
+    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
+    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
+    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
     <!-- Add more sponsor images as necessary -->
 </div>
 """
