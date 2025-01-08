@@ -845,7 +845,7 @@ We welcome contributors to enhance the platform and encourage feedback to improv
 - **Advisors**: [Advisor Name 1](https://your-link.com), [Advisor Name 2](https://your-link.com)
 
 ## Contact Us
-- Follow us on [Twitter](https://twitter.com/your-account), [Discord](https://discord.gg/your-server) or email us at `your-email@domain.com`
+- Follow us on [Twitter](https://twitter.com/your-account), [Discord](https://discord.gg/your-server) or email us at `computer.intelligence.project@gmail.com`
 - Report issues on [GitHub](https://github.com/your-repo)
 
 ## Acknowledgments
