@@ -463,7 +463,7 @@ def build_side_by_side_ui_named(models):
     with gr.Group():
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(
-                value=False,
+                value=True,
                 label="Enable Sandbox",
                 info="Run generated code in a remote sandbox",
                 interactive=True,

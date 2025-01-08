@@ -935,7 +935,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     with gr.Group():
         with gr.Row():
             enable_sandbox_checkbox = gr.Checkbox(
-                value=False,
+                value=True,
                 label="Enable Sandbox",
                 info="Run generated code in a remote sandbox",
                 interactive=True,
