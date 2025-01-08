@@ -70,21 +70,47 @@ RUN_CODE_BUTTON_HTML = "<button style='background-color: #4CAF50; border: none; 
 Button in the chat to run the code in the sandbox.
 '''
 
-GENERAL_SANDBOX_INSTRUCTION = """ You are an expert Software Engineer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
+GENERAL_SANDBOX_INSTRUCTION = """\
+You are an expert Software Engineer who is a good UI/UX designer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
+
+You must generate code that can be the following frameworks:
+- React: React programs that can be directly rendered in a browser.
+- Vue: Vue programs that can be directly rendered in a browser.
+- Gradio: Gradio programs that can be directly rendered in a browser.
+- Streamlit: Streamlit programs that can be directly rendered in a browser.
+- Python Code Interpreter: Plain Python programs that do not require any web UI frameworks and standard inputs from the user.
+- Javascript Code Interpreter: Plain Javascript programs that do not require any web UI frameworks and standard inputs from the user.
+- HTML: HTML programs that can be directly rendered in a browser.
+- PyGame: PyGame programs that can be directly rendered in a browser.
+
+
+If you use `pygame`, you have to write the main function as an async function like:
+```python
+import asyncio
+import pygame
+
+async def main():
+    global game_state
+    while game_state:
+        game_state(pygame.event.get())
+        pygame.display.update()
+        await asyncio.sleep(0) # it must be called on every frame
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
 
 The code must be in the markdown format:
 ```<language>
 <code>
 ```
 
-If python or npm packages are needed, you have to explicitly output the required packages in the markdown format:
-***REMOTE SANDBOX PACKAGES***:
-```
-pip install <package1> <package2> ...
-npm install <package1> <package2> ...
-```
 
-The optional sandbox packages cell must be output together with the code cell in the same message. You should not only output the sandbox packages cell.
+All code should be written in a single file, self-contained, and executable.
+If you are writing in frontend code, use TailwindCSS for frontend styling.
+If you are writing in Python, note that there is no input way to get user inputs.
+Make the program as interactive and user-friendly as possible.
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
@@ -170,7 +196,7 @@ You can choose from the following sandbox environments:
 )
 
 DEFAULT_SANDBOX_INSTRUCTIONS: dict[SandboxEnvironment, str] = {
-    SandboxEnvironment.AUTO: AUTO_SANDBOX_INSTRUCTION.strip(),
+    SandboxEnvironment.AUTO: GENERAL_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.PYTHON_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION.strip(),
     SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_JAVASCRIPT_CODE_INTERPRETER_INSTRUCTION.strip(),
     SandboxEnvironment.HTML: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip(),
@@ -674,22 +700,28 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     npm_packages: list[str] = []
     
     # Determine sandbox environment based on language and imports
-    if code_lang in ['py', 'python']:
+    if code_lang in ['py', 'python', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
         python_packages = extract_python_imports(code)
         sandbox_env_name = determine_python_environment(code, python_packages)
-    elif code_lang in ['js', 'javascript', 'ts', 'typescript', 'tsx', 'jsx']:
-        npm_packages = extract_js_imports(code)
-        sandbox_env_name = determine_js_environment(code, npm_packages)
-    elif code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in code or '<html' in code):
-        sandbox_env_name = SandboxEnvironment.HTML
     elif code_lang in ['vue', 'vue3', 'vue2']:
         npm_packages = extract_js_imports(code)
         sandbox_env_name = SandboxEnvironment.VUE
         code_lang = detect_js_ts_code_lang(code)
+    elif code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in code or '<html' in code):
+        sandbox_env_name = SandboxEnvironment.HTML
+        code_lang = 'html'
     elif code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
         npm_packages = extract_js_imports(code)
         sandbox_env_name = SandboxEnvironment.REACT
         code_lang = detect_js_ts_code_lang(code)
+    elif code_lang in ['js', 'javascript',  'jsx', 'coffeescript', 'ecmascript', 'javascript', 'js', 'node']:
+        code_lang = 'javascript'
+        npm_packages = extract_js_imports(code)
+        sandbox_env_name = determine_js_environment(code, npm_packages)
+    elif code_lang in ['ts', 'typescript']:
+        code_lang = 'typescript'
+        npm_packages = extract_js_imports(code)
+        sandbox_env_name = determine_js_environment(code, npm_packages)
     else:
         sandbox_env_name = None
 
@@ -1069,7 +1101,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
 def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
-    setup_commands = ["pip install --upgrade streamlit"]
+    setup_commands = ["uv pip install --system streamlit"]
 
     for command in setup_commands:
         sandbox.commands.run(
