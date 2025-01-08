@@ -114,7 +114,7 @@ The code must be in the markdown format:
 - For React and Vue, use Tailwind margin and padding classes to style the components and ensure the components are spaced out nicely
 - For Python code, make sure it does not require any user inputs
 - Make sure to include all necessary code in one file.
-- For frontend code, do not export the component at the end of the file.
+- For frontend code, DO NOT RETURN THE COMPONENT AT THE END OF THE FILE (e.g. `ReactDOM.render(</>, document.getElementById('root'));`)
 - There is no additional files in the local file system, unless you create them inside the same program.
 - Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
 - For frontend code, the recharts library is available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`.
@@ -1093,6 +1093,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
         api_key=E2B_API_KEY,
     )
 
+    sandbox.commands.run("pip install uv", timeout=60 * 3, on_stdout=lambda message: print(message), on_stderr=lambda message: print(message))
     # set up the sandbox
     file_path = "~/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
@@ -1109,7 +1110,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
 def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
-    setup_commands = ["uv pip install --system streamlit"]
+    setup_commands = ["pip install uv", "uv pip install --system streamlit"]
 
     for command in setup_commands:
         sandbox.commands.run(
