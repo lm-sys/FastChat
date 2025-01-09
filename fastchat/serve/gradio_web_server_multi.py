@@ -83,6 +83,25 @@ def build_visualizer():
                 </iframe>
             """
             gr.HTML(frame)
+        with gr.Tab("Price Analysis", id=1):
+            price_markdown = """
+            ## *Welcome to the Price Explorer*
+            This scatterplot displays a selection of the arena's models, showing their arena score plotted against their cost.
+
+            ### How to Use:
+            - Hover Over Points: View the model's arena score, cost, organization, and license.
+            - Click the Legend: Select an organization on the right to view its models. Click additional organizations to compare models.
+
+            Note: The prices were obtained either from the model's organization's website or through the [together.ai](https://www.together.ai/) pricing model.
+            """
+            
+            gr.Markdown(price_markdown)
+            frame = """
+                <iframe width="100%" scrolling="no" style="height: 800px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html">
+                </iframe>
+            """
+            gr.HTML(frame)
 
 
 def load_demo(context: Context, request: gr.Request):
