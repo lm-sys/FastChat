@@ -53,36 +53,30 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 def build_visualizer():
     visualizer_markdown = """
     # 🔍 Arena Visualizer
-    Data explorer provides interactive tools to explore and draw insights from our leaderboard data. 
+    This tool provides an interactive way to explore how people are using Chatbot Arena. 
+    Using [topic clustering](https://github.com/MaartenGr/BERTopic), we organized user-submitted prompts from Arena battles into broad and specific categories. 
+    Dive in to uncover insights about the distribution and themes of these prompts!
     """
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
 
-    with gr.Tabs():
-        with gr.Tab("Topic Explorer", id=0):
-            topic_markdown = """
-            ## *Welcome to the Topic Explorer*
-            This tool lets you dive into user-submitted prompts, organized into general 
-            categories and detailed subcategories. Using the sunburst chart, you can easily 
-            explore the data and understand how different topics are distributed.
+    with gr.Accordion("👇 Expand to see detailed instructions on how to use the visualizer", open=False):
+        instructions = """
+        - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+        - Click to Explore: 
+            - Click on a main category to see its subcategories.
+            - Click on subcategories to see example prompts in the sidebar.
+        - Undo and Reset: Click the center of the chart to return to the top level.
 
-            ### How to Use:
-            - Hover Over Segments: View the category name, the number of prompts, and their percentage.
-            - Click to Explore: 
-                - Click on a main category to see its subcategories.
-                - Click on subcategories to see example prompts in the sidebar.
-            - Undo and Reset: Click the center of the chart to return to the top level.
+        Visualizer is created using Arena battle data collected from 2024/6 to 2024/8.
+        """
+        gr.Markdown(instructions)
 
-            Start exploring and discover interesting trends in the data!
-            
-            """
-            gr.Markdown(topic_markdown)
-
-            frame = """
-                <iframe width="100%" scrolling="no" style="height: 1400px; border: 1px solid lightgrey; border-radius: 10px;" 
+    frame = """
+                <iframe class="visualizer" width="100%"
                         src="https://storage.googleapis.com/public-arena-no-cors/index.html">
                 </iframe>
             """
-            gr.HTML(frame)
+    gr.HTML(frame)
 
 
 def load_demo(context: Context, request: gr.Request):
