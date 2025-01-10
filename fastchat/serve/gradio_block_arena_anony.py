@@ -175,7 +175,25 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {}
+SAMPLING_WEIGHTS = {'claude-3-5-haiku-20241022': 1,
+ 'claude-3-5-sonnet-20240620': 1,
+ 'claude-3-5-sonnet-20241022': 1,
+ 'gpt-4-1106-preview': 1,
+ 'gpt-4-turbo-2024-04-09': 1,
+ 'gpt-4o-2024-05-13': 1,
+ 'gpt-4o-2024-08-06': 1,
+ 'gpt-4o-mini-2024-07-18': 1,
+ 'o1-mini': 1,
+ 'yi-lightning': 1,
+ 'llama-3.1-405b-instruct-fp8': 1,
+ 'llama-3.1-8b-instruct': 1,
+ 'llama-3.1-70b-instruct': 1,
+ 'gemini-1.5-pro-001': 1,
+ 'mistral-large-2407': 1,
+ 'qwen2.5-72b-instruct': 1,
+ 'gemma-2-27b-it': 1,
+ 'glm-4-plus': 1,
+ 'p2l': 1000}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
