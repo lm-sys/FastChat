@@ -21,6 +21,9 @@ import tree_sitter_javascript
 import tree_sitter_typescript
 from pathlib import Path
 import sys
+import threading
+from httpcore import ReadTimeout
+import queue
 
 E2B_API_KEY = os.environ.get("E2B_API_KEY")
 '''
@@ -71,9 +74,26 @@ Button in the chat to run the code in the sandbox.
 '''
 
 GENERAL_SANDBOX_INSTRUCTION = """\
-You are an expert Software Engineer who is a good UI/UX designer. Generate code for a single file to be executed in a sandbox. Do not import external files. You can output information if needed.
+# You are an expert Software Engineer who is a good UI/UX designer and a good product manager. Generate code for a single file to be executed in a sandbox. Follow the instructions carefully:
 
-You must generate code that can be the following frameworks ordered by priority:
+- Think carefully step by step. Feel free to ask questions or explain your reasoning.
+- Assume that you can access the internet to fetch data
+- Make sure the program is functional by creating state when needed and having no required props
+- You can only use `pygame`, `gradio`, and `streamlit` to use GUI-based Python programs
+- For the React and Vue components, Use TypeScript or JavaScript as the language and make sure it can run by itself by using a default export
+- For Python code that does not require GUI, make sure it does not require any user inputs
+- For React and Vue, use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette
+- For React and Vue, returning only the full React code starting with imports
+- If you use any imports from React like useState or useEffect, make sure to import them directly
+- For React and Vue, use Tailwind margin and padding classes to style the components and ensure the components are spaced out nicely
+- Make sure to include all necessary code in one file.
+- For frontend code, DO NOT RETURN THE COMPONENT AT THE END OF THE FILE (e.g. `ReactDOM.render(</>, document.getElementById('root'));`)
+- There is no additional files in the local file system, unless you create them inside the same program.
+- Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
+- For frontend code, the recharts library is available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`.
+
+
+# You must generate code that can be the following frameworks ordered by priority:
 1. React (JavaScript/TypeScript) : React programs that can be directly rendered in a browser.
 2. Vue (JavaScript/TypeScript) : Vue programs that can be directly rendered in a browser.
 3. Gradio (Python) : Gradio programs that can be directly rendered in a browser.
@@ -83,7 +103,7 @@ You must generate code that can be the following frameworks ordered by priority:
 7. Javascript Code Interpreter: Plain Javascript programs that do not require any web UI frameworks and standard inputs from the user.
 
 
-If you use `pygame`, you have to write the main function as an async function like:
+# If you use `pygame`, you have to write the main function as an async function like:
 ```python
 import asyncio
 import pygame
@@ -100,25 +120,10 @@ if __name__ == "__main__":
 ```
 
 
-The code must be in the markdown format:
+# The code must be in the markdown format:
 ```<language>
 <code>
 ```
-
-- Think carefully step by step.
-- Make sure it can run by itself by using a default export
-- Make sure the program is functional by creating state when needed and having no required props
-- Use TypeScript or JavaScript as the language for the React and Vue components
-- For React and Vue, use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette.
-- If you use any imports from React like useState or useEffect, make sure to import them directly
-- For React and Vue, use Tailwind margin and padding classes to style the components and ensure the components are spaced out nicely
-- For Python code, make sure it does not require any user inputs
-- Make sure to include all necessary code in one file.
-- For frontend code, DO NOT RETURN THE COMPONENT AT THE END OF THE FILE (e.g. `ReactDOM.render(</>, document.getElementById('root'));`)
-- There is no additional files in the local file system, unless you create them inside the same program.
-- Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
-- For frontend code, the recharts library is available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`.
-- For Python code, avoid using libraries that require desktop GUI interfaces, with the exceptions of `pygame`, `gradio`, and `streamlit` which are explicitly supported.
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
@@ -804,6 +809,66 @@ def install_npm_dependencies(sandbox: Sandbox, dependencies: list[str]):
     )
 
 
+def run_background_command_with_timeout(
+    sandbox: Sandbox,
+    command: str,
+    timeout: int = 5,
+) -> tuple[bool, str]:
+    """
+    Run a command in the background and wait for a short time to check for startup errors.
+    
+    Args:
+        sandbox: The sandbox instance
+        command: The command to run
+        timeout: How long to wait for startup errors (in seconds)
+    
+    Returns:
+        tuple[bool, str]: (success, stderr)
+        - success: True if the command started successfully
+        - stderr: Any error output collected
+    """
+    stderr = ""
+
+    def collect_stderr(message):
+        nonlocal stderr
+        stderr += message
+    
+
+    cmd = sandbox.commands.run(
+        command,
+        timeout=60 * 3,  # Overall timeout for the command
+        background=True,
+        on_stderr=lambda message: collect_stderr(message)
+    )
+
+    def wait_for_command(result_queue):
+        nonlocal stderr
+        try:
+            result = cmd.wait()
+            if result.stderr:
+                stderr += result.stderr
+            result_queue.put(stderr)
+        except ReadTimeout:
+            result_queue.put(stderr)
+        except CommandExitException as e:
+            stderr += "".join(e.stderr)
+            result_queue.put(stderr)
+    # Create a queue to store the result
+    result_queue = queue.Queue()
+
+    # Create a thread to wait for the command
+    wait_thread = threading.Thread(target=wait_for_command, args=(result_queue,))
+    wait_thread.start()
+    # Wait for the thread to complete or timeout
+    wait_thread.join(timeout)
+
+    if wait_thread.is_alive():
+        # Timeout occurred
+        return stderr
+    else:
+        return result_queue.get()
+
+
 def run_code_interpreter(code: str, code_language: str | None, code_dependencies: tuple[list[str], list[str]]) -> str:
     """
     Executes the provided code within a sandboxed environment and returns the output.
@@ -863,10 +928,7 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     Returns:
         url for remote sandbox
     """
-    stderr = ""
-    sandbox = Sandbox(
-        api_key=E2B_API_KEY,
-    )
+    sandbox = Sandbox(api_key=E2B_API_KEY)
 
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
@@ -876,14 +938,12 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     file_path = "~/myhtml/main.html"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
-    try:
-        process = sandbox.commands.run(
-            "python -m http.server 3000", background=True)  # start http server
-    except CommandExitException as e:
-        print(f"Error starting http server: {e}")
-        stderr = "\n".join(e.stderr)
+    stderr = run_background_command_with_timeout(
+        sandbox,
+        "python -m http.server 3000",
+        timeout=10,
+    )
     
-    # get game server url
     host = sandbox.get_host(3000)
     url = f"https://{host}"
     return url + '/myhtml/main.html', stderr
@@ -918,14 +978,10 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
     # Stream logs for NPM dependencies
     if npm_dependencies:
         print("Installing NPM dependencies...")
-        def log_output(message):
-            print(f"npm: {message}")
         
         sandbox.commands.run(
             f"npm install {' '.join(npm_dependencies)}",
             timeout=60 * 3,
-            on_stdout=log_output,
-            on_stderr=log_output,
         )
         print("NPM dependencies installed.")
 
@@ -985,47 +1041,38 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     Returns:
         url for remote sandbox
     """
-    stderr = ""
-    sandbox = Sandbox(
-        api_key=E2B_API_KEY,
-    )
+    sandbox = Sandbox(api_key=E2B_API_KEY)
 
     sandbox.files.make_dir('mygame')
     file_path = "~/mygame/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
-    sandbox.commands.run("pip install uv",
-                         timeout=60 * 3,
-                         # on_stdout=lambda message: print(message),
-                         on_stderr=lambda message: print(message),)
-    sandbox.commands.run("uv pip install --system pygame pygbag black",
-                         timeout=60 * 3,
-                         # on_stdout=lambda message: print(message),
-                         on_stderr=lambda message: print(message),)
+    
+    setup_commands = [
+        "pip install uv",
+        "uv pip install --system pygame pygbag black"
+    ]
+    for command in setup_commands:
+        sandbox.commands.run(
+            command,
+            timeout=60 * 3,
+        )
     
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
 
     # build the pygame code
-    try:
-        sandbox.commands.run(
-            "pygbag --build ~/mygame",  # build game
-            timeout=60 * 5,
-            # on_stdout=lambda message: print(message),
-            # on_stderr=lambda message: print(message),
-        )
-    except CommandExitException as e:
-        print(f"Error building pygame code: {e}")
-        stderr = "\n".join(e.stderr)
+    sandbox.commands.run(
+        "pygbag --build ~/mygame",
+        timeout=60 * 5,
+    )
     
-    try:
-        process = sandbox.commands.run(
-            "python -m http.server 3000", background=True)  # start http server
-    except CommandExitException as e:
-        print(f"Error starting http server: {e}")
-        stderr = "\n".join(e.stderr)
+    stderr = run_background_command_with_timeout(
+        sandbox,
+        "python -m http.server 3000",
+        timeout=10,
+    )
 
-    # get game server url
     host = sandbox.get_host(3000)
     url = f"https://{host}"
     return url + '/mygame/build/web/', stderr
@@ -1041,11 +1088,8 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(
-        api_key=E2B_API_KEY,
-    )
+    sandbox = Sandbox(api_key=E2B_API_KEY)
 
-    # set up sandbox
     setup_commands = [
         "uv pip install --system --upgrade nicegui",
     ]
@@ -1053,11 +1097,8 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
         sandbox.commands.run(
             command,
             timeout=60 * 3,
-            on_stdout=lambda message: print(message),
-            on_stderr=lambda message: print(message),
         )
 
-    # write code to file
     sandbox.files.make_dir('mynicegui')
     file_path = "~/mynicegui/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
@@ -1066,13 +1107,15 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
 
-    process = sandbox.commands.run(
-        "python ~/mynicegui/main.py", background=True)
+    stderr = run_background_command_with_timeout(
+        sandbox,
+        "python ~/mynicegui/main.py",
+        timeout=10,
+    )
 
-    # get web gui url
     host = sandbox.get_host(port=8080)
     url = f"https://{host}"
-    return url
+    return url, stderr
 
 
 def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
@@ -1085,16 +1128,15 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(
-        template="gradio-developer",
-        metadata={
-            "template": "gradio-developer"
-        },
-        api_key=E2B_API_KEY,
-    )
+    sandbox = Sandbox(api_key=E2B_API_KEY)
 
-    sandbox.commands.run("pip install uv", timeout=60 * 3, on_stdout=lambda message: print(message), on_stderr=lambda message: print(message))
-    # set up the sandbox
+    setup_commands = ["pip install uv", "uv pip install --system gradio"]
+    for command in setup_commands:
+        sandbox.commands.run(
+            command,
+            timeout=60 * 3,
+        )
+
     file_path = "~/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
@@ -1102,22 +1144,24 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
 
-    # get the sandbox url
+    stderr = run_background_command_with_timeout(
+        sandbox,
+        "python ~/app.py",
+        timeout=10,
+    )
+
     sandbox_url = 'https://' + sandbox.get_host(7860)
-    return sandbox_url
+    return sandbox_url, stderr
 
 
 def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
     setup_commands = ["pip install uv", "uv pip install --system streamlit"]
-
     for command in setup_commands:
         sandbox.commands.run(
             command,
             timeout=60 * 3,
-            on_stdout=lambda message: print(message),
-            on_stderr=lambda message: print(message),
         )
 
     sandbox.files.make_dir('mystreamlit')
@@ -1128,14 +1172,15 @@ def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[st
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
 
-    process = sandbox.commands.run(
+    stderr = run_background_command_with_timeout(
+        sandbox,
         "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true",
-        background=True
+        timeout=10,
     )
 
     host = sandbox.get_host(port=8501)
     url = f"https://{host}"
-    return url
+    return url, stderr
 
 def on_edit_code(
     state,
@@ -1320,33 +1365,39 @@ def on_run_code(
         case SandboxEnvironment.GRADIO:
             yield update_output("🔄 Setting up Gradio sandbox...")
             yield update_output("⚙️ Installing Gradio dependencies...")
-            url = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ Gradio sandbox ready!")
-            yield (
-                gr.Markdown(value=output_text, visible=True),
-                SandboxComponent(
-                    value=(url, code),
-                    label="Example",
-                    visible=True,
-                    key="newsandbox",
-                ),
-                gr.skip(),
-            )
+            url, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ Gradio sandbox ready!")
+                yield (
+                    gr.Markdown(value=output_text, visible=True),
+                    SandboxComponent(
+                        value=(url, code),
+                        label="Example",
+                        visible=True,
+                        key="newsandbox",
+                    ),
+                    gr.skip(),
+                )
         case SandboxEnvironment.STREAMLIT:
             yield update_output("🔄 Setting up Streamlit sandbox...")
             yield update_output("⚙️ Installing Streamlit dependencies...")
-            url = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ Streamlit sandbox ready!")
-            yield (
-                gr.Markdown(value=output_text, visible=True),
-                SandboxComponent(
-                    value=(url, code),
-                    label="Example",
-                    visible=True,
-                    key="newsandbox",
-                ),
-                gr.skip(),
-            )
+            url, stderr = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ Streamlit sandbox ready!")
+                yield (
+                    gr.Markdown(value=output_text, visible=True),
+                    SandboxComponent(
+                        value=(url, code),
+                        label="Example",
+                        visible=True,
+                        key="newsandbox",
+                    ),
+                    gr.skip(),
+                )
         case SandboxEnvironment.NICEGUI:
             yield update_output("🔄 Setting up NiceGUI sandbox...")
             yield update_output("⚙️ Installing NiceGUI dependencies...")
