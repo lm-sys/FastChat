@@ -836,7 +836,7 @@ def build_about():
     about_markdown = """
 # About Us
 
-**Software Arena** is an open-source platform extending [Chatbot Arena](https://lmarena.ai/?arena) with code execution capabilities for evaluating AI-generated programs through human preference. Software Arena enables direct comparison and evaluation of Large Language Models in generating executable programs with visual interfaces. The platform builds upon the open-source [FastChat project](https://github.com/lm-sys/FastChat), introducing secure sandboxed environments for testing and interacting with AI-generated outputs. We are actively collecting valuable datasets from user interactions to advance research in code generation and user interface development.
+**Software Arena** is an open-source platform that extends Chatbot Arena with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces. Building upon the [FastChat project](https://github.com/lm-sys/FastChat), it provides a secure sandbox environment for running and evaluating AI-generated visual interfaces. We aim to establish transparent comparisons across different models while creating valuable datasets to advance research in code generation and UI development.
 
 We welcome contributors to enhance the platform and encourage feedback to improve its functionality and usability.
 
