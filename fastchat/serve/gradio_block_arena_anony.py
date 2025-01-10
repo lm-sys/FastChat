@@ -547,7 +547,7 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
 - **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a visualization, design an interface).
 - **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox environment. Test the functionality, explore the features, and evaluate the quality of the outputs.
 - **Vote for the Best**: After interacting with both programs, vote for the one that best meets your requirements or provides the superior experience.
-- **Play Fair**: To maintain evaluation integrity, matches where an AI reveals its identity will be invalidated.
+- **Play Fair**: If AI identity reveals, your vote won't count.
 
 ## 💻 Supported Outputs
 - Documents (Markdown or Plain Text)
