@@ -58,8 +58,8 @@ def build_visualizer():
     Dive in to uncover insights about the distribution and themes of these prompts!
     """
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
-
-    with gr.Accordion("👇 Expand to see detailed instructions on how to use the visualizer", open=False):
+    expandText = "👇 Expand to see detailed instructions on how to use the visualizer"
+    with gr.Accordion(expandText, open=False):
         instructions = """
         - Hover Over Segments: View the category name, the number of prompts, and their percentage.
         - Click to Explore: 
