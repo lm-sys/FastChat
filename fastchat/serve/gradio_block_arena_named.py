@@ -387,15 +387,15 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
-# ⚔️ Software Arena: Free AI Platform to Compare and Vote on LLM-Generated Visual UIs
-[GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [Twitter](https://twitter.com/your-account) | [Discord](https://discord.gg/your-server)
+# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
 
 ## 📜 How It Works
 - Interact with two chosen models (e.g., GPT, Gemini, Claude) as they generate programs with visual UIs.
 - Test the programs in a sandbox environment, interact with their functionality, and vote for the better one!
 - You can chat for multiple turns, explore the UIs, and continue testing until you identify a winner.
 
-## 👇 Choose two models to compare
+## 👇 Choose Two Models to Compare
 """
 
     states = [gr.State() for _ in range(num_sides)]

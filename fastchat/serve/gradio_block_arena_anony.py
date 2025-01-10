@@ -538,21 +538,27 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️ Software Arena: Free AI Platform to Compare and Vote on LLM-Generated Visual UIs
-[GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [Twitter](https://twitter.com/your-account) | [Discord](https://discord.gg/your-server)
+# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
+
+Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces.
 
 ## 📜 How It Works
-- **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a game, generate a visualization, etc.).
-- **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox. Interact with the programs, explore their functionality, and evaluate the quality of the generated outputs.
-- **Vote for the Best**: After interacting with both programs, choose the one that best meets the requirements or offers the best experience.
-- **Play Fair**: If an AI reveals its identity, the match will be invalid, and your vote won’t count.
+- **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a visualization, design an interface).
+- **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox environment. Test the functionality, explore the features, and evaluate the quality of the outputs.
+- **Vote for the Best**: After interacting with both programs, vote for the one that best meets your requirements or provides the superior experience.
+- **Play Fair**: To maintain evaluation integrity, matches where an AI reveals its identity will be invalidated.
 
-## 💻 What Can You Create and Test?
-- Web applications and UI frameworks (e.g., HTML, React, Vue)
-- Interactive visualizations and dashboards (e.g., Gradio, Streamlit, NiceGUI)
-- Python and JavaScript programs
-- Games (e.g., PyGame)
-- Diagrams and flowcharts (e.g., Mermaid)
+## 💻 Supported Outputs
+- Documents (Markdown or Plain Text)
+- Websites (single webpage)
+- Scalable Vector Graphics (SVG) images
+- Plots
+- Tables
+- Interactive React/Vue components
+- PyGame
+- Gradio/Streamlit interfaces
+- Mermaid diagrams
 - And more coming soon!
 
 ## 👇 Start Testing & Voting Now!
