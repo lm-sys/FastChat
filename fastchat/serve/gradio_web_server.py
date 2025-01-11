@@ -11,7 +11,7 @@ import os
 import random
 import time
 import uuid
-from typing import List
+from typing import List, Dict
 
 import gradio as gr
 import requests
@@ -119,6 +119,8 @@ class State:
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
+        self.ans_models = []
+        self.router_outputs = []
 
         # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
@@ -127,6 +129,12 @@ class State:
         if "browsing" in model_name:
             self.regen_support = False
         self.init_system_prompt(self.conv, is_vision)
+
+    def update_ans_models(self, ans: str) -> None:
+        self.ans_models.append(ans)
+
+    def update_router_outputs(self, outputs: Dict[str, float]) -> None:
+        self.router_outputs.append(outputs)
 
     def init_system_prompt(self, conv, is_vision):
         system_prompt = conv.get_system_message(is_vision)
@@ -153,6 +161,20 @@ class State:
                 "model_name": self.model_name,
             }
         )
+
+        if self.ans_models:
+            base.update(
+                {
+                    "ans_models": self.ans_models,
+                }
+            )
+
+        if self.router_outputs:
+            base.update(
+                {
+                    "router_outputs": self.router_outputs,
+                }
+            )
 
         if self.is_vision:
             base.update({"has_csam_image": self.has_csam_image})
@@ -420,7 +442,7 @@ def is_limit_reached(model_name, ip):
 
 
 def bot_response(
-    state,
+    state: State,
     temperature,
     top_p,
     max_new_tokens,
@@ -532,6 +554,18 @@ def bot_response(
     try:
         data = {"text": ""}
         for i, data in enumerate(stream_iter):
+            # Change for P2L:
+            if i == 0:
+                if "ans_model" in data:
+                    ans_model = data.get("ans_model")
+
+                    state.update_ans_models(ans_model)
+
+                if "router_outputs" in data:
+                    router_outputs = data.get("router_outputs")
+
+                    state.update_router_outputs(router_outputs)
+
             if data["error_code"] == 0:
                 output = data["text"].strip()
                 conv.update_last_message(output + "▌")
