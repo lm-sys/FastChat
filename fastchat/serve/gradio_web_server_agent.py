@@ -11,7 +11,7 @@ import os
 import random
 import time
 import uuid
-from typing import List, Dict
+from typing import List
 
 import gradio as gr
 import requests
@@ -43,7 +43,9 @@ from fastchat.utils import (
     moderation_filter,
     parse_gradio_auth_creds,
     load_image,
+    parse_json_from_string,
 )
+from fastchat.tools.search import web_search
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -114,13 +116,12 @@ api_endpoint_info = {}
 class State:
     def __init__(self, model_name, is_vision=False):
         self.conv = get_conversation_template(model_name)
+        self.system_conv = get_conversation_template(model_name)
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
         self.oai_thread_id = None
         self.is_vision = is_vision
-        self.ans_models = []
-        self.router_outputs = []
 
         # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
@@ -129,12 +130,6 @@ class State:
         if "browsing" in model_name:
             self.regen_support = False
         self.init_system_prompt(self.conv, is_vision)
-
-    def update_ans_models(self, ans: str) -> None:
-        self.ans_models.append(ans)
-
-    def update_router_outputs(self, outputs: Dict[str, float]) -> None:
-        self.router_outputs.append(outputs)
 
     def init_system_prompt(self, conv, is_vision):
         system_prompt = conv.get_system_message(is_vision)
@@ -161,20 +156,6 @@ class State:
                 "model_name": self.model_name,
             }
         )
-
-        if self.ans_models:
-            base.update(
-                {
-                    "ans_models": self.ans_models,
-                }
-            )
-
-        if self.router_outputs:
-            base.update(
-                {
-                    "router_outputs": self.router_outputs,
-                }
-            )
 
         if self.is_vision:
             base.update({"has_csam_image": self.has_csam_image})
@@ -225,13 +206,20 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
     # Add models from the API providers
     if register_api_endpoint_file:
         api_endpoint_info = json.load(open(register_api_endpoint_file))
+
         for mdl, mdl_dict in api_endpoint_info.items():
+            print(f"mdl: {mdl}")
+            print(f"mdl_dict: {mdl_dict}")
             mdl_vision = mdl_dict.get("vision-arena", False)
             mdl_text = mdl_dict.get("text-arena", True)
             if vision_arena and mdl_vision:
                 models.append(mdl)
             if not vision_arena and mdl_text:
                 models.append(mdl)
+        print(f"api_endpoint_info: {api_endpoint_info}")
+        print(f"models: {models}")
+        print(mdl_vision, mdl_text)
+        print("-------")
 
     # Remove anonymous models
     models = list(set(models))
@@ -373,9 +361,9 @@ def add_text(state, model_selector, text, request: gr.Request):
 
     all_conv_text = state.conv.get_prompt()
     all_conv_text = all_conv_text[-2000:] + "\nuser: " + text
-    flagged = moderation_filter(all_conv_text, [state.model_name])
+    # flagged = moderation_filter(all_conv_text, [state.model_name])
     # flagged = moderation_filter(text, [state.model_name])
-    if flagged:
+    if False:
         logger.info(f"violate moderation. ip: {ip}. text: {text}")
         # overwrite the original text
         text = MODERATION_MSG
@@ -390,6 +378,8 @@ def add_text(state, model_selector, text, request: gr.Request):
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
+    state.system_conv.append_message(state.system_conv.roles[0], text)
+    state.system_conv.append_message(state.system_conv.roles[1], None)
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 
@@ -450,13 +440,13 @@ def is_limit_reached(model_name, ip):
 
 
 def bot_response(
-    state: State,
+    state,
     temperature,
     top_p,
     max_new_tokens,
     request: gr.Request,
-    apply_rate_limit=True,
-    use_recommended_config=False,
+    apply_rate_limit=False,
+    use_recommended_config=True,
 ):
     ip = get_ip(request)
     logger.info(f"bot_response. ip: {ip}")
@@ -480,7 +470,7 @@ def bot_response(
             yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
             return
 
-    conv, model_name = state.conv, state.model_name
+    conv, system_conv, model_name = state.conv, state.system_conv, state.model_name
     model_api_dict = (
         api_endpoint_info[model_name] if model_name in api_endpoint_info else None
     )
@@ -533,7 +523,6 @@ def bot_response(
         custom_system_prompt = model_api_dict.get("custom_system_prompt", False)
         if not custom_system_prompt:
             conv.set_system_message("")
-
         if use_recommended_config:
             recommended_config = model_api_dict.get("recommended_config", None)
             if recommended_config is not None:
@@ -543,42 +532,47 @@ def bot_response(
                     "max_new_tokens", max_new_tokens
                 )
 
+    if model_api_dict.get("agent-mode", False):
+        # Agent mode --> load tools first
+        tool_config_file = model_api_dict.get("tool_config_file", "")
+        try:
+            tools = json.load(open(tool_config_file))
+        except Exception as e:
+            conv.update_last_message(f"No tools are available for this model for agent mode. Provided tool_config_file {tool_config_file} is invalid.")
+            yield (
+                state,
+                state.to_gradio_chatbot(),
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+        
         stream_iter = get_api_provider_stream_iter(
-            conv,
+            system_conv,
             model_name,
             model_api_dict,
             temperature,
             top_p,
             max_new_tokens,
             state,
+            tools
         )
 
-    html_code = ' <span class="cursor"></span> '
+        html_code = ' <span class="cursor"></span> '
+        conv.update_last_message(html_code)
+        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
-    # conv.update_last_message("▌")
-    conv.update_last_message(html_code)
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-
-    try:
-        data = {"text": ""}
-        for i, data in enumerate(stream_iter):
-            # Change for P2L:
-            if i == 0:
-                if "ans_model" in data:
-                    ans_model = data.get("ans_model")
-
-                    state.update_ans_models(ans_model)
-
-                if "router_outputs" in data:
-                    router_outputs = data.get("router_outputs")
-
-                    state.update_router_outputs(router_outputs)
-
+        try:
+            # first-round QA
+            conv.update_last_message("Thinking..." + html_code)
+            yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+            # no stream mode so we can get the response directly
+            data = next(stream_iter)
             if data["error_code"] == 0:
                 output = data["text"].strip()
-                conv.update_last_message(output + "▌")
-                # conv.update_last_message(output + html_code)
-                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
             else:
                 output = data["text"] + f"\n\n(error_code: {data['error_code']})"
                 conv.update_last_message(output)
@@ -590,35 +584,169 @@ def bot_response(
                     enable_btn,
                 )
                 return
-        output = data["text"].strip()
-        conv.update_last_message(output)
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-    except requests.exceptions.RequestException as e:
-        conv.update_last_message(
-            f"{SERVER_ERROR_MSG}\n\n"
-            f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
+
+            # Decide the execution flow based on the parsed response
+            # 1. action -> function_call (web_search) -> answer
+            # 2. answer -> return the answer
+
+            if data["function_name"] is not None:
+                # update system conversation that the function has been called
+                system_conv.update_last_message(f"{data['function_name']} ({str(data['arguments'])})")
+                
+                function_name = data["function_name"]
+                assert "web_search" == function_name, f"function_name: {function_name}"
+                arguments = data["arguments"]
+
+                conv.update_last_message("Searching..." + html_code)
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                
+                web_search_display, web_search_summary, web_search_result = web_search(**arguments)
+                web_search_result = web_search_result[:300000] # truncate
+                
+                # update system conversation with web search results
+                system_conv.append_message(
+                    system_conv.roles[1], f"Reference Website(s):\n{web_search_result}"
+                )
+                system_conv.append_message(system_conv.roles[1], None)
+                
+                conv.update_last_message(
+                    f"Reference Website(s):\n{web_search_display}"
+                )
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                
+                # generate answer after web search
+                message_after_web_search = conv.messages[-1][1]
+                # force no web search in the second round
+                stream_iter = get_api_provider_stream_iter(
+                    system_conv,
+                    model_name,
+                    model_api_dict,
+                    temperature,
+                    top_p,
+                    max_new_tokens,
+                    state,
+                    tools=None
+                )
+                conv.update_last_message(message_after_web_search + "\n\nReasoning..." + html_code)
+                yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                data = next(stream_iter)
+                if data["error_code"] == 0:
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                    output = data["text"].strip()
+                else:
+                    output = data["text"] + f"\n\n(error_code: {data['error_code']})"
+                    conv.update_last_message(output)
+                    yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn,
+                        disable_btn,
+                        disable_btn,
+                        enable_btn,
+                        enable_btn,
+                    )
+                    return
+
+                system_conv.update_last_message(output)
+                # save only summary to prevent context length explosion
+                system_conv.messages[-2][1] = web_search_summary
+                
+                conv.update_last_message(f"{output}\n\n{message_after_web_search}")
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+                
+            else:
+                conv.update_last_message(output)
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+
+        except requests.exceptions.RequestException as e:
+            conv.update_last_message(
+                f"{SERVER_ERROR_MSG}\n\n"
+                f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
+            )
+            yield (state, state.to_gradio_chatbot()) + (
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+        except Exception as e:
+            conv.update_last_message(
+                f"{SERVER_ERROR_MSG}\n\n"
+                f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
+            )
+            yield (state, state.to_gradio_chatbot()) + (
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+
+    else:  # Normal chatting mode
+        stream_iter = get_api_provider_stream_iter(
+            conv,
+            model_name,
+            model_api_dict,
+            temperature,
+            top_p,
+            max_new_tokens,
+            state,
         )
-        yield (state, state.to_gradio_chatbot()) + (
-            disable_btn,
-            disable_btn,
-            disable_btn,
-            enable_btn,
-            enable_btn,
-        )
-        return
-    except Exception as e:
-        conv.update_last_message(
-            f"{SERVER_ERROR_MSG}\n\n"
-            f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
-        )
-        yield (state, state.to_gradio_chatbot()) + (
-            disable_btn,
-            disable_btn,
-            disable_btn,
-            enable_btn,
-            enable_btn,
-        )
-        return
+        html_code = ' <span class="cursor"></span> '
+
+        # conv.update_last_message("▌")
+        conv.update_last_message(html_code)
+        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+
+        try:
+            data = {"text": ""}
+            for i, data in enumerate(stream_iter):
+                if data["error_code"] == 0:
+                    output = data["text"].strip()
+                    # conv.update_last_message(output + "▌")
+                    # conv.update_last_message(output + html_code)
+                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                else:
+                    output = data["text"] + f"\n\n(error_code: {data['error_code']})"
+                    conv.update_last_message(output)
+                    yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn,
+                        disable_btn,
+                        disable_btn,
+                        enable_btn,
+                        enable_btn,
+                    )
+                    return
+            output = data["text"].strip()
+            conv.update_last_message(output)
+            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        except requests.exceptions.RequestException as e:
+            conv.update_last_message(
+                f"{SERVER_ERROR_MSG}\n\n"
+                f"(error_code: {ErrorCode.GRADIO_REQUEST_ERROR}, {e})"
+            )
+            yield (state, state.to_gradio_chatbot()) + (
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
+        except Exception as e:
+            conv.update_last_message(
+                f"{SERVER_ERROR_MSG}\n\n"
+                f"(error_code: {ErrorCode.GRADIO_STREAM_UNKNOWN_ERROR}, {e})"
+            )
+            yield (state, state.to_gradio_chatbot()) + (
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
+            return
 
     finish_tstamp = time.time()
     logger.info(f"{output}")
@@ -915,12 +1043,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             label="Scroll down and start chatting",
             height=650,
             show_copy_button=True,
-            latex_delimiters=[
-                {"left": "$", "right": "$", "display": False},
-                {"left": "$$", "right": "$$", "display": True},
-                {"left": r"\(", "right": r"\)", "display": False},
-                {"left": r"\[", "right": r"\]", "display": True},
-            ],
         )
     with gr.Row():
         textbox = gr.Textbox(

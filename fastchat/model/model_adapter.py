@@ -144,6 +144,14 @@ class BaseModelAdapter:
         return get_conv_template("one_shot")
 
 
+class ReActAgentAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "react-agent" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("react-agent")
+
+
 # A global registry for all model adapters
 # TODO (lmzheng): make it a priority queue.
 model_adapters: List[BaseModelAdapter] = []
@@ -2602,6 +2610,7 @@ register_model_adapter(Llama3Adapter)
 register_model_adapter(Llama31Adapter)
 register_model_adapter(GrokAdapter)
 register_model_adapter(NoSystemAdapter)
+register_model_adapter(ReActAgentAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

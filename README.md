@@ -1,4 +1,12 @@
 # FastChat
+
+## Latest Update and TODOs
+
+- [ ] Enable google serach function call (by 10/28/2024)
+    - [x] Modify the fastchat codebase to support function calling during the chat for OpenAI GPT-4. Please see more at (./docs/agent.md)
+    - [x] Complete the google search function. Currently, it's a prototpye function at [`fastchat/tools/search.py`](./fastchat/tools/search.py)
+    - [ ] Make the agent call scalable for more LLMs (in addition to OpenAI's API models).
+
 | [**Demo**](https://lmarena.ai/) | [**Discord**](https://discord.gg/6GXcFg3TH8) | [**X**](https://x.com/lmsysorg) |
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.

@@ -1,0 +1,175 @@
+Prompt: tell me the temperature in celsius, hydrometry in percentage, sunshine in hours, rainfall in mm, humidity in percentage, soil type, climate, water level and suitable plantation location country or city for Galinsoga ciliate seed in bullets 2 words answer in number
+------------------------------
+GPT-4o Answer: - Temperature: 18°C
+- Hydrometry: 60%
+- Sunshine: 8 hours
+- Rainfall: 100 mm
+- Humidity: 70%
+- Soil Type: Loamy Soil
+- Climate: Temperate Zone
+- Water Level: Moderate Level
+- Suitable Location: Bogotá, Colombia
+------------------------------
+GPT-4o Agent Answer: Here are some suggested conditions for growing Galinsoga ciliate:
+
+- **Temperature:** 25°C
+- **Hydrometry:** 70%
+- **Sunshine:** 6 hours
+- **Rainfall:** 50 mm
+- **Humidity:** 60%
+- **Soil Type:** Loamy
+- **Climate:** Temperate
+- **Water Level:** Medium
+- **Location:** Mexico City
+
+These values are generalized and may vary based on specific cultivation practices and local conditions.
+Reference Website: 
+
+- [Galinsogas | CALS](https://cals.cornell.edu/weed-science/weed-profiles/galinsogas)
+==================================================
+Prompt: Instruction: You're a bot in Meta ads support helping diagnose Meta advertiser's problems and you should not answer to any out-of-scope questions. Invoke help internal center document query when it's a in-scope question and you'd like to find some documents. You can invoke help center by responding "I want to invoke help center" and provide 3 key words. Based on this setting please provide response for following user request. 
+
+Input: How can I set up a DA campaign?
+------------------------------
+GPT-4o Answer: I want to invoke help center with the keywords: "DA campaign setup".
+------------------------------
+GPT-4o Agent Answer: I want to invoke help center with the keywords: "DA campaign setup."
+
+==================================================
+
+Prompt: what to know about the current political and social polarization in the us
+------------------------------
+GPT-4o Answer: As of the latest information, political and social polarization in the United States remains a significant and complex issue with various contributing factors and consequences. Here are some key points to consider:
+
+1. **Partisan Divides**: The U.S. is experiencing deep partisan divides, with Democrats and Republicans having increasingly divergent views on a wide array of issues, including climate change, healthcare, gun control, immigration, and more. This divide is often reflected in legislative gridlock and challenges in passing bipartisan legislation.
+
+2. **Media Influence**: The role of media, including traditional news outlets and social media platforms, is critical in shaping public opinion and exacerbating polarization. Media outlets are often criticized for bias, and social media algorithms tend to create echo chambers, reinforcing existing beliefs and reducing exposure to opposing viewpoints.
+
+3. **Cultural and Identity Issues**: Cultural and identity-related issues, such as race, gender, and LGBTQ+ rights, have become central to political discourse. These issues often evoke strong emotions and can deepen divides between different demographic groups.
+
+4. **Economic Disparities**: Economic inequality and disparities between urban and rural areas contribute to polarization. People in different economic situations often have contrasting priorities and political preferences, which can lead to tension and division.
+
+5. **Misinformation and Disinformation**: The spread of misinformation and disinformation, particularly online, can exacerbate divisions by creating and reinforcing false narratives. This can undermine trust in institutions and increase skepticism towards opposing viewpoints.
+
+6. **Polarization in Institutions**: Polarization is evident not only among the general public but also within key institutions, including Congress and the judiciary. This can result in contentious nominations, partisan decision-making, and challenges to the functioning of democratic processes.
+
+7. **Impact on Governance**: Polarization can lead to a lack of compromise and cooperation in governance, affecting the ability of the government to effectively address pressing issues. It can also contribute to political instability and a lack of trust in government institutions.
+
+8. **Social Movements**: Social movements, such as Black Lives Matter and others advocating for social justice, reflect the heightened attention to issues of inequality and discrimination. These movements often become focal points in the polarization debate.
+
+9. **Potential Solutions**: Addressing polarization requires efforts to promote dialogue, increase media literacy, encourage bipartisan cooperation, and address underlying economic and social disparities. Building understanding and empathy across different groups is crucial to bridging divides.
+
+It's important to note that while polarization presents challenges, there are also ongoing efforts by individuals, organizations, and communities to foster dialogue and understanding across political and social divides.
+------------------------------
+GPT-4o Agent Answer: Political and social polarization in the United States has been a significant topic of concern, particularly in recent years. Here's an overview of the current state of polarization in the U.S. as of 2023:
+
+### **Political Polarization:**
+
+1. **Partisan Divisions:** The U.S. is experiencing deep partisan divisions, with Republicans and Democrats holding increasingly divergent views on key issues. This polarization is reflected in both ideological and affective dimensions—meaning people not only disagree on policy but also harbor negative feelings towards those in the opposing party.
+
+2. **Ideological Shifts:** There has been a notable shift towards more extreme positions within both parties, but particularly among Republicans. This has resulted in significant differences in policy priorities and approaches to governance.
+
+3. **Polarization in Congress:** Congressional polarization has increased, leading to legislative gridlock and a decrease in bipartisan cooperation. This affects the ability of the government to enact policies and respond effectively to national challenges.
+
+4. **Role of Media:** Media ecosystems, including social media, have contributed to polarization by creating echo chambers where individuals are exposed primarily to information that reinforces their existing beliefs.
+
+5. **Influence of Special Interests:** Concerns about money in politics remain prevalent, with many Americans believing that special interest groups and big donors have too much influence over political decisions, further entrenching polarization.
+
+### **Social Polarization:**
+
+1. **Cultural Divides:** Cultural issues such as race, gender, and immigration have become highly polarized, with stark divisions in public opinion contributing to social fragmentation.
+
+2. **Trust in Institutions:** Trust in democratic institutions, including the federal government, the judicial system, and the media, is low, with partisanship affecting perceptions of legitimacy and fairness.
+
+3. **Community and Identity:** Polarization is not just a matter of policy disagreement but extends to identities. Political affiliations are increasingly intertwined with personal and social identities, impacting relationships and social cohesion.
+
+4. **Geographical Polarization:** There is a growing divide between urban and rural areas, with each often aligning with different political ideologies and parties, further entrenching partisan divides.
+
+### **Potential Consequences and Concerns:**
+
+1. **Democratic Backsliding:** Polarization threatens to undermine democratic processes and norms, as it promotes skepticism towards electoral outcomes and erodes the willingness to compromise.
+
+2. **Political Violence:** Rising polarization is associated with an increased risk of political violence and unrest, as seen in events like the January 6 Capitol riot.
+
+3. **Policy Stagnation:** With heightened partisanship, achieving consensus on important national issues becomes challenging, leading to policy stagnation and inadequate responses to pressing public needs.
+
+### **Proposals and Solutions:**
+
+1. **Electoral Reforms:** Suggestions include reforms to voting processes, such as ranked-choice voting, to encourage moderation and reduce the influence of extreme partisanship.
+
+2. **Promoting Dialogue:** Encouraging intergroup dialogue and understanding across partisan lines could help reduce affective polarization and improve social cohesion.
+
+3. **Institutional Changes:** Proposals for structural changes, such as implementing term limits or altering the composition of legislative bodies, aim to reduce entrenched partisanship and increase accountability.
+
+Understanding and addressing polarization in the U.S. is complex, involving political, social, and cultural dimensions. Efforts to bridge divides and foster a more collaborative political environment are ongoing and crucial for maintaining a healthy democracy.
+Reference Website: 
+
+- [Highly Negative Views of American Politics in 2023 | Pew Research Center](https://www.pewresearch.org/politics/2023/09/19/americans-dismal-views-of-the-nations-politics/)
+- [Political Polarization Relatively Strong In The US | ZeroHedge](https://www.zerohedge.com/political/political-polarization-relatively-strong-us)
+- [Political polarization in the United States - Wikipedia](https://en.wikipedia.org/wiki/Political_polarization_in_the_United_States)
+==================================================
+
+Prompt: What the best performing method on SWE-Bench now?
+------------------------------
+GPT-4o Answer: As of my last update, I don't have real-time access to specific benchmarks or their current standings. To find the best-performing method on SWE-Bench, you would need to check the latest results on the official SWE-Bench website or repository, where they might publish leaderboards or recent papers that have reported their results on this benchmark. Keeping an eye on recent publications in conference proceedings or journals related to software engineering might also provide insights into current top-performing methods.
+------------------------------
+GPT-4o Agent Answer: **NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**
+
+(error_code: 50003, Unexpected error during scrape URL: Status code 403. URL is blocked. Firecrawl currently does not support social media scraping due to policy restrictions. - No additional error details provided.)
+==================================================
+Prompt: How many parameters does the largest neural network in the world have?
+------------------------------
+GPT-4o Answer: As of my last update, the largest publicly known neural network is GPT-4 by OpenAI, although specific details about its parameters have not been disclosed. However, it is believed to have more parameters than its predecessor, GPT-3, which has 175 billion parameters. There might be larger models in development or deployed by organizations that have not been publicly disclosed. Therefore, the exact number of parameters for the largest neural network in the world may not be publicly available.
+------------------------------
+GPT-4o Agent Answer: As of the latest information, the largest neural network in the world is the BaGuaLu AI model, which has over 174 trillion parameters. This model was trained using the Chinese Sunway exaflop supercomputer, achieving significant advancements in the field of artificial intelligence.
+Reference Website: 
+
+- [AI trends in 2024: Graph Neural Networks](https://www.assemblyai.com/blog/ai-trends-graph-neural-networks/)
+- [AI Model Trained With 174 Trillion Parameters | NextBigFuture.com](https://www.nextbigfuture.com/2023/01/ai-model-trained-with-174-trillion-parameters.html)
+- [Large language model - Wikipedia](https://en.wikipedia.org/wiki/Large_language_model)
+==================================================
+Prompt: What hyper-automation tools are being used in Sandvik?
+------------------------------
+GPT-4o Answer: As of the latest available information, Sandvik, a global engineering company, has been incorporating hyper-automation tools to enhance its operations and increase efficiency. While specific tools and platforms might not be publicly detailed, companies like Sandvik typically use a combination of the following technologies for hyper-automation:
+
+1. **Robotic Process Automation (RPA):** Tools such as UiPath, Automation Anywhere, or Blue Prism might be used to automate repetitive and rule-based tasks.
+
+2. **Artificial Intelligence (AI) and Machine Learning (ML):** These technologies are employed to analyze data, make predictions, and automate decision-making processes.
+
+3. **Process Mining:** Tools like Celonis can help in understanding and optimizing business processes by analyzing data from various systems.
+
+4. **Intelligent Document Processing (IDP):** Solutions from vendors like ABBYY or Kofax can automate the extraction and processing of data from documents.
+
+5. **Business Process Management (BPM):** Platforms such as Appian or Pega might be used to design, execute, and monitor automated workflows.
+
+6. **Internet of Things (IoT):** IoT devices and platforms can be leveraged to collect data from machinery and other physical assets for predictive maintenance and optimization.
+
+7. **Cloud Computing:** Cloud platforms like AWS, Azure, or Google Cloud provide the infrastructure and services needed for scalable automation solutions.
+
+8. **Data Analytics:** Tools like Power BI or Tableau are used for visualizing and analyzing data to drive insights and automation opportunities.
+
+For the most accurate and current information on the specific tools Sandvik is using, it would be best to consult their official communications or reach out to them directly.
+------------------------------
+GPT-4o Agent Answer: Sandvik is utilizing several advanced hyper-automation tools to enhance their mining operations, focusing on automation and digitalization to optimize processes, increase productivity, and improve safety. Here's a summary of some key tools and platforms they use:
+
+1. **AutoMine® Core**: This is a comprehensive automation platform designed for mass mining operations. It integrates advanced planning and scheduling capabilities with top-tier underground autonomy, enhancing productivity through seamless integration into a mine's digital ecosystem.
+
+2. **AutoMine® Product Group**: This includes various levels of automation for mobile equipment, enabling autonomous and remotely operated machine control. It supports both underground and surface operations, allowing operators to manage multiple machines from a safe remote location.
+
+3. **AutoMine® Fleet and Manual Production Monitoring (MPM)**: These solutions provide interoperability for Sandvik and third-party fleets, offering insights into underground connectivity, data collection, and analysis to make operations safer and more productive.
+
+4. **Polymathian's ORB**: Integrated with AutoMine® Core, this tool helps optimize productivity by up to 20% through autonomous dispatching and real-time optimization.
+
+5. **Automation and Connectivity System (ACS)**: Designed for crusher automation, this system enables real-time performance management and optimization, ensuring crushers operate at optimal levels with minimal downtime and wear.
+
+6. **AutoMine® Underground Drilling and Surface Drilling Packages**: These packages offer various levels of autonomy for drilling operations, from single drill tele-operation to fully autonomous fleet operations.
+
+7. **Automation Learning Solutions**: A training package that encompasses remote and autonomous operations to ensure successful implementation and operation of Sandvik's automation solutions.
+
+Sandvik's commitment to digitalization and automation allows them to provide cutting-edge solutions that drive safety, productivity, and sustainability in mining operations.
+Reference Website: 
+
+- [Sandvik introduces AutoMine® Core automation platform for mass mining operations](https://www.rocktechnology.sandvik/en/news-and-media/news-archive/2023/10/sandvik-introduces-automine-core-automation-platform-for-mass-mining-operations/)
+- [Automation](https://www.rocktechnology.sandvik/en/products/technology/automation/)
+- [Crusher Performance, Sandvik Automation, Crusher Automation](https://www.rockprocessing.sandvik/en/products/stationary-crushers/crusher-automation/)
+==================================================
