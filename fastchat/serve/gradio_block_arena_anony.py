@@ -549,18 +549,6 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
 - **Vote for the Best**: After interacting with both programs, vote for the one that best meets your requirements or provides the superior experience.
 - **Play Fair**: If AI identity reveals, your vote won't count.
 
-## 💻 Supported Outputs
-- Documents (Markdown or Plain Text)
-- Websites (single webpage)
-- Scalable Vector Graphics (SVG) images
-- Plots
-- Tables
-- Interactive React/Vue components
-- PyGame
-- Gradio/Streamlit interfaces
-- Mermaid diagrams
-- And more coming soon!
-
 ## 👇 Start Testing & Voting Now!
 """
 
@@ -601,18 +589,6 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
                     )
         with gr.Row():
             slow_warning = gr.Markdown("")
-
-    with gr.Row():
-        leftvote_btn = gr.Button(
-            value="👈  A is better", visible=False, interactive=False
-        )
-        rightvote_btn = gr.Button(
-            value="👉  B is better", visible=False, interactive=False
-        )
-        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-        bothbad_btn = gr.Button(
-            value="👎  Both are bad", visible=False, interactive=False
-        )
 
     # sandbox states and components
     sandbox_states: list[gr.State] = [] # state for each chatbot
@@ -655,7 +631,7 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
                                         value="",
                                         interactive=True, # allow user edit
                                         visible=False,
-                                        wrap_lines=True,
+                                        # wrap_lines=True,
                                         label='Sandbox Code',
                                     )
                                     with gr.Row():
@@ -712,6 +688,18 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
         send_btn_left = gr.Button(value="Send to Left", variant="primary", scale=0)
         send_btn_right = gr.Button(value="Send to Right", variant="primary", scale=0)
         send_btns_one_side = [send_btn_left, send_btn_right]
+
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)

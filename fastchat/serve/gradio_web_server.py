@@ -86,10 +86,9 @@ The service collects user data, including dialogue (text and images), editing hi
 We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
-    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
-    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
-    <!-- Add more sponsor images as necessary -->
+    <img src="https://github.com/e2b-dev/E2B/blob/main/readme-assets/logo-circle.png?raw=true" alt="E2B">
+    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="HuggingFace">
 </div>
 """
 
@@ -842,6 +841,18 @@ def build_about():
 
 We welcome contributors to enhance the platform and encourage feedback to improve its functionality and usability.
 
+## 💻 Supported Outputs
+- Documents (Markdown or Plain Text)
+- Websites (single webpage)
+- Scalable Vector Graphics (SVG) images
+- Plots
+- Tables
+- Interactive React/Vue components
+- PyGame
+- Gradio/Streamlit interfaces
+- Mermaid diagrams
+- And more coming soon!
+
 ## Technical Implementation
 Software Arena provides:
 - **Code Execution**: Secure, sandboxed environment using E2B for executing code in supported languages
@@ -850,9 +861,9 @@ Software Arena provides:
 - **Interaction Tracking**: Comprehensive logging of user interactions with rendered UIs
 
 ## Open-source Contributors
-- **Leads**: [Terry Yue Zhuo](https://terryyz.github.io/)
-- **Contributors**: Gary Liu, Yuhan Cao, [Tianyang Liu](https://leolty.github.io/), [Jihan Yao](https://yaojh18.github.io/), [Banghua Zhu](https://people.eecs.berkeley.edu/~banghua/)
-- **Advisors**: [Torsten Scholak](https://www.servicenow.com/research/author/torsten-scholak.html), [Atin Sood](https://atinsood.com/about/), [Julian McAuley](https://cseweb.ucsd.edu/~jmcauley/) 
+- **Lead**: [Terry Yue Zhuo](https://terryyz.github.io/)
+- **Contributors**: [Gary Liu](mailto:ksqod_code@pm.me), [Yuhan Cao](mailto:ycao0081@student.monash.edu), [Tianyang Liu](https://leolty.github.io/), [Kaixin Li](https://likaixin2000.github.io/), [Jihan Yao](https://yaojh18.github.io/)
+- **Advisors**: [Banghua Zhu](https://people.eecs.berkeley.edu/~banghua/), [Torsten Scholak](https://www.servicenow.com/research/author/torsten-scholak.html), [Atin Sood](https://atinsood.com/about/), [Julian McAuley](https://cseweb.ucsd.edu/~jmcauley/), [Xiaoning Du](https://xiaoningdu.github.io/)
 
 ## Contact
 [Email](mailto:computer.intelligence.project@gmail.com) | [GitHub](https://github.com/BigComputer-Project) | [X](https://x.com/CIntProject)
@@ -861,9 +872,9 @@ Software Arena provides:
 We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
-    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
-    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
+    <img src="https://github.com/e2b-dev/E2B/blob/main/readme-assets/logo-circle.png?raw=true" alt="E2B">
+    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
+    <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="HuggingFace">
 </div>
 """
     gr.Markdown(about_markdown, elem_id="about_markdown")
@@ -880,7 +891,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
     notice_markdown = f"""
 # ⚔️ Software Arena: AI Battle to Generate Executable Programs
-[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
+[Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/BigComProject)
 {promotion}
 """
 
@@ -955,7 +966,7 @@ def build_single_model_ui(models, add_promotion_links=False):
                                 value="",
                                 interactive=True, # allow user edit
                                 visible=False,
-                                wrap_lines=True,
+                                # wrap_lines=True,
                                 label='Sandbox Code',
                             )
                             with gr.Row():

@@ -74,36 +74,55 @@ Button in the chat to run the code in the sandbox.
 '''
 
 GENERAL_SANDBOX_INSTRUCTION = """\
-# You are an expert Software Engineer who is a good UI/UX designer and a good product manager. Generate code for a single file to be executed in a sandbox. Follow the instructions carefully:
+You are an expert Software Engineer who is a good UI/UX designer and a good product manager. Your task is to generate self-contained, executable code for a single file/block that can run directly in a sandbox environment. Feel free to ask questions or explain your reasoning.
 
-- Think carefully step by step. Feel free to ask questions or explain your reasoning.
-- Assume that you can access the internet to fetch data
+Your code must be written using one of these supported development frameworks and environments:
+- React (JavaScript/TypeScript)
+- Vue (JavaScript/TypeScript)
+- HTML (Vanilla HTML)
+- Gradio (Python)
+- Streamlit (Python)
+- PyGame (Python)
+- Python Code Interpreter
+- JavaScript Code Interpreter
+
+All web framework code (React, Vue, HTML) must be directly rendered in a browser and immediately executable without additional setup.
+Python-based frameworks should be directly executable in a browser environment.
+The code to be executed in Code Interpreters must be plain Python or JavaScript programs that do not require any web UI frameworks and standard inputs from the user.
+
+The code must be in the markdown format:
+```<language>
+<code>
+```
+
+Before you begin writing any code, you must follow these fundamental rules:
+- You are NOT allowed to start directly with a code block. Before writing code, ALWAYS think carefully step-by-step
+- Your response must contain a clear explanation of the solution you are providing
+- ALAWYS generate complete, self-contained code in a single file
+- You CANNOT split your program into multiple files or multiple code blocks
+- If you use any external libraries, make sure to specify them for the installation command in either `pip install` or `npm install`
+- Each code block must be completely independent. If modifications are needed, the entire code block must be rewritten
+- When fetching data, you MUST use external libraries and packages, and avoid using placeholder urls or urls that require API keys
 - Make sure the program is functional by creating state when needed and having no required props
-- You can only use `pygame`, `gradio`, and `streamlit` to use GUI-based Python programs
-- For the React and Vue components, Use TypeScript or JavaScript as the language and make sure it can run by itself by using a default export
-- For Python code that does not require GUI, make sure it does not require any user inputs
-- For React and Vue, use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette
-- For React and Vue, returning only the full React code starting with imports
-- If you use any imports from React like useState or useEffect, make sure to import them directly
-- For React and Vue, use Tailwind margin and padding classes to style the components and ensure the components are spaced out nicely
-- Make sure to include all necessary code in one file.
-- For frontend code, DO NOT RETURN THE COMPONENT AT THE END OF THE FILE (e.g. `ReactDOM.render(</>, document.getElementById('root'));`)
-- There is no additional files in the local file system, unless you create them inside the same program.
+- Make sure to include all necessary code in one file
+- There is no additional files in the local file system, unless you create them inside the same program
 - Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
-- For frontend code, the recharts library is available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`.
 
+When developing with React or Vue components, follow these specific requirements:
+- Use TypeScript or JavaScript as the language
+- ALWAYS use BLACK text color on white background, and WHITE text color on black background
+- Make sure it can run by itself by using a default export at the end of the file
+- DO NOT CALL `ReactDOM.render()` AT THE END OF THE FILE
+- Use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette
+- If you use any imports from React like useState or useEffect, make sure to import them directly
+- Use Tailwind margin and padding classes to style the components and ensure proper spacing
+- Various npm packages are available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`
 
-# You must generate code that can be the following frameworks ordered by priority:
-1. React (JavaScript/TypeScript) : React programs that can be directly rendered in a browser.
-2. Vue (JavaScript/TypeScript) : Vue programs that can be directly rendered in a browser.
-3. Gradio (Python) : Gradio programs that can be directly rendered in a browser.
-4. Streamlit (Python) : Streamlit programs that can be directly rendered in a browser.
-5. PyGame (Python) : PyGame programs that can be directly rendered in a browser.
-6. Python Code Interpreter: Plain Python programs that do not require any web UI frameworks and standard inputs from the user.
-7. Javascript Code Interpreter: Plain Javascript programs that do not require any web UI frameworks and standard inputs from the user.
-
-
-# If you use `pygame`, you have to write the main function as an async function like:
+For Python development, you must follow these constraints:
+- Make sure it does not require any user inputs
+- Choose suitable PyPI packages to be imported, e.g. `import pandas`
+- Avoid using libraries that require desktop GUI interfaces, with the exceptions of `pygame`, `gradio`, and `streamlit` which are explicitly supported
+- For PyGame applications, you have to write the main function as an async function like:
 ```python
 import asyncio
 import pygame
@@ -119,11 +138,10 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-
-# The code must be in the markdown format:
-```<language>
-<code>
-```
+For HTML development, ensure that:
+- All HTML code must be self-contained in a single file
+- Include any necessary CSS and JavaScript within the HTML file
+- Ensure the code is directly executable in a browser environment
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
@@ -699,49 +717,70 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     if not matches:
         return None
         
-    # Find the longest code block
-    longest_match = max(matches, key=lambda m: len(m.group('code')))
-    code = longest_match.group('code').strip()
-    code_lang = (longest_match.group('code_lang') or '').lower()
-    
-    # Skip empty code blocks
-    if not code:
-        return None
+    # Define a low-priority list for certain languages
+    low_priority_languages = ['bash', 'shell', 'sh', 'zsh', 'powershell', 'pwsh', '']
 
-    # Extract package dependencies using static analysis
+    # Find the main code block by avoiding low-priority languages
+    main_code = None
+    main_code_lang = None
+    for match in matches:
+        code = match.group('code').strip()
+        code_lang = (match.group('code_lang') or '').lower()
+        if code_lang not in low_priority_languages:
+            main_code = code
+            main_code_lang = code_lang
+            break
+
+    # Fallback to the longest code block if all are low-priority
+    if not main_code:
+        longest_match = max(matches, key=lambda m: len(m.group('code')))
+        main_code = longest_match.group('code').strip()
+        main_code_lang = (longest_match.group('code_lang') or '').lower()
+
+    # Extract package dependencies from the main program
     python_packages: list[str] = []
     npm_packages: list[str] = []
-    
-    # Determine sandbox environment based on language and imports
-    if code_lang in ['py', 'python', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
-        python_packages = extract_python_imports(code)
-        sandbox_env_name = determine_python_environment(code, python_packages)
-    elif code_lang in ['vue', 'vue3', 'vue2']:
-        npm_packages = extract_js_imports(code)
+
+    if main_code_lang in ['py', 'python', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
+        python_packages = extract_python_imports(main_code)
+        sandbox_env_name = determine_python_environment(main_code, python_packages)
+    elif main_code_lang in ['vue', 'vue3', 'vue2']:
+        npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
-        code_lang = detect_js_ts_code_lang(code)
-    elif code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in code or '<html' in code):
+        main_code_lang = detect_js_ts_code_lang(main_code)
+    elif main_code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
         sandbox_env_name = SandboxEnvironment.HTML
-        code_lang = 'html'
-    elif code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
-        npm_packages = extract_js_imports(code)
+        main_code_lang = 'html'
+    elif main_code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
+        npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.REACT
-        code_lang = detect_js_ts_code_lang(code)
-    elif code_lang in ['js', 'javascript',  'jsx', 'coffeescript', 'ecmascript', 'javascript', 'js', 'node']:
-        code_lang = 'javascript'
-        npm_packages = extract_js_imports(code)
-        sandbox_env_name = determine_js_environment(code, npm_packages)
-    elif code_lang in ['ts', 'typescript']:
-        code_lang = 'typescript'
-        npm_packages = extract_js_imports(code)
-        sandbox_env_name = determine_js_environment(code, npm_packages)
+        main_code_lang = detect_js_ts_code_lang(main_code)
+    elif main_code_lang in ['js', 'javascript',  'jsx', 'coffeescript', 'ecmascript', 'javascript', 'js', 'node']:
+        main_code_lang = 'javascript'
+        npm_packages = extract_js_imports(main_code)
+        sandbox_env_name = determine_js_environment(main_code, npm_packages)
+    elif main_code_lang in ['ts', 'typescript']:
+        main_code_lang = 'typescript'
+        npm_packages = extract_js_imports(main_code)
+        sandbox_env_name = determine_js_environment(main_code, npm_packages)
     else:
         sandbox_env_name = None
 
-    if enable_auto_env and sandbox_env_name is None:
-        return None
+    # Extract installation commands from all code blocks
+    all_python_packages: Set[str] = set(python_packages)
+    all_npm_packages: Set[str] = set(npm_packages)
 
-    return code, code_lang, (python_packages, npm_packages), sandbox_env_name
+    for match in matches:
+        code = match.group('code').strip()
+        if code != main_code:
+            print(f"code: {code}")
+            install_python_packages, install_npm_packages = extract_installation_commands(code)
+            print(f"install_python_packages: {install_python_packages}")
+            print(f"install_npm_packages: {install_npm_packages}")
+            all_python_packages.update(install_python_packages)
+            all_npm_packages.update(install_npm_packages)
+
+    return main_code, main_code_lang, (list(all_python_packages), list(all_npm_packages)), sandbox_env_name
 
 
 def render_result(result):
@@ -781,19 +820,26 @@ def install_pip_dependencies(sandbox: Sandbox, dependencies: list[str]):
     '''
     Install pip dependencies in the sandbox.
     '''
+
+    stderr = ""
     if not dependencies:
         return
         
     def log_output(message):
         print(f"pip: {message}")
-        
-    sandbox.commands.run(
-        f"uv pip install --system {' '.join(dependencies)}",
-        timeout=60 * 3,
-        on_stdout=log_output,
-        on_stderr=log_output,
-    )
-
+        nonlocal stderr
+        stderr += message
+    
+    for dependency in dependencies:
+        try:
+            sandbox.commands.run(
+                f"uv pip install --system {dependency}",
+                timeout=60 * 3,
+                on_stdout=log_output,
+                on_stderr=log_output,
+            )
+        except Exception as e:
+            continue
 
 def install_npm_dependencies(sandbox: Sandbox, dependencies: list[str]):
     '''
@@ -876,6 +922,7 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
     Args:
         code (str): The code to be executed.
     """
+    url = ''
     sandbox = CodeSandbox(
         api_key=E2B_API_KEY,
     )
@@ -896,26 +943,27 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
     # collect stdout, stderr from sandbox
     stdout = "\n".join(execution.logs.stdout)
     stderr = "\n".join(execution.logs.stderr)
+    if execution.error:
+        stderr += f"\n{execution.error.name}: {execution.error.value}"
     output = ""
     if stdout:
         output += f"### Stdout:\n```\n{stdout}\n```\n\n"
-    if stderr:
-        output += f"### Stderr:\n```\n{stderr}\n```\n\n"
 
     results = []
-    js_code = ""
     for result in execution.results:
-        rendered_result = render_result(result)
-        if result.javascript:
-            # TODO: js_code are not used
-            # js_code += rendered_result + "\n"
-            print("JavaScript code:", rendered_result)
+        if result.html or result.javascript:
+            # TODO: fix this
+            continue
+            # with open('html_code.html', 'w') as f:
+            #     f.write(result.html)
+            # url, _ = run_html_sandbox(result.html, ([], extract_js_imports(result.html)))
         else:
+            rendered_result = render_result(result)
             results.append(rendered_result)
     if results:
         output += "\n### Results:\n" + "\n".join(results)
 
-    return output
+    return output, url, "" if output else stderr
 
 
 def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
@@ -941,7 +989,7 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     stderr = run_background_command_with_timeout(
         sandbox,
         "python -m http.server 3000",
-        timeout=10,
+        timeout=3,
     )
     
     host = sandbox.get_host(3000)
@@ -1070,7 +1118,7 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     stderr = run_background_command_with_timeout(
         sandbox,
         "python -m http.server 3000",
-        timeout=10,
+        timeout=5,
     )
 
     host = sandbox.get_host(3000)
@@ -1110,7 +1158,7 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
     stderr = run_background_command_with_timeout(
         sandbox,
         "python ~/mynicegui/main.py",
-        timeout=10,
+        timeout=5,
     )
 
     host = sandbox.get_host(port=8080)
@@ -1147,7 +1195,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     stderr = run_background_command_with_timeout(
         sandbox,
         "python ~/app.py",
-        timeout=10,
+        timeout=5,
     )
 
     sandbox_url = 'https://' + sandbox.get_host(7860)
@@ -1175,7 +1223,7 @@ def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[st
     stderr = run_background_command_with_timeout(
         sandbox,
         "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true",
-        timeout=10,
+        timeout=5,
     )
 
     host = sandbox.get_host(port=8501)
@@ -1415,32 +1463,38 @@ def on_run_code(
             )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
             yield update_output("🔄 Running Python Code Interpreter...")
-            output = run_code_interpreter(
+            output, url, stderr = run_code_interpreter(
                 code=code, code_language='python', code_dependencies=code_dependencies
             )
-            yield update_output("✅ Code execution complete!")
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ Code execution complete!")
             yield (
                 gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
                 SandboxComponent(
-                    value=('', ''),
+                    value=(url, ''),
                     label="Example",
-                    visible=False,
+                    visible=True if url else False,
                     key="newsandbox",
                 ),
                 gr.skip()
             )
         case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
             yield update_output("🔄 Running JavaScript Code Interpreter...")
-            output = run_code_interpreter(
+            output, url, stderr = run_code_interpreter(
                 code=code, code_language='javascript', code_dependencies=code_dependencies
             )
-            yield update_output("✅ Code execution complete!")
+            if stderr:
+                yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
+            else:
+                yield update_output("✅ Code execution complete!")
             yield (
                 gr.Markdown(value=output_text + "\n\n" + output, visible=True),
                 SandboxComponent(
-                    value=('', ''),
+                    value=(url, ''),
                     label="Example",
-                    visible=False,
+                    visible=True if url else False,
                     key="newsandbox",
                 ),
                 gr.skip()
@@ -1448,3 +1502,56 @@ def on_run_code(
         case _:
             raise ValueError(
                 f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
+
+def extract_installation_commands(code: str) -> tuple[list[str], list[str]]:
+    '''
+    Extracts package installation commands from the code block.
+
+    Args:
+        code (str): The code block to analyze.
+
+    Returns:
+        tuple[list[str], list[str]]: A tuple containing two lists:
+            1. Python packages from pip install commands.
+            2. npm packages from npm install commands.
+    '''
+    python_packages = []
+    npm_packages = []
+
+    # Regex patterns to find pip and npm install commands
+    # Match pip install with various forms (pip, pip3, python -m pip)
+    pip_patterns = [
+        r'(?:pip|pip3|python -m pip)\s+install\s+(?:(?:--upgrade|--user|--no-cache-dir|-U)\s+)*([^-\s][\w\-\[\]<>=~\.]+(?:\s+[^-\s][\w\-\[\]<>=~\.]+)*)',
+        r'(?:pip|pip3|python -m pip)\s+install\s+(?:-r\s+[\w\-\.\/]+\s+)*([^-\s][\w\-\[\]<>=~\.]+(?:\s+[^-\s][\w\-\[\]<>=~\.]+)*)',
+    ]
+    
+    # Match npm install with various flags
+    npm_patterns = [
+        r'npm\s+i(?:nstall)?\s+(?:(?:--save|--save-dev|-[SD]|--global|-g)\s+)*([^-\s][\w\-@/\.]+(?:\s+[^-\s][\w\-@/\.]+)*)',
+        r'yarn\s+add\s+(?:(?:--dev|-D)\s+)*([^-\s][\w\-@/\.]+(?:\s+[^-\s][\w\-@/\.]+)*)',
+    ]
+
+    # Find all pip install commands
+    for pattern in pip_patterns:
+        matches = re.finditer(pattern, code, re.MULTILINE)
+        for match in matches:
+            # Split packages and clean each one
+            pkgs = match.group(1).strip().split()
+            python_packages.extend(pkg.split('==')[0].split('>=')[0].split('<=')[0].split('~=')[0] for pkg in pkgs)
+
+    # Find all npm install commands
+    for pattern in npm_patterns:
+        matches = re.finditer(pattern, code, re.MULTILINE)
+        for match in matches:
+            # Split packages and clean each one
+            pkgs = match.group(1).strip().split()
+            npm_packages.extend(pkg.split('@')[0] for pkg in pkgs if not pkg.startswith('@'))
+            # Handle scoped packages (e.g., @types/node)
+            npm_packages.extend(f"{pkg.split('/')[0]}/{pkg.split('/')[1].split('@')[0]}" 
+                              for pkg in pkgs if pkg.startswith('@') and '/' in pkg)
+
+    # Remove duplicates while preserving order
+    python_packages = list(dict.fromkeys(python_packages))
+    npm_packages = list(dict.fromkeys(npm_packages))
+
+    return python_packages, npm_packages

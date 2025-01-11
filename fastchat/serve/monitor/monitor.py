@@ -1052,17 +1052,6 @@ def build_leaderboard_tab(
         open=True,
     ):
         citation_md = """
-            ### Citation
-            Please cite the following paper if you find our leaderboard or dataset helpful.
-            ```
-            @misc{chiang2024chatbot,
-                title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},
-                author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},
-                year={2024},
-                eprint={2403.04132},
-                archivePrefix={arXiv},
-                primaryClass={cs.AI}
-            }
             """
         gr.Markdown(citation_md, elem_id="leaderboard_markdown")
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")

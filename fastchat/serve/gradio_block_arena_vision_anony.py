@@ -450,18 +450,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         slow_warning = gr.Markdown("", elem_id="notice_markdown")
 
     with gr.Row():
-        leftvote_btn = gr.Button(
-            value="👈  A is better", visible=False, interactive=False
-        )
-        rightvote_btn = gr.Button(
-            value="👉  B is better", visible=False, interactive=False
-        )
-        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-        bothbad_btn = gr.Button(
-            value="👎  Both are bad", visible=False, interactive=False
-        )
-
-    with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
             placeholder="👉 Enter your prompt and press ENTER",
@@ -480,6 +468,19 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
         send_btn = gr.Button(
             value="Send", variant="primary", scale=1, visible=False, interactive=False
+        )
+
+
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
         )
 
     with gr.Row() as button_row:

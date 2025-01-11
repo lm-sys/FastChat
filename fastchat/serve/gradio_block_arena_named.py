@@ -440,20 +440,6 @@ def build_side_by_side_ui_named(models):
                     )
 
 
-
-    with gr.Row():
-        leftvote_btn = gr.Button(
-            value="👈  A is better", visible=False, interactive=False
-        )
-        rightvote_btn = gr.Button(
-            value="👉  B is better", visible=False, interactive=False
-        )
-        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
-        bothbad_btn = gr.Button(
-            value="👎  Both are bad", visible=False, interactive=False
-        )
-
-
     # sandbox states and components
     sandbox_states: list[gr.State] = [] # state for each chatbot
     sandboxes_components: list[SandboxGradioSandboxComponents] = [] # components for each chatbot
@@ -493,7 +479,7 @@ def build_side_by_side_ui_named(models):
                                         value="",
                                         interactive=True, # allow user edit
                                         visible=False,
-                                        wrap_lines=True,
+                                        # wrap_lines=True,
                                         label='Sandbox Code',
                                     )
                                     with gr.Row():
@@ -550,6 +536,18 @@ def build_side_by_side_ui_named(models):
         send_btn_left = gr.Button(value="Send to Left", variant="primary", scale=0)
         send_btn_right = gr.Button(value="Send to Right", variant="primary", scale=0)
         send_btns_one_side = [send_btn_left, send_btn_right]
+
+    with gr.Row():
+        leftvote_btn = gr.Button(
+            value="👈  A is better", visible=False, interactive=False
+        )
+        rightvote_btn = gr.Button(
+            value="👉  B is better", visible=False, interactive=False
+        )
+        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        bothbad_btn = gr.Button(
+            value="👎  Both are bad", visible=False, interactive=False
+        )
 
     with gr.Row() as button_row:
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
