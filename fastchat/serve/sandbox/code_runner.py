@@ -922,7 +922,6 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
     Args:
         code (str): The code to be executed.
     """
-    url = ''
     sandbox = CodeSandbox(
         api_key=E2B_API_KEY,
     )
@@ -963,7 +962,7 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
     if results:
         output += "\n### Results:\n" + "\n".join(results)
 
-    return output, url, "" if output else stderr
+    return output, "" if output else stderr
 
 
 def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
@@ -1349,6 +1348,7 @@ def on_run_code(
             yield update_output("🔄 Setting up HTML sandbox...")
             url, stderr = run_html_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
+                yield update_output("❌ HTML sandbox failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ HTML sandbox ready!")
@@ -1397,6 +1397,7 @@ def on_run_code(
             yield update_output("⚙️ Installing PyGame dependencies...")
             url, stderr = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
+                yield update_output("❌ PyGame sandbox failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ PyGame sandbox ready!")
@@ -1415,6 +1416,7 @@ def on_run_code(
             yield update_output("⚙️ Installing Gradio dependencies...")
             url, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
+                yield update_output("❌ Gradio sandbox failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ Gradio sandbox ready!")
@@ -1433,6 +1435,7 @@ def on_run_code(
             yield update_output("⚙️ Installing Streamlit dependencies...")
             url, stderr = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
+                yield update_output("❌ Streamlit sandbox failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ Streamlit sandbox ready!")
@@ -1463,42 +1466,44 @@ def on_run_code(
             )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
             yield update_output("🔄 Running Python Code Interpreter...")
-            output, url, stderr = run_code_interpreter(
+            output, stderr = run_code_interpreter(
                 code=code, code_language='python', code_dependencies=code_dependencies
             )
             if stderr:
+                yield update_output("❌ Python Code Interpreter failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ Code execution complete!")
-            yield (
-                gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
-                SandboxComponent(
-                    value=(url, ''),
-                    label="Example",
-                    visible=True if url else False,
-                    key="newsandbox",
-                ),
-                gr.skip()
-            )
+                yield (
+                    gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
+                    SandboxComponent(
+                        value=("", ""),
+                        label="Example",
+                        visible=False,
+                        key="newsandbox",
+                    ),
+                    gr.skip()
+                )
         case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
             yield update_output("🔄 Running JavaScript Code Interpreter...")
-            output, url, stderr = run_code_interpreter(
+            output, stderr = run_code_interpreter(
                 code=code, code_language='javascript', code_dependencies=code_dependencies
             )
             if stderr:
+                yield update_output("❌ JavaScript Code Interpreter failed to run!")
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
                 yield update_output("✅ Code execution complete!")
-            yield (
-                gr.Markdown(value=output_text + "\n\n" + output, visible=True),
-                SandboxComponent(
-                    value=(url, ''),
-                    label="Example",
-                    visible=True if url else False,
-                    key="newsandbox",
-                ),
-                gr.skip()
-            )
+                yield (
+                    gr.Markdown(value=output_text + "\n\n" + output, visible=True),
+                    SandboxComponent(
+                        value=("", ""),
+                        label="Example",
+                        visible=False,
+                        key="newsandbox",
+                    ),
+                    gr.skip()
+                )
         case _:
             raise ValueError(
                 f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
