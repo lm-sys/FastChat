@@ -115,7 +115,9 @@ def build_copilot_arena_tab():
                 )
             vote_data = make_copilot_arena_leaderboard_md(leaderboard, "Autocomplete")
             with gr.Column(scale=3, variant="panel"):
-                interaction_mode_details = gr.Markdown(vote_data, elem_id="interaction_mode_details")
+                interaction_mode_details = gr.Markdown(
+                    vote_data, elem_id="interaction_mode_details"
+                )
 
         leaderboard_df = gr.DataFrame(
             leaderboard,
