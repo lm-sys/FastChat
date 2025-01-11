@@ -131,13 +131,10 @@ class State:
         self.init_system_prompt(self.conv, is_vision)
 
     def update_ans_models(self, ans: str) -> None:
-
         self.ans_models.append(ans)
 
     def update_router_outputs(self, outputs: Dict[str, float]) -> None:
-
         self.router_outputs.append(outputs)
-
 
     def init_system_prompt(self, conv, is_vision):
         system_prompt = conv.get_system_message(is_vision)
@@ -171,7 +168,7 @@ class State:
                     "ans_models": self.ans_models,
                 }
             )
-        
+
         if self.router_outputs:
             base.update(
                 {
@@ -557,22 +554,17 @@ def bot_response(
     try:
         data = {"text": ""}
         for i, data in enumerate(stream_iter):
-            
             # Change for P2L:
             if i == 0:
-
                 if "ans_model" in data:
-
                     ans_model = data.get("ans_model")
-                
-                    state.update_ans_models(ans_model)
-                
-                if "router_outputs" in data:
 
+                    state.update_ans_models(ans_model)
+
+                if "router_outputs" in data:
                     router_outputs = data.get("router_outputs")
 
                     state.update_router_outputs(router_outputs)
-
 
             if data["error_code"] == 0:
                 output = data["text"].strip()

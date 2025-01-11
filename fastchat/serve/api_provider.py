@@ -433,7 +433,7 @@ def p2l_api_stream_iter(
     api_key=None,
 ):
     import openai
-    
+
     client = openai.OpenAI(
         base_url=api_base,
         api_key=api_key or "-",
@@ -479,13 +479,12 @@ def p2l_api_stream_iter(
             }
 
             if chunk_idx == 0:
-
                 if hasattr(chunk.choices[0].delta, "model"):
                     data["ans_model"] = chunk.choices[0].delta.model
-                
+
                 if hasattr(chunk, "router_outputs"):
                     data["router_outputs"] = chunk.router_outputs
-            
+
             yield data
 
 
