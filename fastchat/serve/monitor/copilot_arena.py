@@ -60,11 +60,11 @@ def process_copilot_arena_leaderboard(leaderboard):
     return leaderboard
 
 
-def make_copilot_arena_leaderboard_md(leaderboard, category):
+def make_copilot_arena_leaderboard_md(leaderboard, interaction_mode):
     num_models = len(leaderboard)
     total_battles = int(leaderboard["Votes"].sum()) // 2
     space = "&nbsp;&nbsp;&nbsp;"
-    leaderboard_md = f"""### {category}
+    leaderboard_md = f"""### {interaction_mode}
 #### {space} #models: **{num_models}** {space} #votes: **{"{:,}".format(total_battles)}** {space}
 """
     return leaderboard_md
@@ -78,8 +78,8 @@ def build_copilot_arena_tab():
     if response.status_code == 200:
         response_json = response.json()
 
-        def update_copilot_arena_leaderboard(category):
-            if category == "Autocomplete":
+        def update_copilot_arena_leaderboard(interaction_mode):
+            if interaction_mode == "Autocomplete":
                 leaderboard = pd.DataFrame(response_json["elo_data"])
             else:
                 leaderboard = pd.DataFrame(response_json["edit_elo_data"])
@@ -94,7 +94,7 @@ def build_copilot_arena_tab():
                 column_widths=[70, 130, 60, 80, 50, 80],
             )
 
-            md = make_copilot_arena_leaderboard_md(leaderboard, category)
+            md = make_copilot_arena_leaderboard_md(leaderboard, interaction_mode)
             leaderboard_md = gr.Markdown(md, elem_id="leaderboard_markdown")
 
             return leaderboard_df, leaderboard_md
@@ -108,14 +108,14 @@ def build_copilot_arena_tab():
         leaderboard = process_copilot_arena_leaderboard(leaderboard)
         with gr.Row():
             with gr.Column(scale=2):
-                category_dropdown = gr.Radio(
+                interaction_mode_dropdown = gr.Radio(
                     choices=["Autocomplete", "Edit"],
-                    label="Category",
+                    label="Interaction Mode",
                     value="Autocomplete",
                 )
             vote_data = make_copilot_arena_leaderboard_md(leaderboard, "Autocomplete")
             with gr.Column(scale=3, variant="panel"):
-                category_details = gr.Markdown(vote_data, elem_id="category_details")
+                interaction_mode_details = gr.Markdown(vote_data, elem_id="interaction_mode_details")
 
         leaderboard_df = gr.DataFrame(
             leaderboard,
@@ -136,10 +136,10 @@ def build_copilot_arena_tab():
             elem_id="leaderboard_markdown",
         )
 
-        category_dropdown.change(
+        interaction_mode_dropdown.change(
             update_copilot_arena_leaderboard,
-            inputs=[category_dropdown],
-            outputs=[leaderboard_df, category_details],
+            inputs=[interaction_mode_dropdown],
+            outputs=[leaderboard_df, interaction_mode_details],
         )
     else:
         gr.Markdown("Error with fetching Copilot Arena data. Check back in later.")
