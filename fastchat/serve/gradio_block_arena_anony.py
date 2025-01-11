@@ -538,23 +538,30 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
 
-{SURVEY_LINK}
-
-## 📣 News
-- Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
+Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces.
 
 ## 📜 How It Works
-- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
-- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
+- **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a visualization, design an interface).
+- **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox environment. Test the functionality, explore the features, and evaluate the quality of the outputs.
+- **Vote for the Best**: After interacting with both programs, vote for the one that best meets your requirements or provides the superior experience.
 - **Play Fair**: If AI identity reveals, your vote won't count.
 
-## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
-- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
+## 💻 Supported Outputs
+- Documents (Markdown or Plain Text)
+- Websites (single webpage)
+- Scalable Vector Graphics (SVG) images
+- Plots
+- Tables
+- Interactive React/Vue components
+- PyGame
+- Gradio/Streamlit interfaces
+- Mermaid diagrams
+- And more coming soon!
 
-## 👇 Chat now!
+## 👇 Start Testing & Voting Now!
 """
 
     states = [gr.State() for _ in range(num_sides)]

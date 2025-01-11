@@ -77,23 +77,19 @@ Users are required to agree to the following terms before using the service:
 The service is a research preview. It only provides limited safety measures and may generate offensive content.
 It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
 Please do not upload any private information.
-The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
+The service collects user data, including dialogue (text and images), editing history, and interface interaction data, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or similar license.
 
-#### Please report any bug or issue to our [Discord](https://discord.gg/6GXcFg3TH8)/arena-feedback.
+#### Please report any bugs or issues to the [GitHub repository](https://github.com/BigComputer-Project/FastChat-Software-Arena)
 
-### Acknowledgment
-We thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [RunPod](https://runpod.io), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
+### Acknowledgments
+
+We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
-    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
-    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
-    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
-    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
-    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
-    <img src="https://storage.googleapis.com/public-arena-asset/runpod-logo.jpg" alt="RunPod">
-    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
-    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
+    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
+    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
+    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
+    <!-- Add more sponsor images as necessary -->
 </div>
 """
 
@@ -841,36 +837,33 @@ def get_model_description_md(models):
 def build_about():
     about_markdown = """
 # About Us
-Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). We open-source the [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release open datasets. We always welcome contributions from the community. If you're interested in getting involved, we'd love to hear from you!
 
-## Open-source contributors
-- Leads: [Wei-Lin Chiang](https://infwinston.github.io/), [Anastasios Angelopoulos](https://people.eecs.berkeley.edu/~angelopoulos/)
-- Contributors: [Lianmin Zheng](https://lmzheng.net/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Tianle Li](https://codingwithtim.github.io/), [Evan Frick](https://efrick2002.github.io/), [Dacheng Li](https://dachengli1.github.io/), [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang)
-- Advisors: [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/)
+**Software Arena** is an open-source platform that extends Chatbot Arena with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces. Building upon the [FastChat project](https://github.com/lm-sys/FastChat), it provides a secure sandbox environment for running and evaluating AI-generated visual interfaces. We aim to establish transparent comparisons across different models while creating valuable datasets to advance research in code generation and UI development.
 
-## Learn more
-- Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch blog](https://blog.lmarena.ai/blog/2023/arena/), [dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [policy](https://blog.lmarena.ai/blog/2024/policy/)
-- LMSYS-Chat-1M dataset [paper](https://arxiv.org/abs/2309.11998), LLM Judge [paper](https://arxiv.org/abs/2306.05685)
+We welcome contributors to enhance the platform and encourage feedback to improve its functionality and usability.
 
-## Contact Us
-- Follow our [X](https://x.com/lmsysorg), [Discord](https://discord.gg/6GXcFg3TH8) or email us at `lmarena.ai@gmail.com`
-- File issues on [GitHub](https://github.com/lm-sys/FastChat)
-- Download our datasets and models on [HuggingFace](https://huggingface.co/lmsys)
+## Technical Implementation
+Software Arena provides:
+- **Code Execution**: Secure, sandboxed environment using E2B for executing code in supported languages
+- **Dependency Management**: Automatic installation of dependencies via NPM and PIP
+- **Code Editing**: On-the-fly code modification, testing, and re-execution
+- **Interaction Tracking**: Comprehensive logging of user interactions with rendered UIs
 
-## Acknowledgment
-We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [RunPod](https://runpod.io), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
+## Open-source Contributors
+- **Leads**: [Terry Yue Zhuo](https://terryyz.github.io/)
+- **Contributors**: Gary Liu, Yuhan Cao, [Tianyang Liu](https://leolty.github.io/), [Jihan Yao](https://yaojh18.github.io/), [Banghua Zhu](https://people.eecs.berkeley.edu/~banghua/)
+- **Advisors**: [Torsten Scholak](https://www.servicenow.com/research/author/torsten-scholak.html), [Atin Sood](https://atinsood.com/about/), [Julian McAuley](https://cseweb.ucsd.edu/~jmcauley/) 
+
+## Contact
+[Email](mailto:computer.intelligence.project@gmail.com) | [GitHub](https://github.com/BigComputer-Project) | [X](https://x.com/CIntProject)
+
+## Acknowledgments
+We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
 <div class="sponsor-image-about">
-    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
-    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
-    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
-    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
-    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
-    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
-    <img src="https://storage.googleapis.com/public-arena-asset/runpod-logo.jpg" alt="RunPod">
-    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
-    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
+    <img src="https://storage.cloud.google.com/software-arena-logos/e2b-logo.png" alt="e2b">
+    <img src="https://storage.cloud.google.com/software-arena-logos/data61-logo.png" alt="Data61">
+    <img src="https://storage.cloud.google.com/software-arena-logos/huggingface.png" alt="HuggingFace">
 </div>
 """
     gr.Markdown(about_markdown, elem_id="about_markdown")
@@ -879,18 +872,15 @@ We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https
 def build_single_model_ui(models, add_promotion_links=False):
     promotion = (
         f"""
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
-
-{SURVEY_LINK}
-
-## 👇 Choose any model to chat
+## 👇 Chat Now!
 """
         if add_promotion_links
         else ""
     )
 
     notice_markdown = f"""
-# 🏔️ Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
 {promotion}
 """
 
