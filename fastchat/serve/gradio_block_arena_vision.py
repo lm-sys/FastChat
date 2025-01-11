@@ -14,6 +14,7 @@ from typing import List, Union
 
 import gradio as gr
 from gradio.data_classes import FileData
+from gradio_sandboxcomponent import SandboxComponent
 import numpy as np
 
 from fastchat.constants import (
@@ -38,6 +39,7 @@ from fastchat.serve.gradio_web_server import (
     State,
     get_conv_log_filename,
     get_remote_logger,
+    update_sandbox_system_message,
 )
 from fastchat.serve.vision.image import ImageFormat, Image
 from fastchat.utils import (
@@ -45,6 +47,7 @@ from fastchat.utils import (
     moderation_filter,
     image_moderation_filter,
 )
+from fastchat.serve.sandbox.code_runner import SandboxGradioSandboxComponents, DEFAULT_SANDBOX_INSTRUCTIONS, RUN_CODE_BUTTON_HTML, ChatbotSandboxState, SUPPORTED_SANDBOX_ENVIRONMENTS, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config, update_visibility_for_single_model
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
@@ -143,13 +146,17 @@ def regenerate(state, request: gr.Request):
     return (state, state.to_gradio_chatbot(), None) + (disable_btn,) * 5
 
 
-def clear_history(request: gr.Request):
+def clear_history(sandbox_state, request: gr.Request):
     ip = get_ip(request)
     logger.info(f"clear_history. ip: {ip}")
     state = None
+
+    sandbox_state['enabled_round'] = 0
+    sandbox_state['code_to_execute'] = ""
+
     return (state, [], enable_multimodal, invisible_text, invisible_btn) + (
         disable_btn,
-    ) * 5
+    ) * 5 + (sandbox_state,)
 
 
 def clear_history_example(request: gr.Request):
@@ -256,20 +263,21 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    text, image_flagged, csam_flag = moderate_input(
-        state, text, all_conv_text, [state.model_name], images, ip
-    )
+    # TODO: Skip moderate for now
+    # text, image_flagged, csam_flag = moderate_input(
+    #     state, text, all_conv_text, [state.model_name], images, ip
+    # )
 
-    if image_flagged:
-        logger.info(f"image flagged. ip: {ip}. text: {text}")
-        state.skip_next = True
-        return (
-            state,
-            state.to_gradio_chatbot(),
-            {"text": IMAGE_MODERATION_MSG},
-            "",
-            no_change_btn,
-        ) + (no_change_btn,) * 5
+    # if image_flagged:
+    #     logger.info(f"image flagged. ip: {ip}. text: {text}")
+    #     state.skip_next = True
+    #     return (
+    #         state,
+    #         state.to_gradio_chatbot(),
+    #         {"text": IMAGE_MODERATION_MSG},
+    #         "",
+    #         no_change_btn,
+    #     ) + (no_change_btn,) * 5
 
     if (len(state.conv.messages) - state.conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
         logger.info(f"conversation turn limit. ip: {ip}. text: {text}")
@@ -283,7 +291,7 @@ def add_text(
         ) + (no_change_btn,) * 5
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    text = _prepare_text_with_image(state, text, images, csam_flag=csam_flag)
+    text = _prepare_text_with_image(state, text, images, csam_flag="")
     state.conv.append_message(state.conv.roles[0], text)
     state.conv.append_message(state.conv.roles[1], None)
     return (
@@ -363,6 +371,90 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
                     {"left": r"\[", "right": r"\]", "display": True},
                 ],
             )
+
+
+    # Sandbox state and components
+    sandbox_state = None
+    sandboxes_components: list[SandboxGradioSandboxComponents] = []
+    sandbox_hidden_components = []
+
+    with gr.Group():
+        with gr.Row():
+            enable_sandbox_checkbox = gr.Checkbox(
+                value=False,
+                label="Enable Sandbox",
+                info="Run generated code in a remote sandbox",
+                interactive=True,
+            )
+            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
+        with gr.Group():
+            sandbox_instruction_accordion = gr.Accordion("Sandbox & Output", open=True, visible=False)
+            with sandbox_instruction_accordion:
+                sandbox_group = gr.Group(visible=False)
+                with sandbox_group:
+                    sandbox_column = gr.Column(visible=False,scale=1)
+                    with sandbox_column:
+                        sandbox_state = gr.State(create_chatbot_sandbox_state())
+                        # Add containers for the sandbox output
+                        sandbox_title = gr.Markdown(value=f"### Model Sandbox", visible=False)
+                        sandbox_output_tab = gr.Tab(label="Output", visible=False)
+                        sandbox_code_tab = gr.Tab(label="Code", visible=False)
+                        with sandbox_output_tab:
+                            sandbox_output = gr.Markdown(value="", visible=False)
+                            sandbox_ui = SandboxComponent(
+                                value=("", ""),
+                                show_label=True,
+                                visible=False,
+                            )
+                        with sandbox_code_tab:
+                            sandbox_code = gr.Code(
+                                value="",
+                                interactive=True, # allow user edit
+                                visible=False,
+                                wrap_lines=True,
+                                label='Sandbox Code',
+                            )
+                            with gr.Row():
+                                sandbox_code_submit_btn = gr.Button(value="Apply Changes", visible=True, interactive=True, variant='primary', size='sm')
+                                # run code when click apply changes
+                                sandbox_code_submit_btn.click(
+                                    fn=on_edit_code,
+                                    inputs=[state, sandbox_state, sandbox_output, sandbox_ui, sandbox_code],
+                                    outputs=[sandbox_output, sandbox_ui, sandbox_code]
+                                )
+
+                        sandboxes_components.append((
+                            sandbox_output,
+                            sandbox_ui,
+                            sandbox_code,
+                        ))
+
+        sandbox_hidden_components.extend([sandbox_group, sandbox_column, sandbox_title, sandbox_code_tab,
+                                 sandbox_output_tab, sandbox_env_choice, sandbox_instruction_accordion])
+
+        sandbox_env_choice.change(
+            fn=update_sandbox_config,
+            inputs=[
+                enable_sandbox_checkbox,
+                sandbox_env_choice,
+                sandbox_state
+            ],
+            outputs= [sandbox_state]
+        )
+        # update sandbox global config
+        enable_sandbox_checkbox.change (
+            fn=lambda visible: update_visibility_for_single_model(visible=visible, component_cnt=len(sandbox_hidden_components)),
+            inputs=[enable_sandbox_checkbox], 
+            outputs=sandbox_hidden_components
+        ).then(
+            fn=update_sandbox_config,
+            inputs=[
+                enable_sandbox_checkbox,
+                sandbox_env_choice,
+                sandbox_state
+            ],
+            outputs=[sandbox_state]
+        )
 
     with gr.Row():
         textbox = gr.Textbox(
@@ -444,19 +536,19 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
     )
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(
         clear_history,
         None,
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list + [sandbox_state],
     )
 
     model_selector.change(
         clear_history,
         None,
-        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list + [sandbox_state],
     ).then(set_visible_image, [multimodal_textbox], [image_column])
 
     multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
@@ -471,9 +563,13 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         add_text,
         [state, model_selector, multimodal_textbox, context_state],
         [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+    ).then(
+        update_sandbox_system_message,
+        [state, sandbox_state, model_selector],
+        [state, chatbot]
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
     )
 
@@ -481,9 +577,13 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         add_text,
         [state, model_selector, textbox, context_state],
         [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+    ).then(
+        update_sandbox_system_message,
+        [state, sandbox_state, model_selector],
+        [state, chatbot]
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
     )
 
@@ -491,10 +591,22 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         add_text,
         [state, model_selector, textbox, context_state],
         [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+    ).then(
+        update_sandbox_system_message,
+        [state, sandbox_state, model_selector],
+        [state, chatbot]
     ).then(set_invisible_image, [], [image_column]).then(
         bot_response,
-        [state, temperature, top_p, max_output_tokens],
+        [state, temperature, top_p, max_output_tokens, sandbox_state],
         [state, chatbot] + btn_list,
+    )
+
+    sandbox_components = sandboxes_components[0]
+    # trigger sandbox run when click message
+    chatbot.select(
+        fn=on_click_code_message_run,
+        inputs=[state, sandbox_state, *sandbox_components],
+        outputs=[*sandbox_components]
     )
 
     if random_questions:

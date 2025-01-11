@@ -455,7 +455,7 @@ def bot_response(
     temperature,
     top_p,
     max_new_tokens,
-    sandbox_state:ChatbotSandboxState,
+    sandbox_state: ChatbotSandboxState,
     request: gr.Request,
     apply_rate_limit=True,
     use_recommended_config=False,
