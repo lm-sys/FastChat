@@ -890,7 +890,7 @@ def build_single_model_ui(models, add_promotion_links=False):
     )
 
     notice_markdown = f"""
-# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+# ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
 [Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/BigComProject)
 {promotion}
 """

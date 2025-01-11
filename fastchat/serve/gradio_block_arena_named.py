@@ -387,7 +387,7 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
-# ⚔️ Software Arena: AI Battle to Generate Executable Programs
+# ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
 [Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
 
 ## 📜 How It Works
