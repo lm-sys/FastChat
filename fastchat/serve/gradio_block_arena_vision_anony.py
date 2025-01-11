@@ -7,7 +7,6 @@ import json
 import time
 
 import gradio as gr
-from gradio_sandboxcomponent import SandboxComponent
 import numpy as np
 from typing import Union
 
@@ -76,7 +75,6 @@ from fastchat.utils import (
     moderation_filter,
     image_moderation_filter,
 )
-from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 
@@ -463,94 +461,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             value="👎  Both are bad", visible=False, interactive=False
         )
 
-    # sandbox states and components
-    sandbox_states: list[gr.State] = [] # state for each chatbot
-    sandboxes_components: list[SandboxGradioSandboxComponents] = [] # components for each chatbot
-    sandbox_hidden_components = []
-
-    # chatbot sandbox
-    with gr.Group():
-        # chatbot sandbox config
-        with gr.Row():
-            enable_sandbox_checkbox = gr.Checkbox(
-                value=False,
-                label="Enable Sandbox",
-                info="Run generated code in a remote sandbox",
-                interactive=True,
-            )
-            sandbox_env_choice = gr.Dropdown(choices=SUPPORTED_SANDBOX_ENVIRONMENTS, label="Sandbox Environment", interactive=True, visible=False)
-        with gr.Group():
-            with gr.Accordion("Sandbox & Output", open=True, visible=False) as sandbox_instruction_accordion:
-                with gr.Group(visible=False) as sandbox_group:
-                    sandbox_hidden_components.append(sandbox_group)
-                    with gr.Row(visible=False) as sandbox_row:
-                        sandbox_hidden_components.append(sandbox_row)
-                        for chatbotIdx in range(num_sides):
-                            with gr.Column(scale=1, visible=False) as column:
-                                sandbox_state = gr.State(create_chatbot_sandbox_state())
-                                # Add containers for the sandbox output
-                                sandbox_title = gr.Markdown(value=f"### Model {chatbotIdx + 1} Sandbox", visible=False)
-
-                                with gr.Tab(label="Output", visible=False) as sandbox_output_tab:
-                                    sandbox_output = gr.Markdown(value="", visible=False)
-                                    sandbox_ui = SandboxComponent(
-                                        value=("", ""),
-                                        show_label=True,
-                                        visible=False,
-                                    )
-
-                                with gr.Tab(label="Code", visible=False) as sandbox_code_tab:
-                                    sandbox_code = gr.Code(
-                                        value="",
-                                        interactive=True, # allow user edit
-                                        visible=False,
-                                        wrap_lines=True,
-                                        label='Sandbox Code',
-                                    )
-                                    with gr.Row():
-                                        sandbox_code_submit_btn = gr.Button(value="Apply Changes", visible=True, interactive=True, variant='primary', size='sm')
-                                        # run code when click apply changes
-                                        sandbox_code_submit_btn.click(
-                                            fn=on_edit_code,
-                                            inputs=[states[chatbotIdx], sandbox_state, sandbox_output, sandbox_ui, sandbox_code],
-                                            outputs=[sandbox_output, sandbox_ui, sandbox_code]
-                                        )
-
-                                sandbox_states.append(sandbox_state)
-                                sandboxes_components.append((
-                                    sandbox_output,
-                                    sandbox_ui,
-                                    sandbox_code,
-                                ))
-                                sandbox_hidden_components.extend([column, sandbox_title, sandbox_output_tab, sandbox_code_tab])
-
-        sandbox_hidden_components.extend([sandbox_env_choice, sandbox_instruction_accordion])
-
-        sandbox_env_choice.change(
-            fn=update_sandbox_config_multi,
-            inputs=[
-                enable_sandbox_checkbox,
-                sandbox_env_choice,
-                *sandbox_states
-            ],
-            outputs=[*sandbox_states]
-        )
-
-        # update sandbox global config
-        enable_sandbox_checkbox.change(
-            fn=update_visibility,
-            inputs=[enable_sandbox_checkbox],
-            outputs=sandbox_hidden_components
-        ).then(
-            fn=update_sandbox_config_multi,
-            inputs=[
-                enable_sandbox_checkbox,
-                sandbox_env_choice,
-                *sandbox_states
-            ],
-            outputs=[*sandbox_states]
-        )
-
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
@@ -578,8 +488,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
             with open(random_questions, "r") as f:
                 vqa_samples = json.load(f)
             random_btn = gr.Button(value="🔮 Random Image", interactive=True)
-        else:
-            random_btn = gr.Button(value="🔮 Random Image", interactive=False)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
