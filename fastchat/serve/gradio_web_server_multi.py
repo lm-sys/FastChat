@@ -4,10 +4,6 @@ It supports chatting with a single model or chatting with two models side-by-sid
 """
 
 import argparse
-import pickle
-import time
-from typing import List
-
 import gradio as gr
 
 from fastchat.serve.gradio_block_arena_anony import (
@@ -52,6 +48,60 @@ from fastchat.utils import (
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+
+
+def build_visualizer():
+    visualizer_markdown = """
+    # 🔍 Arena Visualizer
+    Data explorer provides interactive tools to explore and draw insights from our leaderboard data. 
+    """
+    gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
+
+    with gr.Tabs():
+        with gr.Tab("Topic Explorer", id=0):
+            topic_markdown = """
+            ## *Welcome to the Topic Explorer*
+            This tool lets you dive into user-submitted prompts, organized into general 
+            categories and detailed subcategories. Using the sunburst chart, you can easily 
+            explore the data and understand how different topics are distributed.
+
+            ### How to Use:
+            - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+            - Click to Explore: 
+                - Click on a main category to see its subcategories.
+                - Click on subcategories to see example prompts in the sidebar.
+            - Undo and Reset: Click the center of the chart to return to the top level.
+
+            Start exploring and discover interesting trends in the data!
+            
+            """
+            gr.Markdown(topic_markdown)
+
+            frame = """
+                <iframe width="100%" scrolling="no" style="height: 1400px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/index.html">
+                </iframe>
+            """
+            gr.HTML(frame)
+        with gr.Tab("Price Analysis", id=1):
+            price_markdown = """
+            ## *Welcome to the Price Explorer*
+            This scatterplot displays a selection of the arena's models, showing their arena score plotted against their cost.
+
+            ### How to Use:
+            - Hover Over Points: View the model's arena score, cost, organization, and license.
+            - Click the Legend: Select an organization on the right to view its models. Click additional organizations to compare models.
+
+            Note: The prices were obtained either from the model's organization's website or through the [together.ai](https://www.together.ai/) pricing model.
+            """
+            
+            gr.Markdown(price_markdown)
+            frame = """
+                <iframe width="100%" scrolling="no" style="height: 800px; border: 1px solid lightgrey; border-radius: 10px;" 
+                        src="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html">
+                </iframe>
+            """
+            gr.HTML(frame)
 
 
 def load_demo(context: Context, request: gr.Request):
@@ -199,12 +249,14 @@ window.__gradio_mode__ = "app";
                         arena_hard_table,
                         show_plot=True,
                     )
+            if args.show_visualizer:
+                with gr.Tab("🔍 Arena Visualizer", id=5):
+                    build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
-                about = build_about()
+                build_about()
 
         context_state = gr.State(context)
-        url_params = gr.JSON(visible=False)
 
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
@@ -271,7 +323,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-auth-path",
         type=str,
-        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        help='Set the gradio authentication file path. The file should contain one or \
+              more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
     parser.add_argument(
@@ -286,7 +339,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-root-path",
         type=str,
-        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a \
+              reverse-proxy or at a custom URL path prefix",
     )
     parser.add_argument(
         "--ga-id",
@@ -304,6 +358,12 @@ if __name__ == "__main__":
         "--password",
         type=str,
         help="Set the password for the gradio web server",
+    )
+    parser.add_argument(
+        "--show-visualizer",
+        action="store_true",
+        default=False,
+        help="Show the Data Visualizer tab",
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
