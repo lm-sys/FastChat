@@ -787,7 +787,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
 def create_placeholder_svg_data_url(width: int, height: int) -> str:
     '''
     Create a data URL for a placeholder image with given dimensions.
-    Uses SVG to create an elegant placeholder with subtle gradient and good typography.
+    Uses SVG to create an elegant placeholder.
     
     Args:
         width: Width of the placeholder image
@@ -796,7 +796,7 @@ def create_placeholder_svg_data_url(width: int, height: int) -> str:
     Returns:
         str: Data URL containing the SVG image
     '''
-    # Create SVG with subtle gradient background and centered text
+    # Create SVG with gradient background and text
     svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -845,7 +845,7 @@ def replace_placeholder_urls(code: str) -> str:
         data_url = create_placeholder_svg_data_url(width, height)
         return data_url  
     
-    # Updated pattern with capturing groups and without surrounding quotes
+    # Regular expression pattern to match placeholder URLs
     pattern = r'/api/placeholder/(\d+)/(\d+)'
     
     # Replace all occurrences
