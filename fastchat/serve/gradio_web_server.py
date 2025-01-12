@@ -698,7 +698,7 @@ a:hover {
 
 @media screen and (max-width: 769px) {
     .visualizer {
-        height: 100vw;
+        height: 180vw;
         overflow-y: scroll;
         width: 100%;
         overflow-x: hidden;

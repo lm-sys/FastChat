@@ -54,7 +54,7 @@ def build_visualizer():
     visualizer_markdown = """
     # 🔍 Arena Visualizer
     This tool provides an interactive way to explore how people are using Chatbot Arena. 
-    Using [topic clustering](https://github.com/MaartenGr/BERTopic), we organized user-submitted prompts from Arena battles into broad and specific categories. 
+    Using *[topic clustering](https://github.com/MaartenGr/BERTopic)*, we organized user-submitted prompts from Arena battles into broad and specific categories. 
     Dive in to uncover insights about the distribution and themes of these prompts!
     """
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
@@ -62,6 +62,7 @@ def build_visualizer():
     with gr.Accordion(expandText, open=False):
         instructions = """
         - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+            - *On mobile devices*: Tap instead of hover.
         - Click to Explore: 
             - Click on a main category to see its subcategories.
             - Click on subcategories to see example prompts in the sidebar.
