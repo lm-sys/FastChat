@@ -741,25 +741,25 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     python_packages: list[str] = []
     npm_packages: list[str] = []
 
-    if main_code_lang in ['py', 'python', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
+    if main_code_lang in ['py', 'py3', 'python', 'python3', 'ipython', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
         python_packages = extract_python_imports(main_code)
         sandbox_env_name = determine_python_environment(main_code, python_packages)
-    elif main_code_lang in ['vue', 'vue3', 'vue2']:
+    elif main_code_lang in ['vue', 'vue3', 'vue2', 'vue.js', 'vuejs']:
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
+    elif main_code_lang in ['html', 'xhtml', 'xml', 'htm'] or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
         sandbox_env_name = SandboxEnvironment.HTML
         main_code_lang = 'html'
-    elif main_code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
+    elif main_code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form', 'nextjs', 'next']:
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.REACT
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['js', 'javascript',  'jsx', 'coffeescript', 'ecmascript', 'javascript', 'js', 'node']:
+    elif main_code_lang in ['js', 'javascript', 'jsx', 'coffeescript', 'ecmascript', 'node', 'nodejs', 'es6', 'es2015']:
         main_code_lang = 'javascript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
-    elif main_code_lang in ['ts', 'typescript']:
+    elif main_code_lang in ['ts', 'typescript', 'tsx', 'ts-node']:
         main_code_lang = 'typescript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
