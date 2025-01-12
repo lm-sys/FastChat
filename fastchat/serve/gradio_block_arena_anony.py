@@ -38,7 +38,7 @@ from fastchat.serve.gradio_web_server import (
     update_sandbox_system_message
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
+from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxEnvironment, DEFAULT_SANDBOX_INSTRUCTIONS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -735,6 +735,24 @@ Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful 
             label="Max output tokens",
         )
 
+    with gr.Accordion("System Prompt", open=False) as system_prompt_accordion:
+        system_prompt_textbox = gr.Textbox(
+            value=DEFAULT_SANDBOX_INSTRUCTIONS[SandboxEnvironment.AUTO],
+            show_label=False,
+            lines=15,
+            placeholder="Edit system prompt here",
+            interactive=True,
+            elem_id="system_prompt_box",
+        )
+
+    # Define helper functions for system prompt updates
+    def update_system_prompt_both(system_prompt, sandbox_state0, sandbox_state1):
+        if sandbox_state0['enabled_round'] == 0:
+            sandbox_state0['sandbox_instruction'] = system_prompt
+        if sandbox_state1['enabled_round'] == 0:
+            sandbox_state1['sandbox_instruction'] = system_prompt
+        return sandbox_state0, sandbox_state1
+
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
@@ -824,6 +842,10 @@ function (a, b, c, d) {
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
     textbox.submit(
+        update_system_prompt_both,
+        inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+        outputs=[sandbox_states[0], sandbox_states[1]]
+    ).then(
         add_text_multi,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list + [slow_warning],
@@ -836,9 +858,7 @@ function (a, b, c, d) {
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
-        flash_buttons,
-        [],
-        btn_list,
+        flash_buttons, [], btn_list
     ).then(
         lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
         inputs=[sandbox_states[0]],
@@ -846,6 +866,10 @@ function (a, b, c, d) {
     )
 
     send_btn.click(
+        update_system_prompt_both,
+        inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+        outputs=[sandbox_states[0], sandbox_states[1]]
+    ).then(
         add_text_multi,
         states + model_selectors + sandbox_states + [textbox],
         states + chatbots + sandbox_states + [textbox] + btn_list,
@@ -873,6 +897,10 @@ function (a, b, c, d) {
         model_selector = model_selectors[chatbotIdx]
 
         send_btns_one_side[chatbotIdx].click(
+            update_system_prompt_both,
+            inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+            outputs=[sandbox_states[0], sandbox_states[1]]
+        ).then(
             add_text,
             [state, model_selector, sandbox_state, textbox],
             [state, chatbot, textbox] + btn_list,
