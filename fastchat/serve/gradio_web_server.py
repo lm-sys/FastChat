@@ -1031,6 +1031,19 @@ def build_single_model_ui(models, add_promotion_links=False):
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         clear_btn = gr.Button(value="🗑️  Clear history", interactive=False)
 
+    # Define btn_list after all buttons are created
+    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
+
+    with gr.Accordion("System Prompt", open=False) as system_prompt_accordion:
+        system_prompt_textbox = gr.Textbox(
+            value=DEFAULT_SANDBOX_INSTRUCTIONS[SandboxEnvironment.AUTO],
+            show_label=False,
+            lines=15,
+            placeholder="Edit system prompt here",
+            interactive=True,
+            elem_id="system_prompt_box",
+        )
+
     with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
@@ -1057,21 +1070,10 @@ def build_single_model_ui(models, add_promotion_links=False):
             label="Max output tokens",
         )
 
-    with gr.Accordion("System Prompt", open=False) as system_prompt_accordion:
-        system_prompt_textbox = gr.Textbox(
-            value=DEFAULT_SANDBOX_INSTRUCTIONS[SandboxEnvironment.AUTO],
-            show_label=False,
-            lines=15,
-            placeholder="Edit system prompt here",
-            interactive=True,
-            elem_id="system_prompt_box",
-        )
-
     if add_promotion_links:
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
-    btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]
     upvote_btn.click(
         upvote_last_response,
         [state, model_selector],
@@ -1105,7 +1107,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         outputs=[sandbox_output, sandbox_ui, sandbox_code]
     )
 
-
     model_selector.change(
         clear_history, 
         [sandbox_state], 
@@ -1118,7 +1119,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         inputs=[sandbox_output, sandbox_ui, sandbox_code],
         outputs=[sandbox_output, sandbox_ui, sandbox_code]
     )
-
 
     textbox.submit(
         update_system_prompt,
@@ -1141,6 +1141,7 @@ def build_single_model_ui(models, add_promotion_links=False):
         inputs=[sandbox_state],
         outputs=[sandbox_env_choice]
     )
+
     send_btn.click(
         update_system_prompt,
         inputs=[system_prompt_textbox, sandbox_state],
