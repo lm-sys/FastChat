@@ -822,7 +822,6 @@ def create_placeholder_svg_data_url(width: int, height: int) -> str:
     </svg>'''
     
     # Convert to base64 data URL
-    import base64
     encoded_svg = base64.b64encode(svg.encode()).decode()
     return f'data:image/svg+xml;base64,{encoded_svg}'
 
@@ -837,7 +836,6 @@ def replace_placeholder_urls(code: str) -> str:
     Returns:
         str: Code with placeholder URLs replaced with data URLs
     '''
-    import re
     
     def replacer(match: re.Match) -> str:
         # Extract width and height from the URL using capturing groups
