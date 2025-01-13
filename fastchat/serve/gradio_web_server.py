@@ -87,8 +87,8 @@ We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [C
 
 <div class="sponsor-image-about">
     <img src="https://github.com/e2b-dev/E2B/blob/main/readme-assets/logo-circle.png?raw=true" alt="E2B">
-    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
     <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="HuggingFace">
+    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
 </div>
 """
 
@@ -878,8 +878,8 @@ We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [C
 
 <div class="sponsor-image-about">
     <img src="https://github.com/e2b-dev/E2B/blob/main/readme-assets/logo-circle.png?raw=true" alt="E2B">
-    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
     <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="HuggingFace">
+    <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
 </div>
 """
     gr.Markdown(about_markdown, elem_id="about_markdown")
