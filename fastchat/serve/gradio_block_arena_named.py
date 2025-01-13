@@ -742,4 +742,28 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
+    # Register regenerate and clear button handlers
+    regenerate_btn.click(
+        regenerate_multi, states, states + chatbots + [textbox] + btn_list
+    ).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens] + sandbox_states,
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
+    )
+
+    clear_btn.click(
+        clear_history, 
+        sandbox_states, 
+        sandbox_states + states + chatbots + [textbox] + btn_list
+    ).then(
+        clear_sandbox_components,
+        inputs=[component for components in sandboxes_components for component in components],
+        outputs=[component for components in sandboxes_components for component in components]
+    ).then(
+        lambda: gr.update(interactive=True),
+        outputs=[sandbox_env_choice]
+    )
+
     return states + model_selectors
