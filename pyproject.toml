@@ -15,7 +15,9 @@ classifiers = [
 dependencies = [
     "aiohttp", "fastapi", "httpx", "markdown2[all]", "nh3", "numpy",
     "prompt_toolkit>=3.0.0", "pydantic<3,>=2.0.0", "pydantic-settings", "psutil", "requests", "rich>=10.0.0",
-    "shortuuid", "tiktoken", "uvicorn", "tree-sitter", "tree-sitter-javascript", "tree-sitter-typescript"
+    "shortuuid", "tiktoken", "uvicorn", "tree-sitter", "tree-sitter-javascript", "tree-sitter-typescript",
+    "plotly", "scipy", "openai", "e2b", "e2b_code_interpreter", "gradio-sandboxcomponent", "google-generativeai",
+    "httpx==0.27.2"
 ]
 
 [project.optional-dependencies]
