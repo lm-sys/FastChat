@@ -1,4 +1,4 @@
-from fastchat.serve.sandbox.code_runner import extract_code_from_markdown, SandboxEnvironment
+from fastchat.serve.sandbox.code_runner import extract_code_from_markdown, SandboxEnvironment, extract_inline_pip_install_commands
 
 def test_vue_component_extraction():
     # Test markdown content with Vue component
@@ -347,6 +347,81 @@ pygame.quit()
     assert 'pygame' in python_deps, "Pygame dependency not detected"
     assert 'random' not in python_deps, "Standard library module incorrectly included as dependency"
 
-test_vue_component_typescript_detection()
-test_vue_component_extraction()
-test_pygame_code_extraction()
+def test_extract_inline_pip_install_commands():
+    from fastchat.serve.sandbox.code_runner import extract_inline_pip_install_commands
+
+    # Test code with various pip install formats
+    test_code = """
+# Regular imports
+import numpy as np
+import pandas as pd
+
+# pip install numpy pandas
+x = np.array([1, 2, 3])
+
+!pip install scikit-learn>=0.24.0
+from sklearn import metrics
+
+# pip3 install -r requirements.txt tensorflow
+model = tf.keras.Sequential()
+
+!python -m pip install --upgrade torch
+import torch
+
+# Some regular code
+def my_function():
+    pass
+"""
+
+    expected_packages = ['numpy', 'pandas', 'scikit-learn', 'tensorflow', 'torch']
+    expected_code = """
+# Regular imports
+import numpy as np
+import pandas as pd
+
+x = np.array([1, 2, 3])
+
+from sklearn import metrics
+
+model = tf.keras.Sequential()
+
+import torch
+
+# Some regular code
+def my_function():
+    pass
+"""
+
+    packages, cleaned_code = extract_inline_pip_install_commands(test_code)
+    
+    # Test that all expected packages are found
+    assert sorted(packages) == sorted(expected_packages), f"Expected {expected_packages}, but got {packages}"
+    
+    # Test that cleaned code matches expected code
+    assert cleaned_code.strip() == expected_code.strip(), f"Expected:\n{expected_code}\nGot:\n{cleaned_code}"
+
+    # Test with no pip install commands
+    code_without_pip = """
+import numpy as np
+def test():
+    return np.sum([1, 2, 3])
+"""
+    packages, cleaned_code = extract_inline_pip_install_commands(code_without_pip)
+    assert len(packages) == 0, f"Expected no packages, but got {packages}"
+    assert cleaned_code.strip() == code_without_pip.strip(), "Code without pip commands should remain unchanged"
+
+    # Test with only pip install commands
+    only_pip_commands = """
+# pip install numpy
+!pip install pandas
+# pip3 install -r requirements.txt tensorflow
+!python -m pip install torch
+"""
+    packages, cleaned_code = extract_inline_pip_install_commands(only_pip_commands)
+    assert sorted(packages) == sorted(['numpy', 'pandas', 'tensorflow', 'torch']), f"Expected ['numpy', 'pandas', 'tensorflow', 'torch'], but got {packages}"
+    assert cleaned_code.strip() == "", "Code with only pip commands should result in empty string"
+
+# test_vue_component_typescript_detection()
+# test_vue_component_extraction()
+# test_pygame_code_extraction()
+test_extract_inline_pip_install_commands()
