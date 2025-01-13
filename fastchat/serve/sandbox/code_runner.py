@@ -710,8 +710,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
             3. sandbox python and npm dependencies (extracted using static analysis)
             4. sandbox environment determined from code content
     '''
-    # Find all code blocks
-    code_block_regex = r'```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
+    code_block_regex = r'```(?P<code_lang>[\w\+\#\-\.]*)?[ \t]*\r?\n?(?P<code>.*?)```'
     matches = list(re.finditer(code_block_regex, message, re.DOTALL))
     
     if not matches:
@@ -737,36 +736,47 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         main_code = longest_match.group('code').strip()
         main_code_lang = (longest_match.group('code_lang') or '').lower()
 
+    # Define language prefixes for each environment
+    python_prefixes = ['py', 'ipython', 'pygame', 'gradio', 'streamlit', 'nicegui']
+    vue_prefixes = ['vue']
+    html_prefixes = ['html', 'xhtml', 'htm']
+    react_prefixes = ['react', 'next']
+    js_prefixes = ['js', 'javascript', 'jsx', 'coffee', 'ecma', 'node', 'es']
+    ts_prefixes = ['ts', 'typescript', 'tsx']
+
     # Extract package dependencies from the main program
     python_packages: list[str] = []
     npm_packages: list[str] = []
+    
+    # Helper function to check if any prefix matches
+    def matches_prefix(lang: str, prefixes: list[str]) -> bool:
+        return any(lang.lower().startswith(prefix) for prefix in prefixes)
 
-    if main_code_lang in ['py', 'py3', 'python', 'python3', 'ipython', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
+    if matches_prefix(main_code_lang, python_prefixes):
         python_packages = extract_python_imports(main_code)
         sandbox_env_name = determine_python_environment(main_code, python_packages)
-    elif main_code_lang in ['vue', 'vue3', 'vue2', 'vue.js', 'vuejs']:
+    elif matches_prefix(main_code_lang, vue_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['html', 'xhtml', 'xml', 'htm'] or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
+    elif matches_prefix(main_code_lang, html_prefixes) or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
         sandbox_env_name = SandboxEnvironment.HTML
         main_code_lang = 'html'
-    elif main_code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form', 'nextjs', 'next']:
+    elif matches_prefix(main_code_lang, react_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.REACT
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['js', 'javascript', 'jsx', 'coffeescript', 'ecmascript', 'node', 'nodejs', 'es6', 'es2015']:
+    elif matches_prefix(main_code_lang, js_prefixes):
         main_code_lang = 'javascript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
-    elif main_code_lang in ['ts', 'typescript', 'tsx', 'ts-node']:
+    elif matches_prefix(main_code_lang, ts_prefixes):
         main_code_lang = 'typescript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
     else:
         sandbox_env_name = None
 
-    # Extract installation commands from all code blocks
     all_python_packages: Set[str] = set(python_packages)
     all_npm_packages: Set[str] = set(npm_packages)
 
