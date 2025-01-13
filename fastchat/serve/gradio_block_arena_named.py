@@ -91,7 +91,7 @@ def leftvote_last_response(
     vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def rightvote_last_response(
@@ -101,7 +101,7 @@ def rightvote_last_response(
     vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def tievote_last_response(
@@ -111,7 +111,7 @@ def tievote_last_response(
     vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def bothbad_vote_last_response(
@@ -121,7 +121,7 @@ def bothbad_vote_last_response(
     vote_last_response(
         [state0, state1], "bothbad_vote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 def regenerate(state, request: gr.Request):
     ip = get_ip(request)
@@ -764,6 +764,31 @@ function (a, b, c, d) {
     ).then(
         lambda: gr.update(interactive=True),
         outputs=[sandbox_env_choice]
+    )
+
+    # Register voting button handlers
+    leftvote_btn.click(
+        leftvote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
+
+    rightvote_btn.click(
+        rightvote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
+
+    tie_btn.click(
+        tievote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
+
+    bothbad_btn.click(
+        bothbad_vote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
     )
 
     return states + model_selectors
