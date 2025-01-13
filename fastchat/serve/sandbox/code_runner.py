@@ -700,6 +700,61 @@ def detect_js_ts_code_lang(code: str) -> str:
     return 'javascript'
 
 
+def extract_inline_pip_install_commands(code: str) -> tuple[list[str], str]:
+    '''
+    Extracts pip install commands from inline code comments and returns both the packages and cleaned code.
+    This is useful for cases where pip install commands are written as comments in the code or
+    Jupyter notebook-style !pip install commands.
+
+    Args:
+        code (str): The code to analyze.
+
+    Returns:
+        tuple[list[str], str]: A tuple containing:
+            1. List of Python packages extracted from pip install commands in comments
+            2. Code with the pip install comments removed
+    '''
+    python_packages = []
+    cleaned_lines = []
+    
+    # Regex patterns to match pip install commands in comments and Jupyter-style commands
+    pip_patterns = [
+        # Comments with pip install
+        r'#\s*(?:pip|pip3|python -m pip)\s+install\s+(?:(?:--upgrade|--user|--no-cache-dir|-U)\s+)*([^-\s][\w\-\[\]<>=~\.]+(?:\s+[^-\s][\w\-\[\]<>=~\.]+)*)',
+        # Jupyter-style !pip install
+        r'!\s*(?:pip|pip3|python -m pip)\s+install\s+(?:(?:--upgrade|--user|--no-cache-dir|-U)\s+)*([^-\s][\w\-\[\]<>=~\.]+(?:\s+[^-\s][\w\-\[\]<>=~\.]+)*)',
+        # Requirements file style pip install
+        r'(?:#|!)\s*(?:pip|pip3|python -m pip)\s+install\s+(?:-r\s+[\w\-\.\/]+\s+)*([^-\s][\w\-\[\]<>=~\.]+(?:\s+[^-\s][\w\-\[\]<>=~\.]+)*)'
+    ]
+    
+    # Process each line
+    for line in code.splitlines():
+        matched = False
+        for pattern in pip_patterns:
+            match = re.search(pattern, line)
+            if match:
+                matched = True
+                # Extract packages from the command
+                pkgs = match.group(1).strip().split()
+                # Clean package names (remove version specifiers)
+                cleaned_pkgs = [pkg.split('==')[0].split('>=')[0].split('<=')[0].split('~=')[0] for pkg in pkgs]
+                python_packages.extend(cleaned_pkgs)
+                
+                # Remove the pip install command from the line
+                cleaned_line = line[:match.start()].rstrip()
+                if cleaned_line:  # Only add non-empty lines
+                    cleaned_lines.append(cleaned_line)
+                break
+        
+        if not matched:
+            cleaned_lines.append(line)
+    
+    # Remove duplicates while preserving order
+    python_packages = list(dict.fromkeys(python_packages))
+    
+    return python_packages, '\n'.join(cleaned_lines)
+
+
 def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message by parsing code blocks directly.
@@ -756,7 +811,9 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
 
     if matches_prefix(main_code_lang, python_prefixes):
         python_packages = extract_python_imports(main_code)
-        sandbox_env_name = determine_python_environment(main_code, python_packages)
+        extra_python_packages, clean_code = extract_inline_pip_install_commands(main_code)
+        python_packages.extend(extra_python_packages)
+        sandbox_env_name = determine_python_environment(clean_code, python_packages)
     elif matches_prefix(main_code_lang, vue_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
