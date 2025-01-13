@@ -117,6 +117,7 @@ When developing with React or Vue components, follow these specific requirements
 - If you use any imports from React like useState or useEffect, make sure to import them directly
 - Use Tailwind margin and padding classes to style the components and ensure proper spacing
 - Various npm packages are available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`
+- Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so `<img src="/api/placeholder/400/320" alt="placeholder" />`
 
 For Python development, you must follow these constraints:
 - Make sure it does not require any user inputs
@@ -142,6 +143,7 @@ For HTML development, ensure that:
 - All HTML code must be self-contained in a single file
 - Include any necessary CSS and JavaScript within the HTML file
 - Ensure the code is directly executable in a browser environment
+- Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so `<img src="/api/placeholder/400/320" alt="placeholder" />`
 """
 
 DEFAULT_PYTHON_CODE_INTERPRETER_INSTRUCTION = """
@@ -782,6 +784,73 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
 
     return main_code, main_code_lang, (list(all_python_packages), list(all_npm_packages)), sandbox_env_name
 
+def create_placeholder_svg_data_url(width: int, height: int) -> str:
+    '''
+    Create a data URL for a placeholder image with given dimensions.
+    Uses SVG to create an elegant placeholder.
+    
+    Args:
+        width: Width of the placeholder image
+        height: Height of the placeholder image
+    
+    Returns:
+        str: Data URL containing the SVG image
+    '''
+    # Create SVG with gradient background and text
+    svg = f'''<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#F3F4F6"/>
+                <stop offset="100%" style="stop-color:#E5E7EB"/>
+            </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#bg)"/>
+        <text 
+            x="50%" 
+            y="50%" 
+            font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+            font-size="{min(width, height) // 14}" 
+            fill="#94A3B8"
+            font-weight="300"
+            letter-spacing="0.05em"
+            text-anchor="middle" 
+            dominant-baseline="middle">
+            <tspan x="50%" dy="-1em">{width}</tspan>
+            <tspan x="50%" dy="1.4em" font-size="{min(width, height) // 16}">×</tspan>
+            <tspan x="50%" dy="1.4em">{height}</tspan>
+        </text>
+    </svg>'''
+    
+    # Convert to base64 data URL
+    encoded_svg = base64.b64encode(svg.encode()).decode()
+    return f'data:image/svg+xml;base64,{encoded_svg}'
+
+def replace_placeholder_urls(code: str) -> str:
+    '''
+    Replace placeholder image URLs with SVG data URLs.
+    Only replaces exact matches of "/api/placeholder/{width}/{height}".
+    
+    Args:
+        code: The source code containing placeholder URLs
+        
+    Returns:
+        str: Code with placeholder URLs replaced with data URLs
+    '''
+    
+    def replacer(match: re.Match) -> str:
+        # Extract width and height from the URL using capturing groups
+        width = int(match.group(1))
+        height = int(match.group(2))
+        print(f'Replacing placeholder URL with SVG: {width}x{height}')
+        data_url = create_placeholder_svg_data_url(width, height)
+        return data_url  
+    
+    # Regular expression pattern to match placeholder URLs
+    pattern = r'/api/placeholder/(\d+)/(\d+)'
+    
+    # Replace all occurrences
+    return re.sub(pattern, replacer, code)
+
 
 def render_result(result):
     if result.png:
@@ -980,6 +1049,9 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
+    
+    # replace placeholder URLs with SVG data URLs
+    code = replace_placeholder_urls(code)
 
     sandbox.files.make_dir('myhtml')
     file_path = "~/myhtml/main.html"
@@ -1031,6 +1103,9 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
             timeout=60 * 3,
         )
         print("NPM dependencies installed.")
+    
+    # replace placeholder URLs with SVG data URLs
+    code = replace_placeholder_urls(code)
 
     # set up the sandbox
     print("Setting up sandbox directory structure...")
@@ -1064,6 +1139,9 @@ def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -
         },
         api_key=E2B_API_KEY,
     )
+    
+    # replace placeholder URLs with SVG data URLs
+    code = replace_placeholder_urls(code)
 
     # Set up the sandbox
     file_path = "~/app.vue"
