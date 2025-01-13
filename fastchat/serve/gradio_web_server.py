@@ -1181,7 +1181,7 @@ def build_single_model_ui(models, add_promotion_links=False):
 
 def build_demo(models) -> gr.Blocks:
     with gr.Blocks(
-        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
+        title="Software Arena: Compare & Test Best AI Chatbots for Code",
         theme=gr.themes.Default(),
         css=block_css,
     ) as demo:
