@@ -1341,7 +1341,7 @@ def on_run_code(
         gr.Code(value=code, language=code_language, visible=True),
     )
 
-    sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
+    sandbox_env = sandbox_state['sandbox_environment']
     code_dependencies = sandbox_state['code_dependencies']
 
     def update_output(message: str):
@@ -1514,9 +1514,17 @@ def on_run_code(
                     ),
                     gr.skip()
                 )
-        case _:
-            raise ValueError(
-                f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
+        case SandboxEnvironment.AUTO:
+            yield (
+                gr.Markdown(value=code, visible=True),
+                SandboxComponent(
+                    value=("", ""),
+                    label="Example",
+                    visible=False,
+                    key="newsandbox",
+                ),
+                gr.skip()
+            )
 
 def extract_installation_commands(code: str) -> tuple[list[str], list[str]]:
     '''
