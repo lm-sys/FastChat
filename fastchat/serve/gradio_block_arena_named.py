@@ -33,7 +33,7 @@ from fastchat.serve.gradio_web_server import (
     update_sandbox_system_message
 )
 from fastchat.serve.remote_logger import get_remote_logger
-from fastchat.serve.sandbox.code_runner import SandboxGradioSandboxComponents, DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, ChatbotSandboxState, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi, update_visibility
+from fastchat.serve.sandbox.code_runner import SandboxGradioSandboxComponents, SandboxEnvironment, DEFAULT_SANDBOX_INSTRUCTIONS, SUPPORTED_SANDBOX_ENVIRONMENTS, ChatbotSandboxState, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi, update_visibility
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -91,7 +91,7 @@ def leftvote_last_response(
     vote_last_response(
         [state0, state1], "leftvote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def rightvote_last_response(
@@ -101,7 +101,7 @@ def rightvote_last_response(
     vote_last_response(
         [state0, state1], "rightvote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def tievote_last_response(
@@ -111,7 +111,7 @@ def tievote_last_response(
     vote_last_response(
         [state0, state1], "tievote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 
 def bothbad_vote_last_response(
@@ -121,7 +121,7 @@ def bothbad_vote_last_response(
     vote_last_response(
         [state0, state1], "bothbad_vote", [model_selector0, model_selector1], request
     )
-    return ("",) + (disable_btn,) * 4
+    return ("",) + (disable_btn,) * 7
 
 def regenerate(state, request: gr.Request):
     ip = get_ip(request)
@@ -282,12 +282,9 @@ def add_text_multi(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-         + sandbox_states
+        + sandbox_states
         + [""]
-        + [
-            disable_btn,
-        ]
-        * 8
+        + [disable_btn,] * 7
     )
 
 
@@ -526,6 +523,7 @@ def build_side_by_side_ui_named(models):
             outputs=[*sandbox_states]
         )
 
+    # First define all UI components
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
@@ -557,6 +555,28 @@ def build_side_by_side_ui_named(models):
         share_btn = gr.Button(value="📷  Share")
         regenerate_one_side_btns = [left_regenerate_btn, right_regenerate_btn]
 
+    # Define btn_list after all buttons are created
+    btn_list = [
+        leftvote_btn,
+        rightvote_btn,
+        tie_btn,
+        bothbad_btn,
+        regenerate_btn,
+        left_regenerate_btn,
+        right_regenerate_btn,
+        clear_btn,
+    ]
+
+    with gr.Accordion("System Prompt", open=False) as system_prompt_accordion:
+        system_prompt_textbox = gr.Textbox(
+            value=DEFAULT_SANDBOX_INSTRUCTIONS[SandboxEnvironment.AUTO],
+            show_label=False,
+            lines=15,
+            placeholder="Edit system prompt here",
+            interactive=True,
+            elem_id="system_prompt_box",
+        )
+
     with gr.Accordion("Parameters", open=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
@@ -583,49 +603,110 @@ def build_side_by_side_ui_named(models):
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+    # Define helper functions for system prompt updates
+    def update_system_prompt_both(system_prompt, sandbox_state0, sandbox_state1):
+        if sandbox_state0['enabled_round'] == 0:
+            sandbox_state0['sandbox_instruction'] = system_prompt
+        if sandbox_state1['enabled_round'] == 0:
+            sandbox_state1['sandbox_instruction'] = system_prompt
+        return sandbox_state0, sandbox_state1
 
-    # Register listeners
-    btn_list = [
-        leftvote_btn,
-        rightvote_btn,
-        tie_btn,
-        bothbad_btn,
-        regenerate_btn,
-        left_regenerate_btn,
-        right_regenerate_btn,
-        clear_btn,
-    ]
-    leftvote_btn.click(
-        leftvote_last_response,
-        states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
-    )
-    rightvote_btn.click(
-        rightvote_last_response,
-        states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
-    )
-    tie_btn.click(
-        tievote_last_response,
-        states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
-    )
-    bothbad_btn.click(
-        bothbad_vote_last_response,
-        states + model_selectors,
-        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn],
-    )
-    regenerate_btn.click(
-        regenerate_multi, states, states + chatbots + [textbox] + btn_list
+    # Register event handlers
+    textbox.submit(
+        update_system_prompt_both,
+        inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+        outputs=[sandbox_states[0], sandbox_states[1]]
+    ).then(
+        add_text_multi,
+        states + model_selectors + sandbox_states + [textbox],
+        states + chatbots + sandbox_states + [textbox] + btn_list[:7],
+    ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
         flash_buttons, [], btn_list
+    ).then(
+        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+        inputs=[sandbox_states[0]],
+        outputs=[sandbox_env_choice]
     )
-    clear_btn.click(
+
+    send_btn.click(
+        update_system_prompt_both,
+        inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+        outputs=[sandbox_states[0], sandbox_states[1]]
+    ).then(
+        add_text_multi,
+        states + model_selectors + sandbox_states + [textbox],
+        states + chatbots + sandbox_states + [textbox] + btn_list[:7],
+    ).then(
+        update_sandbox_system_messages_multi,
+        states + sandbox_states + model_selectors,
+        states + chatbots
+    ).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens] + sandbox_states,
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons, [], btn_list
+    ).then(
+        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+        inputs=[sandbox_states[0]],
+        outputs=[sandbox_env_choice]
+    )
+
+    # Register handlers for one-sided sends
+    for chatbotIdx in range(num_sides):
+        send_btns_one_side[chatbotIdx].click(
+            update_system_prompt_both,
+            inputs=[system_prompt_textbox, sandbox_states[0], sandbox_states[1]],
+            outputs=[sandbox_states[0], sandbox_states[1]]
+        ).then(
+            add_text,
+            [states[chatbotIdx], model_selectors[chatbotIdx], sandbox_states[chatbotIdx], textbox],
+            [states[chatbotIdx], chatbots[chatbotIdx], textbox] + btn_list[:7],
+        ).then(
+            update_sandbox_system_message,
+            [states[chatbotIdx], sandbox_states[chatbotIdx], model_selectors[chatbotIdx]],
+            [states[chatbotIdx], chatbots[chatbotIdx]]
+        ).then(
+            bot_response,
+            [states[chatbotIdx], temperature, top_p, max_output_tokens, sandbox_states[chatbotIdx]],
+            [states[chatbotIdx], chatbots[chatbotIdx]] + btn_list,
+        ).then(
+            flash_buttons, [], btn_list
+        ).then(
+            lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
+            inputs=[sandbox_states[chatbotIdx]],
+            outputs=[sandbox_env_choice]
+        )
+
+        # Register regenerate handlers
+        regenerate_one_side_btns[chatbotIdx].click(
+            regenerate, 
+            states[chatbotIdx], 
+            [states[chatbotIdx], chatbots[chatbotIdx], textbox] + btn_list
+        ).then(
+            bot_response,
+            [states[chatbotIdx], temperature, top_p, max_output_tokens, sandbox_states[chatbotIdx]],
+            [states[chatbotIdx], chatbots[chatbotIdx]] + btn_list,
+        )
+
+        # Register sandbox click handlers
+        chatbots[chatbotIdx].select(
+            fn=on_click_code_message_run,
+            inputs=[states[chatbotIdx], sandbox_states[chatbotIdx], *sandboxes_components[chatbotIdx]],
+            outputs=[*sandboxes_components[chatbotIdx]],
+        )
+
+    # Register model selector change handlers
+    for i in range(num_sides):
+        model_selectors[i].change(
             clear_history, 
             sandbox_states, 
             sandbox_states + states + chatbots + [textbox] + btn_list 
@@ -638,6 +719,7 @@ def build_side_by_side_ui_named(models):
             outputs=[sandbox_env_choice]
         )
 
+    # Register share button handler
     share_js = """
 function (a, b, c, d) {
     const captureElement = document.querySelector('#share-region-named');
@@ -660,99 +742,53 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    for i in range(num_sides):
-        model_selectors[i].change(
-            clear_history, 
-            sandbox_states, 
-            sandbox_states + states + chatbots + [textbox] + btn_list 
-        ).then(
-            clear_sandbox_components,
-            inputs=[component for components in sandboxes_components for component in components],
-            outputs=[component for components in sandboxes_components for component in components]
-        ).then(
-            lambda: gr.update(interactive=True),
-            outputs=[sandbox_env_choice]
-        )
-
-    textbox.submit(
-        add_text_multi,
-        states + model_selectors + sandbox_states + [textbox],
-        states + chatbots + sandbox_states + [textbox] + btn_list,
-    ).then(
-        update_sandbox_system_messages_multi,
-        states + sandbox_states + model_selectors,
-        states + chatbots
+    # Register regenerate and clear button handlers
+    regenerate_btn.click(
+        regenerate_multi, states, states + chatbots + [textbox] + btn_list
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens] + sandbox_states,
         states + chatbots + btn_list,
     ).then(
         flash_buttons, [], btn_list
+    )
+
+    clear_btn.click(
+        clear_history, 
+        sandbox_states, 
+        sandbox_states + states + chatbots + [textbox] + btn_list
     ).then(
-        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
-        inputs=[sandbox_states[0]],
+        clear_sandbox_components,
+        inputs=[component for components in sandboxes_components for component in components],
+        outputs=[component for components in sandboxes_components for component in components]
+    ).then(
+        lambda: gr.update(interactive=True),
         outputs=[sandbox_env_choice]
     )
 
-    send_btn.click(
-        add_text_multi,
-        states + model_selectors + sandbox_states + [textbox],
-        states + chatbots + sandbox_states + [textbox] + btn_list,
-    ).then(
-        update_sandbox_system_messages_multi,
-        states + sandbox_states + model_selectors,
-        states + chatbots
-    ).then(
-        bot_response_multi,
-        states + [temperature, top_p, max_output_tokens] + sandbox_states,
-        states + chatbots + btn_list,
-    ).then(
-        flash_buttons, [], btn_list
-        ).then(
-        lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
-        inputs=[sandbox_states[0]],
-        outputs=[sandbox_env_choice]
+    # Register voting button handlers
+    leftvote_btn.click(
+        leftvote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
     )
 
-    for chatbotIdx in range(num_sides):
-        chatbot = chatbots[chatbotIdx]
-        state = states[chatbotIdx]
-        sandbox_state = sandbox_states[chatbotIdx]
-        sandbox_components = sandboxes_components[chatbotIdx]
-        model_selector = model_selectors[chatbotIdx]
+    rightvote_btn.click(
+        rightvote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
 
-        send_btns_one_side[chatbotIdx].click(
-            add_text,
-            [state, model_selector, sandbox_state, textbox],
-            [state, chatbot, textbox] + btn_list,
-        ).then(
-            update_sandbox_system_message,
-            [state, sandbox_state, model_selector],
-            [state, chatbot]
-        ).then(
-            bot_response,
-            [state, temperature, top_p, max_output_tokens, sandbox_state],
-            [state, chatbot] + btn_list,
-        ).then(
-            flash_buttons, [], btn_list
-        ).then(
-            lambda sandbox_state: gr.update(interactive=sandbox_state['enabled_round'] == 0),
-            inputs=[sandbox_state],
-            outputs=[sandbox_env_choice]
-        )
-                
-        regenerate_one_side_btns[chatbotIdx].click(regenerate, state, [state, chatbot, textbox] + btn_list
-        ).then(
-            bot_response,
-            [state, temperature, top_p, max_output_tokens, sandbox_state],
-            [state, chatbot] + btn_list,
-       )
+    tie_btn.click(
+        tievote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
 
-        # trigger sandbox run when click code message
-        chatbot.select(
-            fn=on_click_code_message_run,
-            inputs=[state, sandbox_state, *sandbox_components],
-            outputs=[*sandbox_components],
-        )
+    bothbad_btn.click(
+        bothbad_vote_last_response,
+        states + model_selectors,
+        [textbox, leftvote_btn, rightvote_btn, tie_btn, bothbad_btn, send_btn, send_btn_left, send_btn_right]
+    )
 
     return states + model_selectors

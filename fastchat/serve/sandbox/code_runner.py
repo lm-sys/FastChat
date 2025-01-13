@@ -74,7 +74,7 @@ Button in the chat to run the code in the sandbox.
 '''
 
 GENERAL_SANDBOX_INSTRUCTION = """\
-You are an expert Software Engineer who is a good UI/UX designer and a good product manager. Your task is to generate self-contained, executable code for a single file/block that can run directly in a sandbox environment. Feel free to ask questions or explain your reasoning.
+You are an expert Software Engineer, UI/UX designer, and product manager. Your task is to generate self-contained, executable code for a single file or block that can run directly in a sandbox environment. Feel free to ask questions or explain your reasoning.
 
 Your code must be written using one of these supported development frameworks and environments:
 - React (JavaScript/TypeScript)
@@ -88,7 +88,7 @@ Your code must be written using one of these supported development frameworks an
 
 All web framework code (React, Vue, HTML) must be directly rendered in a browser and immediately executable without additional setup.
 Python-based frameworks should be directly executable in a browser environment.
-The code to be executed in Code Interpreters must be plain Python or JavaScript programs that do not require any web UI frameworks and standard inputs from the user.
+The code to be executed in Code Interpreters must be plain Python or JavaScript programs that do not require web UI frameworks or standard user input.
 
 The code must be in the markdown format:
 ```<language>
@@ -98,30 +98,30 @@ The code must be in the markdown format:
 Before you begin writing any code, you must follow these fundamental rules:
 - You are NOT allowed to start directly with a code block. Before writing code, ALWAYS think carefully step-by-step
 - Your response must contain a clear explanation of the solution you are providing
-- ALAWYS generate complete, self-contained code in a single file
-- You CANNOT split your program into multiple files or multiple code blocks
+- ALWAYS generate complete, self-contained code in a single file
+- You CAN NOT split your program into multiple files or multiple code blocks
 - If you use any external libraries, make sure to specify them for the installation command in either `pip install` or `npm install`
 - Each code block must be completely independent. If modifications are needed, the entire code block must be rewritten
-- When fetching data, you MUST use external libraries and packages, and avoid using placeholder urls or urls that require API keys
-- Make sure the program is functional by creating state when needed and having no required props
+- When fetching data, you MUST use external libraries and packages, and avoid using placeholder URLs or URLs that require API keys
+- Make sure the program is functional by creating a state when needed and having no required props
 - Make sure to include all necessary code in one file
-- There is no additional files in the local file system, unless you create them inside the same program
+- There are no additional files in the local file system, unless you create them inside the same program
 - Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
 
 When developing with React or Vue components, follow these specific requirements:
 - Use TypeScript or JavaScript as the language
-- ALWAYS use BLACK text color on white background, and WHITE text color on black background
+- ALWAYS use BLACK text color on a white background, and WHITE text color on a black background
 - Make sure it can run by itself by using a default export at the end of the file
 - DO NOT CALL `ReactDOM.render()` AT THE END OF THE FILE
 - Use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette
-- If you use any imports from React like useState or useEffect, make sure to import them directly
+- If you use any imports from React like `useState` or `useEffect`, make sure to import them directly
 - Use Tailwind margin and padding classes to style the components and ensure proper spacing
 - Various npm packages are available to be imported, e.g. `import { LineChart, XAxis, ... } from "recharts"` & `<LineChart ...><XAxis dataKey="name"> ...`
 - Images from the web are not allowed, but you can use placeholder images by specifying the width and height like so `<img src="/api/placeholder/400/320" alt="placeholder" />`
 
 For Python development, you must follow these constraints:
 - Make sure it does not require any user inputs
-- Choose suitable PyPI packages to be imported, e.g. `import pandas`
+- Choose suitable PyPI packages to be imported, e.g., `import pandas`
 - Avoid using libraries that require desktop GUI interfaces, with the exceptions of `pygame`, `gradio`, and `streamlit` which are explicitly supported
 - For PyGame applications, you have to write the main function as an async function like:
 ```python
@@ -712,8 +712,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
             3. sandbox python and npm dependencies (extracted using static analysis)
             4. sandbox environment determined from code content
     '''
-    # Find all code blocks
-    code_block_regex = r'```(?P<code_lang>\w+)?\n(?P<code>.*?)```'
+    code_block_regex = r'```(?P<code_lang>[\w\+\#\-\.]*)?[ \t]*\r?\n?(?P<code>.*?)```'
     matches = list(re.finditer(code_block_regex, message, re.DOTALL))
     
     if not matches:
@@ -739,36 +738,47 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         main_code = longest_match.group('code').strip()
         main_code_lang = (longest_match.group('code_lang') or '').lower()
 
+    # Define language prefixes for each environment
+    python_prefixes = ['py', 'ipython', 'pygame', 'gradio', 'streamlit', 'nicegui']
+    vue_prefixes = ['vue']
+    html_prefixes = ['html', 'xhtml', 'htm']
+    react_prefixes = ['react', 'next']
+    js_prefixes = ['js', 'javascript', 'jsx', 'coffee', 'ecma', 'node', 'es']
+    ts_prefixes = ['ts', 'typescript', 'tsx']
+
     # Extract package dependencies from the main program
     python_packages: list[str] = []
     npm_packages: list[str] = []
+    
+    # Helper function to check if any prefix matches
+    def matches_prefix(lang: str, prefixes: list[str]) -> bool:
+        return any(lang.lower().startswith(prefix) for prefix in prefixes)
 
-    if main_code_lang in ['py', 'python', 'pygame', 'pygame-sdl2', 'pygame-sdl2-ce', 'gradio', 'streamlit', 'nicegui']:
+    if matches_prefix(main_code_lang, python_prefixes):
         python_packages = extract_python_imports(main_code)
         sandbox_env_name = determine_python_environment(main_code, python_packages)
-    elif main_code_lang in ['vue', 'vue3', 'vue2']:
+    elif matches_prefix(main_code_lang, vue_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['html','xhtml', 'xml'] or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
+    elif matches_prefix(main_code_lang, html_prefixes) or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
         sandbox_env_name = SandboxEnvironment.HTML
         main_code_lang = 'html'
-    elif main_code_lang in ['react', 'reactjs', 'react-native', 'react-hook-form']:
+    elif matches_prefix(main_code_lang, react_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.REACT
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif main_code_lang in ['js', 'javascript',  'jsx', 'coffeescript', 'ecmascript', 'javascript', 'js', 'node']:
+    elif matches_prefix(main_code_lang, js_prefixes):
         main_code_lang = 'javascript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
-    elif main_code_lang in ['ts', 'typescript']:
+    elif matches_prefix(main_code_lang, ts_prefixes):
         main_code_lang = 'typescript'
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = determine_js_environment(main_code, npm_packages)
     else:
         sandbox_env_name = None
 
-    # Extract installation commands from all code blocks
     all_python_packages: Set[str] = set(python_packages)
     all_npm_packages: Set[str] = set(npm_packages)
 
@@ -1409,7 +1419,7 @@ def on_run_code(
         gr.Code(value=code, language=code_language, visible=True),
     )
 
-    sandbox_env = sandbox_state['sandbox_environment'] if sandbox_state['sandbox_environment'] != SandboxEnvironment.AUTO else sandbox_state['auto_selected_sandbox_environment']
+    sandbox_env = sandbox_state['sandbox_environment']
     code_dependencies = sandbox_state['code_dependencies']
 
     def update_output(message: str):
@@ -1582,9 +1592,17 @@ def on_run_code(
                     ),
                     gr.skip()
                 )
-        case _:
-            raise ValueError(
-                f"Unsupported sandbox environment: {sandbox_state['sandbox_environment']}")
+        case SandboxEnvironment.AUTO:
+            yield (
+                gr.Markdown(value=code, visible=True),
+                SandboxComponent(
+                    value=("", ""),
+                    label="Example",
+                    visible=False,
+                    key="newsandbox",
+                ),
+                gr.skip()
+            )
 
 def extract_installation_commands(code: str) -> tuple[list[str], list[str]]:
     '''
