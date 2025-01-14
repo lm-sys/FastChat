@@ -1023,7 +1023,6 @@ def run_background_command_with_timeout(
         command,
         timeout=60 * 3,  # Overall timeout for the command
         background=True,
-        on_stderr=lambda message: collect_stderr(message)
     )
 
     def wait_for_command(result_queue):
@@ -1057,7 +1056,7 @@ def run_background_command_with_timeout(
         return result_queue.get()
 
 
-def run_code_interpreter(code: str, code_language: str | None, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_code_interpreter(code: str, code_language: str | None, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1152,39 +1151,36 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
     Returns:
         url for remote sandbox
     """
-    sandbox = create_sandbox(
-        template="nextjs-developer",
+    sandbox = create_sandbox()
+
+    sandbox.commands.run(
+        "cd ~/react_app",
+        on_stdout=print,
+        on_stderr=print,
     )
 
-    python_dependencies, npm_dependencies = code_dependencies
-
-    # Stream logs for Python dependencies
-    if python_dependencies:
-        print("Installing Python dependencies...")
-        install_pip_dependencies(sandbox, python_dependencies)
-        print("Python dependencies installed.")
-    
-    # Stream logs for NPM dependencies
+    _, npm_dependencies = code_dependencies
     if npm_dependencies:
-        print("Installing NPM dependencies...")
+        print(f"Installing NPM dependencies...: {npm_dependencies}")
         install_npm_dependencies(sandbox, npm_dependencies)
         print("NPM dependencies installed.")
-    
+
     # replace placeholder URLs with SVG data URLs
     code = replace_placeholder_urls(code)
 
     # set up the sandbox
     print("Setting up sandbox directory structure...")
-    sandbox.files.make_dir('pages')
-    file_path = "~/pages/index.tsx"
+    file_path = "~/react_app/src/App.tsx"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
     print("Code files written successfully.")
 
     # get the sandbox url
-    print("Starting development server...")
-    sandbox_url = 'https://' + sandbox.get_host(3000)
-    print(f"Sandbox URL ready: {sandbox_url}")
-
+    sandbox.commands.run(
+        "cd ~/react_app && npm run build",
+        on_stdout=print,
+        on_stderr=print,
+    )
+    sandbox_url = get_sandbox_app_url(sandbox, 'react')
     return (sandbox_url, sandbox.sandbox_id)
 
 
@@ -1202,19 +1198,31 @@ def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -
         template="vue-developer",
     )
 
+    sandbox.commands.run(
+        "cd ~/vue_app",
+        on_stdout=print,
+        on_stderr=print,
+    )
+
     # replace placeholder URLs with SVG data URLs
     code = replace_placeholder_urls(code)
 
     # Set up the sandbox
-    file_path = "~/app.vue"
+    file_path = "~/vue_app/src/App.vue"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
-    python_dependencies, npm_dependencies = code_dependencies
-    install_pip_dependencies(sandbox, python_dependencies)
-    install_npm_dependencies(sandbox, npm_dependencies)
+    _, npm_dependencies = code_dependencies
+    if npm_dependencies:
+        print(f"Installing NPM dependencies...: {npm_dependencies}")
+        install_npm_dependencies(sandbox, npm_dependencies)
+        print("NPM dependencies installed.")
 
-    # Get the sandbox URL
-    sandbox_url = 'https://' + sandbox.get_host(3000)
+    sandbox.commands.run(
+        "cd ~/vue_app && npm run build",
+        on_stdout=print,
+        on_stderr=print,
+    )
+    sandbox_url = get_sandbox_app_url(sandbox, 'vue')
     return (sandbox_url, sandbox.sandbox_id)
 
 
@@ -1528,7 +1536,7 @@ def on_run_code(
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
-                    value=(url, True, []),
+                    value=(sandbox_url, True, []),
                     label="Example",
                     visible=True,
                     key="newsandbox",
@@ -1591,7 +1599,7 @@ def on_run_code(
                 )
         case SandboxEnvironment.NICEGUI:
             yield update_output("🔄 Setting up NiceGUI sandbox...")
-            sandbox_url, sandbox_id = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id, std_err = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
             yield update_output("✅ NiceGUI sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
@@ -1636,7 +1644,7 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text + "\n\n" + output, visible=True),
                     SandboxComponent(
-                        value=("", ""),
+                        value=('', False, []),
                         label="Example",
                         visible=False,
                         key="newsandbox",

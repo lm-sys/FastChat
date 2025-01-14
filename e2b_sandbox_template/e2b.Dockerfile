@@ -34,7 +34,3 @@ WORKDIR /home/user/vue_app
 COPY vue_app/ ./
 RUN npm install
 RUN npm run build
-
-# Prepare Python app
-WORKDIR /home/user/python_app
-COPY python_app/ ./
