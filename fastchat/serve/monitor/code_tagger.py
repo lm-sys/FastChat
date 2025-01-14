@@ -6,7 +6,7 @@ import multiprocessing as mp
 import nltk
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
-
+import pandas as pd
 
 def is_code_conversation(text: str) -> tuple[bool, list[str]]:
     """Check if the text is a code conversation"""
@@ -132,18 +132,26 @@ def check_code_conv(conv) -> tuple[bool, list[str]]:
 
 
 def check_conv_row(conv_row):
+    # check_a, code_a = check_code_conv(conv_row["conversation"])
+    # return check_a, code_a
     check_a, code_a = check_code_conv(conv_row["conversation_a"])
     check_b, code_b = check_code_conv(conv_row["conversation_b"])
-
     return check_a or check_b, code_a + code_b
 
-
-def process_battle_file(battle_file_path: str, n_cpus: int):
-    with open(battle_file_path, "r") as f:
-        data = json.load(f)
+def process_battle_file(battle_file_path: str, n_cpus: int, direct_chat: bool = False):
+    # with open(battle_file_path, "r") as f:
+    #     data = json.load(f)
+    # data = pd.read_json(battle_file_path).to_dict("records")
+    data = pd.read_json(battle_file_path, lines=True).to_dict("records")
+    print(data[0])
 
     with mp.Pool(n_cpus) as pool:
-        tagged_data = list(tqdm(pool.imap(check_conv_row, data), total=len(data)))
+        tagged_data = list(
+            tqdm(
+                pool.imap(check_conv_row, data),
+                total=len(data),
+            )
+        )
 
     output_data = [row for row, (is_code, _) in zip(data, tagged_data) if is_code]
 
@@ -154,6 +162,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean-battle-file", type=str)
     parser.add_argument("--output-clean-battle-file", type=str, default=None)
+    parser.add_argument("--direct-chat", action="store_true")
     parser.add_argument("--n-cpus", type=int, default=-1)
 
     args = parser.parse_args()
