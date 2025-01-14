@@ -596,8 +596,8 @@ def build_side_by_side_ui_named(models):
         )
         max_output_tokens = gr.Slider(
             minimum=16,
-            maximum=2048,
-            value=1024,
+            maximum=4096,
+            value=2048,
             step=64,
             interactive=True,
             label="Max output tokens",

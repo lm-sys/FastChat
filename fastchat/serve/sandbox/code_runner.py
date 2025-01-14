@@ -103,16 +103,17 @@ Before you begin writing any code, you must follow these fundamental rules:
 - ALWAYS generate complete, self-contained code in a single file
 - You CAN NOT split your program into multiple files or multiple code blocks
 - If you use any external libraries, make sure to specify them for the installation command in either `pip install` or `npm install`
+- You prefer JavaScript over HTML
 - Each code block must be completely independent. If modifications are needed, the entire code block must be rewritten
 - When fetching data, you MUST use external libraries and packages, and avoid using placeholder URLs or URLs that require API keys
 - Make sure the program is functional by creating a state when needed and having no required props
 - Make sure to include all necessary code in one file
 - There are no additional files in the local file system, unless you create them inside the same program
-- Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc.
+- Do not touch project dependencies files like package.json, package-lock.json, requirements.txt, etc
 
 When developing with React or Vue components, follow these specific requirements:
 - Use TypeScript or JavaScript as the language
-- ALWAYS use BLACK text color on a white background, and WHITE text color on a black background
+- DO NOT use gray text color on a white background
 - Make sure it can run by itself by using a default export at the end of the file
 - DO NOT CALL `ReactDOM.render()` AT THE END OF THE FILE
 - Use Tailwind classes for styling. DO NOT USE ARBITRARY VALUES (e.g. 'h-[600px]'). Make sure to use a consistent color palette
@@ -1477,8 +1478,10 @@ def on_run_code(
     sandbox_env = sandbox_state['auto_selected_sandbox_environment']
     code_dependencies = sandbox_state['code_dependencies']
 
-    def update_output(message: str):
+    def update_output(message: str, clear_output: bool = False):
         nonlocal output_text
+        if clear_output:
+            output_text = ""
         output_text += f"\n{message}"
         return (
             gr.Markdown(value=output_text, visible=True, sanitize_html=False),
@@ -1491,10 +1494,10 @@ def on_run_code(
             yield update_output("🔄 Setting up HTML sandbox...")
             url, stderr = run_html_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
-                yield update_output("❌ HTML sandbox failed to run!")
+                yield update_output("❌ HTML sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ HTML sandbox ready!")
+                yield update_output("✅ HTML sandbox ready!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
@@ -1507,9 +1510,8 @@ def on_run_code(
                 )
         case SandboxEnvironment.REACT:
             yield update_output("🔄 Setting up React sandbox...")
-            yield update_output("⚙️ Installing dependencies...")
             url = run_react_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ React sandbox ready!")
+            yield update_output("✅ React sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
@@ -1522,9 +1524,8 @@ def on_run_code(
             )
         case SandboxEnvironment.VUE:
             yield update_output("🔄 Setting up Vue sandbox...")
-            yield update_output("⚙️ Installing dependencies...")
             url = run_vue_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ Vue sandbox ready!")
+            yield update_output("✅ Vue sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
@@ -1537,13 +1538,12 @@ def on_run_code(
             )
         case SandboxEnvironment.PYGAME:
             yield update_output("🔄 Setting up PyGame sandbox...")
-            yield update_output("⚙️ Installing PyGame dependencies...")
             url, stderr = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
-                yield update_output("❌ PyGame sandbox failed to run!")
+                yield update_output("❌ PyGame sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ PyGame sandbox ready!")
+                yield update_output("✅ PyGame sandbox ready!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
@@ -1556,13 +1556,13 @@ def on_run_code(
             )
         case SandboxEnvironment.GRADIO:
             yield update_output("🔄 Setting up Gradio sandbox...")
-            yield update_output("⚙️ Installing Gradio dependencies...")
+            yield update_output("⚙️ Installing Gradio dependencies...", clear_output=True)
             url, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
-                yield update_output("❌ Gradio sandbox failed to run!")
+                yield update_output("❌ Gradio sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ Gradio sandbox ready!")
+                yield update_output("✅ Gradio sandbox ready!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
@@ -1594,9 +1594,8 @@ def on_run_code(
                 )
         case SandboxEnvironment.NICEGUI:
             yield update_output("🔄 Setting up NiceGUI sandbox...")
-            yield update_output("⚙️ Installing NiceGUI dependencies...")
             url = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ NiceGUI sandbox ready!")
+            yield update_output("✅ NiceGUI sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
@@ -1608,15 +1607,15 @@ def on_run_code(
                 gr.skip(),
             )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
-            yield update_output("🔄 Running Python Code Interpreter...")
+            yield update_output("🔄 Running Python Code Interpreter...", clear_output=True)
             output, stderr = run_code_interpreter(
                 code=code, code_language='python', code_dependencies=code_dependencies
             )
             if stderr:
-                yield update_output("❌ Python Code Interpreter failed to run!")
+                yield update_output("❌ Python Code Interpreter failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ Code execution complete!")
+                yield update_output("✅ Code execution complete!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
                     SandboxComponent(
@@ -1628,15 +1627,15 @@ def on_run_code(
                     gr.skip()
                 )
         case SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER:
-            yield update_output("🔄 Running JavaScript Code Interpreter...")
+            yield update_output("🔄 Running JavaScript Code Interpreter...", clear_output=True)
             output, stderr = run_code_interpreter(
                 code=code, code_language='javascript', code_dependencies=code_dependencies
             )
             if stderr:
-                yield update_output("❌ JavaScript Code Interpreter failed to run!")
+                yield update_output("❌ JavaScript Code Interpreter failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ Code execution complete!")
+                yield update_output("✅ Code execution complete!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text + "\n\n" + output, visible=True),
                     SandboxComponent(
