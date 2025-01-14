@@ -871,7 +871,7 @@ Software Arena provides:
 
 ## Open-source Contributors
 - **Lead**: [Terry Yue Zhuo](https://terryyz.github.io/)
-- **Contributors**: [Gary Liu](mailto:ksqod_code@pm.me), [Yuhan Cao](mailto:ycao0081@student.monash.edu), [Tianyang Liu](https://leolty.github.io/), [Kaixin Li](https://likaixin2000.github.io/), [Jihan Yao](https://yaojh18.github.io/)
+- **Contributors**: [Gary Liu](mailto:ksqod_code@pm.me), [Yuhan Cao](mailto:ycao0081@student.monash.edu), [Tianyang Liu](https://leolty.github.io/), [Kaixin Li](https://likaixin2000.github.io/), [Bo (Benjamin) Liu](https://benjamin-eecs.github.io/), [Jihan Yao](https://yaojh18.github.io/)
 - **Advisors**: [Banghua Zhu](https://people.eecs.berkeley.edu/~banghua/), [Torsten Scholak](https://www.servicenow.com/research/author/torsten-scholak.html), [Atin Sood](https://atinsood.com/about/), [Julian McAuley](https://cseweb.ucsd.edu/~jmcauley/), [Xiaoning Du](https://xiaoningdu.github.io/)
 
 ## Contact
@@ -897,7 +897,6 @@ def build_single_model_ui(models, add_promotion_links=False):
         if add_promotion_links
         else ""
     )
-
 
     state = gr.State()
     

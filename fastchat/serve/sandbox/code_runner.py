@@ -11,6 +11,7 @@ import base64
 from e2b import Sandbox
 from e2b_code_interpreter import Sandbox as CodeSandbox
 from e2b.sandbox.commands.command_handle import CommandExitException
+from e2b.exceptions import TimeoutException
 from gradio_sandboxcomponent import SandboxComponent
 import ast
 import subprocess
@@ -1033,6 +1034,9 @@ def run_background_command_with_timeout(
         except CommandExitException as e:
             stderr += "".join(e.stderr)
             result_queue.put(stderr)
+        except TimeoutException as e:
+            return
+    
     # Create a queue to store the result
     result_queue = queue.Queue()
 

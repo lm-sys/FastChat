@@ -219,7 +219,8 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {'gpt-3.5-turbo':0.5,'gpt-4o-mini':0.5}
+SAMPLING_WEIGHTS = {'gpt-3.5-turbo':0.5,'gpt-4o-mini':0.5, 'gpt-4o':0.5, 'gpt-4-turbo':0.5,
+                    'qwen2.5-coder-32b-instruct': 0.5, 'qwen2.5-72b-instruct': 0.5}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -538,14 +539,11 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-
-
 ## How It Works
 - **Blind Test**: Chat with two anonymous AI chatbots and give them a prompt or task (e.g., build a web app, create a visualization, design an interface).
 - **Run & Interact**: The AI chatbots generate programs that run in a secure sandbox environment. Test the functionality, explore the features, and evaluate the quality of the outputs.
 - **Vote for the Best**: After interacting with both programs, vote for the one that best meets your requirements or provides the superior experience.
 - **Play Fair**: If AI identity reveals, your vote won't count.
-
 """
 
     states = [gr.State() for _ in range(num_sides)]
