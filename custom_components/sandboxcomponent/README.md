@@ -14,6 +14,7 @@ pip install gradio_sandboxcomponent
 
 ```python
 
+from typing import Any
 import gradio as gr
 from gradio_sandboxcomponent import SandboxComponent
 
@@ -25,11 +26,45 @@ with gr.Blocks() as demo:
         with gr.Row():
             gr.Markdown("## Sandbox")
         with gr.Row():
-            SandboxComponent(
+            sandboxUrl = gr.Textbox(
+                label="Sandbox URL",
+                value='https://www.gradio.app/',
+                placeholder="Enter sandbox URL",
+                lines=1,
+                show_label=True,
+                elem_id=None,
+                elem_classes=None,
+                key=None,
+            )
+            sandboxInteractions = gr.Textbox(
+                label="Sandbox Interactions",
+                value='[]',
+                placeholder="Enter sandbox interactions",
+                lines=1,
+                show_label=True,
+                elem_id=None,
+                elem_classes=None,
+                key=None,
+            )
+        with gr.Row():
+            sandbox = SandboxComponent(
                 label="Sandbox Example",
-                value=("https://www.gradio.app/", "Hello World"),
+                value=("https://www.gradio.app/", True, []),
                 show_label=True)
 
+        def update_outputs(sandboxData: tuple[str, list[Any]]):
+            sandboxUrl, _, sandboxInteractions = sandboxData
+            print(
+                "UPDATING",
+                sandboxData
+            )
+            return sandboxUrl, str(sandboxInteractions)
+
+        sandbox.change(
+            update_outputs,
+            inputs=[sandbox],
+            outputs=[sandboxUrl, sandboxInteractions]
+        )
 
 if __name__ == "__main__":
     demo.launch()
@@ -55,12 +90,12 @@ if __name__ == "__main__":
 <td align="left" style="width: 25%;">
 
 ```python
-tuple[str, str] | Callable | None
+tuple[str, bool, list[Any]] | Callable | None
 ```
 
 </td>
 <td align="left"><code>None</code></td>
-<td align="left">default text to provide in textbox. If callable, the function will be called whenever the app loads to set the initial value of the component.</td>
+<td align="left">url string and interactions.</td>
 </tr>
 
 <tr>
@@ -240,13 +275,13 @@ The impact on the users predict function varies depending on whether the compone
 
 The code snippet below is accurate in cases where the component is used as both an input and an output.
 
-- **As output:** Is passed, passes text value as a {str} into the function.
-- **As input:** Should return, expects a {str} returned from function and sets textarea value to it.
+- **As output:** Is passed, the preprocessed input data sent to the user's function in the backend.
+- **As input:** Should return, the output data received by the component from the user's function in the backend.
 
  ```python
  def predict(
-     value: str | None
- ) -> str | None:
+     value: tuple[str, bool, list[typing.Any]] | None
+ ) -> tuple[str, bool, list[typing.Any]] | dict | None:
      return value
  ```
  

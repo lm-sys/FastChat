@@ -6,15 +6,64 @@ from typing import TYPE_CHECKING, Any
 
 from gradio.components.base import Component, FormComponent
 from gradio.events import Events
+from gradio.data_classes import GradioModel
 
 if TYPE_CHECKING:
     from gradio.components import Timer
 
+from pydantic import BaseModel
+from typing import Union
+from datetime import datetime
 
-class SandboxComponent(FormComponent):
-    """
-    Creates a very simple textbox for user to enter string input or display string output.
-    """
+class LoadInteraction(BaseModel):
+    type: str = "load"
+    time: datetime
+
+class KeydownInteraction(BaseModel):
+    type: str = "keydown"
+    time: datetime
+    key: str
+
+class ClickInteraction(BaseModel):
+    type: str = "click"
+    time: datetime
+    x: float
+    y: float
+
+class ScrollInteraction(BaseModel):
+    type: str = "scroll"
+    time: datetime
+    scrollTop: float
+    scrollLeft: float
+
+class ResizeInteraction(BaseModel):
+    type: str = "resize"
+    time: datetime
+    width: float
+    height: float
+
+class CaptureErrorInteraction(BaseModel):
+    type: str = "captureError"
+    time: datetime
+    error: str
+
+UserInteraction = Union[
+    LoadInteraction,
+    KeydownInteraction,
+    ClickInteraction,
+    ScrollInteraction,
+    ResizeInteraction,
+    CaptureErrorInteraction
+]
+
+class SandboxData(GradioModel):
+    sandboxUrl: str
+    enableTelemetry: bool
+    userInteractionRecords: list[UserInteraction]
+
+class SandboxComponent(Component):
+
+    data_model = SandboxData # the data model for this component
 
     EVENTS = [
         Events.change,
@@ -24,7 +73,7 @@ class SandboxComponent(FormComponent):
 
     def __init__(
         self,
-        value: tuple[str, str] | Callable | None = None,
+        value: tuple[str, bool, list[Any]] | Callable | None = None,
         *,
         label: str | None = None,
         every: Timer | float | None = None,
@@ -41,7 +90,7 @@ class SandboxComponent(FormComponent):
     ):
         """
         Parameters:
-            value: default text to provide in textbox. If callable, the function will be called whenever the app loads to set the initial value of the component.
+            value: url string and interactions.
             placeholder: placeholder hint to provide behind textbox.
             label: the label for this component, displayed above the component if `show_label` is `True` and is also used as the header if there are a table of examples for this component. If None and used in a `gr.Interface`, the label will be the name of the parameter this component corresponds to.
             every: Continously calls `value` to recalculate it if `value` is a function (has no effect otherwise). Can provide a Timer whose tick resets `value`, or a float that provides the regular interval for the reset Timer.
@@ -72,36 +121,35 @@ class SandboxComponent(FormComponent):
             key=key,
         )
 
-    def api_info(self) -> dict[str, Any]:
-        """Provides info about this component's API. Used by Gradio's JS client.
+    def preprocess(self, payload: SandboxData | None) -> tuple[str, bool, list[Any]] | None:
+        if payload is None:
+            return None
+        return (
+            payload.sandboxUrl,
+            payload.enableTelemetry,
+            [dict(record) for record in payload.userInteractionRecords]
+        )
 
-        Returns:
-            dict: A dictionary containing API documentation
-        """
-        return {
-            "type": "string"
-        }
-
-    def preprocess(self, payload: str | None) -> str | None:
-        """
-        Parameters:
-            payload: the text entered in the textarea.
-        Returns:
-            Passes text value as a {str} into the function.
-        """
-        return None if payload is None else str(payload)
-
-    def postprocess(self, value: str | None) -> str | None:
-        """
-        Parameters:
-            value: Expects a {str} returned from function and sets textarea value to it.
-        Returns:
-            The value to display in the textarea.
-        """
-        return None if value is None else json.dumps(value)
+    def postprocess(self, value: tuple[str, bool, list[Any]] | dict | None) -> SandboxData | None:
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            return SandboxData(**value)
+        if isinstance(value, tuple):
+            sandboxUrl, enableTelemetry, userInteractionRecords = value
+            return SandboxData(sandboxUrl=sandboxUrl, enableTelemetry=enableTelemetry, userInteractionRecords=userInteractionRecords)
+        return None
 
     def example_payload(self) -> Any:
-        return ("https://www.google.com", "print('Hello, world!')")
+        return SandboxData(
+            sandboxUrl="https://www.google.com",
+            enableTelemetry=True,
+            userInteractionRecords=[]
+        )
 
     def example_value(self) -> Any:
-        return ("https://www.google.com", "print('Hello, world!')")
+        return SandboxData(
+            sandboxUrl="https://www.google.com",
+            enableTelemetry=True,
+            userInteractionRecords=[]
+        )
