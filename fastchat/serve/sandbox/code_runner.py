@@ -570,6 +570,10 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
     '''
     Determine JavaScript/TypeScript sandbox environment based on imports and AST analysis.
     '''
+    # First check for Vue SFC structure
+    if '<template>' in code or '<script setup' in code:
+        return SandboxEnvironment.VUE
+        
     try:
         # Initialize parser
         ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
@@ -585,6 +589,22 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
             elif node.type == 'template_element':
                 return True
             return False
+        
+        # Check for Vue-specific directives and syntax
+        vue_patterns = [
+            r'v-(?:if|else|for|bind|on|model|show|html|text|once|pre|cloak)',  # Vue directives
+            r'@(?:click|change|input|submit|keyup|keydown|focus|blur)',         # Vue event handlers
+            r':(?:class|style|key|ref|is)',                                     # Vue bindings
+            r'(?:ref|reactive|computed|watch|onMounted|onUnmounted|provide|inject)', # Vue Composition API
+            r'defineComponent\(',                                               # Vue component definition
+            r'setup\(\s*(?:props|context)?\s*\)',                              # Vue setup function
+            r'(?:components|props|emits|data|methods|computed|watch)\s*:',      # Vue Options API
+        ]
+        
+        # Check for Vue patterns in the code
+        for pattern in vue_patterns:
+            if re.search(pattern, code):
+                return SandboxEnvironment.VUE
         
         # Check for framework-specific patterns in the AST
         cursor = tree.walk()

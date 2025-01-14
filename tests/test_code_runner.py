@@ -210,12 +210,8 @@ button:hover {
     result = extract_code_from_markdown(markdown_content)
     assert result is not None
     code, code_lang, (python_packages, npm_packages), sandbox_env_name = result
-    print("Code language:", code_lang)
-    print("NPM packages:", npm_packages)
-    print("Sandbox environment:", sandbox_env_name)
     assert code_lang == 'typescript', "TypeScript not detected in Vue component with explicit TS patterns" 
     assert sandbox_env_name == SandboxEnvironment.VUE, "Vue environment not detected"
-    print(npm_packages)
     assert 'vue' in npm_packages, "Vue dependency not detected"
 
 def test_pygame_code_extraction():
@@ -421,7 +417,219 @@ def test():
     assert sorted(packages) == sorted(['numpy', 'pandas', 'tensorflow', 'torch']), f"Expected ['numpy', 'pandas', 'tensorflow', 'torch'], but got {packages}"
     assert cleaned_code.strip() == "", "Code with only pip commands should result in empty string"
 
-# test_vue_component_typescript_detection()
-# test_vue_component_extraction()
-# test_pygame_code_extraction()
+def test_determine_js_environment():
+    from fastchat.serve.sandbox.code_runner import determine_js_environment, SandboxEnvironment
+
+    # Test Vue SFC structure detection
+    vue_sfc_code = '''
+<template>
+  <div>Hello Vue</div>
+</template>
+<script>
+export default {
+  name: 'HelloWorld'
+}
+</script>
+'''
+    assert determine_js_environment(vue_sfc_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue SFC structure"
+
+    # Test Vue script setup detection
+    vue_setup_code = '''
+<template>
+  <div>{{ message }}</div>
+</template>
+<script setup>
+const message = 'Hello Vue'
+</script>
+'''
+    assert determine_js_environment(vue_setup_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue script setup"
+
+    # Test Vue directives detection
+    vue_directives_code = '''
+export default {
+  template: `
+    <div>
+      <div v-if="show">Conditional</div>
+      <div v-for="item in items">{{ item }}</div>
+      <input v-model="text" />
+      <button @click="handleClick">Click</button>
+      <div :class="{ active: isActive }">Dynamic Class</div>
+    </div>
+  `
+}
+'''
+    assert determine_js_environment(vue_directives_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue directives"
+
+    # Test Vue Composition API detection
+    vue_composition_code = '''
+import { ref, computed, watch, onMounted } from 'vue'
+
+export default {
+  setup() {
+    const count = ref(0)
+    const doubled = computed(() => count.value * 2)
+    watch(count, (newVal) => console.log(newVal))
+    onMounted(() => console.log('mounted'))
+    return { count, doubled }
+  }
+}
+'''
+    assert determine_js_environment(vue_composition_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue Composition API"
+
+    # Test Vue Options API detection
+    vue_options_code = '''
+export default {
+  data() {
+    return { count: 0 }
+  },
+  computed: {
+    doubled() { return this.count * 2 }
+  },
+  methods: {
+    increment() { this.count++ }
+  },
+  watch: {
+    count(newVal) { console.log(newVal) }
+  }
+}
+'''
+    assert determine_js_environment(vue_options_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue Options API"
+
+    # Test React detection - should require both JSX syntax AND React dependency/imports
+    react_code = '''
+function App() {
+  return (
+    <div>
+      <h1>Hello React</h1>
+      <button onClick={() => alert('clicked')}>Click me</button>
+    </div>
+  )
+}
+'''
+    # Without React dependency, should fallback to JavaScript
+    assert determine_js_environment(react_code, []) == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER, "Should fallback to JavaScript when only JSX is present"
+    
+    # With React dependency, should detect as React
+    assert determine_js_environment(react_code, ['react']) == SandboxEnvironment.REACT, "Should detect React when JSX and react dependency are present"
+
+    # With React import, should detect as React
+    react_code_with_import = '''
+import React from 'react';
+
+function App() {
+  return (
+    <div>
+      <h1>Hello React</h1>
+      <button onClick={() => alert('clicked')}>Click me</button>
+    </div>
+  )
+}
+'''
+    assert determine_js_environment(react_code_with_import, ['react']) == SandboxEnvironment.REACT, "Should detect React when import is present"
+
+    # Test package-based detection
+    vue_import_code = "import { createApp } from 'vue'"
+    assert determine_js_environment(vue_import_code, ['vue']) == SandboxEnvironment.VUE, "Failed to detect Vue from imports"
+
+    react_import_code = "import { useState } from 'react'"
+    assert determine_js_environment(react_import_code, ['react']) == SandboxEnvironment.REACT, "Failed to detect React from imports"
+
+    # Test fallback to JavaScript Code Interpreter
+    plain_js_code = '''
+function add(a, b) {
+  return a + b
+}
+'''
+    assert determine_js_environment(plain_js_code, []) == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER, "Failed to fallback to JavaScript Code Interpreter"
+
+
+    real_code = '''
+<template>
+  <div :class="['min-h-screen', darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-100 text-gray-900']">
+    <div class="container mx-auto p-6">
+      <header class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Vue Todo List</h1>
+        <button
+          @click="toggleDarkMode"
+          class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600"
+        >
+          Toggle Dark Mode
+        </button>
+      </header>
+
+      <div class="mb-6">
+        <form @submit.prevent="addTodo" class="flex gap-2">
+          <input
+            v-model="newTodo"
+            type="text"
+            placeholder="Enter a new todo"
+            class="flex-grow px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            type="submit"
+            class="px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600"
+          >
+            Add
+          </button>
+        </form>
+      </div>
+
+      <ul>
+        <li
+          v-for="(todo, index) in todos"
+          :key="index"
+          class="flex justify-between items-center p-4 mb-2 rounded bg-white dark:bg-gray-800 shadow"
+        >
+          <span>{{ todo }}</span>
+          <button
+            @click="removeTodo(index)"
+            class="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+          >
+            Remove
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "App",
+  data() {
+    return {
+      darkMode: false,
+      newTodo: "",
+      todos: [],
+    };
+  },
+  methods: {
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+    },
+    addTodo() {
+      if (this.newTodo.trim() !== "") {
+        this.todos.push(this.newTodo.trim());
+        this.newTodo = "";
+      }
+    },
+    removeTodo(index) {
+      this.todos.splice(index, 1);
+    },
+  },
+};
+</script>
+
+<style>
+/* Tailwind CSS should be included in your project for the styles to work */
+@import "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css";
+</style>
+'''
+    assert determine_js_environment(real_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue environment in real code example"
+
+# Run the tests
+test_determine_js_environment()
+test_vue_component_typescript_detection()
+test_vue_component_extraction()
+test_pygame_code_extraction()
 test_extract_inline_pip_install_commands()
