@@ -143,6 +143,10 @@ window.__gradio_mode__ = "app";
         css=block_css,
         head=head_js,
     ) as demo:
+        gr.Markdown("""
+<h2 style="text-align:center">⚔️ Software Arena: Compare & Test Best AI Chatbots for Code &nbsp;&nbsp;&nbsp;<a href="https://bigcomputer-project.github.io/software-arena.html" target="_blank">Website</a> | <a href="https://github.com/BigComputer-Project/FastChat-Software-Arena" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/18px-GitHub_Invertocat_Logo.svg.png" style="display:inline; height: 18px;"/>&nbsp;GitHub</a> | <a href="https://x.com/CIntProject" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/18px-X_logo_2023.svg.png" style="display:inline; height: 18px;"/>&nbsp;X</a>
+</h2>
+                    """)
         with gr.Tabs() as inner_tabs:
             if args.vision_arena:
                 with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
@@ -152,13 +156,13 @@ window.__gradio_mode__ = "app";
                         random_questions=args.random_questions,
                     )
                 with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
-                    side_by_side_tab.select(None, None, None, js=alert_js)
+                    side_by_side_tab.select(None, None, None)
                     side_by_side_named_list = build_side_by_side_vision_ui_named(
                         context, random_questions=args.random_questions
                     )
 
                 with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
-                    direct_tab.select(None, None, None, js=alert_js)
+                    direct_tab.select(None, None, None)
                     single_model_list = build_single_vision_language_model_ui(
                         context,
                         add_promotion_links=True,
@@ -173,13 +177,13 @@ window.__gradio_mode__ = "app";
                     )
 
                 with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
-                    side_by_side_tab.select(None, None, None, js=alert_js)
+                    side_by_side_tab.select(None, None, None)
                     side_by_side_named_list = build_side_by_side_ui_named(
                         context.text_models
                     )
 
                 with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
-                    direct_tab.select(None, None, None, js=alert_js)
+                    direct_tab.select(None, None, None)
                     single_model_list = build_single_model_ui(
                         context.text_models, add_promotion_links=True
                     )
