@@ -143,6 +143,10 @@ window.__gradio_mode__ = "app";
         css=block_css,
         head=head_js,
     ) as demo:
+        gr.Markdown("""
+<h2 style="text-align:center">⚔️ Software Arena: Compare & Test Best AI Chatbots for Code &nbsp;&nbsp;&nbsp;<a href="https://bigcomputer-project.github.io/software-arena.html" target="_blank">Website</a> | <a href="https://github.com/BigComputer-Project/FastChat-Software-Arena" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/18px-GitHub_Invertocat_Logo.svg.png" style="display:inline; height: 18px;"/>&nbsp;GitHub</a> | <a href="https://x.com/CIntProject" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/18px-X_logo_2023.svg.png" style="display:inline; height: 18px;"/>&nbsp;X</a>
+</h2>
+                    """)
         with gr.Tabs() as inner_tabs:
             if args.vision_arena:
                 with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:

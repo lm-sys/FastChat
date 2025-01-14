@@ -384,22 +384,15 @@ def flash_buttons():
 
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
-# ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
-[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
-
 ## 📜 How It Works
 - Interact with two chosen models (e.g., GPT, Gemini, Claude) as they generate programs with visual UIs.
 - Test the programs in a sandbox environment, interact with their functionality, and vote for the better one!
 - You can chat for multiple turns, explore the UIs, and continue testing until you identify a winner.
-
-## 👇 Choose Two Models to Compare
 """
 
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots: list[gr.Chatbot | None] = [None] * num_sides
-
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Group(elem_id="share-region-named"):
         with gr.Row():
@@ -408,16 +401,11 @@ def build_side_by_side_ui_named(models):
                     model_selectors[i] = gr.Dropdown(
                         choices=models,
                         value=models[i] if len(models) > i else "",
+                        label=f"Model {chr(ord('A') + i)}",
                         interactive=True,
-                        show_label=False,
+                        show_label=True,
                         container=False,
                     )
-        with gr.Row():
-            with gr.Accordion(
-                f"🔍 Expand to see the descriptions of {len(models)} models", open=False
-            ):
-                model_description_md = get_model_description_md(models)
-                gr.Markdown(model_description_md, elem_id="model_description_markdown")
 
         with gr.Row():
             for i in range(num_sides):
@@ -426,7 +414,7 @@ def build_side_by_side_ui_named(models):
                     chatbots[i] = gr.Chatbot(
                         label=label,
                         elem_id=f"chatbot",
-                        height=650,
+                        height=550,
                         show_copy_button=True,
                         latex_delimiters=[
                             {"left": "$", "right": "$", "display": False},
@@ -603,6 +591,16 @@ def build_side_by_side_ui_named(models):
             label="Max output tokens",
         )
 
+    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.Markdown("## Supported Models")
+    with gr.Accordion(
+        f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+    ):
+        model_description_md = get_model_description_md(models)
+        gr.Markdown(model_description_md, elem_id="model_description_markdown")
+
+    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+    
     # Define helper functions for system prompt updates
     def update_system_prompt_both(system_prompt, sandbox_state0, sandbox_state1):
         if sandbox_state0['enabled_round'] == 0:

@@ -70,7 +70,11 @@ enable_moderation = False
 use_remote_storage = False
 
 acknowledgment_md = """
-### Terms of Service
+
+## Found an Issue?
+Please report any bugs or issues to the [GitHub repository](https://github.com/BigComputer-Project/FastChat-Software-Arena).
+
+## Terms of Service
 
 Users are required to agree to the following terms before using the service:
 
@@ -79,13 +83,13 @@ It must not be used for any illegal, harmful, violent, racist, or sexual purpose
 Please do not upload any private information.
 The service collects user data, including dialogue (text and images), editing history, and interface interaction data, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or similar license.
 
-#### Please report any bugs or issues to the [GitHub repository](https://github.com/BigComputer-Project/FastChat-Software-Arena)
+## Acknowledgments
 
-### Acknowledgments
+Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces.
 
 We thank [E2B](https://e2b.dev/), [Hugging Face](https://huggingface.co/) and [CSIRO's Data61](http://data61.csiro.au) for their support and sponsorship:
 
-<div class="sponsor-image-about">
+<div class="sponsor-image-about" style="display: flex; justify-content: center;">
     <img src="https://github.com/e2b-dev/E2B/blob/main/readme-assets/logo-circle.png?raw=true" alt="E2B">
     <img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.png" alt="HuggingFace">
     <img src="https://style.csiro.au/WP_Partners/assets/img/data61-logo.png" alt="Data61">
@@ -894,15 +898,9 @@ def build_single_model_ui(models, add_promotion_links=False):
         else ""
     )
 
-    notice_markdown = f"""
-# ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
-[Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/BigComProject)
-{promotion}
-"""
 
     state = gr.State()
-    gr.Markdown(notice_markdown, elem_id="notice_markdown")
-
+    
     with gr.Group(elem_id="share-region-named"):
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
