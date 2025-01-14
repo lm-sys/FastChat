@@ -156,13 +156,13 @@ window.__gradio_mode__ = "app";
                         random_questions=args.random_questions,
                     )
                 with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
-                    side_by_side_tab.select(None, None, None, js=alert_js)
+                    side_by_side_tab.select(None, None, None)
                     side_by_side_named_list = build_side_by_side_vision_ui_named(
                         context, random_questions=args.random_questions
                     )
 
                 with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
-                    direct_tab.select(None, None, None, js=alert_js)
+                    direct_tab.select(None, None, None)
                     single_model_list = build_single_vision_language_model_ui(
                         context,
                         add_promotion_links=True,
@@ -177,13 +177,13 @@ window.__gradio_mode__ = "app";
                     )
 
                 with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
-                    side_by_side_tab.select(None, None, None, js=alert_js)
+                    side_by_side_tab.select(None, None, None)
                     side_by_side_named_list = build_side_by_side_ui_named(
                         context.text_models
                     )
 
                 with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
-                    direct_tab.select(None, None, None, js=alert_js)
+                    direct_tab.select(None, None, None)
                     single_model_list = build_single_model_ui(
                         context.text_models, add_promotion_links=True
                     )
