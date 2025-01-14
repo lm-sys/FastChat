@@ -385,7 +385,7 @@ def flash_buttons():
 def build_side_by_side_ui_named(models):
     notice_markdown = f"""
 # ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
-[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
+[Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [X](https://x.com/BigComProject)
 
 ## 📜 How It Works
 - Interact with two chosen models (e.g., GPT, Gemini, Claude) as they generate programs with visual UIs.

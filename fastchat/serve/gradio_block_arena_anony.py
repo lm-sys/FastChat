@@ -219,7 +219,8 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {'gpt-3.5-turbo':0.5,'gpt-4o-mini':0.5}
+SAMPLING_WEIGHTS = {'gpt-3.5-turbo':0.5,'gpt-4o-mini':0.5, 'gpt-4o':0.5, 'gpt-4-turbo':0.5,
+                    'qwen2.5-coder-32b-instruct': 0.5, 'qwen2.5-72b-instruct': 0.5}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -539,7 +540,7 @@ def bot_response_multi(
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
 # ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
-[Website](https://bigcomputer-project.github.io/software-arena.html) | [GitHub](https://github.com/BigComputer-Project/FastChat-Software-Arena) | [X](https://x.com/CIntProject)
+[Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [X](https://x.com/BigComProject)
 
 Software Arena extends [Chatbot Arena](https://lmarena.ai/?arena) with powerful code execution capabilities, enabling direct evaluation of LLM-generated programs across a wide range of outputs - from simple computations to complex visual interfaces.
 

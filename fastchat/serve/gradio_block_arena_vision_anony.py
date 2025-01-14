@@ -378,9 +378,7 @@ def add_text(
 def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
     notice_markdown = f"""
 # ⚔️ Software Arena: Compare & Test Best AI Chatbots for Code
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
-
-{SURVEY_LINK}
+[Website](https://bigcomputer-project.github.io) | [Blog](https://bigcomputer-project.github.io/software-arena.html) | [X](https://x.com/BigComProject){SURVEY_LINK}
 
 ## 📜 How It Works
 - **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
