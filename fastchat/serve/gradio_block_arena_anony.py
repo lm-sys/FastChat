@@ -38,7 +38,9 @@ from fastchat.serve.gradio_web_server import (
     update_sandbox_system_message
 )
 from fastchat.serve.remote_logger import get_remote_logger
+
 from fastchat.serve.sandbox.code_runner import SUPPORTED_SANDBOX_ENVIRONMENTS, SandboxEnvironment, DEFAULT_SANDBOX_INSTRUCTIONS, SandboxGradioSandboxComponents, create_chatbot_sandbox_state, on_click_code_message_run, on_edit_code, update_sandbox_config_multi,update_visibility
+from fastchat.serve.sandbox.sandbox_telemetry import log_sandbox_telemetry_gradio_fn
 from fastchat.utils import (
     build_logger,
     moderation_filter,
@@ -612,10 +614,16 @@ def build_side_by_side_ui_anony(models):
                                 with gr.Tab(label="Output", visible=False) as sandbox_output_tab:
                                     sandbox_output = gr.Markdown(value="", visible=False)
                                     sandbox_ui = SandboxComponent(
-                                        value=("", ""),
+                                        value=('', False, []),
                                         show_label=True,
                                         visible=False,
                                     )
+
+                                # log sandbox telemetry
+                                sandbox_ui.change(
+                                    fn=log_sandbox_telemetry_gradio_fn,
+                                    inputs=[sandbox_state, sandbox_ui],
+                                )
 
                                 with gr.Tab(label="Code", visible=False) as sandbox_code_tab:
                                     sandbox_code = gr.Code(
