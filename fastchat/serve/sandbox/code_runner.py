@@ -814,9 +814,9 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
 
     if matches_prefix(main_code_lang, python_prefixes):
         python_packages = extract_python_imports(main_code)
-        extra_python_packages, clean_code = extract_inline_pip_install_commands(main_code)
+        extra_python_packages, main_code = extract_inline_pip_install_commands(main_code)
         python_packages.extend(extra_python_packages)
-        sandbox_env_name = determine_python_environment(clean_code, python_packages)
+        sandbox_env_name = determine_python_environment(main_code, python_packages)
     elif matches_prefix(main_code_lang, vue_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
@@ -1556,7 +1556,6 @@ def on_run_code(
             )
         case SandboxEnvironment.GRADIO:
             yield update_output("🔄 Setting up Gradio sandbox...")
-            yield update_output("⚙️ Installing Gradio dependencies...", clear_output=True)
             url, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
                 yield update_output("❌ Gradio sandbox failed to run!", clear_output=True)
@@ -1575,13 +1574,12 @@ def on_run_code(
                 )
         case SandboxEnvironment.STREAMLIT:
             yield update_output("🔄 Setting up Streamlit sandbox...")
-            yield update_output("⚙️ Installing Streamlit dependencies...")
             url, stderr = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
-                yield update_output("❌ Streamlit sandbox failed to run!")
+                yield update_output("❌ Streamlit sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
             else:
-                yield update_output("✅ Streamlit sandbox ready!")
+                yield update_output("✅ Streamlit sandbox ready!", clear_output=True)
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
