@@ -26,10 +26,8 @@ import threading
 from httpcore import ReadTimeout
 import queue
 
-E2B_API_KEY = os.environ.get("E2B_API_KEY")
-'''
-API key for the e2b API.
-'''
+from .constants import E2B_API_KEY, SANDBOX_TEMPLATE_ID, SANDBOX_NGINX_PORT
+from .sandbox_manager import get_sandbox_app_url, create_sandbox
 
 class SandboxEnvironment(StrEnum):
     AUTO = 'Auto'
@@ -290,6 +288,10 @@ class ChatbotSandboxState(TypedDict):
     '''
     The code dependencies for the sandbox (python, npm).
     '''
+    sandbox_id: str | None
+    '''
+    The sandbox id. None if no running.
+    '''
     btn_list_length: int | None
 
 
@@ -306,6 +308,7 @@ def create_chatbot_sandbox_state(btn_list_length: int) -> ChatbotSandboxState:
         "code_language": None,
         "code_dependencies": ([], []),
         "enabled_round": 0,
+        "sandbox_id": None,
         "btn_list_length": btn_list_length
     }
 
@@ -1104,7 +1107,7 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
     return output, "" if output else stderr
 
 
-def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1134,11 +1137,12 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     )
     
     host = sandbox.get_host(3000)
-    url = f"https://{host}"
-    return url + '/myhtml/main.html', stderr
+
+    sandbox_url = f"https://{host}" + '/myhtml/main.html'
+    return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
-def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1148,16 +1152,12 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(
+    sandbox = create_sandbox(
         template="nextjs-developer",
-        metadata={
-            "template": "nextjs-developer"
-        },
-        api_key=E2B_API_KEY,
     )
 
     python_dependencies, npm_dependencies = code_dependencies
-    
+
     # Stream logs for Python dependencies
     if python_dependencies:
         print("Installing Python dependencies...")
@@ -1184,11 +1184,11 @@ def run_react_sandbox(code: str, code_dependencies: tuple[list[str], list[str]])
     print("Starting development server...")
     sandbox_url = 'https://' + sandbox.get_host(3000)
     print(f"Sandbox URL ready: {sandbox_url}")
-    
-    return sandbox_url
+
+    return (sandbox_url, sandbox.sandbox_id)
 
 
-def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str]:
     """
     Executes the provided Vue code within a sandboxed environment and returns the output.
 
@@ -1198,14 +1198,10 @@ def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(
+    sandbox = create_sandbox(
         template="vue-developer",
-        metadata={
-            "template": "vue-developer"
-        },
-        api_key=E2B_API_KEY,
     )
-    
+
     # replace placeholder URLs with SVG data URLs
     code = replace_placeholder_urls(code)
 
@@ -1219,10 +1215,10 @@ def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -
 
     # Get the sandbox URL
     sandbox_url = 'https://' + sandbox.get_host(3000)
-    return sandbox_url
+    return (sandbox_url, sandbox.sandbox_id)
 
 
-def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1265,11 +1261,11 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     )
 
     host = sandbox.get_host(3000)
-    url = f"https://{host}"
-    return url + '/mygame/build/web/', stderr
+    sandbox_url =  f"https://{host}" + '/mygame/build/web/'
+    return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
-def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1305,11 +1301,12 @@ def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]
     )
 
     host = sandbox.get_host(port=8080)
-    url = f"https://{host}"
-    return url, stderr
+
+    sandbox_url = f"https://{host}"
+    return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
-def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
 
@@ -1317,7 +1314,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
         code (str): The code to be executed.
 
     Returns:
-        url for remote sandbox
+        url for remote sandbox and sandbox id
     """
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
@@ -1342,10 +1339,11 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     )
 
     sandbox_url = 'https://' + sandbox.get_host(7860)
-    return sandbox_url, stderr
+
+    return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
-def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> str:
+def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     sandbox = Sandbox(api_key=E2B_API_KEY)
 
     setup_commands = ["pip install uv", "uv pip install --system streamlit"]
@@ -1371,7 +1369,7 @@ def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[st
 
     host = sandbox.get_host(port=8501)
     url = f"https://{host}"
-    return url, stderr
+    return (url, sandbox.sandbox_id, stderr)
 
 def on_edit_code(
     state,
@@ -1489,10 +1487,11 @@ def on_run_code(
             gr.skip(),
         )
 
+    sandbox_id = None
     match sandbox_env:
         case SandboxEnvironment.HTML:
             yield update_output("🔄 Setting up HTML sandbox...")
-            url, stderr = run_html_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id, stderr = run_html_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
                 yield update_output("❌ HTML sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
@@ -1501,7 +1500,7 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
-                        value=(url, code),
+                        value=(sandbox_url, True, []),
                         label="Example",
                         visible=True,
                         key="newsandbox",
@@ -1510,12 +1509,12 @@ def on_run_code(
                 )
         case SandboxEnvironment.REACT:
             yield update_output("🔄 Setting up React sandbox...")
-            url = run_react_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id = run_react_sandbox(code=code, code_dependencies=code_dependencies)
             yield update_output("✅ React sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
-                    value=(url, code),
+                    value=(sandbox_url, True, []),
                     label="Example",
                     visible=True,
                     key="newsandbox",
@@ -1524,12 +1523,12 @@ def on_run_code(
             )
         case SandboxEnvironment.VUE:
             yield update_output("🔄 Setting up Vue sandbox...")
-            url = run_vue_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id = run_vue_sandbox(code=code, code_dependencies=code_dependencies)
             yield update_output("✅ Vue sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
-                    value=(url, code),
+                    value=(url, True, []),
                     label="Example",
                     visible=True,
                     key="newsandbox",
@@ -1538,7 +1537,7 @@ def on_run_code(
             )
         case SandboxEnvironment.PYGAME:
             yield update_output("🔄 Setting up PyGame sandbox...")
-            url, stderr = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id, stderr = run_pygame_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
                 yield update_output("❌ PyGame sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
@@ -1547,16 +1546,16 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
-                    value=(url, code),
-                    label="Example",
-                    visible=True,
-                    key="newsandbox",
-                ),
-                gr.skip(),
+                        value=(sandbox_url, True, []),
+                        label="Example",
+                        visible=True,
+                        key="newsandbox",
+                    ),
+                    gr.skip(),
             )
         case SandboxEnvironment.GRADIO:
             yield update_output("🔄 Setting up Gradio sandbox...")
-            url, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
                 yield update_output("❌ Gradio sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
@@ -1565,7 +1564,7 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
-                        value=(url, code),
+                        value=(sandbox_url, True, []),
                         label="Example",
                         visible=True,
                         key="newsandbox",
@@ -1574,7 +1573,7 @@ def on_run_code(
                 )
         case SandboxEnvironment.STREAMLIT:
             yield update_output("🔄 Setting up Streamlit sandbox...")
-            url, stderr = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id, stderr = run_streamlit_sandbox(code=code, code_dependencies=code_dependencies)
             if stderr:
                 yield update_output("❌ Streamlit sandbox failed to run!", clear_output=True)
                 yield update_output(f"### Stderr:\n```\n{stderr}\n```\n\n")
@@ -1583,7 +1582,7 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text, visible=True),
                     SandboxComponent(
-                        value=(url, code),
+                        value=(sandbox_url, True, []),
                         label="Example",
                         visible=True,
                         key="newsandbox",
@@ -1592,12 +1591,12 @@ def on_run_code(
                 )
         case SandboxEnvironment.NICEGUI:
             yield update_output("🔄 Setting up NiceGUI sandbox...")
-            url = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
+            sandbox_url, sandbox_id = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
             yield update_output("✅ NiceGUI sandbox ready!", clear_output=True)
             yield (
                 gr.Markdown(value=output_text, visible=True),
                 SandboxComponent(
-                    value=(url, code),
+                    value=(sandbox_url, True, []),
                     label="Example",
                     visible=True,
                     key="newsandbox",
@@ -1617,7 +1616,7 @@ def on_run_code(
                 yield (
                     gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
                     SandboxComponent(
-                        value=("", ""),
+                        value=('', False, []),
                         label="Example",
                         visible=False,
                         key="newsandbox",
@@ -1648,13 +1647,17 @@ def on_run_code(
             yield (
                 gr.Markdown(value=code, visible=True),
                 SandboxComponent(
-                    value=("", ""),
+                    value=('', False, []),
                     label="Example",
                     visible=False,
                     key="newsandbox",
                 ),
                 gr.skip()
             )
+
+    if sandbox_id:
+        sandbox_state['sandbox_id'] = sandbox_id
+
 
 def extract_installation_commands(code: str) -> tuple[list[str], list[str]]:
     '''

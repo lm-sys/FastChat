@@ -8,13 +8,16 @@ dist
 # Log
 *.log
 *.log.*
-*.json
+*-conv.json
+sandbox-records-*.json
+*api_endpoints*.json
 !playground/deepspeed_config_s2.json
 !playground/deepspeed_config_s3.json
 
 # Editor
 .idea
 *.swp
+.vscode
 
 # Other
 .DS_Store
@@ -35,3 +38,6 @@ build
 serve_images
 val2014
 vqa_examples
+
+# npm packages
+node_modules
