@@ -722,6 +722,22 @@ a:hover {
 .block {
   overflow-y: hidden !important;
 }
+
+.visualizer {
+    overflow: hidden;
+    height: 60vw;
+    border: 1px solid lightgrey; 
+    border-radius: 10px;
+}
+
+@media screen and (max-width: 769px) {
+    .visualizer {
+        height: 180vw;
+        overflow-y: scroll;
+        width: 100%;
+        overflow-x: hidden;
+    }
+}
 """
 
 
