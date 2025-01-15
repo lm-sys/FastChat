@@ -40,7 +40,7 @@ class SandboxEnvironment(StrEnum):
     VUE = 'Vue'
     GRADIO = 'Gradio'
     STREAMLIT = 'Streamlit'
-    NICEGUI = 'NiceGUI'
+    # NICEGUI = 'NiceGUI'
     PYGAME = 'PyGame'
 
 
@@ -54,7 +54,7 @@ WEB_UI_SANDBOX_ENVIRONMENTS = [
     SandboxEnvironment.VUE,
     SandboxEnvironment.GRADIO,
     SandboxEnvironment.STREAMLIT,
-    SandboxEnvironment.NICEGUI,
+    # SandboxEnvironment.NICEGUI,
     SandboxEnvironment.PYGAME,
 ]
 
@@ -225,7 +225,7 @@ You can choose from the following sandbox environments:
 + 'Sandbox Environment Name: ' + SandboxEnvironment.HTML + '\n' + DEFAULT_HTML_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.GRADIO + '\n' + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.STREAMLIT + '\n' + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip() + '\n------\n'
-+ 'Sandbox Environment Name: ' + SandboxEnvironment.NICEGUI + '\n' + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip() + '\n------\n'
+# + 'Sandbox Environment Name: ' + SandboxEnvironment.NICEGUI + '\n' + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 + 'Sandbox Environment Name: ' + SandboxEnvironment.PYGAME + '\n' + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip() + '\n------\n'
 )
 
@@ -238,7 +238,7 @@ DEFAULT_SANDBOX_INSTRUCTIONS: dict[SandboxEnvironment, str] = {
     SandboxEnvironment.VUE: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_VUE_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.GRADIO: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_GRADIO_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.STREAMLIT: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_STREAMLIT_SANDBOX_INSTRUCTION.strip(),
-    SandboxEnvironment.NICEGUI: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
+    # SandboxEnvironment.NICEGUI: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_NICEGUI_SANDBOX_INSTRUCTION.strip(),
     SandboxEnvironment.PYGAME: GENERAL_SANDBOX_INSTRUCTION + DEFAULT_PYGAME_SANDBOX_INSTRUCTION.strip(),
 }
 
@@ -561,8 +561,8 @@ def determine_python_environment(code: str, imports: list[str]) -> SandboxEnviro
         return SandboxEnvironment.GRADIO
     elif 'streamlit' in imports:
         return SandboxEnvironment.STREAMLIT
-    elif 'nicegui' in imports:
-        return SandboxEnvironment.NICEGUI
+    # elif 'nicegui' in imports:
+    #     return SandboxEnvironment.NICEGUI
     
     return SandboxEnvironment.PYTHON_CODE_INTERPRETER
 
@@ -897,7 +897,7 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         main_code_lang = (longest_match.group('code_lang') or '').lower()
 
     # Define language prefixes for each environment
-    python_prefixes = ['py', 'ipython', 'pygame', 'gradio', 'streamlit', 'nicegui']
+    python_prefixes = ['py', 'ipython', 'pygame', 'gradio', 'streamlit']
     vue_prefixes = ['vue']
     react_prefixes = ['react', 'next']
     js_prefixes = ['js', 'javascript', 'jsx', 'coffee', 'ecma', 'node', 'es']
@@ -1338,7 +1338,7 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(api_key=E2B_API_KEY)
+    sandbox = create_sandbox()
 
     sandbox.files.make_dir('mygame')
     file_path = "~/mygame/main.py"
@@ -1375,45 +1375,45 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
-def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
-    """
-    Executes the provided code within a sandboxed environment and returns the output.
+# def run_nicegui_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
+#     """
+#     Executes the provided code within a sandboxed environment and returns the output.
 
-    Args:
-        code (str): The code to be executed.
+#     Args:
+#         code (str): The code to be executed.
 
-    Returns:
-        url for remote sandbox
-    """
-    sandbox = Sandbox(api_key=E2B_API_KEY)
+#     Returns:
+#         url for remote sandbox
+#     """
+#     sandbox = Sandbox(api_key=E2B_API_KEY)
 
-    setup_commands = [
-        "uv pip install --system --upgrade nicegui",
-    ]
-    for command in setup_commands:
-        sandbox.commands.run(
-            command,
-            timeout=60 * 3,
-        )
+#     setup_commands = [
+#         "uv pip install --system --upgrade nicegui",
+#     ]
+#     for command in setup_commands:
+#         sandbox.commands.run(
+#             command,
+#             timeout=60 * 3,
+#         )
 
-    sandbox.files.make_dir('mynicegui')
-    file_path = "~/mynicegui/main.py"
-    sandbox.files.write(path=file_path, data=code, request_timeout=60)
+#     sandbox.files.make_dir('mynicegui')
+#     file_path = "~/mynicegui/main.py"
+#     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
-    python_dependencies, npm_dependencies = code_dependencies
-    install_pip_dependencies(sandbox, python_dependencies)
-    install_npm_dependencies(sandbox, npm_dependencies)
+#     python_dependencies, npm_dependencies = code_dependencies
+#     install_pip_dependencies(sandbox, python_dependencies)
+#     install_npm_dependencies(sandbox, npm_dependencies)
 
-    stderr = run_background_command_with_timeout(
-        sandbox,
-        "python ~/mynicegui/main.py",
-        timeout=5,
-    )
+#     stderr = run_background_command_with_timeout(
+#         sandbox,
+#         "python ~/mynicegui/main.py",
+#         timeout=5,
+#     )
 
-    host = sandbox.get_host(port=8080)
+#     host = sandbox.get_host(port=8080)
 
-    sandbox_url = f"https://{host}"
-    return (sandbox_url, sandbox.sandbox_id, stderr)
+#     sandbox_url = f"https://{host}"
+#     return (sandbox_url, sandbox.sandbox_id, stderr)
 
 
 def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
@@ -1426,7 +1426,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     Returns:
         url for remote sandbox and sandbox id
     """
-    sandbox = Sandbox(api_key=E2B_API_KEY)
+    sandbox = create_sandbox()
 
     setup_commands = ["pip install uv", "uv pip install --system gradio"]
     for command in setup_commands:
@@ -1454,7 +1454,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
 
 
 def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
-    sandbox = Sandbox(api_key=E2B_API_KEY)
+    sandbox = create_sandbox()
 
     setup_commands = ["pip install uv", "uv pip install --system streamlit"]
     for command in setup_commands:
@@ -1699,20 +1699,20 @@ def on_run_code(
                     ),
                     gr.skip(),
                 )
-        case SandboxEnvironment.NICEGUI:
-            yield update_output("🔄 Setting up NiceGUI sandbox...")
-            sandbox_url, sandbox_id, std_err = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
-            yield update_output("✅ NiceGUI sandbox ready!", clear_output=True)
-            yield (
-                gr.Markdown(value=output_text, visible=True),
-                SandboxComponent(
-                    value=(sandbox_url, True, []),
-                    label="Example",
-                    visible=True,
-                    key="newsandbox",
-                ),
-                gr.skip(),
-            )
+        # case SandboxEnvironment.NICEGUI:
+        #     yield update_output("🔄 Setting up NiceGUI sandbox...")
+        #     sandbox_url, sandbox_id, std_err = run_nicegui_sandbox(code=code, code_dependencies=code_dependencies)
+        #     yield update_output("✅ NiceGUI sandbox ready!", clear_output=True)
+        #     yield (
+        #         gr.Markdown(value=output_text, visible=True),
+        #         SandboxComponent(
+        #             value=(sandbox_url, True, []),
+        #             label="Example",
+        #             visible=True,
+        #             key="newsandbox",
+        #         ),
+        #         gr.skip(),
+        #     )
         case SandboxEnvironment.PYTHON_CODE_INTERPRETER:
             yield update_output("🔄 Running Python Code Interpreter...", clear_output=True)
             output, stderr = run_code_interpreter(
