@@ -1214,9 +1214,7 @@ def run_vue_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -
     Returns:
         url for remote sandbox
     """
-    sandbox = create_sandbox(
-        template="vue-developer",
-    )
+    sandbox = create_sandbox()
 
     sandbox.commands.run(
         "cd ~/vue_app",
