@@ -1168,7 +1168,7 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     Returns:
         url for remote sandbox
     """
-    sandbox = Sandbox(api_key=E2B_API_KEY)
+    sandbox = create_sandbox()
 
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
