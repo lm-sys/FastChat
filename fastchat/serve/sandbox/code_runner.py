@@ -1344,16 +1344,6 @@ def run_pygame_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     file_path = "~/mygame/main.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
     
-    setup_commands = [
-        "pip install uv",
-        "uv pip install --system pygame pygbag black"
-    ]
-    for command in setup_commands:
-        sandbox.commands.run(
-            command,
-            timeout=60 * 3,
-        )
-    
     python_dependencies, npm_dependencies = code_dependencies
     install_pip_dependencies(sandbox, python_dependencies)
     install_npm_dependencies(sandbox, npm_dependencies)
@@ -1428,13 +1418,6 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     """
     sandbox = create_sandbox()
 
-    setup_commands = ["pip install uv", "uv pip install --system gradio"]
-    for command in setup_commands:
-        sandbox.commands.run(
-            command,
-            timeout=60 * 3,
-        )
-
     file_path = "~/app.py"
     sandbox.files.write(path=file_path, data=code, request_timeout=60)
 
@@ -1445,7 +1428,7 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
     stderr = run_background_command_with_timeout(
         sandbox,
         "python ~/app.py",
-        timeout=5,
+        timeout=8,
     )
 
     sandbox_url = 'https://' + sandbox.get_host(7860)
@@ -1455,13 +1438,6 @@ def run_gradio_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]
 
 def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     sandbox = create_sandbox()
-
-    setup_commands = ["pip install uv", "uv pip install --system streamlit"]
-    for command in setup_commands:
-        sandbox.commands.run(
-            command,
-            timeout=60 * 3,
-        )
 
     sandbox.files.make_dir('mystreamlit')
     file_path = "~/mystreamlit/app.py"
@@ -1474,7 +1450,7 @@ def run_streamlit_sandbox(code: str, code_dependencies: tuple[list[str], list[st
     stderr = run_background_command_with_timeout(
         sandbox,
         "streamlit run ~/mystreamlit/app.py --server.port 8501 --server.headless true",
-        timeout=5,
+        timeout=8,
     )
 
     host = sandbox.get_host(port=8501)
