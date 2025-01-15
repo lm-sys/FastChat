@@ -566,7 +566,7 @@ def determine_python_environment(code: str, imports: list[str]) -> SandboxEnviro
     
     return SandboxEnvironment.PYTHON_CODE_INTERPRETER
 
-def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
+def determine_jsts_environment(code: str, imports: list[str]) -> SandboxEnvironment | None:
     '''
     Determine JavaScript/TypeScript sandbox environment based on imports and AST analysis.
     '''
@@ -899,9 +899,9 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     # Define language prefixes for each environment
     python_prefixes = ['py', 'ipython', 'pygame', 'gradio', 'streamlit', 'nicegui']
     vue_prefixes = ['vue']
-    html_prefixes = ['html', 'xhtml', 'htm']
     react_prefixes = ['react', 'next']
     js_prefixes = ['js', 'javascript', 'jsx', 'coffee', 'ecma', 'node', 'es']
+    html_prefixes = ['html', 'xhtml', 'htm']
     ts_prefixes = ['ts', 'typescript', 'tsx']
 
     # Extract package dependencies from the main program
@@ -921,23 +921,27 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.VUE
         main_code_lang = detect_js_ts_code_lang(main_code)
-    elif matches_prefix(main_code_lang, html_prefixes) or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
-        # For HTML files, extract both inline script dependencies and script tag dependencies
-        npm_packages = extract_js_from_html_script_tags(main_code)
-        sandbox_env_name = SandboxEnvironment.HTML
-        main_code_lang = 'html'
     elif matches_prefix(main_code_lang, react_prefixes):
         npm_packages = extract_js_imports(main_code)
         sandbox_env_name = SandboxEnvironment.REACT
         main_code_lang = detect_js_ts_code_lang(main_code)
+    elif '<!DOCTYPE html>' in main_code or ('<head' in main_code and '<body' in main_code):
+        # For HTML files, extract both inline script dependencies and script tag dependencies
+        npm_packages = extract_js_from_html_script_tags(main_code)
+        sandbox_env_name = SandboxEnvironment.HTML
+        main_code_lang = 'html'
     elif matches_prefix(main_code_lang, js_prefixes):
         main_code_lang = 'javascript'
         npm_packages = extract_js_imports(main_code)
-        sandbox_env_name = determine_js_environment(main_code, npm_packages)
+        sandbox_env_name = determine_jsts_environment(main_code, npm_packages)
     elif matches_prefix(main_code_lang, ts_prefixes):
         main_code_lang = 'typescript'
         npm_packages = extract_js_imports(main_code)
-        sandbox_env_name = determine_js_environment(main_code, npm_packages)
+        sandbox_env_name = determine_jsts_environment(main_code, npm_packages)
+    elif matches_prefix(main_code_lang, html_prefixes):
+        main_code_lang = detect_js_ts_code_lang(main_code)
+        npm_packages = extract_js_imports(main_code)
+        sandbox_env_name = determine_jsts_environment(main_code, npm_packages)
     else:
         sandbox_env_name = None
 
