@@ -1161,12 +1161,14 @@ def run_code_interpreter(code: str, code_language: str | None, code_dependencies
 def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) -> tuple[str, str, tuple[bool, str]]:
     """
     Executes the provided code within a sandboxed environment and returns the output.
+    Supports both React and Vue.js rendering in HTML files.
 
     Args:
         code (str): The code to be executed.
+        code_dependencies: Tuple of (python_deps, npm_deps)
 
     Returns:
-        url for remote sandbox
+        tuple: (sandbox_url, sandbox_id, stderr)
     """
     sandbox = create_sandbox()
 
@@ -1176,6 +1178,67 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     
     # replace placeholder URLs with SVG data URLs
     code = replace_placeholder_urls(code)
+
+    # Check if code contains Vue.js or React
+    is_vue = '<script src="https://unpkg.com/vue@next"></script>' in code or 'createApp' in code
+    is_react = 'react' in code.lower() or 'createRoot' in code or 'ReactDOM' in code
+
+    # Prepare required CDN scripts
+    required_scripts = []
+    
+    if is_vue:
+        required_scripts.append('<script src="https://unpkg.com/vue@next"></script>')
+    
+    if is_react:
+        required_scripts.extend([
+            '<script src="https://unpkg.com/react@18/umd/react.development.js"></script>',
+            '<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>',
+            # Add Babel for JSX support
+            '<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>'
+        ])
+
+    # Insert required scripts if not already present
+    if required_scripts:
+        scripts_str = '\n    '.join(required_scripts)
+        if '</head>' in code:
+            code = code.replace('</head>', f'{scripts_str}\n  </head>')
+        else:
+            # If no head tag, insert before the first script or at the start of body
+            if '<script' in code:
+                code = code.replace('<script', f'{scripts_str}\n  <script', 1)
+            elif '<body>' in code:
+                code = code.replace('<body>', f'<body>\n  {scripts_str}')
+            else:
+                # Last resort: insert at the beginning of the document
+                code = f'{scripts_str}\n{code}'
+
+    # Ensure proper initialization for Vue.js
+    if is_vue and 'app.mount' in code and 'DOMContentLoaded' not in code:
+        code = code.replace('app.mount(', 'document.addEventListener("DOMContentLoaded", () => app.mount(')
+        if code.strip().endswith(');'):
+            code = code[:-2] + '));'
+        else:
+            code = code.strip() + ');'
+
+    # Ensure proper initialization for React
+    if is_react:
+        # Add type="text/babel" to script tags containing JSX
+        code = re.sub(
+            r'(<script[^>]*)(>[\s\S]*?(?:JSX|React)[\s\S]*?</script>)',
+            r'\1 type="text/babel"\2',
+            code
+        )
+        
+        # Ensure React initialization happens after DOM load
+        if 'createRoot' in code and 'DOMContentLoaded' not in code:
+            code = code.replace(
+                'createRoot(',
+                'document.addEventListener("DOMContentLoaded", () => createRoot('
+            )
+            if code.strip().endswith(');'):
+                code = code[:-2] + '));'
+            else:
+                code = code.strip() + ');'
 
     sandbox.files.make_dir('myhtml')
     file_path = "~/myhtml/main.html"
@@ -1188,7 +1251,6 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     )
     
     host = sandbox.get_host(3000)
-
     sandbox_url = f"https://{host}" + '/myhtml/main.html'
     return (sandbox_url, sandbox.sandbox_id, stderr)
 
