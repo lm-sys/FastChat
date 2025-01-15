@@ -813,6 +813,51 @@ def extract_inline_pip_install_commands(code: str) -> tuple[list[str], str]:
     return python_packages, '\n'.join(cleaned_lines)
 
 
+def extract_js_from_html_script_tags(code: str) -> list[str]:
+    '''
+    Extract JavaScript package names from HTML script tags.
+    Handles both CDN script tags and inline scripts.
+    
+    Args:
+        code: HTML code containing script tags
+        
+    Returns:
+        list[str]: List of package names
+    '''
+    packages: Set[str] = set()
+    
+    # Extract packages from CDN script tags
+    script_patterns = [
+        # unpkg.com pattern
+        r'<script[^>]*src="https?://unpkg\.com/(@?[^@/"]+(?:/[^@/"]+)?(?:@[^/"]+)?)[^"]*"[^>]*>',
+        # cdn.jsdelivr.net pattern
+        r'<script[^>]*src="https?://cdn\.jsdelivr\.net/npm/(@?[^@/"]+(?:/[^@/"]+)?(?:@[^/"]+)?)[^"]*"[^>]*>',
+        # Other CDN patterns can be added here
+    ]
+    
+    for pattern in script_patterns:
+        matches = re.finditer(pattern, code, re.IGNORECASE)
+        for match in matches:
+            pkg_name = match.group(1)
+            if pkg_name.startswith('@'):
+                # Handle scoped packages
+                parts = pkg_name.split('/')
+                if len(parts) >= 2:
+                    pkg_name = '/'.join(parts[:2])
+            else:
+                # Remove version from package name
+                pkg_name = pkg_name.split('@')[0]
+            packages.add(pkg_name)
+    
+    # Extract packages from inline scripts
+    script_tags = re.finditer(r'<script[^>]*>(.*?)</script>', code, re.DOTALL | re.IGNORECASE)
+    for script in script_tags:
+        script_content = script.group(1)
+        # Use existing extract_js_imports for inline scripts
+        packages.update(extract_js_imports(script_content))
+    
+    return list(packages)
+
 def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tuple[str, str, tuple[list[str], list[str]], SandboxEnvironment | None] | None:
     '''
     Extracts code from a markdown message by parsing code blocks directly.
@@ -877,6 +922,8 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
         sandbox_env_name = SandboxEnvironment.VUE
         main_code_lang = detect_js_ts_code_lang(main_code)
     elif matches_prefix(main_code_lang, html_prefixes) or ('<!DOCTYPE html>' in main_code or '<html' in main_code):
+        # For HTML files, extract both inline script dependencies and script tag dependencies
+        npm_packages = extract_js_from_html_script_tags(main_code)
         sandbox_env_name = SandboxEnvironment.HTML
         main_code_lang = 'html'
     elif matches_prefix(main_code_lang, react_prefixes):
@@ -1178,67 +1225,6 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     
     # replace placeholder URLs with SVG data URLs
     code = replace_placeholder_urls(code)
-
-    # Check if code contains Vue.js or React
-    is_vue = '<script src="https://unpkg.com/vue@next"></script>' in code or 'createApp' in code
-    is_react = 'react' in code.lower() or 'createRoot' in code or 'ReactDOM' in code
-
-    # Prepare required CDN scripts
-    required_scripts = []
-    
-    if is_vue:
-        required_scripts.append('<script src="https://unpkg.com/vue@next"></script>')
-    
-    if is_react:
-        required_scripts.extend([
-            '<script src="https://unpkg.com/react@18/umd/react.development.js"></script>',
-            '<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>',
-            # Add Babel for JSX support
-            '<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>'
-        ])
-
-    # Insert required scripts if not already present
-    if required_scripts:
-        scripts_str = '\n    '.join(required_scripts)
-        if '</head>' in code:
-            code = code.replace('</head>', f'{scripts_str}\n  </head>')
-        else:
-            # If no head tag, insert before the first script or at the start of body
-            if '<script' in code:
-                code = code.replace('<script', f'{scripts_str}\n  <script', 1)
-            elif '<body>' in code:
-                code = code.replace('<body>', f'<body>\n  {scripts_str}')
-            else:
-                # Last resort: insert at the beginning of the document
-                code = f'{scripts_str}\n{code}'
-
-    # Ensure proper initialization for Vue.js
-    if is_vue and 'app.mount' in code and 'DOMContentLoaded' not in code:
-        code = code.replace('app.mount(', 'document.addEventListener("DOMContentLoaded", () => app.mount(')
-        if code.strip().endswith(');'):
-            code = code[:-2] + '));'
-        else:
-            code = code.strip() + ');'
-
-    # Ensure proper initialization for React
-    if is_react:
-        # Add type="text/babel" to script tags containing JSX
-        code = re.sub(
-            r'(<script[^>]*)(>[\s\S]*?(?:JSX|React)[\s\S]*?</script>)',
-            r'\1 type="text/babel"\2',
-            code
-        )
-        
-        # Ensure React initialization happens after DOM load
-        if 'createRoot' in code and 'DOMContentLoaded' not in code:
-            code = code.replace(
-                'createRoot(',
-                'document.addEventListener("DOMContentLoaded", () => createRoot('
-            )
-            if code.strip().endswith(');'):
-                code = code[:-2] + '));'
-            else:
-                code = code.strip() + ');'
 
     sandbox.files.make_dir('myhtml')
     file_path = "~/myhtml/main.html"
