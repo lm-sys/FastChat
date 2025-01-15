@@ -79,7 +79,7 @@ def build_copilot_arena_tab():
         response_json = response.json()
 
         def update_copilot_arena_leaderboard(interaction_mode):
-            if interaction_mode == "Autocomplete":
+            if interaction_mode == "Code Completion":
                 leaderboard = pd.DataFrame(response_json["elo_data"])
             else:
                 leaderboard = pd.DataFrame(response_json["edit_elo_data"])
@@ -109,11 +109,13 @@ def build_copilot_arena_tab():
         with gr.Row():
             with gr.Column(scale=2):
                 interaction_mode_dropdown = gr.Radio(
-                    choices=["Autocomplete", "Edit"],
+                    choices=["Code Completion", "Code Edit"],
                     label="Interaction Mode",
-                    value="Autocomplete",
+                    value="Code Completion",
                 )
-            vote_data = make_copilot_arena_leaderboard_md(leaderboard, "Autocomplete")
+            vote_data = make_copilot_arena_leaderboard_md(
+                leaderboard, "Code Completion"
+            )
             with gr.Column(scale=3, variant="panel"):
                 interaction_mode_details = gr.Markdown(
                     vote_data, elem_id="interaction_mode_details"
