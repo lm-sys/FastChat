@@ -590,22 +590,6 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
                 return True
             return False
         
-        # Check for Vue-specific directives and syntax
-        vue_patterns = [
-            r'v-(?:if|else|for|bind|on|model|show|html|text|once|pre|cloak)',  # Vue directives
-            r'@(?:click|change|input|submit|keyup|keydown|focus|blur)',         # Vue event handlers
-            r':(?:class|style|key|ref|is)',                                     # Vue bindings
-            r'(?:ref|reactive|computed|watch|onMounted|onUnmounted|provide|inject)', # Vue Composition API
-            r'defineComponent\(',                                               # Vue component definition
-            r'setup\(\s*(?:props|context)?\s*\)',                              # Vue setup function
-            r'(?:components|props|emits|data|methods|computed|watch)\s*:',      # Vue Options API
-        ]
-        
-        # Check for Vue patterns in the code
-        for pattern in vue_patterns:
-            if re.search(pattern, code):
-                return SandboxEnvironment.VUE
-        
         # Check for framework-specific patterns in the AST
         cursor = tree.walk()
         reached_end = False
@@ -627,9 +611,20 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
     react_packages = {'react', '@react', 'next', '@next'}
     vue_packages = {'vue', '@vue', 'nuxt', '@nuxt'}
     
+    # Check for Vue-specific directives and syntax
+    vue_patterns = [
+        r'v-(?:if|else|for|bind|on|model|show|html|text|once|pre|cloak)',  # Vue directives
+        r'@(?:click|change|input|submit|keyup|keydown|focus|blur)',         # Vue event handlers
+        r':(?:class|style|key|ref|is)',                                     # Vue bindings
+        r'(?:ref|reactive|computed|watch|onMounted|onUnmounted|provide|inject)', # Vue Composition API
+        r'defineComponent\(',                                               # Vue component definition
+        r'setup\(\s*(?:props|context)?\s*\)',                              # Vue setup function
+        r'(?:components|props|emits|data|methods|computed|watch)\s*:',      # Vue Options API
+    ]
+    
     if any(pkg in react_packages for pkg in imports):
         return SandboxEnvironment.REACT
-    elif any(pkg in vue_packages for pkg in imports):
+    elif any(pkg in vue_packages for pkg in imports) or any(pattern in code for pattern in vue_patterns):
         return SandboxEnvironment.VUE
     
     return SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER
