@@ -573,7 +573,16 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
     # First check for Vue SFC structure
     if '<template>' in code or '<script setup' in code:
         return SandboxEnvironment.VUE
-        
+    
+    # Check imports for framework detection
+    react_packages = {'react', '@react', 'next', '@next'}
+    vue_packages = {'vue', '@vue', 'nuxt', '@nuxt'}
+    
+    if any(pkg in react_packages for pkg in imports):
+        return SandboxEnvironment.REACT
+    elif any(pkg in vue_packages for pkg in imports):
+        return SandboxEnvironment.VUE
+
     try:
         # Initialize parser
         ts_parser = Parser(Language(tree_sitter_typescript.language_tsx()))
@@ -581,51 +590,79 @@ def determine_js_environment(code: str, imports: list[str]) -> SandboxEnvironmen
         # Parse the code
         tree = ts_parser.parse(bytes(code, "utf8"))
         
-        def has_framework_patterns(node: Node) -> bool:
+        def has_framework_patterns(node: Node) -> tuple[bool, str]:
             # Check for React patterns
             if node.type in ['jsx_element', 'jsx_self_closing_element']:
-                return True
+                return True, 'react'
+                
             # Check for Vue template
             elif node.type == 'template_element':
-                return True
-            return False
+                return True, 'vue'
+                
+            # Check for Vue template string
+            elif node.type == 'template_string':
+                content = code[node.start_byte:node.end_byte]
+                # Look for Vue directives in template strings
+                vue_patterns = [
+                    'v-if=', 'v-else', 'v-for=', 'v-bind:', 'v-on:', 'v-model=',
+                    'v-show=', 'v-html=', 'v-text=', '@', ':',
+                    'components:', 'props:', 'emits:', 'data:', 
+                    'methods:', 'computed:', 'watch:',
+                    'setup(', 'ref(', 'reactive(', 'computed(', 'watch(',
+                    'onMounted(', 'onUnmounted(', 'provide(', 'inject(',
+                    'defineComponent(', 'defineProps(', 'defineEmits(',
+                    'createApp(', 'nextTick('
+                ]
+                if any(pattern in content for pattern in vue_patterns):
+                    return True, 'vue'
+            return False, ''
         
         # Check for framework-specific patterns in the AST
         cursor = tree.walk()
-        reached_end = False
-        while not reached_end:
-            if has_framework_patterns(cursor.node):
-                if cursor.node.type.startswith('jsx'):
-                    return SandboxEnvironment.REACT
-                elif cursor.node.type == 'template_element':
-                    return SandboxEnvironment.VUE
+        
+        def visit_node() -> SandboxEnvironment | None:
+            is_framework, framework = has_framework_patterns(cursor.node)
+            if is_framework:
+                return SandboxEnvironment.REACT if framework == 'react' else SandboxEnvironment.VUE
+                
+            # Check children
+            if cursor.goto_first_child():
+                while True:
+                    result = visit_node()
+                    if result:
+                        return result
+                    if not cursor.goto_next_sibling():
+                        break
+                cursor.goto_parent()
             
-            reached_end = not cursor.goto_next_sibling()
-            if reached_end and cursor.goto_parent():
-                reached_end = not cursor.goto_next_sibling()
+            return None
+
+        result = visit_node()
+        if result:
+            return result
+
+        # Additional Vue pattern detection for script content
+        vue_patterns = [
+            r'export\s+default\s+{',
+            r'defineComponent\s*\(',
+            r'Vue\.extend\s*\(',
+            r'createApp\s*\(',
+            r'(?:ref|reactive|computed|watch|onMounted|onUnmounted|provide|inject)\s*\(',
+            r'(?:components|props|emits|data|methods|computed|watch)\s*:',
+            r'defineProps\s*\(',
+            r'defineEmits\s*\(',
+            r'v-(?:if|else|for|bind|on|model|show|html|text)=',
+            r'@(?:click|change|input|submit|keyup|keydown)',
+            r':(?:class|style|src|href|value|disabled|checked)'
+        ]
+        
+        for pattern in vue_patterns:
+            if re.search(pattern, code, re.MULTILINE):
+                return SandboxEnvironment.VUE
     
-    except Exception:
+    except Exception as e:
+        print(f"Tree-sitter parsing error: {e}")
         pass
-    
-    # Check imports for framework detection
-    react_packages = {'react', '@react', 'next', '@next'}
-    vue_packages = {'vue', '@vue', 'nuxt', '@nuxt'}
-    
-    # Check for Vue-specific directives and syntax
-    vue_patterns = [
-        r'v-(?:if|else|for|bind|on|model|show|html|text|once|pre|cloak)',  # Vue directives
-        r'@(?:click|change|input|submit|keyup|keydown|focus|blur)',         # Vue event handlers
-        r':(?:class|style|key|ref|is)',                                     # Vue bindings
-        r'(?:ref|reactive|computed|watch|onMounted|onUnmounted|provide|inject)', # Vue Composition API
-        r'defineComponent\(',                                               # Vue component definition
-        r'setup\(\s*(?:props|context)?\s*\)',                              # Vue setup function
-        r'(?:components|props|emits|data|methods|computed|watch)\s*:',      # Vue Options API
-    ]
-    
-    if any(pkg in react_packages for pkg in imports):
-        return SandboxEnvironment.REACT
-    elif any(pkg in vue_packages for pkg in imports) or any(pattern in code for pattern in vue_patterns):
-        return SandboxEnvironment.VUE
     
     return SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER
 
@@ -1573,7 +1610,7 @@ def on_run_code(
                         key="newsandbox",
                     ),
                     gr.skip(),
-            )
+                )
         case SandboxEnvironment.GRADIO:
             yield update_output("🔄 Setting up Gradio sandbox...")
             sandbox_url, sandbox_id, stderr = run_gradio_sandbox(code=code, code_dependencies=code_dependencies)
@@ -1655,7 +1692,7 @@ def on_run_code(
             else:
                 yield update_output("✅ Code execution complete!", clear_output=True)
                 yield (
-                    gr.Markdown(value=output_text + "\n\n" + output, visible=True),
+                    gr.Markdown(value=output_text + "\n\n" + output, sanitize_html=False, visible=True),
                     SandboxComponent(
                         value=('', False, []),
                         label="Example",
