@@ -830,11 +830,13 @@ def extract_js_from_html_script_tags(code: str) -> list[str]:
     script_patterns = [
         # unpkg.com pattern
         r'<script[^>]*src="https?://unpkg\.com/(@?[^@/"]+(?:/[^@/"]+)?(?:@[^/"]+)?)[^"]*"[^>]*>',
-        # cdn.jsdelivr.net pattern
+        # cdn.jsdelivr.net pattern - explicitly handle /npm/ in the path
         r'<script[^>]*src="https?://cdn\.jsdelivr\.net/npm/(@?[^@/"]+(?:/[^@/"]+)?(?:@[^/"]+)?)[^"]*"[^>]*>',
-        # Other CDN patterns can be added here
+        # Generic CDN pattern for any domain - exclude common path components
+        r'<script[^>]*src="https?://(?!(?:[^"]+/)?(?:npm|dist|lib|build|umd|esm|cjs|min)/)[^"]+?/(@?[\w-]+)(?:/[^"]*)?[^"]*"[^>]*>',
     ]
     
+    seen_packages = set()  # Track packages we've already added to avoid duplicates
     for pattern in script_patterns:
         matches = re.finditer(pattern, code, re.IGNORECASE)
         for match in matches:
@@ -845,16 +847,38 @@ def extract_js_from_html_script_tags(code: str) -> list[str]:
                 if len(parts) >= 2:
                     pkg_name = '/'.join(parts[:2])
             else:
-                # Remove version from package name
-                pkg_name = pkg_name.split('@')[0]
-            packages.add(pkg_name)
+                # Remove version and path components from package name
+                pkg_name = pkg_name.split('/')[0].split('@')[0]
+            
+            # Skip common path components and duplicates
+            if pkg_name and pkg_name not in seen_packages and not pkg_name.lower() in {'npm', 'dist', 'lib', 'build', 'umd', 'esm', 'cjs', 'min'}:
+                seen_packages.add(pkg_name)
+                packages.add(pkg_name)
     
     # Extract packages from inline scripts
     script_tags = re.finditer(r'<script[^>]*>(.*?)</script>', code, re.DOTALL | re.IGNORECASE)
     for script in script_tags:
         script_content = script.group(1)
-        # Use existing extract_js_imports for inline scripts
-        packages.update(extract_js_imports(script_content))
+        # Check for ES module imports with full URLs
+        es_module_patterns = [
+            # Match imports from CDN URLs, being careful to extract only the package name
+            r'import\s+[\w\s{},*]+\s+from\s+[\'"]https?://[^/]+/npm/([^/@"\s]+)[@/][^"]*[\'"]',
+        ]
+        found_cdn_import = False
+        for pattern in es_module_patterns:
+            matches = re.finditer(pattern, script_content)
+            for match in matches:
+                pkg_name = match.group(1)
+                if pkg_name and pkg_name not in seen_packages and not pkg_name.lower() in {'npm', 'dist', 'lib', 'build', 'umd', 'esm', 'cjs', 'min', 'https', 'http'}:
+                    seen_packages.add(pkg_name)
+                    packages.add(pkg_name)
+                    found_cdn_import = True
+        
+        # Only check for regular imports if we didn't find a CDN import
+        if not found_cdn_import:
+            # Remove any URL imports before passing to extract_js_imports
+            cleaned_content = re.sub(r'import\s+[\w\s{},*]+\s+from\s+[\'"]https?://[^"]+[\'"]', '', script_content)
+            packages.update(extract_js_imports(cleaned_content))
     
     return list(packages)
 
@@ -1089,12 +1113,17 @@ def install_npm_dependencies(sandbox: Sandbox, dependencies: list[str]):
     '''
     if not dependencies:
         return
-    sandbox.commands.run(
-        f"npm install {' '.join(dependencies)}",
-        timeout=60 * 3,
-        on_stdout=lambda message: print(message),
-        on_stderr=lambda message: print(message),
-    )
+    
+    for dependency in dependencies:
+        try:
+            sandbox.commands.run(
+                f"npm install {dependency}",
+                timeout=60 * 3,
+                on_stdout=lambda message: print(message),
+                on_stderr=lambda message: print(message),
+            )
+        except Exception as e:
+            continue
 
 
 def run_background_command_with_timeout(

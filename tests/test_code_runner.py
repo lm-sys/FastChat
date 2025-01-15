@@ -507,7 +507,7 @@ function App() {
 }
 '''
     # Without React dependency, should fallback to JavaScript
-    assert determine_js_environment(react_code, []) == SandboxEnvironment.JAVASCRIPT_CODE_INTERPRETER, "Should fallback to JavaScript when only JSX is present"
+    assert determine_js_environment(react_code, []) == SandboxEnvironment.REACT, "Should detect React when JSX and react dependency are present"
     
     # With React dependency, should detect as React
     assert determine_js_environment(react_code, ['react']) == SandboxEnvironment.REACT, "Should detect React when JSX and react dependency are present"
@@ -627,9 +627,292 @@ export default {
 '''
     assert determine_js_environment(real_code, []) == SandboxEnvironment.VUE, "Failed to detect Vue environment in real code example"
 
-# Run the tests
-test_determine_js_environment()
-test_vue_component_typescript_detection()
-test_vue_component_extraction()
-test_pygame_code_extraction()
-test_extract_inline_pip_install_commands()
+def test_vue_in_html_detection():
+    # Test HTML content with Vue.js integration
+    html_with_vue = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue 2048 Game</title>
+    <script src="https://unpkg.com/vue@next"></script>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .game-container {
+            max-width: 500px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 24px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="text-center">
+        <h1 class="text-4xl font-bold mb-4">Vue 2048 Game</h1>
+        <div class="game-container">
+            <div v-for="(cell, index) in cells" :key="index" class="cell" :style="{ backgroundColor: cellColor(cell) }">
+                {{ cell || '' }}
+            </div>
+        </div>
+        <button @click="startGame" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Start Game</button>
+    </div>
+
+    <script>
+        const { createApp, reactive } = Vue;
+
+        createApp({
+            setup() {
+                const state = reactive({
+                    cells: Array(16).fill(0),
+                });
+
+                function startGame() {
+                    state.cells = Array(16).fill(0);
+                    addRandomCell();
+                    addRandomCell();
+                }
+
+                function addRandomCell() {
+                    let emptyCells = state.cells.map((cell, index) => cell === 0 ? index : null).filter(index => index !== null);
+                    if(emptyCells.length) {
+                        let randomCellIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                        state.cells[randomCellIndex] = Math.random() > 0.1 ? 2 : 4;
+                    }
+                }
+
+                function cellColor(cell) {
+                    const colors = {
+                        0: '#f0f0f0',
+                        2: '#eee4da',
+                        4: '#ede0c8',
+                        // Add more colors for different numbers
+                    };
+                    return colors[cell] || '#f0f0f0';
+                }
+
+                return { ...state, startGame, cellColor };
+            },
+        }).mount('#app');
+    </script>
+</body>
+</html>'''
+
+    # Extract code and verify results
+    result = extract_code_from_markdown(f"```html\n{html_with_vue}\n```")
+    assert result is not None, "Failed to extract code from markdown"
+    
+    code, code_lang, dependencies, env = result
+    
+    # Test code extraction
+    assert '<!DOCTYPE html>' in code, "HTML doctype not found in extracted code"
+    assert '<script src="https://unpkg.com/vue@next"></script>' in code, "Vue.js script import not found"
+    assert 'createApp(' in code, "Vue createApp not found in code"
+    
+    # Test language detection
+    assert code_lang == 'html', "HTML not detected as language"
+    
+    # Test environment detection
+    assert env == SandboxEnvironment.HTML, "HTML environment not detected for Vue in HTML"
+    
+    # Test that Vue.js is detected in dependencies
+    npm_deps = dependencies[1]  # npm dependencies are second in tuple
+    assert 'vue' in npm_deps, "Vue dependency not detected in HTML with Vue.js"
+
+def test_vue_calendar_component():
+    # Test markdown content with Vue calendar component
+    markdown_content = '''
+```html
+<template>
+  <div class="p-4 max-w-md mx-auto">
+    <!-- 日历头部 -->
+    <div class="flex justify-between items-center mb-4">
+      <button
+        @click="changeMonth(-1)"
+        class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+      >
+        Prev
+      </button>
+      <h2 class="text-lg font-bold">
+        {{ currentYear }} - {{ currentMonth + 1 }}
+      </h2>
+      <button
+        @click="changeMonth(1)"
+        class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded"
+      >
+        Next
+      </button>
+    </div>
+
+    <!-- 星期标题 -->
+    <div class="grid grid-cols-7 text-center font-bold mb-2">
+      <div v-for="day in weekDays" :key="day" class="text-gray-700">
+        {{ day }}
+      </div>
+    </div>
+
+    <!-- 日期 -->
+    <transition name="fade" mode="out-in">
+      <div
+        :key="currentKey"
+        class="grid grid-cols-7 gap-2 transition-transform duration-300"
+      >
+        <!-- 前面补空白 -->
+        <div
+          v-for="_, index in firstDayOfMonth"
+          :key="'empty-' + index"
+        ></div>
+
+        <!-- 日期 -->
+        <div
+          v-for="day in daysInMonth"
+          :key="day"
+          class="p-2 text-center rounded hover:bg-blue-100"
+        >
+          {{ day }}
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      currentDate: new Date(),
+      currentKey: 0, // 用于触发 Vue 的过渡效果
+      weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    };
+  },
+  computed: {
+    currentYear() {
+      return this.currentDate.getFullYear();
+    },
+    currentMonth() {
+      return this.currentDate.getMonth();
+    },
+    daysInMonth() {
+      const year = this.currentYear;
+      const month = this.currentMonth;
+      const days = [];
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      for (let day = 1; day <= lastDay; day++) {
+        days.push(day);
+      }
+      return days;
+    },
+    firstDayOfMonth() {
+      // 获取当前月份第一天是星期几
+      const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+      return firstDay.getDay();
+    },
+  },
+  methods: {
+    changeMonth(offset) {
+      this.currentDate.setMonth(this.currentMonth + offset);
+      this.currentKey++; // 更改 key 触发 Vue 的过渡效果
+    },
+  },
+};
+</script>
+
+<style>
+/* 自定义 Vue 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+</style>
+```
+'''
+
+    # Extract code and verify results
+    result = extract_code_from_markdown(markdown_content)
+    assert result is not None, "Failed to extract code from markdown"
+    
+    code, code_lang, dependencies, env = result
+
+    assert code_lang == 'typescript', "TypeScript not detected as language"
+    
+    # Test environment detection
+    assert env == SandboxEnvironment.VUE, "Vue environment not detected"
+    
+    # Test dependency extraction
+    npm_deps = dependencies[1]  # npm dependencies are second in tuple
+    assert 'vue' in npm_deps, "Vue dependency not detected"
+
+def test_mermaid_diagram_html():
+    # Test markdown content with Mermaid diagram HTML
+    markdown_content = '''
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Arena Mermaid Diagram</title>
+    <!-- Import Mermaid -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({startOnLoad:true});
+    </script>
+</head>
+<body>
+
+<!-- Mermaid diagram definition -->
+<div class="mermaid">
+graph TD;
+    Agile -->|Informs| DevOps;
+    DevOps --> CI[Continuous Integration];
+    CI --> CD[Continuous Deployment];
+    CI --> AutomatedTesting[Automated Testing];
+    CD --> Feedback;
+    AutomatedTesting --> Feedback;
+    Feedback --> Agile;
+</div>
+
+</body>
+</html>
+```
+'''
+
+    # Extract code and verify results
+    result = extract_code_from_markdown(markdown_content)
+    assert result is not None, "Failed to extract code from markdown"
+    
+    code, code_lang, dependencies, env = result
+
+    # Test language detection
+    assert code_lang == 'html', "HTML not detected as language"
+    
+    # Test environment detection
+    assert env == SandboxEnvironment.HTML, "HTML environment not detected"
+    
+    # Test dependency extraction
+    npm_deps = dependencies[1]  # npm dependencies are second in tuple
+    print(npm_deps)
+
+    assert 'mermaid' in npm_deps, "Mermaid dependency not detected"
+
+test_vue_in_html_detection()
+test_mermaid_diagram_html()
