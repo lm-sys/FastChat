@@ -1184,7 +1184,7 @@ def run_html_sandbox(code: str, code_dependencies: tuple[list[str], list[str]]) 
     stderr = run_background_command_with_timeout(
         sandbox,
         "python -m http.server 3000",
-        timeout=3,
+        timeout=0,
     )
     
     host = sandbox.get_host(3000)
