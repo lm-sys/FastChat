@@ -9,7 +9,7 @@ E2B_API_KEY = os.environ.get("E2B_API_KEY")
 API key for the e2b API.
 '''
 
-SANDBOX_TEMPLATE_ID: str = "tz4fkg7rkqfxoxpn65vo"
+SANDBOX_TEMPLATE_ID: str = "bxq9sha9l55ytsyfturr"
 '''
 Template ID for the sandbox.
 '''
