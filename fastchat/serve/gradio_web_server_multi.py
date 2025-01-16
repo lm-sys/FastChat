@@ -63,7 +63,9 @@ def build_visualizer():
             Using *[topic clustering](https://github.com/MaartenGr/BERTopic)*, we organized user-submitted prompts from Arena battles into broad and specific categories. 
             Dive in to uncover insights about the distribution and themes of these prompts! """
             gr.Markdown(topic_markdown)
-            expandText = "👇 Expand to see detailed instructions on how to use the visualizer"
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the visualizer"
+            )
             with gr.Accordion(expandText, open=False):
                 instructions = """
                 - Hover Over Segments: View the category name, the number of prompts, and their percentage.
@@ -88,7 +90,9 @@ def build_visualizer():
             This scatterplot displays a selection of the arena's models, showing their arena score plotted against their cost.
             """
             gr.Markdown(price_markdown)
-            expandText = "👇 Expand to see detailed instructions on how to use the scatterplot"
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the scatterplot"
+            )
             with gr.Accordion(expandText, open=False):
                 instructions = """
                 - Hover Over Points: View the model's arena score, cost, organization, and license.
