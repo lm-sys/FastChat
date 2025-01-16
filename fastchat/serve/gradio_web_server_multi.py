@@ -99,7 +99,7 @@ def build_visualizer():
                 - Click on Points: Click on a point to visit the website where the pricing details were sourced.
                 - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
 
-                The prices were obtained either from the model's organization's website or through the [together.ai](https://www.together.ai/) pricing model. The scatterplot was last updated using Arena battle data from 2024/12.
+                The prices were obtained either from the model's organization's website or through the [together.ai](https://www.together.ai/) pricing model. The scatterplot was last updated using Arena battle data from 2024/12. We only displayed models that have public pricing/parameter information.
                 """
                 gr.Markdown(instructions)
             frame = """
