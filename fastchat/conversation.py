@@ -39,6 +39,7 @@ class SeparatorStyle(IntEnum):
     GEMMA = auto()
     CLLM = auto()
     DEFAULT = auto()
+    PHI4 = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -323,6 +324,16 @@ class Conversation:
                     ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.PHI4:
+            ret = ""
+            if self.system_message:
+                ret += system_prompt
+            for i, (role, message) in enumerate(self.messages):
+                if message:
+                    ret += f"<|im_start|>{role}<|im_sep|>{message.strip()}<|im_end|>"
+                else:
+                    ret += f"<|im_start|>{role}<|im_sep|>"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -2295,6 +2306,19 @@ register_conv_template(
         roles=("user", "assistant"),
         sep_style=SeparatorStyle.DEFAULT,
         sep=None,
+    )
+)
+
+# reference: https://github.com/ggerganov/llama.cpp/pull/11148
+register_conv_template(
+    Conversation(
+        name="phi-4",
+        system_template="<|im_start|>system<|im_sep|>{system_message}<|im_end|>",
+        roles=("user", "assistant"),
+        sep_style=SeparatorStyle.PHI4,
+        sep="<|im_sep|>",
+        stop_str="<|im_end|>",
+        stop_token_ids=[100257, 100265], # <|endoftext|>: 100257, <|im_end|>": 100265,
     )
 )
 
