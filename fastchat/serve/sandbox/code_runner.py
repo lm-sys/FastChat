@@ -906,15 +906,17 @@ def extract_code_from_markdown(message: str, enable_auto_env: bool=False) -> tup
     # Find the main code block by avoiding low-priority languages
     main_code = None
     main_code_lang = None
+    max_length = 0
+    
     for match in matches:
         code = match.group('code').strip()
         code_lang = (match.group('code_lang') or '').lower()
-        if code_lang not in low_priority_languages:
+        if code_lang not in low_priority_languages and len(code) > max_length:
             main_code = code
             main_code_lang = code_lang
-            break
+            max_length = len(code)
 
-    # Fallback to the longest code block if all are low-priority
+    # Fallback to the longest code block if no main code was found
     if not main_code:
         longest_match = max(matches, key=lambda m: len(m.group('code')))
         main_code = longest_match.group('code').strip()
