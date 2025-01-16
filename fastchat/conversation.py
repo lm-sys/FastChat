@@ -2318,7 +2318,7 @@ register_conv_template(
         sep_style=SeparatorStyle.PHI4,
         sep="<|im_sep|>",
         stop_str="<|im_end|>",
-        stop_token_ids=[100257, 100265], # <|endoftext|>: 100257, <|im_end|>": 100265,
+        stop_token_ids=[100257, 100265],  # <|endoftext|>: 100257, <|im_end|>": 100265,
     )
 )
 

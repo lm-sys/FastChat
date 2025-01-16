@@ -255,9 +255,7 @@ register_model_info(
 )
 
 register_model_info(
-    [
-        "phi-4"
-    ],
+    ["phi-4"],
     "Phi-4",
     "https://techcommunity.microsoft.com/blog/aiplatformblog/introducing-phi-4-microsoft%E2%80%99s-newest-small-language-model-specializing-in-comple/4357090",
     "A capable and cost-effective small language model (SLMs) by Microsoft",
