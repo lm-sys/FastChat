@@ -105,11 +105,11 @@ def load_demo(context: Context, request: gr.Request):
             vision_arena=False,
         )
 
-        context.vision_models, context.all_vision_models = get_model_list(
-            args.controller_url,
-            args.register_api_endpoint_file,
-            vision_arena=True,
-        )
+        #context.vision_models, context.all_vision_models = get_model_list(
+        #    args.controller_url,
+        #    args.register_api_endpoint_file,
+        #    vision_arena=True,
+        #)
 
     # Text models
     if args.vision_arena:
@@ -121,19 +121,19 @@ def load_demo(context: Context, request: gr.Request):
 
         direct_chat_updates = load_demo_single(context, request.query_params)
     else:
-        direct_chat_updates = load_demo_single(context, request.query_params)
+        #direct_chat_updates = load_demo_single(context, request.query_params)
         side_by_side_anony_updates = load_demo_side_by_side_anony(
             context.all_text_models, request.query_params
         )
-        side_by_side_named_updates = load_demo_side_by_side_named(
-            context.text_models, request.query_params
-        )
+        #side_by_side_named_updates = load_demo_side_by_side_named(
+        #    context.text_models, request.query_params
+        #)
 
     tabs_list = (
         [gr.Tabs(selected=inner_selected)]
         + side_by_side_anony_updates
-        + side_by_side_named_updates
-        + direct_chat_updates
+        #+ side_by_side_named_updates
+        #+ direct_chat_updates
     )
 
     return tabs_list
@@ -164,7 +164,7 @@ window.__gradio_mode__ = "app";
         """
     text_size = gr.themes.sizes.text_lg
     with gr.Blocks(
-        title="Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots",
+        title="Keelemudelite edetabel: aita valida parimat keelemudelit!",
         theme=gr.themes.Default(text_size=text_size),
         css=block_css,
         head=head_js,
@@ -192,33 +192,33 @@ window.__gradio_mode__ = "app";
                     )
 
             else:
-                with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
+                with gr.Tab("💬  Vestlemine", id=0) as arena_tab:
                     arena_tab.select(None, None, None, js=load_js)
                     side_by_side_anony_list = build_side_by_side_ui_anony(
                         context.all_text_models
                     )
 
-                with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
-                    side_by_side_tab.select(None, None, None, js=alert_js)
-                    side_by_side_named_list = build_side_by_side_ui_named(
-                        context.text_models
-                    )
+                #with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
+                #    side_by_side_tab.select(None, None, None, js=alert_js)
+                #    side_by_side_named_list = build_side_by_side_ui_named(
+                #        context.text_models
+                #    )
 
-                with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
-                    direct_tab.select(None, None, None, js=alert_js)
-                    single_model_list = build_single_model_ui(
-                        context.text_models, add_promotion_links=True
-                    )
+                #with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
+                #    direct_tab.select(None, None, None, js=alert_js)
+                #    single_model_list = build_single_model_ui(
+                #        context.text_models, add_promotion_links=True
+                #    )
 
             demo_tabs = (
                 [inner_tabs]
                 + side_by_side_anony_list
-                + side_by_side_named_list
-                + single_model_list
+                #+ side_by_side_named_list
+                #+ single_model_list
             )
 
             if elo_results_file:
-                with gr.Tab("🏆 Leaderboard", id=3):
+                with gr.Tab("🏆 Tulemused", id=3):
                     build_leaderboard_tab(
                         elo_results_file,
                         leaderboard_table_file,
@@ -229,7 +229,7 @@ window.__gradio_mode__ = "app";
                 with gr.Tab("🔍 Arena Visualizer", id=5):
                     build_visualizer()
 
-            with gr.Tab("ℹ️ About Us", id=4):
+            with gr.Tab("ℹ️ Meist", id=4):
                 build_about()
 
         context_state = gr.State(context)

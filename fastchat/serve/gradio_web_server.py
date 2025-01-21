@@ -59,7 +59,7 @@ enable_text = gr.Textbox(
 disable_text = gr.Textbox(
     interactive=False,
     visible=True,
-    placeholder='Press "🎲 New Round" to start over👇 (Note: Your vote shapes the leaderboard, please vote RESPONSIBLY!)',
+    placeholder='Kliki "🎲 Uus vestlus" et uut vestlust alustada👇 (Sinu valikute põhjal moodustub mudelite edetabel. Palun tee oma valik vastutustundlikult.)',
 )
 
 controller_url = None
@@ -67,31 +67,14 @@ enable_moderation = False
 use_remote_storage = False
 
 acknowledgment_md = """
-### Terms of Service
+### Kasutustingimused
 
-Users are required to agree to the following terms before using the service:
+Kasutajad on kohustatud nõustuma järgmiste kasutustingimustega:
 
-The service is a research preview. It only provides limited safety measures and may generate offensive content.
-It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
-Please do not upload any private information.
-The service collects user dialogue data, including both text and images, and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) or a similar license.
-
-#### Please report any bug or issue to our [Discord](https://discord.gg/6GXcFg3TH8)/arena-feedback.
-
-### Acknowledgment
-We thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [RunPod](https://runpod.io), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous [sponsorship](https://lmsys.org/donations/).
-
-<div class="sponsor-image-about">
-    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
-    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
-    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
-    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
-    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
-    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
-    <img src="https://storage.googleapis.com/public-arena-asset/runpod-logo.jpg" alt="RunPod">
-    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
-    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
-</div>
+See platvorm on loodud eelistusandmete ja juhiste kogumiseks parema eestikeelse keelemudeli loomise eesmärgil. Võrdluses olevatele keelemudelitele rakendatakse piiratud modereerimist, mistõtu võivad mudelid genereerida solvavat sisu. 
+Seda platvormi ei tohi kasutada ebaseadusliku, kedagi kahjustavad, vägivaldse, rassistliku või seksuaalse sisuga teksti genereerimiseks. 
+Palun ära siseseta platvormile isiklikku informatsiooni.
+Platvorm kogub kasutajate dialoogiandmeid, ning jätab endale õiguse neid andmeid levitada Creative Commons Attribution (CC-BY) või sarnase litsentsi alusel. 
 """
 
 # JSON file format of API-based models:
@@ -844,38 +827,22 @@ def get_model_description_md(models):
 
 def build_about():
     about_markdown = """
-# About Us
-Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). We open-source the [FastChat](https://github.com/lm-sys/FastChat) project at GitHub and release open datasets. We always welcome contributions from the community. If you're interested in getting involved, we'd love to hear from you!
+# Meist
+Keelemudelite edetabel ([vestle.tartunlp.ai](https://vestle.tartunlp.ai)) on avatud lähtekoodiga platvorm keelemudelite hindamiseks kasutaja eelistuste kaudu. Platvormi lähtekoodi autorid on teadlased California Ülikoolist Berkeleys ([koduleht](https://sky.cs.berkeley.edu/)) ja mittetulundusorganisatsioonist [LMSYS](https://lmsys.org). [Originaalkoodi](https://github.com/lm-sys/FastChat) kohandas eestikeelseks [TartuNLP](https://tartunlp.ai). 
 
-## Open-source contributors
-- Leads: [Wei-Lin Chiang](https://infwinston.github.io/), [Anastasios Angelopoulos](https://people.eecs.berkeley.edu/~angelopoulos/)
-- Contributors: [Lianmin Zheng](https://lmzheng.net/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Tianle Li](https://codingwithtim.github.io/), [Evan Frick](https://efrick2002.github.io/), [Dacheng Li](https://dachengli1.github.io/), [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang)
-- Advisors: [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/)
 
-## Learn more
-- Chatbot Arena [paper](https://arxiv.org/abs/2403.04132), [launch blog](https://blog.lmarena.ai/blog/2023/arena/), [dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [policy](https://blog.lmarena.ai/blog/2024/policy/)
-- LMSYS-Chat-1M dataset [paper](https://arxiv.org/abs/2309.11998), LLM Judge [paper](https://arxiv.org/abs/2306.05685)
+## Originaalautorid
+- tiimijuhid: [Wei-Lin Chiang](https://infwinston.github.io/), [Anastasios Angelopoulos](https://people.eecs.berkeley.edu/~angelopoulos/)
+- panustajad: [Lianmin Zheng](https://lmzheng.net/), [Ying Sheng](https://sites.google.com/view/yingsheng/home), [Lisa Dunlap](https://www.lisabdunlap.com/), [Christopher Chou](https://www.linkedin.com/in/chrisychou), [Tianle Li](https://codingwithtim.github.io/), [Evan Frick](https://efrick2002.github.io/), [Dacheng Li](https://dachengli1.github.io/), [Siyuan Zhuang](https://www.linkedin.com/in/siyuanzhuang)
+- nõustajad: [Ion Stoica](http://people.eecs.berkeley.edu/~istoica/), [Joseph E. Gonzalez](https://people.eecs.berkeley.edu/~jegonzal/), [Hao Zhang](https://cseweb.ucsd.edu/~haozhang/), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/)
 
-## Contact Us
-- Follow our [X](https://x.com/lmsysorg), [Discord](https://discord.gg/6GXcFg3TH8) or email us at `lmarena.ai@gmail.com`
-- File issues on [GitHub](https://github.com/lm-sys/FastChat)
-- Download our datasets and models on [HuggingFace](https://huggingface.co/lmsys)
+## Loe rohkem (materjalid inglise keeles)
+- Chatbot Arena [artikkel](https://arxiv.org/abs/2403.04132), [blogipostitus](https://blog.lmarena.ai/blog/2023/arena/), [andmed](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md), [tingimused](https://blog.lmarena.ai/blog/2024/policy/)
+- LMSYS-Chat-1M andmestik [artikkel](https://arxiv.org/abs/2309.11998), LLM Judge [artikkel](https://arxiv.org/abs/2306.05685)
 
-## Acknowledgment
-We thank [SkyPilot](https://github.com/skypilot-org/skypilot) and [Gradio](https://github.com/gradio-app/gradio) team for their system support.
-We also thank [UC Berkeley SkyLab](https://sky.cs.berkeley.edu/), [Kaggle](https://www.kaggle.com/), [MBZUAI](https://mbzuai.ac.ae/), [a16z](https://www.a16z.com/), [Together AI](https://www.together.ai/), [Hyperbolic](https://hyperbolic.xyz/), [RunPod](https://runpod.io), [Anyscale](https://www.anyscale.com/), [HuggingFace](https://huggingface.co/) for their generous sponsorship. Learn more about partnership [here](https://lmsys.org/donations/).
+## Kontakt
+- TBA
 
-<div class="sponsor-image-about">
-    <img src="https://storage.googleapis.com/public-arena-asset/skylab.png" alt="SkyLab">
-    <img src="https://storage.googleapis.com/public-arena-asset/kaggle.png" alt="Kaggle">
-    <img src="https://storage.googleapis.com/public-arena-asset/mbzuai.jpeg" alt="MBZUAI">
-    <img src="https://storage.googleapis.com/public-arena-asset/a16z.jpeg" alt="a16z">
-    <img src="https://storage.googleapis.com/public-arena-asset/together.png" alt="Together AI">
-    <img src="https://storage.googleapis.com/public-arena-asset/hyperbolic_logo.png" alt="Hyperbolic">
-    <img src="https://storage.googleapis.com/public-arena-asset/runpod-logo.jpg" alt="RunPod">
-    <img src="https://storage.googleapis.com/public-arena-asset/anyscale.png" alt="AnyScale">
-    <img src="https://storage.googleapis.com/public-arena-asset/huggingface.png" alt="HuggingFace">
-</div>
 """
     gr.Markdown(about_markdown, elem_id="about_markdown")
 

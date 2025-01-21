@@ -79,21 +79,21 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
     get_remote_logger().log(data)
 
     gr.Info(
-        "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
+        "🎉 Aitäh hääletamast! Sinu valikute põhjal moodustub mudelite edetabel. Palun tee oma valik vastutustundlikult."
     )
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
+                "### Mudel A: " + states[0].model_name,
+                "### Mudel B: " + states[1].model_name,
             )
             # yield names + ("",) + (disable_btn,) * 4
             yield names + (disable_text,) + (disable_btn,) * 5
             time.sleep(0.1)
     else:
         names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
+            "### Mudel A: " + states[0].model_name,
+            "### Mudel B: " + states[1].model_name,
         )
         # yield names + ("",) + (disable_btn,) * 4
         yield names + (disable_text,) + (disable_btn,) * 5
@@ -175,7 +175,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {}
+SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13":1, "gpt-4-turbo-2024-04-09":1}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -440,23 +440,14 @@ def bot_response_multi(
 
 def build_side_by_side_ui_anony(models):
     notice_markdown = f"""
-# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
-[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
+# Keelemudelite edetabel: aita valida parimat eestikeelset keelemudelit!
 
-{SURVEY_LINK}
+## 📜 Kuidas see töötab?
+- **Pimetest**: Esita oma küsimus. Sinu küsimusele vastavad kaks anonüümset keelemudelit.
+- **Vali parim**: Vali kahest vastusest parim. Kui sa kohe valikut ei oska langetada, võid vestlust jätkata kuni oled otsuseni jõudnud.
+- **Aus mäng**: Sinu valikute põhjal koostame mudelite edetabeli. Palun tee oma otsus vastutustundlikult.
 
-## 📣 News
-- Chatbot Arena now supports images in beta. Check it out [here](https://lmarena.ai/?vision).
-
-## 📜 How It Works
-- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
-- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
-- **Play Fair**: If AI identity reveals, your vote won't count.
-
-## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
-- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
-
-## 👇 Chat now!
+## 👇 Vestlema!
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -467,13 +458,13 @@ def build_side_by_side_ui_anony(models):
 
     with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion(
-            f"🔍 Expand to see the descriptions of {len(models)} models", open=False
+            f"🔍 Kliki siia, et näha kõiki {len(models)} võrluses oleva mudeli nime", open=False
         ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
         with gr.Row():
             for i in range(num_sides):
-                label = "Model A" if i == 0 else "Model B"
+                label = "Mudel A" if i == 0 else "Mudel B"
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
                         label=label,
@@ -499,30 +490,30 @@ def build_side_by_side_ui_anony(models):
 
     with gr.Row():
         leftvote_btn = gr.Button(
-            value="👈  A is better", visible=False, interactive=False
+            value="👈  A on parem", visible=False, interactive=False
         )
         rightvote_btn = gr.Button(
-            value="👉  B is better", visible=False, interactive=False
+            value="👉  B on parem", visible=False, interactive=False
         )
-        tie_btn = gr.Button(value="🤝  Tie", visible=False, interactive=False)
+        tie_btn = gr.Button(value="🤝  Viik", visible=False, interactive=False)
         bothbad_btn = gr.Button(
-            value="👎  Both are bad", visible=False, interactive=False
+            value="👎  Mõlemad on halvad", visible=False, interactive=False
         )
 
     with gr.Row():
         textbox = gr.Textbox(
             show_label=False,
-            placeholder="👉 Enter your prompt and press ENTER",
+            placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER",
             elem_id="input_box",
         )
-        send_btn = gr.Button(value="Send", variant="primary", scale=0)
+        send_btn = gr.Button(value="Saada", variant="primary", scale=0)
 
     with gr.Row() as button_row:
-        clear_btn = gr.Button(value="🎲 New Round", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
-        share_btn = gr.Button(value="📷  Share")
+        clear_btn = gr.Button(value="🎲 Uus vestlus", interactive=False)
+        regenerate_btn = gr.Button(value="🔄  Genereeri vastus uuesti", interactive=False)
+        share_btn = gr.Button(value="📷  Jaga")
 
-    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
+    with gr.Accordion("Parameetrid", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
