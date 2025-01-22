@@ -175,7 +175,10 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
         )
 
 
-SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13":1, "gpt-4-turbo-2024-04-09":1}
+SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13": 1, 
+                    "gpt-4-turbo-2024-04-09": 1, 
+                    "meta-llama/Llama-3.3-70B-Instruct": 1,
+                    "meta-llama/Llama-3.2-1B-Instruct": 1}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -260,6 +263,7 @@ def get_battle_pair(
     rival_model = rival_models[rival_idx]
 
     swap = np.random.randint(2)
+    logger.info(f"Chosen model: {chosen_model}. Rival model: {rival_model}")
     if swap == 0:
         return chosen_model, rival_model
     else:
@@ -634,7 +638,7 @@ function (a, b, c, d) {
     send_btn.click(
         add_text,
         states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list,
+        states + chatbots + [textbox] + btn_list + [slow_warning],
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
