@@ -526,6 +526,8 @@ def bot_response(
         if not custom_system_prompt:
             conv.set_system_message("")
 
+        extra_body = None
+
         if use_recommended_config:
             recommended_config = model_api_dict.get("recommended_config", None)
             if recommended_config is not None:
@@ -534,6 +536,7 @@ def bot_response(
                 max_new_tokens = recommended_config.get(
                     "max_new_tokens", max_new_tokens
                 )
+                extra_body = recommended_config.get("extra_body", None)
 
         stream_iter = get_api_provider_stream_iter(
             conv,
@@ -543,6 +546,7 @@ def bot_response(
             top_p,
             max_new_tokens,
             state,
+            extra_body=extra_body,
         )
 
     html_code = ' <span class="cursor"></span> '

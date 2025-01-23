@@ -23,6 +23,7 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
+    extra_body=None,
 ):
     if model_api_dict["api_type"] == "openai":
         if model_api_dict.get("vision-arena", False):
@@ -256,6 +257,7 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
+            extra_body=extra_body,
         )
     else:
         raise NotImplementedError()
@@ -431,6 +433,7 @@ def p2l_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
+    extra_body=None,
 ):
     import openai
 
@@ -459,6 +462,7 @@ def p2l_api_stream_iter(
         "temperature": None,
         "top_p": None,
         "max_new_tokens": max_new_tokens,
+        "extra_body": extra_body,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
@@ -467,6 +471,7 @@ def p2l_api_stream_iter(
         messages=messages,
         max_tokens=max_new_tokens,
         stream=True,
+        extra_body=extra_body,
     )
     text = ""
     for chunk_idx, chunk in enumerate(res):
