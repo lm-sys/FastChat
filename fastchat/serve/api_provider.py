@@ -433,7 +433,7 @@ def p2l_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
-    extra_body=None
+    extra_body=None,
 ):
     import openai
 
@@ -462,7 +462,7 @@ def p2l_api_stream_iter(
         "temperature": None,
         "top_p": None,
         "max_new_tokens": max_new_tokens,
-        "extra_body": extra_body
+        "extra_body": extra_body,
     }
     logger.info(f"==== request ====\n{gen_params}")
 

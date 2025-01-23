@@ -527,7 +527,7 @@ def bot_response(
             conv.set_system_message("")
 
         extra_body = None
-        
+
         if use_recommended_config:
             recommended_config = model_api_dict.get("recommended_config", None)
             if recommended_config is not None:
@@ -546,7 +546,7 @@ def bot_response(
             top_p,
             max_new_tokens,
             state,
-            extra_body=extra_body
+            extra_body=extra_body,
         )
 
     html_code = ' <span class="cursor"></span> '
