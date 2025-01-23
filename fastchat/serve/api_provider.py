@@ -23,7 +23,7 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
-    extra_body={},
+    extra_body=None,
 ):
     if model_api_dict["api_type"] == "openai":
         if model_api_dict.get("vision-arena", False):
@@ -433,7 +433,7 @@ def p2l_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
-    extra_body={}
+    extra_body=None
 ):
     import openai
 
