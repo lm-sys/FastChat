@@ -103,7 +103,7 @@ def build_visualizer():
                 """
                 gr.Markdown(instructions)
             frame = """
-                <iframe width="100%" scrolling="no" style="height: 800px; border: 1px solid lightgrey; border-radius: 10px;" 
+                <iframe class="visualizer" width="100%"
                         src="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html">
                 </iframe>
             """
