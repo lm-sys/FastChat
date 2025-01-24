@@ -1,5 +1,4 @@
 import os
-import time
 
 import argparse
 import json
@@ -11,7 +10,6 @@ import random
 import threading
 import orjson
 
-from collections import defaultdict
 from category import create_category
 from utils import api_config
 from tqdm import tqdm
@@ -84,6 +82,7 @@ def get_answer(
     temperature: float,
     answer_file: str,
     api_dict: dict,
+    api_type: str,
     category: object,
     testing: bool,
 ):
@@ -93,7 +92,7 @@ def get_answer(
         uid_to_row[uid] = row
 
     outputs, raw_outputs = category.get_answer(
-        batch, model_name, max_tokens, temperature, api_dict
+        batch, model_name, max_tokens, temperature, api_dict, api_type
     )
 
     for uid in uid_to_row:
@@ -272,6 +271,7 @@ if __name__ == "__main__":
                 config["temperature"],
                 config["output_file"],
                 get_endpoint(config["endpoints"]),
+                config["api_type"],
                 category,
                 args.testing,
             )
@@ -299,6 +299,7 @@ if __name__ == "__main__":
                     config["temperature"],
                     config["output_file"],
                     get_endpoint(config["endpoints"]),
+                    config["api_type"],
                     category,
                     args.testing,
                 )

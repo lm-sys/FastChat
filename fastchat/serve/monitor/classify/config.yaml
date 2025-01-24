@@ -13,6 +13,7 @@ task_name:
   - creative_writing_v0.1
   - refusal_v0.2
 
+api_type: openai
 model_name: null
 name: llama-3-70b-instruct
 endpoints:
