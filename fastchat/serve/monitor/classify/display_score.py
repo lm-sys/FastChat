@@ -10,7 +10,7 @@ tag_names = {
     "math_bench": ("math_v0.1", "math"),
     "hard_bench": ("criteria_v0.1", "hard"),
     "creative_writing_bench": ("creative_writing_v0.1", "creative_writing"),
-    "refusal_bench": ("refusal_v0.2", "refusal"),
+    "refusal_bench": ("refusal_v0.1", "refusal"),
 }
 
 
