@@ -2483,7 +2483,7 @@ class RekaAdapter(BaseModelAdapter):
 
 class NoSystemAdapter(BaseModelAdapter):
     def match(self, model_path: str):
-        keyword_list = ["athene-70b"]
+        keyword_list = ["athene-70b", "p2l"]
 
         for keyword in keyword_list:
             if keyword == model_path.lower():
