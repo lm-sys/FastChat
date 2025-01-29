@@ -96,10 +96,11 @@ def build_visualizer():
             with gr.Accordion(expandText, open=False):
                 instructions = """
                 - Hover Over Points: View the model's arena score, cost, organization, and license.
-                - Click on Points: Click on a point to visit the website where the pricing details were sourced.
+                - Click on Points: Click on a point to visit the model's website.
                 - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
+                - Toggle Between Categories: Use the toggle in the upper right-hand corner to see the different arena scores per category.
 
-                The prices were obtained either from the model's organization's website or through the [together.ai](https://www.together.ai/) pricing model. The scatterplot was last updated using Arena battle data from 2024/12. We only displayed models that have public pricing/parameter information.
+                The scatterplot only displays models that have public pricing/parameter information. To add pricing information, feel free to the Github repo [here](https://github.com/lmarena/arena-leaderboard-v2/).
                 """
                 gr.Markdown(instructions)
             frame = """
