@@ -174,11 +174,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
-
-SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13": 1, 
-                    "gpt-4-turbo-2024-04-09": 1, 
-                    "meta-llama/Llama-3.3-70B-Instruct": 1,
-                    "meta-llama/Llama-3.2-1B-Instruct": 1}
+SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
 BATTLE_TARGETS = {}
@@ -190,13 +186,13 @@ ANON_MODELS = []
 SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+OUTAGE_MODELS = ["DeepSeek-R1-Distill-Qwen-32B", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"]
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
     if model in outage_models:
         return 0
-    weight = sampling_weights.get(model, 0)
+    weight = sampling_weights.get(model, 1)
     if model in sampling_boost_models:
         weight *= 5
     return weight

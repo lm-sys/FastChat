@@ -65,7 +65,7 @@ register_model_info(
 
 register_model_info(
     [
-        "claude-3-5-sonnet-20240620",
+        "claude-3-5-sonnet-20240620", "claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"
     ],
     "Claude 3.5",
     "https://www.anthropic.com/news/claude-3-5-sonnet",
@@ -81,8 +81,10 @@ register_model_info(
         "llama-3.1-405b-instruct-bf16",
         "llama-3.1-405b-instruct-fp8",
         "llama-3.1-405b-instruct",
-        "llama-3.1-70b-instruct",
+        "Llama-3.1-70b-instruct",
         "llama-3.1-8b-instruct",
+        "Llama-3.3-70b-instruct",
+
     ],
     "Llama 3.1",
     "https://llama.meta.com/",
@@ -102,6 +104,8 @@ register_model_info(
         "gemini-1.5-pro-api-0514",
         "gemini-1.5-flash-api-0514",
         "gemini-advanced-0514",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
     ],
     "Gemini",
     "https://deepmind.google/technologies/gemini/",
@@ -331,6 +335,8 @@ register_model_info(
         "mistral-7b-instruct-v0.2",
         "mistral-7b-instruct",
         "pixtral-12b-2409",
+        "Mistral-7B-Instruct-v0.3",
+        "Mistral-Nemo-Instruct-2407"
     ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
@@ -506,11 +512,12 @@ register_model_info(
 )
 
 register_model_info(
-    ["deepseek-llm-67b-chat"],
+    ["deepseek-llm-67b-chat", "DeepSeek-R1-Distill-Qwen-32B", "DeepSeek-R1-Distill-Qwen-1.5B"],
     "DeepSeek LLM",
     "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
     "An advanced language model by DeepSeek",
 )
+
 
 register_model_info(
     ["stripedhyena-nous-7b"],
@@ -520,7 +527,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["nous-hermes-2-mixtral-8x7b-dpo"],
+    ["nous-hermes-2-mixtral-8x7b-dpo", "Hermes-3-Llama-3.1-8B"],
     "Nous-Hermes-2-Mixtral-8x7B-DPO",
     "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
     "Nous Hermes finetuned from Mixtral 8x7B",
@@ -852,7 +859,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["Meta-Llama-3-8B-Instruct", "Meta-Llama-3-70B-Instruct"],
+    ["Llama-3-8b-instruct", "Llama-3-70b-instruct"],
     "llama-3",
     "https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct",
     "Meta developed and released the Meta Llama 3 family of large language models (LLMs), a collection of pretrained and instruction tuned generative text models in 8 and 70B sizes.",
