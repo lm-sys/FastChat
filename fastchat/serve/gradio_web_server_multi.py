@@ -100,14 +100,12 @@ def build_visualizer():
                 - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
                 - Toggle Between Categories: Use the toggle in the upper right-hand corner to see the different arena scores per category.
 
-                The scatterplot only displays models that have public pricing/parameter information. To add pricing information, feel free to the Github repo [here](https://github.com/lmarena/arena-leaderboard-v2/).
+                The scatterplot only displays models that have public pricing/parameter information. To add pricing information, feel free to add to the Github repo [here](https://github.com/lmarena/arena-catalog).
                 """
                 gr.Markdown(instructions)
-            frame = """
-                <iframe class="visualizer" width="100%"
-                        src="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html">
-                </iframe>
-            """
+
+            frame = """<object type="text/html" data="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html" width="100%" class="visualizer"></object>"""
+
             gr.HTML(frame)
 
 
