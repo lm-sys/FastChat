@@ -98,7 +98,7 @@ def build_visualizer():
                 - Hover Over Points: View the model's arena score, cost, organization, and license.
                 - Click on Points: Click on a point to visit the model's website.
                 - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
-                - Toggle Between Categories: Use the toggle in the upper right-hand corner to see the different arena scores per category.
+                - Select Categories: Use the dropdown in the upper right-hand corner to see the different arena scores per category.
 
                 The scatterplot only displays models that have public pricing/parameter information. To add pricing information, feel free to add to the Github repo [here](https://github.com/lmarena/arena-catalog).
                 """
