@@ -16,6 +16,9 @@ import gradio as gr
 from gradio.data_classes import FileData
 import numpy as np
 
+from io import BytesIO
+import base64
+
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
@@ -217,29 +220,38 @@ def wrap_pdfchat_query(query, document):
 
 # def parse_pdf(file_path):
 #     from llama_parse import LlamaParse
+#     from llama_index.core.schema import ImageDocument, TextNode
 
-#     assert (
-#         "LLAMA_CLOUD_API_KEY" in os.environ
-#     ), "Make sure to specify LlamaParse API key."
+#     from PIL import Image
 
-#     for _ in range(LLAMA_PARSE_MAX_RETRY):
-#         try:
-#             documents = LlamaParse(
-#                 result_type="markdown",
-#                 verbose=True,
-#                 languages=list(LLAMAPARSE_SUPPORTED_LANGS.values()),
-#                 accurate_mode=True,
-#             ).load_data(file_path)
-#             assert len(documents) > 0
-#             break
-#         except AssertionError as e:
-#             continue
-
-#     output = "\n".join(
-#         [f"Page {i+1}:\n{doc.text}\n" for i, doc in enumerate(documents)]
+#     parser = LlamaParse(
+#         api_key=os.getenv("LLAMA_CLOUD_API_KEY"),
+#         result_type="markdown",
 #     )
 
-#     return output
+#     def get_image_nodes(json_objs: List[dict], download_path: str):
+#         image_dicts = parser.get_images(json_objs, download_path=download_path)
+#         return [ImageDocument(image_path=image_dict["path"]) for image_dict in image_dicts]
+
+#     json_objs = parser.get_json_result(file_path)
+#     json_list = json_objs[0]["pages"]
+
+#     text = ""
+#     for page in json_list:
+#         text += f"Page {page['page']}:\n{page['md']}\n"
+#         if (page['images']):
+#             for i, image in enumerate(page['images']):
+#                 text += f"page{page['page']}_figure{i + 1}\n"
+
+#     image_documents = get_image_nodes(json_objs, ".")
+#     images = []
+
+#     for image_doc in image_documents:
+#         image_path = image_doc.image_path
+#         image = Image.open(image_path)
+#         images.append(image)
+
+#     return text, images
 
 
 PDFPARSE_MAX_RETRY = 2
@@ -259,29 +271,48 @@ MARKER_PDFPARSE_CONFIG = {
     "languages": ",".join(PDFPARSE_SUPPORTED_LANGS.values()),
 }
 
+def convert_base64_to_pil_image(b64_string):
+    from PIL import Image
+
+    image_data = base64.b64decode(b64_string)
+    image_bytes = BytesIO(image_data)
+    image = Image.open(image_bytes)
+    
+    return image
 
 def parse_pdf(file_path):
-    from marker.config.parser import ConfigParser
-    from marker.models import create_model_dict
-    from marker.converters.pdf import PdfConverter
+    import requests
 
-    output_md, output_images = None, None
-    for _ in range(PDFPARSE_MAX_RETRY):
-        try:
-            config_parser = ConfigParser(MARKER_PDFPARSE_CONFIG)
+    url = "https://www.datalab.to/api/v1/marker"
 
-            converter = PdfConverter(
-                config=config_parser.generate_config_dict(),
-                artifact_dict=create_model_dict(),
-                processor_list=config_parser.get_processors(),
-                renderer=config_parser.get_renderer(),
-            )
-            rendered = converter(file_path)
-            output_md = rendered.markdown
-            output_images = list(rendered.images.values())
+    form_data = {
+        'file': ('test.pdf', open(file_path, 'rb'), 'application/pdf'),
+        'langs': (None, "English"),
+        "force_ocr": (None, False),
+        "paginate": (None, False),
+        'output_format': (None, 'markdown'),
+        "use_llm": (None, True),
+        "strip_existing_ocr": (None, False),
+        "disable_image_extraction": (None, False)
+    }
+
+    headers = {"X-Api-Key": os.getenv("X-Api-Key")} 
+    response = requests.post(url, files=form_data, headers=headers)
+    data = response.json()
+
+    max_polls = 300
+    check_url = data["request_check_url"]
+
+    for i in range(max_polls):
+        time.sleep(2)
+        response = requests.get(check_url, headers=headers)
+        data = response.json()
+
+        if data["status"] == "complete":
             break
-        except AssertionError as e:
-            continue
+    
+    output_md = data["markdown"]
+    output_images = [convert_base64_to_pil_image(b64_image) for b64_image in data["images"].values()]
 
     return output_md, output_images
 
