@@ -85,7 +85,7 @@ def build_visualizer():
                         </iframe>
                     """
             gr.HTML(frame)
-        with gr.Tab("Price Analysis", id=1):
+        with gr.Tab("Price Explorer", id=1):
             price_markdown = """
             This scatterplot displays a selection of the arena's models, showing their arena score plotted against their cost.
             """
@@ -104,7 +104,7 @@ def build_visualizer():
                 """
                 gr.Markdown(instructions)
 
-            frame = """<object type="text/html" data="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html" width="100%" class="visualizer"></object>"""
+            frame = """<object type="text/html" data="https://raw.githubusercontent.com/lmarena/arena-catalog/main/scatterplot.html" width="100%" class="visualizer"></object>"""
 
             gr.HTML(frame)
 
