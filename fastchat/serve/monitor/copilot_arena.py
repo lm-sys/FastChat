@@ -6,6 +6,16 @@ import os
 from fastchat.serve.monitor.monitor import recompute_final_ranking
 
 copilot_arena_leaderboard_url = os.getenv("COPILOT_ARENA_LEADERBOARD_URL")
+copilot_arena_citation_md = """
+    ### Citation
+    Please cite the following paper if you find our leaderboard helpful.
+    ```
+    @misc{chi2025copilot,
+        title={Copilot Arena: A Platform for Code LLM Evaluation in the Wild},
+        author={Wayne Chi and Valerie Chen and Wei-Lin Chiang and Anastasios N. Angelopoulos and Aditya Mittal and Naman Jain and Tianjun Zhang and Ion Stoica and Chris Donahue and Ameet Talwalkar}
+        year={2025},
+    }
+"""
 
 
 def process_copilot_arena_leaderboard(leaderboard):
