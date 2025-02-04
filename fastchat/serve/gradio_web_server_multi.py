@@ -104,7 +104,7 @@ def build_visualizer():
                 """
                 gr.Markdown(instructions)
 
-            frame = """<object type="text/html" data="https://raw.githubusercontent.com/lmarena/arena-catalog/main/scatterplot.html" width="100%" class="visualizer"></object>"""
+            frame = """<object type="text/html" data="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html" width="100%" class="visualizer"></object>"""
 
             gr.HTML(frame)
 
