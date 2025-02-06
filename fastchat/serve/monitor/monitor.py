@@ -1054,6 +1054,7 @@ def build_leaderboard_tab(
                 build_video_arena_tab,
                 VIDEO_ARENA_LEADERBOARD_URL,
             )
+
             if VIDEO_ARENA_LEADERBOARD_URL:
                 with gr.Tab("🎥 Text-to-Video", id=6):
                     build_video_arena_tab()

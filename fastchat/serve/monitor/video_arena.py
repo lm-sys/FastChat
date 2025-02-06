@@ -23,8 +23,7 @@ from fastchat.serve.monitor.monitor import recompute_final_ranking
 
 # URL for fetching Video Arena leaderboard data
 VIDEO_ARENA_LEADERBOARD_URL = os.getenv(
-    "VIDEO_ARENA_LEADERBOARD_URL",
-    "https://www.videoarena.tv/api/v1/leaderboard"
+    "VIDEO_ARENA_LEADERBOARD_URL", "https://www.videoarena.tv/api/v1/leaderboard"
 )
 
 
@@ -36,6 +35,7 @@ class ModelVersion:
         license: The license type of the model version
         website: The website URL for the model version
     """
+
     license: str
     website: str
 
@@ -49,6 +49,7 @@ class ModelInfo:
         organization: The organization that created the model
         versions: Dictionary mapping version names to ModelVersion objects
     """
+
     official_name: str
     organization: str
     versions: dict[str, ModelVersion] = None
@@ -56,61 +57,78 @@ class ModelInfo:
 
 # Mapping of model identifiers to their information
 VIDEO_MODEL_INFO = {
-    'veo': ModelInfo(
-        'Veo',
-        'Google',
-        versions={'2.0': ModelVersion('Proprietary', 'https://deepmind.google/technologies/veo/veo-2/')}
-    ),
-    'minimax': ModelInfo(
-        'Minimax',
-        'Hailuo',
-        versions={'01': ModelVersion('Proprietary', 'https://hailuoai.video/')}
-    ),
-    'kling': ModelInfo(
-        'Kling',
-        'Kuaishou',
-        versions={'1.0': ModelVersion('Proprietary', 'https://klingai.com/'),
-                 '1.5': ModelVersion('Proprietary', 'https://klingai.com/')}
-    ),
-    'sora': ModelInfo(
-        'Sora',
-        'OpenAI',
-        versions={'1': ModelVersion('Proprietary', 'https://openai.com/sora/')}
-    ),
-    'luma': ModelInfo(
-        'Luma',
-        'LumaLabs',
-        versions={'1.6': ModelVersion('Proprietary', 'https://lumalabs.ai/dream-machine')}
-    ),
-    'runway': ModelInfo(
-        'Runway',
-        'Runway',
-        versions={'default': ModelVersion('Proprietary',
-                                        'https://runwayml.com/research/introducing-gen-3-alpha')}
-    ),
-    'genmo': ModelInfo(
-        'Genmo',
-        'Genmo',
+    "veo": ModelInfo(
+        "Veo",
+        "Google",
         versions={
-            '0.2': ModelVersion('Proprietary', 'https://www.genmo.ai/'),
-            'Mochi-1': ModelVersion('Apache-2.0', 'https://www.genmo.ai/')
-        }
+            "2.0": ModelVersion(
+                "Proprietary", "https://deepmind.google/technologies/veo/veo-2/"
+            )
+        },
     ),
-    'svd': ModelInfo(
-        'SVD',
-        'StabilityAI',
-        versions={'1.0': ModelVersion('Proprietary', 'https://stability.ai/stable-video')}
+    "minimax": ModelInfo(
+        "Minimax",
+        "Hailuo",
+        versions={"01": ModelVersion("Proprietary", "https://hailuoai.video/")},
     ),
-    'opensora': ModelInfo(
-        'OpenSora',
-        'OpenSora',
-        versions={'1.2': ModelVersion('Apache-2.0', 'https://github.com/hpcaitech/Open-Sora')}
+    "kling": ModelInfo(
+        "Kling",
+        "Kuaishou",
+        versions={
+            "1.0": ModelVersion("Proprietary", "https://klingai.com/"),
+            "1.5": ModelVersion("Proprietary", "https://klingai.com/"),
+        },
     ),
-    'pika': ModelInfo(
-        'Pika',
-        'PikaLabs',
-        versions={'β': ModelVersion('Proprietary', 'pika.art'),
-                 '1.5': ModelVersion('Proprietary', 'pika.art')}
+    "sora": ModelInfo(
+        "Sora",
+        "OpenAI",
+        versions={"1": ModelVersion("Proprietary", "https://openai.com/sora/")},
+    ),
+    "luma": ModelInfo(
+        "Luma",
+        "LumaLabs",
+        versions={
+            "1.6": ModelVersion("Proprietary", "https://lumalabs.ai/dream-machine")
+        },
+    ),
+    "runway": ModelInfo(
+        "Runway",
+        "Runway",
+        versions={
+            "default": ModelVersion(
+                "Proprietary", "https://runwayml.com/research/introducing-gen-3-alpha"
+            )
+        },
+    ),
+    "genmo": ModelInfo(
+        "Genmo",
+        "Genmo",
+        versions={
+            "0.2": ModelVersion("Proprietary", "https://www.genmo.ai/"),
+            "Mochi-1": ModelVersion("Apache-2.0", "https://www.genmo.ai/"),
+        },
+    ),
+    "svd": ModelInfo(
+        "SVD",
+        "StabilityAI",
+        versions={
+            "1.0": ModelVersion("Proprietary", "https://stability.ai/stable-video")
+        },
+    ),
+    "opensora": ModelInfo(
+        "OpenSora",
+        "OpenSora",
+        versions={
+            "1.2": ModelVersion("Apache-2.0", "https://github.com/hpcaitech/Open-Sora")
+        },
+    ),
+    "pika": ModelInfo(
+        "Pika",
+        "PikaLabs",
+        versions={
+            "β": ModelVersion("Proprietary", "pika.art"),
+            "1.5": ModelVersion("Proprietary", "pika.art"),
+        },
     ),
 }
 
@@ -129,37 +147,41 @@ def process_video_arena_leaderboard(data):
     """
     leaderboard = []
     for item in data:
-        model_name = item['model'].lower()
-        version = item['version']
+        model_name = item["model"].lower()
+        version = item["version"]
 
         # Skip veo model
-        if model_name == 'veo':
+        if model_name == "veo":
             continue
 
         # Get model info from mapping
         model_info = VIDEO_MODEL_INFO.get(
             model_name,
-            ModelInfo(model_name, "Unknown", {'default': ModelVersion('Proprietary', '')})
+            ModelInfo(
+                model_name, "Unknown", {"default": ModelVersion("Proprietary", "")}
+            ),
         )
 
         # Determine license and website based on version
-        version_key = version if version in model_info.versions else 'default'
+        version_key = version if version in model_info.versions else "default"
         if version_key not in model_info.versions:
-            model_info.versions['default'] = ModelVersion('Proprietary', '')
+            model_info.versions["default"] = ModelVersion("Proprietary", "")
         model_version = model_info.versions[version_key]
         license_type, website = model_version.license, model_version.website
 
         # Replace spaces with dashes in the display name
-        display_name = f"{model_info.official_name} {version}".replace(' ', '-')
+        display_name = f"{model_info.official_name} {version}".replace(" ", "-")
         model_data = {
             "name": f"[{display_name}]({website})" if website else display_name,
             "visibility": "public",
-            "score": round(item['scores']['elo']),
-            "lower": item['scores']['elo'] - item['scores']['ci_lower'],
-            "upper": item['scores']['elo'] + item['scores']['ci_upper'],
-            "votes": (item['scores']['win']['total'] +
-                     item['scores']['loss']['total'] +
-                     item['scores']['tie']['total']),
+            "score": round(item["scores"]["elo"]),
+            "lower": item["scores"]["elo"] - item["scores"]["ci_lower"],
+            "upper": item["scores"]["elo"] + item["scores"]["ci_upper"],
+            "votes": (
+                item["scores"]["win"]["total"]
+                + item["scores"]["loss"]["total"]
+                + item["scores"]["tie"]["total"]
+            ),
             "organization": model_info.organization,
             "license": license_type,
         }
@@ -191,8 +213,7 @@ def process_video_arena_leaderboard(data):
 
     # Sort the leaderboard
     leaderboard = leaderboard.sort_values(
-        by=["Rank* (UB)", "score"],
-        ascending=[True, False]
+        by=["Rank* (UB)", "score"], ascending=[True, False]
     )
 
     return leaderboard
