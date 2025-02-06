@@ -19,7 +19,7 @@ import requests
 import pandas as pd
 import gradio as gr
 
-from fastchat.serve.monitor.monitor import model_hyperlink, recompute_final_ranking
+from fastchat.serve.monitor.monitor import recompute_final_ranking
 
 # URL for fetching Video Arena leaderboard data
 VIDEO_ARENA_LEADERBOARD_URL = os.getenv(
@@ -238,7 +238,7 @@ def build_video_arena_tab():
         total_battles = int(leaderboard["Votes"].sum()) // 2
 
         md = f"""
-        VideoArena is a free AI video service allowing users to access, compare, and rank
+        [VideoArena](https://www.videoarena.tv/) is a free AI video service allowing users to access, compare, and rank
         text-to-video capabilities of state-of-the-art generative models. This
         leaderboard contains the relative performance and ranking of {num_models}
         models over {total_battles} battles.
