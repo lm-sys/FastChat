@@ -1050,6 +1050,20 @@ def build_leaderboard_tab(
                     "Please configure it to a valid URL."
                 )
 
+            from fastchat.serve.monitor.video_arena import (
+                build_video_arena_tab,
+                VIDEO_ARENA_LEADERBOARD_URL,
+            )
+            if VIDEO_ARENA_LEADERBOARD_URL:
+                with gr.Tab("🎥 Text-to-Video", id=6):
+                    build_video_arena_tab()
+            else:
+                print(
+                    "Unable to build Video Arena's Leaderboard. "
+                    "VIDEO_ARENA_LEADERBOARD_URL environment variable is not set. "
+                    "Please configure it to a valid URL."
+                )
+
         if not show_plot:
             gr.Markdown(
                 """ ## Visit our [HF space](https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard) for more analysis!
