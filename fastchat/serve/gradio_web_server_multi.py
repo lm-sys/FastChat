@@ -87,7 +87,7 @@ def build_visualizer():
             gr.HTML(frame)
         with gr.Tab("Price Explorer", id=1):
             price_markdown = """
-            This scatterplot presents a selection of models from Arena, plotting their Arena Score against their cost. Only models with publicly available pricing and parameter information are included, meaning models like Gemini's experimental models are not displayed.
+            This scatterplot presents a selection of models from the Arena, plotting their score against their cost. Only models with publicly available pricing and parameter information are included, meaning models like Gemini's experimental models are not displayed. Feel free to view price sources or add pricing information [here](https://github.com/lmarena/arena-catalog/blob/main/data/scatterplot-data.json).
             """
             gr.Markdown(price_markdown)
             expandText = (
@@ -99,8 +99,6 @@ def build_visualizer():
                 - Click on Points: Click on a point to visit the model's website.
                 - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
                 - Select Category: Use the dropdown menu in the upper-right corner to select a category and view the arena scores for that category.
-
-                To view price sources or add pricing information, feel free to check out the Github repo [here](https://github.com/lmarena/arena-catalog).
                 """
                 gr.Markdown(instructions)
 
