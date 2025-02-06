@@ -53,31 +53,58 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 def build_visualizer():
     visualizer_markdown = """
     # 🔍 Arena Visualizer
-    This tool provides an interactive way to explore how people are using Chatbot Arena. 
-    Using *[topic clustering](https://github.com/MaartenGr/BERTopic)*, we organized user-submitted prompts from Arena battles into broad and specific categories. 
-    Dive in to uncover insights about the distribution and themes of these prompts!
+    Arena visualizer provides interactive tools to explore and draw insights from our leaderboard data. 
     """
     gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
-    expandText = "👇 Expand to see detailed instructions on how to use the visualizer"
-    with gr.Accordion(expandText, open=False):
-        instructions = """
-        - Hover Over Segments: View the category name, the number of prompts, and their percentage.
-            - *On mobile devices*: Tap instead of hover.
-        - Click to Explore: 
-            - Click on a main category to see its subcategories.
-            - Click on subcategories to see example prompts in the sidebar.
-        - Undo and Reset: Click the center of the chart to return to the top level.
+    with gr.Tabs():
+        with gr.Tab("Topic Explorer", id=0):
+            topic_markdown = """ 
+            This tool provides an interactive way to explore how people are using Chatbot Arena. 
+            Using *[topic clustering](https://github.com/MaartenGr/BERTopic)*, we organized user-submitted prompts from Arena battles into broad and specific categories. 
+            Dive in to uncover insights about the distribution and themes of these prompts! """
+            gr.Markdown(topic_markdown)
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the visualizer"
+            )
+            with gr.Accordion(expandText, open=False):
+                instructions = """
+                - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+                    - *On mobile devices*: Tap instead of hover.
+                - Click to Explore: 
+                    - Click on a main category to see its subcategories.
+                    - Click on subcategories to see example prompts in the sidebar.
+                - Undo and Reset: Click the center of the chart to return to the top level.
 
-        Visualizer is created using Arena battle data collected from 2024/6 to 2024/8.
-        """
-        gr.Markdown(instructions)
+                Visualizer is created using Arena battle data collected from 2024/6 to 2024/8.
+                """
+                gr.Markdown(instructions)
 
-    frame = """
-                <iframe class="visualizer" width="100%"
-                        src="https://storage.googleapis.com/public-arena-no-cors/index.html">
-                </iframe>
+            frame = """
+                        <iframe class="visualizer" width="100%"
+                                src="https://storage.googleapis.com/public-arena-no-cors/index.html">
+                        </iframe>
+                    """
+            gr.HTML(frame)
+        with gr.Tab("Price Explorer", id=1):
+            price_markdown = """
+            This scatterplot presents a selection of models from the Arena, plotting their score against their cost. Only models with publicly available pricing and parameter information are included, meaning models like Gemini's experimental models are not displayed. Feel free to view price sources or add pricing information [here](https://github.com/lmarena/arena-catalog/blob/main/data/scatterplot-data.json).
             """
-    gr.HTML(frame)
+            gr.Markdown(price_markdown)
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the scatterplot"
+            )
+            with gr.Accordion(expandText, open=False):
+                instructions = """
+                - Hover Over Points: View the model's arena score, cost, organization, and license.
+                - Click on Points: Click on a point to visit the model's website.
+                - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
+                - Select Category: Use the dropdown menu in the upper-right corner to select a category and view the arena scores for that category.
+                """
+                gr.Markdown(instructions)
+
+            frame = """<object type="text/html" data="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html" width="100%" class="visualizer"></object>"""
+
+            gr.HTML(frame)
 
 
 def load_demo(context: Context, request: gr.Request):
