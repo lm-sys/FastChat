@@ -14,12 +14,15 @@ task_name:
 
 model_name: null
 name: llama-3-70b-instruct
+api_type: openai
 endpoints:
   - api_base: null
     api_key: null
 parallel: 50
 temperature: 0.0
 max_token: 512
+
+image_dir: null # directory where vision arena images are stored
 
 max_retry: 2
 retry_sleep: 10

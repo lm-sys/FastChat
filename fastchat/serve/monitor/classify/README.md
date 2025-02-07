@@ -29,6 +29,8 @@ To test your new classifier for a new category, you would have to make sure you 
 python label.py --config config.yaml --testing
 ```
 
+If you are labeling a vision category, add the `--vision` flag to the command. This will add a new column to the input data called `image_path` that contains the path to the image corresponding to each conversation. Ensure that you update your config with the correct `image_dir` where the images are stored.
+
 Then, add your new category bench to `tag_names` in `display_score.py`. After making sure that you also have a correctly formatted ground truth json file, you can report the performance of your classifier by running
 ```console
 python display_score.py --bench <your_bench>
