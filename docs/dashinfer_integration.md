@@ -20,4 +20,4 @@ Here is an example:
    '''
    python3 -m fastchat.serve.dashinfer_worker --model-path ~/.cache/modelscope/hub/qwen/Qwen-7B-Chat --conv-template qwen-7b-chat /path/to/dashinfer-model-generation-config.json
    '''
-   All avaliable conversation chat templates are listed at [fastchat/conversation.py](../fastchat/conversation.py)
+   All available conversation chat templates are listed at [fastchat/conversation.py](../fastchat/conversation.py)
