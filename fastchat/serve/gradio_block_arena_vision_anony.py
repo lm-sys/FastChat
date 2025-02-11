@@ -312,10 +312,6 @@ def add_text(
                 State(model_left, is_vision=False, pdf_id=unique_id),
                 State(model_right, is_vision=False, pdf_id=unique_id),
             ]
-            upload_pdf_file_to_gcs(
-                pdf_file_path=pdfs[0],
-                filename=unique_id,
-            )
         else:
             model_left, model_right = get_battle_pair(
                 context.all_text_models,
@@ -366,10 +362,17 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    # TODO: add PDF moderator
-    text, image_flagged, csam_flag = moderate_input(
-        state0, text, text, model_list, images, ip
-    )
+    post_processed_text = _prepare_text_with_pdf(text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT], pdfs)
+    if type(post_processed_text) is tuple:
+        text += post_processed_text[0]
+        text, image_flagged, csam_flag = moderate_input(
+            state0, text, text, model_list, images + post_processed_text[1], ip
+        )
+    else:
+        text += post_processed_text
+        text, image_flagged, csam_flag = moderate_input(
+            state0, text, text, model_list, images, ip
+        )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -408,7 +411,11 @@ def add_text(
         )
 
     text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-    post_processed_text = _prepare_text_with_pdf(text, pdfs)
+
+    upload_pdf_file_to_gcs(
+        pdf_file_path=pdfs[0],
+        filename=unique_id,
+    )
 
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(

@@ -273,12 +273,18 @@ MARKER_PDFPARSE_CONFIG = {
 
 def convert_base64_to_pil_image(b64_string):
     from PIL import Image
+    import numpy as np
 
-    image_data = base64.b64decode(b64_string)
+    image_data = np.frombuffer(base64.b64decode(b64_string), dtype=np.uint8)
     image_bytes = BytesIO(image_data)
     image = Image.open(image_bytes)
     
     return image
+
+def batch_convert_base64_to_images(base64_dict):
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        return list(executor.map(convert_base64_to_pil_image, base64_dict.values()))
 
 def parse_pdf(file_path):
     import requests
@@ -287,7 +293,6 @@ def parse_pdf(file_path):
 
     form_data = {
         'file': ('test.pdf', open(file_path, 'rb'), 'application/pdf'),
-        'langs': (None, "English"),
         "force_ocr": (None, False),
         "paginate": (None, False),
         'output_format': (None, 'markdown'),
@@ -296,7 +301,7 @@ def parse_pdf(file_path):
         "disable_image_extraction": (None, False)
     }
 
-    headers = {"X-Api-Key": os.getenv("X-Api-Key")} 
+    headers = {"X-Api-Key": str(os.getenv("MARKER_API_KEY"))} 
     response = requests.post(url, files=form_data, headers=headers)
     data = response.json()
 
@@ -312,7 +317,7 @@ def parse_pdf(file_path):
             break
     
     output_md = data["markdown"]
-    output_images = [convert_base64_to_pil_image(b64_image) for b64_image in data["images"].values()]
+    output_images = batch_convert_base64_to_images(data["images"])
 
     return output_md, output_images
 
