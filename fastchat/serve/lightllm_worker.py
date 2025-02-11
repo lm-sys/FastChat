@@ -509,4 +509,4 @@ if __name__ == "__main__":
         context_length,
     )
 
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info", use_colors=False)
