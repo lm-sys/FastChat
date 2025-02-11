@@ -8,6 +8,11 @@ import json
 import os
 import random
 import time
+import requests
+import re
+from load import Xgen15BTokenizer
+import transformers
+from transformers import AutoModelForCausalLM
 
 import shortuuid
 import torch
@@ -69,6 +74,108 @@ def run_eval(
     if use_ray:
         ray.get(ans_handles)
 
+def fetch_model(model_pth):
+    model = AutoModelForCausalLM.from_pretrained(
+        model_pth,
+        torch_dtype=torch.bfloat16,
+        use_flash_attention_2=True,
+        device_map='auto',
+    )
+    tokenizer = Xgen15BTokenizer()
+    return model, tokenizer
+
+def parse_response(response, model_id):
+    # split based on STOPS
+    if model_id.lower() == "Mixtral-8x7b".lower():
+        STOPS = ["<s>", "</s>", "[INST]", "[/INST]"]
+    else:
+        STOPS = ["<|system|>", "<|user|>", "<|assistant|>", "<|endofprompt|>", "<|endoftext|>"]
+
+    # Join the stops using "|" for regex OR operator
+    stops_pattern = "|".join(map(re.escape, STOPS))
+
+    # Split the string using stops_pattern
+    result = re.split(stops_pattern, response)
+    return result[-1]
+
+def generate_endpoint(prompt, model):
+    if model.lower() == "XGen-22b-v2".lower():
+        url = "https://inference.salesforceresearch.ai/generate"
+    elif model.lower() == "Mixtral-8x7b".lower():
+        url = "https://mixtralai.salesforceresearch.ai/generate"
+    else:
+        raise ValueError(f"Model {model} not supported")
+    print(prompt)
+    data = {
+        "prompt": prompt,
+        "use_beam_search": False,
+        "n": 1,
+        "temperature": 0.0,
+        "max_tokens": 2000,
+        "stop" : ['<|endofprompt|>', '[/RESPONSE]']
+    }
+    response = requests.post(url, json=data)
+
+    return parse_response(response.json()['text'][0], model)
+
+def format_prompt(messages, model):
+    formatted_prompt = ""
+
+    # Tony's finetuned models
+    if model.endswith("pm"):
+        for message in messages:
+            if message["role"] == "user":
+                formatted_prompt += f"<|im_start|>user\n{message['content']}<|im_end|>\n"
+            elif message["role"] == "assistant":
+                formatted_prompt += f"<|im_start|>assistant\n{message['content']}<|im_end|>\n"
+
+        formatted_prompt += '<|im_start|>assistant\n'
+
+    # Mixtral endpoint
+    elif model.lower() == "Mixtral-8x7b".lower():
+        for message in messages:
+            if message["role"] == "user":
+                formatted_prompt += f"<s>\n[INST] {message['content']} [/INST]\n"
+            elif message["role"] == "assistant":
+                formatted_prompt += f"{message['content']} </s>"
+
+    # XGen template
+    else:
+        for message in messages:
+            if message["role"] == "user":
+                formatted_prompt += f"<|user|>\n{message['content']}<|endofprompt|>\n"
+            elif message["role"] == "assistant":
+                formatted_prompt += f"<|assistant|>\n{message['content']}<|endofprompt|>\n"
+
+        formatted_prompt += f"<|assistant|>\n"
+
+    return formatted_prompt
+
+
+def chat(model, model_id, tokenizer, messages):
+    if model_id.endswith("pm"):
+        # Tony's models (OpenAI format)
+        eos_token = "<|im_end|>"
+    else:
+        # All other models (Xgen format)
+        eos_token = "<|endofprompt|>"
+
+    input_ids = tokenizer.encode(messages, return_tensors='pt').to('cuda')
+
+    # Generate a response
+    with torch.no_grad():
+        response_ids = model.generate(
+            input_ids,
+            do_sample=False,
+            max_new_tokens=2000,
+            eos_token_id=tokenizer.encode(eos_token)[0]
+        ).to('cuda')
+
+    # Decode the response
+    response = tokenizer.decode(response_ids[:, input_ids.shape[-1]:][0], skip_special_tokens=True)[:-1]
+    response = response.rstrip()
+    response = parse_response(response, model_id)
+    return response
 
 @torch.inference_mode()
 def get_model_answers(
@@ -83,17 +190,7 @@ def get_model_answers(
     dtype,
     revision,
 ):
-    model, tokenizer = load_model(
-        model_path,
-        revision=revision,
-        device="cuda",
-        num_gpus=num_gpus_per_model,
-        max_gpu_memory=max_gpu_memory,
-        dtype=dtype,
-        load_8bit=False,
-        cpu_offloading=False,
-        debug=False,
-    )
+    model, tokenizer = fetch_model(model_path)
 
     for question in tqdm(questions):
         if question["category"] in temperature_config:
@@ -104,75 +201,26 @@ def get_model_answers(
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
-            conv = get_conversation_template(model_id)
+            messages = []
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
-                conv.append_message(conv.roles[0], qs)
-                conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt]).input_ids
-
-                if temperature < 1e-4:
-                    do_sample = False
-                else:
-                    do_sample = True
+                messages.append(
+                    {"content": qs, "role": "user"}
+                )
+                formatted_prompt = format_prompt(messages, model_id)
 
                 # some models may error out when generating long outputs
                 try:
-                    output_ids = model.generate(
-                        torch.as_tensor(input_ids).cuda(),
-                        do_sample=do_sample,
-                        temperature=temperature,
-                        max_new_tokens=max_new_token,
+                    output = chat(model, model_id, tokenizer, formatted_prompt).rstrip()
+                    messages.append(
+                        {"content": output, "role": "assistant"}
                     )
-                    if model.config.is_encoder_decoder:
-                        output_ids = output_ids[0]
-                    else:
-                        output_ids = output_ids[0][len(input_ids[0]) :]
 
-                    # be consistent with the template's stop_token_ids
-                    if conv.stop_token_ids:
-                        stop_token_ids_index = [
-                            i
-                            for i, id in enumerate(output_ids)
-                            if id in conv.stop_token_ids
-                        ]
-                        if len(stop_token_ids_index) > 0:
-                            output_ids = output_ids[: stop_token_ids_index[0]]
-
-                    output = tokenizer.decode(
-                        output_ids,
-                        spaces_between_special_tokens=False,
-                    )
-                    if conv.stop_str and isinstance(conv.stop_str, list):
-                        stop_str_indices = sorted(
-                            [
-                                output.find(stop_str)
-                                for stop_str in conv.stop_str
-                                if output.find(stop_str) > 0
-                            ]
-                        )
-                        if len(stop_str_indices) > 0:
-                            output = output[: stop_str_indices[0]]
-                    elif conv.stop_str and output.find(conv.stop_str) > 0:
-                        output = output[: output.find(conv.stop_str)]
-
-                    for special_token in tokenizer.special_tokens_map.values():
-                        if isinstance(special_token, list):
-                            for special_tok in special_token:
-                                output = output.replace(special_tok, "")
-                        else:
-                            output = output.replace(special_token, "")
-                    output = output.strip()
-
-                    if conv.name == "xgen" and output.startswith("Assistant:"):
-                        output = output.replace("Assistant:", "", 1).strip()
                 except RuntimeError as e:
                     print("ERROR question ID: ", question["question_id"])
                     output = "ERROR"
 
-                conv.update_last_message(output)
                 turns.append(output)
 
             choices.append({"index": i, "turns": turns})
@@ -285,20 +333,27 @@ if __name__ == "__main__":
 
     print(f"Output to {answer_file}")
 
-    run_eval(
-        model_path=args.model_path,
-        model_id=args.model_id,
-        question_file=question_file,
-        question_begin=args.question_begin,
-        question_end=args.question_end,
-        answer_file=answer_file,
-        max_new_token=args.max_new_token,
-        num_choices=args.num_choices,
-        num_gpus_per_model=args.num_gpus_per_model,
-        num_gpus_total=args.num_gpus_total,
-        max_gpu_memory=args.max_gpu_memory,
-        dtype=str_to_torch_dtype(args.dtype),
-        revision=args.revision,
-    )
+    import ipdb, traceback, sys
 
-    reorg_answer_file(answer_file)
+    try:
+        run_eval(
+            model_path=args.model_path,
+            model_id=args.model_id,
+            question_file=question_file,
+            question_begin=args.question_begin,
+            question_end=args.question_end,
+            answer_file=answer_file,
+            max_new_token=args.max_new_token,
+            num_choices=args.num_choices,
+            num_gpus_per_model=args.num_gpus_per_model,
+            num_gpus_total=args.num_gpus_total,
+            max_gpu_memory=args.max_gpu_memory,
+            dtype=str_to_torch_dtype(args.dtype),
+            revision=args.revision,
+        )
+
+        reorg_answer_file(answer_file)
+    except:
+        extype, value, tb = sys.exc_info()
+        traceback.print_exc()
+        ipdb.post_mortem(tb)
