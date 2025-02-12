@@ -406,7 +406,7 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
         state.has_csam_image = True
         report_csam_image(state, images[0])
 
-    return text, image_flagged, csam_flagged
+    return text, text_flagged, image_flagged, csam_flagged
 
 
 def add_text(
