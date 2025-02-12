@@ -365,12 +365,12 @@ def add_text(
     post_processed_text = _prepare_text_with_pdf(text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT], pdfs)
     if type(post_processed_text) is tuple:
         text += post_processed_text[0]
-        text, image_flagged, csam_flag = moderate_input(
+        text, text_flagged, image_flagged, csam_flag = moderate_input(
             state0, text, text, model_list, images + post_processed_text[1], ip
         )
     else:
         text += post_processed_text
-        text, image_flagged, csam_flag = moderate_input(
+        text, text_flagged, image_flagged, csam_flag = moderate_input(
             state0, text, text, model_list, images, ip
         )
 
@@ -401,6 +401,25 @@ def add_text(
             + [
                 {
                     "text": IMAGE_MODERATION_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                },
+                "",
+                no_change_btn,
+            ]
+            + [no_change_btn] * 7
+            + [""]
+        )
+    
+    if text_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [
+                {
+                    "text": TEXT_MODERATION_MSG
                     + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
                 },
                 "",
