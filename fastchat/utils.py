@@ -18,6 +18,8 @@ import requests
 
 from fastchat.constants import LOGDIR
 
+from PIL import Image
+
 
 handler = None
 visited_loggers = set()
@@ -392,7 +394,6 @@ def str_to_torch_dtype(dtype: str):
 
 
 def load_image(image_file):
-    from PIL import Image
     import requests
 
     image = None
@@ -481,6 +482,18 @@ def get_pdf_num_page(file_path):
 
     return len(reader.pages)
 
+def resize_image_if_needed(image_bytes):
+    image = Image.open(BytesIO(image_bytes))
+    if min(image.size) < 128:
+        print(f"⚠️ Resizing image from {image.size} to minimum required size")
+        new_size = (max(128, image.size[0]), max(128, image.size[1]))
+        image = image.resize(new_size, Image.LANCZOS)
+        
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format="PNG")
+        return img_byte_arr.getvalue()
+    
+    return image_bytes
 
 def image_moderation_request(image_bytes, endpoint, api_key):
     headers = {"Content-Type": "image/jpeg", "Ocp-Apim-Subscription-Key": api_key}
@@ -516,6 +529,7 @@ def image_moderation_filter(image):
     print(f"moderating image")
 
     image_bytes = base64.b64decode(image.base64_str)
+    image_bytes = resize_image_if_needed(image_bytes)  
 
     nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
     csam_flagged = False
