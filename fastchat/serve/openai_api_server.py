@@ -7,6 +7,7 @@
 Usage:
 python3 -m fastchat.serve.openai_api_server
 """
+
 import asyncio
 import argparse
 import json

@@ -4,6 +4,7 @@ Clean chatbot arena battle log.
 Usage:
 python3 clean_battle_data.py --mode conv_release
 """
+
 import argparse
 import datetime
 import json

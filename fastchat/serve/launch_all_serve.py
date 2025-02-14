@@ -1,13 +1,14 @@
 """
-Usage: python launch_all_serve_by_shell.py --model-path-address "THUDM/chatglm2-6b@localhost@2021" "huggyllama/llama-7b@localhost@2022" 
+Usage: python launch_all_serve_by_shell.py --model-path-address "THUDM/chatglm2-6b@localhost@2021" "huggyllama/llama-7b@localhost@2022"
 
-Workers are listed in format of `model-path`@`host`@`port` 
+Workers are listed in format of `model-path`@`host`@`port`
 
-The key mechanism behind this scripts is: 
+The key mechanism behind this scripts is:
     1, execute shell cmd to launch the controller/worker/openai-api-server;
     2, check the log of controller/worker/openai-api-server to ensure that the serve is launched properly.
 Note that a few of non-critical `fastchat.serve` cmd options are not supported currently.
 """
+
 import sys
 import os
 

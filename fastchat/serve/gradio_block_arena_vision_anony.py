@@ -95,8 +95,7 @@ vl_models = []
 
 # TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {}
-PDFCHAT_SAMPLING_WEIGHTS = {
-    "gpt-4o-2024-05-13": 1, "gpt-4o-mini-2024-07-18": 1}
+PDFCHAT_SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13": 1, "gpt-4o-mini-2024-07-18": 1}
 
 # TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
@@ -362,7 +361,9 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    post_processed_text = _prepare_text_with_pdf(text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT], pdfs)
+    post_processed_text = _prepare_text_with_pdf(
+        text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT], pdfs
+    )
     if type(post_processed_text) is tuple:
         text += post_processed_text[0]
         text, text_flagged, image_flagged, csam_flag = moderate_input(
@@ -409,7 +410,7 @@ def add_text(
             + [no_change_btn] * 7
             + [""]
         )
-    
+
     if text_flagged:
         logger.info(f"text flagged. ip: {ip}. text: {text}")
         for i in range(num_sides):

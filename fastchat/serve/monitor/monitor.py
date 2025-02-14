@@ -369,9 +369,7 @@ def update_leaderboard_df(arena_table_vals):
             (
                 "color: green; font-weight: bold"
                 if v > 0
-                else "color: red; font-weight: bold"
-                if v < 0
-                else ""
+                else "color: red; font-weight: bold" if v < 0 else ""
             )
             for v in s
         ]
@@ -474,9 +472,9 @@ def build_arena_tab(
         arena_values = get_arena_table(
             arena_df,
             model_table_df,
-            arena_subset_df=arena_subset_df
-            if category != "Overall"
-            else arena_overall_sc_df,
+            arena_subset_df=(
+                arena_subset_df if category != "Overall" else arena_overall_sc_df
+            ),
             hidden_models=(
                 None
                 if len(filters) > 0 and "Show Deprecated" in filters
@@ -1033,6 +1031,21 @@ def build_leaderboard_tab(
             with gr.Tab("Full Leaderboard", id=4):
                 build_full_leaderboard_tab(
                     elo_results_text, model_table_df, model_to_score
+                )
+
+            from fastchat.serve.monitor.copilot_arena import (
+                build_copilot_arena_tab,
+                copilot_arena_leaderboard_url,
+            )
+
+            if copilot_arena_leaderboard_url:
+                with gr.Tab("Copilot Arena Leaderboard", id=5):
+                    build_copilot_arena_tab()
+            else:
+                print(
+                    "Unable to build Copilot Arena's Leaderboard. "
+                    "COPILOT_ARENA_LEADERBOARD_URL environment variable is not set. "
+                    "Please configure it to a valid URL."
                 )
 
         if not show_plot:

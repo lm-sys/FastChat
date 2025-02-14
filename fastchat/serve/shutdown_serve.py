@@ -1,7 +1,7 @@
 """
 Usage：
 python shutdown_serve.py --down all
-options: "all","controller","model_worker","openai_api_server"， `all` means to stop all related servers 
+options: "all","controller","model_worker","openai_api_server"， `all` means to stop all related servers
 """
 
 import argparse

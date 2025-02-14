@@ -239,9 +239,9 @@ def load_model(
         if num_gpus != 1:
             kwargs["device_map"] = "auto"
             if max_gpu_memory is None:
-                kwargs[
-                    "device_map"
-                ] = "sequential"  # This is important for not the same VRAM sizes
+                kwargs["device_map"] = (
+                    "sequential"  # This is important for not the same VRAM sizes
+                )
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
                     i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -2489,7 +2489,7 @@ class RekaAdapter(BaseModelAdapter):
 
 class NoSystemAdapter(BaseModelAdapter):
     def match(self, model_path: str):
-        keyword_list = ["athene-70b"]
+        keyword_list = ["athene-70b", "p2l"]
 
         for keyword in keyword_list:
             if keyword == model_path.lower():

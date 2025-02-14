@@ -1,4 +1,5 @@
 """Benchmarking script to test the throughput of serving workers."""
+
 import argparse
 import json
 

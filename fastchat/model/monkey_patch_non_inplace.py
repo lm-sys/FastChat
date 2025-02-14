@@ -2,6 +2,7 @@
 Monkey patch the llama implementation in the huggingface/transformers library.
 Avoid bugs in mps backend by not using in-place operations.
 """
+
 import math
 from typing import List, Optional, Tuple
 

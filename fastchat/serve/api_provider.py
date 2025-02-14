@@ -23,6 +23,7 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
+    extra_body=None,
 ):
     if model_api_dict["api_type"] == "openai":
         if model_api_dict.get("vision-arena", False):
@@ -246,6 +247,18 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
             conversation_id=state.conv_id,
         )
+    elif model_api_dict["api_type"] == "p2l":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = p2l_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            extra_body=extra_body,
+        )
     else:
         raise NotImplementedError()
 
@@ -410,6 +423,74 @@ def column_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
+
+
+def p2l_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+    extra_body=None,
+):
+    import openai
+
+    client = openai.OpenAI(
+        base_url=api_base,
+        api_key=api_key or "-",
+        timeout=180,
+    )
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": None,
+        "top_p": None,
+        "max_new_tokens": max_new_tokens,
+        "extra_body": extra_body,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        max_tokens=max_new_tokens,
+        stream=True,
+        extra_body=extra_body,
+    )
+    text = ""
+    for chunk_idx, chunk in enumerate(res):
+        if len(chunk.choices) > 0:
+            text += chunk.choices[0].delta.content or ""
+
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+
+            if chunk_idx == 0:
+                if hasattr(chunk.choices[0].delta, "model"):
+                    data["ans_model"] = chunk.choices[0].delta.model
+
+                if hasattr(chunk, "router_outputs"):
+                    data["router_outputs"] = chunk.router_outputs
+
+            yield data
 
 
 def upload_openai_file_to_gcs(file_id):

@@ -2,6 +2,7 @@
 Usage:
 python3 -m playground.benchmark.benchmark_api_provider --api-endpoint-file api_endpoints.json --output-file ./benchmark_results.json --random-questions metadata_sampled.json
 """
+
 import argparse
 import json
 import time

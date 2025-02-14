@@ -3,6 +3,7 @@
 Usage:
 python3 gen_api_answer.py --model gpt-3.5-turbo
 """
+
 import argparse
 import json
 import os

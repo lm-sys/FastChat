@@ -3,6 +3,7 @@ Sample some conversations from a file.
 
 Usage: python3 -m fastchat.data.sample --in sharegpt.json --out sampled.json
 """
+
 import argparse
 import json
 
