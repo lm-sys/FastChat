@@ -13,6 +13,7 @@ Other commands:
 - Type "!!save <filename>" to save the conversation history to a json file.
 - Type "!!load <filename>" to load a conversation history from a json file.
 """
+
 import argparse
 import os
 import re
@@ -197,6 +198,14 @@ def main(args):
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
         os.environ["XPU_VISIBLE_DEVICES"] = args.gpus
+        if len(args.gpus.split(",")) == 1:
+            try:
+                import torch_npu
+
+                torch.npu.set_device(int(args.gpus))
+                print(f"NPU is available, now model is running on npu:{args.gpus}")
+            except ModuleNotFoundError:
+                pass
     if args.enable_exllama:
         exllama_config = ExllamaConfig(
             max_seq_len=args.exllama_max_seq_len,
