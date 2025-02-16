@@ -177,20 +177,11 @@ def clear_history_example(request: gr.Request):
     ) * 5
 
 
-# TODO(Chris): At some point, we would like this to be a live-reporting feature.
 def report_csam_image(state, image):
     pass
 
 
 def wrap_pdfchat_query(query, document):
-    # TODO: Considering redesign the context format.
-    # document_context = f"""
-    # The following is the content of a document:
-    # {document}
-    # Based on this document, answer the following question:
-    # {query}
-    # """
-
     reformatted_query_context = (
         f"Answer the user query given the context.\n"
         f"[QUERY CONTEXT]\n"
@@ -202,57 +193,6 @@ def wrap_pdfchat_query(query, document):
     )
 
     return reformatted_query_context
-
-
-# LLAMA_PARSE_MAX_RETRY = 2
-# LLAMAPARSE_SUPPORTED_LANGS = {
-#     "English": "en",
-#     "Chinese": "ch_sim",
-#     "Russian": "ru",
-#     "Spanish": "es",
-#     "Japanese": "ja",
-#     "Korean": "ko",
-#     "French": "fr",
-#     "German": "de",
-#     "Vietnamese": "vi",
-# }
-
-
-# def parse_pdf(file_path):
-#     from llama_parse import LlamaParse
-#     from llama_index.core.schema import ImageDocument, TextNode
-
-#     from PIL import Image
-
-#     parser = LlamaParse(
-#         api_key=os.getenv("LLAMA_CLOUD_API_KEY"),
-#         result_type="markdown",
-#     )
-
-#     def get_image_nodes(json_objs: List[dict], download_path: str):
-#         image_dicts = parser.get_images(json_objs, download_path=download_path)
-#         return [ImageDocument(image_path=image_dict["path"]) for image_dict in image_dicts]
-
-#     json_objs = parser.get_json_result(file_path)
-#     json_list = json_objs[0]["pages"]
-
-#     text = ""
-#     for page in json_list:
-#         text += f"Page {page['page']}:\n{page['md']}\n"
-#         if (page['images']):
-#             for i, image in enumerate(page['images']):
-#                 text += f"page{page['page']}_figure{i + 1}\n"
-
-#     image_documents = get_image_nodes(json_objs, ".")
-#     images = []
-
-#     for image_doc in image_documents:
-#         image_path = image_doc.image_path
-#         image = Image.open(image_path)
-#         images.append(image)
-
-#     return text, images
-
 
 PDFPARSE_MAX_RETRY = 2
 PDFPARSE_SUPPORTED_LANGS = {
@@ -336,16 +276,6 @@ def _prepare_text_with_image(state, text, images, csam_flag):
 
     return text
 
-
-# def _prepare_text_with_pdf(text, pdfs):
-#     if len(pdfs) > 0:
-#         document_content = parse_pdf(pdfs[0])
-#         print("Document processed")
-#         text = wrap_pdfchat_query(text, document_content)
-
-#     return text
-
-
 def _prepare_text_with_pdf(text, pdfs):
     if len(pdfs) > 0:
         parsed_text, imgs = parse_pdf(pdfs[0])
@@ -360,7 +290,6 @@ def _prepare_text_with_pdf(text, pdfs):
     return text
 
 
-# NOTE(chris): take multiple images later on
 def convert_images_to_conversation_format(images):
     import base64
 

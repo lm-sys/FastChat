@@ -93,15 +93,12 @@ anony_names = ["", ""]
 text_models = []
 vl_models = []
 
-# TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {}
-PDFCHAT_SAMPLING_WEIGHTS = {"gpt-4o-2024-05-13": 1, "gpt-4o-mini-2024-07-18": 1}
+PDFCHAT_SAMPLING_WEIGHTS = {}
 
-# TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
 PDFCHAT_BATTLE_TARGETS = {}
 
-# TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = []
 PDFCHAT_SAMPLING_BOOST_MODELS = []
 
