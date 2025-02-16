@@ -412,7 +412,7 @@ def add_text(
         )
 
     if text_flagged:
-        logger.info(f"text flagged. ip: {ip}. text: {text}")
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
         for i in range(num_sides):
             states[i].skip_next = True
         return (
