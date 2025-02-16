@@ -38,7 +38,10 @@ from fastchat.serve.gradio_web_server import (
     load_demo_single,
     get_ip,
 )
-from fastchat.serve.monitor.monitor import build_leaderboard_tab
+from fastchat.serve.monitor.monitor import (
+    build_leaderboard_tab,
+    build_prompt_to_leaderboard_tab,
+)
 from fastchat.utils import (
     build_logger,
     get_window_url_params_js,
@@ -252,11 +255,17 @@ window.__gradio_mode__ = "app";
                         arena_hard_table,
                         show_plot=True,
                     )
+            if args.prompt_to_leaderboard_examples:
+                with gr.Tab("🏆 Prompt-to-Leaderboard", id=4):
+                    build_prompt_to_leaderboard_tab(
+                        leaderboard_table_file,
+                        args.prompt_to_leaderboard_examples,
+                    )
             if args.show_visualizer:
-                with gr.Tab("🔍 Arena Visualizer", id=5):
+                with gr.Tab("🔍 Arena Visualizer", id=6):
                     build_visualizer()
 
-            with gr.Tab("ℹ️ About Us", id=4):
+            with gr.Tab("ℹ️ About Us", id=5):
                 build_about()
 
         context_state = gr.State(context)
@@ -367,6 +376,12 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="Show the Data Visualizer tab",
+    )
+    parser.add_argument(
+        "--prompt-to-leaderboard-examples",
+        type=str,
+        default=None,
+        help="Point to the file where Prompt-to-Leaderboard examples are stored, also enable its tab",
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")

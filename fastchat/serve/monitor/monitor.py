@@ -11,6 +11,7 @@ import ast
 import json
 import pickle
 import os
+import random
 import threading
 import time
 
@@ -23,6 +24,7 @@ from fastchat.serve.monitor.basic_stats import report_basic_stats, get_log_files
 from fastchat.serve.monitor.clean_battle_data import clean_battle_data
 from fastchat.serve.monitor.elo_analysis import report_elo_analysis_results
 from fastchat.utils import build_logger, get_window_url_params_js
+from fastchat.serve.monitor.prompt_to_lb import get_p2l_leaderboard
 
 
 from fastchat.serve.monitor.monitor_md import (
@@ -266,7 +268,12 @@ def arena_hard_process(leaderboard_table_file, filepath):
 
 
 def get_arena_table(
-    arena_df, model_table_df, arena_subset_df=None, hidden_models=None, is_overall=False
+    arena_df,
+    model_table_df,
+    arena_subset_df=None,
+    hidden_models=None,
+    is_overall=False,
+    recompute_rank=True,
 ):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
@@ -275,7 +282,8 @@ def get_arena_table(
     if hidden_models:
         arena_df = arena_df[~arena_df.index.isin(hidden_models)].copy()
 
-    arena_df["final_ranking"] = recompute_final_ranking(arena_df)
+    if recompute_rank:
+        arena_df["final_ranking"] = recompute_final_ranking(arena_df)
 
     if arena_subset_df is not None:
         if is_overall:
@@ -348,6 +356,23 @@ def get_arena_table(
     ]
 
     return values
+
+
+def update_p2l_leaderboard_df(arena_table_vals):
+    columns = [
+        "Rank",
+        "Delta",
+        "Model",
+        "Arena Score",
+        "95% CI",
+        "Votes",
+        "Organization",
+        "License",
+        "Knowledge Cutoff",
+    ]
+    elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
+
+    return elo_dataframe.drop(columns=["Delta", "95% CI", "Votes"])
 
 
 def update_leaderboard_df(arena_table_vals):
@@ -427,6 +452,8 @@ def build_arena_tab(
     default_md,
     vision=False,
     show_plot=False,
+    enable_category=True,
+    show_leaderboard_md=True,
 ):
     if elo_results is None:
         gr.Markdown(
@@ -574,33 +601,35 @@ def build_arena_tab(
         is_overall=True,
     )
 
-    md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
-    gr.Markdown(md, elem_id="leaderboard_markdown")
+    if show_leaderboard_md:
+        md = make_arena_leaderboard_md(arena_df, last_updated_time, vision=vision)
+        gr.Markdown(md, elem_id="leaderboard_markdown")
 
     # only keep category without style control
     category_choices = list(arena_dfs.keys())
     category_choices = [x for x in category_choices if "Style Control" not in x]
 
-    with gr.Row():
-        with gr.Column(scale=2):
-            category_dropdown = gr.Dropdown(
-                choices=category_choices,
-                label="Category",
-                value="Overall",
+    if enable_category:
+        with gr.Row():
+            with gr.Column(scale=2):
+                category_dropdown = gr.Dropdown(
+                    choices=category_choices,
+                    label="Category",
+                    value="Overall",
+                )
+            with gr.Column(scale=2):
+                category_checkbox = gr.CheckboxGroup(
+                    ["Style Control", "Show Deprecated"],
+                    label="Apply filter",
+                    info="",
+                )
+            default_category_details = make_category_arena_leaderboard_md(
+                arena_df, arena_df, name="Overall"
             )
-        with gr.Column(scale=2):
-            category_checkbox = gr.CheckboxGroup(
-                ["Style Control", "Show Deprecated"],
-                label="Apply filter",
-                info="",
-            )
-        default_category_details = make_category_arena_leaderboard_md(
-            arena_df, arena_df, name="Overall"
-        )
-        with gr.Column(scale=3, variant="panel"):
-            category_deets = gr.Markdown(
-                default_category_details, elem_id="category_deets"
-            )
+            with gr.Column(scale=3, variant="panel"):
+                category_deets = gr.Markdown(
+                    default_category_details, elem_id="category_deets"
+                )
 
     arena_vals = update_overall_leaderboard_df(arena_table_vals)
     elo_display_df = gr.Dataframe(
@@ -650,6 +679,12 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
     if not vision:
         leader_component_values[:] = [default_md, p1, p2, p3, p4]
 
+    plot_1 = gr.Plot(value=None, visible=False)
+    plot_2 = gr.Plot(value=None, visible=False)
+    plot_3 = gr.Plot(value=None, visible=False)
+    plot_4 = gr.Plot(value=None, visible=False)
+    more_stats_md = gr.Markdown("", visible=False)
+
     if show_plot:
         more_stats_md = gr.Markdown(
             f"""## More Statistics for Chatbot Arena (Overall)""",
@@ -681,33 +716,35 @@ Note: in each category, we exclude models with fewer than 300 votes as their con
                     elem_id="plot-title",
                 )
                 plot_2 = gr.Plot(p2, show_label=False)
-    category_dropdown.change(
-        update_leaderboard_and_plots,
-        inputs=[category_dropdown, category_checkbox],
-        outputs=[
-            elo_display_df,
-            plot_1,
-            plot_2,
-            plot_3,
-            plot_4,
-            more_stats_md,
-            category_deets,
-        ],
-    )
 
-    category_checkbox.change(
-        update_leaderboard_and_plots,
-        inputs=[category_dropdown, category_checkbox],
-        outputs=[
-            elo_display_df,
-            plot_1,
-            plot_2,
-            plot_3,
-            plot_4,
-            more_stats_md,
-            category_deets,
-        ],
-    )
+    if enable_category:
+        category_dropdown.change(
+            update_leaderboard_and_plots,
+            inputs=[category_dropdown, category_checkbox],
+            outputs=[
+                elo_display_df,
+                plot_1,
+                plot_2,
+                plot_3,
+                plot_4,
+                more_stats_md,
+                category_deets,
+            ],
+        )
+
+        category_checkbox.change(
+            update_leaderboard_and_plots,
+            inputs=[category_dropdown, category_checkbox],
+            outputs=[
+                elo_display_df,
+                plot_1,
+                plot_2,
+                plot_3,
+                plot_4,
+                more_stats_md,
+                category_deets,
+            ],
+        )
     return [plot_1, plot_2, plot_3, plot_4]
 
 
@@ -900,6 +937,152 @@ def get_combined_table(elo_results, model_table_df):
     return combined_table
 
 
+def build_prompt_to_leaderboard_df(model_table_df, p2l_examples):
+    with gr.Row():
+        prompt_input = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            elem_id="input_box",
+        )
+        send_btn = gr.Button(value="Send", variant="primary", scale=0)
+
+    sample_examples = random.choices(p2l_examples, k=3)
+    with gr.Row():
+        dataset = gr.Dataset(
+            components=[prompt_input],
+            samples=[[example] for example in sample_examples],
+            elem_id="custom-repochat-dataset",
+            scale=3,
+        )
+        category_checkbox = gr.CheckboxGroup(
+            ["Show Deprecated"], label="Apply filter", info="", scale=1
+        )
+
+    # Make the dataframe invisible and empty initially
+    elo_display_df = gr.Dataframe(
+        headers=[
+            "Rank",
+            "Model",
+            "Arena Elo",
+            "Organization",
+            "License",
+            "Knowledge Cutoff",
+        ],
+        datatype=[
+            "number",
+            "markdown",
+            "number",
+            "str",
+            "str",
+            "str",
+        ],
+        value=[],  # No initial data
+        visible=False,  # Keep it hidden
+        elem_id="arena_leaderboard_dataframe",
+        height=1000,
+        column_widths=[75, 180, 60, 70, 80, 60],
+        wrap=True,
+    )
+
+    cached_lb = gr.State()
+
+    def gen_prompt_to_leaderboard(prompt, filters, cached_lb=None):
+        # Your logic to create/return new dataframe data
+        if cached_lb is None:
+            lb = get_p2l_leaderboard(prompt)
+        else:
+            print("cached_lb used")
+            lb = cached_lb
+
+        _lb = pd.DataFrame([{"model": k, "rating": v} for k, v in lb.to_dict().items()])
+        _lb["variance"] = 0.0
+        _lb["rating_q975"] = 0
+        _lb["rating_q025"] = 0
+        _lb["num_battles"] = 0
+        _lb["final_ranking"] = list(range(1, len(_lb) + 1))
+        _lb = _lb.set_index("model").rename_axis(None)
+
+        hidden_models = (
+            None
+            if len(filters) > 0 and "Show Deprecated" in filters
+            else deprecated_model_name
+        )
+
+        print(f"Hidden Models: {hidden_models}")
+
+        arena_values = get_arena_table(
+            _lb,
+            model_table_df,
+            is_overall=True,
+            recompute_rank=False,
+            hidden_models=hidden_models,
+        )
+        p2l_lb = update_p2l_leaderboard_df(arena_values)
+
+        # Return a gr.update() to update the Dataframe's value and make it visible
+        return gr.update(value=p2l_lb, visible=True), lb
+
+    dataset.click(
+        lambda x: x[0],
+        dataset,
+        prompt_input,
+    )
+    send_btn.click(
+        fn=gen_prompt_to_leaderboard,
+        inputs=[prompt_input, category_checkbox],
+        outputs=[elo_display_df, cached_lb],
+    )
+
+    category_checkbox.change(
+        fn=gen_prompt_to_leaderboard,
+        inputs=[prompt_input, category_checkbox, cached_lb],
+        outputs=[elo_display_df, cached_lb],
+    )
+
+
+def build_prompt_to_leaderboard_tab(leaderboard_table_file, p2l_examples_file):
+    default_md = """# Prompt-to-Leaderboard
+    
+    Input any prompt and see its leaderboard!
+    [Paper] [Prompt-to-Leaderboard: Prompt-Adaptive LLM Evaluations]()"""
+
+    gr.Markdown(default_md, elem_id="leaderboard_markdown")
+
+    p2l_examples = None
+    if p2l_examples_file:
+        with open(p2l_examples_file, "r") as file:
+            p2l_examples = json.load(file)
+
+    if leaderboard_table_file:
+        data = load_leaderboard_table_csv(leaderboard_table_file)
+        model_table_df = pd.DataFrame(data)
+        build_prompt_to_leaderboard_df(model_table_df, p2l_examples)
+    else:
+        pass
+
+    from fastchat.serve.gradio_web_server import acknowledgment_md
+
+    with gr.Accordion(
+        "Citation",
+        open=True,
+    ):
+        citation_md = """
+            ### Citation
+            Please cite the following paper if you find our leaderboard or dataset helpful.
+            ```
+            @misc{chiang2024chatbot,
+                title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},
+                author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},
+                year={2024},
+                eprint={2403.04132},
+                archivePrefix={arXiv},
+                primaryClass={cs.AI}
+            }
+            """
+        gr.Markdown(citation_md, elem_id="leaderboard_markdown")
+        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+
+
 def build_leaderboard_tab(
     elo_results_file,
     leaderboard_table_file,
@@ -991,6 +1174,7 @@ def build_leaderboard_tab(
                     vision=True,
                     show_plot=show_plot,
                 )
+
             model_to_score = {}
             if arena_hard_leaderboard is not None:
                 with gr.Tab("Arena-Hard-Auto", id=3):
