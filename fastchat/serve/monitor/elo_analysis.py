@@ -455,14 +455,12 @@ def report_elo_analysis_results(
         "last_updated_tstamp": last_updated_tstamp,
         "bootstrap_df": bootstrap_df,
         "leaderboard_table_df": leaderboard_table_df,
-        "style_coefficients": (
-            {
-                "bootstrap": np.vstack(boostrap_coef),
-                "final": coef_final,
-            }
-            if rating_system == "bt" and style_control
-            else {}
-        ),
+        "style_coefficients": {
+            "bootstrap": np.vstack(boostrap_coef),
+            "final": coef_final,
+        }
+        if rating_system == "bt" and style_control
+        else {},
     }
 
 

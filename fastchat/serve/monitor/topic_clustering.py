@@ -4,7 +4,6 @@ Usage:
 python3 topic_clustering.py --in arena.json --english-only --min-length 32
 python3 topic_clustering.py --in clean_conv_20230809_100k.json --english-only --min-length 32 --max-length 1536
 """
-
 import argparse
 import json
 import pickle

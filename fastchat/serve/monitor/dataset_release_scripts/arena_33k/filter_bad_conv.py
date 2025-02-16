@@ -3,7 +3,6 @@ Filter conversations for release.
 
 Usage: python3 filter_bad_conv.py --in clean_battle_conv_20230630_tagged_v1_pii.json
 """
-
 import argparse
 from collections import defaultdict
 from enum import Enum, auto

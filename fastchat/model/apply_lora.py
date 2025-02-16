@@ -7,7 +7,6 @@ python3 -m fastchat.model.apply_lora --base ~/model_weights/llama-7b --target ~/
 Dependency:
 pip3 install git+https://github.com/huggingface/peft.git@2822398fbe896f25d4dac5e468624dc5fd65a51b
 """
-
 import argparse
 
 import torch

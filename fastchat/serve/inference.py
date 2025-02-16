@@ -1,5 +1,4 @@
 """Inference for FastChat models."""
-
 import abc
 import gc
 import json
@@ -228,9 +227,9 @@ def generate_stream(
                             output_ids if echo else output_ids[input_echo_len:]
                         )
                     ],
-                    "token_logprobs": (
-                        token_logprobs if echo else token_logprobs[input_echo_len:]
-                    ),
+                    "token_logprobs": token_logprobs
+                    if echo
+                    else token_logprobs[input_echo_len:],
                     "top_logprobs": [{}]
                     * len(token_logprobs if echo else token_logprobs[input_echo_len:]),
                 }

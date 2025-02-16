@@ -1,5 +1,4 @@
 """Additional information of the models."""
-
 from collections import namedtuple, OrderedDict
 from typing import List
 

@@ -1,7 +1,6 @@
 """
 A model worker that executes the model.
 """
-
 import argparse
 import base64
 import gc

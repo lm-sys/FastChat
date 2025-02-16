@@ -4,7 +4,6 @@ Clean chatbot arena chat log.
 Usage:
 python3 clean_chat_data.py
 """
-
 import argparse
 import json
 import os

@@ -355,11 +355,9 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
                         with gr.Column():
                             model_selectors[i] = gr.Dropdown(
                                 choices=text_and_vision_models,
-                                value=(
-                                    text_and_vision_models[i]
-                                    if len(text_and_vision_models) > i
-                                    else ""
-                                ),
+                                value=text_and_vision_models[i]
+                                if len(text_and_vision_models) > i
+                                else "",
                                 interactive=True,
                                 show_label=False,
                                 container=False,

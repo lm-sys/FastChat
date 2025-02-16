@@ -211,7 +211,6 @@ MARKER_PDFPARSE_CONFIG = {
     "languages": ",".join(PDFPARSE_SUPPORTED_LANGS.values()),
 }
 
-
 def convert_base64_to_pil_image(b64_string):
     from PIL import Image
     import numpy as np
@@ -219,16 +218,13 @@ def convert_base64_to_pil_image(b64_string):
     image_data = np.frombuffer(base64.b64decode(b64_string), dtype=np.uint8)
     image_bytes = BytesIO(image_data)
     image = Image.open(image_bytes)
-
+    
     return image
-
 
 def batch_convert_base64_to_images(base64_dict):
     import concurrent.futures
-
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return list(executor.map(convert_base64_to_pil_image, base64_dict.values()))
-
 
 def parse_pdf(file_path):
     import requests
@@ -236,16 +232,16 @@ def parse_pdf(file_path):
     url = "https://www.datalab.to/api/v1/marker"
 
     form_data = {
-        "file": ("test.pdf", open(file_path, "rb"), "application/pdf"),
+        'file': ('test.pdf', open(file_path, 'rb'), 'application/pdf'),
         "force_ocr": (None, False),
         "paginate": (None, False),
-        "output_format": (None, "markdown"),
+        'output_format': (None, 'markdown'),
         "use_llm": (None, True),
         "strip_existing_ocr": (None, False),
-        "disable_image_extraction": (None, False),
+        "disable_image_extraction": (None, False)
     }
 
-    headers = {"X-Api-Key": str(os.getenv("MARKER_API_KEY"))}
+    headers = {"X-Api-Key": str(os.getenv("MARKER_API_KEY"))} 
     response = requests.post(url, files=form_data, headers=headers)
     data = response.json()
 
@@ -259,7 +255,7 @@ def parse_pdf(file_path):
 
         if data["status"] == "complete":
             break
-
+    
     output_md = data["markdown"]
     output_images = batch_convert_base64_to_images(data["images"])
 
@@ -454,9 +450,9 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         with gr.Row(elem_id="model_selector_row"):
             model_selector = gr.Dropdown(
                 choices=text_and_vision_models,
-                value=(
-                    text_and_vision_models[0] if len(text_and_vision_models) > 0 else ""
-                ),
+                value=text_and_vision_models[0]
+                if len(text_and_vision_models) > 0
+                else "",
                 interactive=True,
                 show_label=False,
                 container=False,
