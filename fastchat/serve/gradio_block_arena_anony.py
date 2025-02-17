@@ -186,7 +186,7 @@ ANON_MODELS = []
 SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = ["DeepSeek-R1-Distill-Qwen-32B", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"]
+OUTAGE_MODELS = ["DeepSeek-R1-Distill-Qwen-32B", "DeepSeek-R1-Distill-Qwen-1.5B"]
 
 
 def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=[]):
@@ -458,7 +458,7 @@ def build_side_by_side_ui_anony(models):
 
     with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion(
-            f"🔍 Kliki siia, et näha kõiki {len(models)} võrluses oleva mudeli nime", open=False
+            f"🔍 Kliki siia, et näha võrdluses olevaid mudeleid", open=False
         ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
