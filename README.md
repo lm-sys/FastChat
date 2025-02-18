@@ -6,7 +6,7 @@
 
 `python3 -m fastchat.serve.controller`
 
-- Create a JSON configuration file `api_endpoint.json` with the api endpoints of the models you want to serve. Note, ask me or Ihsan the API keys by email. For example:
+- Create a JSON configuration file `api_endpoint.json` with the api endpoints of the models you want to serve. **Note, ask me or Ihsan the API keys by email**. For example:
 
 ```
 {
