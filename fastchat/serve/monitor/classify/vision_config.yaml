@@ -1,0 +1,34 @@
+# Yaml config file for category classification
+
+input_file: null # json
+cache_file: null # json
+output_file: null # json line
+
+convert_to_json: True
+
+task_name:
+  - captioning_v0.1
+  - homework_v0.1
+  - ocr_v0.1
+  - humor_v0.1
+  - entity_recognition_v0.1
+  - creative_writing_vision_v0.1
+  - diagram_v0.1
+  
+
+model_name: null
+name: gemini-1.5-flash
+api_type: gemini
+endpoints:
+  - api_base: null
+    api_key: null
+
+parallel: 50
+temperature: 0.0
+max_token: 512
+
+image_dir: null # directory where vision arena images are stored
+
+max_retry: 2
+retry_sleep: 10
+error_output: $ERROR$
