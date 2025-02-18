@@ -38,6 +38,7 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
+            azure_api_version=model_api_dict.get("azure_api_version"),
         )
     elif model_api_dict["api_type"] == "openai_no_stream":
         prompt = conv.to_openai_api_messages()
@@ -50,6 +51,7 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
             stream=False,
+            azure_api_version=model_api_dict.get("azure_api_version"),
         )
     elif model_api_dict["api_type"] == "openai_o1":
         prompt = conv.to_openai_api_messages()
@@ -61,6 +63,7 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
+            azure_api_version=model_api_dict.get("azure_api_version"),
             is_o1=True,
         )
     elif model_api_dict["api_type"] == "openai_assistant":
@@ -275,18 +278,20 @@ def openai_api_stream_iter(
     api_key=None,
     stream=True,
     is_o1=False,
+    azure_api_version=None,
 ):
     import openai
 
     api_key = api_key or os.environ["OPENAI_API_KEY"]
-
-    if "azure" in model_name:
+    if azure_api_version:
+        logger.info(f"Using Azure API version {azure_api_version}")
         client = openai.AzureOpenAI(
-            api_version="2023-07-01-preview",
-            azure_endpoint=api_base or "https://api.openai.com/v1",
+            api_version=azure_api_version,
+            azure_endpoint=api_base,
             api_key=api_key,
         )
     else:
+        logger.info(f"Using OpenAI API")
         client = openai.OpenAI(
             base_url=api_base or "https://api.openai.com/v1",
             api_key=api_key,

@@ -17,6 +17,7 @@ dist
 *.swp
 
 # Other
+.gradio/certificate.pem
 .DS_Store
 wandb
 output

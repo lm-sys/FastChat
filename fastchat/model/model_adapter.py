@@ -141,7 +141,7 @@ class BaseModelAdapter:
         )
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+        return get_conv_template("chatgpt")
 
 
 # A global registry for all model adapters

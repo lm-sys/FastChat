@@ -114,6 +114,8 @@ api_endpoint_info = {}
 class State:
     def __init__(self, model_name, is_vision=False):
         self.conv = get_conversation_template(model_name)
+        logger.info(f"model_name: {model_name}")
+        logger.info(f"conv: {self.conv}")
         self.conv_id = uuid.uuid4().hex
         self.skip_next = False
         self.model_name = model_name
@@ -271,6 +273,19 @@ def load_demo_single(context: Context, query_params):
     return [state, dropdown_update]
 
 
+# def load_demo(url_params, request: gr.Request):
+#     global models
+
+#     ip = get_ip(request)
+#     logger.info(f"load_demo. ip: {ip}. params: {url_params}")
+
+#     if args.model_list_mode == "reload":
+#         models, all_models = get_model_list(
+#             controller_url, args.register_api_endpoint_file, vision_arena=False
+#         )
+
+#     return load_demo_single(models, url_params)
+
 def load_demo(url_params, request: gr.Request):
     global models
 
@@ -281,8 +296,13 @@ def load_demo(url_params, request: gr.Request):
         models, all_models = get_model_list(
             controller_url, args.register_api_endpoint_file, vision_arena=False
         )
+    
+    # Create a Context object with the models
+    context = Context()
+    context.text_models = models
+    context.models = all_models if 'all_models' in locals() else models
 
-    return load_demo_single(models, url_params)
+    return load_demo_single(context, url_params)
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
@@ -538,6 +558,7 @@ def bot_response(
                 )
                 extra_body = recommended_config.get("extra_body", None)
 
+        
         stream_iter = get_api_provider_stream_iter(
             conv,
             model_name,
