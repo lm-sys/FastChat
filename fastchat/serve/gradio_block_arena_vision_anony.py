@@ -358,19 +358,16 @@ def add_text(
 
     images = convert_images_to_conversation_format(images)
 
-    post_processed_text = _prepare_text_with_pdf(
-        text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT], pdfs
+    text, pdf_imgs = _prepare_text_with_pdf(text, pdfs)
+
+    text, text_flagged, image_flagged, csam_flag = moderate_input(
+        state0, text, text, model_list, images + pdf_imgs, ip
     )
-    if type(post_processed_text) is tuple:
-        text += post_processed_text[0]
-        text, text_flagged, image_flagged, csam_flag = moderate_input(
-            state0, text, text, model_list, images + post_processed_text[1], ip
-        )
-    else:
-        text += post_processed_text
-        text, text_flagged, image_flagged, csam_flag = moderate_input(
-            state0, text, text, model_list, images, ip
-        )
+
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+
+    if len(pdf_imgs) > 0:
+        text = (text, pdf_imgs)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -427,8 +424,6 @@ def add_text(
             + [""]
         )
 
-    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
-
     upload_pdf_file_to_gcs(
         pdf_file_path=pdfs[0],
         filename=unique_id,
@@ -436,7 +431,7 @@ def add_text(
 
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
-            states[i], post_processed_text, images, csam_flag=csam_flag
+            states[i], text, images, csam_flag=csam_flag
         )
 
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)

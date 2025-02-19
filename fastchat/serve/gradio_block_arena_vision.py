@@ -288,8 +288,8 @@ def _prepare_text_with_pdf(text, pdfs):
 
         if len(imgs) > 0:
             return wrapped_text, imgs
-        return wrapped_text
-    return text
+        return wrapped_text, []
+    return text, []
 
 
 def convert_images_to_conversation_format(images):
