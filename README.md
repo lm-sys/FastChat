@@ -41,7 +41,7 @@
 }
 ```
 
-- Add the sampling rate in the `SAMPLING_WEIGHTS` dictionary in `fastchat/serve/gradio_block_arena_anony.py`
+- Add the sampling rate in the `SAMPLING_WEIGHTS` dictionary in `fastchat/serve/gradio_block_arena_anony.py` .
 - In 2nd terminal:
 
 `python3 -m fastchat.serve.gradio_web_server_multi --register-api-endpoint-file api_endpoint.json`
