@@ -45,6 +45,7 @@ for k, v in key_to_category_name.items():
     k2c[k + "_style_control"] = v + "_style_control"
 key_to_category_name = k2c
 
+
 notebook_url = (
     "https://colab.research.google.com/drive/1KdwokPjirkTmpO_P1WByFNFiqxWQquwH"
 )
@@ -442,8 +443,11 @@ def build_arena_tab(
     for k in key_to_category_name.keys():
         if k not in elo_results:
             continue
-        arena_dfs[key_to_category_name[k]] = elo_results[k]["leaderboard_table_df"]
-        category_elo_results[key_to_category_name[k]] = elo_results[k]
+        category_name = key_to_category_name[k.replace("_style_control", "")]
+        if "_style_control" in k:
+            category_name = f"{category_name} w/ Style Control"
+        arena_dfs[category_name] = elo_results[k]["leaderboard_table_df"]
+        category_elo_results[category_name] = elo_results[k]
 
     arena_df = arena_dfs["Overall"]
 
@@ -791,7 +795,7 @@ def get_arena_category_table(results_df, categories, metric="ranking"):
         style = style.background_gradient(
             cmap="Blues",
             subset=category_names,
-            vmin=1150,
+            vmin=category_df[category_names].max().max() - 250,
             vmax=category_df[category_names].max().max(),
         )
 
@@ -814,10 +818,6 @@ def build_category_leaderboard_tab(
             combined_elo_df, categories, "rating"
         )
         sort_ranking = lambda _: get_arena_category_table(combined_elo_df, categories)
-    with gr.Row():
-        gr.Markdown(
-            f"""&emsp; <span style='font-weight: bold; font-size: 150%;'>Chatbot Arena Overview</span>"""
-        )
 
     overall_ranking_leaderboard = gr.Dataframe(
         headers=["Model"] + [key_to_category_name[k] for k in categories],
@@ -851,6 +851,20 @@ selected_categories = [
     # "no_refusal",
 ]
 selected_categories_width = [110, 110, 110, 110, 80, 80, 80, 110, 80, 80]
+
+vision_categories = [
+    "full",
+    "full_style_control",
+    "captioning",
+    "captioning_style_control",
+    "entity_recognition",
+    "ocr",
+    "creative_writing_vision",
+    "homework",
+    "diagram",
+    "no_refusal",
+]
+vision_categories_width = [110, 110, 100, 110, 110, 60, 80, 80, 80, 80]
 
 language_categories = [
     "english",
@@ -963,16 +977,26 @@ def build_leaderboard_tab(
                 combined_table = get_combined_table(elo_results_text, model_table_df)
                 build_category_leaderboard_tab(
                     combined_table,
-                    "Task",
+                    "LLM Task",
                     selected_categories,
                     selected_categories_width,
                 )
                 build_category_leaderboard_tab(
                     combined_table,
-                    "Language",
+                    "LLM Language",
                     language_categories,
                     language_categories_width,
                 )
+                if elo_results_vision is not None:
+                    vision_combined_table = get_combined_table(
+                        elo_results_vision, model_table_df
+                    )
+                    build_category_leaderboard_tab(
+                        vision_combined_table,
+                        "VLM Task",
+                        vision_categories,
+                        vision_categories_width,
+                    )
                 gr.Markdown(
                     f"""
             ***Rank (UB)**: model's ranking (upper-bound), defined by one + the number of models that are statistically better than the target model.
@@ -1089,31 +1113,10 @@ def build_demo(elo_results_file, leaderboard_table_file, arena_hard_leaderboard)
     from fastchat.serve.gradio_web_server import block_css
 
     text_size = gr.themes.sizes.text_lg
-    # load theme from theme.json
-    theme = gr.themes.Default.load("theme.json")
-    # set text size to large
-    theme.text_size = text_size
-    theme.set(
-        button_large_text_size="20px",
-        button_small_text_size="20px",
-        button_large_text_weight="100",
-        button_small_text_weight="100",
-        button_shadow="*shadow_drop_lg",
-        button_shadow_hover="*shadow_drop_lg",
-        checkbox_label_shadow="*shadow_drop_lg",
-        button_shadow_active="*shadow_inset",
-        button_secondary_background_fill="*primary_300",
-        button_secondary_background_fill_dark="*primary_700",
-        button_secondary_background_fill_hover="*primary_200",
-        button_secondary_background_fill_hover_dark="*primary_500",
-        button_secondary_text_color="*primary_800",
-        button_secondary_text_color_dark="white",
-    )
 
     with gr.Blocks(
         title="Chatbot Arena Leaderboard",
-        # theme=gr.themes.Default(text_size=text_size),
-        theme=theme,
+        theme=gr.themes.Default(text_size=text_size),
         css=block_css,
     ) as demo:
         with gr.Tabs() as tabs:
