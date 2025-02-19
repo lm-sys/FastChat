@@ -424,10 +424,11 @@ def add_text(
             + [""]
         )
 
-    upload_pdf_file_to_gcs(
-        pdf_file_path=pdfs[0],
-        filename=unique_id,
-    )
+    if len(pdfs) > 0:
+        upload_pdf_file_to_gcs(
+            pdf_file_path=pdfs[0],
+            filename=unique_id,
+        )
 
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
