@@ -37,6 +37,7 @@ After these steps, the new model should be compatible with most FastChat feature
   - example: `python3 -m fastchat.serve.cli --model-path meta-llama/Llama-2-7b-chat-hf`
 - Vicuna, Alpaca, LLaMA, Koala
   - example: `python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5`
+- [Alibaba-NLP/gte-large-en-v1.5](https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5)
 - [allenai/tulu-2-dpo-7b](https://huggingface.co/allenai/tulu-2-dpo-7b)
 - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
 - [BAAI/AquilaChat2-7B](https://huggingface.co/BAAI/AquilaChat2-7B)
@@ -66,6 +67,7 @@ After these steps, the new model should be compatible with most FastChat feature
 - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
 - [meta-math/MetaMath-7B-V1.0](https://huggingface.co/meta-math/MetaMath-7B-V1.0)
 - [Microsoft/Orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
+- [moka-ai/m3e-large](https://huggingface.co/moka-ai/m3e-large)
 - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
   - example: `python3 -m fastchat.serve.cli --model-path mosaicml/mpt-7b-chat`
 - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
@@ -81,6 +83,7 @@ After these steps, the new model should be compatible with most FastChat feature
 - [Qwen/Qwen-7B-Chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
 - [rishiraj/CatPPT](https://huggingface.co/rishiraj/CatPPT)
 - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
+- [shibing624/text2vec-base-multilingual](https://huggingface.co/shibing624/text2vec-base-multilingual)
 - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
 - [tenyx/TenyxChat-7B-v1](https://huggingface.co/tenyx/TenyxChat-7B-v1)
 - [TinyLlama/TinyLlama-1.1B-Chat-v1.0](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)
