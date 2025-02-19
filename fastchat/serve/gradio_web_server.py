@@ -121,6 +121,9 @@ class State:
         self.is_vision = is_vision
         self.ans_models = []
         self.router_outputs = []
+        self.pdf_id = (
+            pdf_id  # NOTE(Tim): Version 1 PDFChat Architecture, could be revised later.
+        )
 
         # NOTE(chris): This could be sort of a hack since it assumes the user only uploads one image. If they can upload multiple, we should store a list of image hashes.
         self.has_csam_image = False
