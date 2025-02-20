@@ -17,6 +17,8 @@ from fastchat.constants import (
     PDF_MODERATION_MSG,
     PDF_LIMIT_MSG,
     PDF_PAGE_LIMIT,
+    PDF_CHAR_LEN_LIMIT,
+    PDF_CHAR_LIMIT_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -364,7 +366,23 @@ def add_text(
         state0, text, text, model_list, images + pdf_imgs, ip
     )
 
-    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    if len(pdfs) > 0 and len(text) > PDF_CHAR_LEN_LIMIT:
+        logger.info(f"pdf character limit. ip: {get_ip(request)}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [
+                {"text": PDF_CHAR_LIMIT_MSG},
+                "",
+                no_change_btn,
+            ]
+            + [no_change_btn] * 7
+            + [""]
+        )
+    else:
+        text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]
 
     if len(pdf_imgs) > 0:
         text = (text, pdf_imgs)
