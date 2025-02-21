@@ -270,6 +270,7 @@ def add_text(
         text = chat_input
         files = []
 
+    user_query = text
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -366,21 +367,22 @@ def add_text(
         state0, text, text, model_list, images + pdf_imgs, ip
     )
 
-    if len(pdfs) > 0 and len(text) > PDF_CHAR_LEN_LIMIT:
-        logger.info(f"pdf character limit. ip: {get_ip(request)}. text: {text}")
-        for i in range(num_sides):
-            states[i].skip_next = True
-        return (
-            states
-            + [x.to_gradio_chatbot() for x in states]
-            + [
-                {"text": PDF_CHAR_LIMIT_MSG},
-                "",
-                no_change_btn,
-            ]
-            + [no_change_btn] * 7
-            + [""]
-        )
+    if len(pdfs) > 0:
+        if len(text) > PDF_CHAR_LEN_LIMIT:
+            logger.info(f"pdf character limit. ip: {get_ip(request)}. text: {text}")
+            for i in range(num_sides):
+                states[i].skip_next = True
+            return (
+                states
+                + [x.to_gradio_chatbot() for x in states]
+                + [
+                    {"text": PDF_CHAR_LIMIT_MSG},
+                    "",
+                    no_change_btn,
+                ]
+                + [no_change_btn] * 7
+                + [""]
+            )
     else:
         text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]
 
