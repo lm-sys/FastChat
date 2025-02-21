@@ -270,7 +270,6 @@ def add_text(
         text = chat_input
         files = []
 
-    user_query = text
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
