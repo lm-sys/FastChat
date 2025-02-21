@@ -81,9 +81,9 @@ register_model_info(
         "llama-3.1-405b-instruct-bf16",
         "llama-3.1-405b-instruct-fp8",
         "llama-3.1-405b-instruct",
-        "Llama-3.1-70b-instruct",
+        "llama-3.1-70b-instruct",
         "llama-3.1-8b-instruct",
-        "Llama-3.3-70b-instruct",
+        "llama-3.3-70b-instruct",
 
     ],
     "Llama 3.1",
@@ -335,8 +335,8 @@ register_model_info(
         "mistral-7b-instruct-v0.2",
         "mistral-7b-instruct",
         "pixtral-12b-2409",
-        "Mistral-7B-Instruct-v0.3",
-        "Mistral-Nemo-Instruct-2407"
+        "mistral-7B-Instruct-v0.3",
+        "mistral-Nemo-Instruct-2407"
     ],
     "Mixtral of experts",
     "https://mistral.ai/news/mixtral-of-experts/",
@@ -527,7 +527,7 @@ register_model_info(
 )
 
 register_model_info(
-    ["nous-hermes-2-mixtral-8x7b-dpo", "Hermes-3-Llama-3.1-8B"],
+    ["nous-hermes-2-mixtral-8x7b-dpo", "hermes-3-Llama-3.1-8B"],
     "Nous-Hermes-2-Mixtral-8x7B-DPO",
     "https://huggingface.co/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
     "Nous Hermes finetuned from Mixtral 8x7B",
