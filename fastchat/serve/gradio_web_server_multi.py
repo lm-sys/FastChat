@@ -34,6 +34,7 @@ from fastchat.serve.gradio_web_server import (
     block_css,
     build_single_model_ui,
     build_about,
+    build_terms,
     get_model_list,
     load_demo_single,
     get_ip,
@@ -149,6 +150,10 @@ def build_demo(
 
     head_js = """
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link
+  rel="icon"
+  href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇪🇪</text></svg>"
+/>
 """
     if args.ga_id is not None:
         head_js += f"""
@@ -163,13 +168,25 @@ window.__gradio_mode__ = "app";
 </script>
         """
     text_size = gr.themes.sizes.text_lg
+
+    theme = gr.themes.Monochrome(
+    primary_hue="amber",
+    secondary_hue="neutral",
+    radius_size="sm",
+    font=[gr.themes.GoogleFont('Quicksand'), 'ui-sans-serif', 'system-ui', 'sans-serif']
+    ).set(
+            button_primary_background_fill='*primary_500',
+            button_primary_background_fill_hover='*primary_600',
+            button_secondary_background_fill='*secondary_500',
+            button_secondary_background_fill_hover='*secondary_600',
+    )
     with gr.Blocks(
-        title="Keelemudelite edetabel: aita valida parimat keelemudelit!",
-        theme=gr.themes.Default(text_size=text_size),
+        title="Keelemudelite edetabel",
+        theme=theme,
         css=block_css,
         head=head_js,
     ) as demo:
-        with gr.Tabs() as inner_tabs:
+        with gr.Tabs(elem_classes="tabs") as inner_tabs:
             if args.vision_arena:
                 with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
                     arena_tab.select(None, None, None, js=load_js)
@@ -192,7 +209,7 @@ window.__gradio_mode__ = "app";
                     )
 
             else:
-                with gr.Tab("💬  Vestlemine", id=0) as arena_tab:
+                with gr.Tab("🇪🇪 Vestle", id=0, elem_id='chat_tab') as arena_tab:
                     arena_tab.select(None, None, None, js=load_js)
                     side_by_side_anony_list = build_side_by_side_ui_anony(
                         context.all_text_models
@@ -229,8 +246,11 @@ window.__gradio_mode__ = "app";
                 with gr.Tab("🔍 Arena Visualizer", id=5):
                     build_visualizer()
 
-            with gr.Tab("ℹ️ Meist", id=4):
+            with gr.Tab("ℹ️ Meist", id=4, elem_classes='tab-button'):
                 build_about()
+            
+            with gr.Tab("📜 Kasutajatingimused", id=5):
+                build_terms()
 
         context_state = gr.State(context)
 
@@ -398,5 +418,5 @@ if __name__ == "__main__":
         max_threads=200,
         auth=auth,
         root_path=args.gradio_root_path,
-        show_api=False,
+        show_api=False
     )

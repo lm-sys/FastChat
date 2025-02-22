@@ -54,12 +54,12 @@ enable_btn = gr.Button(interactive=True, visible=True)
 disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 enable_text = gr.Textbox(
-    interactive=True, visible=True, placeholder="👉 Enter your prompt and press ENTER"
+    interactive=True, visible=True, placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER"
 )
 disable_text = gr.Textbox(
     interactive=False,
     visible=True,
-    placeholder='Kliki "🎲 Uus vestlus" et uut vestlust alustada👇 (Sinu valikute põhjal moodustub mudelite edetabel. Palun tee oma valik vastutustundlikult.)',
+    placeholder='Kliki "🎲 Uus vestlus" et uut vestlust alustada.',
 )
 
 controller_url = None
@@ -67,12 +67,10 @@ enable_moderation = False
 use_remote_storage = False
 
 acknowledgment_md = """
-### Kasutustingimused
-
 Kasutajad on kohustatud nõustuma järgmiste kasutustingimustega:
 
 See platvorm on loodud eelistusandmete ja juhiste kogumiseks parema eestikeelse keelemudeli loomise eesmärgil. Võrdluses olevatele keelemudelitele rakendatakse piiratud modereerimist, mistõtu võivad mudelid genereerida solvavat sisu. 
-Seda platvormi ei tohi kasutada ebaseadusliku, kedagi kahjustavad, vägivaldse, rassistliku või seksuaalse sisuga teksti genereerimiseks. 
+Seda platvormi ei tohi kasutada ebaseadusliku, kedagi kahjustava, vägivaldse, rassistliku või seksuaalse sisuga teksti genereerimiseks. 
 Palun ära siseseta platvormile isiklikku informatsiooni.
 Platvorm kogub kasutajate dialoogiandmeid, ning jätab endale õiguse neid andmeid levitada Creative Commons Attribution (CC-BY) või sarnase litsentsi alusel. 
 """
@@ -626,9 +624,226 @@ def bot_response(
 
 
 block_css = """
+
+
 .prose {
     font-size: 105% !important;
 }
+
+.tabs {
+    margin-bottom: 128px;
+}
+
+#input_row {
+    gap: 0;
+}
+
+#input_box, #input_row {
+    background-color: #ffffff70;
+}
+
+#input_box textarea {
+    background-color: white;
+    font-size: 16px;
+}
+
+.chatbot {
+    box-shadow: none;
+}
+
+.chatbot_0 {
+    border-left: 1px solid #e5e5e5 !important;
+}
+
+.chatbot_1 {
+    border-right: 1px solid #e5e5e5 !important;
+}
+
+.voting_button {
+    background: white;
+    color: gray;
+    border-top: 1px solid #AAA;
+    border-right: 1px solid #AAA;
+    border-bottom: 1px solid #AAA;
+}
+
+.voting_button:hover {
+    background: #DDD;
+}
+
+.voting_button:first-child {
+    border-left: 1px solid #AAA;
+    border-top-left-radius: 6px;
+}
+
+.voting_button:last-child {
+    border-top-right-radius: 6px;
+}
+
+#selection_buttons_row {
+    gap: 0;
+}
+
+#hero_text {
+    background-color: #e0f0ff;
+    text-align: center;
+    padding: 32px 24px 56px;
+}
+
+#hero_text h1 {
+    font-size: 34px;
+    padding-bottom: 24px;
+}
+
+#hero_text ol {
+    font-size: 18px;
+}
+
+#hero_text ol li {
+    padding: 2px 0;
+}
+
+#models_accordion {
+    border: 1px solid #e5e5e5 !important;
+    border-bottom: none !important;
+    border-radius: 6px;
+}
+
+
+ 
+#fixed_footer {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: calc(100% - 256px);
+    z-index: 25;
+    margin: 0 128px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+
+@media screen and (max-width: 1024px) {
+    #fixed_footer {
+        width: 100%;
+        margin: 0;
+    }
+}
+
+
+
+@media screen and (min-width: 640px) {
+    .row-middle-button {
+        margin: 0 12px;
+    }
+}
+
+@media screen and (max-width: 640px) {
+
+    .chatbot {
+        height: 450px !important;
+    }
+
+
+    .message-row.bubble {
+        margin: var(--spacing-xl) var(--spacing-xl) var(--spacing-md) !important;
+    }
+
+    #fixed_footer {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .control_button:nth-child(1) {
+        order: 1;
+    }
+    .control_button:nth-child(2) {
+        order: 3;
+    }
+    .control_button:nth-child(3) {
+        order: 2;
+    }
+    
+    #send_button {
+        min-width: unset;
+        padding: 0 16px;
+    }
+
+    #input_box textarea {
+        padding: 8px;
+        height: 56px !important;
+    }
+
+    #fixed_footer {
+        position: unset;
+    }
+
+    #input_row {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 25;
+    }
+
+    #chat_tab {
+        padding: 0;
+    }
+
+    #hero_container {
+        border-radius: 0;
+        margin-bottom: -32px;
+    }
+
+    #hero_text h2 {
+        font-size: 20px;
+    }
+
+    #hero_text h1 {
+        font-size: 30px;
+    }
+
+    #hero_text ol {
+        font-size: 16px;
+    }
+
+    #hero_text {
+        padding: 2px 24px 24px;
+    }
+
+    #selection_buttons_row {
+        position: fixed;
+        bottom: 84px;
+        left: 0;
+        width: 100%;
+        z-index: 25;
+        background: white;
+    }
+
+    .voting_button {
+        min-width: 50%;
+        max-width: 50%;
+    }
+    .voting_button:nth-child(1) {
+        order: 1;
+    }
+    .voting_button:nth-child(2) {
+        order: 3;
+    }
+    .voting_button:nth-child(3) {
+        order: 4;
+    }
+    .voting_button:nth-child(4) {
+        order: 2;
+    }
+
+    .tabs {
+        margin-bottom: 156px;
+    }
+}
+
+
 
 #arena_leaderboard_dataframe table {
     font-size: 105%;
@@ -825,6 +1040,9 @@ def get_model_description_md(models):
     return model_description_md
 
 
+def build_terms():
+    gr.Markdown(acknowledgment_md, elem_id="terms_markdown")
+
 def build_about():
     about_markdown = """
 # Meist
@@ -938,8 +1156,8 @@ def build_single_model_ui(models, add_promotion_links=False):
             label="Max output tokens",
         )
 
-    if add_promotion_links:
-        gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+    # if add_promotion_links:
+    #     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [upvote_btn, downvote_btn, flag_btn, regenerate_btn, clear_btn]

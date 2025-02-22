@@ -439,26 +439,25 @@ def bot_response_multi(
 
 
 def build_side_by_side_ui_anony(models):
-    notice_markdown = f"""
-# Keelemudelite edetabel: aita valida parimat eestikeelset keelemudelit!
-
-## 📜 Kuidas see töötab?
-- **Pimetest**: Esita oma küsimus. Sinu küsimusele vastavad kaks anonüümset keelemudelit.
-- **Vali parim**: Vali kahest vastusest parim. Kui sa kohe valikut ei oska langetada, võid vestlust jätkata kuni oled otsuseni jõudnud.
-- **Aus mäng**: Sinu valikute põhjal koostame mudelite edetabeli. Palun tee oma otsus vastutustundlikult.
-
-## 👇 Vestlema!
-"""
-
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
 
-    gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.HTML("""
+            <div id="hero_text">
+                <h2>🇪🇪 Keelemudelite edetabel 🇪🇪</h2>
+                <h1>Aita valida parimat eestikeelset keelemudelit!</h1>
+                <ol>
+                    <li>Esita oma küsimus. Sinu küsimusele vastavad kaks anonüümset keelemudelit.</li>
+                    <li>Vali kahest vastusest parim. Kui sa kohe valikut ei oska langetada, võid vestlust jätkata kuni oled otsuseni jõudnud.</li>
+                    <li>Sinu valikute põhjal koostame mudelite edetabeli. Palun tee oma otsus vastutustundlikult.</li>
+                </ol>
+            </div>
+            """, elem_id="hero_container")
 
     with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion(
-            f"🔍 Kliki siia, et näha võrdluses olevaid mudeleid", open=False
+            f"🔍 Kliki siia, et näha võrdluses olevaid mudeleid", open=False, elem_id="models_accordion"
         ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
@@ -468,9 +467,8 @@ def build_side_by_side_ui_anony(models):
                 with gr.Column():
                     chatbots[i] = gr.Chatbot(
                         label=label,
-                        elem_id="chatbot",
+                        elem_classes=f"chatbot chatbot_{i}",
                         height=650,
-                        show_copy_button=True,
                         latex_delimiters=[
                             {"left": "$", "right": "$", "display": False},
                             {"left": "$$", "right": "$$", "display": True},
@@ -488,30 +486,33 @@ def build_side_by_side_ui_anony(models):
         with gr.Row():
             slow_warning = gr.Markdown("")
 
-    with gr.Row():
-        leftvote_btn = gr.Button(
-            value="👈  A on parem", visible=False, interactive=False
-        )
-        rightvote_btn = gr.Button(
-            value="👉  B on parem", visible=False, interactive=False
-        )
-        tie_btn = gr.Button(value="🤝  Viik", visible=False, interactive=False)
-        bothbad_btn = gr.Button(
-            value="👎  Mõlemad on halvad", visible=False, interactive=False
-        )
+    with gr.Group(elem_id="fixed_footer"): 
 
-    with gr.Row():
-        textbox = gr.Textbox(
-            show_label=False,
-            placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER",
-            elem_id="input_box",
-        )
-        send_btn = gr.Button(value="Saada", variant="primary", scale=0)
+        with gr.Row(elem_id="selection_buttons_row"):
+            leftvote_btn = gr.Button(
+                value="👈  A on parem", elem_classes="voting_button", visible=False, interactive=False
+            )
+            tie_btn = gr.Button(value="🤝  Viik", elem_classes="voting_button", visible=False, interactive=False)
+            bothbad_btn = gr.Button(
+                value="👎  Mõlemad on halvad", elem_classes="voting_button", visible=False, interactive=False
+            )
+            rightvote_btn = gr.Button(
+                value="👉  B on parem", elem_classes="voting_button", visible=False, interactive=False
+            )
 
-    with gr.Row() as button_row:
-        clear_btn = gr.Button(value="🎲 Uus vestlus", interactive=False)
-        regenerate_btn = gr.Button(value="🔄  Genereeri vastus uuesti", interactive=False)
-        share_btn = gr.Button(value="📷  Jaga")
+        with gr.Row(elem_id="input_row"):
+            textbox = gr.Textbox(
+                show_label=False,
+                autofocus=True,
+                placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER",
+                elem_id="input_box",
+            )
+            send_btn = gr.Button(value="Saada", variant="primary",  scale=0, elem_id="send_button")
+
+        with gr.Row() as button_row:
+            clear_btn = gr.Button(value="🎲 Uus vestlus", elem_classes="control_button", interactive=False )
+            share_btn = gr.Button(value="📷  Jaga", elem_classes="row-middle-button control_button")
+            regenerate_btn = gr.Button(value="🔄  Genereeri vastus uuesti", elem_classes="control_button", interactive=False)
 
     with gr.Accordion("Parameetrid", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
@@ -539,7 +540,7 @@ def build_side_by_side_ui_anony(models):
             label="Max output tokens",
         )
 
-    gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
+    # gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
     btn_list = [
