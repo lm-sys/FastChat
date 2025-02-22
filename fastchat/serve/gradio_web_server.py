@@ -632,6 +632,7 @@ block_css = """
 
 .tabs {
     margin-bottom: 128px;
+    margin-top: -32px;
 }
 
 #input_row {
@@ -710,7 +711,21 @@ block_css = """
 }
 
 
- 
+.contributor_logos_top {
+    margin-top: 4px;
+    float: right;
+    display: inline-flex;
+}
+
+.contributor_logos_bottom {
+    display: none;
+}
+
+.contributor_logo {
+    height: 28px;
+    margin-left: 12px;
+}
+
 #fixed_footer {
     position: fixed;
     bottom: 0px;
@@ -739,6 +754,16 @@ block_css = """
 }
 
 @media screen and (max-width: 640px) {
+
+    .contributor_logos_top {
+        display: none;
+    }
+
+    .contributor_logos_bottom {
+        margin-top: 24px;
+        display: flex;
+        justify-content: space-around;
+    }
 
     .chatbot {
         height: 450px !important;
@@ -839,7 +864,7 @@ block_css = """
     }
 
     .tabs {
-        margin-bottom: 156px;
+        margin-bottom: 172px;
     }
 }
 

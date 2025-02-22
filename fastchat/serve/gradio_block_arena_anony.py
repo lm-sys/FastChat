@@ -490,14 +490,14 @@ def build_side_by_side_ui_anony(models):
 
         with gr.Row(elem_id="selection_buttons_row"):
             leftvote_btn = gr.Button(
-                value="👈  A on parem", elem_classes="voting_button", visible=False, interactive=False
+                value="Mudel A on parem", elem_classes="voting_button", visible=False, interactive=False
             )
             tie_btn = gr.Button(value="🤝  Viik", elem_classes="voting_button", visible=False, interactive=False)
             bothbad_btn = gr.Button(
                 value="👎  Mõlemad on halvad", elem_classes="voting_button", visible=False, interactive=False
             )
             rightvote_btn = gr.Button(
-                value="👉  B on parem", elem_classes="voting_button", visible=False, interactive=False
+                value="Mudel B on parem", elem_classes="voting_button", visible=False, interactive=False
             )
 
         with gr.Row(elem_id="input_row"):

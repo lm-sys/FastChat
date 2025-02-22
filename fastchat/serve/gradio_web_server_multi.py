@@ -80,6 +80,17 @@ def build_visualizer():
             """
     gr.HTML(frame)
 
+def build_logos(position="top"):
+    gr.HTML(f"""
+        <div class="contributor_logos_{position}">
+            <img class="contributor_logo" src="https://i.imgur.com/S5joumv.png">
+            <img class="contributor_logo" src="https://i.imgur.com/rBK2415.png">
+            <img class="contributor_logo" src="https://i.imgur.com/ZKHvcZ6.png">
+            <img class="contributor_logo" src="https://i.imgur.com/BvL0MYi.png">
+        </div>    
+""")     
+
+
 
 def load_demo(context: Context, request: gr.Request):
     ip = get_ip(request)
@@ -167,7 +178,6 @@ gtag('config', '{args.ga_id}');
 window.__gradio_mode__ = "app";
 </script>
         """
-    text_size = gr.themes.sizes.text_lg
 
     theme = gr.themes.Monochrome(
     primary_hue="amber",
@@ -186,6 +196,9 @@ window.__gradio_mode__ = "app";
         css=block_css,
         head=head_js,
     ) as demo:
+            
+        build_logos()
+
         with gr.Tabs(elem_classes="tabs") as inner_tabs:
             if args.vision_arena:
                 with gr.Tab("⚔️ Arena (battle)", id=0) as arena_tab:
@@ -251,6 +264,8 @@ window.__gradio_mode__ = "app";
             
             with gr.Tab("📜 Kasutajatingimused", id=5):
                 build_terms()
+
+            build_logos('bottom')
 
         context_state = gr.State(context)
 
