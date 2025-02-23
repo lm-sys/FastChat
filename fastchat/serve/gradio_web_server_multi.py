@@ -80,16 +80,18 @@ def build_visualizer():
             """
     gr.HTML(frame)
 
+
 def build_logos(position="top"):
-    gr.HTML(f"""
+    gr.HTML(
+        f"""
         <div class="contributor_logos_{position}">
             <img class="contributor_logo" src="https://i.imgur.com/S5joumv.png">
             <img class="contributor_logo" src="https://i.imgur.com/rBK2415.png">
             <img class="contributor_logo" src="https://i.imgur.com/ZKHvcZ6.png">
             <img class="contributor_logo" src="https://i.imgur.com/BvL0MYi.png">
         </div>    
-""")     
-
+"""
+    )
 
 
 def load_demo(context: Context, request: gr.Request):
@@ -117,11 +119,11 @@ def load_demo(context: Context, request: gr.Request):
             vision_arena=False,
         )
 
-        #context.vision_models, context.all_vision_models = get_model_list(
+        # context.vision_models, context.all_vision_models = get_model_list(
         #    args.controller_url,
         #    args.register_api_endpoint_file,
         #    vision_arena=True,
-        #)
+        # )
 
     # Text models
     if args.vision_arena:
@@ -133,19 +135,19 @@ def load_demo(context: Context, request: gr.Request):
 
         direct_chat_updates = load_demo_single(context, request.query_params)
     else:
-        #direct_chat_updates = load_demo_single(context, request.query_params)
+        # direct_chat_updates = load_demo_single(context, request.query_params)
         side_by_side_anony_updates = load_demo_side_by_side_anony(
             context.all_text_models, request.query_params
         )
-        #side_by_side_named_updates = load_demo_side_by_side_named(
+        # side_by_side_named_updates = load_demo_side_by_side_named(
         #    context.text_models, request.query_params
-        #)
+        # )
 
     tabs_list = (
         [gr.Tabs(selected=inner_selected)]
         + side_by_side_anony_updates
-        #+ side_by_side_named_updates
-        #+ direct_chat_updates
+        # + side_by_side_named_updates
+        # + direct_chat_updates
     )
 
     return tabs_list
@@ -180,15 +182,20 @@ window.__gradio_mode__ = "app";
         """
 
     theme = gr.themes.Monochrome(
-    primary_hue="amber",
-    secondary_hue="neutral",
-    radius_size="sm",
-    font=[gr.themes.GoogleFont('Quicksand'), 'ui-sans-serif', 'system-ui', 'sans-serif']
+        primary_hue="amber",
+        secondary_hue="neutral",
+        radius_size="sm",
+        font=[
+            gr.themes.GoogleFont("Quicksand"),
+            "ui-sans-serif",
+            "system-ui",
+            "sans-serif",
+        ],
     ).set(
-            button_primary_background_fill='*primary_500',
-            button_primary_background_fill_hover='*primary_600',
-            button_secondary_background_fill='*secondary_500',
-            button_secondary_background_fill_hover='*secondary_600',
+        button_primary_background_fill="*primary_500",
+        button_primary_background_fill_hover="*primary_600",
+        button_secondary_background_fill="*secondary_500",
+        button_secondary_background_fill_hover="*secondary_600",
     )
     with gr.Blocks(
         title="Keelemudelite edetabel",
@@ -196,7 +203,6 @@ window.__gradio_mode__ = "app";
         css=block_css,
         head=head_js,
     ) as demo:
-            
         build_logos()
 
         with gr.Tabs(elem_classes="tabs") as inner_tabs:
@@ -222,19 +228,19 @@ window.__gradio_mode__ = "app";
                     )
 
             else:
-                with gr.Tab("🇪🇪 Vestle", id=0, elem_id='chat_tab') as arena_tab:
+                with gr.Tab("🇪🇪 Vestle", id=0, elem_id="chat_tab") as arena_tab:
                     arena_tab.select(None, None, None, js=load_js)
                     side_by_side_anony_list = build_side_by_side_ui_anony(
                         context.all_text_models
                     )
 
-                #with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
+                # with gr.Tab("⚔️ Arena (side-by-side)", id=1) as side_by_side_tab:
                 #    side_by_side_tab.select(None, None, None, js=alert_js)
                 #    side_by_side_named_list = build_side_by_side_ui_named(
                 #        context.text_models
                 #    )
 
-                #with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
+                # with gr.Tab("💬 Direct Chat", id=2) as direct_tab:
                 #    direct_tab.select(None, None, None, js=alert_js)
                 #    single_model_list = build_single_model_ui(
                 #        context.text_models, add_promotion_links=True
@@ -243,8 +249,8 @@ window.__gradio_mode__ = "app";
             demo_tabs = (
                 [inner_tabs]
                 + side_by_side_anony_list
-                #+ side_by_side_named_list
-                #+ single_model_list
+                # + side_by_side_named_list
+                # + single_model_list
             )
 
             if elo_results_file:
@@ -259,13 +265,13 @@ window.__gradio_mode__ = "app";
                 with gr.Tab("🔍 Arena Visualizer", id=5):
                     build_visualizer()
 
-            with gr.Tab("ℹ️ Meist", id=4, elem_classes='tab-button'):
+            with gr.Tab("ℹ️ Meist", id=4, elem_classes="tab-button"):
                 build_about()
-            
+
             with gr.Tab("📜 Kasutajatingimused", id=5):
                 build_terms()
 
-            build_logos('bottom')
+            build_logos("bottom")
 
         context_state = gr.State(context)
 
@@ -433,5 +439,5 @@ if __name__ == "__main__":
         max_threads=200,
         auth=auth,
         root_path=args.gradio_root_path,
-        show_api=False
+        show_api=False,
     )

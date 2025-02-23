@@ -174,6 +174,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
             [state0, state1], "share", [model_selector0, model_selector1], request
         )
 
+
 SAMPLING_WEIGHTS = {}
 
 # target model sampling weights will be boosted.
@@ -443,7 +444,8 @@ def build_side_by_side_ui_anony(models):
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
 
-    gr.HTML("""
+    gr.HTML(
+        """
             <div id="hero_text">
                 <h2>🇪🇪 Keelemudelite edetabel 🇪🇪</h2>
                 <h1>Aita valida parimat eestikeelset keelemudelit!</h1>
@@ -453,11 +455,15 @@ def build_side_by_side_ui_anony(models):
                     <li>Sinu valikute põhjal koostame mudelite edetabeli. Palun tee oma otsus vastutustundlikult.</li>
                 </ol>
             </div>
-            """, elem_id="hero_container")
+            """,
+        elem_id="hero_container",
+    )
 
     with gr.Group(elem_id="share-region-anony"):
         with gr.Accordion(
-            f"🔍 Kliki siia, et näha võrdluses olevaid mudeleid", open=False, elem_id="models_accordion"
+            f"🔍 Kliki siia, et näha võrdluses olevaid mudeleid",
+            open=False,
+            elem_id="models_accordion",
         ):
             model_description_md = get_model_description_md(models)
             gr.Markdown(model_description_md, elem_id="model_description_markdown")
@@ -486,18 +492,31 @@ def build_side_by_side_ui_anony(models):
         with gr.Row():
             slow_warning = gr.Markdown("")
 
-    with gr.Group(elem_id="fixed_footer"): 
-
+    with gr.Group(elem_id="fixed_footer"):
         with gr.Row(elem_id="selection_buttons_row"):
             leftvote_btn = gr.Button(
-                value="Mudel A on parem", elem_classes="voting_button", visible=False, interactive=False
+                value="Mudel A on parem",
+                elem_classes="voting_button",
+                visible=False,
+                interactive=False,
             )
-            tie_btn = gr.Button(value="🤝  Viik", elem_classes="voting_button", visible=False, interactive=False)
+            tie_btn = gr.Button(
+                value="🤝  Viik",
+                elem_classes="voting_button",
+                visible=False,
+                interactive=False,
+            )
             bothbad_btn = gr.Button(
-                value="👎  Mõlemad on halvad", elem_classes="voting_button", visible=False, interactive=False
+                value="👎  Mõlemad on halvad",
+                elem_classes="voting_button",
+                visible=False,
+                interactive=False,
             )
             rightvote_btn = gr.Button(
-                value="Mudel B on parem", elem_classes="voting_button", visible=False, interactive=False
+                value="Mudel B on parem",
+                elem_classes="voting_button",
+                visible=False,
+                interactive=False,
             )
 
         with gr.Row(elem_id="input_row"):
@@ -507,12 +526,22 @@ def build_side_by_side_ui_anony(models):
                 placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER",
                 elem_id="input_box",
             )
-            send_btn = gr.Button(value="Saada", variant="primary",  scale=0, elem_id="send_button")
+            send_btn = gr.Button(
+                value="Saada", variant="primary", scale=0, elem_id="send_button"
+            )
 
         with gr.Row() as button_row:
-            clear_btn = gr.Button(value="🎲 Uus vestlus", elem_classes="control_button", interactive=False )
-            share_btn = gr.Button(value="📷  Jaga", elem_classes="row-middle-button control_button")
-            regenerate_btn = gr.Button(value="🔄  Genereeri vastus uuesti", elem_classes="control_button", interactive=False)
+            clear_btn = gr.Button(
+                value="🎲 Uus vestlus", elem_classes="control_button", interactive=False
+            )
+            share_btn = gr.Button(
+                value="📷  Jaga", elem_classes="row-middle-button control_button"
+            )
+            regenerate_btn = gr.Button(
+                value="🔄  Genereeri vastus uuesti",
+                elem_classes="control_button",
+                interactive=False,
+            )
 
     with gr.Accordion("Parameetrid", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(

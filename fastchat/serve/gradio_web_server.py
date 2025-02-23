@@ -54,7 +54,9 @@ enable_btn = gr.Button(interactive=True, visible=True)
 disable_btn = gr.Button(interactive=False)
 invisible_btn = gr.Button(interactive=False, visible=False)
 enable_text = gr.Textbox(
-    interactive=True, visible=True, placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER"
+    interactive=True,
+    visible=True,
+    placeholder="👉 Kirjuta siia enda küsimus ja vajuta ENTER",
 )
 disable_text = gr.Textbox(
     interactive=False,
@@ -1067,6 +1069,7 @@ def get_model_description_md(models):
 
 def build_terms():
     gr.Markdown(acknowledgment_md, elem_id="terms_markdown")
+
 
 def build_about():
     about_markdown = """
