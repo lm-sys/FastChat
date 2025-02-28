@@ -1,7 +1,6 @@
 import base64
 from enum import auto, IntEnum
 from io import BytesIO
-
 from pydantic import BaseModel
 
 
@@ -115,10 +114,24 @@ class Image(BaseModel):
 
         return image_format, img_base64_str
 
-    def to_conversation_format(self, max_image_size_mb):
-        image_format, image_bytes = self.convert_url_to_image_bytes(
-            max_image_size_mb=max_image_size_mb
+    def convert_pil_image_to_image_bytes(self, pil_img, max_image_size_mb):
+        image_format, image_bytes = self.resize_image_and_return_image_in_bytes(
+            pil_img, max_image_size_mb
         )
+
+        img_base64_str = base64.b64encode(image_bytes.getvalue()).decode()
+
+        return image_format, img_base64_str
+
+    def to_conversation_format(self, max_image_size_mb, pil_img=None):
+        if pil_img:
+            image_format, image_bytes = self.convert_pil_image_to_image_bytes(
+                pil_img=pil_img, max_image_size_mb=max_image_size_mb
+            )
+        else:
+            image_format, image_bytes = self.convert_url_to_image_bytes(
+                max_image_size_mb=max_image_size_mb
+            )
 
         self.filetype = image_format
         self.image_format = ImageFormat.BYTES

@@ -130,12 +130,21 @@ def load_demo(context: Context, request: gr.Request):
             args.controller_url,
             args.register_api_endpoint_file,
             vision_arena=False,
+            pdfchat_arena=False,
         )
 
         context.vision_models, context.all_vision_models = get_model_list(
             args.controller_url,
             args.register_api_endpoint_file,
             vision_arena=True,
+            pdfchat_arena=False,
+        )
+
+        context.pdfchat_models, context.all_pdfchat_models = get_model_list(
+            args.controller_url,
+            args.register_api_endpoint_file,
+            vision_arena=False,
+            pdfchat_arena=True,
         )
 
     # Text models
@@ -379,25 +388,32 @@ if __name__ == "__main__":
         args.controller_url,
         args.register_api_endpoint_file,
         vision_arena=False,
+        pdfchat_arena=False,
     )
 
     vision_models, all_vision_models = get_model_list(
         args.controller_url,
         args.register_api_endpoint_file,
         vision_arena=True,
+        pdfchat_arena=False,
     )
 
-    models = text_models + [
-        model for model in vision_models if model not in text_models
-    ]
-    all_models = all_text_models + [
-        model for model in all_vision_models if model not in all_text_models
-    ]
+    pdfchat_models, all_pdfchat_models = get_model_list(
+        args.controller_url,
+        args.register_api_endpoint_file,
+        vision_arena=False,
+        pdfchat_arena=True,
+    )
+
+    models = list(set(text_models + vision_models + pdfchat_models))
+    all_models = list(set(all_text_models + all_vision_models + all_pdfchat_models))
     context = Context(
         text_models,
         all_text_models,
         vision_models,
         all_vision_models,
+        pdfchat_models,
+        all_pdfchat_models,
         models,
         all_models,
     )

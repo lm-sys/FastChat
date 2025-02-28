@@ -8,5 +8,7 @@ class Context:
     all_text_models: List[str] = field(default_factory=list)
     vision_models: List[str] = field(default_factory=list)
     all_vision_models: List[str] = field(default_factory=list)
+    pdfchat_models: List[str] = field(default_factory=list)
+    all_pdfchat_models: List[str] = field(default_factory=list)
     models: List[str] = field(default_factory=list)
     all_models: List[str] = field(default_factory=list)
