@@ -11,13 +11,15 @@ task_name:
   - if_v0.1
   - math_v0.1
   - creative_writing_v0.1
+  - refusal_v0.2
 
+api_type: openai
 model_name: null
 name: llama-3-70b-instruct
 endpoints:
   - api_base: null
     api_key: null
-parallel: 50
+parallel: 64
 temperature: 0.0
 max_token: 512
 
