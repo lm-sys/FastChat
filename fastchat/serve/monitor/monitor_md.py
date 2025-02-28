@@ -53,17 +53,15 @@ deprecated_model_name = [
 
 key_to_category_name = {
     "full": "Overall",
-    "full_style_control": "Overall w/ Style Control",
     "dedup": "De-duplicate Top Redundant Queries (soon to be default)",
     "math": "Math",
     "if": "Instruction Following",
     "multiturn": "Multi-Turn",
     "creative_writing": "Creative Writing",
+    "creative_writing_vision": "Creative Writing",
     "coding": "Coding",
-    "coding_style_control": "Coding w/ Style Control",
     "hard_6": "Hard Prompts",
     "hard_english_6": "Hard Prompts (English)",
-    "hard_6_style_control": "Hard Prompts w/ Style Control",
     "long_user": "Longer Query",
     "english": "English",
     "chinese": "Chinese",
@@ -78,18 +76,22 @@ key_to_category_name = {
     "no_refusal": "Exclude Refusal",
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
     "full_old": "Overall (Deprecated)",
+    "captioning": "Captioning",
+    "entity_recognition": "Entity Recognition",
+    "ocr": "OCR",
+    "humor": "Humor",
+    "homework": "Homework",
+    "diagram": "Diagram",
+    "is_preset": "Exclude Preset Images",
 }
 cat_name_to_explanation = {
     "Overall": "Overall Questions",
-    "Overall w/ Style Control": "Overall Leaderboard with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "De-duplicate Top Redundant Queries (soon to be default)": "De-duplicate top redundant queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Math": "Math",
     "Instruction Following": "Instruction Following",
     "Multi-Turn": "Multi-Turn Conversation (>= 2 turns)",
     "Coding": "Coding: whether conversation contains code snippets",
-    "Coding w/ Style Control": "Coding with Style Control",
     "Hard Prompts": "Hard Prompts: details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
-    "Hard Prompts w/ Style Control": "Hard Prompts with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/).",
     "Hard Prompts (English)": "Hard Prompts (English), note: the delta is to English Category. details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/)",
     "Longer Query": "Longer Query (>= 500 tokens)",
     "English": "English Prompts",
@@ -106,6 +108,13 @@ cat_name_to_explanation = {
     "overall_limit_5_user_vote": "overall_limit_5_user_vote",
     "Overall (Deprecated)": "Overall without De-duplicating Top Redundant Queries (top 0.1%). See details in [blog post](https://lmsys.org/blog/2024-05-17-category-hard/#note-enhancing-quality-through-de-duplication).",
     "Creative Writing": "Creative Writing",
+    "Exclude Preset Images": "Exclude Images from 'Random Example' Option",
+    "Captioning": "Open-Ended Captioning",
+    "Entity Recognition": "Entity Recognition (e.g. who is in the image)",
+    "OCR": "Optical Character Recognition",
+    "Humor": "Humor (e.g. writing jokes, meme understanding)",
+    "Homework": "Homework problems",
+    "Diagram": "Diagram (e.g. plots, flow charts, figures)",
 }
 cat_name_to_baseline = {
     "Hard Prompts (English)": "English",
@@ -165,7 +174,14 @@ def make_category_arena_leaderboard_md(arena_df, arena_subset_df, name="Overall"
     space = "&nbsp;&nbsp;&nbsp;"
     total_subset_votes = sum(arena_subset_df["num_battles"]) // 2
     total_subset_models = len(arena_subset_df)
-    leaderboard_md = f"""### {cat_name_to_explanation[name]}
+    if "w/ Style Control" in name:
+        explanation = (
+            cat_name_to_explanation[name.replace(" w/ Style Control", "")]
+            + " with Style Control. See details in [blog post](https://lmsys.org/blog/2024-08-28-style-control/)."
+        )
+    else:
+        explanation = cat_name_to_explanation[name]
+    leaderboard_md = f"""### {explanation}
 #### {space} #models: **{total_subset_models} ({round(total_subset_models/total_models *100)}%)** {space} #votes: **{"{:,}".format(total_subset_votes)} ({round(total_subset_votes/total_votes * 100)}%)**{space}
 """
     return leaderboard_md
