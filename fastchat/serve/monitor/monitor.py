@@ -1038,13 +1038,10 @@ def build_leaderboard_tab(
             from fastchat.serve.monitor.copilot_arena import (
                 build_copilot_arena_tab,
                 copilot_arena_leaderboard_url,
-                copilot_arena_citation_md,
             )
 
             if copilot_arena_leaderboard_url:
-                with gr.Tab(
-                    "Copilot Arena Leaderboard", id=5
-                ) as copilot_arena_leaderboard_tab:
+                with gr.Tab("Copilot Arena Leaderboard", id=5):
                     build_copilot_arena_tab()
             else:
                 print(
@@ -1063,29 +1060,27 @@ def build_leaderboard_tab(
     else:
         pass
 
-    from fastchat.serve.gradio_web_server import default_citation_md, acknowledgment_md
+    from fastchat.serve.gradio_web_server import acknowledgment_md
 
     with gr.Accordion(
         "Citation",
         open=True,
     ):
-        leaderboard_citation_md = gr.Markdown(
-            default_citation_md, elem_id="leaderboard_markdown"
-        )
+        citation_md = """
+            ### Citation
+            Please cite the following paper if you find our leaderboard or dataset helpful.
+            ```
+            @misc{chiang2024chatbot,
+                title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},
+                author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},
+                year={2024},
+                eprint={2403.04132},
+                archivePrefix={arXiv},
+                primaryClass={cs.AI}
+            }
+            """
+        gr.Markdown(citation_md, elem_id="leaderboard_markdown")
         gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
-    if copilot_arena_leaderboard_tab:
-        copilot_arena_leaderboard_tab.select(
-            fn=lambda: gr.Markdown(copilot_arena_citation_md),
-            inputs=[],
-            outputs=[leaderboard_citation_md],
-        )
-    for tab in tabs.children:
-        if (not copilot_arena_leaderboard_tab) or tab != copilot_arena_leaderboard_tab:
-            tab.select(
-                fn=lambda: gr.Markdown(default_citation_md),
-                inputs=[],
-                outputs=[leaderboard_citation_md],
-            )
 
     return [md_1] + gr_plots
 

@@ -66,19 +66,6 @@ controller_url = None
 enable_moderation = False
 use_remote_storage = False
 
-default_citation_md = """
-    ### Citation
-    Please cite the following paper if you find our leaderboard or dataset helpful.
-    ```
-    @misc{chiang2024chatbot,
-        title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},
-        author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},
-        year={2024},
-        eprint={2403.04132},
-        archivePrefix={arXiv},
-        primaryClass={cs.AI}
-    }
-"""
 acknowledgment_md = """
 ### Terms of Service
 
