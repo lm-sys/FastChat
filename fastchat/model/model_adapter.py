@@ -253,7 +253,12 @@ def load_model(
         kwargs = {"torch_dtype": torch.float16}
         import transformers
 
-        version = tuple(int(v) for v in transformers.__version__.split("."))
+        try:
+            version = tuple(int(v) for v in transformers.__version__.split("."))
+        except ValueError:
+            # some versions of transformers have a different version format (
+            # e.g. 4.50.0.dev0) and these break this parser so we set a default
+            version = (4, 36, 0)  
         if version < (4, 35, 0):
             # NOTE: Recent transformers library seems to fix the mps issue, also
             # it has made some changes causing compatibility issues with our
