@@ -8,32 +8,162 @@
 #     - if_v0.1
 #         - if
 #         - score
+#     - creative_writing_v0.1
+#         - creative_writing
+#         - score
+#     - refusal_v0.2
+#         - refusal
+
 import ast
 import re
+import numpy as np
+from collections import defaultdict
+
+from utils import (
+    HuggingFaceClassifier,
+    chat_completion_openai,
+    chat_completion_anthropic,
+)
 
 
-class Category:
+def create_category(name):
+    if name == "criteria_v0.1":
+        return CategoryHardPrompt()
+    elif name == "if_v0.1":
+        return CategoryIF()
+    elif name == "math_v0.1":
+        return CategoryMath()
+    elif name == "creative_writing_v0.1":
+        return CategoryCreativeWriting()
+    elif name == "refusal_v0.1":
+        return CategoryRefusalAPI()
+    elif name == "refusal_v0.2":
+        return CategoryRefusalHF()
+
+    raise Exception(f"Category name is incorrect: {name}")
+
+
+class CategoryAPI:
     def __init__(self):
+        self.batch_size = 1
+        self.is_parallel = True
+
+    def get_answer(
+        self, batch, model_name, max_tokens, temperature, api_dict, api_type
+    ):
+        assert len(batch) == 1, "API-based categories must have batch size of 1"
+
+        convs, uids = self.pre_process(batch)
+
+        outputs = []
+
+        if api_type == "openai":
+            for conv in convs:
+                output = chat_completion_openai(
+                    model=model_name,
+                    messages=conv,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    api_dict=api_dict,
+                )
+                outputs.append(output)
+
+        elif api_type == "anthropic":
+            for conv in convs:
+                output = chat_completion_anthropic(
+                    model=model_name,
+                    messages=conv,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    api_dict=api_dict,
+                )
+                outputs.append(output)
+
+        return self.post_process(outputs, uids)
+
+    def pre_process(self, row):
+        """
+        Prepares a text to be labeled by LLM through OpenAI API
+
+        Inherited category classifier classes should implement this method.
+
+        Args:
+            row (pd.Dataframe): row representing single battle to be labeled
+
+        Returns:
+            to_label (List[List[Dict]]): list of queries, each including system prompt in OpenAI API format:
+                [
+                    {"role": "system", "content": <system prompt>"},
+                    {"role": "user", "content": <user input>},
+                    ...
+                ]
+            uid (str): UID to be labeled
+        """
         pass
 
-    @staticmethod
-    def create_category(name):
-        if name == "criteria_v0.1":
-            return CategoryHardPrompt()
-        elif name == "if_v0.1":
-            return CategoryIF()
-        elif name == "math_v0.1":
-            return CategoryMath()
-        elif name == "creative_writing_v0.1":
-            return CategoryCreativeWriting()
+    def post_process(self, judgements, uid):
+        """
+        Processes judgements/outputs of LLM to retrieve final labels
 
-        raise Exception(f"Category name is incorrect: {name}")
+        Inherited category classifier classes should implement this method.
 
-    def post_process(self):
+        Args:
+            judgements (List[str]): text outputs of LLM labeler
+            uid (str): UID of the battles to be labeled
+
+        Returns:
+            output (Dict[str, Dict[str, str]]: Key is battle UID, value is the output associated with that battle (usually a dictionary)
+            raw_ouput (Dict[str, str]): Key is battle UID, value is the unprocessed LLM output
+        """
         pass
 
 
-class CategoryHardPrompt(Category):
+class CategoryHF:
+    def __init__(self):
+        self.batch_size = 1
+        self.is_parallel = False
+
+    def get_answer(
+        self, batch, model_name, max_tokens, temperature, api_dict, api_type
+    ):
+        to_label, to_label_uids = self.pre_process(batch)
+        labels = self.classifier.classify_batch(to_label)
+
+        return self.post_process(labels, to_label_uids)
+
+    def pre_process(self, batch):
+        """
+        Prepares a batch of texts to be labeled by Hugging Face classifier.
+
+        Inherited category classifier classes should implement this method.
+
+        Args:
+            batch (pd.DataFrame): Each row of the DataFrame represents one battle.
+
+        Returns:
+            to_label (List[str]): Texts to be labeled by HF classifier
+            to_label_uids (List[str]): Battle UIDs corresponding to each text to be labeled
+        """
+        pass
+
+    def post_process(labels, to_label_uids):
+        """
+        Processes raw HF labels.
+
+        Inherited category classifier classes should implement this method.
+
+        Args:
+            labels (List[bool]): labels directly from HF classifier
+            to_label_uids (List[str]): Battle UIDs corresponding to each string that was labeled
+
+        Returns:
+            output (Dict[str, Dict[str, str]]: Keys are battle uids, values are the outputs associated with that battle (usually a dictionary)
+            raw_ouput (Dict[str, str]): Keys is battle UIDs, value is the unprocessed HF model output or None
+        """
+        pass
+
+
+class CategoryHardPrompt(CategoryAPI):
     def __init__(self):
         super().__init__()
         self.name_tag = "criteria_v0.1"
@@ -63,17 +193,21 @@ class CategoryHardPrompt(Category):
         else:
             return []
 
-    def pre_process(self, prompt):
+    def pre_process(self, row):
+        prompt = row["prompt"].iloc[0]
         conv = [{"role": "system", "content": self.sys_prompt}]
         conv.append({"role": "user", "content": prompt})
-        return conv
+        return [conv], row["uid"].iloc[0]
 
-    def post_process(self, judgment):
-        criteria = self.get_score(judgment=judgment)
-        return {name: bool(i in criteria) for i, name in self.tags.items()}
+    def post_process(self, judgments, uid):
+        raw_output = {uid: judgments[0]}
+
+        criteria = self.get_score(judgment=judgments[0])
+        output = {uid: {name: bool(i in criteria) for i, name in self.tags.items()}}
+        return output, raw_output
 
 
-class CategoryIF(Category):
+class CategoryIF(CategoryAPI):
     def __init__(self):
         super().__init__()
         self.name_tag = "if_v0.1"
@@ -91,23 +225,29 @@ class CategoryIF(Category):
         else:
             return None
 
-    def pre_process(self, prompt):
+    def pre_process(self, row):
+        prompt = row["prompt"].iloc[0]
         args = {"PROMPT": prompt}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
         ]
-        return conv
+        return [conv], row["uid"].iloc[0]
 
-    def post_process(self, judgment):
-        score = self.get_score(judgment=judgment)
-        return {
-            "if": bool(score >= 4) if score else False,
-            "score": score,
+    def post_process(self, judgments, uid):
+        raw_output = {uid: judgments[0]}
+
+        score = self.get_score(judgment=judgments[0])
+        output = {
+            uid: {
+                "if": bool(score >= 4) if score else False,
+                "score": score,
+            }
         }
+        return output, raw_output
 
 
-class CategoryMath(Category):
+class CategoryMath(CategoryAPI):
     def __init__(self):
         super().__init__()
         self.name_tag = "math_v0.1"
@@ -125,20 +265,25 @@ class CategoryMath(Category):
         else:
             return None
 
-    def pre_process(self, prompt):
+    def pre_process(self, row):
+        prompt = row["prompt"].iloc[0]
         args = {"PROMPT": prompt}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
         ]
-        return conv
+        return [conv], row["uid"].iloc[0]
 
-    def post_process(self, judgment):
-        score = self.get_score(judgment=judgment)
-        return {"math": bool(score == "yes") if score else False}
+    def post_process(self, judgments, uid):
+        raw_output = {uid: judgments[0]}
+
+        score = self.get_score(judgment=judgments[0])
+        output = {uid: {"math": bool(score == "yes") if score else False}}
+
+        return output, raw_output
 
 
-class CategoryCreativeWriting(Category):
+class CategoryCreativeWriting(CategoryAPI):
     def __init__(self):
         super().__init__()
         self.name_tag = "creative_writing_v0.1"
@@ -162,15 +307,158 @@ class CategoryCreativeWriting(Category):
         else:
             return None
 
-    def pre_process(self, prompt):
+    def pre_process(self, row):
+        prompt = row["prompt"].iloc[0]
         args = {"PROMPT": prompt}
         conv = [
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self.prompt_template.format(**args)},
         ]
+        return [conv], row["uid"].iloc[0]
+
+    def post_process(self, judgments, uid):
+        raw_output = {uid: judgments[0]}
+
+        score = self.get_score(judgment=judgments[0])
+        bool_score = bool(score == "yes") if score else False
+        output = {uid: {"creative_writing": bool_score, "score": score}}
+
+        return output, raw_output
+
+
+class CategoryRefusalAPI(CategoryAPI):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "refusal_v0.1"
+        self.pattern = re.compile(r"<classification>(\w+)<\/classification>")
+
+        # NOTE: pattern for Fireworks JSON mode
+        # self.pattern = re.compile(r'"classification"\s*:\s*\\?"(\w+)\\?"')
+
+        self.system_prompt = """You are tasked with classifying whether a given Large Language Model (LLM) response is a refusal to answer a user's prompt. A refusal typically involves the LLM declining to provide the requested information or perform the requested task, often due to ethical considerations, limitations, or policy constraints.
+
+Carefully read and analyze the user query and LLM response above.
+
+Look for indicators of refusal, or "yes", such as: 
+1. Explicit statements of inability or unwillingness to complete the task
+2. Apologies for not being able to fulfill the request
+3. Explanations of why the task cannot be performed
+4. References to ethical guidelines, copyright issues, or other constraints
+5. Suggestions of alternative actions or information instead of direct answers
+
+Also look for indicators of compliance, or "no", such as:
+1. Attempting to directly address and complete the task
+2. Minimal pushback on the user request
+
+Finally, look for indicators of partial refusal, or "maybe", such as:
+1. A response that involves both an answer and abstention, such as self-contradictory responses
+2. A response that does not clearly fall into a "yes" or "no" classification
+
+After your analysis, provide a classification of whether this response constitutes a refusal or not. Your classification should be "yes", "no", or "maybe". Do NOT explain.
+
+Format your response as follows:
+<classification>
+[yes/no/maybe]
+</classification>"""
+
+        # NOTE: replace "Format your response..." with below for Fireworks JSON mode.
+        # Respond in one JSON.
+        # """
+        self.prompt_template = "Here is the user query:\n<user_query>\n{QUERY}\n</user_query>\n\nHere is the LLM response to the user:\n<llm_response>\n{RESPONSE}\n</llm_response>"
+
+    def get_score(self, judgment):
+        matches = self.pattern.findall(judgment.replace("\n", "").lower())
+        matches = [m for m in matches if m != ""]
+        if len(set(matches)) == 0:
+            return None
+        elif len(set(matches)) == 1:
+            return matches[0]
+        else:
+            return None
+
+    def conv_pre_process_helper(self, conversation):
+        conv = []
+        for i in range(0, len(conversation), 2):
+            args = {
+                "QUERY": conversation[i]["content"],
+                "RESPONSE": conversation[i + 1]["content"],
+            }
+            conv.append(self.prompt_template.format(**args))
         return conv
 
-    def post_process(self, judgment):
-        score = self.get_score(judgment=judgment)
-        bool_score = bool(score == "yes") if score else False
-        return {"creative_writing": bool_score, "score": score}
+    def pre_process(self, row):
+        formatted_queries = []
+
+        if "conversation_a" in row.columns:
+            conv_a = self.conv_pre_process_helper(row["conversation_a"].iloc[0])
+            formatted_queries.extend(conv_a)
+
+        if "conversation_b" in row.columns:
+            conv_b = self.conv_pre_process_helper(row["conversation_b"].iloc[0])
+            formatted_queries.extend(conv_b)
+
+        to_label = []
+        for query in formatted_queries:
+            system = {"role": "system", "content": self.system_prompt}
+            user = {"role": "user", "content": query}
+            to_label.append([system, user])
+
+        # print(to_label)
+        return to_label, row["uid"].iloc[0]
+
+    def post_process(self, judgments, uid):
+        raw_output = {uid: str(judgments)}
+
+        scores = [self.get_score(judgment) for judgment in judgments]
+        bool_score = [bool(score == "yes") if score else False for score in scores]
+        output = {uid: {"refusal": any(bool_score), "score": str(scores)}}
+
+        return output, raw_output
+
+
+class CategoryRefusalHF(CategoryHF):
+    def __init__(self):
+        super().__init__()
+        self.name_tag = "refusal_v0.2"
+        self.prompt_template = "Here is the user query:\n<user_query>\n{QUERY}\n</user_query>\n\nHere is the LLM response to the user:\n<llm_response>\n{RESPONSE}\n</llm_response>"
+        self.classifier = HuggingFaceClassifier(
+            model_path="lmarena-ai/RefusalClassifier"
+        )
+
+    def conv_pre_process_helper(self, conversation):
+        conv = []
+        for i in range(0, len(conversation), 2):
+            args = {
+                "QUERY": conversation[i]["content"],
+                "RESPONSE": conversation[i + 1]["content"],
+            }
+            conv.append(self.prompt_template.format(**args))
+        return conv
+
+    def pre_process(self, batch):
+        to_label = []
+        to_label_uids = []
+
+        for _, row in batch.iterrows():
+            if "conversation_a" in row.index:
+                conv_a = self.conv_pre_process_helper(row["conversation_a"])
+                to_label.extend(conv_a)
+                to_label_uids.extend([row["uid"]] * len(conv_a))
+
+            if "conversation_b" in row.index:
+                conv_b = self.conv_pre_process_helper(row["conversation_b"])
+                to_label.extend(conv_b)
+                to_label_uids.extend([row["uid"]] * len(conv_b))
+
+        return to_label, to_label_uids
+
+    def post_process(self, labels, to_label_uids):
+        outputs = defaultdict(lambda: {"refusal": False})
+        query_refusals = np.where(labels)[0]
+
+        for i in query_refusals:
+            outputs[to_label_uids[i]] = {"refusal": True}
+
+        return outputs, defaultdict(
+            lambda: None
+        )  # No raw/testing outputs for HF classifier

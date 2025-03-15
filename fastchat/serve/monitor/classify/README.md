@@ -24,7 +24,15 @@ Your label_bench directory should follow the structure:
 
 ## How to evaluate your category classifier?
 
-To test your new classifier for a new category, you would have to make sure you created the category child class in `category.py`. Then, to generate classification labels, make the necessary edits in `config.yaml` and run
+To test your new classifier for a new category, you would have to make sure you created the category child class in `category.py`. 
+
+We currently support classifiers that can be accessed via OpenAI API, and Hugging Face classifiers.
+
+If you are using a OpenAI API based classifier, you should create a class inheriting from `CategoryAPI`. You will need to create a `name_tag` attribute for your classifier, and implement the `pre_process` and `post_process` functions. More documentation is available on these functions in `category.py` under the `CategoryAPI` class.
+
+If you are using a Hugging Face based classifier, you should create a class inheriting from `CategoryHF`. You will need to create a `name_tag` attribute for your classifier, and implement the `pre_process` and `post_process` functions. More documentation is available on these functions in `category.py` under the `CategoryHF` class.
+
+Then, to generate classification labels, make the necessary edits in `config.yaml` and run
 ```console
 python label.py --config config.yaml --testing
 ```

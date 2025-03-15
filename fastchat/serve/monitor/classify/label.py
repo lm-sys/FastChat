@@ -1,28 +1,61 @@
+import os
+
 import argparse
 import json
 import pandas as pd
-import os
-import time
+import numpy as np
 import concurrent.futures
-import tqdm
 import yaml
 import random
 import threading
 import orjson
 
-from category import Category
-
+from category import create_category
+from utils import api_config
+from tqdm import tqdm
 
 LOCK = threading.RLock()
 
 TASKS = None
-CACHE_DICT = None
-OUTPUT_DICT = None
 
-# API setting constants
-API_MAX_RETRY = None
-API_RETRY_SLEEP = None
-API_ERROR_OUTPUT = None
+"""
+CACHE_DICT (dict): Cached labels
+- uid (str): UID for the battle that has been cached
+    - category_tag
+        - criteria_v0.1
+            - specificity
+            - ...
+        - math_v0.1
+            - math
+        - if_v0.1
+            - if
+            - score
+        - creative_writing_v0.1
+            - creative_writing
+            - score
+        - refusal_v0.2
+            - refusal
+"""
+CACHE_DICT = None
+
+"""
+OUTPUT_DICT (dict): Previously outputted labels
+- uid (str): UID for the battle that has been cached
+    - criteria_v0.1
+        - specificity
+        - ...
+    - math_v0.1
+        - math
+    - if_v0.1
+        - if
+        - score
+    - creative_writing_v0.1
+        - creative_writing
+        - score
+    - refusal_v0.2
+        - refusal
+"""
+OUTPUT_DICT = None
 
 
 # load config args from config yaml files
@@ -42,101 +75,62 @@ def get_endpoint(endpoint_list):
     return api_dict
 
 
-def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=None):
-    import openai
-
-    if api_dict:
-        client = openai.OpenAI(
-            base_url=api_dict["api_base"],
-            api_key=api_dict["api_key"],
-        )
-    else:
-        client = openai.OpenAI()
-
-    output = API_ERROR_OUTPUT
-    for _ in range(API_MAX_RETRY):
-        try:
-            # print(messages)
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
-            )
-            output = completion.choices[0].message.content
-            # print(output)
-            break
-        except openai.RateLimitError as e:
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.BadRequestError as e:
-            print(messages)
-            print(type(e), e)
-            break
-        except openai.APIConnectionError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except openai.InternalServerError as e:
-            print(messages)
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
-        except Exception as e:
-            print(type(e), e)
-            break
-
-    return output
-
-
 def get_answer(
-    question: dict,
+    batch: pd.DataFrame,
     model_name: str,
     max_tokens: int,
     temperature: float,
     answer_file: str,
     api_dict: dict,
-    categories: list,
+    api_type: str,
+    category: object,
     testing: bool,
 ):
-    if "category_tag" in question:
-        category_tag = question["category_tag"]
-    else:
-        category_tag = {}
+    uid_to_row = {}
+    for _, row in batch.iterrows():
+        uid = row["uid"]
+        uid_to_row[uid] = row
 
-    output_log = {}
+    outputs, raw_outputs = category.get_answer(
+        batch, model_name, max_tokens, temperature, api_dict, api_type
+    )
 
-    for category in categories:
-        conv = category.pre_process(question["prompt"])
-        output = chat_completion_openai(
-            model=model_name,
-            messages=conv,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            api_dict=api_dict,
-        )
-        # Dump answers
-        category_tag[category.name_tag] = category.post_process(output)
+    for uid in uid_to_row:
+        output = outputs[uid]
+        line = {"uid": uid, "category_tag": {category.name_tag: output}}
 
         if testing:
-            output_log[category.name_tag] = output
+            raw_output = raw_outputs[uid]
+            line["raw_output"] = raw_output
 
-    question["category_tag"] = category_tag
-    if testing:
-        question["output_log"] = output_log
+        with LOCK:
+            with open(answer_file, "a") as fout:
+                fout.write(json.dumps(line) + "\n")
 
-    question.drop(["prompt", "uid", "required_tasks"], inplace=True)
 
-    with LOCK:
-        with open(answer_file, "a") as fout:
-            fout.write(json.dumps(question.to_dict()) + "\n")
+def category_merge_helper(series):
+    """
+    Given a series of dictionaries of category labels for a single battle, merge into one dict
+
+    Args:
+        series (pd.Series[Dict[str, Dict]]): series of dictionaries of category labels
+
+    Returns:
+        category_label (Dict[str, Dict]): Dictionary of all labeled categories for one battle
+    """
+    merged = {}
+    for dct in series:
+        merged.update(dct)
+
+    # Pandas automatically turns top-level keys into index (not good), so we create a dummy key which we remove later
+    return {"dummy": merged}
 
 
 def category_merge(row):
     id = row["uid"]
     input_category = row["category_tag"] if "category_tag" in row else {}
     cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
-    output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
+    output_category = OUTPUT_DICT[id] if id in OUTPUT_DICT else {}
 
     # tries to fill in missing categories using cache first, then output
     for name in TASKS:
@@ -154,15 +148,19 @@ def find_required_tasks(row):
     id = row["uid"]
     input_category = row["category_tag"] if "category_tag" in row else {}
     cache_category = CACHE_DICT[id]["category_tag"] if id in CACHE_DICT else {}
-    output_category = OUTPUT_DICT[id]["category_tag"] if id in OUTPUT_DICT else {}
+    output_category = OUTPUT_DICT[id] if id in OUTPUT_DICT else {}
 
-    return [
-        name
-        for name in TASKS
-        if not (
-            name in input_category or name in cache_category or name in output_category
-        )
-    ]
+    return set(
+        [
+            name
+            for name in TASKS
+            if not (
+                name in input_category
+                or name in cache_category
+                or name in output_category
+            )
+        ]
+    )
 
 
 if __name__ == "__main__":
@@ -178,12 +176,15 @@ if __name__ == "__main__":
         exit()
 
     config = make_config(args.config)
+    api_config(config)
 
-    API_MAX_RETRY = config["max_retry"]
-    API_RETRY_SLEEP = config["retry_sleep"]
-    API_ERROR_OUTPUT = config["error_output"]
+    # Divide categories into parallelized + non-parallel. Non-parallel for HF models - automatically parallelized
+    categories = [create_category(name) for name in config["task_name"]]
+    parallel_categories = [category for category in categories if category.is_parallel]
+    not_parallel_categories = [
+        category for category in categories if not category.is_parallel
+    ]
 
-    categories = [Category.create_category(name) for name in config["task_name"]]
     TASKS = config["task_name"]
     print(
         f"Following categories will be labeled:\n{[category.name_tag for category in categories]}"
@@ -219,17 +220,18 @@ if __name__ == "__main__":
     if os.path.isfile(config["output_file"]):
         print("loading existing output")
         output_data = pd.read_json(config["output_file"], lines=True)
-        output_data["uid"] = output_data.question_id.map(str) + output_data.tstamp.map(
-            str
-        )
-        assert len(output_data) == len(output_data.uid.unique())
-
         print(f"{len(output_data)}# of existing output just loaded")
 
         assert "category_tag" in output_data.columns
-        output_dict = output_data[["uid", "category_tag"]].set_index("uid")
+        assert "uid" in output_data.columns
+
         print("finalizing output_dict (should take less than 30 sec)")
-        OUTPUT_DICT = output_dict.to_dict("index")
+        OUTPUT_DICT = (
+            output_data.groupby("uid")["category_tag"]
+            .apply(category_merge_helper)
+            .reset_index(level=1, drop=True)  # get rid of dummy key/index
+            .to_dict()
+        )
     else:
         OUTPUT_DICT = {}
 
@@ -251,28 +253,59 @@ if __name__ == "__main__":
     )
     not_labeled["prompt"] = not_labeled.prompt.map(lambda x: x[:12500])
 
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=config["parallel"]
-    ) as executor:
-        futures = []
-        for index, row in tqdm.tqdm(not_labeled.iterrows()):
-            future = executor.submit(
-                get_answer,
-                row,
+    # Label non-parallel categories
+    for category in not_parallel_categories:
+        category_not_labeled = not_labeled[
+            not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
+        ]
+        print(f"Labeling {category.name_tag} using HF model.")
+        for index, batch in tqdm(
+            category_not_labeled.groupby(
+                np.arange(len(category_not_labeled)) // category.batch_size
+            )
+        ):
+            get_answer(
+                batch,
                 config["model_name"],
                 config["max_token"],
                 config["temperature"],
                 config["output_file"],
                 get_endpoint(config["endpoints"]),
-                [
-                    category
-                    for category in categories
-                    if category.name_tag in row["required_tasks"]
-                ],
+                config["api_type"],
+                category,
                 args.testing,
             )
-            futures.append(future)
-        for future in tqdm.tqdm(
+
+    # Loop over parallel categories
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=config["parallel"]
+    ) as executor:
+        futures = []
+        for category in parallel_categories:
+            category_not_labeled = not_labeled[
+                not_labeled["required_tasks"].apply(lambda x: category.name_tag in x)
+            ]
+            print(f"Creating batches for {category.name_tag}.")
+            for index, batch in tqdm(
+                category_not_labeled.groupby(
+                    np.arange(len(category_not_labeled)) // category.batch_size
+                )
+            ):
+                future = executor.submit(
+                    get_answer,
+                    batch,
+                    config["model_name"],
+                    config["max_token"],
+                    config["temperature"],
+                    config["output_file"],
+                    get_endpoint(config["endpoints"]),
+                    config["api_type"],
+                    category,
+                    args.testing,
+                )
+                futures.append(future)
+        print("Processing parallel api calls.")
+        for future in tqdm(
             concurrent.futures.as_completed(futures), total=len(futures)
         ):
             future.result()
@@ -289,13 +322,17 @@ if __name__ == "__main__":
         assert os.path.isfile(config["output_file"])
         print("reading output file...")
         temp = pd.read_json(config["output_file"], lines=True)
-        temp["uid"] = temp.question_id.map(str) + temp.tstamp.map(str)
-        assert len(temp) == len(temp.uid.unique())
 
         assert "category_tag" in temp.columns
-        output_dict = temp[["uid", "category_tag"]].set_index("uid")
+        assert "uid" in temp.columns
+
         print("finalizing output_dict (should take less than 30 sec)")
-        OUTPUT_DICT = output_dict.to_dict("index")
+        OUTPUT_DICT = (
+            temp.groupby("uid")["category_tag"]
+            .apply(category_merge_helper)
+            .reset_index(level=1, drop=True)  # get rid of dummy key/index
+            .to_dict()
+        )
 
         print("begin merging (should take around 1 minute or less on large dataset)")
         input_data["category_tag"] = input_data.apply(category_merge, axis=1)
