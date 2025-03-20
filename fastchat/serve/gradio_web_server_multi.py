@@ -4,10 +4,6 @@ It supports chatting with a single model or chatting with two models side-by-sid
 """
 
 import argparse
-import pickle
-import time
-from typing import List
-
 import gradio as gr
 
 from fastchat.serve.gradio_block_arena_anony import (
@@ -52,6 +48,63 @@ from fastchat.utils import (
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
+
+
+def build_visualizer():
+    visualizer_markdown = """
+    # 🔍 Arena Visualizer
+    Arena visualizer provides interactive tools to explore and draw insights from our leaderboard data. 
+    """
+    gr.Markdown(visualizer_markdown, elem_id="visualizer_markdown")
+    with gr.Tabs():
+        with gr.Tab("Topic Explorer", id=0):
+            topic_markdown = """ 
+            This tool provides an interactive way to explore how people are using Chatbot Arena. 
+            Using *[topic clustering](https://github.com/MaartenGr/BERTopic)*, we organized user-submitted prompts from Arena battles into broad and specific categories. 
+            Dive in to uncover insights about the distribution and themes of these prompts! """
+            gr.Markdown(topic_markdown)
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the visualizer"
+            )
+            with gr.Accordion(expandText, open=False):
+                instructions = """
+                - Hover Over Segments: View the category name, the number of prompts, and their percentage.
+                    - *On mobile devices*: Tap instead of hover.
+                - Click to Explore: 
+                    - Click on a main category to see its subcategories.
+                    - Click on subcategories to see example prompts in the sidebar.
+                - Undo and Reset: Click the center of the chart to return to the top level.
+
+                Visualizer is created using Arena battle data collected from 2024/6 to 2024/8.
+                """
+                gr.Markdown(instructions)
+
+            frame = """
+                        <iframe class="visualizer" width="100%"
+                                src="https://storage.googleapis.com/public-arena-no-cors/index.html">
+                        </iframe>
+                    """
+            gr.HTML(frame)
+        with gr.Tab("Price Explorer", id=1):
+            price_markdown = """
+            This scatterplot presents a selection of models from the Arena, plotting their score against their cost. Only models with publicly available pricing and parameter information are included, meaning models like Gemini's experimental models are not displayed. Feel free to view price sources or add pricing information [here](https://github.com/lmarena/arena-catalog/blob/main/data/scatterplot-data.json).
+            """
+            gr.Markdown(price_markdown)
+            expandText = (
+                "👇 Expand to see detailed instructions on how to use the scatterplot"
+            )
+            with gr.Accordion(expandText, open=False):
+                instructions = """
+                - Hover Over Points: View the model's arena score, cost, organization, and license.
+                - Click on Points: Click on a point to visit the model's website.
+                - Use the Legend: Click an organization name on the right to display its models. To compare models, click multiple organization names.
+                - Select Category: Use the dropdown menu in the upper-right corner to select a category and view the arena scores for that category.
+                """
+                gr.Markdown(instructions)
+
+            frame = """<object type="text/html" data="https://storage.googleapis.com/public-arena-no-cors/scatterplot.html" width="100%" class="visualizer"></object>"""
+
+            gr.HTML(frame)
 
 
 def load_demo(context: Context, request: gr.Request):
@@ -199,12 +252,14 @@ window.__gradio_mode__ = "app";
                         arena_hard_table,
                         show_plot=True,
                     )
+            if args.show_visualizer:
+                with gr.Tab("🔍 Arena Visualizer", id=5):
+                    build_visualizer()
 
             with gr.Tab("ℹ️ About Us", id=4):
-                about = build_about()
+                build_about()
 
         context_state = gr.State(context)
-        url_params = gr.JSON(visible=False)
 
         if args.model_list_mode not in ["once", "reload"]:
             raise ValueError(f"Unknown model list mode: {args.model_list_mode}")
@@ -271,7 +326,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-auth-path",
         type=str,
-        help='Set the gradio authentication file path. The file should contain one or more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
+        help='Set the gradio authentication file path. The file should contain one or \
+              more user:password pairs in this format: "u1:p1,u2:p2,u3:p3"',
         default=None,
     )
     parser.add_argument(
@@ -286,7 +342,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gradio-root-path",
         type=str,
-        help="Sets the gradio root path, eg /abc/def. Useful when running behind a reverse-proxy or at a custom URL path prefix",
+        help="Sets the gradio root path, eg /abc/def. Useful when running behind a \
+              reverse-proxy or at a custom URL path prefix",
     )
     parser.add_argument(
         "--ga-id",
@@ -304,6 +361,12 @@ if __name__ == "__main__":
         "--password",
         type=str,
         help="Set the password for the gradio web server",
+    )
+    parser.add_argument(
+        "--show-visualizer",
+        action="store_true",
+        default=False,
+        help="Show the Data Visualizer tab",
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
