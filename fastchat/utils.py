@@ -8,6 +8,7 @@ import json
 import logging
 import logging.handlers
 import os
+import re
 import platform
 import sys
 import time
@@ -334,6 +335,14 @@ def is_partial_stop(output: str, stop_str: str):
         if stop_str.startswith(output[-i:]):
             return True
     return False
+
+
+def compile_stop_pattern(stop_list):
+    # Escape special characters, and then compile the pattern.
+    pattern_str = "|".join(re.escape(s) for s in stop_list) if stop_list else None
+    pattern = re.compile(pattern_str) if pattern_str else None
+
+    return pattern
 
 
 def run_cmd(cmd: str):
