@@ -144,6 +144,34 @@ class BaseModelAdapter:
         return get_conv_template("one_shot")
 
 
+class BaseEmbeddingModelAdapter(BaseModelAdapter):
+    """The base embedding model adapter"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "embedding" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModel.from_pretrained(
+            model_path,
+            **from_pretrained_kwargs,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision
+        )
+        if hasattr(model.config, "max_position_embeddings") and hasattr(
+            tokenizer, "model_max_length"
+        ):
+            model.config.max_sequence_length = min(
+                model.config.max_position_embeddings, tokenizer.model_max_length
+            )
+        model.use_cls_pooling = True
+        model.eval()
+        return model, tokenizer
+
+
 # A global registry for all model adapters
 # TODO (lmzheng): make it a priority queue.
 model_adapters: List[BaseModelAdapter] = []
@@ -1836,7 +1864,7 @@ class SmaugChatAdapter(BaseModelAdapter):
         return get_conv_template("qwen-7b-chat")
 
 
-class BGEAdapter(BaseModelAdapter):
+class BGEAdapter(BaseEmbeddingModelAdapter):
     """The model adapter for BGE (e.g., BAAI/bge-large-en-v1.5)"""
 
     use_fast_tokenizer = False
@@ -1844,30 +1872,8 @@ class BGEAdapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "bge" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModel.from_pretrained(
-            model_path,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
-        if hasattr(model.config, "max_position_embeddings") and hasattr(
-            tokenizer, "model_max_length"
-        ):
-            model.config.max_sequence_length = min(
-                model.config.max_position_embeddings, tokenizer.model_max_length
-            )
-        model.use_cls_pooling = True
-        model.eval()
-        return model, tokenizer
 
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
-
-
-class E5Adapter(BaseModelAdapter):
+class E5Adapter(BaseEmbeddingModelAdapter):
     """The model adapter for E5 (e.g., intfloat/e5-large-v2)"""
 
     use_fast_tokenizer = False
@@ -1875,25 +1881,32 @@ class E5Adapter(BaseModelAdapter):
     def match(self, model_path: str):
         return "e5-" in model_path.lower()
 
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        revision = from_pretrained_kwargs.get("revision", "main")
-        model = AutoModel.from_pretrained(
-            model_path,
-            **from_pretrained_kwargs,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision
-        )
-        if hasattr(model.config, "max_position_embeddings") and hasattr(
-            tokenizer, "model_max_length"
-        ):
-            model.config.max_sequence_length = min(
-                model.config.max_position_embeddings, tokenizer.model_max_length
-            )
-        return model, tokenizer
 
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("one_shot")
+class Text2VecAdapter(BaseEmbeddingModelAdapter):
+    """The model adapter for text2vec (e.g., shibing624/text2vec-base-chinese)"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "text2vec" in model_path.lower()
+
+
+class M3EAdapter(BaseEmbeddingModelAdapter):
+    """The model adapter for m3e (e.g., moka-ai/m3e-large)"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "m3e-" in model_path.lower()
+
+
+class GTEAdapter(BaseEmbeddingModelAdapter):
+    """The model adapter for gte (e.g., Alibaba-NLP/gte-large-en-v1.5)"""
+
+    use_fast_tokenizer = False
+
+    def match(self, model_path: str):
+        return "gte-" in model_path.lower()
 
 
 class AquilaChatAdapter(BaseModelAdapter):
@@ -2562,6 +2575,9 @@ register_model_adapter(QwenChatAdapter)
 register_model_adapter(AquilaChatAdapter)
 register_model_adapter(BGEAdapter)
 register_model_adapter(E5Adapter)
+register_model_adapter(Text2VecAdapter)
+register_model_adapter(M3EAdapter)
+register_model_adapter(GTEAdapter)
 register_model_adapter(Lamma2ChineseAdapter)
 register_model_adapter(Lamma2ChineseAlpacaAdapter)
 register_model_adapter(VigogneAdapter)
@@ -2603,5 +2619,6 @@ register_model_adapter(Llama31Adapter)
 register_model_adapter(GrokAdapter)
 register_model_adapter(NoSystemAdapter)
 
+register_model_adapter(BaseEmbeddingModelAdapter)
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)
