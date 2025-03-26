@@ -22,7 +22,7 @@ from fastchat.serve.model_worker import (
     logger,
     worker_id,
 )
-from fastchat.utils import get_context_length, is_partial_stop
+from fastchat.utils import is_partial_stop
 
 
 app = FastAPI()
@@ -59,7 +59,7 @@ class VLLMWorker(BaseModelWorker):
         # and llm_engine.engine.tokenizer was no longer a raw tokenizer
         if hasattr(self.tokenizer, "tokenizer"):
             self.tokenizer = llm_engine.engine.tokenizer.tokenizer
-        self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
+        self.context_len = llm_engine.engine.model_config.max_model_len
 
         if not no_register:
             self.init_heart_beat()
