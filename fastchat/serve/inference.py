@@ -83,6 +83,8 @@ def generate_stream(
     echo = bool(params.get("echo", True))
     stop_str = params.get("stop", None)
     stop_token_ids = params.get("stop_token_ids", None) or []
+    logprobs_requested = params.get("logprobs") is not None
+    top_logprobs_n = int(params.get("top_logprobs_n", 5) if logprobs_requested else 0)
     if tokenizer.eos_token_id not in stop_token_ids:
         stop_token_ids.append(tokenizer.eos_token_id)
 
@@ -116,9 +118,12 @@ def generate_stream(
 
     past_key_values = out = None
     token_logprobs = [None]  # The first token has no logprobs.
+    top_logprobs_list = [{}]  # The first token has no top logprobs.
     sent_interrupt = False
     finish_reason = None
     stopped = False
+    last_sent_token_pos = 0 
+
     for i in range(max_new_tokens):
         if i == 0:  # prefill
             if model.config.is_encoder_decoder:
@@ -142,6 +147,8 @@ def generate_stream(
                     shift_input_ids[0].tolist(), shift_logits[0]
                 ):
                     token_logprobs.append(logit[label_id])
+                    # Add empty top_logprobs during prefill (would need to reconstruct full logits tensor to get these)
+                    top_logprobs_list.append({})
         else:  # decoding
             if model.config.is_encoder_decoder:
                 out = model.decoder(
@@ -197,6 +204,28 @@ def generate_stream(
                 torch.log_softmax(logits[0, -1, :], dim=-1)[token].tolist()
             )
 
+        # Calculate top logprobs for the current token if needed
+        if logprobs_requested and top_logprobs_n > 0:
+            # Get raw logits for current position
+            current_logits = torch.log_softmax(logits[0, -1, :], dim=-1)
+            
+            # Get top tokens and their logprobs
+            topk_logits, topk_indices = torch.topk(current_logits, min(top_logprobs_n, len(current_logits)))
+            
+            # Create dictionary of token → logprob
+            top_dict = {}
+            for logit, token_id in zip(topk_logits.tolist(), topk_indices.tolist()):
+                token_text = tokenizer.decode([token_id])  # Use list to ensure proper decoding
+                if token_text and token_text.strip():  # Check if token is non-empty after stripping
+                    # If the same token appears with different logprobs, keep the highest one
+                    if token_text not in top_dict or logit > top_dict[token_text]:
+                        top_dict[token_text] = logit
+            
+            top_logprobs_list.append(top_dict)
+        else:
+            top_logprobs_list.append({})
+
+
         if token in stop_token_ids:
             stopped = True
         else:
@@ -219,21 +248,26 @@ def generate_stream(
             )
             ret_logprobs = None
             if logprobs is not None:
+                # Calculate the start position for this streaming chunk
+                if echo:
+                    start_pos = last_sent_token_pos
+                    tokens_to_send = output_ids[start_pos:]
+                else:
+                    start_pos = max(last_sent_token_pos, input_echo_len)
+                    tokens_to_send = output_ids[start_pos:]
+                
+                # Update last sent position for next stream chunk
+                last_sent_token_pos = len(output_ids)
+                
+                # Format response with only new tokens
                 ret_logprobs = {
                     "text_offset": [],
-                    "tokens": [
-                        tokenizer.decode(token)
-                        for token in (
-                            output_ids if echo else output_ids[input_echo_len:]
-                        )
-                    ],
-                    "token_logprobs": token_logprobs
-                    if echo
-                    else token_logprobs[input_echo_len:],
-                    "top_logprobs": [{}]
-                    * len(token_logprobs if echo else token_logprobs[input_echo_len:]),
+                    "tokens": [tokenizer.decode(token) for token in tokens_to_send],
+                    "token_logprobs": token_logprobs[start_pos:],
+                    "top_logprobs": top_logprobs_list[start_pos:],
                 }
-                # Compute text_offset
+                
+                # Compute text_offset for just this chunk
                 curr_pos = 0
                 for text in ret_logprobs["tokens"]:
                     ret_logprobs["text_offset"].append(curr_pos)
