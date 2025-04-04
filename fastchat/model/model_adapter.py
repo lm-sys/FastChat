@@ -260,7 +260,7 @@ def load_model(
         except ValueError:
             # some versions of transformers have a different version format (
             # e.g. 4.50.0.dev0) and these break this parser so we set a default
-            version = (4, 36, 0)  
+            version = (4, 36, 0)
         if version < (4, 35, 0):
             # NOTE: Recent transformers library seems to fix the mps issue, also
             # it has made some changes causing compatibility issues with our
@@ -830,6 +830,7 @@ class GoogleT5Adapter(BaseModelAdapter):
         )
         return model, tokenizer
 
+
 class Gemma3Adapter(BaseModelAdapter):
     """The model adapter for google/gemma-3"""
 
@@ -844,13 +845,12 @@ class Gemma3Adapter(BaseModelAdapter):
         # print("From pretrained kwargs", from_pretrained_kwargs)
         tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
         model = Gemma3ForCausalLM.from_pretrained(
-                model_path,
-                revision=revision,
-                torch_dtype=torch.bfloat16,
-                device_map=device_map,
-            )
+            model_path,
+            revision=revision,
+            torch_dtype=torch.bfloat16,
+            device_map=device_map,
+        )
         return model, tokenizer
-
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemma")
@@ -2536,9 +2536,6 @@ class NoSystemAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
-
-
-    
 
 
 # Note: the registration order matters.

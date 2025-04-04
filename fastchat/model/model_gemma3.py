@@ -3,6 +3,7 @@ import gc
 import torch
 from transformers import TextIteratorStreamer
 
+
 def generate_stream_gemma3(
     model,
     tokenizer,
@@ -10,7 +11,7 @@ def generate_stream_gemma3(
     device,
     context_len,
     stream_interval=2,
-    judge_sent_end=False
+    judge_sent_end=False,
 ):
     """Custom generate stream function for Gemma-3 models"""
     # Get parameters from the request
@@ -35,12 +36,20 @@ def generate_stream_gemma3(
         # Format input based on whether we have messages or a plain prompt
         if messages:
             inputs = tokenizer.apply_chat_template(
-                messages, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt"
+                messages,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
             ).to(model.device)
         else:
             messages = [{"role": "user", "content": [{"type": "text", "text": prompt}]}]
             inputs = tokenizer.apply_chat_template(
-                messages, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt"
+                messages,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
             ).to(model.device)
     else:
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
@@ -62,11 +71,15 @@ def generate_stream_gemma3(
     if repetition_penalty > 1.0:
         generate_kwargs["repetition_penalty"] = repetition_penalty
 
-    streamer = TextIteratorStreamer(tokenizer, skip_prompt=not echo, skip_special_tokens=True)
+    streamer = TextIteratorStreamer(
+        tokenizer, skip_prompt=not echo, skip_special_tokens=True
+    )
     generate_kwargs["streamer"] = streamer
 
     # Start generation in a separate thread
-    thread = Thread(target=lambda: model.generate(input_ids=input_ids, **generate_kwargs))
+    thread = Thread(
+        target=lambda: model.generate(input_ids=input_ids, **generate_kwargs)
+    )
     thread.start()
 
     # Track generation progress
