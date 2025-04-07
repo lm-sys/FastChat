@@ -115,6 +115,7 @@ class VLLMWorker(BaseModelWorker):
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             best_of=best_of,
+            seed=1234
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
