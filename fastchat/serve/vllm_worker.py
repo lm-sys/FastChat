@@ -24,6 +24,9 @@ from fastchat.serve.model_worker import (
 )
 from fastchat.utils import get_context_length, is_partial_stop
 
+# This makes vllm > 0.8.0 work again.
+import os
+os.environ['VLLM_USE_V1'] = os.environ.get('VLLM_USE_V1', '0')
 
 app = FastAPI()
 
