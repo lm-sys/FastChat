@@ -146,7 +146,7 @@ def make_default_md_2(mirror=False):
     leaderboard_md = f"""
 {mirror_str if mirror else ""}
 
-Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at UC Berkeley [SkyLab](https://sky.cs.berkeley.edu/) and [LMSYS](https://lmsys.org). With over 1,000,000 user votes, the platform ranks best LLM and AI chatbots using the Bradley-Terry model to generate live leaderboards. For technical details, check out our [paper](https://arxiv.org/abs/2403.04132).
+Chatbot Arena ([lmarena.ai](https://lmarena.ai)) is an open-source platform for evaluating AI through human preference, developed by researchers at [LMArena](https://blog.lmarena.ai/about/). With over 1,000,000 user votes, the platform ranks best LLM and AI chatbots using the Bradley-Terry model to generate live leaderboards. For technical details, check out our [paper](https://arxiv.org/abs/2403.04132).
 
 **Chatbot Arena thrives on community engagement — cast your vote to help improve AI evaluation!**
 
