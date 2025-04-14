@@ -128,7 +128,7 @@ def get_prompt_separator(conv):
 
     elif conv.sep_style == SeparatorStyle.LLAMA2:
         user_turn_separator = conv.sep2
-        assistant_turn_separator = conv.roles[1] + " "
+        assistant_turn_separator = conv.roles[1]
 
     elif conv.sep_style == SeparatorStyle.CHATML:
         if conv.sep2 is None:
@@ -160,8 +160,8 @@ def mask_targets(conversations, targets, tokenizer, conv):
             ):  # Last turn is the user_turn_separator
                 break
 
-            if i != 0:
-                turn = user_turn_separator + turn
+            if i < len(turns) - 1:
+                turn = turn + user_turn_separator
 
             turn_len = len(tokenizer(turn, add_special_tokens=False).input_ids)
 
@@ -366,6 +366,7 @@ def train():
         model_args.model_name_or_path,
         config=config,
         trust_remote_code=True,
+        legacy=True,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
         padding_side="right",
