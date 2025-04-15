@@ -1,6 +1,7 @@
 """
 A model worker that executes the model.
 """
+
 import argparse
 import base64
 import gc
@@ -351,6 +352,14 @@ def create_model_worker():
                 f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+        if len(args.gpus.split(",")) == 1:
+            try:
+                import torch_npu
+
+                torch.npu.set_device(int(args.gpus))
+                print(f"NPU is available, now model is running on npu:{args.gpus}")
+            except ModuleNotFoundError:
+                pass
 
     gptq_config = GptqConfig(
         ckpt=args.gptq_ckpt or args.model_path,
