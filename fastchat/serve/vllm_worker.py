@@ -82,6 +82,7 @@ class VLLMWorker(BaseModelWorker):
         echo = params.get("echo", True)
         use_beam_search = params.get("use_beam_search", False)
         best_of = params.get("best_of", None)
+        seed = params.get("seed", None)
 
         request = params.get("request", None)
 
@@ -115,6 +116,7 @@ class VLLMWorker(BaseModelWorker):
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             best_of=best_of,
+            seed=seed,
         )
         results_generator = engine.generate(context, sampling_params, request_id)
 
