@@ -24,7 +24,7 @@ from fastchat.serve.model_worker import (
     worker_id,
 )
 
-from lightllm.server.sampling_params import SamplingParams
+from lightllm.server.core.objs.py_sampling_params import SamplingParams
 from lightllm.server.multimodal_params import MultimodalParams
 from lightllm.server.httpserver.manager import HttpServerManager
 from lightllm.server.detokenization.manager import start_detokenization_process
