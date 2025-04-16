@@ -281,24 +281,47 @@ async def get_gen_params(
     use_beam_search: Optional[bool] = None,
 ) -> Dict[str, Any]:
     conv = await get_conv(model_name, worker_addr)
-    conv = Conversation(
-        name=conv["name"],
-        system_template=conv["system_template"],
-        system_message=conv["system_message"],
-        roles=conv["roles"],
-        messages=list(conv["messages"]),  # prevent in-place modification
-        offset=conv["offset"],
-        sep_style=SeparatorStyle(conv["sep_style"]),
-        sep=conv["sep"],
-        sep2=conv["sep2"],
-        stop_str=conv["stop_str"],
-        stop_token_ids=conv["stop_token_ids"],
-    )
+
+    images = []
+    conv_stop_str = None
+    conv_stop_token_ids = None
 
     if isinstance(messages, str):
         prompt = messages
-        images = []
+    elif "chat_template" in conv and conv["chat_template"]["chat_template"]:
+        conv = conv["chat_template"]
+        prompt = await apply_chat_template(worker_addr, messages)
+        conv_stop_str = conv.get("eos_token")
+        generation_config = conv.get("generation_config")
+        if generation_config:
+            conv_stop_token_ids = conv.get("eos_token_id")
+            if isinstance(conv_stop_token_ids, int):
+                conv_stop_token_ids = [conv_stop_token_ids]
+
+            if temperature is None:
+                temperature = generation_config.get("temperature")
+            if top_p is None:
+                top_p = generation_config.get("top_p")
+            if top_k is None:
+                top_k = generation_config.get("top_k")
+            if max_tokens is None:
+                max_tokens = generation_config.get("max_tokens")
     else:
+        conv = conv["conv"]
+        conv = Conversation(
+            name=conv["name"],
+            system_template=conv["system_template"],
+            system_message=conv["system_message"],
+            roles=conv["roles"],
+            messages=list(conv["messages"]),  # prevent in-place modification
+            offset=conv["offset"],
+            sep_style=SeparatorStyle(conv["sep_style"]),
+            sep=conv["sep"],
+            sep2=conv["sep2"],
+            stop_str=conv["stop_str"],
+            stop_token_ids=conv["stop_token_ids"],
+        )
+
         for message in messages:
             msg_role = message["role"]
             if msg_role == "system":
@@ -327,10 +350,12 @@ async def get_gen_params(
             else:
                 raise ValueError(f"Unknown role: {msg_role}")
 
-        # Add a blank message for the assistant.
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        images = conv.get_images()
+            # Add a blank message for the assistant.
+            conv.append_message(conv.roles[1], None)
+            prompt = conv.get_prompt()
+            images = conv.get_images()
+            conv_stop_str = conv.stop_str
+            conv_stop_token_ids = conv.stop_token_ids
 
     gen_params = {
         "model": model_name,
@@ -343,7 +368,7 @@ async def get_gen_params(
         "frequency_penalty": frequency_penalty,
         "max_new_tokens": max_tokens,
         "echo": echo,
-        "stop_token_ids": conv.stop_token_ids,
+        "stop_token_ids": conv_stop_token_ids,
     }
 
     if len(images) > 0:
@@ -356,7 +381,7 @@ async def get_gen_params(
 
     new_stop = set()
     _add_to_set(stop, new_stop)
-    _add_to_set(conv.stop_str, new_stop)
+    _add_to_set(conv_stop_str, new_stop)
 
     gen_params["stop"] = list(new_stop)
 
@@ -388,10 +413,24 @@ async def get_conv(model_name: str, worker_addr: str):
     conv_template = conv_template_map.get((worker_addr, model_name))
     if conv_template is None:
         conv_template = await fetch_remote(
-            worker_addr + "/worker_get_conv_template", {"model": model_name}, "conv"
+            worker_addr + "/worker_get_conv_template", {"model": model_name}
         )
+        conv_template = json.loads(conv_template)
         conv_template_map[(worker_addr, model_name)] = conv_template
     return conv_template
+
+
+async def apply_chat_template(worker_addr: str, conversation):
+    prompt = await fetch_remote(
+        worker_addr + "/apply_chat_template",
+        {
+            "conversation": conversation,
+            "tokenize": False,
+            "add_generation_prompt": True,
+        },
+        "prompt",
+    )
+    return prompt
 
 
 @app.get("/v1/models", dependencies=[Depends(check_api_key)])

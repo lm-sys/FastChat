@@ -7,7 +7,8 @@ See documentations at docs/vllm_integration.md
 import argparse
 import asyncio
 import json
-from typing import List
+import codecs
+from typing import List, Optional
 
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -16,6 +17,7 @@ from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
+from transformers.generation import GenerationConfig
 
 from fastchat.serve.base_model_worker import BaseModelWorker
 from fastchat.serve.model_worker import (
@@ -59,10 +61,44 @@ class VLLMWorker(BaseModelWorker):
         # and llm_engine.engine.tokenizer was no longer a raw tokenizer
         if hasattr(self.tokenizer, "tokenizer"):
             self.tokenizer = llm_engine.engine.tokenizer.tokenizer
+        self._load_chat_template(chat_template=None)
+        try:
+            self.generation_config = GenerationConfig.from_pretrained(
+                model_path, trust_remote_code=True
+            )
+        except Exception:
+            self.generation_config = None
         self.context_len = get_context_length(llm_engine.engine.model_config.hf_config)
 
         if not no_register:
             self.init_heart_beat()
+
+    def _load_chat_template(self, chat_template: Optional[str]):
+        tokenizer = self.tokenizer
+
+        if chat_template is not None:
+            try:
+                with open(chat_template, "r") as f:
+                    tokenizer.chat_template = f.read()
+            except OSError as e:
+                JINJA_CHARS = "{}\n"
+                if not any(c in chat_template for c in JINJA_CHARS):
+                    msg = (
+                        f"The supplied chat template ({chat_template}) "
+                        f"looks like a file path, but it failed to be "
+                        f"opened. Reason: {e}"
+                    )
+                    raise ValueError(msg) from e
+
+                # If opening a file fails, set chat template to be args to
+                # ensure we decode so our escape are interpreted correctly
+                tokenizer.chat_template = codecs.decode(chat_template, "unicode_escape")
+
+            logger.info("Using supplied chat template:\n%s", tokenizer.chat_template)
+        elif tokenizer.chat_template is not None:
+            logger.info("Using default chat template:\n%s", tokenizer.chat_template)
+        else:
+            tokenizer.chat_template = ""
 
     async def generate_stream(self, params):
         self.call_ct += 1
@@ -169,6 +205,28 @@ class VLLMWorker(BaseModelWorker):
             if aborted:
                 break
 
+    def get_conv_template(self):
+        if self.tokenizer.chat_template:
+            chat_template_kwargs = {
+                "chat_template": {
+                    "chat_template": self.tokenizer.chat_template,
+                    "eos_token": self.tokenizer.eos_token,
+                    "generation_config": self.generation_config.to_diff_dict()
+                    if self.generation_config
+                    else None,
+                }
+            }
+        else:
+            chat_template_kwargs = {}
+
+        return {
+            "conv": self.conv,
+            **chat_template_kwargs,
+        }
+
+    def apply_chat_template(self, params):
+        return self.tokenizer.apply_chat_template(**params)
+
     async def generate(self, params):
         async for x in self.generate_stream(params):
             pass
@@ -193,6 +251,13 @@ def create_background_tasks(request_id):
     background_tasks.add_task(release_worker_semaphore)
     background_tasks.add_task(abort_request)
     return background_tasks
+
+
+@app.post("/apply_chat_template")
+async def api_apply_chat_template(request: Request):
+    params = await request.json()
+    prompt = worker.apply_chat_template(params)
+    return JSONResponse({"prompt": prompt})
 
 
 @app.post("/worker_generate_stream")
