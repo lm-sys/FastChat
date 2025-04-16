@@ -16,6 +16,9 @@ import gradio as gr
 from gradio.data_classes import FileData
 import numpy as np
 
+from io import BytesIO
+import base64
+
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
@@ -74,16 +77,29 @@ def get_vqa_sample():
     return (res, path)
 
 
-def set_visible_image(textbox):
-    images = textbox["files"]
-    if len(images) == 0:
-        return invisible_image_column
-    elif len(images) > 1:
-        gr.Warning(
-            "We only support single image conversations. Please start a new round if you would like to chat using this image."
-        )
+def is_pdf(file_path):
+    try:
+        with open(file_path, "rb") as file:
+            header = file.read(5)  # Read the first 5 bytes
+            return header == b"%PDF-"
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
-    return visible_image_column
+
+def set_visible_image(textbox):
+    import filetype
+
+    files = textbox["files"]
+    if len(files) == 0:
+        return invisible_image_column
+    elif len(files) > 1:
+        gr.Warning(
+            "We only support single image or document conversations. Please start a new round if you would like to chat using this image or document."
+        )
+    elif filetype.is_image(files[0]):
+        return visible_image_column
+    return invisible_image_column
 
 
 def set_invisible_image():
@@ -161,9 +177,94 @@ def clear_history_example(request: gr.Request):
     ) * 5
 
 
-# TODO(Chris): At some point, we would like this to be a live-reporting feature.
 def report_csam_image(state, image):
     pass
+
+
+def wrap_pdfchat_query(query, document):
+    reformatted_query_context = (
+        f"Answer the user query given the context.\n"
+        f"[QUERY CONTEXT]\n"
+        f"<details>\n"
+        f"<summary>Expand context details</summary>\n\n"
+        f"{document}\n\n"
+        f"</details>"
+        f"\n\n[USER QUERY]\n\n{query}"
+    )
+
+    return reformatted_query_context
+
+
+PDFPARSE_MAX_RETRY = 2
+PDFPARSE_SUPPORTED_LANGS = {
+    "English": "en",
+    "Chinese": "zh",
+    "Russian": "ru",
+    "Spanish": "es",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "French": "fr",
+    "German": "de",
+    "Vietnamese": "vi",
+}
+MARKER_PDFPARSE_CONFIG = {
+    "output_format": "markdown",
+    "languages": ",".join(PDFPARSE_SUPPORTED_LANGS.values()),
+}
+
+
+def convert_base64_to_pil_image(b64_string):
+    from PIL import Image
+    import numpy as np
+
+    image_data = np.frombuffer(base64.b64decode(b64_string), dtype=np.uint8)
+    image_bytes = BytesIO(image_data)
+    image = Image.open(image_bytes)
+
+    return image
+
+
+def batch_convert_base64_to_images(base64_dict):
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        return list(executor.map(convert_base64_to_pil_image, base64_dict.values()))
+
+
+def parse_pdf(file_path):
+    import requests
+
+    url = "https://www.datalab.to/api/v1/marker"
+
+    form_data = {
+        "file": ("test.pdf", open(file_path, "rb"), "application/pdf"),
+        "force_ocr": (None, False),
+        "paginate": (None, False),
+        "output_format": (None, "markdown"),
+        "use_llm": (None, True),
+        "strip_existing_ocr": (None, False),
+        "disable_image_extraction": (None, False),
+    }
+
+    headers = {"X-Api-Key": str(os.getenv("MARKER_API_KEY"))}
+    response = requests.post(url, files=form_data, headers=headers)
+    data = response.json()
+
+    max_polls = 300
+    check_url = data["request_check_url"]
+
+    for i in range(max_polls):
+        time.sleep(2)
+        response = requests.get(check_url, headers=headers)
+        data = response.json()
+
+        if data["status"] == "complete":
+            break
+
+    output_md = data["markdown"]
+    output_images = batch_convert_base64_to_images(data["images"])
+
+    return output_md, output_images
 
 
 def _prepare_text_with_image(state, text, images, csam_flag):
@@ -177,7 +278,20 @@ def _prepare_text_with_image(state, text, images, csam_flag):
     return text
 
 
-# NOTE(chris): take multiple images later on
+def _prepare_text_with_pdf(text, pdfs):
+    if len(pdfs) > 0:
+        parsed_text, imgs = parse_pdf(pdfs[0])
+        print("Document processed")
+        wrapped_text = wrap_pdfchat_query(text, parsed_text)
+
+        imgs = convert_pdf_images_to_conversation_format(imgs)
+
+        if len(imgs) > 0:
+            return wrapped_text, imgs
+        return wrapped_text, []
+    return text, []
+
+
 def convert_images_to_conversation_format(images):
     import base64
 
@@ -188,6 +302,20 @@ def convert_images_to_conversation_format(images):
         conv_image.to_conversation_format(MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB)
         conv_images.append(conv_image)
 
+    return conv_images
+
+
+def convert_pdf_images_to_conversation_format(images):
+    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB = 5 / 1.5
+    conv_images = []
+    if len(images) > 0:
+        for img in images:
+            # pdf parser returns a PIL image object instead of path
+            conv_images.append(
+                Image(url="").to_conversation_format(
+                    MAX_NSFW_ENDPOINT_IMAGE_SIZE_IN_MB, pil_img=img
+                )
+            )
     return conv_images
 
 
@@ -213,7 +341,7 @@ def moderate_input(state, text, all_conv_text, model_list, images, ip):
         state.has_csam_image = True
         report_csam_image(state, images[0])
 
-    return text, image_flagged, csam_flagged
+    return text, text_flagged, image_flagged, csam_flagged
 
 
 def add_text(

@@ -18,6 +18,8 @@ import requests
 
 from fastchat.constants import LOGDIR
 
+from PIL import Image
+
 
 handler = None
 visited_loggers = set()
@@ -392,7 +394,6 @@ def str_to_torch_dtype(dtype: str):
 
 
 def load_image(image_file):
-    from PIL import Image
     import requests
 
     image = None
@@ -430,6 +431,20 @@ def upload_image_file_to_gcs(image, filename):
     return blob.public_url
 
 
+def upload_pdf_file_to_gcs(pdf_file_path, filename):
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+    # upload file to GCS
+    bucket = storage_client.get_bucket("arena-pdf-dev")
+
+    blob = bucket.blob(filename)
+    # Automatically opens the file in binary read mode
+    blob.upload_from_filename(pdf_file_path, content_type="application/pdf")
+
+    return blob.public_url
+
+
 def get_image_file_from_gcs(filename):
     from google.cloud import storage
 
@@ -439,6 +454,47 @@ def get_image_file_from_gcs(filename):
     contents = blob.download_as_bytes()
 
     return contents
+
+
+def get_pdf_file_from_gcs(filename):
+    from google.cloud import storage
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket("arena-pdf-dev")
+    blob = bucket.blob(f"{filename}")
+    contents = blob.download_as_bytes()
+
+    return contents
+
+
+def hash_pdf(file_path):
+    import hashlib
+
+    with open(file_path, "rb") as f:
+        file_content = f.read()
+    return hashlib.md5(file_content).hexdigest()
+
+
+def get_pdf_num_page(file_path):
+    from pypdf import PdfReader
+
+    reader = PdfReader(file_path)
+
+    return len(reader.pages)
+
+
+def resize_image_if_needed(image_bytes):
+    image = Image.open(BytesIO(image_bytes))
+    if min(image.size) < 128:
+        print(f"⚠️ Resizing image from {image.size} to minimum required size")
+        new_size = (max(128, image.size[0]), max(128, image.size[1]))
+        image = image.resize(new_size, Image.LANCZOS)
+
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format="PNG")
+        return img_byte_arr.getvalue()
+
+    return image_bytes
 
 
 def image_moderation_request(image_bytes, endpoint, api_key):
@@ -475,6 +531,7 @@ def image_moderation_filter(image):
     print(f"moderating image")
 
     image_bytes = base64.b64decode(image.base64_str)
+    image_bytes = resize_image_if_needed(image_bytes)
 
     nsfw_flagged = image_moderation_provider(image_bytes, "nsfw")
     csam_flagged = False

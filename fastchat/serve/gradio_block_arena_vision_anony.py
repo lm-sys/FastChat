@@ -5,6 +5,7 @@ Users chat with two anonymous models.
 
 import json
 import time
+import filetype
 
 import gradio as gr
 import numpy as np
@@ -13,6 +14,11 @@ from typing import Union
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
     IMAGE_MODERATION_MSG,
+    PDF_MODERATION_MSG,
+    PDF_LIMIT_MSG,
+    PDF_PAGE_LIMIT,
+    PDF_CHAR_LEN_LIMIT,
+    PDF_CHAR_LIMIT_MSG,
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
@@ -63,10 +69,12 @@ from fastchat.serve.gradio_block_arena_vision import (
     moderate_input,
     enable_multimodal,
     _prepare_text_with_image,
+    _prepare_text_with_pdf,
     convert_images_to_conversation_format,
     invisible_text,
     visible_text,
     disable_multimodal,
+    is_pdf,
 )
 from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
@@ -74,6 +82,9 @@ from fastchat.utils import (
     build_logger,
     moderation_filter,
     image_moderation_filter,
+    get_pdf_num_page,
+    upload_pdf_file_to_gcs,
+    hash_pdf,
 )
 
 logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
@@ -84,17 +95,18 @@ anony_names = ["", ""]
 text_models = []
 vl_models = []
 
-# TODO(chris): fix sampling weights
 VISION_SAMPLING_WEIGHTS = {}
+PDFCHAT_SAMPLING_WEIGHTS = {}
 
-# TODO(chris): Find battle targets that make sense
 VISION_BATTLE_TARGETS = {}
+PDFCHAT_BATTLE_TARGETS = {}
 
-# TODO(chris): Fill out models that require sampling boost
 VISION_SAMPLING_BOOST_MODELS = []
+PDFCHAT_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
 VISION_OUTAGE_MODELS = []
+PDFCHAT_OUTAGE_MODELS = []
 
 
 def get_vqa_sample():
@@ -253,15 +265,18 @@ def add_text(
     request: gr.Request,
 ):
     if isinstance(chat_input, dict):
-        text, images = chat_input["text"], chat_input["files"]
+        text, files = chat_input["text"], chat_input["files"]
     else:
         text = chat_input
-        images = []
+        files = []
 
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
     model_selectors = [model_selector0, model_selector1]
+
+    images = [file for file in files if filetype.is_image(file)]
+    pdfs = [file for file in files if is_pdf(file)]
 
     # Init states if necessary
     if states[0] is None:
@@ -279,6 +294,22 @@ def add_text(
                 State(model_left, is_vision=True),
                 State(model_right, is_vision=True),
             ]
+        elif len(pdfs) > 0:
+            model_left, model_right = get_battle_pair(
+                context.all_pdfchat_models,
+                PDFCHAT_BATTLE_TARGETS,
+                PDFCHAT_OUTAGE_MODELS,
+                PDFCHAT_SAMPLING_WEIGHTS,
+                PDFCHAT_SAMPLING_BOOST_MODELS,
+            )
+
+            # Save an unique id for mapping conversation back to the file on google cloud.
+            unique_id = hash_pdf(pdfs[0])
+
+            states = [
+                State(model_left, is_vision=False, pdf_id=unique_id),
+                State(model_right, is_vision=False, pdf_id=unique_id),
+            ]
         else:
             model_left, model_right = get_battle_pair(
                 context.all_text_models,
@@ -287,7 +318,6 @@ def add_text(
                 SAMPLING_WEIGHTS,
                 SAMPLING_BOOST_MODELS,
             )
-
             states = [
                 State(model_left, is_vision=False),
                 State(model_right, is_vision=False),
@@ -307,13 +337,56 @@ def add_text(
             + [""]
         )
 
+    if len(pdfs) > 0 and get_pdf_num_page(pdfs[0]) > PDF_PAGE_LIMIT:
+        logger.info(f"pdf page limit exceeded. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [
+                {
+                    "text": PDF_LIMIT_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                },
+                "",
+                no_change_btn,
+            ]
+            + [no_change_btn] * 7
+            + [""]
+        )
+
     model_list = [states[i].model_name for i in range(num_sides)]
 
     images = convert_images_to_conversation_format(images)
 
-    text, image_flagged, csam_flag = moderate_input(
-        state0, text, text, model_list, images, ip
+    text, pdf_imgs = _prepare_text_with_pdf(text, pdfs)
+
+    text, text_flagged, image_flagged, csam_flag = moderate_input(
+        state0, text, text, model_list, images + pdf_imgs, ip
     )
+
+    if len(pdfs) > 0:
+        if len(text) > PDF_CHAR_LEN_LIMIT:
+            logger.info(f"pdf character limit. ip: {get_ip(request)}. text: {text}")
+            for i in range(num_sides):
+                states[i].skip_next = True
+            return (
+                states
+                + [x.to_gradio_chatbot() for x in states]
+                + [
+                    {"text": PDF_CHAR_LIMIT_MSG},
+                    "",
+                    no_change_btn,
+                ]
+                + [no_change_btn] * 7
+                + [""]
+            )
+    else:
+        text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]
+
+    if len(pdf_imgs) > 0:
+        text = (text, pdf_imgs)
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -323,11 +396,12 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
             + [
+                {"text": CONVERSATION_LIMIT_MSG},
+                "",
                 no_change_btn,
             ]
-            * 7
+            + [no_change_btn] * 7
             + [""]
         )
 
@@ -350,11 +424,36 @@ def add_text(
             + [""]
         )
 
-    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    if text_flagged:
+        logger.info(f"image flagged. ip: {ip}. text: {text}")
+        for i in range(num_sides):
+            states[i].skip_next = True
+        return (
+            states
+            + [x.to_gradio_chatbot() for x in states]
+            + [
+                {
+                    "text": TEXT_MODERATION_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                },
+                "",
+                no_change_btn,
+            ]
+            + [no_change_btn] * 7
+            + [""]
+        )
+
+    if len(pdfs) > 0:
+        upload_pdf_file_to_gcs(
+            pdf_file_path=pdfs[0],
+            filename=unique_id,
+        )
+
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
         )
+
         states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
@@ -471,7 +570,7 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
         )
 
         multimodal_textbox = gr.MultimodalTextbox(
-            file_types=["image"],
+            file_types=["image", ".pdf"],
             show_label=False,
             container=True,
             placeholder="Enter your prompt or add image here",

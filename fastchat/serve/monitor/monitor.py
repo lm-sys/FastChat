@@ -478,9 +478,9 @@ def build_arena_tab(
         arena_values = get_arena_table(
             arena_df,
             model_table_df,
-            arena_subset_df=arena_subset_df
-            if category != "Overall"
-            else arena_overall_sc_df,
+            arena_subset_df=(
+                arena_subset_df if category != "Overall" else arena_overall_sc_df
+            ),
             hidden_models=(
                 None
                 if len(filters) > 0 and "Show Deprecated" in filters
