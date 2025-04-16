@@ -23,6 +23,7 @@ from transformers import (
     LlamaTokenizer,
     LlamaForCausalLM,
     T5Tokenizer,
+    Gemma3ForCausalLM,
 )
 
 from fastchat.constants import CPU_ISA
@@ -36,6 +37,7 @@ from fastchat.model.model_yuan2 import generate_stream_yuan2
 from fastchat.model.model_exllama import generate_stream_exllama
 from fastchat.model.model_xfastertransformer import generate_stream_xft
 from fastchat.model.model_cllm import generate_stream_cllm
+from fastchat.model.model_gemma3 import generate_stream_gemma3
 
 from fastchat.model.monkey_patch_non_inplace import (
     replace_llama_attn_with_non_inplace_operations,
@@ -253,7 +255,12 @@ def load_model(
         kwargs = {"torch_dtype": torch.float16}
         import transformers
 
-        version = tuple(int(v) for v in transformers.__version__.split("."))
+        try:
+            version = tuple(int(v) for v in transformers.__version__.split("."))
+        except ValueError:
+            # some versions of transformers have a different version format (
+            # e.g. 4.50.0.dev0) and these break this parser so we set a default
+            version = (4, 36, 0)
         if version < (4, 35, 0):
             # NOTE: Recent transformers library seems to fix the mps issue, also
             # it has made some changes causing compatibility issues with our
@@ -414,6 +421,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
     is_xft = "xft" in model_type
     is_yuan = "yuan" in model_type
     is_cllm = "consistency-llm" in model_path.lower()
+    is_gemma3 = "gemma-3" in model_path.lower()
 
     if is_chatglm:
         return generate_stream_chatglm
@@ -429,6 +437,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
         return generate_stream_yuan2
     elif is_cllm:
         return generate_stream_cllm
+    elif is_gemma3:
+        return generate_stream_gemma3
 
     elif peft_share_base_weights and is_peft:
         # Return a curried stream function that loads the right adapter
@@ -453,6 +463,7 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
             is_xft = "xft" in base_model_type
             is_yuan = "yuan" in base_model_type
             is_cllm = "consistency-llm" in model_path.lower()
+            is_gemma3 = "gemma-3" in model_path.lower()
 
             generate_stream_function = generate_stream
             if is_chatglm:
@@ -469,6 +480,8 @@ def get_generate_stream_function(model: torch.nn.Module, model_path: str):
                 generate_stream_function = generate_stream_yuan2
             elif is_cllm:
                 generate_stream_function = generate_stream_cllm
+            elif is_gemma3:
+                generate_stream_function = generate_stream_gemma3
             for x in generate_stream_function(
                 model,
                 tokenizer,
@@ -816,6 +829,31 @@ class GoogleT5Adapter(BaseModelAdapter):
             **from_pretrained_kwargs,
         )
         return model, tokenizer
+
+
+class Gemma3Adapter(BaseModelAdapter):
+    """The model adapter for google/gemma-3"""
+
+    def match(self, model_path: str):
+        return "gemma-3" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        device_map = from_pretrained_kwargs.get("device_map", None)
+        if device_map == "sequential":
+            device_map = "auto"
+        # print("From pretrained kwargs", from_pretrained_kwargs)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        model = Gemma3ForCausalLM.from_pretrained(
+            model_path,
+            revision=revision,
+            torch_dtype=torch.bfloat16,
+            device_map=device_map,
+        )
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
 
 
 class KoalaAdapter(BaseModelAdapter):
@@ -2502,6 +2540,7 @@ class NoSystemAdapter(BaseModelAdapter):
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(Gemma3Adapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
