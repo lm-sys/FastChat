@@ -226,6 +226,7 @@ def main(args):
     try:
         chat_loop(
             args.model_path,
+            args.state_dict,
             args.device,
             args.num_gpus,
             args.max_gpu_memory,
