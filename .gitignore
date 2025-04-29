@@ -21,6 +21,8 @@ dist
 wandb
 output
 checkpoints_flant5_3b
+fastchat/llm_judge/data/mt_bench/model_answer/*.jsonl
+fastchat/llm_judge/data/mt_bench/model_judgment/*.jsonl
 
 # Data
 *.pkl
