@@ -1,7 +1,7 @@
 # transformerlab-inference
 <!-- | [**Demo**](https://transformerlab.ai/) | [**Discord**](https://discord.gg/6GXcFg3TH8) | [**X**](https://x.com/lmsysorg) | -->
 
-> This repository started as a fork of [FastChat](https://github.com/lm-sys/FastChat) and is now a separate project being developed independently by the [TransformerLab](https://www.transformerlab.ai/) team. This repository is intended for the inference service of the [Transformer Lab project](https://github.com/transformerlab/transformerlab-app).
+> This repository started as a fork of [FastChat](https://github.com/lm-sys/FastChat) and is now a separate project being developed independently by the [Transformer Lab](https://www.transformerlab.ai/) team. This repository is intended for the inference service of the [Transformer Lab project](https://github.com/transformerlab/transformerlab-app).
 
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
