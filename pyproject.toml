@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fschat"
+name = "transformerlab-inference"
 version = "0.2.36"
 description = "An open platform for training, serving, and evaluating large language model based chatbots."
 readme = "README.md"
@@ -13,24 +13,61 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "aiohttp", "fastapi", "httpx", "markdown2[all]", "nh3", "numpy",
-    "prompt_toolkit>=3.0.0", "pydantic<3,>=2.0.0", "pydantic-settings", "psutil", "requests", "rich>=10.0.0",
-    "shortuuid", "tiktoken", "uvicorn",
+    "aiohttp",
+    "fastapi",
+    "httpx",
+    "markdown2[all]",
+    "nh3",
+    "numpy",
+    "prompt_toolkit>=3.0.0",
+    "pydantic<3,>=2.0.0",
+    "pydantic-settings",
+    "psutil",
+    "requests",
+    "rich>=10.0.0",
+    "shortuuid",
+    "tiktoken",
+    "uvicorn",
 ]
 
 [project.optional-dependencies]
-model_worker = ["accelerate>=0.21", "peft", "sentencepiece", "torch", "transformers>=4.31.0", "protobuf", "openai", "anthropic"]
+model_worker = [
+    "accelerate>=0.21",
+    "peft",
+    "sentencepiece",
+    "torch",
+    "transformers>=4.31.0",
+    "protobuf",
+    "openai",
+    "anthropic",
+]
 webui = ["gradio>=4.10", "plotly", "scipy"]
 train = ["einops", "flash-attn>=2.0", "wandb"]
 llm_judge = ["openai<1", "anthropic>=0.3", "ray"]
 dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
-"Homepage" = "https://github.com/lm-sys/fastchat"
-"Bug Tracker" = "https://github.com/lm-sys/fastchat/issues"
+"Homepage" = "https://github.com/transformerlab/FastChat"
+"Bug Tracker" = "https://github.com/transformerlab/transformerlab-app/issues"
 
 [tool.setuptools.packages.find]
-exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
+exclude = [
+    "assets*",
+    "benchmark*",
+    "docs",
+    "dist*",
+    "playground*",
+    "scripts*",
+    "tests*",
+]
 
 [tool.wheel]
-exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
+exclude = [
+    "assets*",
+    "benchmark*",
+    "docs",
+    "dist*",
+    "playground*",
+    "scripts*",
+    "tests*",
+]

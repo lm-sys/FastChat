@@ -1,15 +1,17 @@
-# FastChat
-| [**Demo**](https://lmarena.ai/) | [**Discord**](https://discord.gg/6GXcFg3TH8) | [**X**](https://x.com/lmsysorg) |
+# transformerlab-inference
+<!-- | [**Demo**](https://transformerlab.ai/) | [**Discord**](https://discord.gg/6GXcFg3TH8) | [**X**](https://x.com/lmsysorg) | -->
+
+> This repository started as a fork of [FastChat](https://github.com/lm-sys/FastChat) and is now a separate project being developed independently by the [Transformer Lab](https://www.transformerlab.ai/) team. This repository is intended for the inference service of the [Transformer Lab project](https://github.com/transformerlab/transformerlab-app).
+
 
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
-- FastChat powers Chatbot Arena ([lmarena.ai](https://lmarena.ai)), serving over 10 million chat requests for 70+ LLMs.
-- Chatbot Arena has collected over 1.5M human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://lmarena.ai/?leaderboard).
-
+<!-- - FastChat powers Chatbot Arena ([transformerlab.ai](https://transformerlab.ai)), serving over 10 million chat requests for 70+ LLMs.
+- Chatbot Arena has collected over 1.5M human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://transformerlab.ai/?leaderboard). -->
 FastChat's core features include:
 - The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
-## News
+<!-- ## News
 - [2024/03] 🔥 We released Chatbot Arena technical [report](https://arxiv.org/abs/2403.04132).
 - [2023/09] We released **LMSYS-Chat-1M**, a large-scale real-world LLM conversation dataset. Read the [report](https://arxiv.org/abs/2309.11998).
 - [2023/08] We released **Vicuna v1.5** based on Llama 2 with 4K and 16K context lengths. Download [weights](#vicuna-weights).
@@ -26,7 +28,7 @@ FastChat's core features include:
 
 </details>
 
-<a href="https://lmarena.ai"><img src="assets/demo_narrow.gif" width="70%"></a>
+<a href="https://transformerlab.ai"><img src="assets/demo_narrow.gif" width="70%"></a> -->
 
 ## Contents
 - [Install](#install)
@@ -48,10 +50,10 @@ pip3 install "fschat[model_worker,webui]"
 
 ### Method 2: From source
 
-1. Clone this repository and navigate to the FastChat folder
+1. Clone this repository and navigate to the transformerlab-inference folder
 ```bash
-git clone https://github.com/lm-sys/FastChat.git
-cd FastChat
+git clone https://github.com/transformerlab/transformerlab-inference.git
+cd transformerlab-inference
 ```
 
 If you are running on Mac:
@@ -97,7 +99,7 @@ You can use the commands below to chat with them. They will automatically downlo
 
 ## Inference with Command Line Interface
 
-<a href="https://lmarena.ai"><img src="assets/screenshot_cli.png" width="70%"></a>
+<a href="https://transformerlab.ai"><img src="assets/screenshot_cli.png" width="70%"></a>
 
 (Experimental Feature: You can specify `--style rich` to enable rich text output and better text streaming quality for some non-ASCII content. This may not work properly on certain terminals.)
 
@@ -202,7 +204,7 @@ export FASTCHAT_USE_MODELSCOPE=True
 
 ## Serving with Web GUI
 
-<a href="https://lmarena.ai"><img src="assets/screenshot_gui.png" width="70%"></a>
+<a href="https://transformerlab.ai"><img src="assets/screenshot_gui.png" width="70%"></a>
 
 To serve using the web UI, you need three main components: web servers that interface with users, model workers that host one or more models, and a controller to coordinate the webserver and model workers. You can learn more about the architecture [here](docs/server_arch.md).
 
