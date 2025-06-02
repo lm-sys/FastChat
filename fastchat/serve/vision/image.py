@@ -26,20 +26,22 @@ class Image(BaseModel):
         from PIL import Image
         import requests
 
+        image_bytes = BytesIO()
+
         # Load image if it has not been loaded in yet
         if self.image_format == ImageFormat.URL:
-            response = requests.get(image)
+            response = requests.get(self.url)
             image = Image.open(BytesIO(response.content)).convert("RGBA")
-            image_bytes = BytesIO()
-            image.save(image_bytes, format="PNG")
         elif self.image_format == ImageFormat.LOCAL_FILEPATH:
             image = Image.open(self.url).convert("RGBA")
-            image_bytes = BytesIO()
-            image.save(image_bytes, format="PNG")
         elif self.image_format == ImageFormat.BYTES:
-            image_bytes = image
+            image_data = base64.b64decode(self.base64_str)
+            image = Image.open(BytesIO(image_data)).convert("RGBA")
+        else:
+            raise ValueError(f"Unsupported image format: {self.image_format}")
 
-        img_b64_str = base64.b64encode(image_bytes).decode()
+        image.save(image_bytes, format="PNG")
+        img_b64_str = base64.b64encode(image_bytes.getvalue()).decode()
 
         return img_b64_str
 
@@ -47,7 +49,7 @@ class Image(BaseModel):
         if self.image_format == ImageFormat.URL:  # input is a url
             return self.url
         elif self.image_format == ImageFormat.LOCAL_FILEPATH:  # input is a local image
-            self.base64_str = self.convert_image_to_base64(self.url)
+            self.base64_str = self.convert_image_to_base64()
             return f"data:image/{self.filetype};base64,{self.base64_str}"
         elif self.image_format == ImageFormat.BYTES:
             return f"data:image/{self.filetype};base64,{self.base64_str}"
