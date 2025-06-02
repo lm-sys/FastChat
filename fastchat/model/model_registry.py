@@ -271,6 +271,13 @@ register_model_info(
 )
 
 register_model_info(
+    ["critique-agentic-search", "critique-agentic-search-api", "critique-labs-ai"],
+    "Critique Labs AI",
+    "https://www.critique-labs.ai/",
+    "Agentic Search Engine By Critique Labs AI",
+)
+
+register_model_info(
     ["gemini-pro", "gemini-pro-dev-api"],
     "Gemini",
     "https://blog.google/technology/ai/google-gemini-pro-imagen-duet-ai-update/",
