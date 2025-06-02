@@ -261,6 +261,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conv-template", type=str, default=None, help="Conversation prompt template."
     )
+    parser.add_argument("--model_dtype", type=str, default="auto")
     parser.add_argument(
         "--trust_remote_code",
         action="store_false",
@@ -281,6 +282,8 @@ if __name__ == "__main__":
 
     parser = AsyncEngineArgs.add_cli_args(parser)
     args = parser.parse_args()
+    if args.model_dtype and args.model_dtype != "auto" and args.model_dtype.strip() != "":
+        args.dtype = args.model_dtype
     if args.model_path:
         args.model = args.model_path
     if args.num_gpus > 1:

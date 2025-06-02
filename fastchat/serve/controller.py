@@ -28,7 +28,7 @@ from fastchat.constants import (
 from fastchat.utils import build_logger
 
 
-logger = build_logger("controller", "controller.log")
+logger = None
 
 
 class DispatchMethod(Enum):
@@ -351,6 +351,7 @@ async def worker_api_get_status(request: Request):
 
 
 def create_controller():
+    global logger
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=21001)
@@ -367,7 +368,14 @@ def create_controller():
         default=False,
         help="Enable SSL. Requires OS Environment variables 'SSL_KEYFILE' and 'SSL_CERTFILE'.",
     )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        default="controller.log",
+        help="Path to the controller log file",
+    )
     args = parser.parse_args()
+    logger = build_logger("controller", args.log_file)
     logger.info(f"args: {args}")
 
     controller = Controller(args.dispatch_method)
