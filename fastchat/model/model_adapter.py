@@ -372,13 +372,6 @@ def load_model(
     # Load model
     model, tokenizer = adapter.load_model(model_path, kwargs)
 
-    if (
-        device == "cpu"
-        and kwargs["torch_dtype"] is torch.bfloat16
-        and CPU_ISA is not None
-    ):
-        model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
-
     if (device == "cuda" and num_gpus == 1 and not cpu_offloading) or device in (
         "mps",
         "xpu",
@@ -386,8 +379,15 @@ def load_model(
     ):
         model.to(device)
 
-    if device == "xpu":
-        model = torch.xpu.optimize(model, dtype=kwargs["torch_dtype"], inplace=True)
+    if (
+        device == "cpu"
+        and kwargs["torch_dtype"] is torch.bfloat16
+        and CPU_ISA is not None
+    ) or device == "xpu":
+        if "llm" in dir(ipex):
+            model = ipex.llm.optimize(model, dtype=kwargs["torch_dtype"], device=device)
+        else:
+            model = ipex.optimize(model, dtype=kwargs["torch_dtype"])
 
     if debug:
         print(model)
