@@ -238,6 +238,7 @@ def main(args):
             args.repetition_penalty,
             args.max_new_tokens,
             chatio,
+            attn_implementation=args.attn_implementation,
             gptq_config=GptqConfig(
                 ckpt=args.gptq_ckpt or args.model_path,
                 wbits=args.gptq_wbits,
