@@ -2,6 +2,7 @@
 Inference code for ChatGLM.
 Adapted from https://huggingface.co/THUDM/chatglm-6b/blob/main/modeling_chatglm.py.
 """
+
 import re
 
 import torch
@@ -35,6 +36,35 @@ def process_response(response):
         response = re.sub(r"([\u4e00-\u9fff])%s" % item[0], r"\1%s" % item[1], response)
         response = re.sub(r"%s([\u4e00-\u9fff])" % item[0], r"%s\1" % item[1], response)
     return response
+
+
+def apply_stopping_string(reply, stop_strings):
+    if isinstance(stop_strings, str):
+        stop_strings = [stop_strings]
+
+    stop_found = False
+
+    for string in stop_strings:
+        if isinstance(string, str):
+            idx = reply.find(string)
+            if idx != -1:
+                reply = reply[:idx]
+                stop_found = True
+
+    if not stop_found:
+        # If something like "\nYo" is generated just before "\nYou: is completed, trim it
+        for string in stop_strings:
+            if isinstance(string, str):
+                for j in range(len(string) - 1, 0, -1):
+                    if reply[-j:] == string[:j]:
+                        reply = reply[:-j]
+                        break
+                else:
+                    continue
+
+                break
+
+    return stop_found, reply
 
 
 def recover_message_list(prompt):
@@ -78,6 +108,7 @@ def generate_stream_chatglm(
     top_p = float(params.get("top_p", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 256))
     echo = params.get("echo", True)
+    stop = params.get("stop", [])
 
     model_type = str(type(model)).lower()
     if "peft" in model_type:
@@ -113,6 +144,10 @@ def generate_stream_chatglm(
         response = tokenizer.decode(output_ids)
         response = process_response(response)
 
+        stop_found, response = (
+            apply_stopping_string(response, stop) if response else (False, response)
+        )
+
         yield {
             "text": response,
             "usage": {
@@ -122,6 +157,9 @@ def generate_stream_chatglm(
             },
             "finish_reason": None,
         }
+
+        if stop_found:
+            break
 
     # TODO: ChatGLM stop when it reach max length
     # Only last stream result contains finish_reason, we set finish_reason as stop
