@@ -267,7 +267,12 @@ def arena_hard_process(leaderboard_table_file, filepath):
 
 
 def get_arena_table(
-    arena_df, model_table_df, arena_subset_df=None, hidden_models=None, is_overall=False
+    arena_df,
+    model_table_df,
+    arena_subset_df=None,
+    hidden_models=None,
+    is_overall=False,
+    hide_proprietary=False,
 ):
     arena_df = arena_df.sort_values(
         by=["final_ranking", "rating"], ascending=[True, False]
@@ -314,6 +319,9 @@ def get_arena_table(
 
         if not model_info:
             print(f"Warning: {model_key} not found in model table")
+            return None
+
+        if hide_proprietary and model_info.get("License", "").startswith("Propr"):
             return None
 
         ranking = row.get("final_ranking") or row.name + 1
@@ -487,6 +495,7 @@ def build_arena_tab(
                 else deprecated_model_name
             ),
             is_overall=category == "Overall",
+            hide_proprietary="Hide Proprietary" in filters,
         )
         if category != "Overall":
             arena_values = update_leaderboard_df(arena_values)
@@ -594,7 +603,7 @@ def build_arena_tab(
             )
         with gr.Column(scale=2):
             category_checkbox = gr.CheckboxGroup(
-                ["Style Control", "Show Deprecated"],
+                ["Style Control", "Show Deprecated", "Hide Proprietary"],
                 label="Apply filter",
                 info="",
             )
