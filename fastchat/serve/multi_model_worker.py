@@ -11,6 +11,7 @@ thus reports the combined queue lengths for health checks.
 We recommend using this with multiple Peft models (with `peft` in the name)
 where all Peft models are trained on the exact same base model.
 """
+
 import argparse
 import asyncio
 import dataclasses
@@ -206,6 +207,14 @@ def create_multi_model_worker():
                 f"Larger --num-gpus ({args.num_gpus}) than --gpus {args.gpus}!"
             )
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+        if len(args.gpus.split(",")) == 1:
+            try:
+                import torch_npu
+
+                torch.npu.set_device(int(args.gpus))
+                print(f"NPU is available, now model is running on npu:{args.gpus}")
+            except ModuleNotFoundError:
+                pass
 
     gptq_config = GptqConfig(
         ckpt=args.gptq_ckpt or args.model_path,
