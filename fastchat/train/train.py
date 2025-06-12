@@ -207,7 +207,6 @@ class LazySupervisedDataset(Dataset):
 
     def __init__(self, raw_data, tokenizer: transformers.PreTrainedTokenizer):
         super(LazySupervisedDataset, self).__init__()
-        self.tokenizer = tokenizer
 
         rank0_print("Formatting inputs...Skip in lazy mode")
         self.tokenizer = tokenizer
