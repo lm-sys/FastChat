@@ -23,3 +23,8 @@ See the supported models [here](https://vllm.readthedocs.io/en/latest/models/sup
    '''
    python3 -m fastchat.serve.vllm_worker --model-path TheBloke/vicuna-7B-v1.5-AWQ --quantization awq
    '''
+
+   If you use a LoRA model, try
+   '''
+   python3 -m fastchat.serve.vllm_worker --model-path meta-llama/Llama-2-7b-chat-hf --enable-lora --lora-modules lora1=lora1_path lora2=lora2_path --max-lora-rank 64 --lora-dtype float16
+   '''
