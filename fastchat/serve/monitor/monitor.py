@@ -173,6 +173,9 @@ def load_leaderboard_table_csv(filename, add_hyperlink=True):
                         v = round(ast.literal_eval(v), 2)
                     else:
                         v = np.nan
+                elif h == "input_token_price" or h == "output_token_price":
+                    if v == "null":
+                        v = "-"
                 item[h] = v
             if add_hyperlink:
                 item["Model"] = model_hyperlink(item["Model"], item["Link"])
@@ -224,6 +227,10 @@ def get_full_table(arena_df, model_table_df, model_to_score):
         row.append(model_table_df.iloc[i]["Organization"])
         # license
         row.append(model_table_df.iloc[i]["License"])
+        # Input Price
+        row.append(model_table_df.iloc[i]["input_token_price"])
+        # Output Price
+        row.append(model_table_df.iloc[i]["output_token_price"])
 
         values.append(row)
     values.sort(key=lambda x: -x[1] if not np.isnan(x[1]) else 1e9)
@@ -332,12 +339,14 @@ def get_arena_table(
                 f"+{round(row['rating_q975'] - row['rating'])}/-{round(row['rating'] - row['rating_q025'])}",
                 round(row["num_battles"]),
                 model_info.get("Organization", "Unknown"),
-                model_info.get("License", "Unknown"),
-                (
-                    "Unknown"
-                    if model_info.get("Knowledge cutoff date", "-") == "-"
-                    else model_info.get("Knowledge cutoff date", "Unknown")
-                ),
+                # model_info.get("License", "Unknown"),
+                # (
+                #     "Unknown"
+                #     if model_info.get("Knowledge cutoff date", "-") == "-"
+                #     else model_info.get("Knowledge cutoff date", "Unknown")
+                # ),
+                model_info.get("input_token_price", "-"),
+                model_info.get("output_token_price", "-"),
             ]
         )
         return result
@@ -360,8 +369,10 @@ def update_leaderboard_df(arena_table_vals):
         "95% CI",
         "Votes",
         "Organization",
-        "License",
-        "Knowledge Cutoff",
+        # "License",
+        # "Knowledge Cutoff",
+        "Input Token Price",
+        "Output Token Price",
     ]
     elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
 
@@ -389,8 +400,10 @@ def update_overall_leaderboard_df(arena_table_vals):
         "95% CI",
         "Votes",
         "Organization",
-        "License",
-        "Knowledge Cutoff",
+        # "License",
+        # "Knowledge Cutoff",
+        "Input Token Price",
+        "Output Token Price",
     ]
     elo_dataframe = pd.DataFrame(arena_table_vals, columns=columns)
 
@@ -499,8 +512,10 @@ def build_arena_tab(
                     "95% CI",
                     "Votes",
                     "Organization",
-                    "License",
-                    "Knowledge Cutoff",
+                    # "License",
+                    # "Knowledge Cutoff",
+                    "Input Token Price",
+                    "Output Token Price",
                 ],
                 datatype=[
                     "number",
@@ -516,7 +531,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
+                column_widths=[75, 75, 180, 60, 60, 60, 70, 55, 55],
                 wrap=True,
             )
         else:
@@ -530,8 +545,10 @@ def build_arena_tab(
                     "95% CI",
                     "Votes",
                     "Organization",
-                    "License",
-                    "Knowledge Cutoff",
+                    # "License",
+                    # "Knowledge Cutoff",
+                    "Input Token Price",
+                    "Output Token Price",
                 ],
                 datatype=[
                     "number",
@@ -547,7 +564,7 @@ def build_arena_tab(
                 value=arena_values,
                 elem_id="arena_leaderboard_dataframe",
                 height=1000,
-                column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
+                column_widths=[75, 75, 180, 60, 60, 60, 70, 55, 55],
                 wrap=True,
             )
 
@@ -616,8 +633,10 @@ def build_arena_tab(
             "95% CI",
             "Votes",
             "Organization",
-            "License",
-            "Knowledge Cutoff",
+            # "License",
+            # "Knowledge Cutoff",
+            "Input Token Price",
+            "Output Token Price",
         ],
         datatype=[
             "number",
@@ -633,7 +652,7 @@ def build_arena_tab(
         value=arena_vals,
         elem_id="arena_leaderboard_dataframe",
         height=1000,
-        column_widths=[75, 75, 180, 60, 60, 60, 70, 80, 60],
+        column_widths=[75, 75, 180, 60, 60, 60, 70, 55, 55],
         wrap=True,
     )
 
